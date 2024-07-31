@@ -17,7 +17,22 @@ fn test_location_marks() {
     let content = indoc! {"
         First liné,
         Second liné.
-        Third liné."};
+        Third liné.
+        match something {
+            This is a new scope
+        };
+        let a = SomeStruct { some_value };
+        let b = if true { a } else { b };
+        let a_long_variable_name_to_go_to_newline = if someverylongbooleanvalue {
+            if someverylongfunctionname() {
+                some_value
+            } else {
+                some_other_value
+            }
+        } else {
+            someotherevenlongerfunctionnamewhichisveryveryveryveryverylong()
+        };
+        Scope is closed."};
     // Note that content does not end with '\n'.
 
     let db = FilesDatabaseForTesting::default();
@@ -30,8 +45,17 @@ fn test_location_marks() {
     })
     .intern(&db);
     let summary = db.file_summary(file).unwrap();
+
     let second_line = summary.line_offsets[1];
     let third_line = summary.line_offsets[2];
+    let match_begin = summary.line_offsets[3];
+    let match_inside = summary.line_offsets[4];
+    let match_end = summary.line_offsets[5];
+    let struct_creation = summary.line_offsets[6];
+    let conditional_assignment = summary.line_offsets[7];
+    let multiline_conditional = summary.line_offsets[8];
+    let close_else = summary.line_offsets[16];
+    let last_line = summary.line_offsets[17];
 
     // Empty span.
     let location = DiagnosticLocation {
@@ -113,8 +137,128 @@ fn test_location_marks() {
     assert_eq!(
         get_location_marks(&db, &location) + "\n",
         indoc! {"
-            Second liné.
-                   ^***^
+            \\   liné.
+            |   Th
+            |____^
+        "}
+    );
+
+    // Properly indents scopes
+    let location = DiagnosticLocation {
+        file_id: file,
+        span: TextSpan {
+            start: match_begin,
+            end: match_end.add_width(TextWidth::new_for_testing(1)),
+        },
+    };
+
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
+            \\   match something {
+            |       This is a new scope
+            |   }
+            |___^
+        "}
+    );
+
+    // Same as above but includes next line. I don't see when it could happen but it works.
+    let location = DiagnosticLocation {
+        file_id: file,
+        span: TextSpan {
+            start: match_begin,
+            end: conditional_assignment.add_width(TextWidth::new_for_testing(3)),
+        },
+    };
+
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
+            \\   match something {
+            |       This is a new scope
+            |   };
+            |   let a = SomeStruct { some_value };
+            |   let
+            |_____^
+        "}
+    );
+
+    // Start inside scope so not ideally formatted not sure when this can happen
+    // If needed TODO(Lucas): handle start from inside scope
+    let location = DiagnosticLocation {
+        file_id: file,
+        span: TextSpan {
+            start: match_inside,
+            end: match_end.add_width(TextWidth::new_for_testing(2)),
+        },
+    };
+
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
+            \\   This is a new scope
+            |   };
+            |____^
+        "}
+    );
+
+    // Properly formats a one liner that has scopes.
+    let location = DiagnosticLocation {
+        file_id: file,
+        span: TextSpan {
+            start: conditional_assignment,
+            end: multiline_conditional.add_width(TextWidth::new_for_testing(3)),
+        },
+    };
+
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
+            \\   let b = if true { a } else { b };
+            |   let
+            |_____^
+        "}
+    );
+    // Properly formats struct creation
+    let location = DiagnosticLocation {
+        file_id: file,
+        span: TextSpan {
+            start: struct_creation,
+            end: conditional_assignment.add_width(TextWidth::new_for_testing(33)),
+        },
+    };
+
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
+            \\   let a = SomeStruct { some_value };
+            |   let b = if true { a } else { b };
+            |___________________________________^
+        "}
+    );
+
+    // nested scopes
+    let location = DiagnosticLocation {
+        file_id: file,
+        span: TextSpan {
+            start: multiline_conditional,
+            end: close_else.add_width(TextWidth::new_for_testing(2)),
+        },
+    };
+
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
+            \\   let a_long_variable_name_to_go_to_newline = if someverylongbooleanvalue {
+            |       if someverylongfunctionname() {
+            |           some_value
+            |       } else {
+            |           some_other_value
+            |       }
+            |   } else {
+            |       someotherevenlongerfunctionnamewhichisveryveryveryveryverylong()
+            |   };
+            |____^
         "}
     );
 
@@ -122,7 +266,7 @@ fn test_location_marks() {
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: third_line.add_width(TextWidth::new_for_testing(7)),
+            start: last_line.add_width(TextWidth::new_for_testing(7)),
             end: summary.last_offset.add_width(TextWidth::from_char('\n')),
         },
     };
@@ -130,8 +274,8 @@ fn test_location_marks() {
     assert_eq!(
         get_location_marks(&db, &location) + "\n",
         indoc! {"
-            Third liné.
-                   ^**^
+            Scope is closed.
+                   ^*******^
         "}
     );
 
@@ -144,8 +288,8 @@ fn test_location_marks() {
     assert_eq!(
         get_location_marks(&db, &location) + "\n",
         indoc! {"
-            Third liné.
-                       ^
+            Scope is closed.
+                            ^
         "}
     );
 }

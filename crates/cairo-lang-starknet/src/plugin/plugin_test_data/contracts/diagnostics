@@ -187,13 +187,33 @@ error: Plugin diagnostic: The first parameter of an entry point must be `self`.
 
 warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
  --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+\   #[starknet::contract]
+|   mod test_contract {
+|       #[storage]
+|       struct Storage {}
+|       
+|       #[external(v0)]
+|       fn foo() {}
+|       
+|       #[external(v0)]
+|       fn bar(_n: u32) {}
+|   }
+|___^
 
 warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
  --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+\   #[starknet::contract]
+|   mod test_contract {
+|       #[storage]
+|       struct Storage {}
+|       
+|       #[external(v0)]
+|       fn foo() {}
+|       
+|       #[external(v0)]
+|       fn bar(_n: u32) {}
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -679,8 +699,9 @@ mod test_contract {
 struct MyType {}
 
 lib.cairo:8:1
-#[derive(Drop)]
-^*************^
+\   #[derive(Drop)]
+|   struct MyType {}
+|__________________^
 impls:
 
 impl MyTypeDrop of core::traits::Drop::<MyType>;
@@ -1253,8 +1274,14 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
 
 warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
  --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+\   #[starknet::contract]
+|   mod test_contract {
+|       #[storage]
+|       struct Storage {}
+|       #[external(v0)]
+|       fn foo<T>(ref self: ContractState, x: T) {}
+|   }
+|___^
 
 error: Type not found.
  --> lib.cairo:1:1
@@ -1741,13 +1768,15 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: `__validate__` is a reserved entry point names for account contracts only.
  --> lib.cairo:5:5
-    #[external(v0)]
-    ^*************^
+\   #[external(v0)]
+|   fn __validate__(ref self: ContractState) {}
+|_____________________________________________^
 
 warning: Plugin diagnostic: Failed to generate ABI: `__execute__` is a reserved entry point names for account contracts only.
  --> lib.cairo:11:5
-    #[external(v0)]
-    ^*************^
+\   #[external(v0)]
+|   fn __execute__(ref self: ContractState) {}
+|____________________________________________^
 
 //! > ==========================================================================
 
@@ -2220,8 +2249,13 @@ mod test_contract {
 //! > expected_diagnostics
 error: Plugin diagnostic: Contracts must define a 'Storage' struct.
  --> lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+\   #[starknet::contract]
+|   mod test_contract {
+|       fn same_name() -> felt252 {
+|           1
+|       }
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -2257,8 +2291,10 @@ mod test_contract {
 //! > expected_diagnostics
 error: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
  --> lib.cairo:3:5
-    struct Storage {
-    ^**************^
+\   struct Storage {
+|       same_name: felt252,
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -2394,16 +2430,20 @@ pub mod __constructor {
 
 
 lib.cairo:5:5
-    #[external(v0)]
-    ^*************^
+\   #[external(v0)]
+|   #[generate_trait]
+|   impl AImpl of ATrait {}
+|_________________________^
 generate_trait:
 
     trait ATrait {}
 
 
 lib.cairo:9:5
-    #[external(v1)]
-    ^*************^
+\   #[external(v1)]
+|   #[generate_trait]
+|   impl BImpl of BTrait {}
+|_________________________^
 generate_trait:
 
     trait BTrait {}
@@ -2498,8 +2538,9 @@ trait ContractAbi {}
 //! > expected_diagnostics
 error: Plugin diagnostic: The 'contract' attribute was deprecated, please use `starknet::contract` instead.
  --> lib.cairo:1:1
-#[contract]
-^*********^
+\   #[contract]
+|   mod test_contract {}
+|______________________^
 
 error: Plugin diagnostic: Unsupported attribute.
  --> lib.cairo:1:1
@@ -2508,8 +2549,9 @@ error: Plugin diagnostic: Unsupported attribute.
 
 error: Plugin diagnostic: The 'abi' attribute for traits was deprecated, please use `starknet::interface` instead.
  --> lib.cairo:4:1
-#[abi]
-^****^
+\   #[abi]
+|   trait ContractAbi {}
+|______________________^
 
 //! > ==========================================================================
 
@@ -3480,8 +3522,17 @@ pub mod __constructor {
 
 
 lib.cairo:23:5
-    #[generate_trait]
-    ^***************^
+\   #[generate_trait]
+|   #[external(v0)]
+|   impl Impl1 of NonInterfaceTrait {
+|       #[external(v0)]
+|       fn foo_external2(self: @ContractState) {}
+|       #[l1_handler]
+|       fn foo_l1_handler2(self: @ContractState) {}
+|       #[constructor]
+|       fn foo_constructor2(self: @ContractState) {}
+|   }
+|___^
 generate_trait:
 
     trait NonInterfaceTrait {
@@ -3664,8 +3715,11 @@ pub mod __constructor {
 
 
 lib.cairo:5:1
-
-^
+\   
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {}
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3844,8 +3898,12 @@ pub mod __constructor {
 
 
 lib.cairo:5:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum MyEvent {}
+|   
+|___^
 impls:
 
 impl MyEventDrop of core::traits::Drop::<MyEvent>;
@@ -6391,8 +6449,16 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
 
 
 lib.cairo:7:1
-#[starknet::embeddable]
-^*********************^
+\   #[starknet::embeddable]
+|   impl EmbeddableImpl<TContractState> of Interface<TContractState> {
+|       #[external(v0)]
+|       fn foo1(self: @TContractState) {}
+|       #[l1_handler]
+|       fn foo2(self: @TContractState) {}
+|       #[constructor]
+|       fn foo3(self: @TContractState) {}
+|   }
+|___^
 embeddable:
 
 trait UnsafeNewContractStateTraitForEmbeddableImpl<
@@ -8023,8 +8089,14 @@ impl HasComponentImpl_component of super::component::HasComponent<ContractState>
 
 
 lib.cairo:32:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       CompEvent: super::component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -8115,8 +8187,9 @@ mod test_contract {
 //! > expected_diagnostics
 error: Plugin diagnostic: The 'abi' attribute for impl aliases only supports the 'embed_v0' argument.
  --> lib.cairo:10:5
-    #[abi(v0)]
-    ^********^
+\   #[abi(v0)]
+|   impl Alias = super::SomeImpl<ContractState>;
+|______________________________________________^
 
 error: Plugin diagnostic: The 'abi' attribute for impls only supports the 'per_item' or 'embed_v0' argument.
  --> lib.cairo:13:5
@@ -8145,8 +8218,11 @@ mod test_contract {
 }
 
 lib.cairo:1:1
-#[generate_trait]
-^***************^
+\   #[generate_trait]
+|   impl SomeImpl<T> of SomeTrait<T> {
+|       fn foo(self: @T) {}
+|   }
+|___^
 generate_trait:
 
 trait SomeTrait<T> {
@@ -9168,8 +9244,13 @@ pub trait HasComponent<TContractState> {
 
 
 lib.cairo:6:5
-    #[generate_trait]
-    ^***************^
+\   #[generate_trait]
+|   impl Comp1HelperImpl<
+|   TContractState, impl X: HasComponent<TContractState>
+|   > of Comp1HelperTrait<TContractState, X> {
+|       fn foo1(self: @ComponentState<TContractState>) {}
+|   }
+|___^
 generate_trait:
 
     trait Comp1HelperTrait<
@@ -9304,8 +9385,13 @@ pub trait HasComponent<TContractState> {
 
 
 lib.cairo:19:5
-    #[generate_trait]
-    ^***************^
+\   #[generate_trait]
+|   impl Comp1HelperImpl<
+|   TContractState, impl X: HasComponent<TContractState>
+|   > of Comp1HelperTrait<TContractState, X> {
+|       fn foo2(self: @ComponentState<TContractState>) {}
+|   }
+|___^
 generate_trait:
 
     trait Comp1HelperTrait<
@@ -10382,8 +10468,13 @@ pub trait HasComponent<TContractState> {
 
 
 lib.cairo:6:5
-    #[generate_trait]
-    ^***************^
+\   #[generate_trait]
+|   impl Comp1HelperImpl<
+|   TContractState, impl X: HasComponent<TContractState>
+|   > of Comp1HelperTrait<TContractState, X> {
+|       fn foo1(self: @ComponentState<TContractState>) {}
+|   }
+|___^
 generate_trait:
 
     trait Comp1HelperTrait<
@@ -10518,8 +10609,13 @@ pub trait HasComponent<TContractState> {
 
 
 lib.cairo:19:5
-    #[generate_trait]
-    ^***************^
+\   #[generate_trait]
+|   impl Comp1HelperImpl<
+|   TContractState, impl X: HasComponent<TContractState>
+|   > of Comp1HelperTrait<TContractState, X> {
+|       fn foo2(self: @ComponentState<TContractState>) {}
+|   }
+|___^
 generate_trait:
 
     trait Comp1HelperTrait<
@@ -12443,8 +12539,14 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
 
 
 lib.cairo:24:1
-
-^
+\   
+|   #[event]
+|   #[derive(Drop, starknet::Event)]
+|   enum Event {
+|       CompEvent: super::test_component::Event,
+|   }
+|   
+|___^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;

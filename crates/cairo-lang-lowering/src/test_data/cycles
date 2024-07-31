@@ -18,8 +18,10 @@ foo
 //! > lowering_diagnostics
 error: Call cycle of `nopanic` functions is not allowed.
  --> lib.cairo:1:1
-fn foo(x: felt252) nopanic {
-^**************************^
+\   fn foo(x: felt252) nopanic {
+|       foo(x);
+|   }
+|___^
 
 //! > lowering_flat
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
@@ -173,13 +175,19 @@ impl BDestruct of Destruct<B> {
 //! > lowering_diagnostics
 error: Call cycle of `nopanic` functions is not allowed.
  --> lib.cairo:3:5
-    fn destruct(self: A) nopanic {
-    ^****************************^
+\   fn destruct(self: A) nopanic {
+|       let A { } = self;
+|       B {};
+|   }
+|___^
 
 error: Call cycle of `nopanic` functions is not allowed.
  --> lib.cairo:11:5
-    fn destruct(self: B) nopanic {
-    ^****************************^
+\   fn destruct(self: B) nopanic {
+|       let B { } = self;
+|       A {};
+|   }
+|___^
 
 //! > lowering_flat
 Parameters:

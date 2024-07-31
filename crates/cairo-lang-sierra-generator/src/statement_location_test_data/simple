@@ -109,13 +109,29 @@ enum MyEnum {
 label_test::foo::0:
 enum_match<test::MyEnum>([1]) { fallthrough([2]) label_test::foo::1([3]) label_test::foo::2([4]) }
 Originating location:
-    match my_enum {
-    ^*************^
+\   match my_enum {
+|       MyEnum::A(a) => a,
+|       MyEnum::B(b) => b,
+|       MyEnum::C((c1, c2)) => { if c1 > c2 {
+|           c1 + c2
+|       } else {
+|           c1 * c2
+|       } }
+|   }
+|___^
 In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-    match my_enum {
-    ^*************^
+\   match my_enum {
+|       MyEnum::A(a) => a,
+|       MyEnum::B(b) => b,
+|       MyEnum::C((c1, c2)) => { if c1 > c2 {
+|           c1 + c2
+|       } else {
+|           c1 * c2
+|       } }
+|   }
+|___^
 In function: lib.cairo::foo
 store_temp<u8>([2]) -> ([5])
 Originating location:
@@ -129,13 +145,29 @@ Originating location:
 In function: lib.cairo::foo
 label_test::foo::1:
 Originating location:
-    match my_enum {
-    ^*************^
+\   match my_enum {
+|       MyEnum::A(a) => a,
+|       MyEnum::B(b) => b,
+|       MyEnum::C((c1, c2)) => { if c1 > c2 {
+|           c1 + c2
+|       } else {
+|           c1 * c2
+|       } }
+|   }
+|___^
 In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-    match my_enum {
-    ^*************^
+\   match my_enum {
+|       MyEnum::A(a) => a,
+|       MyEnum::B(b) => b,
+|       MyEnum::C((c1, c2)) => { if c1 > c2 {
+|           c1 + c2
+|       } else {
+|           c1 * c2
+|       } }
+|   }
+|___^
 In function: lib.cairo::foo
 store_temp<u8>([3]) -> ([5])
 Originating location:
@@ -154,33 +186,89 @@ Originating location:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([6]) -> ([7])
 Originating location:
-fn foo(my_enum: MyEnum) -> u8 {
-                              ^
+\   {
+|       match my_enum {
+|           MyEnum::A(a) => a,
+|           MyEnum::B(b) => b,
+|           MyEnum::C((c1, c2)) => { if c1 > c2 {
+|               c1 + c2
+|           } else {
+|               c1 * c2
+|           } }
+|       }
+|   }
+|___^
 In function: lib.cairo::foo
 store_temp<RangeCheck>([0]) -> ([0])
 Originating location:
-fn foo(my_enum: MyEnum) -> u8 {
-                              ^
+\   {
+|       match my_enum {
+|           MyEnum::A(a) => a,
+|           MyEnum::B(b) => b,
+|           MyEnum::C((c1, c2)) => { if c1 > c2 {
+|               c1 + c2
+|           } else {
+|               c1 * c2
+|           } }
+|       }
+|   }
+|___^
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([7]) -> ([7])
 Originating location:
-fn foo(my_enum: MyEnum) -> u8 {
-                              ^
+\   {
+|       match my_enum {
+|           MyEnum::A(a) => a,
+|           MyEnum::B(b) => b,
+|           MyEnum::C((c1, c2)) => { if c1 > c2 {
+|               c1 + c2
+|           } else {
+|               c1 * c2
+|           } }
+|       }
+|   }
+|___^
 In function: lib.cairo::foo
 return([0], [7])
 Originating location:
-fn foo(my_enum: MyEnum) -> u8 {
-                              ^
+\   {
+|       match my_enum {
+|           MyEnum::A(a) => a,
+|           MyEnum::B(b) => b,
+|           MyEnum::C((c1, c2)) => { if c1 > c2 {
+|               c1 + c2
+|           } else {
+|               c1 * c2
+|           } }
+|       }
+|   }
+|___^
 In function: lib.cairo::foo
 label_test::foo::2:
 Originating location:
-    match my_enum {
-    ^*************^
+\   match my_enum {
+|       MyEnum::A(a) => a,
+|       MyEnum::B(b) => b,
+|       MyEnum::C((c1, c2)) => { if c1 > c2 {
+|           c1 + c2
+|       } else {
+|           c1 * c2
+|       } }
+|   }
+|___^
 In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-    match my_enum {
-    ^*************^
+\   match my_enum {
+|       MyEnum::A(a) => a,
+|       MyEnum::B(b) => b,
+|       MyEnum::C((c1, c2)) => { if c1 > c2 {
+|           c1 + c2
+|       } else {
+|           c1 * c2
+|       } }
+|   }
+|___^
 In function: lib.cairo::foo
 struct_deconstruct<Tuple<u8, u8>>([4]) -> ([8], [9])
 Originating location:
@@ -295,8 +383,13 @@ Inlined at:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([20]) -> ([21])
 Originating location:
-    fn expect(self: Option<T>, err: felt252) -> T {
-                                                  ^
+\   {
+|       match self {
+|           Option::Some(x) => x,
+|           Option::None => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -308,8 +401,13 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<RangeCheck>([17]) -> ([17])
 Originating location:
-    fn expect(self: Option<T>, err: felt252) -> T {
-                                                  ^
+\   {
+|       match self {
+|           Option::Some(x) => x,
+|           Option::None => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -321,8 +419,13 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([21]) -> ([21])
 Originating location:
-    fn expect(self: Option<T>, err: felt252) -> T {
-                                                  ^
+\   {
+|       match self {
+|           Option::Some(x) => x,
+|           Option::None => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -334,8 +437,13 @@ Inlined at:
 In function: lib.cairo::foo
 return([17], [21])
 Originating location:
-    fn expect(self: Option<T>, err: felt252) -> T {
-                                                  ^
+\   {
+|       match self {
+|           Option::Some(x) => x,
+|           Option::None => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::option::OptionTraitImpl::expect
 Inlined at:
         u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
@@ -618,8 +726,13 @@ Inlined at:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([32]) -> ([33])
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
+\   {
+|       match self {
+|           Result::Ok(x) => x,
+|           Result::Err(_) => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -631,8 +744,13 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<RangeCheck>([28]) -> ([28])
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
+\   {
+|       match self {
+|           Result::Ok(x) => x,
+|           Result::Err(_) => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -644,8 +762,13 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([33]) -> ([33])
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
+\   {
+|       match self {
+|           Result::Ok(x) => x,
+|           Result::Err(_) => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -657,8 +780,13 @@ Inlined at:
 In function: lib.cairo::foo
 return([28], [33])
 Originating location:
-    fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                               ^
+\   {
+|       match self {
+|           Result::Ok(x) => x,
+|           Result::Err(_) => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -1051,8 +1179,11 @@ Originating location:
 In function: lib.cairo::main
 store_temp<test::MyEnum>([4]) -> ([4])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1060,8 +1191,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<test::MyEnum>([8]) -> ([8])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1069,8 +1203,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<test::MyEnum>([13]) -> ([13])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1078,8 +1215,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<test::MyEnum>([18]) -> ([18])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1087,8 +1227,11 @@ Inlined at:
 In function: lib.cairo::main
 enum_match<test::MyEnum>([4]) { fallthrough([19]) label_test::main::1([20]) label_test::main::2([21]) label_test::main::3([22]) }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1096,8 +1239,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1105,8 +1251,11 @@ Inlined at:
 In function: lib.cairo::main
 drop<Tuple<felt252, felt252>>([19]) -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1114,8 +1263,11 @@ Inlined at:
 In function: lib.cairo::main
 jump() { label_test::main::5() }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1123,8 +1275,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::1:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1132,8 +1287,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1141,8 +1299,11 @@ Inlined at:
 In function: lib.cairo::main
 drop<Tuple<felt252, felt252>>([20]) -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1150,8 +1311,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::5:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1159,18 +1323,39 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<RangeCheck>([0]) -> ([23])
 Originating location:
-fn main() {
-^*********^
+\   fn main() {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 jump() { label_test::main::6() }
 Originating location:
-fn main() {
-^*********^
+\   fn main() {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 label_test::main::2:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1178,8 +1363,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1205,8 +1393,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([24]) -> ([27])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1214,8 +1405,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([26]) -> ([28])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1223,8 +1417,11 @@ Inlined at:
 In function: lib.cairo::main
 jump() { label_test::main::7() }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1232,8 +1429,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::3:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1241,8 +1441,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1268,8 +1471,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([29]) -> ([27])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1277,8 +1483,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([31]) -> ([28])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1286,8 +1495,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::7:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(a);
@@ -1373,8 +1585,11 @@ Inlined at:
 In function: lib.cairo::main
 enum_match<test::MyEnum>([8]) { fallthrough([37]) label_test::main::10([38]) label_test::main::11([39]) label_test::main::12([40]) }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1382,8 +1597,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1391,8 +1609,11 @@ Inlined at:
 In function: lib.cairo::main
 drop<Tuple<felt252, felt252>>([37]) -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1400,8 +1621,11 @@ Inlined at:
 In function: lib.cairo::main
 jump() { label_test::main::14() }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1409,8 +1633,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::10:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1418,8 +1645,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1427,8 +1657,11 @@ Inlined at:
 In function: lib.cairo::main
 drop<Tuple<felt252, felt252>>([38]) -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1436,8 +1669,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::14:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1445,18 +1681,39 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<RangeCheck>([23]) -> ([41])
 Originating location:
-fn main() {
-^*********^
+\   fn main() {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 jump() { label_test::main::15() }
 Originating location:
-fn main() {
-^*********^
+\   fn main() {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 label_test::main::11:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1464,8 +1721,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1491,8 +1751,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([42]) -> ([45])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1500,8 +1763,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([44]) -> ([46])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1509,8 +1775,11 @@ Inlined at:
 In function: lib.cairo::main
 jump() { label_test::main::16() }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1518,8 +1787,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::12:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1527,8 +1799,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1554,8 +1829,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([47]) -> ([45])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1563,8 +1841,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([49]) -> ([46])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1572,8 +1853,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::16:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(b);
@@ -1659,8 +1943,11 @@ Inlined at:
 In function: lib.cairo::main
 enum_match<test::MyEnum>([13]) { fallthrough([55]) label_test::main::19([56]) label_test::main::20([57]) label_test::main::21([58]) }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1668,8 +1955,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1677,8 +1967,11 @@ Inlined at:
 In function: lib.cairo::main
 drop<Tuple<felt252, felt252>>([55]) -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1686,8 +1979,11 @@ Inlined at:
 In function: lib.cairo::main
 jump() { label_test::main::23() }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1695,8 +1991,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::19:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1704,8 +2003,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1713,8 +2015,11 @@ Inlined at:
 In function: lib.cairo::main
 drop<Tuple<felt252, felt252>>([56]) -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1722,8 +2027,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::23:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1731,18 +2039,39 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<RangeCheck>([41]) -> ([59])
 Originating location:
-fn main() {
-^*********^
+\   fn main() {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 jump() { label_test::main::24() }
 Originating location:
-fn main() {
-^*********^
+\   fn main() {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 label_test::main::20:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1750,8 +2079,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1777,8 +2109,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([60]) -> ([63])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1786,8 +2121,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([62]) -> ([64])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1795,8 +2133,11 @@ Inlined at:
 In function: lib.cairo::main
 jump() { label_test::main::25() }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1804,8 +2145,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::21:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1813,8 +2157,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1840,8 +2187,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([65]) -> ([63])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1849,8 +2199,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([67]) -> ([64])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1858,8 +2211,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::25:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(c);
@@ -1945,8 +2301,11 @@ Inlined at:
 In function: lib.cairo::main
 enum_match<test::MyEnum>([18]) { fallthrough([73]) label_test::main::28([74]) label_test::main::29([75]) label_test::main::30([76]) }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -1954,8 +2313,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -1963,8 +2325,11 @@ Inlined at:
 In function: lib.cairo::main
 drop<Tuple<felt252, felt252>>([73]) -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -1972,8 +2337,11 @@ Inlined at:
 In function: lib.cairo::main
 jump() { label_test::main::32() }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -1981,8 +2349,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::28:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -1990,8 +2361,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -1999,8 +2373,11 @@ Inlined at:
 In function: lib.cairo::main
 drop<Tuple<felt252, felt252>>([74]) -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2008,8 +2385,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::32:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2017,18 +2397,39 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<RangeCheck>([59]) -> ([77])
 Originating location:
-fn main() {
-^*********^
+\   fn main() {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 jump() { label_test::main::33() }
 Originating location:
-fn main() {
-^*********^
+\   fn main() {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 label_test::main::29:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2036,8 +2437,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2063,8 +2467,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([78]) -> ([81])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2072,8 +2479,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([80]) -> ([82])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2081,8 +2491,11 @@ Inlined at:
 In function: lib.cairo::main
 jump() { label_test::main::34() }
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2090,8 +2503,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::30:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2099,8 +2515,11 @@ Inlined at:
 In function: lib.cairo::main
 branch_align() -> ()
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2126,8 +2545,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([83]) -> ([81])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2135,8 +2557,11 @@ Inlined at:
 In function: lib.cairo::main
 store_temp<u8>([85]) -> ([82])
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2144,8 +2569,11 @@ Inlined at:
 In function: lib.cairo::main
 label_test::main::34:
 Originating location:
-    match a {
-    ^*******^
+\   match a {
+|       MyEnum::A((_, x)) | MyEnum::B((x, _)) => x,
+|       MyEnum::C((x, _, t)) | MyEnum::D(P { x, y: _, z: t }) => (x + t).into(),
+|   }
+|___^
 In function: lib.cairo::foo
 Inlined at:
     let _ = foo(d);
@@ -2257,18 +2685,45 @@ Inlined at:
 In function: lib.cairo::main
 enum_init<core::panics::PanicResult::<((),)>, 0>([92]) -> ([93])
 Originating location:
-fn main() {
-          ^
+\   {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 store_temp<core::panics::PanicResult::<((),)>>([93]) -> ([93])
 Originating location:
-fn main() {
-          ^
+\   {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 return([77], [93])
 Originating location:
-fn main() {
-          ^
+\   {
+|       let a = MyEnum::A((1, 2));
+|       let b = MyEnum::B((1, 2));
+|       let c = MyEnum::C((1, 2, 3));
+|       let d = MyEnum::D(P { x: 1, y: 2, z: 9 });
+|       let _ = foo(a);
+|       let _ = foo(b);
+|       let _ = foo(c);
+|       let _ = foo(d);
+|   }
+|___^
 In function: lib.cairo::main
 label_test::main::35:
 Originating location:
@@ -3389,8 +3844,11 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<felt252>([11]) -> ([11])
 Originating location:
-        match *lhs - *rhs {
-        ^*****************^
+\   match *lhs - *rhs {
+|       0 => true,
+|       _ => false,
+|   }
+|___^
 In function: core::Felt252PartialEq::eq
 Inlined at:
     if x == y { // highlighted
@@ -3398,8 +3856,11 @@ Inlined at:
 In function: lib.cairo::foo
 felt252_is_zero([11]) { fallthrough() label_test::foo::1([12]) }
 Originating location:
-        match *lhs - *rhs {
-        ^*****************^
+\   match *lhs - *rhs {
+|       0 => true,
+|       _ => false,
+|   }
+|___^
 In function: core::Felt252PartialEq::eq
 Inlined at:
     if x == y { // highlighted
@@ -3407,8 +3868,11 @@ Inlined at:
 In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-        match *lhs - *rhs {
-        ^*****************^
+\   match *lhs - *rhs {
+|       0 => true,
+|       _ => false,
+|   }
+|___^
 In function: core::Felt252PartialEq::eq
 Inlined at:
     if x == y { // highlighted
@@ -3416,8 +3880,11 @@ Inlined at:
 In function: lib.cairo::foo
 drop<Uninitialized<core::byte_array::ByteArray>>([4]) -> ()
 Originating location:
-        match *lhs - *rhs {
-        ^*****************^
+\   match *lhs - *rhs {
+|       0 => true,
+|       _ => false,
+|   }
+|___^
 In function: core::Felt252PartialEq::eq
 Inlined at:
     if x == y { // highlighted
@@ -3425,8 +3892,11 @@ Inlined at:
 In function: lib.cairo::foo
 drop<Uninitialized<RangeCheck>>([2]) -> ()
 Originating location:
-        match *lhs - *rhs {
-        ^*****************^
+\   match *lhs - *rhs {
+|       0 => true,
+|       _ => false,
+|   }
+|___^
 In function: core::Felt252PartialEq::eq
 Inlined at:
     if x == y { // highlighted
@@ -4178,8 +4648,11 @@ Originating location:
 In function: writeln_macro::writeln_macro
 label_test::foo::1:
 Originating location:
-        match *lhs - *rhs {
-        ^*****************^
+\   match *lhs - *rhs {
+|       0 => true,
+|       _ => false,
+|   }
+|___^
 In function: core::Felt252PartialEq::eq
 Inlined at:
     if x == y { // highlighted
@@ -4187,8 +4660,11 @@ Inlined at:
 In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-        match *lhs - *rhs {
-        ^*****************^
+\   match *lhs - *rhs {
+|       0 => true,
+|       _ => false,
+|   }
+|___^
 In function: core::Felt252PartialEq::eq
 Inlined at:
     if x == y { // highlighted
@@ -4196,8 +4672,11 @@ Inlined at:
 In function: lib.cairo::foo
 drop<NonZero<felt252>>([12]) -> ()
 Originating location:
-        match *lhs - *rhs {
-        ^*****************^
+\   match *lhs - *rhs {
+|       0 => true,
+|       _ => false,
+|   }
+|___^
 In function: core::Felt252PartialEq::eq
 Inlined at:
     if x == y { // highlighted
@@ -4205,8 +4684,11 @@ Inlined at:
 In function: lib.cairo::foo
 drop<Uninitialized<core::byte_array::ByteArray>>([8]) -> ()
 Originating location:
-        match *lhs - *rhs {
-        ^*****************^
+\   match *lhs - *rhs {
+|       0 => true,
+|       _ => false,
+|   }
+|___^
 In function: core::Felt252PartialEq::eq
 Inlined at:
     if x == y { // highlighted
@@ -4214,8 +4696,11 @@ Inlined at:
 In function: lib.cairo::foo
 drop<Uninitialized<RangeCheck>>([6]) -> ()
 Originating location:
-        match *lhs - *rhs {
-        ^*****************^
+\   match *lhs - *rhs {
+|       0 => true,
+|       _ => false,
+|   }
+|___^
 In function: core::Felt252PartialEq::eq
 Inlined at:
     if x == y { // highlighted
@@ -4937,18 +5422,45 @@ Originating location:
 In function: writeln_macro::writeln_macro
 enum_init<core::panics::PanicResult::<((),)>, 0>([90]) -> ([91])
 Originating location:
-fn foo() {
-         ^
+\   {
+|       let x = 10; // highlighted
+|       let y = 20; // highlighted
+|       
+|       if x == y { // highlighted
+|           println!("x == y");
+|       } else {
+|           println!("x != y"); // no runtime cost - not highlighted
+|       };
+|   }
+|___^
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<((),)>>([91]) -> ([91])
 Originating location:
-fn foo() {
-         ^
+\   {
+|       let x = 10; // highlighted
+|       let y = 20; // highlighted
+|       
+|       if x == y { // highlighted
+|           println!("x == y");
+|       } else {
+|           println!("x != y"); // no runtime cost - not highlighted
+|       };
+|   }
+|___^
 In function: lib.cairo::foo
 return([50], [91])
 Originating location:
-fn foo() {
-         ^
+\   {
+|       let x = 10; // highlighted
+|       let y = 20; // highlighted
+|       
+|       if x == y { // highlighted
+|           println!("x == y");
+|       } else {
+|           println!("x != y"); // no runtime cost - not highlighted
+|       };
+|   }
+|___^
 In function: lib.cairo::foo
 label_test::foo::6:
 Originating location:
@@ -5743,8 +6255,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 enum_match<core::bool>([24]) { fallthrough([29]) label_test::some_array_checks::4([30]) }
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5759,8 +6273,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5775,8 +6291,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 disable_ap_tracking() -> ()
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5791,8 +6309,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 drop<Unit>([29]) -> ()
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5807,8 +6327,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 drop<core::array::Span::<core::felt252>>([21]) -> ()
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5823,8 +6345,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 drop<core::array::Span::<core::felt252>>([20]) -> ()
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5839,8 +6363,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 struct_construct<Unit>() -> ([31])
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5903,8 +6429,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 label_test::some_array_checks::4:
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5919,8 +6447,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5935,8 +6465,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 disable_ap_tracking() -> ()
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5951,8 +6483,10 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 drop<Unit>([30]) -> ()
 Originating location:
-        if (*lhs).len() != (*rhs).len() {
-        ^*******************************^
+\   if (*lhs).len() != (*rhs).len() {
+|       return false;
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5967,8 +6501,17 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 store_temp<core::array::Span::<core::felt252>>([20]) -> ([20])
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5983,8 +6526,17 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 store_temp<core::array::Span::<core::felt252>>([21]) -> ([21])
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -5999,8 +6551,17 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 function_call<user@core::array::SpanPartialEq::eq[expr36]>([20], [21]) -> ([34])
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -6015,8 +6576,17 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::array::Span::<core::felt252>, core::bool)>>([34]) { fallthrough([35]) label_test::some_array_checks::7([36]) }
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -6031,8 +6601,17 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -6047,8 +6626,17 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 struct_deconstruct<Tuple<core::array::Span::<core::felt252>, core::array::Span::<core::felt252>, core::bool>>([35]) -> ([37], [38], [39])
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -6063,8 +6651,17 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 drop<core::array::Span::<core::felt252>>([37]) -> ()
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -6079,8 +6676,17 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 drop<core::array::Span::<core::felt252>>([38]) -> ()
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -6095,8 +6701,24 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 store_temp<core::bool>([39]) -> ([33])
 Originating location:
-    fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
-                                                ^
+\   {
+|       if (*lhs).len() != (*rhs).len() {
+|           return false;
+|       }
+|       let mut lhs_span = *lhs;
+|       let mut rhs_span = *rhs;
+|       loop {
+|           match lhs_span.pop_front() {
+|               Option::Some(lhs_v) => {
+|                   if lhs_v != rhs_span.pop_front().unwrap() {
+|                       break false;
+|                   }
+|               },
+|               Option::None => { break true; },
+|           };
+|       }
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -6111,8 +6733,24 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 label_test::some_array_checks::6:
 Originating location:
-    fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
-                                                ^
+\   {
+|       if (*lhs).len() != (*rhs).len() {
+|           return false;
+|       }
+|       let mut lhs_span = *lhs;
+|       let mut rhs_span = *rhs;
+|       loop {
+|           match lhs_span.pop_front() {
+|               Option::Some(lhs_v) => {
+|                   if lhs_v != rhs_span.pop_front().unwrap() {
+|                       break false;
+|                   }
+|               },
+|               Option::None => { break true; },
+|           };
+|       }
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -6175,18 +6813,36 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 enum_match<core::bool>([40]) { fallthrough([43]) label_test::some_array_checks::9([44]) }
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-^**********************************^
+\   if !(array![1, 2] != array![2, 1]) {
+|       let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+|       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+|       write!(__formatter_for_assert_macro__, "")
+|       );
+|       core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+|   }
+|___^
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-^**********************************^
+\   if !(array![1, 2] != array![2, 1]) {
+|       let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+|       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+|       write!(__formatter_for_assert_macro__, "")
+|       );
+|       core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+|   }
+|___^
 In function: assert_macro::assert_macro
 drop<Unit>([43]) -> ()
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-^**********************************^
+\   if !(array![1, 2] != array![2, 1]) {
+|       let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+|       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+|       write!(__formatter_for_assert_macro__, "")
+|       );
+|       core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+|   }
+|___^
 In function: assert_macro::assert_macro
 array_new<bytes31>() -> ([45])
 Originating location:
@@ -6807,58 +7463,111 @@ Originating location:
 In function: assert_macro::assert_macro
 label_test::some_array_checks::9:
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-^**********************************^
+\   if !(array![1, 2] != array![2, 1]) {
+|       let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+|       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+|       write!(__formatter_for_assert_macro__, "")
+|       );
+|       core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+|   }
+|___^
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-^**********************************^
+\   if !(array![1, 2] != array![2, 1]) {
+|       let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+|       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+|       write!(__formatter_for_assert_macro__, "")
+|       );
+|       core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+|   }
+|___^
 In function: assert_macro::assert_macro
 drop<Unit>([44]) -> ()
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-^**********************************^
+\   if !(array![1, 2] != array![2, 1]) {
+|       let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+|       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+|       write!(__formatter_for_assert_macro__, "")
+|       );
+|       core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+|   }
+|___^
 In function: assert_macro::assert_macro
 drop<Uninitialized<core::byte_array::ByteArray>>([1]) -> ()
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-^**********************************^
+\   if !(array![1, 2] != array![2, 1]) {
+|       let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+|       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+|       write!(__formatter_for_assert_macro__, "")
+|       );
+|       core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+|   }
+|___^
 In function: assert_macro::assert_macro
 struct_construct<Unit>() -> ([78])
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-^**********************************^
+\   if !(array![1, 2] != array![2, 1]) {
+|       let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+|       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+|       write!(__formatter_for_assert_macro__, "")
+|       );
+|       core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+|   }
+|___^
 In function: assert_macro::assert_macro
 struct_construct<Tuple<Unit>>([78]) -> ([79])
 Originating location:
-if !(array![1, 2] != array![2, 1]) {
-^**********************************^
+\   if !(array![1, 2] != array![2, 1]) {
+|       let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+|       core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+|       write!(__formatter_for_assert_macro__, "")
+|       );
+|       core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+|   }
+|___^
 In function: assert_macro::assert_macro
 enum_init<core::panics::PanicResult::<((),)>, 0>([79]) -> ([80])
 Originating location:
-fn some_array_checks() {
-                       ^
+\   {
+|       assert!(array![1, 2] != array![2, 1], "");
+|   }
+|___^
 In function: lib.cairo::some_array_checks
 store_temp<core::panics::PanicResult::<((),)>>([80]) -> ([80])
 Originating location:
-fn some_array_checks() {
-                       ^
+\   {
+|       assert!(array![1, 2] != array![2, 1], "");
+|   }
+|___^
 In function: lib.cairo::some_array_checks
 return([80])
 Originating location:
-fn some_array_checks() {
-                       ^
+\   {
+|       assert!(array![1, 2] != array![2, 1], "");
+|   }
+|___^
 In function: lib.cairo::some_array_checks
 label_test::some_array_checks::10:
 Originating location:
-fn some_array_checks() {
-                       ^
+\   {
+|       assert!(array![1, 2] != array![2, 1], "");
+|   }
+|___^
 In function: lib.cairo::some_array_checks
 label_test::some_array_checks::7:
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -6873,8 +7582,17 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 branch_align() -> ()
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()
@@ -6889,8 +7607,17 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 drop<Uninitialized<core::byte_array::ByteArray>>([1]) -> ()
 Originating location:
-        loop {
-        ^****^
+\   loop {
+|       match lhs_span.pop_front() {
+|           Option::Some(lhs_v) => {
+|               if lhs_v != rhs_span.pop_front().unwrap() {
+|                   break false;
+|               }
+|           },
+|           Option::None => { break true; },
+|       };
+|   }
+|___^
 In function: core::array::SpanPartialEq::eq
 Inlined at:
         lhs.span() == rhs.span()

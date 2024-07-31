@@ -23,8 +23,12 @@ foo
 //! > lowering_diagnostics
 error: Unsupported match - numbers must be sequential starting from 0.
  --> lib.cairo:2:13
-    let b = match a {
-            ^*******^
+\   match a {
+|       5 => { 550 },
+|       6 => { 70 },
+|       _ => { 90 }
+|   }
+|___^
 
 //! > lowering_flat
 Parameters: v0: core::felt252
@@ -226,8 +230,11 @@ foo
 //! > lowering_diagnostics
 error: Unsupported match - numbers must be sequential starting from 0.
  --> lib.cairo:3:5
-    match x {
-    ^*******^
+\   match x {
+|       12 => x,
+|       _ => 7,
+|   }
+|___^
 
 //! > lowering_flat
 Parameters:
@@ -258,8 +265,11 @@ foo
 //! > lowering_diagnostics
 error: Match is non exhaustive - match over a numerical value must have a wildcard card pattern (`_`).
  --> lib.cairo:3:5
-    match x {
-    ^*******^
+\   match x {
+|       0 => x,
+|       1 => 7,
+|   }
+|___^
 
 //! > lowering_flat
 Parameters:
@@ -815,13 +825,19 @@ enum A {
 //! > lowering_diagnostics
 error: Missing match arm: `Three` not covered.
  --> lib.cairo:8:5
-    match a {
-    ^*******^
+\   match a {
+|       A::Two(_) => 2,
+|       A::One(_) => 1,
+|   }
+|___^
 
 error: Missing match arm: `Four` not covered.
  --> lib.cairo:8:5
-    match a {
-    ^*******^
+\   match a {
+|       A::Two(_) => 2,
+|       A::One(_) => 1,
+|   }
+|___^
 
 //! > lowering_flat
 Parameters: v0: test::A
