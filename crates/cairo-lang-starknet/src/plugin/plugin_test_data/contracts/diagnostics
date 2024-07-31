@@ -8449,7 +8449,7 @@ error: Expected variable or constant, found impl.
             get_dep_component!(Comp1, Comp1).foo1();
                                ^***^
 
-error: Method `foo1` not found on type `@test::component2::ComponentState::<TContractState>`. Did you import the correct trait and impl?
+error[E0002]: Method `foo1` not found on type `@test::component2::ComponentState::<TContractState>`. Did you import the correct trait and impl?
  --> lib.cairo:59:46
             get_dep_component!(@self, Comp2).foo1();
                                              ^**^
@@ -9719,7 +9719,7 @@ error: ref argument must be a variable.
             get_dep_component_mut!(ref Comp1, Comp1).foo1();
                                        ^***^
 
-error: Method `foo1` could not be called on type `test::component2::ComponentState::<TContractState>`.
+error[E0002]: Method `foo1` could not be called on type `test::component2::ComponentState::<TContractState>`.
 Candidate `Comp1HelperTrait::foo1` inference failed with: Type mismatch: `test::component2::ComponentState::<TContractState>` and `@test::component1::ComponentState::<?8>`.
  --> lib.cairo:54:53
             get_dep_component_mut!(ref self, Comp2).foo1();
@@ -10849,7 +10849,7 @@ mod contract {
 }
 
 //! > expected_diagnostics
-error: Method `write` could not be called on type `core::starknet::storage::storage_base::StorageBase::<core::felt252>`.
+error[E0002]: Method `write` could not be called on type `core::starknet::storage::storage_base::StorageBase::<core::felt252>`.
 Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::felt252>>.
 Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::felt252>>.
  --> lib.cairo:18:27
@@ -11645,7 +11645,7 @@ mod contract {
 }
 
 //! > expected_diagnostics
-error: Method `write` could not be called on type `core::starknet::storage::storage_base::StorageBase::<core::integer::u32>`.
+error[E0002]: Method `write` could not be called on type `core::starknet::storage::storage_base::StorageBase::<core::integer::u32>`.
 Candidate `StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::integer::u32>>.
 Candidate `StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::integer::u32>>.
  --> lib.cairo:35:40
