@@ -331,8 +331,10 @@ impl MyImpl of MyTrait {
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
  --> lib.cairo:11:21
-    fn foo() -> u16 {
-                    ^
+\   {
+|       AnotherTrait::X
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -739,5 +741,7 @@ impl MyImpl of MyTrait {}
 
 error: Trait has no implementation in context: test::MyTrait.
  --> lib.cairo:5:17
-fn foo() -> i32 {
-                ^
+\   {
+|       MyImpl::Y
+|   }
+|___^

@@ -76,8 +76,12 @@ mod test_contract {
 }
 
 lib.cairo:1:1
-#[derive(Drop, starknet::Store, Hash)]
-^************************************^
+\   #[derive(Drop, starknet::Store, Hash)]
+|   struct OuterType {
+|       x: u32,
+|   }
+|   
+|___^
 impls:
 
 impl OuterTypeDrop of core::traits::Drop::<OuterType>;

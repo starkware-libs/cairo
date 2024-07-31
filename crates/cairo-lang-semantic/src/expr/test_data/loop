@@ -51,8 +51,16 @@ foo
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:23
-fn foo(x: Option<()>) {
-                      ^
+\   {
+|       loop {
+|           if true {
+|               break true;
+|           } else {
+|               break 0;
+|           }
+|       }
+|   }
+|___^
 
 //! > ==========================================================================
 
@@ -235,8 +243,12 @@ foo
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::bool", found: "()".
  --> lib.cairo:1:18
-fn foo() -> bool {
-                 ^
+\   {
+|       loop {
+|           break;
+|       }
+|   }
+|___^
 
 //! > ==========================================================================
 

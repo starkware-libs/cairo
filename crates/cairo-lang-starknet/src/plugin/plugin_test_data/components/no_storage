@@ -16,5 +16,6 @@ mod test_component {}
 //! > expected_diagnostics
 error: Plugin diagnostic: Components must define a 'Storage' struct.
  --> lib.cairo:1:1
-#[starknet::component]
-^********************^
+\   #[starknet::component]
+|   mod test_component {}
+|_______________________^
