@@ -1103,31 +1103,27 @@ enum A {
 Parameters: v0: test::A, v1: test::A
 blk0 (root):
 Statements:
-  (v2: test::A, v3: @test::A) <- snapshot(v0)
-  (v4: (@test::A, test::A)) <- struct_construct(v3, v1)
-  (v5: (@test::A, test::A), v6: @(@test::A, test::A)) <- snapshot(v4)
-  (v7: @@test::A, v8: @test::A) <- struct_destructure(v6)
 End:
-  Match(match_enum(v7) {
-    A::One(v9) => blk1,
-    A::Two(v10) => blk5,
-    A::Three(v11) => blk10,
+  Match(match_enum(v0) {
+    A::One(v2) => blk1,
+    A::Two(v3) => blk5,
+    A::Three(v4) => blk10,
   })
 
 blk1:
 Statements:
 End:
-  Match(match_enum(v8) {
-    A::One(v12) => blk2,
-    A::Two(v13) => blk3,
-    A::Three(v14) => blk4,
+  Match(match_enum(v1) {
+    A::One(v5) => blk2,
+    A::Two(v6) => blk3,
+    A::Three(v7) => blk4,
   })
 
 blk2:
 Statements:
-  (v15: core::felt252) <- 1
+  (v8: core::felt252) <- 1
 End:
-  Return(v15)
+  Return(v8)
 
 blk3:
 Statements:
@@ -1142,21 +1138,21 @@ End:
 blk5:
 Statements:
 End:
-  Match(match_enum(v8) {
-    A::One(v16) => blk6,
-    A::Two(v17) => blk7,
-    A::Three(v18) => blk8,
+  Match(match_enum(v1) {
+    A::One(v9) => blk6,
+    A::Two(v10) => blk7,
+    A::Three(v11) => blk8,
   })
 
 blk6:
 Statements:
-  (v19: @@core::felt252, v20: @@core::felt252) <- struct_destructure(v10)
-  (v21: @core::felt252) <- desnap(v19)
-  (v22: core::felt252) <- desnap(v21)
-  (v23: core::felt252) <- 3
-  (v24: core::felt252) <- core::felt252_add(v22, v23)
+  (v12: @@core::felt252, v13: @@core::felt252) <- struct_destructure(v3)
+  (v14: @core::felt252) <- desnap(v12)
+  (v15: core::felt252) <- desnap(v14)
+  (v16: core::felt252) <- 3
+  (v17: core::felt252) <- core::felt252_add(v15, v16)
 End:
-  Return(v24)
+  Return(v17)
 
 blk7:
 Statements:
@@ -1170,17 +1166,17 @@ End:
 
 blk9:
 Statements:
-  (v25: core::felt252) <- 2
+  (v18: core::felt252) <- 2
 End:
-  Return(v25)
+  Return(v18)
 
 blk10:
 Statements:
 End:
-  Match(match_enum(v8) {
-    A::One(v26) => blk11,
-    A::Two(v27) => blk12,
-    A::Three(v28) => blk14,
+  Match(match_enum(v1) {
+    A::One(v19) => blk11,
+    A::Two(v20) => blk12,
+    A::Three(v21) => blk14,
   })
 
 blk11:
@@ -1195,9 +1191,9 @@ End:
 
 blk13:
 Statements:
-  (v29: core::felt252) <- 6
+  (v22: core::felt252) <- 6
 End:
-  Return(v29)
+  Return(v22)
 
 blk14:
 Statements:
@@ -1206,9 +1202,9 @@ End:
 
 blk15:
 Statements:
-  (v30: core::felt252) <- 3
+  (v23: core::felt252) <- 3
 End:
-  Return(v30)
+  Return(v23)
 
 //! > ==========================================================================
 

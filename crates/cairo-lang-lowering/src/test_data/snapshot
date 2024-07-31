@@ -22,8 +22,7 @@ extern fn bar(x: @felt252) nopanic;
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
-  () <- test::bar(v2)
+  () <- test::bar(v0)
 End:
   Return()
 
@@ -225,7 +224,6 @@ Parameters: v0: test::A
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- struct_destructure(v0)
-  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
-  () <- test::bar(v3)
+  () <- test::bar(v1)
 End:
-  Return(v2)
+  Return(v1)

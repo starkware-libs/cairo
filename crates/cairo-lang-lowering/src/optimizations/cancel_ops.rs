@@ -236,6 +236,7 @@ impl<'a> CancelOpsContext<'a> {
             }
             Statement::Snapshot(stmt) => {
                 let mut can_remove_snap = true;
+                let type_copyable = self.lowered.variables[stmt.input.var_id].copyable.is_ok();
 
                 let desnaps = filter_use_sites(
                     &self.use_sites,
@@ -248,7 +249,7 @@ impl<'a> CancelOpsContext<'a> {
                             self.stmts_to_remove.push(*location);
                             Some(desnap_stmt)
                         } else {
-                            can_remove_snap = false;
+                            can_remove_snap = type_copyable;
                             None
                         }
                     },
@@ -257,6 +258,9 @@ impl<'a> CancelOpsContext<'a> {
                 let new_var = if can_remove_snap {
                     self.stmts_to_remove.push(statement_location);
                     self.rename_var(stmt.original(), stmt.input.var_id);
+                    if type_copyable {
+                        self.rename_var(stmt.snapshot(), stmt.input.var_id);
+                    }
                     stmt.input.var_id
                 } else if desnaps.is_empty()
                     && self.lowered.variables[stmt.input.var_id].copyable.is_err()

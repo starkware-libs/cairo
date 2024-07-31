@@ -97,13 +97,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                 Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
                     if let Some(args) = inputs
                         .iter()
-                        .map(|input| {
-                            if let Some(VarInfo::Const(val)) = ctx.var_info.get(&input.var_id) {
-                                Some(val.clone())
-                            } else {
-                                None
-                            }
-                        })
+                        .map(|input| ctx.as_const(input.var_id).cloned())
                         .collect::<Option<Vec<_>>>()
                     {
                         let value = ConstValue::Struct(args, lowered.variables[*output].ty);
@@ -207,6 +201,12 @@ impl<'a> ConstFoldingContext<'a> {
                             ConstValue::Int(val.clone(), *ty).intern(self.db),
                         )],
                     );
+            }
+        } else if stmt.function == self.storage_address_from_base_and_offset {
+            let offset = stmt.inputs[1].var_id;
+            if matches!(self.as_const(offset)?, ConstValue::Int(offset, _) if offset.is_zero()) {
+                stmt.inputs.pop();
+                stmt.function = self.storage_address_from_base;
             }
         } else if let Some(extrn) = stmt.function.get_extern(self.db) {
             if extrn == self.into_box {
@@ -408,6 +408,10 @@ pub struct ConstFoldingLibfuncInfo {
     downcast: ExternFunctionId,
     /// The `storage_base_address_from_felt252` libfunc.
     storage_base_address_from_felt252: FunctionId,
+    /// The `storage_address_from_base_and_offset` libfunc.
+    storage_address_from_base_and_offset: FunctionId,
+    /// The `storage_address_from_base` libfunc.
+    storage_address_from_base: FunctionId,
     /// The set of functions that check if a number is zero.
     nz_fns: OrderedHashSet<FunctionId>,
     /// The set of functions to add unsigned ints.
@@ -438,6 +442,10 @@ impl ConstFoldingLibfuncInfo {
         let storage_access_module = starknet_module.submodule("storage_access");
         let storage_base_address_from_felt252 =
             storage_access_module.function_id("storage_base_address_from_felt252", vec![]);
+        let storage_address_from_base_and_offset =
+            storage_access_module.function_id("storage_address_from_base_and_offset", vec![]);
+        let storage_address_from_base =
+            storage_access_module.function_id("storage_address_from_base", vec![]);
         let nz_fns = OrderedHashSet::<_>::from_iter(chain!(
             [core.function_id("felt252_is_zero", vec![])],
             ["u8", "u16", "u32", "u64", "u128", "u256", "i8", "i16", "i32", "i64", "i128"]
@@ -489,6 +497,8 @@ impl ConstFoldingLibfuncInfo {
             upcast,
             downcast,
             storage_base_address_from_felt252,
+            storage_address_from_base_and_offset,
+            storage_address_from_base,
             nz_fns,
             uadd_fns,
             usub_fns,

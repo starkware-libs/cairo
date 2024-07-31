@@ -1266,8 +1266,7 @@ Statements:
   (v0: core::integer::u32) <- 3
   (v1: test::B) <- struct_construct(v0)
   () <- test::ex1(v1)
-  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v0)
-  () <- test::ex(v3)
+  () <- test::ex(v0)
 End:
   Return()
 
@@ -1316,8 +1315,7 @@ blk0 (root):
 Statements:
   () <- test::ex1(v0)
   (v1: core::integer::u32) <- struct_destructure(v0)
-  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
-  () <- test::ex(v3)
+  () <- test::ex(v1)
 End:
   Return()
 

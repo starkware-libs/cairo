@@ -32,20 +32,10 @@ impl StoragePointerDrop<T> of Drop<StoragePointer<T>> {}
 /// found next to the type.
 use sub_pointers::{SubPointersDeref, SubPointersMutDeref};
 
-
-/// Same as `StoragePointer`, but with `offset` 0, which allows for some optimizations.
-pub struct StoragePointer0Offset<T> {
-    pub __storage_pointer_address__: StorageBaseAddress,
-}
-
-impl StoragePointer0OffsetCopy<T> of Copy<StoragePointer0Offset<T>> {}
-impl StoragePointer0OffsetDrop<T> of Drop<StoragePointer0Offset<T>> {}
-
-/// Trait for converting a storage member to a `StoragePointer0Offset`.
-// type instead of `T`.
+/// Trait for converting a storage member to a `StoragePointer` type instead of `T`.
 pub trait StorageAsPointer<TMemberState> {
     type Value;
-    fn as_ptr(self: @TMemberState) -> StoragePointer0Offset<Self::Value>;
+    fn as_ptr(self: @TMemberState) -> StoragePointer<Self::Value>;
 }
 
 /// Trait for accessing the values in storage using a `StoragePointer`.
@@ -58,49 +48,6 @@ pub trait StoragePointerReadAccess<T> {
 pub trait StoragePointerWriteAccess<T> {
     type Value;
     fn write(self: T, value: Self::Value);
-}
-
-/// Simple implementation of `StoragePointerReadAccess` for any type that implements `Store` for 0
-/// offset.
-impl StorableStoragePointer0OffsetReadAccess<
-    T, +starknet::Store<T>
-> of StoragePointerReadAccess<StoragePointer0Offset<T>> {
-    type Value = T;
-    fn read(self: @StoragePointer0Offset<T>) -> T {
-        starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<T>::read(0, *self.__storage_pointer_address__)
-        )
-    }
-}
-
-/// Simple implementation of `StoragePointerReadAccess` for any type that implements `Store` for 0
-/// offset.
-impl MutableStorableStoragePointer0OffsetReadAccess<
-    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>
-> of StoragePointerReadAccess<StoragePointer0Offset<T>> {
-    type Value = MutableTrait::<T>::InnerType;
-    fn read(self: @StoragePointer0Offset<T>) -> MutableTrait::<T>::InnerType {
-        starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<
-                MutableTrait::<T>::InnerType
-            >::read(0, *self.__storage_pointer_address__)
-        )
-    }
-}
-
-/// Simple implementation of `StoragePointerWriteAccess` for any type that implements `Store` for 0
-/// offset.
-impl StorableStoragePointer0OffsetWriteAccess<
-    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>
-> of StoragePointerWriteAccess<StoragePointer0Offset<T>> {
-    type Value = MutableTrait::<T>::InnerType;
-    fn write(self: StoragePointer0Offset<T>, value: MutableTrait::<T>::InnerType) {
-        starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<
-                MutableTrait::<T>::InnerType
-            >::write(0, self.__storage_pointer_address__, value)
-        )
-    }
 }
 
 /// Simple implementation of `StoragePointerReadAccess` for any type that implements `Store` for any
@@ -223,8 +170,10 @@ pub trait StorageAsPath<TMemberState> {
 /// `Store`.
 impl StorableStoragePathAsPointer<T, +starknet::Store<T>> of StorageAsPointer<StoragePath<T>> {
     type Value = T;
-    fn as_ptr(self: @StoragePath<T>) -> StoragePointer0Offset<T> {
-        StoragePointer0Offset { __storage_pointer_address__: (*self).finalize() }
+    fn as_ptr(self: @StoragePath<T>) -> StoragePointer<T> {
+        StoragePointer {
+            __storage_pointer_address__: (*self).finalize(), __storage_pointer_offset__: 0
+        }
     }
 }
 
@@ -234,8 +183,10 @@ impl MutableStorableStoragePathAsPointer<
     T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>
 > of StorageAsPointer<StoragePath<T>> {
     type Value = T;
-    fn as_ptr(self: @StoragePath<T>) -> StoragePointer0Offset<T> {
-        StoragePointer0Offset { __storage_pointer_address__: (*self).finalize() }
+    fn as_ptr(self: @StoragePath<T>) -> StoragePointer<T> {
+        StoragePointer {
+            __storage_pointer_address__: (*self).finalize(), __storage_pointer_offset__: 0
+        }
     }
 }
 
@@ -243,25 +194,11 @@ impl MutableStorableStoragePathAsPointer<
 impl StoragePathDeref<
     T, impl PointerImpl: StorageAsPointer<StoragePath<T>>
 > of core::ops::Deref<StoragePath<T>> {
-    type Target = StoragePointer0Offset<PointerImpl::Value>;
-    fn deref(self: StoragePath<T>) -> StoragePointer0Offset<PointerImpl::Value> {
+    type Target = StoragePointer<PointerImpl::Value>;
+    fn deref(self: StoragePath<T>) -> StoragePointer<PointerImpl::Value> {
         self.as_ptr()
     }
 }
-
-/// Implement deref for StoragePointer0Offset into a StoragePointer.
-impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>> {
-    type Target = StoragePointer<T>;
-    fn deref(self: StoragePointer0Offset<T>) -> StoragePointer<T> {
-        StoragePointer::<
-            T
-        > {
-            __storage_pointer_address__: self.__storage_pointer_address__,
-            __storage_pointer_offset__: 0
-        }
-    }
-}
-
 
 /// A struct for delaying the creation of a storage path, used for lazy evaluation in storage nodes.
 pub struct PendingStoragePath<T> {
@@ -315,7 +252,7 @@ impl StorablePathableStorageAsPointer<
     impl PtrImpl: StorageAsPointer<StoragePath<PathImpl::Value>>,
 > of StorageAsPointer<T> {
     type Value = PtrImpl::Value;
-    fn as_ptr(self: @T) -> StoragePointer0Offset<PtrImpl::Value> {
+    fn as_ptr(self: @T) -> StoragePointer<PtrImpl::Value> {
         let path = self.as_path();
         path.as_ptr()
     }
@@ -326,7 +263,7 @@ impl StorablePathableStorageAsPointer<
 impl StorablePointerReadAccessImpl<
     T,
     impl PointerImpl: StorageAsPointer<T>,
-    impl AccessImpl: StoragePointerReadAccess<StoragePointer0Offset<PointerImpl::Value>>,
+    impl AccessImpl: StoragePointerReadAccess<StoragePointer<PointerImpl::Value>>,
 > of StoragePointerReadAccess<T> {
     type Value = AccessImpl::Value;
     fn read(self: @T) -> Self::Value {
@@ -338,13 +275,13 @@ impl StorablePointerReadAccessImpl<
 impl StorablePointerWriteAccessImpl<
     T,
     impl PointerImpl: StorageAsPointer<T>,
-    impl AccessImpl: StoragePointerWriteAccess<StoragePointer0Offset<PointerImpl::Value>>,
+    impl AccessImpl: StoragePointerWriteAccess<StoragePointer<PointerImpl::Value>>,
     +Drop<T>,
     +Drop<AccessImpl::Value>,
 > of StoragePointerWriteAccess<T> {
     type Value = AccessImpl::Value;
     fn write(self: T, value: Self::Value) {
-        let ptr: StoragePointer0Offset<PointerImpl::Value> = self.as_ptr();
+        let ptr: StoragePointer<PointerImpl::Value> = self.as_ptr();
         ptr.write(value)
     }
 }
