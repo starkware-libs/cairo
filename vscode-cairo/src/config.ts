@@ -38,7 +38,7 @@ function replacePathPlaceholders(
   workspaceFolder: vscode.WorkspaceFolder | undefined,
 ): string {
   // 1. If there is known workspace folder, replace ${workspaceFolder} with it.
-  // 2. If it is undefined, assume the first folder in currently opened
+  // 2. If it is undefined, assume the first folder is currently opened
   //    workspace. We could use the currently opened document to detect
   //    the correct workspace. However, that would be determined by the document
   //    user has opened on Editor startup. This could lead to unpredictable
