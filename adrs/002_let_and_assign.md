@@ -19,7 +19,7 @@ This is opposed to "let"/"var" in other languages, that are effectively, shadowi
 - May change type.
 - Do not affect outer scopes.
 
-The rebinding in Cairo0 acts more like assignment in other languages.
+The rebinding in Cairo0 acts more like an assignment in other languages.
 
 ### Proposal
 
