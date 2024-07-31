@@ -2,11 +2,14 @@
 #[path = "const_folding_test.rs"]
 mod test;
 
+use std::sync::Arc;
+
 use cairo_lang_defs::ids::{ExternFunctionId, ModuleId, ModuleItemId};
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{corelib, GenericArgumentId, TypeId};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{try_extract_matches, Intern};
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
@@ -37,10 +40,15 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
     }
-
+    let libfunc_info = priv_const_folding_info(db);
     // Note that we can keep the var_info across blocks because the lowering
     // is in static single assignment form.
-    let mut ctx = ConstFoldingContext::new(db, &lowered.variables);
+    let mut ctx = ConstFoldingContext {
+        db,
+        var_info: UnorderedHashMap::default(),
+        variables: &lowered.variables,
+        libfunc_info: &libfunc_info,
+    };
     let mut stack = vec![BlockId::root()];
     let mut visited = vec![false; lowered.blocks.len()];
     while let Some(block_id) = stack.pop() {
@@ -165,19 +173,10 @@ struct ConstFoldingContext<'a> {
     /// The accumulated information about the const values of variables.
     var_info: UnorderedHashMap<VariableId, VarInfo>,
     /// The libfunc information.
-    libfunc_info: LibfuncInfo<'a>,
+    libfunc_info: &'a ConstFoldingLibfuncInfo,
 }
 
 impl<'a> ConstFoldingContext<'a> {
-    fn new(db: &'a dyn LoweringGroup, variables: &'a Arena<Variable>) -> Self {
-        Self {
-            db,
-            var_info: UnorderedHashMap::default(),
-            variables,
-            libfunc_info: LibfuncInfo::new(db),
-        }
-    }
-
     /// Handles a statement call.
     /// Returns None if no additional changes are required.
     /// If changes are required, returns an updated statement.
@@ -201,12 +200,13 @@ impl<'a> ConstFoldingContext<'a> {
             let input_var = stmt.inputs[0].var_id;
             if let Some(ConstValue::Int(val, ty)) = self.as_const(input_var) {
                 stmt.inputs.clear();
-                stmt.function = self.storage_access_module.function_id(
-                    "storage_base_address_const",
-                    vec![GenericArgumentId::Constant(
-                        ConstValue::Int(val.clone(), *ty).intern(self.db),
-                    )],
-                );
+                stmt.function = ModuleHelper { db: self.db, id: self.storage_access_module }
+                    .function_id(
+                        "storage_base_address_const",
+                        vec![GenericArgumentId::Constant(
+                            ConstValue::Int(val.clone(), *ty).intern(self.db),
+                        )],
+                    );
             }
         } else if let Some(extrn) = stmt.function.get_extern(self.db) {
             if extrn == self.into_box {
@@ -343,6 +343,13 @@ impl<'a> ConstFoldingContext<'a> {
     }
 }
 
+/// Query implementation of [LoweringGroup::priv_const_folding_info].
+pub fn priv_const_folding_info(
+    db: &dyn LoweringGroup,
+) -> Arc<crate::optimizations::const_folding::ConstFoldingLibfuncInfo> {
+    Arc::new(ConstFoldingLibfuncInfo::new(db))
+}
+
 /// Helper for getting functions in the corelib.
 struct ModuleHelper<'a> {
     /// The db.
@@ -389,7 +396,8 @@ impl<'a> ModuleHelper<'a> {
 }
 
 /// Holds static information about libfuncs required for the optimization.
-struct LibfuncInfo<'a> {
+#[derive(Debug, PartialEq, Eq)]
+pub struct ConstFoldingLibfuncInfo {
     /// The `felt252_sub` libfunc.
     felt_sub: FunctionId,
     /// The `into_box` libfunc.
@@ -401,24 +409,24 @@ struct LibfuncInfo<'a> {
     /// The `storage_base_address_from_felt252` libfunc.
     storage_base_address_from_felt252: FunctionId,
     /// The set of functions that check if a number is zero.
-    nz_fns: UnorderedHashSet<FunctionId>,
+    nz_fns: OrderedHashSet<FunctionId>,
     /// The set of functions to add unsigned ints.
-    uadd_fns: UnorderedHashSet<FunctionId>,
+    uadd_fns: OrderedHashSet<FunctionId>,
     /// The set of functions to subtract unsigned ints.
-    usub_fns: UnorderedHashSet<FunctionId>,
+    usub_fns: OrderedHashSet<FunctionId>,
     /// The set of functions to add signed ints.
-    iadd_fns: UnorderedHashSet<FunctionId>,
+    iadd_fns: OrderedHashSet<FunctionId>,
     /// The set of functions to subtract signed ints.
-    isub_fns: UnorderedHashSet<FunctionId>,
+    isub_fns: OrderedHashSet<FunctionId>,
     /// The set of functions to multiply integers.
-    wide_mul_fns: UnorderedHashSet<FunctionId>,
+    wide_mul_fns: OrderedHashSet<FunctionId>,
     /// The storage access module.
-    storage_access_module: ModuleHelper<'a>,
+    storage_access_module: ModuleId,
     /// Type ranges.
-    type_value_ranges: UnorderedHashMap<TypeId, TypeRange>,
+    type_value_ranges: OrderedHashMap<TypeId, TypeRange>,
 }
-impl<'a> LibfuncInfo<'a> {
-    fn new(db: &'a dyn LoweringGroup) -> Self {
+impl ConstFoldingLibfuncInfo {
+    fn new(db: &dyn LoweringGroup) -> Self {
         let core = ModuleHelper::core(db);
         let felt_sub = core.function_id("felt252_sub", vec![]);
         let box_module = core.submodule("box");
@@ -430,34 +438,34 @@ impl<'a> LibfuncInfo<'a> {
         let storage_access_module = starknet_module.submodule("storage_access");
         let storage_base_address_from_felt252 =
             storage_access_module.function_id("storage_base_address_from_felt252", vec![]);
-        let nz_fns = UnorderedHashSet::<_>::from_iter(chain!(
+        let nz_fns = OrderedHashSet::<_>::from_iter(chain!(
             [core.function_id("felt252_is_zero", vec![])],
             ["u8", "u16", "u32", "u64", "u128", "u256", "i8", "i16", "i32", "i64", "i128"]
                 .map(|ty| integer_module.function_id(format!("{}_is_zero", ty), vec![]))
         ));
         let utypes = ["u8", "u16", "u32", "u64", "u128"];
         let itypes = ["i8", "i16", "i32", "i64", "i128"];
-        let uadd_fns = UnorderedHashSet::<_>::from_iter(
+        let uadd_fns = OrderedHashSet::<_>::from_iter(
             utypes.map(|ty| integer_module.function_id(format!("{ty}_overflowing_add"), vec![])),
         );
-        let usub_fns = UnorderedHashSet::<_>::from_iter(chain!(
+        let usub_fns = OrderedHashSet::<_>::from_iter(chain!(
             utypes.map(|ty| integer_module.function_id(format!("{ty}_overflowing_sub"), vec![])),
             // Considering `i*_diff` as `usub` operations - as they act exactly the same.
             itypes.map(|ty| integer_module.function_id(format!("{ty}_diff"), vec![])),
         ));
         let iadd_fns =
-            UnorderedHashSet::<_>::from_iter(itypes.map(|ty| {
+            OrderedHashSet::<_>::from_iter(itypes.map(|ty| {
                 integer_module.function_id(format!("{ty}_overflowing_add_impl"), vec![])
             }));
         let isub_fns =
-            UnorderedHashSet::<_>::from_iter(itypes.map(|ty| {
+            OrderedHashSet::<_>::from_iter(itypes.map(|ty| {
                 integer_module.function_id(format!("{ty}_overflowing_sub_impl"), vec![])
             }));
-        let wide_mul_fns = UnorderedHashSet::<_>::from_iter(
+        let wide_mul_fns = OrderedHashSet::<_>::from_iter(
             ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64"]
                 .map(|ty| integer_module.function_id(format!("{ty}_wide_mul"), vec![])),
         );
-        let type_value_ranges = UnorderedHashMap::from_iter(
+        let type_value_ranges = OrderedHashMap::from_iter(
             [
                 ("u8", TypeRange::closed(0, u8::MAX)),
                 ("u16", TypeRange::closed(0, u16::MAX)),
@@ -487,20 +495,21 @@ impl<'a> LibfuncInfo<'a> {
             iadd_fns,
             isub_fns,
             wide_mul_fns,
-            storage_access_module,
+            storage_access_module: storage_access_module.id,
             type_value_ranges,
         }
     }
 }
 
-impl<'a> std::ops::Deref for ConstFoldingContext<'a> {
-    type Target = LibfuncInfo<'a>;
-    fn deref(&self) -> &LibfuncInfo<'a> {
-        &self.libfunc_info
+impl std::ops::Deref for ConstFoldingContext<'_> {
+    type Target = ConstFoldingLibfuncInfo;
+    fn deref(&self) -> &ConstFoldingLibfuncInfo {
+        self.libfunc_info
     }
 }
 
 /// The range of a type for normalizations.
+#[derive(Debug, PartialEq, Eq)]
 struct TypeRange {
     min: BigInt,
     max: BigInt,

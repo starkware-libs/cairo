@@ -313,6 +313,12 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::optimizations::config::priv_movable_function_ids)]
     fn priv_movable_function_ids(&self) -> Arc<UnorderedHashSet<ids::FunctionId>>;
 
+    /// Internal query for the libfuncs information required for const folding.
+    #[salsa::invoke(crate::optimizations::const_folding::priv_const_folding_info)]
+    fn priv_const_folding_info(
+        &self,
+    ) -> Arc<crate::optimizations::const_folding::ConstFoldingLibfuncInfo>;
+
     // Internal query for a heuristic to decide if a given `function_id` should be inlined.
     #[salsa::invoke(crate::inline::priv_should_inline)]
     fn priv_should_inline(&self, function_id: ids::ConcreteFunctionWithBodyId) -> Maybe<bool>;
