@@ -49,7 +49,7 @@ fn extract_content(
 
 /// Generate the diagnostic marks on a [&str]
 ///
-/// # Arguemnts
+/// # Arguments
 ///
 /// * `snippet` - The code to add marks to.
 /// * `start_col` - If the snippet is a 1 liner will start the mark at this index else will not use
