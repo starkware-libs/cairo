@@ -27,11 +27,14 @@ use crate::{
 
 /// Keeps track of equivalent values that a variables might be replaced with.
 /// Note: We don't keep track of types as we assume the usage is always correct.
+#[derive(Clone, Debug)]
 enum VarInfo {
     /// The variable is a const value.
     Const(ConstValue),
     /// The variable can be replaced by another variable.
     Var(VarUsage),
+    Struct(Vec<VarInfo>),
+    Snapshot(Box<VarInfo>),
 }
 
 /// Performs constant folding on the lowered program.
@@ -75,18 +78,14 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                     }
                 }
                 Statement::Snapshot(stmt) => {
-                    if let Some(VarInfo::Const(val)) = ctx.var_info.get(&stmt.input.var_id) {
-                        let val = val.clone();
-                        // TODO(Tomerstarkware): add snapshot to value type.
-                        ctx.var_info.insert(stmt.original(), VarInfo::Const(val.clone()));
-                        ctx.var_info.insert(stmt.snapshot(), VarInfo::Const(val));
+                    if let Some(info) = ctx.var_info.get(&stmt.input.var_id).cloned() {
+                        ctx.var_info.insert(stmt.original(), info.clone());
+                        ctx.var_info.insert(stmt.snapshot(), VarInfo::Snapshot(info.into()));
                     }
                 }
                 Statement::Desnap(StatementDesnap { input, output }) => {
-                    if let Some(VarInfo::Const(val)) = ctx.var_info.get(&input.var_id) {
-                        let val = val.clone();
-                        // TODO(Tomerstarkware): remove snapshot from value type.
-                        ctx.var_info.insert(*output, VarInfo::Const(val));
+                    if let Some(VarInfo::Snapshot(info)) = ctx.var_info.get(&input.var_id) {
+                        ctx.var_info.insert(*output, info.as_ref().clone());
                     }
                 }
                 Statement::Call(call_stmt) => {
@@ -97,26 +96,37 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                 Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
                     if let Some(args) = inputs
                         .iter()
-                        .map(|input| {
-                            if let Some(VarInfo::Const(val)) = ctx.var_info.get(&input.var_id) {
-                                Some(val.clone())
-                            } else {
-                                None
-                            }
-                        })
+                        .map(|input| ctx.as_const(input.var_id).cloned())
                         .collect::<Option<Vec<_>>>()
                     {
                         let value = ConstValue::Struct(args, lowered.variables[*output].ty);
                         ctx.var_info.insert(*output, VarInfo::Const(value));
+                    } else {
+                        let args = inputs
+                            .iter()
+                            .map(|input| {
+                                ctx.var_info
+                                    .get(&input.var_id)
+                                    .cloned()
+                                    .unwrap_or_else(|| VarInfo::Var(*input))
+                            })
+                            .collect();
+                        ctx.var_info.insert(*output, VarInfo::Struct(args));
                     }
                 }
                 Statement::StructDestructure(StatementStructDestructure { input, outputs }) => {
-                    if let Some(VarInfo::Const(ConstValue::Struct(args, _))) =
-                        ctx.var_info.get(&input.var_id)
-                    {
-                        for (output, val) in zip_eq(outputs, args.clone()) {
-                            ctx.var_info.insert(*output, VarInfo::Const(val));
+                    match ctx.var_info.get(&input.var_id) {
+                        Some(VarInfo::Const(ConstValue::Struct(args, _))) => {
+                            for (output, val) in zip_eq(outputs, args.clone()) {
+                                ctx.var_info.insert(*output, VarInfo::Const(val));
+                            }
                         }
+                        Some(VarInfo::Struct(args)) => {
+                            for (output, info) in zip_eq(outputs, args.clone()) {
+                                ctx.var_info.insert(*output, info);
+                            }
+                        }
+                        _ => {}
                     }
                 }
                 Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
@@ -208,9 +218,21 @@ impl<'a> ConstFoldingContext<'a> {
                         )],
                     );
             }
+        } else if stmt.function == self.storage_address_from_base_and_offset {
+            let offset = stmt.inputs[1].var_id;
+            if matches!(self.as_const(offset)?, ConstValue::Int(offset, _) if offset.is_zero()) {
+                stmt.inputs.pop();
+                stmt.function = self.storage_address_from_base;
+            }
         } else if let Some(extrn) = stmt.function.get_extern(self.db) {
             if extrn == self.into_box {
-                let val = self.as_const(stmt.inputs[0].var_id)?;
+                let val = match self.var_info.get(&stmt.inputs[0].var_id)? {
+                    VarInfo::Snapshot(inner) => {
+                        try_extract_matches!(inner.as_ref(), VarInfo::Const)
+                    }
+                    VarInfo::Const(val) => Some(val),
+                    _ => None,
+                }?;
                 let value = ConstValue::Boxed(val.clone().into());
                 // Not inserting the value into the `var_info` map because the
                 // resulting box isn't an actual const at the Sierra level.
@@ -408,6 +430,10 @@ pub struct ConstFoldingLibfuncInfo {
     downcast: ExternFunctionId,
     /// The `storage_base_address_from_felt252` libfunc.
     storage_base_address_from_felt252: FunctionId,
+    /// The `storage_address_from_base_and_offset` libfunc.
+    storage_address_from_base_and_offset: FunctionId,
+    /// The `storage_address_from_base` libfunc.
+    storage_address_from_base: FunctionId,
     /// The set of functions that check if a number is zero.
     nz_fns: OrderedHashSet<FunctionId>,
     /// The set of functions to add unsigned ints.
@@ -438,6 +464,10 @@ impl ConstFoldingLibfuncInfo {
         let storage_access_module = starknet_module.submodule("storage_access");
         let storage_base_address_from_felt252 =
             storage_access_module.function_id("storage_base_address_from_felt252", vec![]);
+        let storage_address_from_base_and_offset =
+            storage_access_module.function_id("storage_address_from_base_and_offset", vec![]);
+        let storage_address_from_base =
+            storage_access_module.function_id("storage_address_from_base", vec![]);
         let nz_fns = OrderedHashSet::<_>::from_iter(chain!(
             [core.function_id("felt252_is_zero", vec![])],
             ["u8", "u16", "u32", "u64", "u128", "u256", "i8", "i16", "i32", "i64", "i128"]
@@ -489,6 +519,8 @@ impl ConstFoldingLibfuncInfo {
             upcast,
             downcast,
             storage_base_address_from_felt252,
+            storage_address_from_base_and_offset,
+            storage_address_from_base,
             nz_fns,
             uadd_fns,
             usub_fns,

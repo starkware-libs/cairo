@@ -119,7 +119,7 @@ pub use account::AccountContract;
 ///     - Storage collections, specifically `Map` and `Vec`, simulate the behavior of collections by
 ///       updating the hash state with the key or index of the collection member.
 /// 4. After finishing the updates, the `StoragePath` instance is finalized, resulting in a
-///    `StoragePointer0Offset` instance, which is a pointer to the address of the storage object. If
+///    `StoragePointer` instance, which is a pointer to the address of the storage object. If
 ///    the pointer is to an object of size greater than 1, the object is stored in a sequential
 ///    manner starting from the address of the pointer. The whole object can be read or written
 ///    using `read` and `write` methods, and specific members can also be accessed in the case of a
