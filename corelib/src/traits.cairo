@@ -180,7 +180,7 @@ impl DestructFromDrop<T, +Drop<T>> of Destruct<T> {
 pub trait PanicDestruct<T> {
     fn panic_destruct(self: T, ref panic: Panic) nopanic;
 }
-impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
+pub(crate) impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
     #[inline(always)]
     fn panic_destruct(self: T, ref panic: Panic) nopanic {
         Destruct::destruct(self);

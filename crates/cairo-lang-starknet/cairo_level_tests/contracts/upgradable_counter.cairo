@@ -8,6 +8,7 @@ trait ICounterContract<TContractState> {
 
 #[starknet::contract]
 mod counter_contract {
+    use starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     component!(path: upgradable_comp, storage: upgradable, event: UpgradableEvent);

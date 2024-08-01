@@ -89,7 +89,7 @@ pub struct ContractState {}
 No highlight information.
 // = popover
 ```cairo
-core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>
+core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>
 ```
 
 //! > hover #4

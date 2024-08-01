@@ -1,11 +1,11 @@
 {
   "sierra_program": [
     "0x1",
-    "0x5",
+    "0x6",
     "0x0",
     "0x2",
-    "0x6",
-    "0x4",
+    "0x7",
+    "0x0",
     "0x3a1",
     "0x5f",
     "0x74",
@@ -43,7 +43,7 @@
     "0x183200a6a4152123baa1b81f196782c91f5482916ec49fad15123907b10a497",
     "0xf",
     "0x66656c74323532",
-    "0x1937acb18d53867b6a6bfa49e09d69ae2ea426128b2f25074959187e7e92826",
+    "0x74131f8ccbce54c69d6f110fe2e023877ad5757b22c113da2a3f525c6601fe",
     "0x45524332303a206d696e7420746f2074686520302061646472657373",
     "0x57726f6e67206f776e65722e",
     "0x436f6e747261637441646472657373",
@@ -56,7 +56,7 @@
     "0x17",
     "0x45524332303a20617070726f76652066726f6d2030",
     "0xffffffffffffffffffffffffffffffff",
-    "0x23e548a2befece2908aeab25651ea01e66375f9e974f1508cb0b84685bf7815",
+    "0x20c573050f4f72ab687d1e30ab9e3112f066656a1db232d4e8d586e1bc52772",
     "0x753235365f737562204f766572666c6f77",
     "0x800000000000000f00000000000000000000000000000001",
     "0x3911e6e64a8a0eb2802439bae80981d9820e9d4df4eb5067e80d6fb2a21576f",
@@ -93,7 +93,7 @@
     "0x8",
     "0xe",
     "0x1802098ad3a768b9070752b9c76d78739119b657863faee996237047e2cd718",
-    "0x429a4b3e0337434278d7c604be3b7c5f5ee6ee5889b92e462def57a367766c",
+    "0x11956ef5427d8b17839ef1ab259882b25c0eabf6d6a15c034942faee6617e37",
     "0x45524332303a207472616e7366657220746f2030",
     "0x45524332303a207472616e736665722066726f6d2030",
     "0x4e6f6e5a65726f",
@@ -150,17 +150,17 @@
     "0x55",
     "0x4661696c656420746f20646573657269616c697a6520706172616d202332",
     "0x1166fe35572d4e7764dac0caf1fd7fc591901fd01156db2561a07b68ab8dca2",
-    "0xe7a63aff01bf4be7ba34458838ea974d95608b676e54dce9b1dddf12aff452",
+    "0x141ea21bd03254e41074504de8465806cb179228cd769ab9e55224c660a57c4",
     "0x59",
-    "0xd7a344e324ed0f74706867b1ef0260de861577272349adbf8e8063df3c8409",
+    "0x2a69c3f2ee27bbe2624c4ffcb3563ad31a1d6caee2eef9aed347284f5f8a34d",
     "0xbf4c436d6f8521e5c6189511c75075de702ad597ce22c1786275e8e5167ec7",
     "0x4661696c656420746f20646573657269616c697a6520706172616d202331",
-    "0x3f3835185aa9e97347df42d2564013be036150cc5a803ef96f88d7e98bd6dd0",
-    "0x18f6a94578187672aaedfb6425f7d047d0968b70b268d4a3ac50e7bfaf3bbce",
+    "0x12ec76808d96ca2583b0dd3fb55396ab8783beaa30b8e3bf084a606e215849e",
+    "0x2b22539ea90e179bb2e7ef5f6db1255a5f497b922386e746219ec855ba7ab0c",
     "0x25b1ef8ee6544359221f3cf316f768360e83448109193bdcef77f52a79d95c4",
     "0x506564657273656e",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
-    "0x9c663f53a5d02bc7db4e281d46c4e5f40fad70cf167fa26ba68fd55faae7c6",
+    "0x268e4078627d9364ab472ed410c0ea6fe44919b24eafd69d665019c5a1c0c88",
     "0x1557182e4359a1f0c6301278e8f5b35a776ab58d39892581e357578fb287836",
     "0x53746f72655538202d206e6f6e207538",
     "0x7538",
@@ -3029,7 +3029,7 @@
       ],
       [
         18,
-        "core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>"
+        "core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>"
       ],
       [
         19,
@@ -3065,7 +3065,7 @@
       ],
       [
         27,
-        "core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
+        "core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
       ],
       [
         28,
@@ -3133,7 +3133,7 @@
       ],
       [
         44,
-        "core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
+        "core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
       ],
       [
         45,
@@ -3317,11 +3317,11 @@
       ],
       [
         90,
-        "core::starknet::storage::StoragePath::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>"
+        "core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>"
       ],
       [
         91,
-        "core::starknet::storage::StorageBase::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>"
+        "core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>"
       ],
       [
         92,
@@ -3333,11 +3333,11 @@
       ],
       [
         94,
-        "core::starknet::storage::StoragePath::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>"
+        "core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>"
       ],
       [
         95,
-        "core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>"
+        "core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>"
       ],
       [
         96,
@@ -3353,7 +3353,7 @@
       ],
       [
         99,
-        "core::starknet::storage::StorageBase::<core::integer::u256>"
+        "core::starknet::storage::storage_base::StorageBase::<core::integer::u256>"
       ],
       [
         100,
@@ -3695,23 +3695,23 @@
       ],
       [
         68,
-        "struct_construct<core::starknet::storage::StorageBase::<core::integer::u256>>"
+        "struct_construct<core::starknet::storage::storage_base::StorageBase::<core::integer::u256>>"
       ],
       [
         69,
-        "snapshot_take<core::starknet::storage::StorageBase::<core::integer::u256>>"
+        "snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::integer::u256>>"
       ],
       [
         70,
-        "drop<core::starknet::storage::StorageBase::<core::integer::u256>>"
+        "drop<core::starknet::storage::storage_base::StorageBase::<core::integer::u256>>"
       ],
       [
         71,
-        "store_temp<core::starknet::storage::StorageBase::<core::integer::u256>>"
+        "store_temp<core::starknet::storage::storage_base::StorageBase::<core::integer::u256>>"
       ],
       [
         72,
-        "function_call<user@core::starknet::storage::StorablePointerReadAccessImpl::<core::starknet::storage::StorageBase::<core::integer::u256>, core::starknet::storage::StorablePathableStorageAsPointer::<core::starknet::storage::StorageBase::<core::integer::u256>, core::starknet::storage::StorageBaseAsPath::<core::integer::u256>, core::starknet::storage::StorableStoragePathAsPointer::<core::integer::u256, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>, core::starknet::storage::StorableStoragePointer0OffsetReadAccess::<core::integer::u256, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>::read>"
+        "function_call<user@core::starknet::storage::StorablePointerReadAccessImpl::<core::starknet::storage::storage_base::StorageBase::<core::integer::u256>, core::starknet::storage::StorablePathableStorageAsPointer::<core::starknet::storage::storage_base::StorageBase::<core::integer::u256>, core::starknet::storage::storage_base::StorageBaseAsPath::<core::integer::u256>, core::starknet::storage::StorableStoragePathAsPointer::<core::integer::u256, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>, core::starknet::storage::StorableStoragePointer0OffsetReadAccess::<core::integer::u256, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>::read>"
       ],
       [
         73,
@@ -3771,19 +3771,19 @@
       ],
       [
         87,
-        "struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
+        "struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
       ],
       [
         88,
-        "snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
+        "snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
       ],
       [
         89,
-        "drop<core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
+        "drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
       ],
       [
         90,
-        "struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
+        "struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
       ],
       [
         91,
@@ -3791,11 +3791,11 @@
       ],
       [
         92,
-        "struct_construct<core::starknet::storage::StoragePath::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
+        "struct_construct<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
       ],
       [
         93,
-        "store_temp<core::starknet::storage::StoragePath::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
+        "store_temp<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
       ],
       [
         94,
@@ -3803,7 +3803,7 @@
       ],
       [
         95,
-        "function_call<user@core::starknet::storage::StorableEntryReadAccess::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>, core::starknet::storage::EntryInfoImpl::<core::starknet::contract_address::ContractAddress, core::integer::u256>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>::read>"
+        "function_call<user@core::starknet::storage::map::StorableEntryReadAccess::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>, core::starknet::storage::map::EntryInfoImpl::<core::starknet::contract_address::ContractAddress, core::integer::u256>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>::read>"
       ],
       [
         96,
@@ -3819,23 +3819,23 @@
       ],
       [
         99,
-        "struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
+        "struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
       ],
       [
         100,
-        "snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
+        "snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
       ],
       [
         101,
-        "drop<core::starknet::storage::StorageBase::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
+        "drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
       ],
       [
         102,
-        "struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
+        "struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
       ],
       [
         103,
-        "struct_construct<core::starknet::storage::StoragePath::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
+        "struct_construct<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
       ],
       [
         104,
@@ -3843,7 +3843,7 @@
       ],
       [
         105,
-        "store_temp<core::starknet::storage::StoragePath::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
+        "store_temp<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
       ],
       [
         106,
@@ -3851,7 +3851,7 @@
       ],
       [
         107,
-        "function_call<user@core::starknet::storage::StorableEntryReadAccess::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::starknet::storage::EntryInfoImpl::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::pedersen::HashState, core::pedersen::HashStateImpl, core::metaprogramming::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress,), core::pedersen::HashState, core::pedersen::HashStateImpl, core::metaprogramming::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleSize0Hash::<core::pedersen::HashState, core::pedersen::HashStateImpl>, core::traits::TupleSize0Drop>, core::traits::TupleNextDrop::<(core::starknet::contract_address::ContractAddress,), core::metaprogramming::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::metaprogramming::IsTupleTupleSize1::<core::starknet::contract_address::ContractAddress>, core::starknet::contract_address::ContractAddressDrop, core::traits::TupleSize0Drop>>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>::read>"
+        "function_call<user@core::starknet::storage::map::StorableEntryReadAccess::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::starknet::storage::map::EntryInfoImpl::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::pedersen::HashState, core::pedersen::HashStateImpl, core::metaprogramming::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress,), core::pedersen::HashState, core::pedersen::HashStateImpl, core::metaprogramming::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleSize0Hash::<core::pedersen::HashState, core::pedersen::HashStateImpl>, core::traits::TupleSize0Drop>, core::traits::TupleNextDrop::<(core::starknet::contract_address::ContractAddress,), core::metaprogramming::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::metaprogramming::IsTupleTupleSize1::<core::starknet::contract_address::ContractAddress>, core::starknet::contract_address::ContractAddressDrop, core::traits::TupleSize0Drop>>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>::read>"
       ],
       [
         108,
@@ -4151,7 +4151,7 @@
       ],
       [
         182,
-        "struct_deconstruct<core::starknet::storage::StorageBase::<core::integer::u256>>"
+        "struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::integer::u256>>"
       ],
       [
         183,
@@ -4203,7 +4203,7 @@
       ],
       [
         195,
-        "struct_deconstruct<core::starknet::storage::StoragePath::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
+        "struct_deconstruct<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>"
       ],
       [
         196,
@@ -4219,7 +4219,7 @@
       ],
       [
         199,
-        "struct_deconstruct<core::starknet::storage::StoragePath::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
+        "struct_deconstruct<core::starknet::storage::StoragePath::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>"
       ],
       [
         200,
@@ -4251,19 +4251,19 @@
       ],
       [
         207,
-        "struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>>"
+        "struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>>"
       ],
       [
         208,
-        "snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>>"
+        "snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>>"
       ],
       [
         209,
-        "drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>>"
+        "drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>>"
       ],
       [
         210,
-        "struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>>"
+        "struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>>>>"
       ],
       [
         211,
@@ -4339,19 +4339,19 @@
       ],
       [
         229,
-        "struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>>"
+        "struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>>"
       ],
       [
         230,
-        "snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>>"
+        "snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>>"
       ],
       [
         231,
-        "drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>>"
+        "drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>>"
       ],
       [
         232,
-        "struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>>"
+        "struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>>>>"
       ],
       [
         233,
@@ -4419,23 +4419,23 @@
       ],
       [
         249,
-        "struct_construct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>>"
+        "struct_construct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>>"
       ],
       [
         250,
-        "snapshot_take<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>>"
+        "snapshot_take<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>>"
       ],
       [
         251,
-        "drop<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>>"
+        "drop<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>>"
       ],
       [
         252,
-        "store_temp<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>>"
+        "store_temp<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>>"
       ],
       [
         253,
-        "function_call<user@core::starknet::storage::StorablePointerReadAccessImpl::<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::StorablePathableStorageAsPointer::<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::StorageBaseAsPath::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::MutableStorableStoragePathAsPointer::<core::starknet::storage::Mutable::<core::integer::u256>, core::starknet::storage::MutableImpl::<core::integer::u256>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>, core::starknet::storage::MutableStorableStoragePointer0OffsetReadAccess::<core::starknet::storage::Mutable::<core::integer::u256>, core::starknet::storage::MutableImpl::<core::integer::u256>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>::read>"
+        "function_call<user@core::starknet::storage::StorablePointerReadAccessImpl::<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::StorablePathableStorageAsPointer::<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::storage_base::StorageBaseAsPath::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::MutableStorableStoragePathAsPointer::<core::starknet::storage::Mutable::<core::integer::u256>, core::starknet::storage::MutableImpl::<core::integer::u256>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>, core::starknet::storage::MutableStorableStoragePointer0OffsetReadAccess::<core::starknet::storage::Mutable::<core::integer::u256>, core::starknet::storage::MutableImpl::<core::integer::u256>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>::read>"
       ],
       [
         254,
@@ -4615,7 +4615,7 @@
       ],
       [
         298,
-        "struct_deconstruct<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>>"
+        "struct_deconstruct<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>>"
       ],
       [
         299,
@@ -4725,15 +4725,15 @@
       ],
       [
         18,
-        "core::starknet::storage::StorablePointerReadAccessImpl::<core::starknet::storage::StorageBase::<core::integer::u256>, core::starknet::storage::StorablePathableStorageAsPointer::<core::starknet::storage::StorageBase::<core::integer::u256>, core::starknet::storage::StorageBaseAsPath::<core::integer::u256>, core::starknet::storage::StorableStoragePathAsPointer::<core::integer::u256, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>, core::starknet::storage::StorableStoragePointer0OffsetReadAccess::<core::integer::u256, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>::read"
+        "core::starknet::storage::StorablePointerReadAccessImpl::<core::starknet::storage::storage_base::StorageBase::<core::integer::u256>, core::starknet::storage::StorablePathableStorageAsPointer::<core::starknet::storage::storage_base::StorageBase::<core::integer::u256>, core::starknet::storage::storage_base::StorageBaseAsPath::<core::integer::u256>, core::starknet::storage::StorableStoragePathAsPointer::<core::integer::u256, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>, core::starknet::storage::StorableStoragePointer0OffsetReadAccess::<core::integer::u256, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>::read"
       ],
       [
         19,
-        "core::starknet::storage::StorableEntryReadAccess::<core::starknet::storage::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>, core::starknet::storage::EntryInfoImpl::<core::starknet::contract_address::ContractAddress, core::integer::u256>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>::read"
+        "core::starknet::storage::map::StorableEntryReadAccess::<core::starknet::storage::map::Map::<core::starknet::contract_address::ContractAddress, core::integer::u256>, core::starknet::storage::map::EntryInfoImpl::<core::starknet::contract_address::ContractAddress, core::integer::u256>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>::read"
       ],
       [
         20,
-        "core::starknet::storage::StorableEntryReadAccess::<core::starknet::storage::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::starknet::storage::EntryInfoImpl::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::pedersen::HashState, core::pedersen::HashStateImpl, core::metaprogramming::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress,), core::pedersen::HashState, core::pedersen::HashStateImpl, core::metaprogramming::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleSize0Hash::<core::pedersen::HashState, core::pedersen::HashStateImpl>, core::traits::TupleSize0Drop>, core::traits::TupleNextDrop::<(core::starknet::contract_address::ContractAddress,), core::metaprogramming::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::metaprogramming::IsTupleTupleSize1::<core::starknet::contract_address::ContractAddress>, core::starknet::contract_address::ContractAddressDrop, core::traits::TupleSize0Drop>>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>::read"
+        "core::starknet::storage::map::StorableEntryReadAccess::<core::starknet::storage::map::Map::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::starknet::storage::map::EntryInfoImpl::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::pedersen::HashState, core::pedersen::HashStateImpl, core::metaprogramming::TupleSplitTupleSize2::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleNextHash::<(core::starknet::contract_address::ContractAddress,), core::pedersen::HashState, core::pedersen::HashStateImpl, core::metaprogramming::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::TupleSize0Hash::<core::pedersen::HashState, core::pedersen::HashStateImpl>, core::traits::TupleSize0Drop>, core::traits::TupleNextDrop::<(core::starknet::contract_address::ContractAddress,), core::metaprogramming::TupleSplitTupleSize1::<core::starknet::contract_address::ContractAddress>, core::metaprogramming::IsTupleTupleSize1::<core::starknet::contract_address::ContractAddress>, core::starknet::contract_address::ContractAddressDrop, core::traits::TupleSize0Drop>>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>::read"
       ],
       [
         21,
@@ -4777,7 +4777,7 @@
       ],
       [
         31,
-        "core::starknet::storage::StorablePointerReadAccessImpl::<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::StorablePathableStorageAsPointer::<core::starknet::storage::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::StorageBaseAsPath::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::MutableStorableStoragePathAsPointer::<core::starknet::storage::Mutable::<core::integer::u256>, core::starknet::storage::MutableImpl::<core::integer::u256>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>, core::starknet::storage::MutableStorableStoragePointer0OffsetReadAccess::<core::starknet::storage::Mutable::<core::integer::u256>, core::starknet::storage::MutableImpl::<core::integer::u256>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>::read"
+        "core::starknet::storage::StorablePointerReadAccessImpl::<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::StorablePathableStorageAsPointer::<core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::storage_base::StorageBaseAsPath::<core::starknet::storage::Mutable::<core::integer::u256>>, core::starknet::storage::MutableStorableStoragePathAsPointer::<core::starknet::storage::Mutable::<core::integer::u256>, core::starknet::storage::MutableImpl::<core::integer::u256>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>, core::starknet::storage::MutableStorableStoragePointer0OffsetReadAccess::<core::starknet::storage::Mutable::<core::integer::u256>, core::starknet::storage::MutableImpl::<core::integer::u256>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u256, (core::integer::u128, core::integer::u128), core::starknet::storage_access::StorePackingU256, core::starknet::storage_access::TupleNextStore::<(core::integer::u128, core::integer::u128), core::metaprogramming::TupleSplitTupleSize2::<core::integer::u128, core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>, core::starknet::storage_access::StoreUsingPacking::<(core::integer::u128,), core::integer::u128, core::starknet::storage_access::StorePackingTuple1::<core::integer::u128>, core::starknet::storage_access::StoreUsingPacking::<core::integer::u128, core::felt252, core::starknet::storage_access::StorePackingU128, core::starknet::storage_access::StoreFelt252>>, core::integer::u128Drop, core::traits::TupleNextDrop::<(core::integer::u128,), core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>, core::metaprogramming::IsTupleTupleSize1::<core::integer::u128>, core::integer::u128Drop, core::traits::TupleSize0Drop>, core::metaprogramming::TupleSplitTupleSize1::<core::integer::u128>>>>>::read"
       ],
       [
         32,

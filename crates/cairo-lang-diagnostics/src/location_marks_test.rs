@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
@@ -24,8 +22,8 @@ fn test_location_marks() {
     let file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "name".into(),
-        content: Arc::new(content.into()),
-        code_mappings: Default::default(),
+        content: content.into(),
+        code_mappings: [].into(),
         kind: FileKind::Module,
     })
     .intern(&db);

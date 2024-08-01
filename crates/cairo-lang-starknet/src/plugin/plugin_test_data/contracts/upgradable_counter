@@ -17,8 +17,18 @@ trait ICounterContract<TContractState> {
 
 #[starknet::contract]
 mod counter_contract {
+    use starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
+
+    #[storage]
+    struct Storage {
+        counter: u128,
+        #[substorage(v0)]
+        upgradable: upgradable_comp::Storage,
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -67,60 +77,63 @@ mod counter_contract {
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
-#[phantom]
-pub struct Storage {
-          pub counter: u128,
-          pub upgradable: upgradable_comp::Storage,
-          pub ownable: ownable_comp::Storage,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub counter: starknet::storage::StorageBase<u128>,
-    pub upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
-    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+struct StorageStorageBase {
+    counter: starknet::storage::StorageBase<u128>,
+    upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+    ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let counter_value = starknet::storage::StorageBase {__base_address__: selector!("counter")};
+        let upgradable_value = starknet::storage::FlattenedStorage {};
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           counter: counter_value,
+           upgradable: upgradable_value,
+           ownable: ownable_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-    pub upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
-    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+struct StorageStorageBaseMut {
+    counter: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
+    upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
+    ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
-    type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
-        ContractStorageBase {
-           counter: starknet::storage::StorageBase{ address: selector!("counter") },
-           upgradable: starknet::storage::StorageBase{ address: selector!("upgradable") },
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           counter: starknet::storage::StorageBase{ address: selector!("counter") },
-           upgradable: starknet::storage::StorageBase{ address: selector!("upgradable") },
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let counter_value = starknet::storage::StorageBase {__base_address__: selector!("counter")};
+        let upgradable_value = starknet::storage::FlattenedStorage {};
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBaseMut {
+           counter: counter_value,
+           upgradable: upgradable_value,
+           ownable: ownable_value,
         }
     }
 }
+
 pub struct ContractState {
-        pub upgradable: upgradable_comp::ComponentState<ContractState>,
-        pub ownable: ownable_comp::ComponentState<ContractState>,
+         upgradable: upgradable_comp::ComponentState<ContractState>,
+         ownable: ownable_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -137,7 +150,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 use starknet::storage::Map as LegacyMap;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -158,7 +171,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -177,7 +190,7 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -198,7 +211,7 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -408,10 +421,10 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 trait ICounterContractDispatcherTrait<T> {
     fn increase_counter(self: T, amount: u128);
@@ -666,16 +679,16 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
 
 #[derive(Drop, Copy)]
 struct ICounterContractDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl ICounterContractDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractDispatcher> {
-type SubPointersType = ICounterContractDispatcherSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractDispatcher>) -> ICounterContractDispatcherSubPointers {
-               let base_address = self.address;
-        let mut current_offset = self.offset;
+    type SubPointersType = ICounterContractDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractDispatcher>) -> ICounterContractDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 ICounterContractDispatcherSubPointers {
            contract_address: contract_address_value,
@@ -683,19 +696,19 @@ type SubPointersType = ICounterContractDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableICounterContractDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+struct ICounterContractDispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
-impl MutableICounterContractDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractDispatcher> {
-type SubPointersType = MutableICounterContractDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractDispatcher>>) -> MutableICounterContractDispatcherSubPointers {
-               let base_address = self.address;
-        let mut current_offset = self.offset;
+impl ICounterContractDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<ICounterContractDispatcher> {
+    type SubPointersType = ICounterContractDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractDispatcher>>) -> ICounterContractDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
-                MutableICounterContractDispatcherSubPointers {
+                ICounterContractDispatcherSubPointersMut {
            contract_address: contract_address_value,
         }
     }
@@ -746,16 +759,16 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
 
 #[derive(Drop, Copy)]
 struct ICounterContractLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl ICounterContractLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractLibraryDispatcher> {
-type SubPointersType = ICounterContractLibraryDispatcherSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractLibraryDispatcher>) -> ICounterContractLibraryDispatcherSubPointers {
-               let base_address = self.address;
-        let mut current_offset = self.offset;
+    type SubPointersType = ICounterContractLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractLibraryDispatcher>) -> ICounterContractLibraryDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 ICounterContractLibraryDispatcherSubPointers {
            class_hash: class_hash_value,
@@ -763,19 +776,19 @@ type SubPointersType = ICounterContractLibraryDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableICounterContractLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+struct ICounterContractLibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
-impl MutableICounterContractLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractLibraryDispatcher> {
-type SubPointersType = MutableICounterContractLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractLibraryDispatcher>>) -> MutableICounterContractLibraryDispatcherSubPointers {
-               let base_address = self.address;
-        let mut current_offset = self.offset;
+impl ICounterContractLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<ICounterContractLibraryDispatcher> {
+    type SubPointersType = ICounterContractLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractLibraryDispatcher>>) -> ICounterContractLibraryDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
-                MutableICounterContractLibraryDispatcherSubPointers {
+                ICounterContractLibraryDispatcherSubPointersMut {
            class_hash: class_hash_value,
         }
     }
@@ -826,16 +839,16 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
 
 #[derive(Drop, Copy)]
 struct ICounterContractSafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 impl ICounterContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractSafeLibraryDispatcher> {
-type SubPointersType = ICounterContractSafeLibraryDispatcherSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractSafeLibraryDispatcher>) -> ICounterContractSafeLibraryDispatcherSubPointers {
-               let base_address = self.address;
-        let mut current_offset = self.offset;
+    type SubPointersType = ICounterContractSafeLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractSafeLibraryDispatcher>) -> ICounterContractSafeLibraryDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 ICounterContractSafeLibraryDispatcherSubPointers {
            class_hash: class_hash_value,
@@ -843,19 +856,19 @@ type SubPointersType = ICounterContractSafeLibraryDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableICounterContractSafeLibraryDispatcherSubPointers {
-    class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+struct ICounterContractSafeLibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
-impl MutableICounterContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractSafeLibraryDispatcher> {
-type SubPointersType = MutableICounterContractSafeLibraryDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractSafeLibraryDispatcher>>) -> MutableICounterContractSafeLibraryDispatcherSubPointers {
-               let base_address = self.address;
-        let mut current_offset = self.offset;
+impl ICounterContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<ICounterContractSafeLibraryDispatcher> {
+    type SubPointersType = ICounterContractSafeLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractSafeLibraryDispatcher>>) -> ICounterContractSafeLibraryDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let class_hash_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
-                MutableICounterContractSafeLibraryDispatcherSubPointers {
+                ICounterContractSafeLibraryDispatcherSubPointersMut {
            class_hash: class_hash_value,
         }
     }
@@ -906,16 +919,16 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
 
 #[derive(Drop, Copy)]
 struct ICounterContractSafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 impl ICounterContractSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractSafeDispatcher> {
-type SubPointersType = ICounterContractSafeDispatcherSubPointers;
-   fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractSafeDispatcher>) -> ICounterContractSafeDispatcherSubPointers {
-               let base_address = self.address;
-        let mut current_offset = self.offset;
+    type SubPointersType = ICounterContractSafeDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractSafeDispatcher>) -> ICounterContractSafeDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
                 ICounterContractSafeDispatcherSubPointers {
            contract_address: contract_address_value,
@@ -923,42 +936,52 @@ type SubPointersType = ICounterContractSafeDispatcherSubPointers;
     }
 }
 #[derive(Drop, Copy)]
-struct MutableICounterContractSafeDispatcherSubPointers {
-    contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+struct ICounterContractSafeDispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
-impl MutableICounterContractSafeDispatcherSubPointersImpl of starknet::storage::MutableSubPointers<ICounterContractSafeDispatcher> {
-type SubPointersType = MutableICounterContractSafeDispatcherSubPointers;
-   fn mutable_sub_pointers(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractSafeDispatcher>>) -> MutableICounterContractSafeDispatcherSubPointers {
-               let base_address = self.address;
-        let mut current_offset = self.offset;
+impl ICounterContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<ICounterContractSafeDispatcher> {
+    type SubPointersType = ICounterContractSafeDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractSafeDispatcher>>) -> ICounterContractSafeDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
         let contract_address_value = starknet::storage::StoragePointer {
-            address: base_address,
-            offset: current_offset,
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
         };
-                MutableICounterContractSafeDispatcherSubPointers {
+                ICounterContractSafeDispatcherSubPointersMut {
            contract_address: contract_address_value,
         }
     }
 }
 impl ICounterContractDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractDispatcherSubPointers>;
 impl ICounterContractDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractDispatcherSubPointers>;
-impl MutableICounterContractDispatcherSubPointersDrop of core::traits::Drop::<MutableICounterContractDispatcherSubPointers>;
-impl MutableICounterContractDispatcherSubPointersCopy of core::traits::Copy::<MutableICounterContractDispatcherSubPointers>;
+impl ICounterContractDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractDispatcherSubPointersMut>;
+impl ICounterContractDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractDispatcherSubPointersMut>;
 impl ICounterContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointers>;
 impl ICounterContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointers>;
-impl MutableICounterContractLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableICounterContractLibraryDispatcherSubPointers>;
-impl MutableICounterContractLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableICounterContractLibraryDispatcherSubPointers>;
+impl ICounterContractLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointersMut>;
+impl ICounterContractLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointersMut>;
 impl ICounterContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointers>;
 impl ICounterContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointers>;
-impl MutableICounterContractSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MutableICounterContractSafeLibraryDispatcherSubPointers>;
-impl MutableICounterContractSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MutableICounterContractSafeLibraryDispatcherSubPointers>;
+impl ICounterContractSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointersMut>;
+impl ICounterContractSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointersMut>;
 impl ICounterContractSafeDispatcherSubPointersDrop of core::traits::Drop::<ICounterContractSafeDispatcherSubPointers>;
 impl ICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy::<ICounterContractSafeDispatcherSubPointers>;
-impl MutableICounterContractSafeDispatcherSubPointersDrop of core::traits::Drop::<MutableICounterContractSafeDispatcherSubPointers>;
-impl MutableICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy::<MutableICounterContractSafeDispatcherSubPointers>;
+impl ICounterContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractSafeDispatcherSubPointersMut>;
+impl ICounterContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractSafeDispatcherSubPointersMut>;
 
+    use starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
+
+    #[storage]
+    struct Storage {
+        counter: u128,
+        #[substorage(v0)]
+        upgradable: upgradable_comp::Storage,
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -1007,60 +1030,63 @@ impl MutableICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy:
     impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
-#[phantom]
-pub struct Storage {
-          pub counter: u128,
-          pub upgradable: upgradable_comp::Storage,
-          pub ownable: ownable_comp::Storage,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub counter: starknet::storage::StorageBase<u128>,
-    pub upgradable: starknet::storage::StorageBase<upgradable_comp::Storage>,
-    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
+struct StorageStorageBase {
+    counter: starknet::storage::StorageBase<u128>,
+    upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+    ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let counter_value = starknet::storage::StorageBase {__base_address__: selector!("counter")};
+        let upgradable_value = starknet::storage::FlattenedStorage {};
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           counter: counter_value,
+           upgradable: upgradable_value,
+           ownable: ownable_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub counter: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
-    pub upgradable: starknet::storage::StorageBase<starknet::storage::Mutable<upgradable_comp::Storage>>,
-    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
+struct StorageStorageBaseMut {
+    counter: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
+    upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
+    ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
-    type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
-        ContractStorageBase {
-           counter: starknet::storage::StorageBase{ address: selector!("counter") },
-           upgradable: starknet::storage::StorageBase{ address: selector!("upgradable") },
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           counter: starknet::storage::StorageBase{ address: selector!("counter") },
-           upgradable: starknet::storage::StorageBase{ address: selector!("upgradable") },
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let counter_value = starknet::storage::StorageBase {__base_address__: selector!("counter")};
+        let upgradable_value = starknet::storage::FlattenedStorage {};
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        StorageStorageBaseMut {
+           counter: counter_value,
+           upgradable: upgradable_value,
+           ownable: ownable_value,
         }
     }
 }
+
 pub struct ContractState {
-        pub upgradable: upgradable_comp::ComponentState<ContractState>,
-        pub ownable: ownable_comp::ComponentState<ContractState>,
+         upgradable: upgradable_comp::ComponentState<ContractState>,
+         ownable: ownable_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -1077,7 +1103,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 )]
 use starknet::storage::Map as LegacyMap;
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1098,7 +1124,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1117,7 +1143,7 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1138,7 +1164,7 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -1348,9 +1374,9 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

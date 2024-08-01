@@ -274,6 +274,12 @@ impl ModuleId {
             }
         }
     }
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            ModuleId::CrateRoot(id) => id.lookup_intern(db).name(),
+            ModuleId::Submodule(id) => id.name(db),
+        }
+    }
     pub fn owning_crate(&self, db: &dyn DefsGroup) -> CrateId {
         match self {
             ModuleId::CrateRoot(crate_id) => *crate_id,

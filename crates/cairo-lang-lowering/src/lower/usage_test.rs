@@ -72,6 +72,7 @@ fn test_function_usage(
         for (_, expr) in usage.snap_usage.iter() {
             write!(usages_str, " {:?},", expr.debug(&expr_formatter)).unwrap();
         }
+
         writeln!(usages_str).unwrap();
     }
 

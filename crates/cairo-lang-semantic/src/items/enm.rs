@@ -114,7 +114,7 @@ pub fn enum_generic_params_data(
         &mut resolver,
         module_file_id,
         &enum_ast.generic_params(db.upcast()),
-    )?;
+    );
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, enum_ast.stable_ptr().untyped());
 

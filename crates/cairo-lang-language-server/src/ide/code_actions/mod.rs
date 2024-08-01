@@ -8,6 +8,7 @@ use tracing::debug;
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
+mod add_missing_trait;
 mod rename_unused_variable;
 
 /// Compute commands for a given text document and range. These commands are typically code fixes to
@@ -70,6 +71,7 @@ fn get_code_actions_for_diagnostic(
                 params.text_document.uri.clone(),
             )]
         }
+        "E0002" => add_missing_trait::add_missing_trait(db, node, params.text_document.uri.clone()),
         code => {
             debug!("no code actions for diagnostic code: {code}");
             vec![]

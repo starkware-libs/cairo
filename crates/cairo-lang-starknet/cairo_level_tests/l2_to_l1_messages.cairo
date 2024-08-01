@@ -10,6 +10,7 @@ use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
 #[starknet::contract]
 mod contract_with_messages_sent_to_l1 {
     use starknet::SyscallResultTrait;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use core::traits::Into;
     use core::array::ArrayTrait;
 

@@ -133,10 +133,13 @@ impl<'a> DiagnosticsReporter<'a> {
                 found_diagnostics = true;
             }
 
-            for module_id in &*db.crate_modules(*crate_id) {
-                for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
-                    found_diagnostics |=
-                        self.check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
+            let modules = db.crate_modules(*crate_id);
+            for module_id in modules.iter() {
+                if let Ok(module_files) = db.module_files(*module_id) {
+                    for file_id in module_files.iter().copied() {
+                        found_diagnostics |=
+                            self.check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
+                    }
                 }
 
                 if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
@@ -183,8 +186,8 @@ impl<'a> DiagnosticsReporter<'a> {
             rayon::spawn(move || {
                 let db = &*snapshot;
 
-                let crate_modules = (*db.crate_modules(crate_id)).clone();
-                for module_id in crate_modules {
+                let crate_modules = db.crate_modules(crate_id);
+                for module_id in crate_modules.iter().copied() {
                     let snapshot = salsa::ParallelDatabase::snapshot(db);
                     rayon::spawn(move || {
                         let db = &*snapshot;

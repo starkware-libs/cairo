@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
@@ -127,8 +127,8 @@ pub fn setup_test_crate_ex(
     let file_id = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "lib.cairo".into(),
-        content: Arc::new(content.into()),
-        code_mappings: Default::default(),
+        content: content.into(),
+        code_mappings: [].into(),
         kind: FileKind::Module,
     })
     .intern(db);

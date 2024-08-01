@@ -5,8 +5,6 @@ pub mod cairo_formatter;
 pub mod formatter_impl;
 pub mod node_properties;
 
-use std::sync::Arc;
-
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
@@ -49,8 +47,8 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
     let virtual_file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "string_to_format".into(),
-        content: Arc::new(content.clone()),
-        code_mappings: Default::default(),
+        content: content.clone().into(),
+        code_mappings: [].into(),
         kind: FileKind::Module,
     })
     .intern(db);

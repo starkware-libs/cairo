@@ -433,7 +433,7 @@ fn build_failure_guarantee_verify(
         jump Done if nullifier3 != 0;
 
         // If the nullifier is zero, add an unsatisfiable constraint.
-        fail;
+        unsatisfiable_assert one = zero;
 
         Done:
         const mul_mod_usage = MOD_BUILTIN_INSTANCE_SIZE;
@@ -479,7 +479,12 @@ fn build_get_output(
     let CircuitInfo { values, .. } =
         builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
 
-    let output_offset = values.get(output_ty).unwrap();
+    let Some(output_offset) = values.get(output_ty) else {
+        return Err(InvocationError::InvalidCircuitOutput {
+            output_ty: output_ty.clone(),
+            circuit_ty: circuit_ty.clone(),
+        });
+    };
 
     add_input_variables! {casm_builder,
         deref values_ptr;

@@ -840,6 +840,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ClosureInGlobalScope => {
                 "Closures are not allowed in this context.".into()
             }
+            SemanticDiagnosticKind::MaybeMissingColonColon => "Are you missing a `::`?.".into(),
         }
     }
 
@@ -870,6 +871,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn error_code(&self) -> Option<ErrorCode> {
         self.kind.error_code()
+    }
+
+    fn is_same_kind(&self, other: &Self) -> bool {
+        other.kind == self.kind
     }
 }
 
@@ -1181,6 +1186,7 @@ pub enum SemanticDiagnosticKind {
     },
     TypeEqualTraitReImplementation,
     ClosureInGlobalScope,
+    MaybeMissingColonColon,
 }
 
 /// The kind of an expression with multiple possible return types.
@@ -1195,6 +1201,9 @@ impl SemanticDiagnosticKind {
     pub fn error_code(&self) -> Option<ErrorCode> {
         Some(match &self {
             Self::UnusedVariable => error_code!(E0001),
+            Self::CannotCallMethod { .. } => {
+                error_code!(E0002)
+            }
             _ => return None,
         })
     }

@@ -209,7 +209,7 @@ pub fn impl_alias_generic_params_data_helper(
         &mut resolver,
         module_file_id,
         &impl_alias_ast.generic_params(db.upcast()),
-    )?;
+    );
 
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());

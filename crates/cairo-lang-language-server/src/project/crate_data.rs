@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
@@ -93,7 +92,7 @@ fn inject_virtual_wrapper_lib(db: &mut AnalysisDatabase, crate_id: CrateId, file
     let file_id = db.module_main_file(module_id).unwrap();
     // Inject virtual lib file wrapper.
     db.as_files_group_mut()
-        .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
+        .override_file_content(file_id, Some(format!("mod {file_stem};").into()));
 }
 
 /// The inverse of [`inject_virtual_wrapper_lib`],
