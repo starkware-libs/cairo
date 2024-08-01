@@ -4,6 +4,7 @@
 use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
+use cairo_lang_semantic::items::function_with_body::Arenas;
 use cairo_lang_semantic::{
     self as semantic, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath, FunctionBody, Pattern,
     Statement, VarId,
@@ -160,31 +161,31 @@ impl Usages {
     pub fn from_function_body(function_body: &FunctionBody) -> Self {
         let mut current = Usage::default();
         let mut usages = Self { usages: Default::default() };
-        usages.handle_expr(function_body, function_body.body_expr, &mut current);
+        usages.handle_expr(&function_body.arenas, function_body.body_expr, &mut current);
         usages
     }
 
-    fn handle_expr(&mut self, function_body: &FunctionBody, expr_id: ExprId, current: &mut Usage) {
-        match &function_body.exprs[expr_id] {
+    fn handle_expr(&mut self, arenas: &Arenas, expr_id: ExprId, current: &mut Usage) {
+        match &arenas.exprs[expr_id] {
             Expr::Tuple(expr) => {
                 for expr_id in &expr.items {
-                    self.handle_expr(function_body, *expr_id, current);
+                    self.handle_expr(arenas, *expr_id, current);
                 }
             }
             Expr::FixedSizeArray(expr) => match &expr.items {
                 semantic::FixedSizeArrayItems::Items(items) => {
                     for expr_id in items {
-                        self.handle_expr(function_body, *expr_id, current);
+                        self.handle_expr(arenas, *expr_id, current);
                     }
                 }
                 semantic::FixedSizeArrayItems::ValueAndSize(value, _) => {
-                    self.handle_expr(function_body, *value, current);
+                    self.handle_expr(arenas, *value, current);
                 }
             },
             Expr::Snapshot(expr) => {
                 let expr_id = expr.inner;
 
-                match &function_body.exprs[expr_id] {
+                match &arenas.exprs[expr_id] {
                     Expr::Var(expr_var) => {
                         current.snap_usage.insert(
                             MemberPath::Var(expr_var.var),
@@ -195,55 +196,53 @@ impl Usages {
                         if let Some(member_path) = &expr.member_path {
                             current.snap_usage.insert(member_path.into(), member_path.clone());
                         } else {
-                            self.handle_expr(function_body, expr.expr, current);
+                            self.handle_expr(arenas, expr.expr, current);
                         }
                     }
-                    _ => self.handle_expr(function_body, expr_id, current),
+                    _ => self.handle_expr(arenas, expr_id, current),
                 }
             }
-            Expr::Desnap(expr) => self.handle_expr(function_body, expr.inner, current),
+            Expr::Desnap(expr) => self.handle_expr(arenas, expr.inner, current),
             Expr::Assignment(expr) => {
-                self.handle_expr(function_body, expr.rhs, current);
+                self.handle_expr(arenas, expr.rhs, current);
                 current.usage.insert((&expr.ref_arg).into(), expr.ref_arg.clone());
                 current.changes.insert((&expr.ref_arg).into(), expr.ref_arg.clone());
             }
             Expr::LogicalOperator(expr) => {
-                self.handle_expr(function_body, expr.lhs, current);
-                self.handle_expr(function_body, expr.rhs, current);
+                self.handle_expr(arenas, expr.lhs, current);
+                self.handle_expr(arenas, expr.rhs, current);
             }
             Expr::Block(expr) => {
                 let mut usage = Default::default();
                 for stmt in &expr.statements {
-                    match &function_body.statements[*stmt] {
+                    match &arenas.statements[*stmt] {
                         Statement::Let(stmt) => {
-                            self.handle_expr(function_body, stmt.expr, &mut usage);
-                            Self::handle_pattern(&function_body.patterns, stmt.pattern, &mut usage);
+                            self.handle_expr(arenas, stmt.expr, &mut usage);
+                            Self::handle_pattern(&arenas.patterns, stmt.pattern, &mut usage);
                         }
-                        Statement::Expr(stmt) => {
-                            self.handle_expr(function_body, stmt.expr, &mut usage)
-                        }
+                        Statement::Expr(stmt) => self.handle_expr(arenas, stmt.expr, &mut usage),
                         Statement::Continue(_) => (),
                         Statement::Return(stmt) => {
                             if let Some(expr) = stmt.expr_option {
-                                self.handle_expr(function_body, expr, &mut usage)
+                                self.handle_expr(arenas, expr, &mut usage)
                             };
                         }
                         Statement::Break(stmt) => {
                             if let Some(expr) = stmt.expr_option {
-                                self.handle_expr(function_body, expr, &mut usage)
+                                self.handle_expr(arenas, expr, &mut usage)
                             };
                         }
                     };
                 }
                 if let Some(expr_id) = expr.tail {
-                    self.handle_expr(function_body, expr_id, &mut usage)
+                    self.handle_expr(arenas, expr_id, &mut usage)
                 }
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
             }
             Expr::Loop(expr) => {
                 let mut usage = Default::default();
-                self.handle_expr(function_body, expr.body, &mut usage);
+                self.handle_expr(arenas, expr.body, &mut usage);
                 current.add_usage_and_changes(&usage);
                 self.usages.insert(expr_id, usage);
             }
@@ -251,16 +250,16 @@ impl Usages {
                 let mut usage = Default::default();
                 match &expr.condition {
                     semantic::Condition::BoolExpr(expr) => {
-                        self.handle_expr(function_body, *expr, &mut usage);
+                        self.handle_expr(arenas, *expr, &mut usage);
                     }
                     semantic::Condition::Let(expr, patterns) => {
-                        self.handle_expr(function_body, *expr, &mut usage);
+                        self.handle_expr(arenas, *expr, &mut usage);
                         for pattern in patterns {
-                            Self::handle_pattern(&function_body.patterns, *pattern, &mut usage);
+                            Self::handle_pattern(&arenas.patterns, *pattern, &mut usage);
                         }
                     }
                 }
-                self.handle_expr(function_body, expr.body, &mut usage);
+                self.handle_expr(arenas, expr.body, &mut usage);
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
 
@@ -276,8 +275,8 @@ impl Usages {
                     (&expr.into_iter_member_path).into(),
                     expr.into_iter_member_path.clone(),
                 );
-                Self::handle_pattern(&function_body.patterns, expr.pattern, &mut usage);
-                self.handle_expr(function_body, expr.body, &mut usage);
+                Self::handle_pattern(&arenas.patterns, expr.pattern, &mut usage);
+                self.handle_expr(arenas, expr.body, &mut usage);
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
                 self.usages.insert(expr_id, usage);
@@ -286,7 +285,7 @@ impl Usages {
                 let mut usage: Usage = Default::default();
 
                 usage.introductions.extend(expr.param_ids.iter().map(|id| VarId::Param(*id)));
-                self.handle_expr(function_body, expr.body, &mut usage);
+                self.handle_expr(arenas, expr.body, &mut usage);
                 usage.finalize_as_scope();
                 self.usages.insert(expr_id, usage);
             }
@@ -298,36 +297,36 @@ impl Usages {
                             current.changes.insert(member_path.into(), member_path.clone());
                         }
                         ExprFunctionCallArg::Value(expr) => {
-                            self.handle_expr(function_body, *expr, current)
+                            self.handle_expr(arenas, *expr, current)
                         }
                     }
                 }
             }
             Expr::Match(expr) => {
-                self.handle_expr(function_body, expr.matched_expr, current);
+                self.handle_expr(arenas, expr.matched_expr, current);
                 for arm in &expr.arms {
                     for pattern in &arm.patterns {
-                        Self::handle_pattern(&function_body.patterns, *pattern, current);
+                        Self::handle_pattern(&arenas.patterns, *pattern, current);
                     }
-                    self.handle_expr(function_body, arm.expression, current);
+                    self.handle_expr(arenas, arm.expression, current);
                 }
             }
             Expr::If(expr) => {
                 match &expr.condition {
                     semantic::Condition::BoolExpr(expr) => {
-                        self.handle_expr(function_body, *expr, current);
+                        self.handle_expr(arenas, *expr, current);
                     }
                     semantic::Condition::Let(expr, patterns) => {
-                        self.handle_expr(function_body, *expr, current);
+                        self.handle_expr(arenas, *expr, current);
                         for pattern in patterns {
-                            Self::handle_pattern(&function_body.patterns, *pattern, current);
+                            Self::handle_pattern(&arenas.patterns, *pattern, current);
                         }
                     }
                 }
 
-                self.handle_expr(function_body, expr.if_block, current);
+                self.handle_expr(arenas, expr.if_block, current);
                 if let Some(expr) = expr.else_block {
-                    self.handle_expr(function_body, expr, current);
+                    self.handle_expr(arenas, expr, current);
                 }
             }
             Expr::Var(expr) => {
@@ -340,21 +339,19 @@ impl Usages {
                 if let Some(member_path) = &expr.member_path {
                     current.usage.insert(member_path.into(), member_path.clone());
                 } else {
-                    self.handle_expr(function_body, expr.expr, current);
+                    self.handle_expr(arenas, expr.expr, current);
                 }
             }
             Expr::StructCtor(expr) => {
                 for (_, expr_id) in &expr.members {
-                    self.handle_expr(function_body, *expr_id, current);
+                    self.handle_expr(arenas, *expr_id, current);
                 }
                 if let Some(base) = &expr.base_struct {
-                    self.handle_expr(function_body, *base, current);
+                    self.handle_expr(arenas, *base, current);
                 }
             }
-            Expr::EnumVariantCtor(expr) => {
-                self.handle_expr(function_body, expr.value_expr, current)
-            }
-            Expr::PropagateError(expr) => self.handle_expr(function_body, expr.inner, current),
+            Expr::EnumVariantCtor(expr) => self.handle_expr(arenas, expr.value_expr, current),
+            Expr::PropagateError(expr) => self.handle_expr(arenas, expr.inner, current),
             Expr::Constant(_) => {}
             Expr::Missing(_) => {}
         }

@@ -197,7 +197,9 @@ impl ConcreteFunctionWithBodyId {
             ConcreteFunctionWithBodyLongId::Generated(generated) => {
                 let parent_id = generated.parent.function_with_body_id(semantic_db);
                 StableLocation::new(
-                    db.function_body(parent_id)?.exprs[generated.element].stable_ptr().untyped(),
+                    db.function_body(parent_id)?.arenas.exprs[generated.element]
+                        .stable_ptr()
+                        .untyped(),
                 )
             }
         })

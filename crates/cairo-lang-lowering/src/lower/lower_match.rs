@@ -139,7 +139,7 @@ fn get_underscore_pattern_path(
             arm.patterns
                 .iter()
                 .position(|pattern| {
-                    matches!(ctx.function_body.patterns[*pattern], semantic::Pattern::Otherwise(_))
+                    matches!(ctx.function_body.arenas.patterns[*pattern], semantic::Pattern::Otherwise(_))
                 })
                 .map(|pattern_index| PatternPath { arm_index, pattern_index: Some(pattern_index) })
         })
@@ -147,7 +147,7 @@ fn get_underscore_pattern_path(
 
     for arm in arms.iter().skip(otherwise_variant.arm_index + 1) {
         if arm.patterns.is_empty() && arm.expr.is_some() {
-            let expr = ctx.function_body.exprs[arm.expr.unwrap()].clone();
+            let expr = ctx.function_body.arenas.exprs[arm.expr.unwrap()].clone();
             ctx.diagnostics.report(
                 &expr,
                 MatchError(MatchError {
@@ -157,7 +157,7 @@ fn get_underscore_pattern_path(
             );
         }
         for pattern in arm.patterns.iter() {
-            let pattern = ctx.function_body.patterns[*pattern].clone();
+            let pattern = ctx.function_body.arenas.patterns[*pattern].clone();
             ctx.diagnostics.report(
                 &pattern,
                 MatchError(MatchError {
@@ -172,7 +172,7 @@ fn get_underscore_pattern_path(
         .iter()
         .skip(otherwise_variant.pattern_index.unwrap_or(0) + 1)
     {
-        let pattern = ctx.function_body.patterns[*pattern].clone();
+        let pattern = ctx.function_body.arenas.patterns[*pattern].clone();
         ctx.diagnostics.report(
             &pattern,
             MatchError(MatchError {
@@ -195,7 +195,7 @@ fn get_variant_to_arm_map<'a>(
     let mut map = UnorderedHashMap::default();
     for (arm_index, arm) in arms.enumerate() {
         for (pattern_index, pattern) in arm.patterns.iter().enumerate() {
-            let pattern = ctx.function_body.patterns[*pattern].clone();
+            let pattern = ctx.function_body.arenas.patterns[*pattern].clone();
 
             if let semantic::Pattern::Otherwise(_) = pattern {
                 break;
@@ -273,7 +273,7 @@ fn insert_tuple_path_patterns(
         return Ok(());
     }
 
-    let pattern = ctx.function_body.patterns[patterns[index]].clone();
+    let pattern = ctx.function_body.arenas.patterns[patterns[index]].clone();
 
     match pattern {
         Pattern::EnumVariant(enum_pattern) => {
@@ -336,7 +336,7 @@ fn get_variants_to_arm_map_tuple<'a>(
     let mut map = UnorderedHashMap::default();
     for (arm_index, arm) in arms.enumerate() {
         for (pattern_index, pattern) in arm.patterns.iter().enumerate() {
-            let pattern = ctx.function_body.patterns[*pattern].clone();
+            let pattern = ctx.function_body.arenas.patterns[*pattern].clone();
             if let semantic::Pattern::Otherwise(_) = pattern {
                 break;
             }
@@ -422,7 +422,7 @@ fn lower_tuple_match_arm(
             ))
         })?;
     let pattern = pattern_path.pattern_index.map(|pattern_index| {
-        ctx.function_body.patterns[arms[pattern_path.arm_index].patterns[pattern_index]].clone()
+        ctx.function_body.arenas.patterns[arms[pattern_path.arm_index].patterns[pattern_index]].clone()
     });
 
     let lowering_inner_pattern_result = match pattern {
@@ -431,13 +431,13 @@ fn lower_tuple_match_arm(
             .iter()
             .enumerate()
             .map(|(index, pattern)| {
-                let pattern = &ctx.function_body.patterns[*pattern];
+                let pattern = &ctx.function_body.arenas.patterns[*pattern];
                 match pattern {
                     Pattern::EnumVariant(PatternEnumVariant {
                         inner_pattern: Some(inner_pattern),
                         ..
                     }) => {
-                        let inner_pattern = ctx.function_body.patterns[*inner_pattern].clone();
+                        let inner_pattern = ctx.function_body.arenas.patterns[*inner_pattern].clone();
                         let pattern_location =
                             ctx.get_location(inner_pattern.stable_ptr().untyped());
 
@@ -665,7 +665,7 @@ pub(crate) fn lower_expr_match(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, expr.matched_expr)?;
 
-    let matched_expr = ctx.function_body.exprs[expr.matched_expr].clone();
+    let matched_expr = ctx.function_body.arenas.exprs[expr.matched_expr].clone();
     let ty = matched_expr.ty();
 
     if ty == ctx.db.core_felt252_ty() {
@@ -762,7 +762,7 @@ pub(crate) fn lower_concrete_enum_match(
             let mut subscope = create_subscope(ctx, builder);
 
             let pattern = pattern_index
-                .map(|pattern_index| &ctx.function_body.patterns[arm.patterns[pattern_index]]);
+                .map(|pattern_index| &ctx.function_body.arenas.patterns[arm.patterns[pattern_index]]);
             let block_id = subscope.block_id;
             block_ids.push(block_id);
 
@@ -771,7 +771,7 @@ pub(crate) fn lower_concrete_enum_match(
                     inner_pattern: Some(inner_pattern),
                     ..
                 })) => {
-                    let inner_pattern = ctx.function_body.patterns[*inner_pattern].clone();
+                    let inner_pattern = ctx.function_body.arenas.patterns[*inner_pattern].clone();
                     let pattern_location = ctx.get_location(inner_pattern.stable_ptr().untyped());
 
                     let var_id = ctx.new_var(VarRequest {
@@ -919,7 +919,7 @@ pub(crate) fn lower_optimized_extern_match(
 
             let arm = &match_arms[*arm_index];
             let pattern = pattern_index
-                .map(|pattern_index| &ctx.function_body.patterns[arm.patterns[pattern_index]]);
+                .map(|pattern_index| &ctx.function_body.arenas.patterns[arm.patterns[pattern_index]]);
 
             let lowering_inner_pattern_result = match pattern {
                 Some(Pattern::EnumVariant(PatternEnumVariant {
@@ -928,7 +928,7 @@ pub(crate) fn lower_optimized_extern_match(
                 })) => lower_single_pattern(
                     ctx,
                     &mut subscope,
-                    ctx.function_body.patterns[*inner_pattern].clone(),
+                    ctx.function_body.arenas.patterns[*inner_pattern].clone(),
                     variant_expr,
                 ),
                 Some(
@@ -1021,7 +1021,7 @@ fn group_match_arms(
                             }
                             (Some(expr), MatchKind::WhileLet(loop_expr_id, stable_ptr)) => {
                                 let semantic::Expr::Block(expr) =
-                                    ctx.function_body.exprs[expr].clone()
+                                    ctx.function_body.arenas.exprs[expr].clone()
                                 else {
                                     unreachable!("While Let expression should be a block");
                                 };
@@ -1068,7 +1068,7 @@ fn group_match_arms(
                         .first()
                         .map(|pattern| {
                             ctx.get_location(
-                                ctx.function_body.patterns[*pattern].stable_ptr().untyped(),
+                                ctx.function_body.arenas.patterns[*pattern].stable_ptr().untyped(),
                             )
                         })
                         .unwrap_or(location);
@@ -1095,7 +1095,8 @@ fn group_match_arms(
                     lower_tail_expr(ctx, outer_subscope, expr)
                 }
                 (Some(expr), MatchKind::WhileLet(loop_expr_id, stable_ptr)) => {
-                    let semantic::Expr::Block(expr) = ctx.function_body.exprs[expr].clone() else {
+                    let semantic::Expr::Block(expr) = ctx.function_body.arenas.exprs[expr].clone()
+                    else {
                         unreachable!("WhileLet expression should be a block");
                     };
                     let block_expr = (|| {
@@ -1157,7 +1158,7 @@ fn lower_expr_felt252_arm(
     let mut else_block = create_subscope_with_bound_refs(ctx, builder);
     let block_else_id = else_block.block_id;
 
-    let pattern = &ctx.function_body.patterns[arm.patterns[pattern_index]];
+    let pattern = &ctx.function_body.arenas.patterns[arm.patterns[pattern_index]];
     let semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) = pattern else {
         return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
             pattern.stable_ptr().untyped(),
@@ -1327,7 +1328,7 @@ fn lower_expr_match_felt252(
     let mut otherwise_exist = false;
     for (arm_index, arm) in expr.arms.iter().enumerate() {
         for pattern in arm.patterns.iter() {
-            let pattern = &ctx.function_body.patterns[*pattern];
+            let pattern = &ctx.function_body.arenas.patterns[*pattern];
             if otherwise_exist {
                 return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
                     pattern.stable_ptr().untyped(),
@@ -1440,7 +1441,7 @@ fn lower_expr_match_felt252(
 
     let bounded_int_ty = corelib::bounded_int_ty(semantic_db, 0.into(), max.into());
 
-    let ty = ctx.function_body.exprs[expr.matched_expr].ty();
+    let ty = ctx.function_body.arenas.exprs[expr.matched_expr].ty();
     let function_id = corelib::core_downcast(semantic_db, ty, bounded_int_ty).lowered(ctx.db);
 
     let in_range_block_input_var_id = ctx.new_var(VarRequest { ty: bounded_int_ty, location });
