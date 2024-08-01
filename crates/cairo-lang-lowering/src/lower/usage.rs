@@ -1,4 +1,4 @@
-//! Introduces [BlockUsages], which is responsible for computing variables usage in semantic blocks\
+//! Introduces [Usages], which is responsible for computing variables usage in semantic blocks\
 //! of a function.
 
 use cairo_lang_defs::ids::MemberId;
@@ -149,19 +149,19 @@ impl Usage {
     }
 }
 
-/// Usages of variables and member paths in each semantic block of a function.
+/// Usages of member paths in expressions of interest, currently loops and closures.
 #[derive(Debug, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct BlockUsages {
-    /// Mapping from an [ExprId] for a block expression or loop, to its [Usage].
-    pub block_usages: OrderedHashMap<ExprId, Usage>,
+pub struct Usages {
+    /// Mapping from an [ExprId] to its [Usage].
+    pub usages: OrderedHashMap<ExprId, Usage>,
 }
-impl BlockUsages {
+impl Usages {
     pub fn from_function_body(function_body: &FunctionBody) -> Self {
         let mut current = Usage::default();
-        let mut block_usages = Self { block_usages: Default::default() };
-        block_usages.handle_expr(function_body, function_body.body_expr, &mut current);
-        block_usages
+        let mut usages = Self { usages: Default::default() };
+        usages.handle_expr(function_body, function_body.body_expr, &mut current);
+        usages
     }
 
     fn handle_expr(&mut self, function_body: &FunctionBody, expr_id: ExprId, current: &mut Usage) {
@@ -240,12 +240,12 @@ impl BlockUsages {
                 }
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
-                self.block_usages.insert(expr_id, usage);
             }
             Expr::Loop(expr) => {
-                self.handle_expr(function_body, expr.body, current);
-                // Copy body usage to loop usage.
-                self.block_usages.insert(expr_id, self.block_usages[&expr.body].clone());
+                let mut usage = Default::default();
+                self.handle_expr(function_body, expr.body, &mut usage);
+                current.add_usage_and_changes(&usage);
+                self.usages.insert(expr_id, usage);
             }
             Expr::While(expr) => {
                 let mut usage = Default::default();
@@ -264,7 +264,7 @@ impl BlockUsages {
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
 
-                self.block_usages.insert(expr_id, usage);
+                self.usages.insert(expr_id, usage);
             }
             Expr::For(expr) => {
                 let mut usage: Usage = Default::default();
@@ -280,7 +280,7 @@ impl BlockUsages {
                 self.handle_expr(function_body, expr.body, &mut usage);
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
-                self.block_usages.insert(expr_id, usage);
+                self.usages.insert(expr_id, usage);
             }
             Expr::ExprClosure(expr) => {
                 let mut usage: Usage = Default::default();
@@ -288,7 +288,7 @@ impl BlockUsages {
                 usage.introductions.extend(expr.param_ids.iter().map(|id| VarId::Param(*id)));
                 self.handle_expr(function_body, expr.body, &mut usage);
                 usage.finalize_as_scope();
-                self.block_usages.insert(expr_id, usage);
+                self.usages.insert(expr_id, usage);
             }
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {
