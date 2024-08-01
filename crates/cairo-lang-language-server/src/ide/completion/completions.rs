@@ -74,7 +74,7 @@ pub fn generic_completions(
     let Ok(body) = db.function_body(function_id) else {
         return completions;
     };
-    for (_id, pat) in &body.patterns {
+    for (_id, pat) in &body.arenas.patterns {
         if let Pattern::Variable(var) = pat {
             completions.push(CompletionItem {
                 label: var.name.clone().into(),

@@ -32,6 +32,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosti
 use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
+use crate::items::function_with_body::Arenas;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
@@ -1374,6 +1375,6 @@ pub fn priv_trait_function_body_data(
         expr_lookup,
         pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { exprs, patterns, statements, body_expr }),
+        body: Arc::new(FunctionBody { arenas: Arenas { exprs, patterns, statements }, body_expr }),
     }))
 }

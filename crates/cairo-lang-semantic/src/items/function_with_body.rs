@@ -147,12 +147,19 @@ pub struct FunctionBodyData {
     pub body: Arc<FunctionBody>,
 }
 
+/// Arena for semantic expressions, patterns, and statements.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct FunctionBody {
+pub struct Arenas {
     pub exprs: Arena<semantic::Expr>,
     pub patterns: Arena<semantic::Pattern>,
     pub statements: Arena<semantic::Statement>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct FunctionBody {
+    pub arenas: Arenas,
     pub body_expr: semantic::ExprId,
 }
 
@@ -203,7 +210,7 @@ pub fn expr_semantic(
     function_id: FunctionWithBodyId,
     id: semantic::ExprId,
 ) -> semantic::Expr {
-    db.function_body(function_id).unwrap().exprs.get(id).unwrap().clone()
+    db.function_body(function_id).unwrap().arenas.exprs.get(id).unwrap().clone()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::pattern_semantic].
@@ -212,7 +219,7 @@ pub fn pattern_semantic(
     function_id: FunctionWithBodyId,
     id: semantic::PatternId,
 ) -> semantic::Pattern {
-    db.function_body(function_id).unwrap().patterns.get(id).unwrap().clone()
+    db.function_body(function_id).unwrap().arenas.patterns.get(id).unwrap().clone()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::statement_semantic].
@@ -221,7 +228,7 @@ pub fn statement_semantic(
     function_id: FunctionWithBodyId,
     id: semantic::StatementId,
 ) -> semantic::Statement {
-    db.function_body(function_id).unwrap().statements.get(id).unwrap().clone()
+    db.function_body(function_id).unwrap().arenas.statements.get(id).unwrap().clone()
 }
 
 pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
