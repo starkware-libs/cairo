@@ -507,8 +507,9 @@ impl CasmContractClass {
 
             let builtins = builtins
                 .iter()
-                .map(|type_id| {
-                    type_resolver.get_generic_id(type_id).0.as_str().to_case(Case::Snake)
+                .map(|type_id| match type_resolver.get_generic_id(type_id).0.as_str() {
+                    "RangeCheck96" => "range_check96".to_string(),
+                    name => name.to_case(Case::Snake),
                 })
                 .collect_vec();
 

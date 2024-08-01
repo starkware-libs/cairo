@@ -101,6 +101,10 @@ impl DiagnosticEntry for LoweringDiagnostic {
         }
         self.location.stable_location.diagnostic_location(db.upcast())
     }
+
+    fn is_same_kind(&self, other: &Self) -> bool {
+        other.kind == self.kind
+    }
 }
 
 impl MatchError {

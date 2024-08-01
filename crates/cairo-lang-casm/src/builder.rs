@@ -409,11 +409,28 @@ impl CasmBuilder {
     /// Returns a variable that is the `op` of `lhs` and `rhs`.
     /// `lhs` must be a cell reference and `rhs` must be deref or immediate.
     pub fn bin_op(&mut self, op: CellOperator, lhs: Var, rhs: Var) -> Var {
-        self.add_var(CellExpression::BinOp {
-            op,
-            a: self.as_cell_ref(lhs, false),
-            b: self.as_deref_or_imm(rhs, false),
-        })
+        let (a, b) = match self.get_value(lhs, false) {
+            // Regular `bin_op` support.
+            CellExpression::Deref(cell) => (cell, self.as_deref_or_imm(rhs, false)),
+            // `add_with_const` + `imm` support.
+            CellExpression::BinOp {
+                op: CellOperator::Add,
+                a,
+                b: DerefOrImmediate::Immediate(imm),
+            } if op == CellOperator::Add => (
+                a,
+                DerefOrImmediate::Immediate(
+                    (imm.value
+                        + extract_matches!(self.get_value(rhs, false), CellExpression::Immediate))
+                    .into(),
+                ),
+            ),
+            _ => panic!(
+                "`bin_op` is supported only between a `deref` and a `deref_or_imm`, or a \
+                 `add_with_const` and `imm`."
+            ),
+        };
+        self.add_var(CellExpression::BinOp { op, a, b })
     }
 
     /// Returns a variable that is `[[var] + offset]`.
@@ -598,6 +615,12 @@ impl CasmBuilder {
             false,
         );
         self.statements.push(Statement::Final(instruction));
+        self.mark_unreachable();
+    }
+
+    /// Marks the current state as unreachable.
+    /// Useful for removing bookkeeping after unsatisfiable conditions.
+    pub fn mark_unreachable(&mut self) {
         self.reachable = false;
     }
 
@@ -887,6 +910,11 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, fail; $($tok:tt)*) => {
         $builder.fail();
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
+    ($builder:ident, unsatisfiable_assert $dst:ident = $res:ident; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, assert $dst = $res;);
+        $builder.mark_unreachable();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)+ {

@@ -32,20 +32,17 @@ impl TestFileRunner for ExpandContractTestRunner {
         let (test_module, _semantic_diagnostics) = setup_test_module(&db, &cairo_code).split();
 
         let mut module_ids = vec![test_module.module_id];
-        module_ids.extend(
-            db.module_submodules_ids(test_module.module_id)
-                .unwrap_or_default()
-                .iter()
-                .copied()
-                .map(ModuleId::Submodule),
-        );
+        if let Ok(submodules_ids) = db.module_submodules_ids(test_module.module_id) {
+            module_ids.extend(submodules_ids.iter().copied().map(ModuleId::Submodule));
+        }
         let mut files = vec![];
-        for module_id in module_ids {
-            for file in db.module_files(module_id).unwrap_or_default().iter().copied() {
-                if files.contains(&file) {
-                    continue;
+        for module_files in
+            module_ids.into_iter().filter_map(|module_id| db.module_files(module_id).ok())
+        {
+            for file in module_files.iter().copied() {
+                if !files.contains(&file) {
+                    files.push(file);
                 }
-                files.push(file);
             }
         }
         let mut file_contents = vec![];
@@ -151,6 +148,8 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     {
         hello_starknet: "hello_starknet",
         with_ownable: "with_ownable",
+        with_ownable_mini: "with_ownable_mini",
+        with_erc20_mini: "with_erc20_mini",
         with_erc20: "with_erc20",
         upgradable_counter: "upgradable_counter",
         ownable_erc20: "ownable_erc20",

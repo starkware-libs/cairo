@@ -99,7 +99,7 @@ pub fn free_function_generic_params_data(
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
-    )?;
+    );
 
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, free_function_syntax.stable_ptr().untyped());

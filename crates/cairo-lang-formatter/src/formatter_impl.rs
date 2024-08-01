@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 use std::fmt;
-use std::ops::Deref;
 
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
@@ -824,7 +823,7 @@ impl<'a> FormatterImpl<'a> {
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db);
         // TODO(ilya): consider not copying here.
-        let mut children = self.db.get_children(syntax_node.clone()).deref().clone();
+        let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();
         if self.config.sort_module_level_items {
             children.sort_by_key(|c| MovableNode::new(self.db, c));

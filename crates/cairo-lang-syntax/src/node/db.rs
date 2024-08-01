@@ -19,10 +19,10 @@ pub trait SyntaxGroup: FilesGroup + Upcast<dyn FilesGroup> {
     fn intern_stable_ptr(&self, field: SyntaxStablePtr) -> SyntaxStablePtrId;
 
     /// Returns the children of the given node.
-    fn get_children(&self, node: SyntaxNode) -> Arc<Vec<SyntaxNode>>;
+    fn get_children(&self, node: SyntaxNode) -> Arc<[SyntaxNode]>;
 }
 
-fn get_children(db: &dyn SyntaxGroup, node: SyntaxNode) -> Arc<Vec<SyntaxNode>> {
+fn get_children(db: &dyn SyntaxGroup, node: SyntaxNode) -> Arc<[SyntaxNode]> {
     let mut res = Vec::new();
 
     let mut offset = node.offset();
@@ -51,5 +51,5 @@ fn get_children(db: &dyn SyntaxGroup, node: SyntaxNode) -> Arc<Vec<SyntaxNode>> 
 
         offset = offset.add_width(width);
     }
-    Arc::new(res)
+    res.into()
 }

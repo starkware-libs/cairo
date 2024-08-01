@@ -6,8 +6,7 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::BuilderConfig;
-use crate::abi::AbiBuilder;
+use super::{AbiBuilder, BuilderConfig};
 use crate::plugin::consts::CONTRACT_ATTR;
 use crate::starknet_plugin_suite;
 
@@ -56,4 +55,34 @@ cairo_lang_test_utils::test_file_test!(
       abi_failures: "abi_failures",
   },
   test_abi_failure
+);
+
+/// Helper function for testing multiple Storage path accesses to the same place.
+pub fn test_storage_path_check(
+    inputs: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let db = &mut RootDatabase::builder()
+        .detect_corelib()
+        .with_plugin_suite(starknet_plugin_suite())
+        .build()
+        .unwrap();
+    let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
+    let (_, diagnostics) = setup_test_module(db, &cairo_code).split();
+
+    let test_error = verify_diagnostics_expectation(args, &diagnostics);
+
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([("diagnostics".into(), diagnostics)]),
+        error: test_error,
+    }
+}
+
+cairo_lang_test_utils::test_file_test!(
+  storage_path_check,
+  "src/test_data",
+  {
+      storage_path_check: "storage_path_check",
+  },
+  test_storage_path_check
 );

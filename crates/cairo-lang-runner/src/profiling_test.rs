@@ -20,6 +20,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         major_test_cases: "major_test_cases",
         profiling: "profiling",
+        circuit: "circuit",
     },
     test_profiling
 );

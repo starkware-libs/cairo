@@ -8,14 +8,10 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
-use cairo_lang_semantic::expr::inference::solver::SolutionSet;
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
-use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
-use cairo_lang_semantic::lsp_helpers::TypeFilter;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
@@ -25,6 +21,7 @@ use cairo_lang_utils::{LookupIntern, Upcast};
 use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
+use crate::ide::utils::find_methods_for_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
 
@@ -44,15 +41,17 @@ pub fn generic_completions(
     }));
 
     // Module completions.
-    completions.extend(db.module_items(module_file_id.0).unwrap_or_default().iter().map(|item| {
-        CompletionItem {
-            label: item.name(db.upcast()).to_string(),
-            kind: ResolvedGenericItem::from_module_item(db, *item)
-                .ok()
-                .map(resolved_generic_item_completion_kind),
-            ..CompletionItem::default()
-        }
-    }));
+    if let Ok(module_items) = db.module_items(module_file_id.0) {
+        completions.extend(module_items.iter().map(|item| {
+            CompletionItem {
+                label: item.name(db.upcast()).to_string(),
+                kind: ResolvedGenericItem::from_module_item(db, *item)
+                    .ok()
+                    .map(resolved_generic_item_completion_kind),
+                ..CompletionItem::default()
+            }
+        }));
+    }
 
     // Local variables and params.
     let Some(lookup_item_id) = lookup_items.into_iter().next() else {
@@ -130,7 +129,7 @@ pub fn colon_colon_completions(
     Some(match item {
         ResolvedConcreteItem::Module(module_id) => db
             .module_items(module_id)
-            .unwrap_or_default()
+            .ok()?
             .iter()
             .map(|item| CompletionItem {
                 label: item.name(db.upcast()).to_string(),
@@ -257,7 +256,7 @@ pub fn dot_completions(
 
 /// Returns a completion item for a method.
 #[tracing::instrument(level = "trace", skip_all)]
-fn completion_for_method(
+pub fn completion_for_method(
     db: &AnalysisDatabase,
     module_id: ModuleId,
     trait_function: TraitFunctionId,
@@ -269,14 +268,13 @@ fn completion_for_method(
 
     // TODO(spapini): Add signature.
     let detail = trait_id.full_path(db.upcast());
-    let trait_full_path = trait_id.full_path(db.upcast());
     let mut additional_text_edits = vec![];
 
     // If the trait is not in scope, add a use statement.
-    if !module_has_trait(db, module_id, trait_id)? {
+    if let Some(trait_path) = db.visible_traits_from_module(module_id).get(&trait_id) {
         additional_text_edits.push(TextEdit {
             range: Range::new(position, position),
-            new_text: format!("use {trait_full_path};\n"),
+            new_text: format!("use {};\n", trait_path),
         });
     }
 
@@ -289,73 +287,4 @@ fn completion_for_method(
         ..CompletionItem::default()
     };
     Some(completion)
-}
-
-/// Checks if a module has a trait in scope.
-#[tracing::instrument(level = "trace", skip_all)]
-fn module_has_trait(
-    db: &AnalysisDatabase,
-    module_id: ModuleId,
-    trait_id: cairo_lang_defs::ids::TraitId,
-) -> Option<bool> {
-    if db.module_traits_ids(module_id).ok()?.contains(&trait_id) {
-        return Some(true);
-    }
-    for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
-        if db.use_resolved_item(use_id) == Ok(ResolvedGenericItem::Trait(trait_id)) {
-            return Some(true);
-        }
-    }
-    Some(false)
-}
-
-/// Finds all methods that can be called on a type.
-#[tracing::instrument(level = "trace", skip_all)]
-fn find_methods_for_type(
-    db: &AnalysisDatabase,
-    mut resolver: Resolver<'_>,
-    ty: cairo_lang_semantic::TypeId,
-    stable_ptr: cairo_lang_syntax::node::ids::SyntaxStablePtrId,
-) -> Vec<TraitFunctionId> {
-    let type_filter = match ty.head(db) {
-        Some(head) => TypeFilter::TypeHead(head),
-        None => TypeFilter::NoFilter,
-    };
-
-    let mut relevant_methods = Vec::new();
-    // Find methods on type.
-    // TODO(spapini): Look only in current crate dependencies.
-    for crate_id in db.crates() {
-        let methods = db.methods_in_crate(crate_id, type_filter.clone());
-        for trait_function in methods.iter().copied() {
-            let clone_data =
-                &mut resolver.inference().clone_with_inference_id(db, InferenceId::NoContext);
-            let mut inference = clone_data.inference(db);
-            let lookup_context = resolver.impl_lookup_context();
-            // Check if trait function signature's first param can fit our expr type.
-            let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function,
-                ty,
-                &lookup_context,
-                Some(stable_ptr),
-                |_| {},
-            ) else {
-                debug!("can't fit");
-                continue;
-            };
-
-            // Find impls for it.
-
-            // ignore the result as nothing can be done with the error, if any.
-            inference.solve().ok();
-            if !matches!(
-                inference.trait_solution_set(concrete_trait_id, lookup_context),
-                Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))
-            ) {
-                continue;
-            }
-            relevant_methods.push(trait_function);
-        }
-    }
-    relevant_methods
 }

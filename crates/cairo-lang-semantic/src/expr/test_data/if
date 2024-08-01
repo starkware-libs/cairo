@@ -92,11 +92,6 @@ error: Identifier not found.
         return y == 9;
                ^
 
-error: Type annotations needed. Failed to infer ?1.
- --> lib.cairo:7:16
-        return y == 9;
-               ^****^
-
 //! > ==========================================================================
 
 //! > if_let logical operators.

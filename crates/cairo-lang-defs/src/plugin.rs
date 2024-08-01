@@ -85,6 +85,8 @@ pub struct MacroPluginMetadata<'a> {
     pub cfg_set: &'a CfgSet,
     /// The possible derives declared by any plugin.
     pub declared_derives: &'a OrderedHashSet<String>,
+    /// The allowed features at the macro activation site.
+    pub allowed_features: &'a OrderedHashSet<SmolStr>,
     /// The edition of the crate to which the current item belongs.
     pub edition: Edition,
 }

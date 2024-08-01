@@ -371,9 +371,11 @@ pub trait SemanticGroup:
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of a trait.
     #[salsa::invoke(items::trt::trait_generic_params)]
+    #[salsa::cycle(items::trt::trait_generic_params_cycle)]
     fn trait_generic_params(&self, trait_id: TraitId) -> Maybe<Vec<GenericParam>>;
     /// Returns the generic parameters data of a trait.
     #[salsa::invoke(items::trt::trait_generic_params_data)]
+    #[salsa::cycle(items::trt::trait_generic_params_data_cycle)]
     fn trait_generic_params_data(&self, trait_id: TraitId) -> Maybe<GenericParamsData>;
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
@@ -719,7 +721,7 @@ pub trait SemanticGroup:
     ) -> Maybe<Arc<OrderedHashMap<ImplTypeDefId, ast::ItemTypeAlias>>>;
     /// Returns the ids of the type items in the impl.
     #[salsa::invoke(items::imp::impl_type_ids)]
-    fn impl_type_ids(&self, impl_def_id: ImplDefId) -> Maybe<Arc<Vec<ImplTypeDefId>>>;
+    fn impl_type_ids(&self, impl_def_id: ImplDefId) -> Maybe<Arc<[ImplTypeDefId]>>;
     /// Returns the impl AST of the impl type that matches the given id, if exists.
     #[salsa::invoke(items::imp::impl_type_by_id)]
     fn impl_type_by_id(&self, impl_type_id: ImplTypeDefId) -> Maybe<Option<ast::ItemTypeAlias>>;
@@ -746,7 +748,7 @@ pub trait SemanticGroup:
     ) -> Maybe<Arc<OrderedHashMap<ImplImplDefId, ast::ItemImplAlias>>>;
     /// Returns the ids of the impl items in the impl.
     #[salsa::invoke(items::imp::impl_impl_ids)]
-    fn impl_impl_ids(&self, impl_def_id: ImplDefId) -> Maybe<Arc<Vec<ImplImplDefId>>>;
+    fn impl_impl_ids(&self, impl_def_id: ImplDefId) -> Maybe<Arc<[ImplImplDefId]>>;
     /// Returns the impl AST of the impl impl that matches the given id, if exists.
     #[salsa::invoke(items::imp::impl_impl_by_id)]
     fn impl_impl_by_id(&self, impl_impl_id: ImplImplDefId) -> Maybe<Option<ast::ItemImplAlias>>;
@@ -1478,14 +1480,38 @@ pub trait SemanticGroup:
         &self,
         module_id: ModuleId,
         type_filter: lsp_helpers::TypeFilter,
-    ) -> Arc<Vec<TraitFunctionId>>;
+    ) -> Arc<[TraitFunctionId]>;
     /// Returns all methods in a crate that match the given type filter.
     #[salsa::invoke(lsp_helpers::methods_in_crate)]
     fn methods_in_crate(
         &self,
         crate_id: CrateId,
         type_filter: lsp_helpers::TypeFilter,
-    ) -> Arc<Vec<TraitFunctionId>>;
+    ) -> Arc<[TraitFunctionId]>;
+    /// Returns all the traits visible from a module, alongside a visible use path to the trait.
+    #[salsa::invoke(lsp_helpers::visible_traits_from_module)]
+    fn visible_traits_from_module(
+        &self,
+        module_id: ModuleId,
+    ) -> Arc<OrderedHashMap<TraitId, String>>;
+    /// Returns all visible traits in a module, alongside a visible use path to the trait.
+    /// `user_module_id` is the module from which the traits are should be visible. If
+    /// `include_parent` is true, the parent module of `module_id` is also considered.
+    #[salsa::invoke(lsp_helpers::visible_traits_in_module)]
+    fn visible_traits_in_module(
+        &self,
+        module_id: ModuleId,
+        user_module_id: ModuleId,
+        include_parent: bool,
+    ) -> Arc<[(TraitId, String)]>;
+    /// Returns all visible traits in a crate, alongside a visible use path to the trait.
+    /// `user_module_id` is the module from which the traits are should be visible.
+    #[salsa::invoke(lsp_helpers::visible_traits_in_crate)]
+    fn visible_traits_in_crate(
+        &self,
+        crate_id: CrateId,
+        user_module_id: ModuleId,
+    ) -> Arc<[(TraitId, String)]>;
 }
 
 impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {

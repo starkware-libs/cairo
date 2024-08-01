@@ -8,6 +8,7 @@ trait IAnotherContract<T> {}
 #[starknet::contract(account)]
 mod test_contract {
     use starknet::{account::Call, ContractAddress, ClassHash};
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use super::{
         IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
         IAnotherContractDispatcherTrait

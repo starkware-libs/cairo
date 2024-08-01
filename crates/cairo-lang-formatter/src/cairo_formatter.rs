@@ -2,7 +2,6 @@ use std::fmt::{Debug, Display};
 use std::fs;
 use std::io::{stdin, Read};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use anyhow::{anyhow, Context, Result};
 use cairo_lang_diagnostics::FormattedDiagnosticEntry;
@@ -156,8 +155,8 @@ impl FormattableInput for String {
         Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "string_to_format".into(),
-            content: Arc::new(self.clone()),
-            code_mappings: Default::default(),
+            content: self.clone().into(),
+            code_mappings: [].into(),
             kind: FileKind::Module,
         })
         .intern(db))
@@ -175,8 +174,8 @@ impl FormattableInput for StdinFmt {
         Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "<stdin>".into(),
-            content: Arc::new(buffer),
-            code_mappings: Default::default(),
+            content: buffer.into(),
+            code_mappings: [].into(),
             kind: FileKind::Module,
         })
         .intern(db))
@@ -201,7 +200,7 @@ fn format_input(
     }
     let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
 
-    if &formatted_text == original_text.as_ref() {
+    if formatted_text == original_text.as_ref() {
         Ok(FormatOutcome::Identical(original_text.to_string()))
     } else {
         let diff = FileDiff { original: original_text.to_string(), formatted: formatted_text };

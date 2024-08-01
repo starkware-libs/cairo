@@ -19,8 +19,14 @@ use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::{
+<<<<<<< HEAD
     BlockOrIf, ClosureParamWrapper, ExprPtr, OptionReturnTypeClause, PatternListOr,
     PatternStructParam, UnaryOperator,
+||||||| 72d1d2f50
+    BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
+=======
+    BinaryOperator, BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
+>>>>>>> origin/dev-v2.7.0
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -379,6 +385,7 @@ fn compute_expr_inline_macro_semantic(
         &MacroPluginMetadata {
             cfg_set: &ctx.cfg_set,
             declared_derives: &ctx.db.declared_derives(),
+            allowed_features: &ctx.resolver.data.allowed_features,
             edition: ctx.resolver.edition,
         },
     );
@@ -398,8 +405,8 @@ fn compute_expr_inline_macro_semantic(
     let new_file = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr().untyped().file_id(ctx.db.upcast())),
         name: code.name,
-        content: Arc::new(code.content),
-        code_mappings: Arc::new(code.code_mappings),
+        content: code.content.into(),
+        code_mappings: code.code_mappings.into(),
         kind: FileKind::Expr,
     })
     .intern(ctx.db);
@@ -624,7 +631,15 @@ fn call_core_binary_op(
         })?;
 
     let mut lexpr = compute_expr_semantic(ctx, lhs_syntax);
+
+    if let (Expr::Missing(_), BinaryOperator::LT(_)) = (&lexpr.expr, &binary_op) {
+        return Err(ctx
+            .diagnostics
+            .report(binary_op.stable_ptr(), SemanticDiagnosticKind::MaybeMissingColonColon));
+    }
+
     let mut rexpr = compute_expr_semantic(ctx, rhs_syntax);
+
     ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
 

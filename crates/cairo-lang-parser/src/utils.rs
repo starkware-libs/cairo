@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
@@ -64,8 +63,8 @@ impl SimpleParserDatabase {
         let file = FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "parser_input".into(),
-            content: Arc::new(content.to_string()),
-            code_mappings: Default::default(),
+            content: content.to_string().into(),
+            code_mappings: [].into(),
             kind: FileKind::Module,
         })
         .intern(self);
@@ -80,7 +79,7 @@ pub fn get_syntax_root_and_diagnostics_from_file(
 ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
     let file_id = FileId::new(db, cairo_filepath);
     let contents = db.file_content(file_id).unwrap();
-    get_syntax_root_and_diagnostics(db, file_id, contents.as_str())
+    get_syntax_root_and_diagnostics(db, file_id, &contents)
 }
 
 /// Returns the syntax_root and diagnostic of a file in the db.

@@ -8,7 +8,9 @@ use core::traits::Index as DeprecatedIndex;
 /// the second gets ref.
 /// Trait for a view of an item contained in type `C` with an index of type `I`.
 pub trait IndexView<C, I> {
+    /// The type of the item.
     type Target;
+    /// Returns the item at the given index.
     fn index(self: @C, index: I) -> Self::Target;
 }
 impl DeprecatedIndexViewImpl<
@@ -22,7 +24,9 @@ impl DeprecatedIndexViewImpl<
 
 /// Trait for accessing an item contained in type `C` with an index of type `I`.
 pub trait Index<C, I> {
+    /// The type of the item.
     type Target;
+    /// Returns the item at the given index.
     fn index(ref self: C, index: I) -> Self::Target;
 }
 #[feature("deprecated-index-traits")]

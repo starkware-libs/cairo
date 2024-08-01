@@ -42,7 +42,9 @@ pub fn egcd<
 }
 
 // TODO(yuval): use signed integers once supported.
-/// Returns the inverse of `a` modulo `n`, or None if `gcd(a, n) > 1`.
+/// Returns `s` the inverse of `a` modulo `n` such that `as`≡ 1 modulo `n`, or None if `gcd(a, n)
+/// > 1`.
+/// `s` is guaranteed to be between `1` and `n - 1` (inclusive).
 pub fn inv_mod<
     T,
     +Copy<T>,
@@ -100,7 +102,7 @@ extern fn u256_guarantee_inv_mod_n(
 > implicits(RangeCheck) nopanic;
 
 /// Returns the inverse of `a` modulo `n`, or None if `a` is not invertible modulo `n`.
-/// All `b`s will be considered not invertible for `n == 1`.
+/// All `a`s will be considered not invertible for `n == 1`.
 #[inline(always)]
 pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     match u256_guarantee_inv_mod_n(a, n) {
@@ -121,7 +123,7 @@ pub fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
 }
 
 // === Oneable ===
-
+/// A trait for types that have a multiplicative identity element.
 trait Oneable<T> {
     /// Returns the multiplicative identity element of Self, 1.
     #[must_use]

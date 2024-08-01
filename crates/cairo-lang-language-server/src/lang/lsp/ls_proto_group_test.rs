@@ -27,8 +27,8 @@ fn file_url() {
         FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "foo".into(),
-            content: Default::default(),
-            code_mappings: Default::default(),
+            content: "".into(),
+            code_mappings: [].into(),
             kind: FileKind::Module,
         }),
     );
@@ -37,8 +37,8 @@ fn file_url() {
         FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "foo/bar".into(),
-            content: Default::default(),
-            code_mappings: Default::default(),
+            content: "".into(),
+            code_mappings: [].into(),
             kind: FileKind::Module,
         }),
     );

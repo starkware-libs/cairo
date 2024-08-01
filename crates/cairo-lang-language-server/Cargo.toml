@@ -11,6 +11,7 @@ testing = []
 
 [dependencies]
 anyhow.workspace = true
+<<<<<<< HEAD
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.6.4" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.6.4" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.6.4" }
@@ -27,6 +28,37 @@ cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.6.4
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.6.4" }
 indent.workspace = true
 indoc.workspace = true
+||||||| 72d1d2f50
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.6.4" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.6.4" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.6.4" }
+cairo-lang-doc = { path = "../cairo-lang-doc", version = "~2.6.4" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.6.4" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.6.4" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "~2.6.4" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.6.4" }
+cairo-lang-project = { path = "../cairo-lang-project", version = "~2.6.4" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.6.4" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.6.4" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.6.4" }
+cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.6.4" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.6.4" }
+=======
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.7.0" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.7.0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.7.0" }
+cairo-lang-doc = { path = "../cairo-lang-doc", version = "~2.7.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.7.0" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.7.0" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "~2.7.0" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.7.0" }
+cairo-lang-project = { path = "../cairo-lang-project", version = "~2.7.0" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.7.0" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.7.0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.7.0" }
+cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.7.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.7.0" }
+>>>>>>> origin/dev-v2.7.0
 itertools.workspace = true
 salsa.workspace = true
 scarb-metadata = "1.12"

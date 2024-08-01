@@ -1073,9 +1073,19 @@ impl<'db> Inference<'db> {
                 .consumed_error
                 .expect("consumed_error is not set although error_status is Err(Consumed)"),
             InferenceErrorStatus::Pending => {
-                let diag_added = mem::take(&mut self.error)
+                let diag_added = match mem::take(&mut self.error)
                     .expect("error is not set although error_status is Err(Pending)")
-                    .report(diagnostics, stable_ptr);
+                {
+                    InferenceError::TypeNotInferred(_) if diagnostics.error_count > 0 => {
+                        // If we have other diagnostics, there is no need to TypeNotInferred.
+
+                        // Note that `diagnostics` is not empty, so it is safe to return
+                        // 'DiagnosticAdded' here.
+                        skip_diagnostic()
+                    }
+                    diag => diag.report(diagnostics, stable_ptr),
+                };
+
                 self.error_status = Err(InferenceErrorStatus::Consumed);
                 self.consumed_error = Some(diag_added);
                 diag_added

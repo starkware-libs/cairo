@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
@@ -31,6 +29,10 @@ impl DiagnosticEntry for SimpleDiag {
             },
         }
     }
+
+    fn is_same_kind(&self, _other: &Self) -> bool {
+        true
+    }
 }
 
 fn setup() -> (FilesDatabaseForTesting, FileId) {
@@ -38,8 +40,8 @@ fn setup() -> (FilesDatabaseForTesting, FileId) {
     let file_id = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "dummy_file.sierra".into(),
-        content: Arc::new("abcd\nefg.\n".into()),
-        code_mappings: Default::default(),
+        content: "abcd\nefg.\n".into(),
+        code_mappings: [].into(),
         kind: FileKind::Module,
     })
     .intern(&db_val);

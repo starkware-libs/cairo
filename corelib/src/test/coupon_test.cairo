@@ -2,6 +2,7 @@ use core::test::test_utils::assert_eq;
 
 extern fn coupon_buy<T>() -> T nopanic;
 
+#[feature("corelib-internal-use")]
 fn arr_sum(arr: Array<(u128, arr_sum::Coupon)>) -> u128 nopanic {
     match arr.pop_front_consume() {
         Option::Some((
