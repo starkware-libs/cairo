@@ -146,7 +146,7 @@ error: Return type of impl function `MyImpl2::param_test` is incompatible with `
 
 error: Unexpected return type. Expected: "core::integer::u128", found: "()".
  --> lib.cairo:26:63
-\   {
+\   fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
 |       
 |   }
 |___^
@@ -1016,7 +1016,7 @@ impl MyImpl of MyTrait {
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:6:22
-\   {
+\   fn foo1() -> u32 {
 |       Self::foo2()
 |   }
 |___^

@@ -186,7 +186,7 @@ Originating location:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([6]) -> ([7])
 Originating location:
-\   {
+\   fn foo(my_enum: MyEnum) -> u8 {
 |       match my_enum {
 |           MyEnum::A(a) => a,
 |           MyEnum::B(b) => b,
@@ -201,7 +201,7 @@ Originating location:
 In function: lib.cairo::foo
 store_temp<RangeCheck>([0]) -> ([0])
 Originating location:
-\   {
+\   fn foo(my_enum: MyEnum) -> u8 {
 |       match my_enum {
 |           MyEnum::A(a) => a,
 |           MyEnum::B(b) => b,
@@ -216,7 +216,7 @@ Originating location:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([7]) -> ([7])
 Originating location:
-\   {
+\   fn foo(my_enum: MyEnum) -> u8 {
 |       match my_enum {
 |           MyEnum::A(a) => a,
 |           MyEnum::B(b) => b,
@@ -231,7 +231,7 @@ Originating location:
 In function: lib.cairo::foo
 return([0], [7])
 Originating location:
-\   {
+\   fn foo(my_enum: MyEnum) -> u8 {
 |       match my_enum {
 |           MyEnum::A(a) => a,
 |           MyEnum::B(b) => b,
@@ -383,7 +383,7 @@ Inlined at:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([20]) -> ([21])
 Originating location:
-\   {
+\   fn expect(self: Option<T>, err: felt252) -> T {
 |       match self {
 |           Option::Some(x) => x,
 |           Option::None => core::panic_with_felt252(err),
@@ -401,7 +401,7 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<RangeCheck>([17]) -> ([17])
 Originating location:
-\   {
+\   fn expect(self: Option<T>, err: felt252) -> T {
 |       match self {
 |           Option::Some(x) => x,
 |           Option::None => core::panic_with_felt252(err),
@@ -419,7 +419,7 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([21]) -> ([21])
 Originating location:
-\   {
+\   fn expect(self: Option<T>, err: felt252) -> T {
 |       match self {
 |           Option::Some(x) => x,
 |           Option::None => core::panic_with_felt252(err),
@@ -437,7 +437,7 @@ Inlined at:
 In function: lib.cairo::foo
 return([17], [21])
 Originating location:
-\   {
+\   fn expect(self: Option<T>, err: felt252) -> T {
 |       match self {
 |           Option::Some(x) => x,
 |           Option::None => core::panic_with_felt252(err),
@@ -726,7 +726,7 @@ Inlined at:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([32]) -> ([33])
 Originating location:
-\   {
+\   fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
 |       match self {
 |           Result::Ok(x) => x,
 |           Result::Err(_) => core::panic_with_felt252(err),
@@ -744,7 +744,7 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<RangeCheck>([28]) -> ([28])
 Originating location:
-\   {
+\   fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
 |       match self {
 |           Result::Ok(x) => x,
 |           Result::Err(_) => core::panic_with_felt252(err),
@@ -762,7 +762,7 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([33]) -> ([33])
 Originating location:
-\   {
+\   fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
 |       match self {
 |           Result::Ok(x) => x,
 |           Result::Err(_) => core::panic_with_felt252(err),
@@ -780,7 +780,7 @@ Inlined at:
 In function: lib.cairo::foo
 return([28], [33])
 Originating location:
-\   {
+\   fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
 |       match self {
 |           Result::Ok(x) => x,
 |           Result::Err(_) => core::panic_with_felt252(err),
@@ -2685,7 +2685,7 @@ Inlined at:
 In function: lib.cairo::main
 enum_init<core::panics::PanicResult::<((),)>, 0>([92]) -> ([93])
 Originating location:
-\   {
+\   fn main() {
 |       let a = MyEnum::A((1, 2));
 |       let b = MyEnum::B((1, 2));
 |       let c = MyEnum::C((1, 2, 3));
@@ -2699,7 +2699,7 @@ Originating location:
 In function: lib.cairo::main
 store_temp<core::panics::PanicResult::<((),)>>([93]) -> ([93])
 Originating location:
-\   {
+\   fn main() {
 |       let a = MyEnum::A((1, 2));
 |       let b = MyEnum::B((1, 2));
 |       let c = MyEnum::C((1, 2, 3));
@@ -2713,7 +2713,7 @@ Originating location:
 In function: lib.cairo::main
 return([77], [93])
 Originating location:
-\   {
+\   fn main() {
 |       let a = MyEnum::A((1, 2));
 |       let b = MyEnum::B((1, 2));
 |       let c = MyEnum::C((1, 2, 3));
@@ -5422,7 +5422,7 @@ Originating location:
 In function: writeln_macro::writeln_macro
 enum_init<core::panics::PanicResult::<((),)>, 0>([90]) -> ([91])
 Originating location:
-\   {
+\   fn foo() {
 |       let x = 10; // highlighted
 |       let y = 20; // highlighted
 |       
@@ -5436,7 +5436,7 @@ Originating location:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<((),)>>([91]) -> ([91])
 Originating location:
-\   {
+\   fn foo() {
 |       let x = 10; // highlighted
 |       let y = 20; // highlighted
 |       
@@ -5450,7 +5450,7 @@ Originating location:
 In function: lib.cairo::foo
 return([50], [91])
 Originating location:
-\   {
+\   fn foo() {
 |       let x = 10; // highlighted
 |       let y = 20; // highlighted
 |       
@@ -6701,7 +6701,7 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 store_temp<core::bool>([39]) -> ([33])
 Originating location:
-\   {
+\   fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
 |       if (*lhs).len() != (*rhs).len() {
 |           return false;
 |       }
@@ -6733,7 +6733,7 @@ if !(array![1, 2] != array![2, 1]) {
 In function: assert_macro::assert_macro
 label_test::some_array_checks::6:
 Originating location:
-\   {
+\   fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
 |       if (*lhs).len() != (*rhs).len() {
 |           return false;
 |       }
@@ -7529,28 +7529,28 @@ Originating location:
 In function: assert_macro::assert_macro
 enum_init<core::panics::PanicResult::<((),)>, 0>([79]) -> ([80])
 Originating location:
-\   {
+\   fn some_array_checks() {
 |       assert!(array![1, 2] != array![2, 1], "");
 |   }
 |___^
 In function: lib.cairo::some_array_checks
 store_temp<core::panics::PanicResult::<((),)>>([80]) -> ([80])
 Originating location:
-\   {
+\   fn some_array_checks() {
 |       assert!(array![1, 2] != array![2, 1], "");
 |   }
 |___^
 In function: lib.cairo::some_array_checks
 return([80])
 Originating location:
-\   {
+\   fn some_array_checks() {
 |       assert!(array![1, 2] != array![2, 1], "");
 |   }
 |___^
 In function: lib.cairo::some_array_checks
 label_test::some_array_checks::10:
 Originating location:
-\   {
+\   fn some_array_checks() {
 |       assert!(array![1, 2] != array![2, 1], "");
 |   }
 |___^

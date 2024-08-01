@@ -135,7 +135,7 @@ fn test_location_marks() {
     assert_eq!(
         get_location_marks(&db, &location) + "\n",
         indoc! {"
-            \\   liné.
+            \\   Second liné.
             |   Th
             |____^
         "}
