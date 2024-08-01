@@ -22,6 +22,7 @@ pub fn expand_module_text(
         let location = DiagnosticLocation {
             file_id: file_id.file_id(db.upcast()).unwrap(),
             span: syntax_node.span_without_trivia(syntax_db),
+            severity: Some(diag.severity),
         };
         diagnostics.push(format!(
             "{}: {}",

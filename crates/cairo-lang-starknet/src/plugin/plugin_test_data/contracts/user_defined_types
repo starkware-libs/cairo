@@ -751,9 +751,9 @@ impl WrappedFelt252SubPointersMutCopy of core::traits::Copy::<WrappedFelt252SubP
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
  --> lib.cairo:39:9
-\   #[default]
-|   C: u32
-|________^
+[1;91m\   [0m#[default]
+[1;91m|   [0mC: u32
+[1;91m|___[0m_____[1;91m^[0m
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:10:18

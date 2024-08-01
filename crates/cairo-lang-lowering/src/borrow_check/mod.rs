@@ -76,7 +76,7 @@ impl DropPosition {
         };
         DiagnosticNote::with_location(
             text.into(),
-            location.lookup_intern(db).stable_location.diagnostic_location(db.upcast()),
+            location.lookup_intern(db).stable_location.diagnostic_location(db.upcast(), None),
         )
     }
 }

@@ -174,13 +174,13 @@ foo
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:23
-\   {
-|       match x {
-|           Option::Some(_) => true,
-|           Option::None => 0,
-|       }
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    match x {
+[1;91m|   [0m        Option::Some(_) => true,
+[1;91m|   [0m        Option::None => 0,
+[1;91m|   [0m    }
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 

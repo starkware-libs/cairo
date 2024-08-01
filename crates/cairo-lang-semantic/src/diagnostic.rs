@@ -845,7 +845,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        let mut location = self.stable_location.diagnostic_location(db.upcast());
+        let mut location =
+            self.stable_location.diagnostic_location(db.upcast(), Some(self.severity()));
         if self.after {
             location = location.after();
         }

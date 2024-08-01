@@ -55,15 +55,15 @@ error: Unexpected argument type. Expected: "core::integer::u128", found: "core::
 
 error: Unexpected return type. Expected: "()", found: "core::integer::u128".
  --> lib.cairo:1:48
-\   {
-|       // Valid.
-|       a + a * a - a;
-|       (b & b) | (b & ((a == a) | (a > a))) & (a < a) & (a <= a) & (a >= a);
-|       // Errors.
-|       a > a > a;
-|       a - b
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    // Valid.
+[1;91m|   [0m    a + a * a - a;
+[1;91m|   [0m    (b & b) | (b & ((a == a) | (a > a))) & (a < a) & (a <= a) & (a >= a);
+[1;91m|   [0m    // Errors.
+[1;91m|   [0m    a > a > a;
+[1;91m|   [0m    a - b
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 

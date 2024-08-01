@@ -26,15 +26,15 @@ error: Condition has type "core::felt252", expected bool.
 
 error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:10
-\   {
-|       let x = 7_felt252;
-|       if x {
-|           true
-|       } else {
-|           0
-|       }
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    let x = 7_felt252;
+[1;91m|   [0m    if x {
+[1;91m|   [0m        true
+[1;91m|   [0m    } else {
+[1;91m|   [0m        0
+[1;91m|   [0m    }
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 

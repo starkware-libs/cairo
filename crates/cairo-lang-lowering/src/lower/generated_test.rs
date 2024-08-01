@@ -73,7 +73,7 @@ fn test_generated_function(
                 "Generated lowering for source location:\n{}\n",
                 get_location_marks(
                     db,
-                    &generated_id.stable_location(db).unwrap().diagnostic_location(db)
+                    &generated_id.stable_location(db).unwrap().diagnostic_location(db, None)
                 )
             )
             .unwrap();

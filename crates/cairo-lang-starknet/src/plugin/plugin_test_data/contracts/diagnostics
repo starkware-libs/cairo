@@ -190,18 +190,18 @@ error: Plugin diagnostic: The first parameter of an entry point must be `self`.
 
 warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
  --> lib.cairo:1:1
-\   #[starknet::contract]
-|   mod test_contract {
-|       #[storage]
-|       struct Storage {}
-|       
-|       #[external(v0)]
-|       fn foo() {}
-|       
-|       #[external(v0)]
-|       fn bar(_n: u32) {}
-|   }
-|___^
+[1;33m\   [0m#[starknet::contract]
+[1;33m|   [0mmod test_contract {
+[1;33m|   [0m    #[storage]
+[1;33m|   [0m    struct Storage {}
+[1;33m|   [0m    
+[1;33m|   [0m    #[external(v0)]
+[1;33m|   [0m    fn foo() {}
+[1;33m|   [0m    
+[1;33m|   [0m    #[external(v0)]
+[1;33m|   [0m    fn bar(_n: u32) {}
+[1;33m|   [0m}
+[1;33m|___[0m[1;33m^[0m
 
 //! > ==========================================================================
 
@@ -1277,14 +1277,14 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
 
 warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
  --> lib.cairo:1:1
-\   #[starknet::contract]
-|   mod test_contract {
-|       #[storage]
-|       struct Storage {}
-|       #[external(v0)]
-|       fn foo<T>(ref self: ContractState, x: T) {}
-|   }
-|___^
+[1;33m\   [0m#[starknet::contract]
+[1;33m|   [0mmod test_contract {
+[1;33m|   [0m    #[storage]
+[1;33m|   [0m    struct Storage {}
+[1;33m|   [0m    #[external(v0)]
+[1;33m|   [0m    fn foo<T>(ref self: ContractState, x: T) {}
+[1;33m|   [0m}
+[1;33m|___[0m[1;33m^[0m
 
 error: Type not found.
  --> lib.cairo:1:1
@@ -1772,15 +1772,15 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: `__validate__` is a reserved entry point name for account contracts only (marked with `#[starknet::contract(account)]`).
  --> lib.cairo:5:5
-\   #[external(v0)]
-|   fn __validate__(ref self: ContractState) {}
-|_____________________________________________^
+[1;33m\   [0m#[external(v0)]
+[1;33m|   [0mfn __validate__(ref self: ContractState) {}
+[1;33m|___[0m__________________________________________[1;33m^[0m
 
 warning: Plugin diagnostic: Failed to generate ABI: `__execute__` is a reserved entry point name for account contracts only (marked with `#[starknet::contract(account)]`).
  --> lib.cairo:11:5
-\   #[external(v0)]
-|   fn __execute__(ref self: ContractState) {}
-|____________________________________________^
+[1;33m\   [0m#[external(v0)]
+[1;33m|   [0mfn __execute__(ref self: ContractState) {}
+[1;33m|___[0m_________________________________________[1;33m^[0m
 
 //! > ==========================================================================
 
@@ -2261,13 +2261,13 @@ mod test_contract {
 //! > expected_diagnostics
 error: Plugin diagnostic: Contracts must define a 'Storage' struct.
  --> lib.cairo:1:1
-\   #[starknet::contract]
-|   mod test_contract {
-|       fn same_name() -> felt252 {
-|           1
-|       }
-|   }
-|___^
+[1;91m\   [0m#[starknet::contract]
+[1;91m|   [0mmod test_contract {
+[1;91m|   [0m    fn same_name() -> felt252 {
+[1;91m|   [0m        1
+[1;91m|   [0m    }
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -2303,10 +2303,10 @@ mod test_contract {
 //! > expected_diagnostics
 error: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
  --> lib.cairo:3:5
-\   struct Storage {
-|       same_name: felt252,
-|   }
-|___^
+[1;91m\   [0mstruct Storage {
+[1;91m|   [0m    same_name: felt252,
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -2553,9 +2553,9 @@ trait ContractAbi {}
 //! > expected_diagnostics
 error: Plugin diagnostic: The 'contract' attribute was deprecated, please use `starknet::contract` instead.
  --> lib.cairo:1:1
-\   #[contract]
-|   mod test_contract {}
-|______________________^
+[1;91m\   [0m#[contract]
+[1;91m|   [0mmod test_contract {}
+[1;91m|___[0m___________________[1;91m^[0m
 
 error: Plugin diagnostic: Unsupported attribute.
  --> lib.cairo:1:1
@@ -2564,9 +2564,9 @@ error: Plugin diagnostic: Unsupported attribute.
 
 error: Plugin diagnostic: The 'abi' attribute for traits was deprecated, please use `starknet::interface` instead.
  --> lib.cairo:4:1
-\   #[abi]
-|   trait ContractAbi {}
-|______________________^
+[1;91m\   [0m#[abi]
+[1;91m|   [0mtrait ContractAbi {}
+[1;91m|___[0m___________________[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -8220,9 +8220,9 @@ mod test_contract {
 //! > expected_diagnostics
 error: Plugin diagnostic: The 'abi' attribute for impl aliases only supports the 'embed_v0' argument.
  --> lib.cairo:10:5
-\   #[abi(v0)]
-|   impl Alias = super::SomeImpl<ContractState>;
-|______________________________________________^
+[1;91m\   [0m#[abi(v0)]
+[1;91m|   [0mimpl Alias = super::SomeImpl<ContractState>;
+[1;91m|___[0m___________________________________________[1;91m^[0m
 
 error: Plugin diagnostic: The 'abi' attribute for impls only supports the 'per_item' or 'embed_v0' argument.
  --> lib.cairo:13:5

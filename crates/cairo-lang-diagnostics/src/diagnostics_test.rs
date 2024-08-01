@@ -27,6 +27,7 @@ impl DiagnosticEntry for SimpleDiag {
                 start: TextOffset::default().add_width(TextWidth::new_for_testing(0)),
                 end: TextOffset::default().add_width(TextWidth::new_for_testing(6)),
             },
+            severity: None,
         }
     }
 

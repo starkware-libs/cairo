@@ -1,10 +1,21 @@
 use cairo_lang_filesystem::span::{TextPosition, TextSpan, TextWidth};
+use colored::Colorize;
 
-use crate::DiagnosticLocation;
+use crate::{DiagnosticLocation, Severity};
 
 #[cfg(test)]
 #[path = "location_marks_test.rs"]
 mod test;
+
+/// Get the text at the specified location and add marks. If the span is a 1 liner will get the full
+/// line and underscore the asked part if it's a multiline will only print what has been asked.
+pub fn get_location_marks(
+    db: &dyn cairo_lang_filesystem::db::FilesGroup,
+    location: &DiagnosticLocation,
+) -> String {
+    let (content, start_col, marker_length) = extract_content(db, location);
+    generate_marks(&content, start_col, marker_length, &location.severity)
+}
 
 /// Gets the string from a diagnostic location. If the span is on a single line it will return the
 /// whole line if it's on multiple lines it return the exact span. It also returns the start column
@@ -56,8 +67,18 @@ fn extract_content(
 ///   it.
 /// * `marker_length` - If the snippet is a 1 liner will use this as the marker length else will not
 ///   use it.
-fn generate_marks(snippet: &str, start_col: usize, marker_length: usize) -> String {
+fn generate_marks(
+    snippet: &str,
+    start_col: usize,
+    marker_length: usize,
+    severity: &Option<Severity>,
+) -> String {
     let mut res = String::new();
+    let color = match severity {
+        None => |val: &str| Colorize::normal(val),
+        Some(Severity::Warning) => |val: &str| Colorize::bold(Colorize::yellow(val)),
+        Some(Severity::Error) => |val: &str| Colorize::bold(Colorize::bright_red(val)),
+    };
 
     // Single-line span handling
     if !snippet.contains('\n') {
@@ -66,12 +87,12 @@ fn generate_marks(snippet: &str, start_col: usize, marker_length: usize) -> Stri
         for _ in 0..start_col {
             res.push(' ');
         }
-        res.push('^');
+        res.push_str(&color("^"));
         if marker_length > 1 {
             for _ in 0..marker_length - 2 {
-                res.push('*');
+                res.push_str(&color("*"));
             }
-            res.push('^');
+            res.push_str(&color("^"));
         }
         return res;
     }
@@ -79,7 +100,7 @@ fn generate_marks(snippet: &str, start_col: usize, marker_length: usize) -> Stri
     // Multi-line span handling
     let mut lines = snippet.split('\n').peekable();
     let mut tab = 0;
-    let mut prefix = "\\   ";
+    let mut prefix = color("\\   ");
 
     while let Some(line) = lines.next() {
         let line = line.trim();
@@ -106,18 +127,16 @@ fn generate_marks(snippet: &str, start_col: usize, marker_length: usize) -> Stri
             tab += 1;
         }
         // If it's the last line point to where the span ends.
-        prefix = "|   ";
+        prefix = color("|   ");
         if lines.peek().is_none() {
-            res.push_str(&format!("|___{}^", "_".repeat(std::cmp::max(line.len(), 1) - 1)));
+            res.push_str(&format!(
+                "{}{}{}",
+                color("|___"),
+                color("_").repeat(std::cmp::max(line.len(), 1) - 1),
+                color("^")
+            ));
         }
     }
 
     res
-}
-pub fn get_location_marks(
-    db: &dyn cairo_lang_filesystem::db::FilesGroup,
-    location: &DiagnosticLocation,
-) -> String {
-    let (content, start_col, marker_length) = extract_content(db, location);
-    generate_marks(&content, start_col, marker_length)
 }

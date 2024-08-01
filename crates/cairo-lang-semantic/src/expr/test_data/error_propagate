@@ -129,11 +129,11 @@ error: Return type "core::result::Result::<core::felt252, core::integer::u128>" 
 
 error: Unexpected return type. Expected: "core::result::Result::<core::felt252, core::integer::u128>", found: "core::result::Result::<core::felt252, core::felt252>".
  --> lib.cairo:4:37
-\   {
-|       with_other_err()?;
-|       Result::<felt252, felt252>::Ok((0))
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    with_other_err()?;
+[1;91m|   [0m    Result::<felt252, felt252>::Ok((0))
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 

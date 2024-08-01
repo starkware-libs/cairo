@@ -568,6 +568,7 @@ dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
  "cairo-lang-utils",
+ "colored",
  "env_logger",
  "indoc",
  "itertools 0.12.1",

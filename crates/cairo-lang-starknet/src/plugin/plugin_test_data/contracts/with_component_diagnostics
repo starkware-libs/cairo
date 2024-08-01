@@ -1515,10 +1515,10 @@ error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:24:5
-\   component!(
-|   path: super::test_component, storage: test_component_storage, event: ABC, another: x
-|   );
-|____^
+[1;91m\   [0mcomponent!(
+[1;91m|   [0mpath: super::test_component, storage: test_component_storage, event: ABC, another: x
+[1;91m|   [0m);
+[1;91m|___[0m_[1;91m^[0m
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:28:5
@@ -1943,15 +1943,15 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 //! > expected_diagnostics
 error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
  --> lib.cairo:14:9
-\   #[substorage(v0)]
-|   non_path_type: (usize, usize)
-|_______________________________^
+[1;91m\   [0m#[substorage(v0)]
+[1;91m|   [0mnon_path_type: (usize, usize)
+[1;91m|___[0m____________________________[1;91m^[0m
 
 error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
  --> lib.cairo:16:9
-\   #[substorage(v0)]
-|   non_component: usize
-|______________________^
+[1;91m\   [0m#[substorage(v0)]
+[1;91m|   [0mnon_component: usize
+[1;91m|___[0m___________________[1;91m^[0m
 
 //! > ==========================================================================
 

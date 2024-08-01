@@ -58,17 +58,18 @@ pub trait DiagnosticEntry: Clone + fmt::Debug + Eq + Hash {
 pub struct DiagnosticLocation {
     pub file_id: FileId,
     pub span: TextSpan,
+    pub severity: Option<Severity>,
 }
 impl DiagnosticLocation {
     /// Get the location of right after this diagnostic's location (with width 0).
     pub fn after(&self) -> Self {
-        Self { file_id: self.file_id, span: self.span.after() }
+        Self { file_id: self.file_id, span: self.span.after(), severity: self.severity }
     }
 
     /// Get the location of the originating user code.
     pub fn user_location(&self, db: &dyn FilesGroup) -> Self {
         let (file_id, span) = get_originating_location(db, self.file_id, self.span);
-        Self { file_id, span }
+        Self { file_id, span, severity: self.severity }
     }
 
     /// Helper function to format the location of a diagnostic.
@@ -208,11 +209,7 @@ impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
     }
 }
 
-pub fn format_diagnostics(
-    db: &(dyn FilesGroup + 'static),
-    message: &str,
-    location: DiagnosticLocation,
-) -> String {
+pub fn format_diagnostics(db: &(dyn FilesGroup + 'static), message: &str, location: DiagnosticLocation) -> String {
     format!("{message}\n --> {:?}\n", location.debug(db))
 }
 
@@ -283,8 +280,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
             }
             msg += "\n";
 
-            let formatted =
-                FormattedDiagnosticEntry::new(entry.severity(), entry.error_code(), msg);
+            let formatted = FormattedDiagnosticEntry::new(entry.severity(), entry.error_code(), msg);
             res.push(formatted);
         }
         res

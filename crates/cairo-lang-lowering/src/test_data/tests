@@ -377,10 +377,10 @@ foo
 //! > semantic_diagnostics
 error: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
  --> lib.cairo:1:43
-\   {
-|       serde::Serde::<u128>::deserialize(ref data)
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    serde::Serde::<u128>::deserialize(ref data)
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > lowering_diagnostics
 

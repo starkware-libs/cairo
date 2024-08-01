@@ -51,16 +51,16 @@ foo
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:23
-\   {
-|       loop {
-|           if true {
-|               break true;
-|           } else {
-|               break 0;
-|           }
-|       }
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    loop {
+[1;91m|   [0m        if true {
+[1;91m|   [0m            break true;
+[1;91m|   [0m        } else {
+[1;91m|   [0m            break 0;
+[1;91m|   [0m        }
+[1;91m|   [0m    }
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -243,12 +243,12 @@ foo
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::bool", found: "()".
  --> lib.cairo:1:18
-\   {
-|       loop {
-|           break;
-|       }
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    loop {
+[1;91m|   [0m        break;
+[1;91m|   [0m    }
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 

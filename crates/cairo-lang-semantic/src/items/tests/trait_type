@@ -1141,10 +1141,10 @@ error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTr
 
 error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
  --> lib.cairo:19:30
-\   {
-|       3_u32
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    3_u32
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 error: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:23:18
@@ -1153,10 +1153,10 @@ error: Unexpected argument type. Expected: "core::integer::u32", found: "core::i
 
 error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
  --> lib.cairo:25:11
-\   {
-|       let _: MyTrait::MyType = 3_u32;
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    let _: MyTrait::MyType = 3_u32;
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -1410,10 +1410,10 @@ impl MyImpl of MyTrait {
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:8:31
-\   {
-|       3_u16
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    3_u16
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -1547,17 +1547,17 @@ error: Unexpected return type. Expected: "core::integer::u32", found: "core::int
 
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:12:54
-\   {
-|       x
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    x
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
  --> lib.cairo:15:39
-\   {
-|       let _: MyTrait::MyType1 = x;
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    let _: MyTrait::MyType1 = x;
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 error: Loop has incompatible return types: "core::integer::u16" and "core::integer::u32"
  --> lib.cairo:23:19
@@ -1571,19 +1571,19 @@ error: Match arms have incompatible types: "core::integer::u16" and "core::integ
 
 error: If blocks have incompatible types: "core::integer::u16" and "core::integer::u32"
  --> lib.cairo:38:5
-\   if cond {
-|       x
-|   } else {
-|       y
-|   }
-|___^
+[1;91m\   [0mif cond {
+[1;91m|   [0m    x
+[1;91m|   [0m} else {
+[1;91m|   [0m    y
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 error: Unexpected return type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
  --> lib.cairo:44:79
-\   {
-|       Option::Some(x?)
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    Option::Some(x?)
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -1706,52 +1706,52 @@ fn complex2(
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
  --> lib.cairo:13:74
-\   {
-|       Option::Some(x?)
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    Option::Some(x?)
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 error: Unexpected return type. Expected: "(core::integer::u32, core::integer::u16)", found: "(core::integer::u16, core::integer::u32)".
  --> lib.cairo:16:92
-\   {
-|       (x, y)
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    (x, y)
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 error: Unexpected return type. Expected: "[core::integer::u32; 3]", found: "[core::integer::u16; 3]".
  --> lib.cairo:19:71
-\   {
-|       x
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    x
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
  --> lib.cairo:22:58
-\   {
-|       x
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    x
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
  --> lib.cairo:25:58
-\   {
-|       @x
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    @x
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
  --> lib.cairo:33:61
-\   {
-|       x
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    x
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 error: Unexpected return type. Expected: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
  --> lib.cairo:41:3
-\   {
-|       x
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    x
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -1850,10 +1850,10 @@ impl MyImpl of MyTrait {
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:9:37
-\   {
-|       x
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    x
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -2305,10 +2305,10 @@ impl MyImpl of MyTrait {}
 
 error: Trait has no implementation in context: test::MyTrait.
  --> lib.cairo:5:10
-\   {
-|       let _: MyImpl::ty = 5;
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    let _: MyImpl::ty = 5;
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -2364,10 +2364,10 @@ trait MyTrait {
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::felt252", found: "core::integer::u32".
  --> lib.cairo:9:15
-\   {
-|       3_u32
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    3_u32
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -2399,10 +2399,10 @@ trait MyTrait {
 //! > expected_diagnostics
 error: Type mismatch: `core::felt252` and `core::integer::u32`.
  --> lib.cairo:10:18
-\   {
-|       _y
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    _y
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 

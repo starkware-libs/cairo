@@ -61,10 +61,10 @@ skipped  \\ Comment
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
-\   skipped  \\ Comment
-|   
-|   tokens
-|________^
+[1;91m\   [0mskipped  \\ Comment
+[1;91m|   [0m
+[1;91m|   [0mtokens
+[1;91m|___[0m_____[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -81,7 +81,7 @@ skipped  \\ Comment
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
-\   skipped  \\ Comment
-|   
-|   tokens
-|________^
+[1;91m\   [0mskipped  \\ Comment
+[1;91m|   [0m
+[1;91m|   [0mtokens
+[1;91m|___[0m_____[1;91m^[0m

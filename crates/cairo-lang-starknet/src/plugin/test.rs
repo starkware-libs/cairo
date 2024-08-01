@@ -51,7 +51,8 @@ impl TestFileRunner for ExpandContractTestRunner {
             let content = db.file_content(file_id).unwrap();
             let start = TextOffset::default();
             let end = start.add_width(TextWidth::from_str(&content));
-            let content_location = DiagnosticLocation { file_id, span: TextSpan { start, end } };
+            let content_location =
+                DiagnosticLocation { file_id, span: TextSpan { start, end }, severity: None };
             let original_location = content_location.user_location(db.upcast());
             let origin = (content_location != original_location)
                 .then(|| format!("{:?}\n", original_location.debug(db.upcast())))

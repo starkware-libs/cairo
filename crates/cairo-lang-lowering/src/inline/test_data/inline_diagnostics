@@ -20,12 +20,12 @@ foo
 //! > lowering_diagnostics
 error: Cannot inline a function that might call itself.
  --> lib.cairo:1:1
-\   #[inline(always)]
-|   fn foo(ref a: felt252, b: felt252) -> felt252 {
-|       foo(ref a, b);
-|       b
-|   }
-|___^
+[1;91m\   [0m#[inline(always)]
+[1;91m|   [0mfn foo(ref a: felt252, b: felt252) -> felt252 {
+[1;91m|   [0m    foo(ref a, b);
+[1;91m|   [0m    b
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > before
 Parameters: v0: core::felt252, v1: core::felt252

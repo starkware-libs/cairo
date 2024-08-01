@@ -1,7 +1,7 @@
 use std::fmt;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::DiagnosticLocation;
+use cairo_lang_diagnostics::{DiagnosticLocation, Severity};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -31,11 +31,16 @@ impl StableLocation {
     }
 
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
-    pub fn diagnostic_location(&self, db: &dyn DefsGroup) -> DiagnosticLocation {
+    pub fn diagnostic_location(
+        &self,
+        db: &dyn DefsGroup,
+        severity: Option<Severity>,
+    ) -> DiagnosticLocation {
         let syntax_node = self.syntax_node(db);
         DiagnosticLocation {
             file_id: self.file_id(db),
             span: syntax_node.span_without_trivia(db.upcast()),
+            severity,
         }
     }
 
@@ -48,13 +53,17 @@ impl StableLocation {
         let syntax_db = db.upcast();
         let start = self.0.lookup(syntax_db).span_start_without_trivia(syntax_db);
         let end = until_stable_ptr.lookup(syntax_db).span_end_without_trivia(syntax_db);
-        DiagnosticLocation { file_id: self.0.file_id(syntax_db), span: TextSpan { start, end } }
+        DiagnosticLocation {
+            file_id: self.0.file_id(syntax_db),
+            span: TextSpan { start, end },
+            severity: None,
+        }
     }
 }
 
 impl DebugWithDb<dyn DefsGroup> for StableLocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn DefsGroup) -> fmt::Result {
-        let diag_location = self.diagnostic_location(db);
+        let diag_location = self.diagnostic_location(db, None);
         diag_location.fmt_location(f, db.upcast())
     }
 }

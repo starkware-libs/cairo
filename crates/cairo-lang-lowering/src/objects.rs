@@ -68,7 +68,7 @@ impl Location {
     ) -> Self {
         self.with_note(DiagnosticNote::with_location(
             text.into(),
-            location.lookup_intern(db).stable_location.diagnostic_location(db.upcast()),
+            location.lookup_intern(db).stable_location.diagnostic_location(db.upcast(), None),
         ))
     }
 }
@@ -76,7 +76,7 @@ impl Location {
 impl DebugWithDb<dyn LoweringGroup> for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn LoweringGroup) -> std::fmt::Result {
         let files_db = db.upcast();
-        self.stable_location.diagnostic_location(db.upcast()).fmt(f, files_db)?;
+        self.stable_location.diagnostic_location(db.upcast(), None).fmt(f, files_db)?;
 
         for note in &self.notes {
             f.write_str("\nnote: ")?;

@@ -65,10 +65,10 @@ impl MyImpl<+MyTrait> of MyTrait {
 //! > expected_diagnostics
 error: Inference cycle detected
  --> lib.cairo:8:10
-\   {
-|       MyTrait::foo();
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    MyTrait::foo();
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 
@@ -155,10 +155,10 @@ foo
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::never", found: "core::felt252".
  --> lib.cairo:1:19
-\   {
-|       5_felt252
-|   }
-|___^
+[1;91m\   [0m{
+[1;91m|   [0m    5_felt252
+[1;91m|   [0m}
+[1;91m|___[0m[1;91m^[0m
 
 //! > ==========================================================================
 

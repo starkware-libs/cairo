@@ -62,6 +62,7 @@ fn test_location_marks() {
             start: second_line.add_width(TextWidth::new_for_testing(13)),
             end: second_line.add_width(TextWidth::new_for_testing(13)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -79,6 +80,7 @@ fn test_location_marks() {
             start: third_line.add_width(TextWidth::new_for_testing(3)),
             end: third_line.add_width(TextWidth::new_for_testing(4)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -96,6 +98,7 @@ fn test_location_marks() {
             start: third_line.add_width(TextWidth::new_for_testing(3)),
             end: third_line.add_width(TextWidth::new_for_testing(5)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -113,6 +116,7 @@ fn test_location_marks() {
             start: second_line.add_width(TextWidth::new_for_testing(7)),
             end: second_line.add_width(TextWidth::new_for_testing(12)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -130,6 +134,7 @@ fn test_location_marks() {
             start: second_line.add_width(TextWidth::new_for_testing(7)),
             end: third_line.add_width(TextWidth::new_for_testing(2)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -148,6 +153,7 @@ fn test_location_marks() {
             start: match_begin,
             end: match_end.add_width(TextWidth::new_for_testing(1)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -167,6 +173,7 @@ fn test_location_marks() {
             start: match_begin,
             end: conditional_assignment.add_width(TextWidth::new_for_testing(3)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -189,6 +196,7 @@ fn test_location_marks() {
             start: match_inside,
             end: match_end.add_width(TextWidth::new_for_testing(2)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -207,6 +215,7 @@ fn test_location_marks() {
             start: conditional_assignment,
             end: multiline_conditional.add_width(TextWidth::new_for_testing(3)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -224,6 +233,7 @@ fn test_location_marks() {
             start: struct_creation,
             end: conditional_assignment.add_width(TextWidth::new_for_testing(33)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -242,6 +252,7 @@ fn test_location_marks() {
             start: multiline_conditional,
             end: close_else.add_width(TextWidth::new_for_testing(2)),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -267,6 +278,7 @@ fn test_location_marks() {
             start: last_line.add_width(TextWidth::new_for_testing(7)),
             end: summary.last_offset.add_width(TextWidth::from_char('\n')),
         },
+        severity: None,
     };
 
     assert_eq!(
@@ -281,6 +293,7 @@ fn test_location_marks() {
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan { start: summary.last_offset, end: summary.last_offset },
+        severity: None,
     };
 
     assert_eq!(

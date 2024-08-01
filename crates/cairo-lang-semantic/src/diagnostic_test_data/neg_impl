@@ -72,9 +72,9 @@ impl BadImpl<-NegImpl> of NegImpl {
 //! > expected_diagnostics
 error: Inference cycle detected
  --> lib.cairo:8:16
-\   {  {
-|       {
-|           NegImpl::bar()
-|       }
-|   }; }
-|______^
+[1;91m\   [0m{  {
+[1;91m|   [0m    {
+[1;91m|   [0m        NegImpl::bar()
+[1;91m|   [0m    }
+[1;91m|   [0m}; }
+[1;91m|___[0m___[1;91m^[0m

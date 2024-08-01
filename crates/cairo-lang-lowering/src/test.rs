@@ -115,7 +115,7 @@ fn test_location_and_diagnostics() {
         .stable_ptr
         .untyped(),
     )
-    .diagnostic_location(db);
+    .diagnostic_location(db, None);
 
     let location = LocationId::from_stable_location(db, test_expr.function_id.stable_location(db))
         .with_auto_generation_note(db, "withdraw_gas")
@@ -148,7 +148,7 @@ a = a * 3
     });
 
     assert_eq!(
-        builder.build().format(db),
+        builder.build().format(db).replace("\u{1b}[1;91m", "").replace("\u{1b}[0m", ""),
         indoc::indoc! {"
 error: Cannot inline a function that might call itself.
  --> lib.cairo:1:1

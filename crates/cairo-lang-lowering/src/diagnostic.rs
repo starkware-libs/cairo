@@ -99,7 +99,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
             }
             _ => {}
         }
-        self.location.stable_location.diagnostic_location(db.upcast())
+        self.location.stable_location.diagnostic_location(db.upcast(), Some(self.severity()))
     }
 
     fn is_same_kind(&self, other: &Self) -> bool {
