@@ -17,14 +17,17 @@ pub fn get_location_marks(
     let summary = db.file_summary(location.file_id).expect("File missing from DB.");
 
     let mut span = location.span;
+    // Make sure that the span doesn't end after the end of the file.
     span.end = std::cmp::min(summary.last_offset, span.end);
 
     let TextPosition { line: first_line_idx, col: start_col } = span
         .start
         .position_in_file(db, location.file_id)
         .expect("Failed to find location in file.");
+
     let TextPosition { line: last_line_idx, col: _ } =
         span.end.position_in_file(db, location.file_id).expect("Failed to find location in file.");
+
     if first_line_idx == last_line_idx {
         let first_line_start = summary.line_offsets[first_line_idx];
         let first_line_end = match summary.line_offsets.get(first_line_idx + 1) {
@@ -53,16 +56,19 @@ pub fn get_location_marks(
         res
     } else {
         let mut res = String::new();
+        // Number of indentations
         let mut tab = 0;
         let mut prefix = "\\   ";
         let mut lines = span.take(&content).split('\n').peekable();
         while let Some(line) = lines.next() {
             let line = line.trim();
-            // Will check if we reached an `} else {`
+            // Will check if we reached an `} else {` or an `} else {}` or `} else {};`
             let is_else = line.starts_with('}')
                 && (line.ends_with('{') || line.ends_with("{}") || line.ends_with("{};"))
                 && line.contains("else");
             if tab > 0
+                // If we close a scope that wasn't opened in the same line.
+                // Or if it's an else we need to deindent the line of the else.
                 && (((line.ends_with('}') || line.ends_with("};") || line.ends_with("},"))
                     && !line.contains('{'))
                     || is_else)
@@ -70,10 +76,13 @@ pub fn get_location_marks(
                 tab -= 1
             }
             res.write_str(&format!("{prefix}{}{}\n", "    ".repeat(tab), line)).unwrap();
+            // If we open a scope that is not closed on the same line.
+            // If it's an else we need to indent for the inside of the else
             if line.contains('{') && !line.contains('}') || is_else {
                 tab += 1
             }
             prefix = "|   ";
+            // If it's the last line point to where the span ends.
             if lines.peek().is_none() {
                 res.write_str(&format!("|___{}^", "_".repeat(std::cmp::max(line.len(), 1) - 1)))
                     .unwrap();
