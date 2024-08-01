@@ -726,8 +726,13 @@ Inlined at:
 In function: lib.cairo::foo
 enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>([32]) -> ([33])
 Originating location:
-    fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                                        ^
+\   {
+|       match self {
+|           Result::Ok(x) => x,
+|           Result::Err(_) => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -739,8 +744,13 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<RangeCheck>([28]) -> ([28])
 Originating location:
-    fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                                        ^
+\   {
+|       match self {
+|           Result::Ok(x) => x,
+|           Result::Err(_) => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -752,8 +762,13 @@ Inlined at:
 In function: lib.cairo::foo
 store_temp<core::panics::PanicResult::<(core::integer::u8,)>>([33]) -> ([33])
 Originating location:
-    fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                                        ^
+\   {
+|       match self {
+|           Result::Ok(x) => x,
+|           Result::Err(_) => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
@@ -765,8 +780,13 @@ Inlined at:
 In function: lib.cairo::foo
 return([28], [33])
 Originating location:
-    fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
-                                                                        ^
+\   {
+|       match self {
+|           Result::Ok(x) => x,
+|           Result::Err(_) => core::panic_with_felt252(err),
+|       }
+|   }
+|___^
 In function: core::result::ResultTraitImpl::expect
 Inlined at:
         u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
