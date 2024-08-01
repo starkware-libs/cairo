@@ -57,11 +57,11 @@ impl EthAddressZero of core::num::traits::Zero<EthAddress> {
     fn zero() -> EthAddress {
         0.try_into().unwrap()
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @EthAddress) -> bool {
         core::num::traits::Zero::<felt252>::is_zero(self.address)
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @EthAddress) -> bool {
         !self.is_zero()
     }

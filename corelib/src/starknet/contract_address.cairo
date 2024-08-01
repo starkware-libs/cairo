@@ -32,11 +32,11 @@ impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @ContractAddress) -> bool {
         core::num::traits::Zero::<felt252>::is_zero(@contract_address_to_felt252(*self))
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @ContractAddress) -> bool {
         !self.is_zero()
     }
@@ -57,7 +57,7 @@ impl ContractAddressSerde of Serde<ContractAddress> {
 }
 
 impl ContractAddressPartialEq of PartialEq<ContractAddress> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @ContractAddress, rhs: @ContractAddress) -> bool {
         contract_address_to_felt252(*lhs) == contract_address_to_felt252(*rhs)
     }
@@ -69,15 +69,15 @@ impl ContractAddressPartialOrd of PartialOrd<ContractAddress> {
         let lhs: u256 = contract_address_to_felt252(lhs).into();
         lhs < contract_address_to_felt252(rhs).into()
     }
-    #[inline(always)]
+    #[inline]
     fn le(lhs: ContractAddress, rhs: ContractAddress) -> bool {
         !(rhs < lhs)
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: ContractAddress, rhs: ContractAddress) -> bool {
         rhs < lhs
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: ContractAddress, rhs: ContractAddress) -> bool {
         !(lhs < rhs)
     }

@@ -12,7 +12,7 @@ impl OptionDefault<T> of Default<Option<T>> {
 }
 
 pub impl DestructOption<T, +Destruct<T>, -Drop<Option<T>>> of Destruct<Option<T>> {
-    #[inline(always)]
+    #[inline]
     fn destruct(self: Option<T>) nopanic {
         match self {
             Option::Some(x) => x.destruct(),
@@ -42,7 +42,7 @@ pub trait OptionTrait<T> {
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
-    #[inline(always)]
+    #[inline]
     fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
@@ -50,7 +50,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn unwrap(self: Option<T>) -> T {
         self.expect('Option::unwrap failed.')
     }
@@ -63,7 +63,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_some(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => true,
@@ -71,7 +71,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_none(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => false,

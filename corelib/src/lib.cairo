@@ -32,7 +32,7 @@ impl BoolSerde of Serde<bool> {
 
 extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
 impl BoolBitAnd of BitAnd<bool> {
-    #[inline(always)]
+    #[inline]
     fn bitand(lhs: bool, rhs: bool) -> bool {
         let (r,) = bool_and_impl(lhs, rhs);
         r
@@ -41,7 +41,7 @@ impl BoolBitAnd of BitAnd<bool> {
 
 extern fn bool_or_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
 impl BoolBitOr of BitOr<bool> {
-    #[inline(always)]
+    #[inline]
     fn bitor(lhs: bool, rhs: bool) -> bool {
         let (r,) = bool_or_impl(lhs, rhs);
         r
@@ -49,9 +49,9 @@ impl BoolBitOr of BitOr<bool> {
 }
 
 extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;
-#[inline(always)]
+#[inline]
 impl BoolNot of Not<bool> {
-    #[inline(always)]
+    #[inline]
     fn not(a: bool) -> bool implicits() nopanic {
         let (r,) = bool_not_impl(a);
         r
@@ -60,7 +60,7 @@ impl BoolNot of Not<bool> {
 
 extern fn bool_xor_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
 impl BoolBitXor of BitXor<bool> {
-    #[inline(always)]
+    #[inline]
     fn bitxor(lhs: bool, rhs: bool) -> bool {
         let (r,) = bool_xor_impl(lhs, rhs);
         r
@@ -68,14 +68,14 @@ impl BoolBitXor of BitXor<bool> {
 }
 
 impl BoolPartialEq of PartialEq<bool> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @bool, rhs: @bool) -> bool {
         match lhs {
             false => !*rhs,
             true => *rhs,
         }
     }
-    #[inline(always)]
+    #[inline]
     fn ne(lhs: @bool, rhs: @bool) -> bool {
         match lhs {
             false => *rhs,
@@ -86,7 +86,7 @@ impl BoolPartialEq of PartialEq<bool> {
 
 /// Default values for felt252_dict values.
 impl BoolFelt252DictValue of Felt252DictValue<bool> {
-    #[inline(always)]
+    #[inline]
     fn zero_default() -> bool nopanic {
         false
     }
@@ -94,7 +94,7 @@ impl BoolFelt252DictValue of Felt252DictValue<bool> {
 
 extern fn bool_to_felt252(a: bool) -> felt252 implicits() nopanic;
 impl BoolIntoFelt252 of Into<bool, felt252> {
-    #[inline(always)]
+    #[inline]
     fn into(self: bool) -> felt252 implicits() nopanic {
         bool_to_felt252(self)
     }
@@ -135,13 +135,13 @@ impl Felt252Serde of Serde<felt252> {
 }
 
 impl Felt252Add of Add<felt252> {
-    #[inline(always)]
+    #[inline]
     fn add(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_add(lhs, rhs)
     }
 }
 impl Felt252AddEq of AddEq<felt252> {
-    #[inline(always)]
+    #[inline]
     fn add_eq(ref self: felt252, other: felt252) {
         self = Add::add(self, other);
     }
@@ -149,13 +149,13 @@ impl Felt252AddEq of AddEq<felt252> {
 
 extern fn felt252_add(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 impl Felt252Sub of Sub<felt252> {
-    #[inline(always)]
+    #[inline]
     fn sub(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_sub(lhs, rhs)
     }
 }
 impl Felt252SubEq of SubEq<felt252> {
-    #[inline(always)]
+    #[inline]
     fn sub_eq(ref self: felt252, other: felt252) {
         self = Sub::sub(self, other);
     }
@@ -163,13 +163,13 @@ impl Felt252SubEq of SubEq<felt252> {
 
 extern fn felt252_sub(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 impl Felt252Mul of Mul<felt252> {
-    #[inline(always)]
+    #[inline]
     fn mul(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_mul(lhs, rhs)
     }
 }
 impl Felt252MulEq of MulEq<felt252> {
-    #[inline(always)]
+    #[inline]
     fn mul_eq(ref self: felt252, other: felt252) {
         self = Mul::mul(self, other);
     }
@@ -178,7 +178,7 @@ impl Felt252MulEq of MulEq<felt252> {
 extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 
 impl Felt252Neg of Neg<felt252> {
-    #[inline(always)]
+    #[inline]
     fn neg(a: felt252) -> felt252 {
         a * -1
     }
@@ -187,7 +187,7 @@ impl Felt252Neg of Neg<felt252> {
 pub extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
 
 impl Felt252PartialEq of PartialEq<felt252> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @felt252, rhs: @felt252) -> bool {
         match *lhs - *rhs {
             0 => true,
@@ -208,14 +208,14 @@ impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
 }
 
 impl Felt252Default of Default<felt252> {
-    #[inline(always)]
+    #[inline]
     fn default() -> felt252 nopanic {
         0
     }
 }
 
 impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
-    #[inline(always)]
+    #[inline]
     fn zero_default() -> felt252 nopanic {
         0
     }
@@ -301,12 +301,12 @@ use panics::{panic, Panic, PanicResult};
 
 pub enum never {}
 
-#[inline(always)]
+#[inline]
 pub fn panic_with_felt252(err_code: felt252) -> never {
     panic(array![err_code])
 }
 
-#[inline(always)]
+#[inline]
 pub fn assert(cond: bool, err_code: felt252) {
     if !cond {
         panic_with_felt252(err_code)

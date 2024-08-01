@@ -269,7 +269,7 @@ pub impl AddInputResultImpl<C> of AddInputResultTrait<C> {
         }
     }
     // Inlining to make sure possibly huge `C` won't be in a user function name.
-    #[inline(always)]
+    #[inline]
     fn done(self: AddInputResult<C>) -> CircuitData<C> {
         match self {
             AddInputResult::Done(data) => data,
@@ -309,12 +309,12 @@ impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
 #[generate_trait]
 pub impl EvalCircuitImpl<C> of EvalCircuitTrait<C> {
     // Inlining to make sure possibly huge `C` won't be in a user function name.
-    #[inline(always)]
+    #[inline]
     fn eval(self: CircuitData<C>, modulus: CircuitModulus) -> core::circuit::EvalCircuitResult<C> {
         self.eval_ex(get_circuit_descriptor::<C>(), modulus)
     }
     // Inlining to make sure possibly huge `C` won't be in a user function name.
-    #[inline(always)]
+    #[inline]
     fn eval_ex(
         self: CircuitData<C>, descriptor: CircuitDescriptor<C>, modulus: CircuitModulus
     ) -> core::circuit::EvalCircuitResult<C> {
@@ -332,7 +332,7 @@ impl CircuitOutputsImpl<
     C, Output
 > of CircuitOutputsTrait<CircuitOutputs<C>, CircuitElement<Output>> {
     // Inlining to make sure possibly huge `C` won't be in a user function name.
-    #[inline(always)]
+    #[inline]
     fn get_output(self: CircuitOutputs<C>, output: CircuitElement<Output>) -> u384 {
         let (res, _) = get_circuit_output::<C, Output>(self);
         res

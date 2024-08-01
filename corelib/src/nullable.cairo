@@ -54,7 +54,7 @@ pub impl NullableImpl<T> of NullableTrait<T> {
 }
 
 impl NullableDefault<T> of Default<Nullable<T>> {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn default() -> Nullable<T> nopanic {
         null()
@@ -62,7 +62,7 @@ impl NullableDefault<T> of Default<Nullable<T>> {
 }
 
 impl NullableFelt252DictValue<T> of Felt252DictValue<Nullable<T>> {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn zero_default() -> Nullable<T> nopanic {
         null()

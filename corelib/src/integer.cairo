@@ -77,7 +77,7 @@ extern fn u128_mul_guarantee_verify(guarantee: U128MulGuarantee) implicits(Range
 
 /// Multiplies two u128s and returns `(high, low)` - the 128-bit parts of the result.
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
-#[inline(always)]
+#[inline]
 pub fn u128_wide_mul(a: u128, b: u128) -> (u128, u128) nopanic {
     let (high, low, _) = u128_guarantee_mul(a, b);
     (high, low)
@@ -172,26 +172,26 @@ pub extern fn u128_safe_divmod(
 extern fn u128_eq(lhs: u128, rhs: u128) -> bool implicits() nopanic;
 
 impl U128PartialEq of PartialEq<u128> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @u128, rhs: @u128) -> bool {
         u128_eq(*lhs, *rhs)
     }
 }
 
 impl U128PartialOrd of PartialOrd<u128> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: u128, rhs: u128) -> bool {
         u128_overflowing_sub(rhs, lhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: u128, rhs: u128) -> bool {
         u128_overflowing_sub(lhs, rhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn lt(lhs: u128, rhs: u128) -> bool {
         u128_overflowing_sub(lhs, rhs).into_is_err()
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: u128, rhs: u128) -> bool {
         u128_overflowing_sub(rhs, lhs).into_is_err()
     }
@@ -201,21 +201,21 @@ pub extern type Bitwise;
 /// Returns the bitwise operations (AND, XOR, OR) between `lhs` and `rhs`.
 extern fn bitwise(lhs: u128, rhs: u128) -> (u128, u128, u128) implicits(Bitwise) nopanic;
 impl U128BitAnd of core::traits::BitAnd<u128> {
-    #[inline(always)]
+    #[inline]
     fn bitand(lhs: u128, rhs: u128) -> u128 {
         let (v, _, _) = bitwise(lhs, rhs);
         v
     }
 }
 impl U128BitXor of core::traits::BitXor<u128> {
-    #[inline(always)]
+    #[inline]
     fn bitxor(lhs: u128, rhs: u128) -> u128 {
         let (_, v, _) = bitwise(lhs, rhs);
         v
     }
 }
 impl U128BitOr of core::traits::BitOr<u128> {
-    #[inline(always)]
+    #[inline]
     fn bitor(lhs: u128, rhs: u128) -> u128 {
         let (_, _, v) = bitwise(lhs, rhs);
         v
@@ -250,26 +250,26 @@ extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
 impl U8Serde = core::serde::into_felt252_based::SerdeImpl<u8>;
 
 impl U8PartialEq of PartialEq<u8> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @u8, rhs: @u8) -> bool {
         u8_eq(*lhs, *rhs)
     }
 }
 
 impl U8PartialOrd of PartialOrd<u8> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: u8, rhs: u8) -> bool {
         u8_overflowing_sub(rhs, lhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: u8, rhs: u8) -> bool {
         u8_overflowing_sub(lhs, rhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn lt(lhs: u8, rhs: u8) -> bool {
         u8_overflowing_sub(lhs, rhs).into_is_err()
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: u8, rhs: u8) -> bool {
         u8_overflowing_sub(rhs, lhs).into_is_err()
     }
@@ -367,21 +367,21 @@ impl U8BitNot of BitNot<u8> {
 }
 extern fn u8_bitwise(lhs: u8, rhs: u8) -> (u8, u8, u8) implicits(Bitwise) nopanic;
 impl U8BitAnd of BitAnd<u8> {
-    #[inline(always)]
+    #[inline]
     fn bitand(lhs: u8, rhs: u8) -> u8 {
         let (v, _, _) = u8_bitwise(lhs, rhs);
         v
     }
 }
 impl U8BitXor of BitXor<u8> {
-    #[inline(always)]
+    #[inline]
     fn bitxor(lhs: u8, rhs: u8) -> u8 {
         let (_, v, _) = u8_bitwise(lhs, rhs);
         v
     }
 }
 impl U8BitOr of BitOr<u8> {
-    #[inline(always)]
+    #[inline]
     fn bitor(lhs: u8, rhs: u8) -> u8 {
         let (_, _, v) = u8_bitwise(lhs, rhs);
         v
@@ -407,26 +407,26 @@ extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
 impl U16Serde = core::serde::into_felt252_based::SerdeImpl<u16>;
 
 impl U16PartialEq of PartialEq<u16> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @u16, rhs: @u16) -> bool {
         u16_eq(*lhs, *rhs)
     }
 }
 
 impl U16PartialOrd of PartialOrd<u16> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: u16, rhs: u16) -> bool {
         u16_overflowing_sub(rhs, lhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: u16, rhs: u16) -> bool {
         u16_overflowing_sub(lhs, rhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn lt(lhs: u16, rhs: u16) -> bool {
         u16_overflowing_sub(lhs, rhs).into_is_err()
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: u16, rhs: u16) -> bool {
         u16_overflowing_sub(rhs, lhs).into_is_err()
     }
@@ -530,21 +530,21 @@ impl U16BitNot of BitNot<u16> {
 }
 extern fn u16_bitwise(lhs: u16, rhs: u16) -> (u16, u16, u16) implicits(Bitwise) nopanic;
 impl U16BitAnd of BitAnd<u16> {
-    #[inline(always)]
+    #[inline]
     fn bitand(lhs: u16, rhs: u16) -> u16 {
         let (v, _, _) = u16_bitwise(lhs, rhs);
         v
     }
 }
 impl U16BitXor of BitXor<u16> {
-    #[inline(always)]
+    #[inline]
     fn bitxor(lhs: u16, rhs: u16) -> u16 {
         let (_, v, _) = u16_bitwise(lhs, rhs);
         v
     }
 }
 impl U16BitOr of BitOr<u16> {
-    #[inline(always)]
+    #[inline]
     fn bitor(lhs: u16, rhs: u16) -> u16 {
         let (_, _, v) = u16_bitwise(lhs, rhs);
         v
@@ -570,26 +570,26 @@ extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
 impl U32Serde = core::serde::into_felt252_based::SerdeImpl<u32>;
 
 impl U32PartialEq of PartialEq<u32> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @u32, rhs: @u32) -> bool {
         u32_eq(*lhs, *rhs)
     }
 }
 
 impl U32PartialOrd of PartialOrd<u32> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: u32, rhs: u32) -> bool {
         u32_overflowing_sub(rhs, lhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: u32, rhs: u32) -> bool {
         u32_overflowing_sub(lhs, rhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn lt(lhs: u32, rhs: u32) -> bool {
         u32_overflowing_sub(lhs, rhs).into_is_err()
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: u32, rhs: u32) -> bool {
         u32_overflowing_sub(rhs, lhs).into_is_err()
     }
@@ -693,21 +693,21 @@ impl U32BitNot of BitNot<u32> {
 }
 extern fn u32_bitwise(lhs: u32, rhs: u32) -> (u32, u32, u32) implicits(Bitwise) nopanic;
 impl U32BitAnd of BitAnd<u32> {
-    #[inline(always)]
+    #[inline]
     fn bitand(lhs: u32, rhs: u32) -> u32 {
         let (v, _, _) = u32_bitwise(lhs, rhs);
         v
     }
 }
 impl U32BitXor of BitXor<u32> {
-    #[inline(always)]
+    #[inline]
     fn bitxor(lhs: u32, rhs: u32) -> u32 {
         let (_, v, _) = u32_bitwise(lhs, rhs);
         v
     }
 }
 impl U32BitOr of BitOr<u32> {
-    #[inline(always)]
+    #[inline]
     fn bitor(lhs: u32, rhs: u32) -> u32 {
         let (_, _, v) = u32_bitwise(lhs, rhs);
         v
@@ -733,26 +733,26 @@ extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
 impl U64Serde = core::serde::into_felt252_based::SerdeImpl<u64>;
 
 impl U64PartialEq of PartialEq<u64> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @u64, rhs: @u64) -> bool {
         u64_eq(*lhs, *rhs)
     }
 }
 
 impl U64PartialOrd of PartialOrd<u64> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: u64, rhs: u64) -> bool {
         u64_overflowing_sub(rhs, lhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: u64, rhs: u64) -> bool {
         u64_overflowing_sub(lhs, rhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn lt(lhs: u64, rhs: u64) -> bool {
         u64_overflowing_sub(lhs, rhs).into_is_err()
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: u64, rhs: u64) -> bool {
         u64_overflowing_sub(rhs, lhs).into_is_err()
     }
@@ -856,21 +856,21 @@ impl U64BitNot of BitNot<u64> {
 }
 extern fn u64_bitwise(lhs: u64, rhs: u64) -> (u64, u64, u64) implicits(Bitwise) nopanic;
 impl U64BitAnd of BitAnd<u64> {
-    #[inline(always)]
+    #[inline]
     fn bitand(lhs: u64, rhs: u64) -> u64 {
         let (v, _, _) = u64_bitwise(lhs, rhs);
         v
     }
 }
 impl U64BitXor of BitXor<u64> {
-    #[inline(always)]
+    #[inline]
     fn bitxor(lhs: u64, rhs: u64) -> u64 {
         let (_, v, _) = u64_bitwise(lhs, rhs);
         v
     }
 }
 impl U64BitOr of BitOr<u64> {
-    #[inline(always)]
+    #[inline]
     fn bitor(lhs: u64, rhs: u64) -> u64 {
         let (_, _, v) = u64_bitwise(lhs, rhs);
         v
@@ -1014,11 +1014,11 @@ impl U256Mul of Mul<u256> {
 }
 
 impl U256PartialOrd of PartialOrd<u256> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: u256, rhs: u256) -> bool {
         !(rhs < lhs)
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: u256, rhs: u256) -> bool {
         !(lhs < rhs)
     }
@@ -1031,26 +1031,26 @@ impl U256PartialOrd of PartialOrd<u256> {
             false
         }
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: u256, rhs: u256) -> bool {
         rhs < lhs
     }
 }
 
 impl U256BitAnd of BitAnd<u256> {
-    #[inline(always)]
+    #[inline]
     fn bitand(lhs: u256, rhs: u256) -> u256 {
         u256 { low: lhs.low & rhs.low, high: lhs.high & rhs.high }
     }
 }
 impl U256BitXor of BitXor<u256> {
-    #[inline(always)]
+    #[inline]
     fn bitxor(lhs: u256, rhs: u256) -> u256 {
         u256 { low: lhs.low ^ rhs.low, high: lhs.high ^ rhs.high }
     }
 }
 impl U256BitOr of BitOr<u256> {
-    #[inline(always)]
+    #[inline]
     fn bitor(lhs: u256, rhs: u256) -> u256 {
         u256 { low: lhs.low | rhs.low, high: lhs.high | rhs.high }
     }
@@ -1072,7 +1072,7 @@ extern fn u256_safe_divmod(
 ) -> (u256, u256, U128MulGuarantee) implicits(RangeCheck) nopanic;
 
 /// Calculates division with remainder of a u256 by a non-zero u256.
-#[inline(always)]
+#[inline]
 fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(RangeCheck) nopanic {
     let (q, r, _) = u256_safe_divmod(lhs, rhs);
     (q, r)
@@ -1151,7 +1151,7 @@ pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
 }
 
 /// Calculates division with remainder of a u512 by a non-zero u256.
-#[inline(always)]
+#[inline]
 pub fn u512_safe_div_rem_by_u256(
     lhs: u512, rhs: NonZero<u256>
 ) -> (u512, u256) implicits(RangeCheck) nopanic {
@@ -1200,11 +1200,11 @@ pub trait BoundedInt<T> {
 mod bounded_int_impls {
     #[feature("deprecated-bounded-int-trait")]
     pub impl ByBounded<T, impl Bounded: core::num::traits::Bounded<T>> of super::BoundedInt<T> {
-        #[inline(always)]
+        #[inline]
         fn min() -> T nopanic {
             Bounded::MIN
         }
-        #[inline(always)]
+        #[inline]
         fn max() -> T nopanic {
             Bounded::MAX
         }
@@ -1405,77 +1405,77 @@ impl DowncastableI128 of DowncastableInt<i128>;
 
 /// Default values
 impl U8Default of Default<u8> {
-    #[inline(always)]
+    #[inline]
     fn default() -> u8 nopanic {
         0_u8
     }
 }
 
 impl U16Default of Default<u16> {
-    #[inline(always)]
+    #[inline]
     fn default() -> u16 nopanic {
         0_u16
     }
 }
 
 impl U32Default of Default<u32> {
-    #[inline(always)]
+    #[inline]
     fn default() -> u32 nopanic {
         0_u32
     }
 }
 
 impl U64Default of Default<u64> {
-    #[inline(always)]
+    #[inline]
     fn default() -> u64 nopanic {
         0_u64
     }
 }
 
 impl U128Default of Default<u128> {
-    #[inline(always)]
+    #[inline]
     fn default() -> u128 nopanic {
         0_u128
     }
 }
 
 impl U256Default of Default<u256> {
-    #[inline(always)]
+    #[inline]
     fn default() -> u256 nopanic {
         0_u256
     }
 }
 
 impl I8Default of Default<i8> {
-    #[inline(always)]
+    #[inline]
     fn default() -> i8 nopanic {
         0_i8
     }
 }
 
 impl I16Default of Default<i16> {
-    #[inline(always)]
+    #[inline]
     fn default() -> i16 nopanic {
         0_i16
     }
 }
 
 impl I32Default of Default<i32> {
-    #[inline(always)]
+    #[inline]
     fn default() -> i32 nopanic {
         0_i32
     }
 }
 
 impl I64Default of Default<i64> {
-    #[inline(always)]
+    #[inline]
     fn default() -> i64 nopanic {
         0_i64
     }
 }
 
 impl I128Default of Default<i128> {
-    #[inline(always)]
+    #[inline]
     fn default() -> i128 nopanic {
         0_i128
     }
@@ -1483,35 +1483,35 @@ impl I128Default of Default<i128> {
 
 /// Default values for felt252_dict values.
 impl U8Felt252DictValue of Felt252DictValue<u8> {
-    #[inline(always)]
+    #[inline]
     fn zero_default() -> u8 nopanic {
         0
     }
 }
 
 impl U16Felt252DictValue of Felt252DictValue<u16> {
-    #[inline(always)]
+    #[inline]
     fn zero_default() -> u16 nopanic {
         0
     }
 }
 
 impl U32Felt252DictValue of Felt252DictValue<u32> {
-    #[inline(always)]
+    #[inline]
     fn zero_default() -> u32 nopanic {
         0
     }
 }
 
 impl U64Felt252DictValue of Felt252DictValue<u64> {
-    #[inline(always)]
+    #[inline]
     fn zero_default() -> u64 nopanic {
         0
     }
 }
 
 impl U128Felt252DictValue of Felt252DictValue<u128> {
-    #[inline(always)]
+    #[inline]
     fn zero_default() -> u128 nopanic {
         0
     }
@@ -1640,7 +1640,7 @@ extern fn i8_eq(lhs: i8, rhs: i8) -> bool implicits() nopanic;
 impl I8Serde = core::serde::into_felt252_based::SerdeImpl<i8>;
 
 impl I8PartialEq of PartialEq<i8> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @i8, rhs: @i8) -> bool {
         i8_eq(*lhs, *rhs)
     }
@@ -1672,7 +1672,7 @@ impl I8Sub of Sub<i8> {
 }
 
 impl I8Neg of Neg<i8> {
-    #[inline(always)]
+    #[inline]
     fn neg(a: i8) -> i8 {
         0 - a
     }
@@ -1689,19 +1689,19 @@ impl I8Mul of Mul<i8> {
 /// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**8 + lhs - rhs)`.
 pub extern fn i8_diff(lhs: i8, rhs: i8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
 impl I8PartialOrd of PartialOrd<i8> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: i8, rhs: i8) -> bool {
         i8_diff(rhs, lhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: i8, rhs: i8) -> bool {
         i8_diff(lhs, rhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn lt(lhs: i8, rhs: i8) -> bool {
         i8_diff(lhs, rhs).into_is_err()
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: i8, rhs: i8) -> bool {
         i8_diff(rhs, lhs).into_is_err()
     }
@@ -1725,7 +1725,7 @@ extern fn i16_eq(lhs: i16, rhs: i16) -> bool implicits() nopanic;
 impl I16Serde = core::serde::into_felt252_based::SerdeImpl<i16>;
 
 impl I16PartialEq of PartialEq<i16> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @i16, rhs: @i16) -> bool {
         i16_eq(*lhs, *rhs)
     }
@@ -1757,7 +1757,7 @@ impl I16Sub of Sub<i16> {
 }
 
 impl I16Neg of Neg<i16> {
-    #[inline(always)]
+    #[inline]
     fn neg(a: i16) -> i16 {
         0 - a
     }
@@ -1774,19 +1774,19 @@ impl I16Mul of Mul<i16> {
 /// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**16 + lhs - rhs)`.
 pub extern fn i16_diff(lhs: i16, rhs: i16) -> Result<u16, u16> implicits(RangeCheck) nopanic;
 impl I16PartialOrd of PartialOrd<i16> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: i16, rhs: i16) -> bool {
         i16_diff(rhs, lhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: i16, rhs: i16) -> bool {
         i16_diff(lhs, rhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn lt(lhs: i16, rhs: i16) -> bool {
         i16_diff(lhs, rhs).into_is_err()
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: i16, rhs: i16) -> bool {
         i16_diff(rhs, lhs).into_is_err()
     }
@@ -1810,7 +1810,7 @@ extern fn i32_eq(lhs: i32, rhs: i32) -> bool implicits() nopanic;
 impl I32Serde = core::serde::into_felt252_based::SerdeImpl<i32>;
 
 impl I32PartialEq of PartialEq<i32> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @i32, rhs: @i32) -> bool {
         i32_eq(*lhs, *rhs)
     }
@@ -1842,7 +1842,7 @@ impl I32Sub of Sub<i32> {
 }
 
 impl I32Neg of Neg<i32> {
-    #[inline(always)]
+    #[inline]
     fn neg(a: i32) -> i32 {
         0 - a
     }
@@ -1859,19 +1859,19 @@ impl I32Mul of Mul<i32> {
 /// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**32 + lhs - rhs)`.
 pub extern fn i32_diff(lhs: i32, rhs: i32) -> Result<u32, u32> implicits(RangeCheck) nopanic;
 impl I32PartialOrd of PartialOrd<i32> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: i32, rhs: i32) -> bool {
         i32_diff(rhs, lhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: i32, rhs: i32) -> bool {
         i32_diff(lhs, rhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn lt(lhs: i32, rhs: i32) -> bool {
         i32_diff(lhs, rhs).into_is_err()
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: i32, rhs: i32) -> bool {
         i32_diff(rhs, lhs).into_is_err()
     }
@@ -1895,7 +1895,7 @@ extern fn i64_eq(lhs: i64, rhs: i64) -> bool implicits() nopanic;
 impl I64Serde = core::serde::into_felt252_based::SerdeImpl<i64>;
 
 impl I64PartialEq of PartialEq<i64> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @i64, rhs: @i64) -> bool {
         i64_eq(*lhs, *rhs)
     }
@@ -1927,7 +1927,7 @@ impl I64Sub of Sub<i64> {
 }
 
 impl I64Neg of Neg<i64> {
-    #[inline(always)]
+    #[inline]
     fn neg(a: i64) -> i64 {
         0 - a
     }
@@ -1944,19 +1944,19 @@ impl I64Mul of Mul<i64> {
 /// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**64 + lhs - rhs)`.
 pub extern fn i64_diff(lhs: i64, rhs: i64) -> Result<u64, u64> implicits(RangeCheck) nopanic;
 impl I64PartialOrd of PartialOrd<i64> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: i64, rhs: i64) -> bool {
         i64_diff(rhs, lhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: i64, rhs: i64) -> bool {
         i64_diff(lhs, rhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn lt(lhs: i64, rhs: i64) -> bool {
         i64_diff(lhs, rhs).into_is_err()
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: i64, rhs: i64) -> bool {
         i64_diff(rhs, lhs).into_is_err()
     }
@@ -1980,11 +1980,11 @@ extern fn i128_eq(lhs: i128, rhs: i128) -> bool implicits() nopanic;
 impl I128Serde = core::serde::into_felt252_based::SerdeImpl<i128>;
 
 impl I128PartialEq of PartialEq<i128> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @i128, rhs: @i128) -> bool {
         i128_eq(*lhs, *rhs)
     }
-    #[inline(always)]
+    #[inline]
     fn ne(lhs: @i128, rhs: @i128) -> bool {
         !(*lhs == *rhs)
     }
@@ -2016,7 +2016,7 @@ impl I128Sub of Sub<i128> {
 }
 
 impl I128Neg of Neg<i128> {
-    #[inline(always)]
+    #[inline]
     fn neg(a: i128) -> i128 {
         0 - a
     }
@@ -2042,19 +2042,19 @@ impl I128Mul of Mul<i128> {
 /// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**128 + lhs - rhs)`.
 pub extern fn i128_diff(lhs: i128, rhs: i128) -> Result<u128, u128> implicits(RangeCheck) nopanic;
 impl I128PartialOrd of PartialOrd<i128> {
-    #[inline(always)]
+    #[inline]
     fn le(lhs: i128, rhs: i128) -> bool {
         i128_diff(rhs, lhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn ge(lhs: i128, rhs: i128) -> bool {
         i128_diff(lhs, rhs).into_is_ok()
     }
-    #[inline(always)]
+    #[inline]
     fn lt(lhs: i128, rhs: i128) -> bool {
         i128_diff(lhs, rhs).into_is_err()
     }
-    #[inline(always)]
+    #[inline]
     fn gt(lhs: i128, rhs: i128) -> bool {
         i128_diff(rhs, lhs).into_is_err()
     }
@@ -2488,11 +2488,11 @@ impl U8Zero of core::num::traits::Zero<u8> {
     fn zero() -> u8 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @u8) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @u8) -> bool {
         !self.is_zero()
     }
@@ -2502,11 +2502,11 @@ impl U16Zero of core::num::traits::Zero<u16> {
     fn zero() -> u16 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @u16) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @u16) -> bool {
         !self.is_zero()
     }
@@ -2516,11 +2516,11 @@ impl U32Zero of core::num::traits::Zero<u32> {
     fn zero() -> u32 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @u32) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @u32) -> bool {
         !self.is_zero()
     }
@@ -2530,11 +2530,11 @@ impl U64Zero of core::num::traits::Zero<u64> {
     fn zero() -> u64 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @u64) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @u64) -> bool {
         !self.is_zero()
     }
@@ -2544,11 +2544,11 @@ impl U128Zero of core::num::traits::Zero<u128> {
     fn zero() -> u128 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @u128) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @u128) -> bool {
         !self.is_zero()
     }
@@ -2558,11 +2558,11 @@ impl U256Zero of core::num::traits::Zero<u256> {
     fn zero() -> u256 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @u256) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @u256) -> bool {
         !self.is_zero()
     }
@@ -2572,11 +2572,11 @@ impl I8Zero of core::num::traits::Zero<i8> {
     fn zero() -> i8 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @i8) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @i8) -> bool {
         !self.is_zero()
     }
@@ -2586,11 +2586,11 @@ impl I16Zero of core::num::traits::Zero<i16> {
     fn zero() -> i16 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @i16) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @i16) -> bool {
         !self.is_zero()
     }
@@ -2600,11 +2600,11 @@ impl I32Zero of core::num::traits::Zero<i32> {
     fn zero() -> i32 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @i32) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @i32) -> bool {
         !self.is_zero()
     }
@@ -2614,11 +2614,11 @@ impl I64Zero of core::num::traits::Zero<i64> {
     fn zero() -> i64 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @i64) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @i64) -> bool {
         !self.is_zero()
     }
@@ -2628,11 +2628,11 @@ impl I128Zero of core::num::traits::Zero<i128> {
     fn zero() -> i128 {
         0
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @i128) -> bool {
         *self == Self::zero()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @i128) -> bool {
         !self.is_zero()
     }
@@ -2644,11 +2644,11 @@ impl U8One of core::num::traits::One<u8> {
     fn one() -> u8 {
         1
     }
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @u8) -> bool {
         *self == Self::one()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @u8) -> bool {
         !self.is_one()
     }
@@ -2658,11 +2658,11 @@ impl U16One of core::num::traits::One<u16> {
     fn one() -> u16 {
         1
     }
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @u16) -> bool {
         *self == Self::one()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @u16) -> bool {
         !self.is_one()
     }
@@ -2672,11 +2672,11 @@ impl U32One of core::num::traits::One<u32> {
     fn one() -> u32 {
         1
     }
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @u32) -> bool {
         *self == Self::one()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @u32) -> bool {
         !self.is_one()
     }
@@ -2686,11 +2686,11 @@ impl U64One of core::num::traits::One<u64> {
     fn one() -> u64 {
         1
     }
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @u64) -> bool {
         *self == Self::one()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @u64) -> bool {
         !self.is_one()
     }
@@ -2700,11 +2700,11 @@ impl U128One of core::num::traits::One<u128> {
     fn one() -> u128 {
         1
     }
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @u128) -> bool {
         *self == Self::one()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @u128) -> bool {
         !self.is_one()
     }
@@ -2714,11 +2714,11 @@ impl U256One of core::num::traits::One<u256> {
     fn one() -> u256 {
         1
     }
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @u256) -> bool {
         *self == Self::one()
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @u256) -> bool {
         !self.is_one()
     }
@@ -2729,12 +2729,12 @@ impl I8One of core::num::traits::One<i8> {
         1
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @i8) -> bool {
         *self == Self::one()
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @i8) -> bool {
         !self.is_one()
     }
@@ -2745,12 +2745,12 @@ impl I16One of core::num::traits::One<i16> {
         1
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @i16) -> bool {
         *self == Self::one()
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @i16) -> bool {
         !self.is_one()
     }
@@ -2761,12 +2761,12 @@ impl I32One of core::num::traits::One<i32> {
         1
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @i32) -> bool {
         *self == Self::one()
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @i32) -> bool {
         !self.is_one()
     }
@@ -2777,12 +2777,12 @@ impl I64One of core::num::traits::One<i64> {
         1
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @i64) -> bool {
         *self == Self::one()
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @i64) -> bool {
         !self.is_one()
     }
@@ -2793,12 +2793,12 @@ impl I128One of core::num::traits::One<i128> {
         1
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_one(self: @i128) -> bool {
         *self == Self::one()
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_non_one(self: @i128) -> bool {
         !self.is_one()
     }

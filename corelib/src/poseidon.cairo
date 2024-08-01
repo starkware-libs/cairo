@@ -21,7 +21,7 @@ pub struct HashState {
 #[generate_trait]
 pub impl PoseidonImpl of PoseidonTrait {
     /// Creates an initial state.
-    #[inline(always)]
+    #[inline]
     fn new() -> HashState {
         HashState { s0: 0, s1: 0, s2: 0, odd: false }
     }
@@ -34,7 +34,7 @@ impl HashStateDefault of Default<HashState> {
 }
 
 impl HashStateImpl of HashStateTrait<HashState> {
-    #[inline(always)]
+    #[inline]
     fn update(self: HashState, value: felt252) -> HashState {
         if self.odd {
             let (s0, s1, s2) = hades_permutation(self.s0, self.s1 + value, self.s2);
@@ -44,7 +44,7 @@ impl HashStateImpl of HashStateTrait<HashState> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn finalize(self: HashState) -> felt252 {
         if self.odd {
             let (r, _, _) = hades_permutation(self.s0, self.s1 + 1, self.s2);

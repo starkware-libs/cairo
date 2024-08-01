@@ -38,7 +38,7 @@ extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 #[generate_trait]
 pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// Creates a new array.
-    #[inline(always)]
+    #[inline]
     fn new() -> Array<T> nopanic {
         array_new()
     }
@@ -51,7 +51,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// arr.append(1);
     /// arr.append(2);
     /// ```
-    #[inline(always)]
+    #[inline]
     fn append(ref self: Array<T>, value: T) nopanic {
         array_append(ref self, value)
     }
@@ -84,7 +84,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// assert!(arr.pop_front() == Option::Some(4));
     /// assert!(arr.pop_front() == Option::None);
     /// ```
-    #[inline(always)]
+    #[inline]
     fn pop_front(ref self: Array<T>) -> Option<T> nopanic {
         match array_pop_front(ref self) {
             Option::Some(x) => Option::Some(x.unbox()),
@@ -101,7 +101,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// let arr = array![2, 3, 4];
     /// assert!(arr.pop_front_consume() == Option::Some((array![3, 4], 2)));
     /// ```
-    #[inline(always)]
+    #[inline]
     fn pop_front_consume(self: Array<T>) -> Option<(Array<T>, T)> nopanic {
         match array_pop_front_consume(self) {
             Option::Some((arr, x)) => Option::Some((arr, x.unbox())),
@@ -117,7 +117,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// let arr = array![2, 3, 4];
     /// assert!(arr.get(1) == Option::Some(@3));
     /// ```
-    #[inline(always)]
+    #[inline]
     fn get(self: @Array<T>, index: usize) -> Option<Box<@T>> {
         array_get(self, index)
     }
@@ -140,7 +140,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// let arr = array![2, 3, 4];
     /// assert!(arr.len() == 3);
     /// ```
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn len(self: @Array<T>) -> usize {
         array_len(self)
@@ -155,7 +155,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// arr.append(1);
     /// assert!(!arr.is_empty());
     /// ```
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn is_empty(self: @Array<T>) -> bool {
         let mut snapshot = self;
@@ -165,7 +165,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
         }
     }
     /// Returns a span of the array.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn span(snapshot: @Array<T>) -> Span<T> {
         Span { snapshot }
@@ -173,7 +173,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
 }
 
 impl ArrayDefault<T> of Default<Array<T>> {
-    #[inline(always)]
+    #[inline]
     fn default() -> Array<T> {
         ArrayTrait::new()
     }
@@ -284,7 +284,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// let mut span = array![1, 2, 3].span();
     /// assert!(span.pop_front() == Option::Some(@1));
     /// ```
-    #[inline(always)]
+    #[inline]
     fn pop_front(ref self: Span<T>) -> Option<@T> {
         let mut snapshot = self.snapshot;
         let item = array_snapshot_pop_front(ref snapshot);
@@ -302,7 +302,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// let mut span = array![1, 2, 3].span();
     /// assert!(span.pop_back() == Option::Some(@7));
     /// ```
-    #[inline(always)]
+    #[inline]
     fn pop_back(ref self: Span<T>) -> Option<@T> {
         let mut snapshot = self.snapshot;
         let item = array_snapshot_pop_back(ref snapshot);
@@ -343,7 +343,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// let span = array![1, 2, 3].span();
     /// assert!(span.get(1) == Option::Some(@2));
     /// ```
-    #[inline(always)]
+    #[inline]
     fn get(self: Span<T>, index: usize) -> Option<Box<@T>> {
         array_get(self.snapshot, index)
     }
@@ -354,7 +354,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// let span = array![1, 2, 3].span();
     /// assert!(span.at(1) == @2);
     /// ```
-    #[inline(always)]
+    #[inline]
     fn at(self: Span<T>, index: usize) -> @T {
         array_at(self.snapshot, index).unbox()
     }
@@ -366,7 +366,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// let span = array![1, 2, 3].span();
     /// assert!(span.slice(1, 2) == array![2, 3].span());
     /// ```
-    #[inline(always)]
+    #[inline]
     fn slice(self: Span<T>, start: usize, length: usize) -> Span<T> {
         Span { snapshot: array_slice(self.snapshot, start, length).expect('Index out of bounds') }
     }
@@ -377,7 +377,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// let span = array![1, 2, 3].span();
     /// assert!(span.len() == 3);
     /// ```
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn len(self: Span<T>) -> usize {
         array_len(self.snapshot)
@@ -389,7 +389,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// let span = array![1, 2, 3].span();
     /// assert!(!span.is_empty());
     /// ```
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn is_empty(self: Span<T>) -> bool {
         let mut snapshot = self.snapshot;
@@ -402,7 +402,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
 
 /// Implementation of the `SpanIndex` trait for spans.
 pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
-    #[inline(always)]
+    #[inline]
     fn index(self: @Span<T>, index: usize) -> @T {
         array_at(*self.snapshot, index).unbox()
     }
@@ -416,7 +416,7 @@ pub trait ToSpanTrait<C, T> {
 }
 
 impl ArrayToSpan<T> of ToSpanTrait<Array<T>, T> {
-    #[inline(always)]
+    #[inline]
     fn span(self: @Array<T>) -> Span<T> {
         ArrayTrait::span(self)
     }
@@ -444,14 +444,14 @@ impl FixedSizeArrayBoxToSpan<T, const SIZE: usize> of ToSpanTrait<Box<@[T; SIZE]
 impl FixedSizeArrayToSpan<
     T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
 > of ToSpanTrait<[T; SIZE], T> {
-    #[inline(always)]
+    #[inline]
     fn span(self: @[T; SIZE]) -> Span<T> {
         BoxTrait::new(self).span()
     }
 }
 
 impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
-    #[inline(always)]
+    #[inline]
     fn span(self: @[T; 0]) -> Span<T> {
         array![].span()
     }
@@ -468,14 +468,14 @@ extern fn tuple_from_span<T, impl Info: FixedSizedArrayInfo<T>>(
 impl SpanTryIntoFixedSizedArray<
     T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
 > of TryInto<Span<T>, @Box<[T; SIZE]>> {
-    #[inline(always)]
+    #[inline]
     fn try_into(self: Span<T>) -> Option<@Box<[T; SIZE]>> {
         tuple_from_span(self.snapshot)
     }
 }
 
 impl SpanTryIntoEmptyFixedSizedArray<T, +Drop<T>> of TryInto<Span<T>, @Box<[T; 0]>> {
-    #[inline(always)]
+    #[inline]
     fn try_into(self: Span<T>) -> Option<@Box<[T; 0]>> {
         if self.is_empty() {
             Option::Some(@BoxTrait::new([]))

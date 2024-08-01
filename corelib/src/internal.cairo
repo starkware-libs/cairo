@@ -25,7 +25,7 @@ impl BoundedIntIntoFelt252<
 impl BoundedIntPartialEq<
     const MIN: felt252, const MAX: felt252
 > of PartialEq<BoundedInt<MIN, MAX>> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @BoundedInt<MIN, MAX>, rhs: @BoundedInt<MIN, MAX>) -> bool {
         Into::<_, felt252>::into(*lhs) == (*rhs).into()
     }

@@ -8,7 +8,7 @@ pub impl BoolImpl<T, +Drop<T>> of BoolTrait<T> {
     /// assert!(false.then_some(0) == Option::None);
     /// assert!(true.then_some(0) == Option::Some(0));
     /// ```
-    #[inline(always)]
+    #[inline]
     fn then_some(self: bool, t: T) -> Option<T> nopanic {
         if self {
             Option::Some(t)

@@ -25,7 +25,7 @@ pub trait LegacyHash<T> {
 
 /// Implementation of `LegacyHash` for types that have `Hash` for backwards compatibility.
 impl LegacyHashForHash<T, +Hash<T, core::pedersen::HashState>> of LegacyHash<T> {
-    #[inline(always)]
+    #[inline]
     fn hash(state: felt252, value: T) -> felt252 {
         core::pedersen::HashState { state }.update_with(value).state
     }
@@ -39,14 +39,14 @@ pub trait HashStateExTrait<S, T> {
 }
 
 impl HashStateEx<S, +HashStateTrait<S>, T, +Hash<T, S>> of HashStateExTrait<S, T> {
-    #[inline(always)]
+    #[inline]
     fn update_with(self: S, value: T) -> S {
         Hash::update_state(self, value)
     }
 }
 
 impl HashFelt252<S, +HashStateTrait<S>> of Hash<felt252, S> {
-    #[inline(always)]
+    #[inline]
     fn update_state(state: S, value: felt252) -> S {
         state.update(value)
     }
@@ -62,7 +62,7 @@ pub mod into_felt252_based {
     pub impl HashImpl<
         T, S, +Into<T, felt252>, +super::HashStateTrait<S>, +Drop<S>
     > of super::Hash<T, S> {
-        #[inline(always)]
+        #[inline]
         fn update_state(state: S, value: T) -> S {
             state.update(value.into())
         }
@@ -82,14 +82,14 @@ impl HashI64<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<i64
 impl HashI128<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<i128, S>;
 
 impl TupleSize0Hash<S, +HashStateTrait<S>> of Hash<(), S> {
-    #[inline(always)]
+    #[inline]
     fn update_state(state: S, value: ()) -> S {
         state
     }
 }
 
 impl FixedSizedArray0Hash<T, S, +HashStateTrait<S>, +Drop<T>> of Hash<[T; 0], S> {
-    #[inline(always)]
+    #[inline]
     fn update_state(state: S, value: [T; 0]) -> S {
         state
     }
@@ -104,7 +104,7 @@ impl TupleNextHash<
     +Hash<TH::Rest, S>,
     +Drop<TH::Rest>,
 > of Hash<T, S> {
-    #[inline(always)]
+    #[inline]
     fn update_state(state: S, value: T) -> S {
         let (head, rest) = TH::split_head(value);
         state.update_with(head).update_with(rest)

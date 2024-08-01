@@ -12,19 +12,19 @@ pub struct HashState {
 #[generate_trait]
 pub impl PedersenImpl of PedersenTrait {
     /// Creates a state from a base value.
-    #[inline(always)]
+    #[inline]
     fn new(base: felt252) -> HashState {
         HashState { state: base }
     }
 }
 
 impl HashStateImpl of core::hash::HashStateTrait<HashState> {
-    #[inline(always)]
+    #[inline]
     fn update(self: HashState, value: felt252) -> HashState {
         HashState { state: pedersen(self.state, value) }
     }
 
-    #[inline(always)]
+    #[inline]
     fn finalize(self: HashState) -> felt252 {
         self.state
     }
