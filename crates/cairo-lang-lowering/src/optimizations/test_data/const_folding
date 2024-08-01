@@ -1290,6 +1290,54 @@ End:
 
 //! > ==========================================================================
 
+//! > complex StorageBaseAddress const.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> starknet::storage::StorageBaseAddress {
+    starknet::storage::StorageBase::<felt252> { __base_address__: 1337, }.deref().finalize()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use starknet::storage::StoragePathTrait;
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1337
+  (v1: core::starknet::storage::storage_base::StorageBase::<core::felt252>) <- struct_construct(v0)
+  (v2: core::starknet::storage::storage_base::StorageBase::<core::felt252>, v3: @core::starknet::storage::storage_base::StorageBase::<core::felt252>) <- snapshot(v1)
+  (v4: @core::felt252) <- struct_destructure(v3)
+  (v5: core::felt252) <- desnap(v4)
+  (v10: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_from_felt252(v5)
+End:
+  Return(v10)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1337
+  (v1: core::starknet::storage::storage_base::StorageBase::<core::felt252>) <- struct_construct(v0)
+  (v2: core::starknet::storage::storage_base::StorageBase::<core::felt252>, v3: @core::starknet::storage::storage_base::StorageBase::<core::felt252>) <- snapshot(v1)
+  (v4: @core::felt252) <- struct_destructure(v3)
+  (v5: core::felt252) <- desnap(v4)
+  (v10: core::starknet::storage_access::StorageBaseAddress) <- core::starknet::storage_access::storage_base_address_const::<1337>()
+End:
+  Return(v10)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
 //! > Add success const fold.
 
 //! > test_runner_name

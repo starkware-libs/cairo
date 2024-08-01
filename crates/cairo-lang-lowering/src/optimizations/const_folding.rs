@@ -27,11 +27,16 @@ use crate::{
 
 /// Keeps track of equivalent values that a variables might be replaced with.
 /// Note: We don't keep track of types as we assume the usage is always correct.
+#[derive(Debug, Clone)]
 enum VarInfo {
     /// The variable is a const value.
     Const(ConstValue),
     /// The variable can be replaced by another variable.
     Var(VarUsage),
+    /// The variable is a snapshot of another variable.
+    Snapshot(Box<VarInfo>),
+    /// The variable is a struct of other variables.
+    Struct(Vec<VarInfo>),
 }
 
 /// Performs constant folding on the lowered program.
@@ -75,18 +80,14 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                     }
                 }
                 Statement::Snapshot(stmt) => {
-                    if let Some(VarInfo::Const(val)) = ctx.var_info.get(&stmt.input.var_id) {
-                        let val = val.clone();
-                        // TODO(Tomerstarkware): add snapshot to value type.
-                        ctx.var_info.insert(stmt.original(), VarInfo::Const(val.clone()));
-                        ctx.var_info.insert(stmt.snapshot(), VarInfo::Const(val));
+                    if let Some(info) = ctx.var_info.get(&stmt.input.var_id).cloned() {
+                        ctx.var_info.insert(stmt.original(), info.clone());
+                        ctx.var_info.insert(stmt.snapshot(), VarInfo::Snapshot(info.into()));
                     }
                 }
                 Statement::Desnap(StatementDesnap { input, output }) => {
-                    if let Some(VarInfo::Const(val)) = ctx.var_info.get(&input.var_id) {
-                        let val = val.clone();
-                        // TODO(Tomerstarkware): remove snapshot from value type.
-                        ctx.var_info.insert(*output, VarInfo::Const(val));
+                    if let Some(VarInfo::Snapshot(info)) = ctx.var_info.get(&input.var_id) {
+                        ctx.var_info.insert(*output, info.as_ref().clone());
                     }
                 }
                 Statement::Call(call_stmt) => {
@@ -95,27 +96,55 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                     }
                 }
                 Statement::StructConstruct(StatementStructConstruct { inputs, output }) => {
-                    if let Some(args) = inputs
-                        .iter()
-                        .map(|input| {
-                            if let Some(VarInfo::Const(val)) = ctx.var_info.get(&input.var_id) {
-                                Some(val.clone())
-                            } else {
-                                None
-                            }
-                        })
-                        .collect::<Option<Vec<_>>>()
-                    {
-                        let value = ConstValue::Struct(args, lowered.variables[*output].ty);
+                    let mut const_args = vec![];
+                    let mut all_args = vec![];
+                    let mut contains_info = false;
+                    for input in inputs.iter() {
+                        let Some(info) = ctx.var_info.get(&input.var_id) else {
+                            all_args.push(VarInfo::Var(*input));
+                            continue;
+                        };
+                        contains_info = true;
+                        if let VarInfo::Const(value) = info {
+                            const_args.push(value.clone());
+                        }
+                        all_args.push(info.clone());
+                    }
+                    if const_args.len() == inputs.len() {
+                        let value = ConstValue::Struct(const_args, lowered.variables[*output].ty);
                         ctx.var_info.insert(*output, VarInfo::Const(value));
+                    } else if contains_info {
+                        ctx.var_info.insert(*output, VarInfo::Struct(all_args));
                     }
                 }
                 Statement::StructDestructure(StatementStructDestructure { input, outputs }) => {
-                    if let Some(VarInfo::Const(ConstValue::Struct(args, _))) =
-                        ctx.var_info.get(&input.var_id)
-                    {
-                        for (output, val) in zip_eq(outputs, args.clone()) {
-                            ctx.var_info.insert(*output, VarInfo::Const(val));
+                    if let Some(mut info) = ctx.var_info.get(&input.var_id) {
+                        let mut n_snapshot = 0;
+                        while let VarInfo::Snapshot(inner) = info {
+                            info = inner.as_ref();
+                            n_snapshot += 1;
+                        }
+                        let wrap_with_snapshots = |mut info| {
+                            for _ in 0..n_snapshot {
+                                info = VarInfo::Snapshot(Box::new(info));
+                            }
+                            info
+                        };
+                        match info {
+                            VarInfo::Const(ConstValue::Struct(member_values, _)) => {
+                                for (output, value) in zip_eq(outputs, member_values.clone()) {
+                                    ctx.var_info.insert(
+                                        *output,
+                                        wrap_with_snapshots(VarInfo::Const(value)),
+                                    );
+                                }
+                            }
+                            VarInfo::Struct(members) => {
+                                for (output, member) in zip_eq(outputs, members.clone()) {
+                                    ctx.var_info.insert(*output, wrap_with_snapshots(member));
+                                }
+                            }
+                            _ => {}
                         }
                     }
                 }
@@ -210,8 +239,12 @@ impl<'a> ConstFoldingContext<'a> {
             }
         } else if let Some(extrn) = stmt.function.get_extern(self.db) {
             if extrn == self.into_box {
-                let val = self.as_const(stmt.inputs[0].var_id)?;
-                let value = ConstValue::Boxed(val.clone().into());
+                let const_value = match self.var_info.get(&stmt.inputs[0].var_id)? {
+                    VarInfo::Const(val) => val,
+                    VarInfo::Snapshot(info) => try_extract_matches!(info.as_ref(), VarInfo::Const)?,
+                    _ => return None,
+                };
+                let value = ConstValue::Boxed(const_value.clone().into());
                 // Not inserting the value into the `var_info` map because the
                 // resulting box isn't an actual const at the Sierra level.
                 return Some(Statement::Const(StatementConst { value, output: stmt.outputs[0] }));
