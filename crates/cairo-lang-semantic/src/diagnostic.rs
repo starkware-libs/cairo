@@ -834,17 +834,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     )
                 }
             }
-<<<<<<< HEAD
             SemanticDiagnosticKind::TypeEqualTraitReImplementation => {
                 "Type equals trait should not be re-implemented.".into()
             }
             SemanticDiagnosticKind::ClosureInGlobalScope => {
                 "Closures are not allowed in this context.".into()
             }
-||||||| 72d1d2f50
-=======
             SemanticDiagnosticKind::MaybeMissingColonColon => "Are you missing a `::`?.".into(),
->>>>>>> origin/dev-v2.7.0
         }
     }
 
@@ -1188,13 +1184,9 @@ pub enum SemanticDiagnosticKind {
     DerefCycle {
         deref_chain: String,
     },
-<<<<<<< HEAD
     TypeEqualTraitReImplementation,
     ClosureInGlobalScope,
-||||||| 72d1d2f50
-=======
     MaybeMissingColonColon,
->>>>>>> origin/dev-v2.7.0
 }
 
 /// The kind of an expression with multiple possible return types.

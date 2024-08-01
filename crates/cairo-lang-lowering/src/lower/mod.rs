@@ -1418,14 +1418,8 @@ fn lower_expr_loop(
     }
     .intern(ctx.db);
 
-<<<<<<< HEAD
     let snap_usage = ctx.usages.usages[&loop_expr_id].snap_usage.clone();
 
-||||||| 72d1d2f50
-=======
-    let snap_usage = ctx.block_usages.block_usages[&loop_expr_id].snap_usage.clone();
-
->>>>>>> origin/dev-v2.7.0
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
     let lowered = lower_loop_function(

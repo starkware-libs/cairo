@@ -68,24 +68,9 @@ fn test_function_usage(
             write!(usages_str, " {:?},", expr.debug(&expr_formatter)).unwrap();
         }
         writeln!(usages_str).unwrap();
-<<<<<<< HEAD
         write!(usages_str, "  Snapshot_Usage:").unwrap();
         for (_, expr) in usage.snap_usage.iter() {
             write!(usages_str, " {:?},", expr.debug(&expr_formatter)).unwrap();
-||||||| 72d1d2f50
-        write!(usages_str, "  Introductions: ").unwrap();
-        for var in &usage.introductions {
-            write!(usages_str, "{:?}, ", var.debug(&expr_formatter)).unwrap();
-=======
-        write!(usages_str, "  Snapshot_Usage:").unwrap();
-        for (_, expr) in usage.snap_usage.iter() {
-            write!(usages_str, " {:?},", expr.debug(&expr_formatter)).unwrap();
-        }
-        writeln!(usages_str).unwrap();
-        write!(usages_str, "  Introductions:").unwrap();
-        for var in &usage.introductions {
-            write!(usages_str, " {:?},", var.debug(&expr_formatter)).unwrap();
->>>>>>> origin/dev-v2.7.0
         }
 
         writeln!(usages_str).unwrap();

@@ -1,11 +1,5 @@
 use std::collections::BTreeMap;
-<<<<<<< HEAD
-use std::sync::{Arc, LazyLock, Mutex};
-||||||| 72d1d2f50
-use std::sync::{Arc, Mutex};
-=======
-use std::sync::Mutex;
->>>>>>> origin/dev-v2.7.0
+use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};

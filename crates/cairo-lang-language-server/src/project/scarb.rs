@@ -168,33 +168,3 @@ fn scarb_package_experimental_features(
         coupons: contains("coupons"),
     }
 }
-<<<<<<< HEAD:crates/cairo-lang-language-server/src/project/scarb.rs
-||||||| 72d1d2f50:crates/cairo-lang-language-server/src/project/scarb/db.rs
-
-/// Generate a wrapper lib file for a compilation unit without a root `lib.cairo`.
-///
-/// This approach allows compiling crates that do not define `lib.cairo` file. For example, single
-/// file crates can be created this way. The actual single file module is defined as `mod` item in
-/// created lib file.
-fn inject_virtual_wrapper_lib(crate_id: CrateId, file_stem: &str, db: &mut AnalysisDatabase) {
-    let module_id = ModuleId::CrateRoot(crate_id);
-    let file_id = db.module_main_file(module_id).unwrap();
-    // Inject virtual lib file wrapper.
-    db.as_files_group_mut()
-        .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
-}
-=======
-
-/// Generate a wrapper lib file for a compilation unit without a root `lib.cairo`.
-///
-/// This approach allows compiling crates that do not define `lib.cairo` file. For example, single
-/// file crates can be created this way. The actual single file module is defined as `mod` item in
-/// created lib file.
-fn inject_virtual_wrapper_lib(crate_id: CrateId, file_stem: &str, db: &mut AnalysisDatabase) {
-    let module_id = ModuleId::CrateRoot(crate_id);
-    let file_id = db.module_main_file(module_id).unwrap();
-    // Inject virtual lib file wrapper.
-    db.as_files_group_mut()
-        .override_file_content(file_id, Some(format!("mod {file_stem};").into()));
-}
->>>>>>> origin/dev-v2.7.0:crates/cairo-lang-language-server/src/project/scarb/db.rs

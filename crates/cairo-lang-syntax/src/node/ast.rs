@@ -5587,7 +5587,7 @@ impl From<&OptionFixedSizeArraySizeEmpty> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprClosure {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ExprClosure {
     pub const INDEX_WRAPPER: usize = 0;
@@ -5783,7 +5783,7 @@ impl ClosureParamWrapper {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ClosureParamWrapperNAry {
     node: SyntaxNode,
-    children: Arc<Vec<SyntaxNode>>,
+    children: Arc<[SyntaxNode]>,
 }
 impl ClosureParamWrapperNAry {
     pub const INDEX_LEFTOR: usize = 0;

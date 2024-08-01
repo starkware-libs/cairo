@@ -1,13 +1,5 @@
 use std::ffi::OsStr;
-<<<<<<< HEAD
 use std::path::Path;
-use std::sync::Arc;
-||||||| 72d1d2f50
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-=======
-use std::path::{Path, PathBuf};
->>>>>>> origin/dev-v2.7.0
 
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroupEx};

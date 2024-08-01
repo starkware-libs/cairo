@@ -19,14 +19,8 @@ use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::{
-<<<<<<< HEAD
-    BlockOrIf, ClosureParamWrapper, ExprPtr, OptionReturnTypeClause, PatternListOr,
+    BinaryOperator, BlockOrIf, ClosureParamWrapper, ExprPtr, OptionReturnTypeClause, PatternListOr,
     PatternStructParam, UnaryOperator,
-||||||| 72d1d2f50
-    BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
-=======
-    BinaryOperator, BlockOrIf, ExprPtr, PatternListOr, PatternStructParam, UnaryOperator,
->>>>>>> origin/dev-v2.7.0
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -887,7 +881,8 @@ pub fn compute_root_expr(
     // Conform TypeEqual constraints for Associated type bounds.
     let inference = &mut ctx.resolver.data.inference_data.inference(ctx.db);
     for param in &ctx.resolver.data.generic_params {
-        let GenericParam::Impl(imp) = ctx.db.priv_generic_param_data(*param)?.generic_param else {
+        let Ok(GenericParam::Impl(imp)) = ctx.db.priv_generic_param_data(*param)?.generic_param
+        else {
             continue;
         };
         let Ok(concrete_trait_id) = imp.concrete_trait else {
