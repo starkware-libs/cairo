@@ -774,7 +774,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub value: felt252,
+        pub value: felt252,
 }
 
 #[derive(Drop, Copy)]

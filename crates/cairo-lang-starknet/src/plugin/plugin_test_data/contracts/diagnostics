@@ -2071,7 +2071,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub same_name: felt252,
+        pub same_name: felt252,
 }
 
 #[derive(Drop, Copy)]
@@ -7943,7 +7943,8 @@ contract:
 
 #[phantom]
 pub struct Storage {
-          pub component_storage: super::component::Storage,
+        #[substorage(v0)]
+        pub component_storage: super::component::Storage,
 }
 
 #[derive(Drop, Copy)]
@@ -11437,7 +11438,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub a_member: felt252,
+        pub a_member: felt252,
 }
 
 #[derive(Drop, Copy)]
@@ -12250,7 +12251,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
+        pub data: u32,
 }
 
 #[derive(Drop, Copy)]
@@ -12381,7 +12382,8 @@ contract:
 
 #[phantom]
 pub struct Storage {
-          pub component_member: super::test_component::Storage,
+        #[substorage(v0)]
+        pub component_member: super::test_component::Storage,
 }
 
 #[derive(Drop, Copy)]
@@ -13299,7 +13301,7 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub u256_pair: super::u256Pair,
+        pub u256_pair: super::u256Pair,
 }
 
 #[derive(Drop, Copy)]

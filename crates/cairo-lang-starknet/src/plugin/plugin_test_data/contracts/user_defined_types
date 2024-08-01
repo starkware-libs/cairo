@@ -105,10 +105,10 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub var: WrappedFelt252,
-          pub zero_size: ZeroSize,
-          pub mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
-          pub zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
+        pub var: WrappedFelt252,
+        pub zero_size: ZeroSize,
+        pub mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
+        pub zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
 }
 
 #[derive(Drop, Copy)]

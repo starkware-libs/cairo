@@ -2459,15 +2459,15 @@ pub enum Event {}
 
 #[phantom]
 pub struct Storage {
-          pub balance: usize,
-          pub user_balance: Map<usize, usize>,
-          pub user_balance_subbalance: Map<usize, Map<usize, usize>>,
-          pub legacy_map_balace: LegacyMap<usize, usize>,
-          pub balance_pair: BalancePair,
-          pub sliced_balance_trio: SlicedBalanceTrio,
-          pub linked_list: LinkedList,
-          pub arr: Vec<usize>,
-          pub queryable_enum: QueryableEnum,
+        pub balance: usize,
+        pub user_balance: Map<usize, usize>,
+        pub user_balance_subbalance: Map<usize, Map<usize, usize>>,
+        pub legacy_map_balace: LegacyMap<usize, usize>,
+        pub balance_pair: BalancePair,
+        pub sliced_balance_trio: SlicedBalanceTrio,
+        pub linked_list: LinkedList,
+        pub arr: Vec<usize>,
+        pub queryable_enum: QueryableEnum,
 }
 
 #[derive(Drop, Copy)]

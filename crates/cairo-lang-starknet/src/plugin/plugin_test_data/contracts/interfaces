@@ -1457,7 +1457,8 @@ contract:
 
 #[phantom]
 pub struct Storage {
-          pub comp_storage: super::comp::Storage,
+        #[substorage(v0)]
+        pub comp_storage: super::comp::Storage,
 }
 
 #[derive(Drop, Copy)]

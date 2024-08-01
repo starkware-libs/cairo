@@ -828,9 +828,9 @@ component:
 
 #[phantom]
 pub struct Storage {
-          pub data: u32,
-          pub map: LegacyMap<u32, u32>,
-          pub my_type_var: super::MyType,
+        pub data: u32,
+        pub map: LegacyMap<u32, u32>,
+        pub my_type_var: super::MyType,
 }
 
 #[derive(Drop, Copy)]

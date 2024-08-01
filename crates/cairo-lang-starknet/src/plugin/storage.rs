@@ -270,8 +270,9 @@ fn get_simple_member_code(
             )
         },
         storage_member: RewriteNode::interpolate_patched(
-            "\n          $member_visibility$ $member_name$: $member_type$,",
+            "\n$attributes$        $member_visibility$ $member_name$: $member_type$,",
             &[
+                ("attributes".to_string(), RewriteNode::from_ast(&member.attributes(db))),
                 ("member_visibility".to_string(), member_visibility),
                 ("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone())),
                 ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
