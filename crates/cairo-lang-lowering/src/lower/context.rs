@@ -21,7 +21,7 @@ use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::generators;
-use super::usage::BlockUsages;
+use super::usage::Usages;
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
@@ -112,7 +112,7 @@ pub struct EncapsulatingLoweringContext<'db> {
     /// Expression formatter of the free function.
     pub expr_formatter: ExprFormatter<'db>,
     /// Block usages for the entire encapsulating function.
-    pub block_usages: BlockUsages,
+    pub usages: Usages,
     /// Lowerings of generated functions.
     pub lowerings: OrderedHashMap<semantic::ExprId, FlatLowered>,
 }
@@ -122,14 +122,14 @@ impl<'db> EncapsulatingLoweringContext<'db> {
         semantic_function_id: defs::ids::FunctionWithBodyId,
     ) -> Maybe<Self> {
         let function_body = db.function_body(semantic_function_id)?;
-        let block_usages = BlockUsages::from_function_body(&function_body);
+        let usages = Usages::from_function_body(&function_body);
         Ok(Self {
             db,
             semantic_function_id,
             function_body,
             semantic_defs: Default::default(),
             expr_formatter: ExprFormatter { db: db.upcast(), function_id: semantic_function_id },
-            block_usages,
+            usages,
             lowerings: Default::default(),
         })
     }

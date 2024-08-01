@@ -19,16 +19,6 @@ foo
 //! > semantic_diagnostics
 
 //! > usage
-Block 2:4:
-  Usage: ParamId(test::b),
-  Changes:
-  Snapshot_Usage:
-  Introductions:
-Block 0:27:
-  Usage: ParamId(test::a), ParamId(test::b),
-  Changes:
-  Snapshot_Usage:
-  Introductions:
 
 //! > ==========================================================================
 
@@ -67,26 +57,11 @@ struct B {
 //! > semantic_diagnostics
 
 //! > usage
-Block 11:16:
-  Usage: LocalVarId(test::h), ParamId(test::b), ParamId(test::a)::b,
-  Changes: LocalVarId(test::h), ParamId(test::b),
-  Snapshot_Usage:
-  Introductions: LocalVarId(test::x),
-Block 8:9:
-  Usage: LocalVarId(test::c), ParamId(test::a)::b, ParamId(test::b),
-  Changes: ParamId(test::a)::b::c, ParamId(test::b),
-  Snapshot_Usage:
-  Introductions: LocalVarId(test::h),
 Loop 8:4:
   Usage: LocalVarId(test::c), ParamId(test::a)::b, ParamId(test::b),
   Changes: ParamId(test::a)::b::c, ParamId(test::b),
   Snapshot_Usage:
-  Introductions: LocalVarId(test::h),
-Block 6:27:
-  Usage: ParamId(test::b), ParamId(test::a)::b,
-  Changes: ParamId(test::a)::b::c, ParamId(test::b),
-  Snapshot_Usage:
-  Introductions: LocalVarId(test::c),
+  Introductions:
 
 //! > ==========================================================================
 
@@ -118,21 +93,11 @@ struct B {
 //! > semantic_diagnostics
 
 //! > usage
-Block 9:38:
-  Usage: LocalVarId(test::c), ParamId(test::a)::b::c,
-  Changes: ParamId(test::a)::b::c,
-  Snapshot_Usage:
-  Introductions:
 While 9:4:
   Usage: LocalVarId(test::c), ParamId(test::a)::b::c,
   Changes: ParamId(test::a)::b::c,
   Snapshot_Usage: LocalVarId(test::only_used_in_condition),
   Introductions:
-Block 6:27:
-  Usage: ParamId(test::a)::b::c,
-  Changes: ParamId(test::a)::b::c,
-  Snapshot_Usage:
-  Introductions: LocalVarId(test::c), LocalVarId(test::only_used_in_condition),
 
 //! > ==========================================================================
 
@@ -171,26 +136,11 @@ fn borrow_B(b: @B) {}
 //! > semantic_diagnostics
 
 //! > usage
-Block 12:8:
-  Usage:
-  Changes:
-  Snapshot_Usage: ParamId(test::b), ParamId(test::a)::b,
-  Introductions:
-Block 11:38:
-  Usage: LocalVarId(test::c), ParamId(test::b),
-  Changes:
-  Snapshot_Usage: ParamId(test::a)::b,
-  Introductions:
 While 11:4:
   Usage: LocalVarId(test::c), ParamId(test::b),
   Changes:
   Snapshot_Usage: LocalVarId(test::only_used_in_condition), ParamId(test::a)::b,
   Introductions:
-Block 8:27:
-  Usage: ParamId(test::b),
-  Changes:
-  Snapshot_Usage: ParamId(test::a)::b,
-  Introductions: LocalVarId(test::c), LocalVarId(test::only_used_in_condition),
 
 //! > ==========================================================================
 
@@ -214,18 +164,8 @@ foo
 //! > semantic_diagnostics
 
 //! > usage
-Block 1:13:
-  Usage: ParamId(test::a), ParamId(test::b),
-  Changes:
-  Snapshot_Usage:
-  Introductions:
 Closure 1:4:
   Usage: ParamId(test::a),
   Changes:
   Snapshot_Usage:
   Introductions: ParamId(test::b),
-Block 0:15:
-  Usage:
-  Changes:
-  Snapshot_Usage:
-  Introductions:
