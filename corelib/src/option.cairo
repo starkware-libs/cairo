@@ -42,7 +42,7 @@ pub trait OptionTrait<T> {
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
-    #[inline]
+    #[inline(always)]
     fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
@@ -50,7 +50,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn unwrap(self: Option<T>) -> T {
         self.expect('Option::unwrap failed.')
     }
