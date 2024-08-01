@@ -1345,8 +1345,13 @@ self: HelloStarknetTraitSafeDispatcher, user_id: usize, subbalance_id: usize
 
 
 lib.cairo:27:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct BalancePair {
+|       balance1: u256,
+|       #[flat]
+|       balance2: felt252,
+|   }
+|___^
 storage_node:
 
 #[derive(Drop, Copy)]
@@ -1422,8 +1427,14 @@ impl BalancePairStorageNodeMutImpl of starknet::storage::StorageNodeMut<BalanceP
 
 
 lib.cairo:33:1
-
-^
+\   
+|   #[derive(Drop, starknet::Store)]
+|   struct SlicedBalanceTrio {
+|       balance1: u256,
+|       balance12: SlicedBalancePair,
+|   }
+|   
+|___^
 impls:
 
 impl SlicedBalanceTrioDrop of core::traits::Drop::<SlicedBalanceTrio>;
@@ -1530,8 +1541,14 @@ impl SlicedBalanceTrioSubPointersMutImpl of starknet::storage::SubPointersMut<Sl
 
 
 lib.cairo:39:1
-
-^
+\   
+|   #[derive(Drop, starknet::Store)]
+|   struct SlicedBalancePair {
+|       balance1: u256,
+|       balance2: felt252,
+|   }
+|   
+|___^
 impls:
 
 impl SlicedBalancePairDrop of core::traits::Drop::<SlicedBalancePair>;
@@ -1638,8 +1655,12 @@ impl SlicedBalancePairSubPointersMutImpl of starknet::storage::SubPointersMut<Sl
 
 
 lib.cairo:46:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct LinkedList {
+|       value: felt252,
+|       next: LinkedList,
+|   }
+|___^
 storage_node:
 
 #[derive(Drop, Copy)]
@@ -1721,8 +1742,15 @@ impl LinkedListStorageNodeMutImpl of starknet::storage::StorageNodeMut<LinkedLis
 
 
 lib.cairo:51:1
-
-^
+\   
+|   #[starknet::sub_pointers(QueryableEnumVariants)]
+|   #[derive(Drop, starknet::Store)]
+|   enum QueryableEnum {
+|       A: u128,
+|       B: u256,
+|   }
+|   
+|___^
 impls:
 
 impl QueryableEnumDrop of core::traits::Drop::<QueryableEnum>;
@@ -1813,8 +1841,13 @@ impl StoreQueryableEnum of starknet::Store::<QueryableEnum> {
 
 
 lib.cairo:52:1
-#[starknet::sub_pointers(QueryableEnumVariants)]
-^**********************************************^
+\   #[starknet::sub_pointers(QueryableEnumVariants)]
+|   #[derive(Drop, starknet::Store)]
+|   enum QueryableEnum {
+|       A: u128,
+|       B: u256,
+|   }
+|___^
 storage_node:
 
 #[derive(Drop, Copy)]
@@ -2250,8 +2283,13 @@ impl HelloStarknetTraitSafeDispatcherSubPointersMutImpl of starknet::storage::Su
 
 
 lib.cairo:27:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct BalancePair {
+|       balance1: u256,
+|       #[flat]
+|       balance2: felt252,
+|   }
+|___^
 impls:
 
 impl BalancePairStorageBaseDrop of core::traits::Drop::<BalancePairStorageBase>;
@@ -2259,8 +2297,13 @@ impl BalancePairStorageBaseCopy of core::traits::Copy::<BalancePairStorageBase>;
 
 
 lib.cairo:27:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct BalancePair {
+|       balance1: u256,
+|       #[flat]
+|       balance2: felt252,
+|   }
+|___^
 impls:
 
 impl BalancePairStorageBaseMutDrop of core::traits::Drop::<BalancePairStorageBaseMut>;
@@ -2268,8 +2311,13 @@ impl BalancePairStorageBaseMutCopy of core::traits::Copy::<BalancePairStorageBas
 
 
 lib.cairo:27:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct BalancePair {
+|       balance1: u256,
+|       #[flat]
+|       balance2: felt252,
+|   }
+|___^
 impls:
 
 impl BalancePairStorageNodeDrop of core::traits::Drop::<BalancePairStorageNode>;
@@ -2277,8 +2325,13 @@ impl BalancePairStorageNodeCopy of core::traits::Copy::<BalancePairStorageNode>;
 
 
 lib.cairo:27:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct BalancePair {
+|       balance1: u256,
+|       #[flat]
+|       balance2: felt252,
+|   }
+|___^
 impls:
 
 impl BalancePairStorageNodeMutDrop of core::traits::Drop::<BalancePairStorageNodeMut>;
@@ -2322,8 +2375,12 @@ impl SlicedBalancePairSubPointersMutCopy of core::traits::Copy::<SlicedBalancePa
 
 
 lib.cairo:46:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct LinkedList {
+|       value: felt252,
+|       next: LinkedList,
+|   }
+|___^
 impls:
 
 impl LinkedListStorageBaseDrop of core::traits::Drop::<LinkedListStorageBase>;
@@ -2331,8 +2388,12 @@ impl LinkedListStorageBaseCopy of core::traits::Copy::<LinkedListStorageBase>;
 
 
 lib.cairo:46:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct LinkedList {
+|       value: felt252,
+|       next: LinkedList,
+|   }
+|___^
 impls:
 
 impl LinkedListStorageBaseMutDrop of core::traits::Drop::<LinkedListStorageBaseMut>;
@@ -2340,8 +2401,12 @@ impl LinkedListStorageBaseMutCopy of core::traits::Copy::<LinkedListStorageBaseM
 
 
 lib.cairo:46:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct LinkedList {
+|       value: felt252,
+|       next: LinkedList,
+|   }
+|___^
 impls:
 
 impl LinkedListStorageNodeDrop of core::traits::Drop::<LinkedListStorageNode>;
@@ -2349,8 +2414,12 @@ impl LinkedListStorageNodeCopy of core::traits::Copy::<LinkedListStorageNode>;
 
 
 lib.cairo:46:1
-#[starknet::storage_node]
-^***********************^
+\   #[starknet::storage_node]
+|   struct LinkedList {
+|       value: felt252,
+|       next: LinkedList,
+|   }
+|___^
 impls:
 
 impl LinkedListStorageNodeMutDrop of core::traits::Drop::<LinkedListStorageNodeMut>;
@@ -2358,8 +2427,13 @@ impl LinkedListStorageNodeMutCopy of core::traits::Copy::<LinkedListStorageNodeM
 
 
 lib.cairo:52:1
-#[starknet::sub_pointers(QueryableEnumVariants)]
-^**********************************************^
+\   #[starknet::sub_pointers(QueryableEnumVariants)]
+|   #[derive(Drop, starknet::Store)]
+|   enum QueryableEnum {
+|       A: u128,
+|       B: u256,
+|   }
+|___^
 impls:
 
 impl QueryableEnumVariantsDrop of core::traits::Drop::<QueryableEnumVariants>;
@@ -2367,8 +2441,13 @@ impl QueryableEnumVariantsCopy of core::traits::Copy::<QueryableEnumVariants>;
 
 
 lib.cairo:52:1
-#[starknet::sub_pointers(QueryableEnumVariants)]
-^**********************************************^
+\   #[starknet::sub_pointers(QueryableEnumVariants)]
+|   #[derive(Drop, starknet::Store)]
+|   enum QueryableEnum {
+|       A: u128,
+|       B: u256,
+|   }
+|___^
 impls:
 
 impl QueryableEnumVariantsMutDrop of core::traits::Drop::<QueryableEnumVariantsMut>;
