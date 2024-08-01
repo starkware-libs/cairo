@@ -1377,7 +1377,7 @@ fn lower_expr_loop(
         _ => unreachable!("Loop expression must be either loop, while or for."),
     };
 
-    let usage = &ctx.block_usages.block_usages[&loop_expr_id];
+    let usage = &ctx.usages.usages[&loop_expr_id];
 
     // Determine signature.
     let params = usage
@@ -1418,7 +1418,7 @@ fn lower_expr_loop(
     }
     .intern(ctx.db);
 
-    let snap_usage = ctx.block_usages.block_usages[&loop_expr_id].snap_usage.clone();
+    let snap_usage = ctx.usages.usages[&loop_expr_id].snap_usage.clone();
 
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();

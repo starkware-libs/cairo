@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::BlockUsages;
+use super::Usages;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -41,17 +41,16 @@ fn test_function_usage(
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
     let function_def =
         db.function_body(test_function.concrete_function_id.function_with_body_id(db)).unwrap();
-    let usages = BlockUsages::from_function_body(&function_def);
+    let usages = Usages::from_function_body(&function_def);
 
     let mut usages_str = String::new();
-    for (expr_id, usage) in usages.block_usages.iter() {
+    for (expr_id, usage) in usages.usages.iter() {
         let expr = &function_def.exprs[*expr_id];
         let stable_ptr = expr.stable_ptr();
         let node = stable_ptr.untyped().lookup(db);
         let position = node.span_start_without_trivia(db).position_in_file(db, file_id).unwrap();
 
         match expr {
-            semantic::Expr::Block(_) => write!(usages_str, "Block").unwrap(),
             semantic::Expr::Loop(_) => write!(usages_str, "Loop").unwrap(),
             semantic::Expr::While(_) => write!(usages_str, "While").unwrap(),
             semantic::Expr::For(_) => write!(usages_str, "For").unwrap(),
