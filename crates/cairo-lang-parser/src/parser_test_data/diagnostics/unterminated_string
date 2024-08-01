@@ -11,7 +11,7 @@ fn f() {
 //! > expected_diagnostics
 error: Unterminated short string literal.
  --> dummy_file.cairo:2:27
-\   'abc;
+\   let unterminated_str = 'abc;
 |   }
 |___^
 
@@ -40,7 +40,7 @@ fn f() {
 //! > expected_diagnostics
 error: Unterminated string literal.
  --> dummy_file.cairo:2:27
-\   "abc;
+\   let unterminated_str = "abc;
 |   }
 |___^
 

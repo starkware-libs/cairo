@@ -698,7 +698,7 @@ enum MyEnum {
 //! > lowering_diagnostics
 error: Unreachable else clause.
  --> lib.cairo:10:12
-\   {
+\   } else {
 |       y = y + 8;
 |   }
 |___^

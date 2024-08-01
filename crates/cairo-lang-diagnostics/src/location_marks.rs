@@ -6,9 +6,29 @@ use crate::DiagnosticLocation;
 #[path = "location_marks_test.rs"]
 mod test;
 
-/// Gets the string from a diagnostic location. If the span is on a single line it will return the
-/// whole line if it's on multiple lines it return the exact span. It also returns the start column
-/// of the span and the marker length (if it's a multiline span both will be 0)
+/// Get the code corresponding to a diagnostic location. The first line will always be complete even
+/// if the span starts after the first col.
+/// If the diagnostic is on a single line it will return something like this:
+/// ```text
+/// let val = function().other_function()
+///                     ^**************^
+/// ```
+/// If it's a multiline diagnostic it will return something like this:
+/// ```text
+/// \   let val = function
+/// |   .other_function()
+/// |___________________^
+/// ```
+pub fn get_location_marks(
+    db: &dyn cairo_lang_filesystem::db::FilesGroup,
+    location: &DiagnosticLocation,
+) -> String {
+    let (content, start_col, marker_length) = extract_content(db, location);
+    generate_marks(&content, start_col, marker_length)
+}
+
+/// Gets the string from a diagnostic location. The first line is always complete even if the span
+/// starts after.
 fn extract_content(
     db: &dyn cairo_lang_filesystem::db::FilesGroup,
     location: &DiagnosticLocation,
@@ -28,8 +48,8 @@ fn extract_content(
     let TextPosition { line: last_line_idx, col: _ } =
         span.end.position_in_file(db, location.file_id).expect("Failed to find location in file.");
 
+    let first_line_start = summary.line_offsets[first_line_idx];
     if first_line_idx == last_line_idx {
-        let first_line_start = summary.line_offsets[first_line_idx];
         let first_line_end = match summary.line_offsets.get(first_line_idx + 1) {
             Some(offset) => offset.sub_width(TextWidth::from_char('\n')),
             None => summary.last_offset,
@@ -42,6 +62,7 @@ fn extract_content(
         let marker_length = subspan_in_first_line.n_chars(&content);
         (line_content, start_col, marker_length)
     } else {
+        span.start = first_line_start;
         let span_content = span.take(&content).to_string();
         (span_content, 0, 0)
     }
@@ -113,11 +134,4 @@ fn generate_marks(snippet: &str, start_col: usize, marker_length: usize) -> Stri
     }
 
     res
-}
-pub fn get_location_marks(
-    db: &dyn cairo_lang_filesystem::db::FilesGroup,
-    location: &DiagnosticLocation,
-) -> String {
-    let (content, start_col, marker_length) = extract_content(db, location);
-    generate_marks(&content, start_col, marker_length)
 }

@@ -392,7 +392,7 @@ error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait
 
 error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
  --> lib.cairo:18:48
-\   {
+\   fn foo1() -> AnotherTrait::Impl::InputType {
 |       3_u32
 |   }
 |___^
@@ -519,7 +519,7 @@ impl MyImpl of MyTrait {
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
  --> lib.cairo:14:40
-\   {
+\   fn foo1() -> Self::Impl::InputType {
 |       3_u32
 |   }
 |___^
@@ -653,7 +653,7 @@ fn complex(
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u16>; 3], (@core::integer::u16, core::integer::u16)>>)".
  --> lib.cairo:45:61
-\   {
+\   ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
 |       x
 |   }
 |___^
@@ -729,7 +729,7 @@ impl MyImpl of MyTrait {
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:15:46
-\   {
+\   fn bar(x: Self::Impl1::InputType) -> u32 {
 |       x
 |   }
 |___^

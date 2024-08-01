@@ -647,8 +647,8 @@ struct S<const N: felt252> {
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "test::S::<1>", found: "test::S::<N>".
  --> lib.cairo:1:44
-\   {
-|       S::<N> { field: 1 }
+\   fn bar<const N: felt252>() -> S<{ 3 - 2 }> {
+|   S::<N> { field: 1 }
 |   }
 |___^
 

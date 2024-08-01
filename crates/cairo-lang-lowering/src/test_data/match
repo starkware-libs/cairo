@@ -23,7 +23,7 @@ foo
 //! > lowering_diagnostics
 error: Unsupported match - numbers must be sequential starting from 0.
  --> lib.cairo:2:13
-\   match a {
+\   let b = match a {
 |       5 => { 550 },
 |       6 => { 70 },
 |       _ => { 90 }

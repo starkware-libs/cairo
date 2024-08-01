@@ -72,7 +72,7 @@ impl BadImpl<-NegImpl> of NegImpl {
 //! > expected_diagnostics
 error: Inference cycle detected
  --> lib.cairo:8:16
-\   {  {
+\   fn test_func() {  {
 |       {
 |           NegImpl::bar()
 |       }
