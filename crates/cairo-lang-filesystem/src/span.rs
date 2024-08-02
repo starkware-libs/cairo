@@ -1,5 +1,5 @@
 use std::iter::Sum;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Range, Sub};
 
 use crate::db::FilesGroup;
 use crate::ids::FileId;
@@ -72,6 +72,7 @@ pub struct TextSpan {
     pub start: TextOffset,
     pub end: TextOffset,
 }
+
 impl TextSpan {
     pub fn width(self) -> TextWidth {
         self.end - self.start
@@ -92,6 +93,26 @@ impl TextSpan {
     /// Get the span of width 0, located right at the beginning of this span.
     pub fn start_only(self) -> Self {
         Self { start: self.start, end: self.start }
+    }
+
+    /// Returns self.start..self.end
+    pub fn to_range(&self) -> Range<u32> {
+        self.start.0.0..self.end.0.0
+    }
+
+    /// Same as to_range but as usize
+    pub fn to_range_usize(&self) -> Range<usize> {
+        self.start.0.0 as usize..self.end.0.0 as usize
+    }
+
+    /// Returns self.start + offset..self.end + offset
+    pub fn to_offseted_range(&self, offset: u32) -> Range<u32> {
+        self.start.0.0 + offset..self.end.0.0 + offset
+    }
+
+    /// Same as to_offsetted_range but as usize
+    pub fn to_offseted_range_usize(&self, offset: usize) -> Range<usize> {
+        self.start.0.0 as usize + offset..self.end.0.0 as usize + offset
     }
 
     /// Convert this span to a [`TextPositionSpan`] in the file.
