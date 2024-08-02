@@ -1,5 +1,6 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{LanguageElementId, LookupItemId};
+use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MemberId, VariantId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -8,6 +9,24 @@ use itertools::Itertools;
 
 use crate::markdown::cleanup_doc_markdown;
 
+/// Item which documentation can be fetched from source code.
+#[derive(Clone, Debug, Hash, Eq, PartialEq)]
+pub enum DocumentableItemId {
+    LookupItem(LookupItemId),
+    Member(MemberId),
+    Variant(VariantId),
+}
+
+impl DocumentableItemId {
+    fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
+        match self {
+            DocumentableItemId::LookupItem(lookup_item_id) => lookup_item_id.stable_location(db),
+            DocumentableItemId::Member(member_id) => member_id.stable_location(db),
+            DocumentableItemId::Variant(variant_id) => variant_id.stable_location(db),
+        }
+    }
+}
+
 #[salsa::query_group(DocDatabase)]
 pub trait DocGroup: Upcast<dyn DefsGroup> + Upcast<dyn SyntaxGroup> + SyntaxGroup {
     // TODO(mkaput): Add tests.
@@ -15,14 +34,14 @@ pub trait DocGroup: Upcast<dyn DefsGroup> + Upcast<dyn SyntaxGroup> + SyntaxGrou
     //   be the best to convert all /// comments to #[doc] attrs before processing items by plugins,
     //   so that plugins would get a nice and clean syntax of documentation to manipulate further.
     /// Gets the documentation above an item definition.
-    fn get_item_documentation(&self, item_id: LookupItemId) -> Option<String>;
+    fn get_item_documentation(&self, item_id: DocumentableItemId) -> Option<String>;
 
     // TODO(mkaput): Add tests.
     /// Gets the signature of an item (i.e., item without its body).
-    fn get_item_signature(&self, item_id: LookupItemId) -> String;
+    fn get_item_signature(&self, item_id: DocumentableItemId) -> String;
 }
 
-fn get_item_documentation(db: &dyn DocGroup, item_id: LookupItemId) -> Option<String> {
+fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
     // Get the text of the item (trivia + definition)
     let doc = item_id.stable_location(db.upcast()).syntax_node(db.upcast()).get_text(db.upcast());
 
@@ -57,7 +76,7 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: LookupItemId) -> Option<St
     (!doc.trim().is_empty()).then_some(doc)
 }
 
-fn get_item_signature(db: &dyn DocGroup, item_id: LookupItemId) -> String {
+fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
     let syntax_node = item_id.stable_location(db.upcast()).syntax_node(db.upcast());
     let definition = match syntax_node.green_node(db.upcast()).kind {
         SyntaxKind::ItemConstant

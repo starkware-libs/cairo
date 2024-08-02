@@ -49,7 +49,7 @@ use anyhow::{bail, Context};
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, LanguageElementId, LookupItemId, ModuleId, SubmoduleLongId,
+    FunctionTitleId, LanguageElementId, LookupItemId, MemberId, ModuleId, SubmoduleLongId,
 };
 use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::db::{
@@ -63,11 +63,13 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
+use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
+use cairo_lang_semantic::{Expr, SemanticDiagnostic, TypeLongId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
@@ -868,10 +870,49 @@ impl LanguageServer for Backend {
     }
 }
 
-/// Either [`ResolvedGenericItem`] or [`ResolvedConcreteItem`].
+/// Extracts [`MemberId`] if the [`ast::TerminalIdentifier`] points to
+/// right-hand side of access member expression e.g., to `xyz` in `self.xyz`.
+fn try_extract_member(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<MemberId> {
+    let syntax_node = identifier.as_syntax_node();
+    let binary_expr_syntax_node =
+        db.first_ancestor_of_kind(syntax_node.clone(), SyntaxKind::ExprBinary)?;
+    let binary_expr = ast::ExprBinary::from_syntax_node(db, binary_expr_syntax_node);
+
+    let function_with_body = lookup_items.first()?.function_with_body()?;
+
+    let expr_id =
+        db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr().into()).ok()?;
+    let semantic_expr = db.expr_semantic(function_with_body, expr_id);
+
+    if let Expr::MemberAccess(expr_member_access) = semantic_expr {
+        let pointer_to_rhs = binary_expr.rhs(db).stable_ptr().untyped();
+
+        let mut current_node = syntax_node;
+        // Check if the terminal identifier points to a member, not a struct variable.
+        while pointer_to_rhs != current_node.stable_ptr() {
+            // If we found the node with the binary expression, then we are sure we won't find the
+            // node with the member.
+            if current_node.stable_ptr() == binary_expr.stable_ptr().untyped() {
+                return None;
+            }
+            current_node = current_node.parent().unwrap();
+        }
+
+        Some(expr_member_access.member)
+    } else {
+        None
+    }
+}
+
+/// Either [`ResolvedGenericItem`], [`ResolvedConcreteItem`] or [`MemberId`].
 enum ResolvedItem {
     Generic(ResolvedGenericItem),
     Concrete(ResolvedConcreteItem),
+    Member(MemberId),
 }
 
 // TODO(mkaput): Move this to crate::lang::inspect::defs and make private.
@@ -901,6 +942,11 @@ fn find_definition(
             ));
         }
     }
+
+    if let Some(member_id) = try_extract_member(db, identifier, lookup_items) {
+        return Some((ResolvedItem::Member(member_id), member_id.untyped_stable_ptr(db)));
+    }
+
     for lookup_item_id in lookup_items.iter().copied() {
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())

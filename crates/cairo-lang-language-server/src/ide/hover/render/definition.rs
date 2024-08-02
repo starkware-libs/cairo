@@ -1,4 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_doc::db::{DocGroup, DocumentableItemId};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -36,6 +37,22 @@ pub fn definition(
         SymbolDef::ExprInlineMacro(macro_name) => {
             let mut md = fenced_code_block(macro_name);
             if let Some(doc) = db.inline_macro_plugins().get(macro_name)?.documentation() {
+                md += RULE;
+                md += &doc;
+            }
+            md
+        }
+        SymbolDef::Member((member_id, struct_def)) => {
+            let documentable_item = DocumentableItemId::Member(*member_id);
+
+            let mut md = String::new();
+
+            // Signature is the signature of the struct, so it makes sense that the definition
+            // path is too.
+            md += &fenced_code_block(&struct_def.definition_path(db));
+            md += &fenced_code_block(&struct_def.signature(db));
+
+            if let Some(doc) = db.get_item_documentation(documentable_item) {
                 md += RULE;
                 md += &doc;
             }
