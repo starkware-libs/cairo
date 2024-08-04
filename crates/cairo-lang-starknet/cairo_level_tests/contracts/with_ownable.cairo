@@ -1,4 +1,3 @@
-use starknet::ContractAddress;
 #[starknet::contract]
 mod ownable_balance {
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};

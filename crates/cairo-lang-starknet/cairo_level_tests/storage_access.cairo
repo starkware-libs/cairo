@@ -1,5 +1,5 @@
 use core::traits::TryInto;
-use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress, SyscallResult,};
+use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 use super::utils::{deserialized, serialized};
 
 #[feature("deprecated-bounded-int-trait")]

@@ -1,5 +1,7 @@
+#[allow(unused_imports)]
 use core::box::Box;
 use core::option::OptionTrait;
+#[allow(unused_imports)]
 use core::array::Span;
 use core::traits::Into;
 use core::traits::TryInto;
@@ -9,6 +11,7 @@ use core::zeroable::Zeroable;
 pub mod storage_access;
 /// Re-imports
 pub use storage_access::{Store, StorageAddress};
+#[allow(unused_imports)]
 use storage_access::{
     StorePacking, StorageBaseAddress, storage_base_address_const, storage_base_address_from_felt252,
     storage_address_from_base, storage_address_from_base_and_offset, storage_address_to_felt252,
@@ -17,6 +20,7 @@ use storage_access::{
 
 /// Module containing all the extern declaration of the syscalls.
 pub mod syscalls;
+#[allow(unused_imports)]
 use syscalls::{
     call_contract_syscall, deploy_syscall, emit_event_syscall, get_block_hash_syscall,
     get_execution_info_syscall, library_call_syscall, send_message_to_l1_syscall,
@@ -31,6 +35,7 @@ pub mod secp256r1;
 /// ContractAddress
 pub mod contract_address;
 pub use contract_address::{ContractAddress, contract_address_const};
+#[allow(unused_imports)]
 use contract_address::{
     ContractAddressIntoFelt252, Felt252TryIntoContractAddress, contract_address_to_felt252,
     contract_address_try_from_felt252
@@ -39,17 +44,20 @@ use contract_address::{
 /// EthAddress
 pub mod eth_address;
 pub use eth_address::EthAddress;
+#[allow(unused_imports)]
 use eth_address::{
     EthAddressIntoFelt252, EthAddressSerde, EthAddressZeroable, Felt252TryIntoEthAddress
 };
 
 /// EthSignature
 pub mod eth_signature;
+#[allow(unused_imports)]
 use eth_signature::verify_eth_signature;
 
 /// ClassHash
 pub mod class_hash;
 pub use class_hash::ClassHash;
+#[allow(unused_imports)]
 use class_hash::{
     ClassHashIntoFelt252, Felt252TryIntoClassHash, class_hash_const, class_hash_to_felt252,
     class_hash_try_from_felt252

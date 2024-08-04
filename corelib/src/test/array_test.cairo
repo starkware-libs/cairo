@@ -1,4 +1,4 @@
-use core::test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::assert_eq;
 use core::iter::{IntoIterator, Iterator};
 
 #[test]
