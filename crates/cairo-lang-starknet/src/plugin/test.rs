@@ -147,6 +147,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     "src/plugin/plugin_test_data/contracts",
     {
         hello_starknet: "hello_starknet",
+        libfuncs_coverage: "libfuncs_coverage",
         with_ownable: "with_ownable",
         with_ownable_mini: "with_ownable_mini",
         with_erc20_mini: "with_erc20_mini",
