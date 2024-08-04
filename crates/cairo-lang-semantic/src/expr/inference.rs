@@ -34,7 +34,9 @@ use crate::items::functions::{
     ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
-use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{
+    GeneratedImplId, ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl,
+};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{
@@ -1146,9 +1148,9 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                 let impl_id = impl_type_id.impl_id();
                 let trait_ty = impl_type_id.ty();
                 return Ok(match impl_id.lookup_intern(self.db) {
-                    ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => {
-                        impl_type_id_rewrite_result
-                    }
+                    ImplLongId::GenericParameter(_)
+                    | ImplLongId::TraitImpl(_)
+                    | ImplLongId::GeneratedImpl(_) => impl_type_id_rewrite_result,
                     ImplLongId::ImplImpl(impl_impl) => {
                         // The grand parent impl must be var free since we are rewriting the parent,
                         // and the parent is not var.
@@ -1197,9 +1199,9 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
                 let impl_id = impl_constant_id.impl_id();
                 let trait_constant = impl_constant_id.trait_constant_id();
                 return Ok(match impl_id.lookup_intern(self.db) {
-                    ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => {
-                        impl_constant_id_rewrite_result
-                    }
+                    ImplLongId::GenericParameter(_)
+                    | ImplLongId::TraitImpl(_)
+                    | ImplLongId::GeneratedImpl(_) => impl_constant_id_rewrite_result,
                     ImplLongId::ImplImpl(impl_impl) => {
                         // The grand parent impl must be var free since we are rewriting the parent,
                         // and the parent is not var.
@@ -1250,9 +1252,9 @@ impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
                 let impl_id = impl_impl_id.impl_id();
                 let trait_impl = impl_impl_id.trait_impl_id();
                 return Ok(match impl_id.lookup_intern(self.db) {
-                    ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => {
-                        impl_impl_id_rewrite_result
-                    }
+                    ImplLongId::GenericParameter(_)
+                    | ImplLongId::TraitImpl(_)
+                    | ImplLongId::GeneratedImpl(_) => impl_impl_id_rewrite_result,
                     ImplLongId::ImplImpl(impl_impl) => {
                         // The grand parent impl must be var free since we are rewriting the parent,
                         // and the parent is not var.
