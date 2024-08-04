@@ -1353,7 +1353,9 @@ pub(crate) extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
 
 // TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
 //   will not lead to Sierra errors.
-extern fn downcast<FromType, ToType>(x: FromType) -> Option<ToType> implicits(RangeCheck) nopanic;
+pub(crate) extern fn downcast<FromType, ToType>(
+    x: FromType
+) -> Option<ToType> implicits(RangeCheck) nopanic;
 
 // Marks `FromType` as upcastable to `ToType`.
 // Do not add user code implementing this trait.

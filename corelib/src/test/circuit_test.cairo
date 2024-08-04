@@ -14,6 +14,12 @@ fn test_u96() {
 }
 
 #[test]
+fn test_try_into_u96() {
+    assert_eq!(0x123_felt252.try_into(), Option::<u96>::Some(0x123));
+    assert_eq!(0x1000000000000000000000000_felt252.try_into(), Option::<u96>::None);
+}
+
+#[test]
 fn test_builtins() {
     core::internal::require_implicit::<RangeCheck96>();
     core::internal::require_implicit::<AddMod>();
