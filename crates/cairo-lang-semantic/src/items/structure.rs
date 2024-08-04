@@ -257,7 +257,7 @@ pub fn struct_definition_resolver_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_struct_declaration_data(struct_id)?.resolver_data)
+    Ok(db.priv_struct_definition_data(struct_id)?.resolver_data)
 }
 
 pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {

@@ -1,5 +1,6 @@
 use core::array::ArrayTrait;
 use core::traits::Into;
+#[allow(unused_imports)]
 use core::option::Option;
 
 /// Usage:

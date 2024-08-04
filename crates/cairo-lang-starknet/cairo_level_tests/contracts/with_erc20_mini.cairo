@@ -1,5 +1,3 @@
-use starknet::ContractAddress;
-
 #[starknet::contract]
 mod erc20_mini_contract {
     use cairo_level_tests::components::erc20_mini;

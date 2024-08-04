@@ -1,9 +1,6 @@
-use super::utils::serialized;
-
 use cairo_level_tests::contracts::erc20::{erc_20, IERC20LibraryDispatcher, IERC20DispatcherTrait};
 use starknet::testing::set_caller_address;
 
-use starknet::class_hash::class_hash_const;
 use starknet::contract_address::contract_address_const;
 
 #[test]

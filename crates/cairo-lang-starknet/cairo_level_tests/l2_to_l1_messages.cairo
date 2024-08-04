@@ -3,7 +3,6 @@ use core::array::{ArrayTrait, SpanTrait};
 use core::option::OptionTrait;
 use core::result::ResultTrait;
 use starknet::{testing, SyscallResultTrait};
-use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 
 use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
 

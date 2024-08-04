@@ -1,4 +1,4 @@
-use starknet::{account::Call, ContractAddress};
+use starknet::account::Call;
 
 use super::utils::serialized;
 
