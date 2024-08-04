@@ -7,7 +7,6 @@ ExpandContractFromCrateTestRunner(expect_diagnostics: false)
 cairo_level_tests/contracts/with_ownable.cairo
 
 //! > generated_cairo_code
-use starknet::ContractAddress;
 #[starknet::contract]
 mod ownable_balance {
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
@@ -115,6 +114,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 impl ContractStateTransfer of
@@ -387,6 +387,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 impl ContractStateTransfer of

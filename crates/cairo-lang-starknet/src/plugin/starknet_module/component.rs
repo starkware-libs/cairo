@@ -38,6 +38,7 @@ impl ComponentSpecificGenerationData {
                 feature: \"deprecated_legacy_map\",
                 note: \"Use `starknet::storage::Map` instead.\"
             )]
+            #[allow(unused_imports)]
             use starknet::storage::Map as LegacyMap;
             $has_component_trait$
 

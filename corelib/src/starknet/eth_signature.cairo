@@ -1,4 +1,5 @@
 use core::option::OptionTrait;
+#[allow(unused_imports)]
 use starknet::{
     EthAddress,
     secp256_trait::{

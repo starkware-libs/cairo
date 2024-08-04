@@ -1,5 +1,6 @@
 use core::traits::{Into, TryInto};
 use core::option::OptionTrait;
+#[allow(unused_imports)]
 use core::integer::{u128_safe_divmod, u128_to_felt252};
 use core::RangeCheck;
 

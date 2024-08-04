@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
-    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
-    ModuleId, TraitId, TraitItemId,
+    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
+    ModuleFileId, ModuleId, TraitId, TraitItemId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::Edition;
@@ -15,6 +15,7 @@ use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, require, try_extract_matches, Intern, LookupIntern};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -117,6 +118,8 @@ pub struct ResolverData {
     pub trait_or_impl_ctx: TraitOrImplContext,
     /// The configuration of allowed features.
     pub feature_config: FeatureConfig,
+    /// The set of used items in the current context.
+    pub used_items: OrderedHashSet<LookupItemId>,
 }
 impl ResolverData {
     pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
@@ -128,6 +131,7 @@ impl ResolverData {
             inference_data: InferenceData::new(inference_id),
             trait_or_impl_ctx: TraitOrImplContext::None,
             feature_config: Default::default(),
+            used_items: Default::default(),
         }
     }
     pub fn clone_with_inference_id(
@@ -143,6 +147,7 @@ impl ResolverData {
             inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
             trait_or_impl_ctx: self.trait_or_impl_ctx,
             feature_config: self.feature_config.clone(),
+            used_items: self.used_items.clone(),
         }
     }
 }
@@ -544,8 +549,8 @@ impl<'db> Resolver<'db> {
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
 
                 let segment_stable_ptr = segment.stable_ptr().untyped();
-
                 self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
+                self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
                 let inner_generic_item =
                     ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
                 let specialized_item = self.specialize_generic_module_item(
@@ -591,6 +596,7 @@ impl<'db> Resolver<'db> {
                 let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident)? else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
+                self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
 
                 match trait_item_id {
                     TraitItemId::Function(trait_function_id) => {
@@ -719,6 +725,7 @@ impl<'db> Resolver<'db> {
                 let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident)? else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
+                self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
 
                 match trait_item_id {
                     TraitItemId::Function(trait_function_id) => {
@@ -883,6 +890,7 @@ impl<'db> Resolver<'db> {
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
                 self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
+                self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
                 ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {

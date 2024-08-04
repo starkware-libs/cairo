@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementId, TraitId,
+    LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -16,7 +16,7 @@ use smol_str::SmolStr;
 use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
 use super::visibility::Visibility;
-use crate::db::SemanticGroup;
+use crate::db::{get_resolver_data_options, SemanticGroup};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::resolve::ResolvedGenericItem;
 use crate::SemanticDiagnostic;
@@ -31,7 +31,7 @@ pub struct ModuleItemInfo {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleSemanticData {
-    // The items in the module without duplicates.
+    /// The items in the module without duplicates.
     pub items: OrderedHashMap<SmolStr, ModuleItemInfo>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
@@ -130,6 +130,32 @@ pub fn module_item_info_by_name(
 ) -> Maybe<Option<ModuleItemInfo>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).cloned())
+}
+
+/// Query implementation of [SemanticGroup::module_all_used_items].
+pub fn module_all_used_items(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+) -> Maybe<Arc<OrderedHashSet<LookupItemId>>> {
+    let mut all_used_items = OrderedHashSet::default();
+    let module_items = db.module_items(module_id)?;
+    for item in module_items.iter() {
+        if let Some(items) = match *item {
+            ModuleItemId::Submodule(submodule_id) => {
+                Some(db.module_all_used_items(ModuleId::Submodule(submodule_id))?)
+            }
+            ModuleItemId::Trait(trait_id) => Some(db.trait_all_used_items(trait_id)?),
+            ModuleItemId::Impl(impl_id) => Some(db.impl_all_used_items(impl_id)?),
+            _ => None,
+        } {
+            all_used_items.extend(items.iter().cloned());
+        } else {
+            for resolver_data in get_resolver_data_options(LookupItemId::ModuleItem(*item), db) {
+                all_used_items.extend(resolver_data.used_items.iter().cloned());
+            }
+        }
+    }
+    Ok(all_used_items.into())
 }
 
 /// Query implementation of [SemanticGroup::module_attributes].

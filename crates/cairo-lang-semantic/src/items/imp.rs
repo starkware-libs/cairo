@@ -61,7 +61,7 @@ use super::{resolve_trait_path, TraitOrImplContext};
 use crate::corelib::{
     copy_trait, core_submodule, deref_trait, drop_trait, get_core_trait, CoreTraitContext,
 };
-use crate::db::SemanticGroup;
+use crate::db::{get_resolver_data_options, SemanticGroup};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
@@ -786,6 +786,21 @@ pub fn impl_implicit_impl_by_name(
     name: SmolStr,
 ) -> Maybe<Option<TraitImplId>> {
     Ok(db.priv_impl_definition_data(impl_def_id)?.implicit_impls_id_by_name.get(&name).cloned())
+}
+
+/// Query implementation of [SemanticGroup::impl_all_used_items].
+pub fn impl_all_used_items(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<Arc<OrderedHashSet<LookupItemId>>> {
+    let mut all_used_items = db.impl_def_resolver_data(impl_def_id)?.used_items.clone();
+    let data = db.priv_impl_definition_data(impl_def_id)?;
+    for item in data.item_id_by_name.values() {
+        for resolver_data in get_resolver_data_options(LookupItemId::ImplItem(*item), db) {
+            all_used_items.extend(resolver_data.used_items.iter().cloned());
+        }
+    }
+    Ok(all_used_items.into())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_types].

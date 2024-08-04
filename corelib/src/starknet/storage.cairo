@@ -1,7 +1,9 @@
 use core::traits::Into;
+#[allow(unused_imports)]
 use core::pedersen::HashState;
 use core::hash::HashStateTrait;
 use starknet::storage_access::StorageBaseAddress;
+#[allow(unused_imports)]
 use starknet::SyscallResult;
 use starknet::storage_access::storage_base_address_from_felt252;
 
