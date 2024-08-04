@@ -33,7 +33,9 @@ use crate::items::functions::{
     ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
-use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{
+    ClosureImplId, ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl,
+};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{
@@ -525,9 +527,8 @@ impl<'db> Inference<'db> {
         &mut self,
         concrete_trait_id: ConcreteTraitId,
         stable_ptr: Option<SyntaxStablePtrId>,
-        mut lookup_context: ImplLookupContext,
+        lookup_context: ImplLookupContext,
     ) -> ImplId {
-        enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
         let var = self.new_impl_var_raw(lookup_context, concrete_trait_id, stable_ptr);
         ImplLongId::ImplVar(self.impl_var(var).intern(self.db)).intern(self.db)
     }
@@ -1114,6 +1115,14 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                         *value = self.rewritten_impl_type(var, trait_ty).lookup_intern(self.db);
                         return Ok(RewriteResult::Modified);
                     }
+                    ImplLongId::ClosureImpl(closure_impl) => {
+                        if let Some(ty) = closure_impl.ret_ty(self.db) {
+                            *value = self.rewrite(ty).no_err().lookup_intern(self.db);
+                            RewriteResult::Modified
+                        } else {
+                            impl_type_id_rewrite_result
+                        }
+                    }
                 });
             }
             _ => {}
@@ -1167,6 +1176,9 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
                             .lookup_intern(self.db);
                         return Ok(RewriteResult::Modified);
                     }
+                    ImplLongId::ClosureImpl(_) => {
+                        unreachable!("Closure impls do not contain constants")
+                    }
                 });
             }
             _ => {}
@@ -1217,6 +1229,9 @@ impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
                     ImplLongId::ImplVar(var) => {
                         *value = self.rewritten_impl_impl(var, trait_impl).lookup_intern(self.db);
                         return Ok(RewriteResult::Modified);
+                    }
+                    ImplLongId::ClosureImpl(_) => {
+                        unreachable!("Closure impls do not contain impls")
                     }
                 });
             }

@@ -14,7 +14,7 @@ use super::{
 use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
+use crate::items::imp::{ClosureImplId, ImplId, ImplImplId, ImplLongId, ImplLookupContext};
 use crate::substitution::SemanticRewriter;
 use crate::types::{peel_snapshots, ImplTypeId};
 use crate::{
@@ -365,6 +365,22 @@ impl<'db> InferenceConform for Inference<'db> {
             ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => {
                 Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
             }
+            ImplLongId::ClosureImpl(closure_imp0) => {
+                let ImplLongId::ClosureImpl(closure_imp1) = long_impl1 else {
+                    return Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }));
+                };
+
+                let args = self.conform_ty(closure_imp0.args, closure_imp1.args)?;
+
+                let closure_type =
+                    self.conform_ty(closure_imp0.closure_type, closure_imp1.closure_type)?;
+                Ok(ImplLongId::ClosureImpl(ClosureImplId {
+                    args,
+                    closure_type,
+                    trait_id: closure_imp0.trait_id,
+                })
+                .intern(self.db))
+            }
         }
     }
 
@@ -459,6 +475,10 @@ impl<'db> InferenceConform for Inference<'db> {
                 )
             }
             ImplLongId::ImplImpl(impl_impl) => self.impl_contains_var(impl_impl.impl_id(), var),
+            ImplLongId::ClosureImpl(closure_impl) => self.generic_args_contain_var(
+                &closure_impl.concrete_trait(self.db).generic_args(self.db),
+                var,
+            ),
         }
     }
 

@@ -203,6 +203,8 @@ impl<'ctx> ComputationContext<'ctx> {
     /// Adds warning for unused variables if required.
     fn add_unused_variable_warning(&mut self, var_name: &str, var: &Variable) {
         if !self.environment.used_variables.contains(&var.id()) && !var_name.starts_with('_') {
+            println!("var_name: {}, var: {:?}", var_name, var);
+            // panic!();
             self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedVariable);
         }
     }
@@ -748,6 +750,7 @@ fn compute_expr_function_call_semantic(
     let syntax_db = db.upcast();
 
     let path = syntax.path(syntax_db);
+    println!("path: {:?}", path.as_syntax_node().get_text(syntax_db));
     let item =
         ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path, NotFoundItemType::Function)?;
     let args_syntax = syntax.arguments(syntax_db).arguments(syntax_db);
@@ -1490,17 +1493,18 @@ fn compute_expr_closure_semantic(
     if matches!(ctx.function_id, ContextFunction::Global) {
         ctx.diagnostics.report(syntax, ClosureInGlobalScope);
     }
+    let closure_type = TypeLongId::Closure(ClosureTypeLongId {
+        param_tys: params.iter().map(|param| param.ty).collect(),
+        ret_ty,
+        wrapper_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
+    })
+    .intern(ctx.db);
     Ok(Expr::ExprClosure(ExprClosure {
         body,
         param_ids: params.iter().map(|param| param.id).collect(),
 
         stable_ptr: syntax.stable_ptr().into(),
-        ty: TypeLongId::Closure(ClosureTypeLongId {
-            param_tys: params.iter().map(|param| param.ty).collect(),
-            ret_ty,
-            wrapper_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
-        })
-        .intern(ctx.db),
+        ty: closure_type,
     }))
 }
 
@@ -2940,7 +2944,7 @@ fn expr_function_call(
 
     let expr_function_call = ExprFunctionCall {
         function: function_id,
-        args,
+        args: args.clone(),
         coupon_arg,
         ty: signature.return_type,
         stable_ptr,

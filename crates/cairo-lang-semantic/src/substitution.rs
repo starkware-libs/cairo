@@ -23,7 +23,7 @@ use crate::items::functions::{
     ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
-use crate::items::imp::{ImplId, ImplImplId, ImplLongId, UninferredImpl};
+use crate::items::imp::{ClosureImplId, ImplId, ImplImplId, ImplLongId, UninferredImpl};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
@@ -312,6 +312,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ValueSelectorArm, $($exclude)*);
         $crate::prune_single!(__regular_helper, MatchArmSelector, $($exclude)*);
         $crate::prune_single!(__regular_helper, ClosureTypeLongId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ClosureImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTypeId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteStructId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteStructLongId, $($exclude)*);

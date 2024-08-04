@@ -58,7 +58,8 @@ impl ImplGenericFunctionId {
             ImplLongId::GenericParameter(_)
             | ImplLongId::ImplVar(_)
             | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_) => Ok(None),
+            | ImplLongId::TraitImpl(_)
+            | ImplLongId::ClosureImpl(_) => Ok(None),
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {

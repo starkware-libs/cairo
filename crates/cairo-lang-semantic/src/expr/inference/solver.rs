@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::SemanticObject;
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::Itertools;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
@@ -10,7 +10,10 @@ use super::{
     InferenceData, InferenceError, InferenceId, InferenceResult, InferenceVar, LocalImplVarId,
 };
 use crate::db::SemanticGroup;
-use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{
+    find_candidates_at_context, ClosureImplId, ImplId, ImplLongId, ImplLookupContext,
+    UninferredImpl,
+};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, GenericArgumentId, TypeId, TypeLongId};
 
@@ -96,6 +99,30 @@ pub fn enrich_lookup_context(
     concrete_trait_id: ConcreteTraitId,
     lookup_context: &mut ImplLookupContext,
 ) {
+    if concrete_trait_id.trait_id(db) == crate::corelib::fn_once_trait(db) {
+        let [GenericArgumentId::Type(closure_type), GenericArgumentId::Type(args_type)] =
+            *concrete_trait_id.generic_args(db).as_slice()
+        else {
+            unreachable!("FnOnce trait should have two types generic arguments.");
+        };
+
+        if matches!(closure_type.lookup_intern(db), TypeLongId::Closure(_)) {
+            lookup_context.set_closure_impl(
+                ImplLongId::ClosureImpl(ClosureImplId {
+                    trait_id: concrete_trait_id.trait_id(db),
+                    closure_type,
+                    args: TypeLongId::Tuple(
+                        extract_matches!(closure_type.lookup_intern(db), TypeLongId::Closure)
+                            .param_tys
+                            .clone(),
+                    )
+                    .intern(db),
+                })
+                .intern(db),
+            );
+            return;
+        }
+    }
     lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db.upcast()).0);
     let generic_args = concrete_trait_id.generic_args(db);
     // Add the defining module of the generic args to the lookup.
@@ -198,7 +225,7 @@ impl CandidateSolver {
         let (concrete_trait_id, canonical_embedding) = canonical_trait.embed(&mut inference);
         // Add the defining module of the candidate to the lookup.
         let mut lookup_context = lookup_context.clone();
-        lookup_context.insert_lookup_scope(candidate.lookup_scope(db.upcast()));
+        lookup_context.insert_lookup_scope(db, &candidate);
         // Instantiate the candidate in the inference table.
         let candidate_impl =
             inference.infer_impl(candidate, concrete_trait_id, &lookup_context, None)?;
