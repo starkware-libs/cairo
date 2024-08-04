@@ -13,6 +13,7 @@ use crate::test_utils::{get_example_file_path, get_test_contract};
 #[test_case("new_syntax_test_contract::counter_contract")]
 #[test_case("minimal_contract::minimal_contract")]
 #[test_case("hello_starknet::hello_starknet")]
+#[test_case("libfuncs_coverage::libfuncs_coverage")]
 #[test_case("erc20::erc_20")]
 #[test_case("storage_accesses::storage_accesses")]
 #[test_case("token_bridge::token_bridge")]
