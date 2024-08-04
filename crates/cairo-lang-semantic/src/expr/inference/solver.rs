@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::SemanticObject;
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{extract_matches, LookupIntern};
 use itertools::Itertools;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
@@ -9,6 +9,7 @@ use super::infers::InferenceEmbeddings;
 use super::{
     InferenceData, InferenceError, InferenceId, InferenceResult, InferenceVar, LocalImplVarId,
 };
+use crate::corelib::panic_destruct_trait;
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
 use crate::substitution::SemanticRewriter;
@@ -144,6 +145,17 @@ impl Solver {
                 CandidateSolver::new(db, canonical_trait, candidate, &lookup_context).ok()
             })
             .collect();
+
+        if canonical_trait.0.trait_id(db) == panic_destruct_trait(db) {
+            let ty =
+                extract_matches!(canonical_trait.0.generic_args(db)[0], GenericArgumentId::Type);
+            if let TypeLongId::Closure(_) = db.lookup_intern_type(ty) {
+                eprintln!("PanicDestruct trait with closure type: {:?}", ty.debug(db.elongate()));
+                // UninferredImpl::ClosureDestructor(())
+                //                  CandidateSolver::new(db, canonical_trait, candidate,
+                // &lookup_context).ok()
+            }
+        }
 
         Self { canonical_trait, lookup_context, candidate_solvers }
     }
