@@ -667,6 +667,10 @@ pub fn numeric_literal_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::TopLevel, "NumericLiteral".into())
 }
 
+pub fn panic_destruct_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, CoreTraitContext::TopLevel, "PanicDestruct".into())
+}
+
 /// Given a core library trait name and its generic arguments, returns [ConcreteTraitId].
 fn get_core_concrete_trait(
     db: &dyn SemanticGroup,

@@ -132,7 +132,8 @@ impl ResolvedConcreteItem {
                 ImplLongId::GenericParameter(_)
                 | ImplLongId::ImplVar(_)
                 | ImplLongId::ImplImpl(_)
-                | ImplLongId::TraitImpl(_) => return None,
+                | ImplLongId::TraitImpl(_)
+                | ImplLongId::GeneratedImpl(_) => return None,
             },
         })
     }

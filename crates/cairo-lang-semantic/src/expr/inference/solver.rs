@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::SemanticObject;
-use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::{extract_matches, LookupIntern};
 use itertools::Itertools;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
@@ -9,6 +9,7 @@ use super::infers::InferenceEmbeddings;
 use super::{
     InferenceData, InferenceError, InferenceId, InferenceResult, InferenceVar, LocalImplVarId,
 };
+use crate::corelib::panic_destruct_trait;
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
 use crate::substitution::SemanticRewriter;
