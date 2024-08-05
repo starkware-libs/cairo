@@ -149,7 +149,7 @@ pub fn maybe_file_and_line(
     println!("{:?}", file_full_path);
     println!("{:?}", location);
 
-    Some((String::from(""), 0))
+    Some((String::from("xddd"), 0))
     
     // let absolute_semantic_path_to_file_module = file_module_absolute_identifier(db, file_id)?;
 
