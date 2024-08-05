@@ -5,9 +5,8 @@ use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-pub struct SourceFileFullPath(pub String); 
+pub struct SourceFileFullPath(pub String);
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SourceCodeLocation {
@@ -16,7 +15,6 @@ pub struct SourceCodeLocation {
     /// Character index inside the line, 0 based.
     pub col: usize,
 }
-
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SourceCodeSpan {

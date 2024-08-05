@@ -10,8 +10,10 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
+use crate::statements_code_locations::{
+    SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, StatementsSourceCodeLocations,
+};
 use crate::statements_functions::StatementsFunctions;
-use crate::statements_code_locations::{SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, StatementsSourceCodeLocations};
 
 #[cfg(test)]
 #[path = "statements_locations_test.rs"]
@@ -138,7 +140,6 @@ pub fn function_identifier_relative_to_file_module(
     relative_semantic_path_segments.into_iter().rev().join("::")
 }
 
-
 pub fn maybe_file_and_line(
     db: &dyn DefsGroup,
     location: StableLocation,
@@ -148,16 +149,10 @@ pub fn maybe_file_and_line(
     let position = location.span.position_in_file(db.upcast(), location.file_id);
     if let Some(position) = position {
         let source_location = SourceCodeSpan {
-            start: SourceCodeLocation {
-                col: position.start.col,
-                line: position.start.line,
-            },
-            end: SourceCodeLocation {
-                col: position.start.col,
-                line: position.start.line,
-            },
+            start: SourceCodeLocation { col: position.start.col, line: position.start.line },
+            end: SourceCodeLocation { col: position.start.col, line: position.start.line },
         };
-    
+
         Some((SourceFileFullPath(file_full_path), source_location))
     } else {
         None
@@ -239,8 +234,12 @@ impl StatementsLocations {
         }
     }
 
-    /// Creates a new [StatementsSourceCodeLocations] struct using [StatementsLocations] and [DefsGroup].
-    pub fn extract_statements_source_code_locations(&self, db: &dyn DefsGroup) -> StatementsSourceCodeLocations {
+    /// Creates a new [StatementsSourceCodeLocations] struct using [StatementsLocations] and
+    /// [DefsGroup].
+    pub fn extract_statements_source_code_locations(
+        &self,
+        db: &dyn DefsGroup,
+    ) -> StatementsSourceCodeLocations {
         StatementsSourceCodeLocations {
             statements_to_lines_map: self
                 .locations

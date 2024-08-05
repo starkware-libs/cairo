@@ -276,19 +276,23 @@ pub fn compile_prepared_db_program_artifact(
     }
 
     let mut annotations = if add_statements_functions {
-        Annotations::from(sierra_program_with_debug
-            .debug_info
-            .statements_locations
-            .extract_statements_functions(db))
+        Annotations::from(
+            sierra_program_with_debug
+                .debug_info
+                .statements_locations
+                .extract_statements_functions(db),
+        )
     } else {
         Annotations::default()
     };
 
     let statements_code_locations_annotations = if add_statements_lines {
-        Annotations::from(sierra_program_with_debug
-            .debug_info
-            .statements_locations
-            .extract_statements_source_code_locations(db))
+        Annotations::from(
+            sierra_program_with_debug
+                .debug_info
+                .statements_locations
+                .extract_statements_source_code_locations(db),
+        )
     } else {
         Annotations::default()
     };

@@ -141,10 +141,10 @@ pub fn compile_test_prepared_db(
         };
 
     let annotations_statements_lines = if tests_compilation_config.add_statements_lines {
-            Annotations::from(debug_info.statements_locations.extract_statements_functions(db))
-        } else {
-            Annotations::default()
-        };
+        Annotations::from(debug_info.statements_locations.extract_statements_functions(db))
+    } else {
+        Annotations::default()
+    };
 
     annotations.extend(annotations_statements_lines);
 
