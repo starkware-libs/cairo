@@ -282,7 +282,7 @@ pub fn constant_semantic_data_helper(
         }
         None => Resolver::new(db, element_id.module_file_id(db.upcast()), inference_id),
     };
-    resolver.set_allowed_features(element_id, constant_ast, &mut diagnostics);
+    resolver.set_feature_config(element_id, constant_ast, &mut diagnostics);
 
     let constant_type = resolve_type(
         db,

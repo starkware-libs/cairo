@@ -736,6 +736,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedFeatureAttrArguments => {
                 "`feature` attribute argument should be a single string.".into()
             }
+            SemanticDiagnosticKind::UnsupportedAllowAttrArguments => {
+                "`allow` attribute arguments are not yet supported.".into()
+            }
             SemanticDiagnosticKind::UnsupportedPubArgument => "Unsupported `pub` argument.".into(),
             SemanticDiagnosticKind::UnknownStatementAttribute => {
                 "Unknown statement attribute.".into()
@@ -1158,6 +1161,7 @@ pub enum SemanticDiagnosticKind {
     RedundantImplicitPrecedenceAttribute,
     UnsupportedImplicitPrecedenceArguments,
     UnsupportedFeatureAttrArguments,
+    UnsupportedAllowAttrArguments,
     UnsupportedPubArgument,
     UnknownStatementAttribute,
     InlineMacroNotFound(SmolStr),

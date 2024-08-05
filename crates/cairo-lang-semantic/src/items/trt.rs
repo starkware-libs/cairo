@@ -370,7 +370,7 @@ pub fn trait_generic_params_data(
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    resolver.set_allowed_features(&trait_id, &trait_ast, &mut diagnostics);
+    resolver.set_feature_config(&trait_id, &trait_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -1178,7 +1178,7 @@ pub fn priv_trait_function_declaration_data(
         (*function_generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.extend(function_generic_params_data.diagnostics);
-    resolver.set_allowed_features(&trait_function_id, function_syntax, &mut diagnostics);
+    resolver.set_feature_config(&trait_function_id, function_syntax, &mut diagnostics);
     let signature_syntax = declaration_syntax.signature(syntax_db);
     let mut environment = Environment::empty();
     let signature = semantic::Signature::from_ast(
