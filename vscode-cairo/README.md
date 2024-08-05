@@ -47,7 +47,7 @@ Consult the settings UI in VS Code for more documentation.
 ## Support
 
 For questions or inquiries about Cairo, Cairo Language Server and this extension, reach out to us
-on [Discord].
+on [Telegram] or [Discord].
 
 ## Troubleshooting
 
@@ -92,4 +92,5 @@ If you feel brave enough, you can try some of the more advanced debugging techni
 [scarb]: https://docs.swmansion.com/scarb
 [scarb-asdf]: https://docs.swmansion.com/scarb/download.html#install-via-asdf
 [scarb-dl]: https://docs.swmansion.com/scarb/download.html
+[telegram]: https://t.me/cairo_ls_support
 [vscode-marketplace]: https://marketplace.visualstudio.com/items?itemName=starkware.cairo1
