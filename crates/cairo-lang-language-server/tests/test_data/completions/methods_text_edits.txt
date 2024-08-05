@@ -1,0 +1,206 @@
+//! > Test adding simple trait.
+
+//! > test_runner_name
+test_completions_text_edits
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+mod hidden_trait {
+    pub trait ATrait1<T> {
+        fn some_method(self: @T);
+    }
+    impl Felt252ATraitImpl of ATrait1<felt252> {
+        fn some_method(self: @felt252) {}
+    }
+}
+
+use hidden_trait::ATrait1;
+
+mod inner_mod {
+    fn main() {
+        let x = 5_felt252;
+        x.some_me<caret>
+    }
+}
+
+//! > Completions #0
+        x.some_me<caret>
+--------------------------
+Completion: add_eq()
+Text edit: use core::traits::AddEq;
+--------------------------
+Completion: sub_eq()
+Text edit: use core::traits::SubEq;
+--------------------------
+Completion: mul_eq()
+Text edit: use core::traits::MulEq;
+--------------------------
+Completion: into()
+--------------------------
+Completion: try_into()
+--------------------------
+Completion: destruct()
+--------------------------
+Completion: panic_destruct()
+--------------------------
+Completion: new_inputs()
+Text edit: use core::circuit::CircuitInputs;
+--------------------------
+Completion: get_descriptor()
+--------------------------
+Completion: clone()
+--------------------------
+Completion: is_zero()
+Text edit: use core::num::traits::Zero;
+--------------------------
+Completion: is_non_zero()
+Text edit: use core::num::traits::Zero;
+--------------------------
+Completion: is_one()
+Text edit: use core::num::traits::One;
+--------------------------
+Completion: is_non_one()
+Text edit: use core::num::traits::One;
+--------------------------
+Completion: add_assign()
+Text edit: use core::ops::AddAssign;
+--------------------------
+Completion: sub_assign()
+Text edit: use core::ops::SubAssign;
+--------------------------
+Completion: mul_assign()
+Text edit: use core::ops::MulAssign;
+--------------------------
+Completion: serialize()
+--------------------------
+Completion: print()
+--------------------------
+Completion: fmt()
+Text edit: use core::fmt::Display;
+--------------------------
+Completion: fmt()
+Text edit: use core::fmt::Debug;
+--------------------------
+Completion: is_zero()
+--------------------------
+Completion: is_non_zero()
+--------------------------
+Completion: append_formatted_to_byte_array()
+Text edit: use core::to_byte_array::AppendFormattedToByteArray;
+--------------------------
+Completion: format_as_byte_array()
+Text edit: use core::to_byte_array::FormatAsByteArray;
+--------------------------
+Completion: some_method()
+Text edit: use super::ATrait1;
+
+//! > ==========================================================================
+
+//! > Test adding non directly visible traits.
+
+//! > test_runner_name
+test_completions_text_edits
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+mod hidden_trait {
+
+    pub trait ATrait1<T> {
+        fn some_method(self: @T);
+    }
+    impl Felt252ATraitImpl of ATrait1<felt252> {
+        fn some_method(self: @felt252) {}
+    }
+}
+
+use hidden_trait::ATrait1;
+
+mod inner_mod {
+    fn main() {
+        let x = 5_felt252;
+        x.some_me<caret>
+    }
+}
+
+//! > Completions #0
+        x.some_me<caret>
+--------------------------
+Completion: add_eq()
+Text edit: use core::traits::AddEq;
+--------------------------
+Completion: sub_eq()
+Text edit: use core::traits::SubEq;
+--------------------------
+Completion: mul_eq()
+Text edit: use core::traits::MulEq;
+--------------------------
+Completion: into()
+--------------------------
+Completion: try_into()
+--------------------------
+Completion: destruct()
+--------------------------
+Completion: panic_destruct()
+--------------------------
+Completion: new_inputs()
+Text edit: use core::circuit::CircuitInputs;
+--------------------------
+Completion: get_descriptor()
+--------------------------
+Completion: clone()
+--------------------------
+Completion: is_zero()
+Text edit: use core::num::traits::Zero;
+--------------------------
+Completion: is_non_zero()
+Text edit: use core::num::traits::Zero;
+--------------------------
+Completion: is_one()
+Text edit: use core::num::traits::One;
+--------------------------
+Completion: is_non_one()
+Text edit: use core::num::traits::One;
+--------------------------
+Completion: add_assign()
+Text edit: use core::ops::AddAssign;
+--------------------------
+Completion: sub_assign()
+Text edit: use core::ops::SubAssign;
+--------------------------
+Completion: mul_assign()
+Text edit: use core::ops::MulAssign;
+--------------------------
+Completion: serialize()
+--------------------------
+Completion: print()
+--------------------------
+Completion: fmt()
+Text edit: use core::fmt::Display;
+--------------------------
+Completion: fmt()
+Text edit: use core::fmt::Debug;
+--------------------------
+Completion: is_zero()
+--------------------------
+Completion: is_non_zero()
+--------------------------
+Completion: append_formatted_to_byte_array()
+Text edit: use core::to_byte_array::AppendFormattedToByteArray;
+--------------------------
+Completion: format_as_byte_array()
+Text edit: use core::to_byte_array::FormatAsByteArray;
+--------------------------
+Completion: some_method()
+Text edit: use super::ATrait1;
