@@ -1,7 +1,7 @@
 //! > Test expansion of consteval_int! simple usage
 
 //! > test_runner_name
-test_expand_expr(expect_diagnostics: false)
+test_expand_expr(expect_diagnostics: warnings_only)
 
 //! > expr_code
 consteval_int!(4 + 5)
@@ -10,13 +10,17 @@ consteval_int!(4 + 5)
 9
 
 //! > diagnostics
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:2:1
+consteval_int!(4 + 5)
+^*******************^
 
 //! > ==========================================================================
 
 //! > Test expansion of consteval_int! complex usage
 
 //! > test_runner_name
-test_expand_expr(expect_diagnostics: false)
+test_expand_expr(expect_diagnostics: warnings_only)
 
 //! > expr_code
 consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
@@ -25,13 +29,17 @@ consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
 47
 
 //! > diagnostics
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:2:1
+consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
+^**************************************^
 
 //! > ==========================================================================
 
 //! > Test expansion of consteval_int! handle temporary overflow
 
 //! > test_runner_name
-test_expand_expr(expect_diagnostics: false)
+test_expand_expr(expect_diagnostics: warnings_only)
 
 //! > expr_code
 consteval_int!(255 + 1 - 1)
@@ -40,6 +48,10 @@ consteval_int!(255 + 1 - 1)
 255
 
 //! > diagnostics
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:2:1
+consteval_int!(255 + 1 - 1)
+^*************************^
 
 //! > ==========================================================================
 
@@ -83,3 +95,88 @@ error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:1
 array![]
 ^******^
+
+//! > ==========================================================================
+
+//! > Test expansion of panic macro with no arguments
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+panic!()
+
+//! > expanded_code
+core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 0, 0, 0)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of panic macro with a simple short string
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+panic!("0123456")
+
+//! > expanded_code
+core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 0, 0x30313233343536, 7)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of panic macro with a 31 byte string.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+panic!("0123456789012345678901234567890")
+
+//! > expanded_code
+core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 1, 0x30313233343536373839303132333435363738393031323334353637383930, 0, 0)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of panic macro with a simple 35 bytes string.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: false)
+
+//! > expr_code
+panic!("01234567890123456789012345678901234")
+
+//! > expanded_code
+core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 1, 0x30313233343536373839303132333435363738393031323334353637383930, 0x31323334, 4)
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of panic macro with args
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > expr_code
+panic!("bad_format(})")
+
+//! > expanded_code
+{
+    let mut __formatter_for_panic_macro__: core::fmt::Formatter = core::traits::Default::default();
+    core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+write!(__formatter_for_panic_macro__, "bad_format(})")
+    );
+    core::panics::panic_with_byte_array(@__formatter_for_panic_macro__.buffer)
+}
+
+//! > diagnostics
+error: Plugin diagnostic: Closing `}` without a matching `{`.
+ --> lib.cairo:2:8
+panic!("bad_format(})")
+       ^*************^

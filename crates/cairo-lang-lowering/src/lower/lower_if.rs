@@ -56,7 +56,8 @@ pub fn lower_expr_if_bool(
     let subscope_main = create_subscope_with_bound_refs(ctx, builder);
     let block_main_id = subscope_main.block_id;
     let main_block =
-        extract_matches!(&ctx.function_body.exprs[expr.if_block], semantic::Expr::Block).clone();
+        extract_matches!(&ctx.function_body.arenas.exprs[expr.if_block], semantic::Expr::Block)
+            .clone();
     let main_block_var_id = ctx.new_var(VarRequest {
         ty: unit_ty,
         location: ctx.get_location(main_block.stable_ptr.untyped()),
@@ -104,7 +105,7 @@ pub fn lower_expr_if_let(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
 
-    let matched_expr = ctx.function_body.exprs[matched_expr].clone();
+    let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
     let ty = matched_expr.ty();
 
     if ty == ctx.db.core_felt252_ty()
@@ -165,7 +166,7 @@ fn lower_optional_else_block(
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {
         Some(else_expr) => {
-            let expr = ctx.function_body.exprs[else_expr].clone();
+            let expr = ctx.function_body.arenas.exprs[else_expr].clone();
             match &expr {
                 semantic::Expr::Block(block) => lower_block(ctx, builder, block),
                 semantic::Expr::If(if_expr) => {

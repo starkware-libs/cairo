@@ -34,13 +34,20 @@ fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopan
 
 pub(crate) extern fn u128_to_felt252(a: u128) -> felt252 nopanic;
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub extern fn u128_overflowing_add(
     lhs: u128, rhs: u128
 ) -> Result<u128, u128> implicits(RangeCheck) nopanic;
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub extern fn u128_overflowing_sub(
     lhs: u128, rhs: u128
 ) -> Result<u128, u128> implicits(RangeCheck) nopanic;
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingAdd` instead")]
 pub fn u128_wrapping_add(lhs: u128, rhs: u128) -> u128 implicits(RangeCheck) nopanic {
     match u128_overflowing_add(lhs, rhs) {
         Result::Ok(x) => x,
@@ -48,6 +55,7 @@ pub fn u128_wrapping_add(lhs: u128, rhs: u128) -> u128 implicits(RangeCheck) nop
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingSub` instead")]
 pub fn u128_wrapping_sub(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
     match u128_overflowing_sub(a, b) {
         Result::Ok(x) => x,
@@ -68,6 +76,7 @@ extern fn u128_guarantee_mul(a: u128, b: u128) -> (u128, u128, U128MulGuarantee)
 extern fn u128_mul_guarantee_verify(guarantee: U128MulGuarantee) implicits(RangeCheck) nopanic;
 
 /// Multiplies two u128s and returns `(high, low)` - the 128-bit parts of the result.
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 #[inline(always)]
 pub fn u128_wide_mul(a: u128, b: u128) -> (u128, u128) nopanic {
     let (high, low, _) = u128_guarantee_mul(a, b);
@@ -80,8 +89,12 @@ impl U128MulGuaranteeDestruct of Destruct<U128MulGuarantee> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u128_sqrt(value: u128) -> u64 implicits(RangeCheck) nopanic;
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingMul` instead"
+)]
 pub fn u128_overflowing_mul(lhs: u128, rhs: u128) -> (u128, bool) implicits(RangeCheck) nopanic {
     let (top_word, bottom_word) = u128_wide_mul(lhs, rhs);
     match u128_to_felt252(top_word) {
@@ -210,7 +223,7 @@ impl U128BitOr of core::traits::BitOr<u128> {
 }
 impl U128BitNot of core::traits::BitNot<u128> {
     fn bitnot(a: u128) -> u128 {
-        BoundedInt::max() - a
+        core::num::traits::Bounded::MAX - a
     }
 }
 
@@ -262,9 +275,16 @@ impl U8PartialOrd of PartialOrd<u8> {
     }
 }
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub extern fn u8_overflowing_add(lhs: u8, rhs: u8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub extern fn u8_overflowing_sub(lhs: u8, rhs: u8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingAdd` instead")]
 pub fn u8_wrapping_add(lhs: u8, rhs: u8) -> u8 implicits(RangeCheck) nopanic {
     match u8_overflowing_add(lhs, rhs) {
         Result::Ok(x) => x,
@@ -272,6 +292,7 @@ pub fn u8_wrapping_add(lhs: u8, rhs: u8) -> u8 implicits(RangeCheck) nopanic {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingSub` instead")]
 pub fn u8_wrapping_sub(lhs: u8, rhs: u8) -> u8 implicits(RangeCheck) nopanic {
     match u8_overflowing_sub(lhs, rhs) {
         Result::Ok(x) => x,
@@ -305,7 +326,9 @@ impl U8Sub of Sub<u8> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn u8_wide_mul(lhs: u8, rhs: u8) -> u16 implicits() nopanic;
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u8_sqrt(value: u8) -> u8 implicits(RangeCheck) nopanic;
 
 impl U8Mul of Mul<u8> {
@@ -339,7 +362,7 @@ impl U8DivRem of DivRem<u8> {
 
 impl U8BitNot of BitNot<u8> {
     fn bitnot(a: u8) -> u8 {
-        BoundedInt::max() - a
+        core::num::traits::Bounded::MAX - a
     }
 }
 extern fn u8_bitwise(lhs: u8, rhs: u8) -> (u8, u8, u8) implicits(Bitwise) nopanic;
@@ -409,13 +432,20 @@ impl U16PartialOrd of PartialOrd<u16> {
     }
 }
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub extern fn u16_overflowing_add(
     lhs: u16, rhs: u16
 ) -> Result<u16, u16> implicits(RangeCheck) nopanic;
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub extern fn u16_overflowing_sub(
     lhs: u16, rhs: u16
 ) -> Result<u16, u16> implicits(RangeCheck) nopanic;
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingAdd` instead")]
 pub fn u16_wrapping_add(lhs: u16, rhs: u16) -> u16 implicits(RangeCheck) nopanic {
     match u16_overflowing_add(lhs, rhs) {
         Result::Ok(x) => x,
@@ -423,6 +453,7 @@ pub fn u16_wrapping_add(lhs: u16, rhs: u16) -> u16 implicits(RangeCheck) nopanic
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingSub` instead")]
 pub fn u16_wrapping_sub(lhs: u16, rhs: u16) -> u16 implicits(RangeCheck) nopanic {
     match u16_overflowing_sub(lhs, rhs) {
         Result::Ok(x) => x,
@@ -456,7 +487,9 @@ impl U16Sub of Sub<u16> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn u16_wide_mul(lhs: u16, rhs: u16) -> u32 implicits() nopanic;
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u16_sqrt(value: u16) -> u8 implicits(RangeCheck) nopanic;
 
 impl U16Mul of Mul<u16> {
@@ -492,7 +525,7 @@ impl U16DivRem of DivRem<u16> {
 
 impl U16BitNot of BitNot<u16> {
     fn bitnot(a: u16) -> u16 {
-        BoundedInt::max() - a
+        core::num::traits::Bounded::MAX - a
     }
 }
 extern fn u16_bitwise(lhs: u16, rhs: u16) -> (u16, u16, u16) implicits(Bitwise) nopanic;
@@ -562,13 +595,20 @@ impl U32PartialOrd of PartialOrd<u32> {
     }
 }
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub extern fn u32_overflowing_add(
     lhs: u32, rhs: u32
 ) -> Result<u32, u32> implicits(RangeCheck) nopanic;
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub extern fn u32_overflowing_sub(
     lhs: u32, rhs: u32
 ) -> Result<u32, u32> implicits(RangeCheck) nopanic;
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingAdd` instead")]
 pub fn u32_wrapping_add(lhs: u32, rhs: u32) -> u32 implicits(RangeCheck) nopanic {
     match u32_overflowing_add(lhs, rhs) {
         Result::Ok(x) => x,
@@ -576,6 +616,7 @@ pub fn u32_wrapping_add(lhs: u32, rhs: u32) -> u32 implicits(RangeCheck) nopanic
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingSub` instead")]
 pub fn u32_wrapping_sub(lhs: u32, rhs: u32) -> u32 implicits(RangeCheck) nopanic {
     match u32_overflowing_sub(lhs, rhs) {
         Result::Ok(x) => x,
@@ -609,7 +650,9 @@ impl U32Sub of Sub<u32> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn u32_wide_mul(lhs: u32, rhs: u32) -> u64 implicits() nopanic;
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u32_sqrt(value: u32) -> u16 implicits(RangeCheck) nopanic;
 
 impl U32Mul of Mul<u32> {
@@ -645,7 +688,7 @@ impl U32DivRem of DivRem<u32> {
 
 impl U32BitNot of BitNot<u32> {
     fn bitnot(a: u32) -> u32 {
-        BoundedInt::max() - a
+        core::num::traits::Bounded::MAX - a
     }
 }
 extern fn u32_bitwise(lhs: u32, rhs: u32) -> (u32, u32, u32) implicits(Bitwise) nopanic;
@@ -715,13 +758,20 @@ impl U64PartialOrd of PartialOrd<u64> {
     }
 }
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub extern fn u64_overflowing_add(
     lhs: u64, rhs: u64
 ) -> Result<u64, u64> implicits(RangeCheck) nopanic;
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
 pub extern fn u64_overflowing_sub(
     lhs: u64, rhs: u64
 ) -> Result<u64, u64> implicits(RangeCheck) nopanic;
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingAdd` instead")]
 pub fn u64_wrapping_add(lhs: u64, rhs: u64) -> u64 implicits(RangeCheck) nopanic {
     match u64_overflowing_add(lhs, rhs) {
         Result::Ok(x) => x,
@@ -729,6 +779,7 @@ pub fn u64_wrapping_add(lhs: u64, rhs: u64) -> u64 implicits(RangeCheck) nopanic
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WrappingSub` instead")]
 pub fn u64_wrapping_sub(lhs: u64, rhs: u64) -> u64 implicits(RangeCheck) nopanic {
     match u64_overflowing_sub(lhs, rhs) {
         Result::Ok(x) => x,
@@ -762,7 +813,9 @@ impl U64Sub of Sub<u64> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn u64_wide_mul(lhs: u64, rhs: u64) -> u128 implicits() nopanic;
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u64_sqrt(value: u64) -> u32 implicits(RangeCheck) nopanic;
 
 impl U64Mul of Mul<u64> {
@@ -798,7 +851,7 @@ impl U64DivRem of DivRem<u64> {
 
 impl U64BitNot of BitNot<u64> {
     fn bitnot(a: u64) -> u64 {
-        BoundedInt::max() - a
+        core::num::traits::Bounded::MAX - a
     }
 }
 extern fn u64_bitwise(lhs: u64, rhs: u64) -> (u64, u64, u64) implicits(Bitwise) nopanic;
@@ -837,6 +890,9 @@ pub struct u256 {
 }
 impl NumericLiteralU256 of NumericLiteral<u256>;
 
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingAdd` instead"
+)]
 pub fn u256_overflowing_add(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
     let (high, overflow) = match u128_overflowing_add(lhs.high, rhs.high) {
         Result::Ok(high) => (high, false),
@@ -853,7 +909,10 @@ pub fn u256_overflowing_add(lhs: u256, rhs: u256) -> (u256, bool) implicits(Rang
     }
 }
 
-pub fn u256_overflow_sub(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingSub` instead"
+)]
+pub fn u256_overflowing_sub(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
     let (high, overflow) = match u128_overflowing_sub(lhs.high, rhs.high) {
         Result::Ok(high) => (high, false),
         Result::Err(high) => (high, true),
@@ -869,7 +928,18 @@ pub fn u256_overflow_sub(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCh
     }
 }
 
-pub fn u256_overflow_mul(lhs: u256, rhs: u256) -> (u256, bool) {
+#[deprecated(
+    feature: "deprecated-overflow-functions",
+    note: "Use `core::integer::u256_overflowing_add` instead"
+)]
+pub fn u256_overflow_sub(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
+    u256_overflowing_sub(lhs, rhs)
+}
+
+#[deprecated(
+    feature: "corelib-internal-use", note: "Use `core::num::traits::OverflowingMul` instead"
+)]
+pub fn u256_overflowing_mul(lhs: u256, rhs: u256) -> (u256, bool) {
     let (high1, low) = u128_wide_mul(lhs.low, rhs.low);
     let (overflow_value1, high2) = u128_wide_mul(lhs.low, rhs.high);
     let (overflow_value2, high3) = u128_wide_mul(lhs.high, rhs.low);
@@ -889,6 +959,14 @@ pub fn u256_overflow_mul(lhs: u256, rhs: u256) -> (u256, bool) {
     (u256 { low, high }, overflow)
 }
 
+#[deprecated(
+    feature: "deprecated-overflow-functions",
+    note: "Use `core::integer::u256_overflowing_mul` instead"
+)]
+pub fn u256_overflow_mul(lhs: u256, rhs: u256) -> (u256, bool) {
+    u256_overflowing_mul(lhs, rhs)
+}
+
 fn u256_checked_add(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) nopanic {
     let (r, overflow) = u256_overflowing_add(lhs, rhs);
     if overflow {
@@ -906,7 +984,7 @@ impl U256Add of Add<u256> {
 
 #[panic_with('u256_sub Overflow', u256_sub)]
 fn u256_checked_sub(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) nopanic {
-    let (r, overflow) = u256_overflow_sub(lhs, rhs);
+    let (r, overflow) = u256_overflowing_sub(lhs, rhs);
     if overflow {
         Option::None
     } else {
@@ -921,7 +999,7 @@ impl U256Sub of Sub<u256> {
 }
 
 fn u256_checked_mul(lhs: u256, rhs: u256) -> Option<u256> implicits(RangeCheck) {
-    let (r, overflow) = u256_overflow_mul(lhs, rhs);
+    let (r, overflow) = u256_overflowing_mul(lhs, rhs);
     if overflow {
         Option::None
     } else {
@@ -999,6 +1077,7 @@ fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(Ra
     let (q, r, _) = u256_safe_divmod(lhs, rhs);
     (q, r)
 }
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 pub extern fn u256_sqrt(a: u256) -> u128 implicits(RangeCheck) nopanic;
 
 #[panic_with('u256 is 0', u256_as_non_zero)]
@@ -1049,6 +1128,7 @@ fn u128_add_with_carry(a: u128, b: u128) -> (u128, u128) nopanic {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
     let (limb1, limb0) = u128_wide_mul(a.low, b.low);
     let (limb2, limb1_part) = u128_wide_mul(a.low, b.high);
@@ -1104,134 +1184,44 @@ impl U512TryIntoU256 of TryInto<u512, u256> {
     }
 }
 
-/// Bounded
+/// Trait for getting the maximal and minimal values of an integer type.
+#[deprecated(
+    feature: "deprecated-bounded-int-trait", note: "Use `core::num::traits::Bounded` instead"
+)]
 pub trait BoundedInt<T> {
+    /// Returns the minimal value of the type.
     #[must_use]
     fn min() -> T nopanic;
+    /// Returns the maximal value of the type.
     #[must_use]
     fn max() -> T nopanic;
 }
 
-impl BoundedU8 of BoundedInt<u8> {
-    #[inline(always)]
-    fn min() -> u8 nopanic {
-        0_u8
-    }
-    #[inline(always)]
-    fn max() -> u8 nopanic {
-        0xff_u8
-    }
-}
-
-impl BoundedU16 of BoundedInt<u16> {
-    #[inline(always)]
-    fn min() -> u16 nopanic {
-        0_u16
-    }
-    #[inline(always)]
-    fn max() -> u16 nopanic {
-        0xffff_u16
+mod bounded_int_impls {
+    #[feature("deprecated-bounded-int-trait")]
+    pub impl ByBounded<T, impl Bounded: core::num::traits::Bounded<T>> of super::BoundedInt<T> {
+        #[inline(always)]
+        fn min() -> T nopanic {
+            Bounded::MIN
+        }
+        #[inline(always)]
+        fn max() -> T nopanic {
+            Bounded::MAX
+        }
     }
 }
 
-impl BoundedU32 of BoundedInt<u32> {
-    #[inline(always)]
-    fn min() -> u32 nopanic {
-        0_u32
-    }
-    #[inline(always)]
-    fn max() -> u32 nopanic {
-        0xffffffff_u32
-    }
-}
-
-impl BoundedU64 of BoundedInt<u64> {
-    #[inline(always)]
-    fn min() -> u64 nopanic {
-        0_u64
-    }
-    #[inline(always)]
-    fn max() -> u64 nopanic {
-        0xffffffffffffffff_u64
-    }
-}
-
-impl BoundedU128 of BoundedInt<u128> {
-    #[inline(always)]
-    fn min() -> u128 nopanic {
-        0_u128
-    }
-    #[inline(always)]
-    fn max() -> u128 nopanic {
-        0xffffffffffffffffffffffffffffffff_u128
-    }
-}
-
-impl BoundedU256 of BoundedInt<u256> {
-    #[inline(always)]
-    fn min() -> u256 nopanic {
-        0_u256
-    }
-    #[inline(always)]
-    fn max() -> u256 nopanic {
-        u256 { low: BoundedInt::max(), high: BoundedInt::max() }
-    }
-}
-
-impl BoundedI8 of BoundedInt<i8> {
-    #[inline(always)]
-    fn min() -> i8 nopanic {
-        -0x80
-    }
-    #[inline(always)]
-    fn max() -> i8 nopanic {
-        0x7f
-    }
-}
-
-impl BoundedI16 of BoundedInt<i16> {
-    #[inline(always)]
-    fn min() -> i16 nopanic {
-        -0x8000
-    }
-    #[inline(always)]
-    fn max() -> i16 nopanic {
-        0x7fff
-    }
-}
-
-impl BoundedI32 of BoundedInt<i32> {
-    #[inline(always)]
-    fn min() -> i32 nopanic {
-        -0x80000000
-    }
-    #[inline(always)]
-    fn max() -> i32 nopanic {
-        0x7fffffff
-    }
-}
-
-impl BoundedI64 of BoundedInt<i64> {
-    #[inline(always)]
-    fn min() -> i64 nopanic {
-        -0x8000000000000000
-    }
-    #[inline(always)]
-    fn max() -> i64 nopanic {
-        0x7fffffffffffffff
-    }
-}
-
-impl BoundedI128 of BoundedInt<i128> {
-    #[inline(always)]
-    fn min() -> i128 nopanic {
-        -0x80000000000000000000000000000000
-    }
-    #[inline(always)]
-    fn max() -> i128 nopanic {
-        0x7fffffffffffffffffffffffffffffff
-    }
-}
+impl BoundedU8 = bounded_int_impls::ByBounded<u8>;
+impl BoundedU16 = bounded_int_impls::ByBounded<u16>;
+impl BoundedU32 = bounded_int_impls::ByBounded<u32>;
+impl BoundedU64 = bounded_int_impls::ByBounded<u64>;
+impl BoundedU128 = bounded_int_impls::ByBounded<u128>;
+impl BoundedU256 = bounded_int_impls::ByBounded<u256>;
+impl BoundedI8 = bounded_int_impls::ByBounded<i8>;
+impl BoundedI16 = bounded_int_impls::ByBounded<i16>;
+impl BoundedI32 = bounded_int_impls::ByBounded<i32>;
+impl BoundedI64 = bounded_int_impls::ByBounded<i64>;
+impl BoundedI128 = bounded_int_impls::ByBounded<i128>;
 
 /// Conversions.
 pub(crate) impl Felt252TryIntoU8 of TryInto<felt252, u8> {
@@ -1363,7 +1353,9 @@ pub(crate) extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
 
 // TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
 //   will not lead to Sierra errors.
-extern fn downcast<FromType, ToType>(x: FromType) -> Option<ToType> implicits(RangeCheck) nopanic;
+pub(crate) extern fn downcast<FromType, ToType>(
+    x: FromType
+) -> Option<ToType> implicits(RangeCheck) nopanic;
 
 // Marks `FromType` as upcastable to `ToType`.
 // Do not add user code implementing this trait.
@@ -1688,6 +1680,7 @@ impl I8Neg of Neg<i8> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
 impl I8Mul of Mul<i8> {
     fn mul(lhs: i8, rhs: i8) -> i8 {
@@ -1772,6 +1765,7 @@ impl I16Neg of Neg<i16> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i16_wide_mul(lhs: i16, rhs: i16) -> i32 implicits() nopanic;
 impl I16Mul of Mul<i16> {
     fn mul(lhs: i16, rhs: i16) -> i16 {
@@ -1856,6 +1850,7 @@ impl I32Neg of Neg<i32> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i32_wide_mul(lhs: i32, rhs: i32) -> i64 implicits() nopanic;
 impl I32Mul of Mul<i32> {
     fn mul(lhs: i32, rhs: i32) -> i32 {
@@ -1940,6 +1935,7 @@ impl I64Neg of Neg<i64> {
     }
 }
 
+#[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::WideMul` instead")]
 pub extern fn i64_wide_mul(lhs: i64, rhs: i64) -> i128 implicits() nopanic;
 impl I64Mul of Mul<i64> {
     fn mul(lhs: i64, rhs: i64) -> i64 {
@@ -2960,7 +2956,7 @@ impl U128OverflowingSub of core::num::traits::OverflowingSub<u128> {
 
 impl U256OverflowingSub of core::num::traits::OverflowingSub<u256> {
     fn overflowing_sub(self: u256, v: u256) -> (u256, bool) {
-        u256_overflow_sub(self, v)
+        u256_overflowing_sub(self, v)
     }
 }
 
@@ -3018,7 +3014,7 @@ impl I128OverflowingSub of core::num::traits::OverflowingSub<i128> {
 impl U8OverflowingMul of core::num::traits::OverflowingMul<u8> {
     fn overflowing_mul(self: u8, v: u8) -> (u8, bool) {
         let wide_result = u8_wide_mul(self, v);
-        let MASK: u16 = BoundedInt::<u8>::max().into();
+        let MASK: u16 = core::num::traits::Bounded::<u8>::MAX.into();
         let (v_low, _, v_with_low_masked) = u16_bitwise(wide_result, MASK);
         (v_low.try_into().unwrap(), v_with_low_masked != MASK)
     }
@@ -3027,7 +3023,7 @@ impl U8OverflowingMul of core::num::traits::OverflowingMul<u8> {
 impl U16OverflowingMul of core::num::traits::OverflowingMul<u16> {
     fn overflowing_mul(self: u16, v: u16) -> (u16, bool) {
         let wide_result = u16_wide_mul(self, v);
-        let MASK: u32 = BoundedInt::<u16>::max().into();
+        let MASK: u32 = core::num::traits::Bounded::<u16>::MAX.into();
         let (v_low, _, v_with_low_masked) = u32_bitwise(wide_result, MASK);
         (v_low.try_into().unwrap(), v_with_low_masked != MASK)
     }
@@ -3036,7 +3032,7 @@ impl U16OverflowingMul of core::num::traits::OverflowingMul<u16> {
 impl U32OverflowingMul of core::num::traits::OverflowingMul<u32> {
     fn overflowing_mul(self: u32, v: u32) -> (u32, bool) {
         let wide_result = u32_wide_mul(self, v);
-        let MASK: u64 = BoundedInt::<u32>::max().into();
+        let MASK: u64 = core::num::traits::Bounded::<u32>::MAX.into();
         let (v_low, _, v_with_low_masked) = u64_bitwise(wide_result, MASK);
         (v_low.try_into().unwrap(), v_with_low_masked != MASK)
     }
@@ -3045,7 +3041,7 @@ impl U32OverflowingMul of core::num::traits::OverflowingMul<u32> {
 impl U64OverflowingMul of core::num::traits::OverflowingMul<u64> {
     fn overflowing_mul(self: u64, v: u64) -> (u64, bool) {
         let wide_result = u64_wide_mul(self, v);
-        let MASK: u128 = BoundedInt::<u64>::max().into();
+        let MASK: u128 = core::num::traits::Bounded::<u64>::MAX.into();
         let (v_low, _, v_with_low_masked) = bitwise(wide_result, MASK);
         (v_low.try_into().unwrap(), v_with_low_masked != MASK)
     }
@@ -3059,7 +3055,7 @@ impl U128OverflowingMul of core::num::traits::OverflowingMul<u128> {
 
 impl U256OverflowingMul of core::num::traits::OverflowingMul<u256> {
     fn overflowing_mul(self: u256, v: u256) -> (u256, bool) {
-        u256_overflow_mul(self, v)
+        u256_overflowing_mul(self, v)
     }
 }
 

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_utils::Intern;
 
 use super::TextOffset;
@@ -14,8 +12,8 @@ fn test_db() -> (FilesDatabaseForTesting, FileId) {
     let file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "name".into(),
-        content: Arc::new(TEST_STRING.into()),
-        code_mappings: Default::default(),
+        content: TEST_STRING.into(),
+        code_mappings: [].into(),
         kind: FileKind::Module,
     })
     .intern(&db);

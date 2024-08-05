@@ -108,9 +108,12 @@ fn test_location_and_diagnostics() {
     let function_body = db.function_body(test_expr.function_id).unwrap();
 
     let expr_location = StableLocation::new(
-        extract_matches!(&function_body.exprs[test_expr.expr_id], semantic::Expr::Assignment)
-            .stable_ptr
-            .untyped(),
+        extract_matches!(
+            &function_body.arenas.exprs[test_expr.expr_id],
+            semantic::Expr::Assignment
+        )
+        .stable_ptr
+        .untyped(),
     )
     .diagnostic_location(db);
 

@@ -7,6 +7,7 @@ use starknet::{
     EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait
 };
 
+/// A point on the Secp256r1 curve.
 #[derive(Copy, Drop)]
 pub extern type Secp256r1Point;
 

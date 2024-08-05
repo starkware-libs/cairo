@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -33,8 +31,8 @@ pub fn create_virtual_file(
     FileLongId::Virtual(VirtualFile {
         parent: None,
         name: file_name.into(),
-        content: Arc::new(content.into()),
-        code_mappings: Default::default(),
+        content: content.into(),
+        code_mappings: [].into(),
         kind: FileKind::Module,
     })
     .intern(db)

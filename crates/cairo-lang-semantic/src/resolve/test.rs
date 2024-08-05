@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
@@ -52,7 +50,7 @@ fn test_resolve_path() {
 
 fn set_file_content(db: &mut SemanticDatabaseForTesting, path: &str, content: &str) {
     let file_id = FileLongId::OnDisk(path.into()).intern(db);
-    db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.into())));
+    db.as_files_group_mut().override_file_content(file_id, Some(content.into()));
 }
 
 #[test]

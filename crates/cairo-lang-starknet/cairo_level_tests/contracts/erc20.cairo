@@ -25,7 +25,10 @@ pub mod erc_20 {
     use starknet::get_caller_address;
     use starknet::contract_address_const;
     use starknet::ContractAddress;
-    use starknet::storage::Map;
+    use starknet::storage::{
+        Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
+        StorageMapWriteAccess
+    };
 
     #[storage]
     struct Storage {

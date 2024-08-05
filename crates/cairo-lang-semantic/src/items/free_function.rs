@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Intern;
 
-use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
+use super::function_with_body::{get_inline_config, Arenas, FunctionBody, FunctionBodyData};
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, GenericFunctionId,
     InlineConfiguration,
@@ -99,7 +99,7 @@ pub fn free_function_generic_params_data(
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
-    )?;
+    );
 
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, free_function_syntax.stable_ptr().untyped());
@@ -260,6 +260,6 @@ pub fn priv_free_function_body_data(
         expr_lookup,
         pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { exprs, patterns, statements, body_expr }),
+        body: Arc::new(FunctionBody { arenas: Arenas { exprs, patterns, statements }, body_expr }),
     })
 }

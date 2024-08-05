@@ -121,7 +121,8 @@ pub fn lower_function(
 
     // Fetch body block expr.
     let semantic_block =
-        extract_matches!(&ctx.function_body.exprs[block_expr_id], semantic::Expr::Block).clone();
+        extract_matches!(&ctx.function_body.arenas.exprs[block_expr_id], semantic::Expr::Block)
+            .clone();
 
     // Initialize builder.
     let root_block_id = alloc_empty_block(&mut ctx);
@@ -196,10 +197,11 @@ pub fn lower_for_loop(
     };
     let next_value_type = some_variant.ty;
     builder.update_ref(ctx, &loop_expr.into_iter_member_path, next_iterator.var_id);
-    let pattern = ctx.function_body.patterns[loop_expr.pattern].clone();
+    let pattern = ctx.function_body.arenas.patterns[loop_expr.pattern].clone();
     let unit_ty = corelib::unit_ty(semantic_db);
     let some_block: cairo_lang_semantic::ExprBlock =
-        extract_matches!(&ctx.function_body.exprs[loop_expr.body], semantic::Expr::Block).clone();
+        extract_matches!(&ctx.function_body.arenas.exprs[loop_expr.body], semantic::Expr::Block)
+            .clone();
     let mut some_subscope = create_subscope(ctx, builder);
     let some_subscope_block_id = some_subscope.block_id;
     let some_var_id = ctx.new_var(VarRequest {
@@ -292,7 +294,8 @@ pub fn lower_while_loop(
     let mut subscope_main = create_subscope_with_bound_refs(ctx, builder);
     let block_main_id = subscope_main.block_id;
     let main_block =
-        extract_matches!(&ctx.function_body.exprs[loop_expr.body], semantic::Expr::Block).clone();
+        extract_matches!(&ctx.function_body.arenas.exprs[loop_expr.body], semantic::Expr::Block)
+            .clone();
     let main_block_var_id = ctx.new_var(VarRequest {
         ty: unit_ty,
         location: ctx.get_location(main_block.stable_ptr.untyped()),
@@ -357,7 +360,7 @@ pub fn lower_expr_while_let(
     let location = ctx.get_location(loop_expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
 
-    let matched_expr = ctx.function_body.exprs[matched_expr].clone();
+    let matched_expr = ctx.function_body.arenas.exprs[matched_expr].clone();
     let ty = matched_expr.ty();
 
     if ty == ctx.db.core_felt252_ty()
@@ -441,11 +444,12 @@ pub fn lower_loop_function(
         .collect_vec();
 
     let root_ok = (|| {
-        let (block_expr, stable_ptr) = match ctx.function_body.exprs[loop_expr_id].clone() {
+        let (block_expr, stable_ptr) = match ctx.function_body.arenas.exprs[loop_expr_id].clone() {
             semantic::Expr::Loop(semantic::ExprLoop { body, stable_ptr, .. }) => {
                 // Fetch body block expr.
                 let semantic_block =
-                    extract_matches!(&ctx.function_body.exprs[body], semantic::Expr::Block).clone();
+                    extract_matches!(&ctx.function_body.arenas.exprs[body], semantic::Expr::Block)
+                        .clone();
 
                 let block_expr = (|| {
                     lower_expr_block(&mut ctx, &mut builder, &semantic_block)?;
@@ -559,7 +563,7 @@ fn lower_expr_block(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a block.");
     for (i, stmt_id) in expr_block.statements.iter().enumerate() {
-        let stmt = ctx.function_body.statements[*stmt_id].clone();
+        let stmt = ctx.function_body.arenas.statements[*stmt_id].clone();
         let Err(err) = lower_statement(ctx, builder, &stmt) else {
             continue;
         };
@@ -568,9 +572,9 @@ fn lower_expr_block(
             // TODO(spapini): We might want to report unreachable for expr that abruptly
             // ends, e.g. `5 + {return; 6}`.
             if i + 1 < expr_block.statements.len() {
-                let start_stmt = &ctx.function_body.statements[expr_block.statements[i + 1]];
+                let start_stmt = &ctx.function_body.arenas.statements[expr_block.statements[i + 1]];
                 let end_stmt =
-                    &ctx.function_body.statements[*expr_block.statements.last().unwrap()];
+                    &ctx.function_body.arenas.statements[*expr_block.statements.last().unwrap()];
                 // Emit diagnostic for the rest of the statements with unreachable.
                 ctx.diagnostics.report(
                     start_stmt.stable_ptr().untyped(),
@@ -635,7 +639,7 @@ pub fn lower_statement(
         semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
             log::trace!("Lowering a let statement.");
             let lowered_expr = lower_expr(ctx, builder, *expr)?;
-            let pattern = ctx.function_body.patterns[*pattern].clone();
+            let pattern = ctx.function_body.arenas.patterns[*pattern].clone();
             lower_single_pattern(ctx, builder, pattern, lowered_expr)?
         }
         semantic::Statement::Continue(semantic::StatementContinue { stable_ptr }) => {
@@ -720,7 +724,9 @@ fn lower_single_pattern(
                             required_members
                                 .get(&member.id)
                                 .map(|pattern| {
-                                    ctx.function_body.patterns[**pattern].stable_ptr().untyped()
+                                    ctx.function_body.arenas.patterns[**pattern]
+                                        .stable_ptr()
+                                        .untyped()
                                 })
                                 .unwrap_or_else(|| structure.stable_ptr.untyped()),
                         ),
@@ -730,7 +736,7 @@ fn lower_single_pattern(
             for (var_id, (_, member)) in izip!(generator.add(ctx, &mut builder.statements), members)
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
-                    let member_pattern = ctx.function_body.patterns[*member_pattern].clone();
+                    let member_pattern = ctx.function_body.arenas.patterns[*member_pattern].clone();
                     let stable_ptr = member_pattern.stable_ptr();
                     lower_single_pattern(
                         ctx,
@@ -791,8 +797,9 @@ fn lower_tuple_like_pattern_helper(
                 .zip_eq(tys)
                 .map(|(pattern, ty)| VarRequest {
                     ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
-                    location: ctx
-                        .get_location(ctx.function_body.patterns[*pattern].stable_ptr().untyped()),
+                    location: ctx.get_location(
+                        ctx.function_body.arenas.patterns[*pattern].stable_ptr().untyped(),
+                    ),
                 })
                 .collect();
             generators::StructDestructure {
@@ -811,7 +818,12 @@ fn lower_tuple_like_pattern_helper(
         }
     };
     for (var, pattern) in zip_eq(outputs, patterns) {
-        lower_single_pattern(ctx, builder, ctx.function_body.patterns[*pattern].clone(), var)?;
+        lower_single_pattern(
+            ctx,
+            builder,
+            ctx.function_body.arenas.patterns[*pattern].clone(),
+            var,
+        )?;
     }
     Ok(())
 }
@@ -837,7 +849,7 @@ fn lower_expr(
     builder: &mut BlockBuilder,
     expr_id: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
-    let expr = ctx.function_body.exprs[expr_id].clone();
+    let expr = ctx.function_body.arenas.exprs[expr_id].clone();
     match &expr {
         semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, builder),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, builder),
@@ -863,9 +875,7 @@ fn lower_expr(
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, builder),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, builder),
         semantic::Expr::FixedSizeArray(expr) => lower_expr_fixed_size_array(ctx, expr, builder),
-        semantic::Expr::ExprClosure(expr) => Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), LoweringDiagnosticKind::Unsupported),
-        )),
+        semantic::Expr::ExprClosure(expr) => lower_expr_closure(ctx, expr, expr_id, builder),
         semantic::Expr::PropagateError(expr) => lower_expr_error_propagate(ctx, expr, builder),
         semantic::Expr::Missing(semantic::ExprMissing { diag_added, .. }) => {
             Err(LoweringFlowError::Failed(*diag_added))
@@ -1128,7 +1138,7 @@ fn lower_expr_snapshot(
     // If the inner expression is a variable, or a member access, and we already have a snapshot var
     // we can use it without creating a new one.
     // Note that in a closure we might only have a snapshot of the variable and not the original.
-    match &ctx.function_body.exprs[expr.inner] {
+    match &ctx.function_body.arenas.exprs[expr.inner] {
         semantic::Expr::Var(expr_var) => {
             let member_path = ExprVarMemberPath::Var(expr_var.clone());
             if let Some(var) = builder.get_snap_ref(ctx, &member_path) {
@@ -1179,7 +1189,8 @@ fn lower_expr_function_call(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a function call expression: {:?}", expr.debug(&ctx.expr_formatter));
-    if let Some(value) = try_extract_minus_literal(ctx.db.upcast(), &ctx.function_body.exprs, expr)
+    if let Some(value) =
+        try_extract_minus_literal(ctx.db.upcast(), &ctx.function_body.arenas.exprs, expr)
     {
         return lower_expr_literal_helper(ctx, expr.stable_ptr.untyped(), expr.ty, &value, builder);
     }
@@ -1337,7 +1348,7 @@ fn lower_expr_loop(
     builder: &mut BlockBuilder,
     loop_expr_id: ExprId,
 ) -> LoweringResult<LoweredExpr> {
-    let (stable_ptr, return_type) = match ctx.function_body.exprs[loop_expr_id].clone() {
+    let (stable_ptr, return_type) = match ctx.function_body.arenas.exprs[loop_expr_id].clone() {
         semantic::Expr::Loop(semantic::ExprLoop { stable_ptr, ty, .. }) => (stable_ptr, ty),
         semantic::Expr::While(semantic::ExprWhile { stable_ptr, ty, .. }) => (stable_ptr, ty),
         semantic::Expr::For(semantic::ExprFor {
@@ -1377,7 +1388,7 @@ fn lower_expr_loop(
         _ => unreachable!("Loop expression must be either loop, while or for."),
     };
 
-    let usage = &ctx.block_usages.block_usages[&loop_expr_id];
+    let usage = &ctx.usages.usages[&loop_expr_id];
 
     // Determine signature.
     let params = usage
@@ -1418,7 +1429,7 @@ fn lower_expr_loop(
     }
     .intern(ctx.db);
 
-    let snap_usage = ctx.block_usages.block_usages[&loop_expr_id].snap_usage.clone();
+    let snap_usage = ctx.usages.usages[&loop_expr_id].snap_usage.clone();
 
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
@@ -1662,6 +1673,18 @@ fn lower_expr_struct_ctor(
         }
         .add(ctx, &mut builder.statements),
     ))
+}
+
+/// Lowers an expression of type [semantic::ExprClosure].
+fn lower_expr_closure(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprClosure,
+    expr_id: semantic::ExprId,
+    builder: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a closure expression: {:?}", expr.debug(&ctx.expr_formatter));
+    let usage = ctx.usages.usages[&expr_id].clone();
+    Ok(LoweredExpr::AtVariable(builder.capture(ctx, usage.clone(), expr)))
 }
 
 /// Lowers an expression of type [semantic::ExprPropagateError].

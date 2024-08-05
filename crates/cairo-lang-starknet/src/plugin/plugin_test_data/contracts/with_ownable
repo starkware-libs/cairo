@@ -10,9 +10,16 @@ cairo_level_tests/contracts/with_ownable.cairo
 use starknet::ContractAddress;
 #[starknet::contract]
 mod ownable_balance {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage,
+        balance: u128,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -45,54 +52,56 @@ mod ownable_balance {
     }
 
 
-#[phantom]
-pub struct Storage {
-          pub ownable: ownable_comp::Storage,
-          pub balance: u128,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
-    pub balance: starknet::storage::StorageBase<u128>,
+struct StorageStorageBase {
+    ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+    balance: starknet::storage::StorageBase<u128>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        StorageStorageBase {
+           ownable: ownable_value,
+           balance: balance_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+struct StorageStorageBaseMut {
+    ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+    balance: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
-    type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
-        ContractStorageBase {
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        StorageStorageBaseMut {
+           ownable: ownable_value,
+           balance: balance_value,
         }
     }
 }
+
 pub struct ContractState {
-        pub ownable: ownable_comp::ComponentState<ContractState>,
+         ownable: ownable_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -114,7 +123,7 @@ impl ContractStateTransfer of
         unsafe_new_contract_state()
     }
 }
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -139,7 +148,7 @@ fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -158,7 +167,7 @@ fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -267,15 +276,22 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128);
     }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable: ownable_comp::Storage,
+        balance: u128,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -308,54 +324,56 @@ impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
     }
 
 
-#[phantom]
-pub struct Storage {
-          pub ownable: ownable_comp::Storage,
-          pub balance: u128,
-}
 
 #[derive(Drop, Copy)]
-pub struct ContractStorageBase {
-    pub ownable: starknet::storage::StorageBase<ownable_comp::Storage>,
-    pub balance: starknet::storage::StorageBase<u128>,
+struct StorageStorageBase {
+    ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+    balance: starknet::storage::StorageBase<u128>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        StorageStorageBase {
+           ownable: ownable_value,
+           balance: balance_value,
+        }
+    }
 }
 #[derive(Drop, Copy)]
-pub struct ContractStorageBaseMut {
-    pub ownable: starknet::storage::StorageBase<starknet::storage::Mutable<ownable_comp::Storage>>,
-    pub balance: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+struct StorageStorageBaseMut {
+    ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+    balance: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
 }
-impl StorageBaseImpl of starknet::storage::StorageBaseTrait<ContractState> {
-    type BaseType = ContractStorageBase;
-    type BaseMutType = ContractStorageBaseMut;
-    fn storage_base(self: @ContractState) -> ContractStorageBase {
-        ContractStorageBase {
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
-        }
-    }
-    fn storage_base_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        ContractStorageBaseMut {
-           ownable: starknet::storage::StorageBase{ address: selector!("ownable") },
-           balance: starknet::storage::StorageBase{ address: selector!("balance") },
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let ownable_value = starknet::storage::FlattenedStorage {};
+        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        StorageStorageBaseMut {
+           ownable: ownable_value,
+           balance: balance_value,
         }
     }
 }
+
 pub struct ContractState {
-        pub ownable: ownable_comp::ComponentState<ContractState>,
+         ownable: ownable_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
  
 impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
-    type Target = ContractStorageBase;
-    fn snapshot_deref(self: @ContractState) -> ContractStorageBase {
-        self.storage_base()
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
-    type Target = ContractStorageBaseMut;
-    fn deref_mut(ref self: ContractState) -> ContractStorageBaseMut {
-        self.storage_base_mut()
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
     }
 }
 pub fn unsafe_new_contract_state() -> ContractState {
@@ -377,7 +395,7 @@ impl ContractStateTransfer of
         unsafe_new_contract_state()
     }
 }
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -402,7 +420,7 @@ fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -421,7 +439,7 @@ fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, core::ec::EcOp, Poseidon, SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -530,9 +548,9 @@ impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
         #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128);
     }
-impl ContractStorageBaseDrop of core::traits::Drop::<ContractStorageBase>;
-impl ContractStorageBaseCopy of core::traits::Copy::<ContractStorageBase>;
-impl ContractStorageBaseMutDrop of core::traits::Drop::<ContractStorageBaseMut>;
-impl ContractStorageBaseMutCopy of core::traits::Copy::<ContractStorageBaseMut>;
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

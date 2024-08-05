@@ -9,9 +9,11 @@ pub trait TransferTrait<TContractState> {
 #[starknet::component]
 pub mod ownable {
     use starknet::ContractAddress;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
     #[storage]
-    struct Storage {
-        owner: ContractAddress,
+    pub struct Storage {
+        pub owner: ContractAddress,
     }
 
     #[embeddable_as(Transfer)]

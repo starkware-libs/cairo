@@ -1202,8 +1202,8 @@ Weight by Cairo function:
   function core::starknet::storage_access::StoreFelt252::read_at_offset: 20
   function core::array::SpanImpl::pop_front: 18
   function core::array::ArrayImpl::append: 17
-  function core::integer::u256_overflow_sub: 17
   function core::integer::u256_overflowing_add: 17
+  function core::integer::u256_overflowing_sub: 17
   function lib.cairo::erc20_transfer: 16
   function core::pedersen::HashStateImpl::update: 12
   function lib.cairo::erc_20::IERC20Impl::transfer: 9

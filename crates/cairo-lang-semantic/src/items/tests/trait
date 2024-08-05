@@ -1247,3 +1247,58 @@ fn bar<impl I: Tr>(x: A<I>) -> A<I> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > trait cycle of generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: *)
+
+//! > function
+fn foo() -> felt252 {
+    2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+pub trait Tr<+Tr> {}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:1:14
+pub trait Tr<+Tr> {}
+             ^*^
+
+//! > ==========================================================================
+
+//! > cycle with anonymous impl with impl alias instead of trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: *)
+
+//! > function
+fn foo() -> felt252 {
+    2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Tr {}
+impl I0<T, +Ifelt252> of Tr {}
+impl Ifelt = I0<Ifelt>;
+
+//! > expected_diagnostics
+error: Trait not found.
+ --> lib.cairo:2:13
+impl I0<T, +Ifelt252> of Tr {}
+            ^******^
+
+error: Cycle detected while resolving 'impls alias' items.
+ --> lib.cairo:3:6
+impl Ifelt = I0<Ifelt>;
+     ^***^

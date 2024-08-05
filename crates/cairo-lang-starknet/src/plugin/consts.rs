@@ -30,7 +30,7 @@ pub const INTERFACE_ATTR: &str = "starknet::interface";
 pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
 pub const CONTRACT_ATTR: &str = "starknet::contract";
 pub const CONTRACT_ATTR_ACCOUNT_ARG: &str = "account";
-pub(super) const COMPONENT_ATTR: &str = "starknet::component";
+pub const COMPONENT_ATTR: &str = "starknet::component";
 pub const STORAGE_ATTR: &str = "storage";
 pub const EXTERNAL_ATTR: &str = "external";
 pub const EMBEDDABLE_ATTR: &str = "starknet::embeddable";
@@ -63,15 +63,15 @@ pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";
 
 /// Starknet OS required implicit precedence.
 pub(super) const IMPLICIT_PRECEDENCE: &[&str] = &[
-    "Pedersen",
-    "RangeCheck",
-    "Bitwise",
+    "core::pedersen::Pedersen",
+    "core::RangeCheck",
+    "core::integer::Bitwise",
     "core::ec::EcOp",
-    "Poseidon",
-    "SegmentArena",
+    "core::poseidon::Poseidon",
+    "core::SegmentArena",
     "core::circuit::RangeCheck96",
     "core::circuit::AddMod",
     "core::circuit::MulMod",
-    "GasBuiltin",
+    "core::gas::GasBuiltin",
     "System",
 ];

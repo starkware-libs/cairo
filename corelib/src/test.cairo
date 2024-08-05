@@ -30,6 +30,7 @@ mod to_byte_array_test;
 
 /// Tests for language features, without mixing implementations within the corelib.
 mod language_features {
+    mod const_folding_test;
     mod const_test;
     mod panics_test;
     mod trait_test;

@@ -1,5 +1,4 @@
-use std::ops::Deref;
-use std::vec;
+use std::sync::Arc;
 
 use crate::node::db::SyntaxGroup;
 use crate::node::SyntaxNode;
@@ -34,7 +33,7 @@ pub struct Preorder<'a> {
 
 struct PreorderLayer {
     start: SyntaxNode,
-    children: Option<vec::IntoIter<SyntaxNode>>,
+    children: Option<(Arc<[SyntaxNode]>, usize)>,
 }
 
 impl<'a> Preorder<'a> {
@@ -65,13 +64,12 @@ impl<'a> Iterator for Preorder<'a> {
                 // #1: If children iterator is not initialized, this means entire iteration just
                 // started, and the enter event for start node has to be emitted.
                 let event = WalkEvent::Enter(layer.start.clone());
-                layer.children =
-                    Some(self.db.get_children(layer.start.clone()).deref().clone().into_iter());
+                layer.children = Some((self.db.get_children(layer.start.clone()), 0));
                 self.layers.push(layer);
                 Some(event)
             }
-            Some(mut iter) => {
-                match iter.next() {
+            Some((nodes, index)) => {
+                match nodes.get(index) {
                     None => {
                         // #2: If children iterator is exhausted, this means iteration of start node
                         // just finished, and the layer needs to be popped (i.e. not pushed back)
@@ -86,12 +84,10 @@ impl<'a> Iterator for Preorder<'a> {
                         // inlined here.
                         let event = WalkEvent::Enter(start.clone());
                         let new_layer = PreorderLayer {
-                            children: Some(
-                                self.db.get_children(start.clone()).deref().clone().into_iter(),
-                            ),
-                            start,
+                            children: Some((self.db.get_children(start.clone()), 0)),
+                            start: start.clone(),
                         };
-                        layer.children = Some(iter);
+                        layer.children = Some((nodes, index + 1));
                         self.layers.extend([layer, new_layer]);
                         Some(event)
                     }

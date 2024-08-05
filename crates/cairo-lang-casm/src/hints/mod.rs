@@ -285,7 +285,7 @@ pub enum CoreHint {
         t_or_k1: CellRef,
     },
 
-    #[cfg_attr(feature = "parity-scale-codec", codec(index = 28))]
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 29))]
     EvalCircuit {
         n_add_mods: ResOperand,
         add_mod_builtin: ResOperand,

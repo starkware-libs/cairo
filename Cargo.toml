@@ -71,7 +71,7 @@ members = [
 exclude = ["ensure-no_std"]
 
 [workspace.package]
-version = "2.6.4"
+version = "2.7.0"
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
@@ -85,7 +85,7 @@ ark-secp256r1 = "0.4.0"
 ark-std = "0.4.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
-cairo-vm = { version = "1.0.0-rc3", features = ["mod_builtin"] }
+cairo-vm = { version = "1.0.0-rc6", features = ["mod_builtin"]}
 clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
 const-fnv1a-hash = "1.1.0"
