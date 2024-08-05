@@ -241,7 +241,7 @@ impl TestCompiler {
             TestsCompilationConfig {
                 starknet: self.starknet,
                 add_statements_functions: false,
-                add_statements_lines: false,
+                add_statements_code_locations: false,
             },
             self.main_crate_ids.clone(),
             self.test_crate_ids.clone(),

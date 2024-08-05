@@ -155,14 +155,14 @@ fn compile_contract_with_prepared_and_checked_db(
         Default::default()
     };
 
-    let statements_lines_annotations = if compiler_config.add_statements_lines {
+    let statements_code_locations_annotations = if compiler_config.add_statements_code_locations {
         let statements_functions = debug_info.statements_locations.extract_statements_functions(db);
         Annotations::from(statements_functions)
     } else {
         Default::default()
     };
 
-    annotations.extend(statements_lines_annotations);
+    annotations.extend(statements_code_locations_annotations);
 
     let contract_class = ContractClass::new(
         &sierra_program,

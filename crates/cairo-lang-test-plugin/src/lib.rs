@@ -57,7 +57,7 @@ pub struct TestsCompilationConfig {
 
     /// Adds mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
     /// [Annotations] in [DebugInfo] in the compiled tests.
-    pub add_statements_lines: bool,
+    pub add_statements_code_locations: bool,
 }
 
 /// Runs Cairo compiler.
@@ -140,13 +140,13 @@ pub fn compile_test_prepared_db(
             (Annotations::default(), None)
         };
 
-    let annotations_statements_lines = if tests_compilation_config.add_statements_lines {
+    let annotations_statements_code_locations = if tests_compilation_config.add_statements_code_locations {
         Annotations::from(debug_info.statements_locations.extract_statements_functions(db))
     } else {
         Annotations::default()
     };
 
-    annotations.extend(annotations_statements_lines);
+    annotations.extend(annotations_statements_code_locations);
 
     let executables = collect_executables(db, executable_functions, &sierra_program);
     let named_tests = all_tests

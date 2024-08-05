@@ -52,7 +52,7 @@ pub struct CompilerConfig<'c> {
 
     /// Adds mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
     /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
-    pub add_statements_lines: bool,
+    pub add_statements_code_locations: bool,
 }
 
 /// Compiles a Cairo project at the given path.
@@ -247,7 +247,7 @@ pub fn compile_prepared_db_program_artifact(
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ProgramArtifact> {
     let add_statements_functions = compiler_config.add_statements_functions;
-    let add_statements_lines = compiler_config.add_statements_lines;
+    let add_statements_code_locations = compiler_config.add_statements_code_locations;
 
     compiler_config.diagnostics_reporter.ensure(db)?;
 
@@ -286,7 +286,7 @@ pub fn compile_prepared_db_program_artifact(
         Annotations::default()
     };
 
-    let statements_code_locations_annotations = if add_statements_lines {
+    let statements_code_locations_annotations = if add_statements_code_locations {
         Annotations::from(
             sierra_program_with_debug
                 .debug_info

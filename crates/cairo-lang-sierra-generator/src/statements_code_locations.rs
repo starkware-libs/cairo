@@ -35,7 +35,7 @@ impl From<StatementsSourceCodeLocations> for Annotations {
         let mapping = serde_json::to_value(value.statements_to_lines_map).unwrap();
         OrderedHashMap::from([(
             "github.com/software-mansion/cairo-coverage".to_string(),
-            serde_json::Value::from_iter([("statements_lines", mapping)]),
+            serde_json::Value::from_iter([("statements_code_locations", mapping)]),
         )])
     }
 }
