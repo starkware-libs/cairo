@@ -140,11 +140,12 @@ pub fn compile_test_prepared_db(
             (Annotations::default(), None)
         };
 
-    let annotations_statements_code_locations = if tests_compilation_config.add_statements_code_locations {
-        Annotations::from(debug_info.statements_locations.extract_statements_functions(db))
-    } else {
-        Annotations::default()
-    };
+    let annotations_statements_code_locations =
+        if tests_compilation_config.add_statements_code_locations {
+            Annotations::from(debug_info.statements_locations.extract_statements_functions(db))
+        } else {
+            Annotations::default()
+        };
 
     annotations.extend(annotations_statements_code_locations);
 

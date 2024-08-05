@@ -156,7 +156,8 @@ fn compile_contract_with_prepared_and_checked_db(
     };
 
     let statements_code_locations_annotations = if compiler_config.add_statements_code_locations {
-        let statements_functions = debug_info.statements_locations.extract_statements_functions(db);
+        let statements_functions =
+            debug_info.statements_locations.extract_statements_source_code_locations(db);
         Annotations::from(statements_functions)
     } else {
         Default::default()
