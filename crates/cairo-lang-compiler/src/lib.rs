@@ -284,21 +284,21 @@ pub fn compile_prepared_db_program_artifact(
         Annotations::default()
     };
 
-    let statements_lines_annotations = if add_statements_lines {
+    let statements_code_locations_annotations = if add_statements_lines {
         Annotations::from(sierra_program_with_debug
             .debug_info
             .statements_locations
-            .extract_statements_lines(db))
+            .extract_statements_source_code_locations(db))
     } else {
         Annotations::default()
     };
-    annotations.extend(statements_lines_annotations);
+    annotations.extend(statements_code_locations_annotations);
 
     let debug_info = DebugInfo {
         type_names: Default::default(),
         libfunc_names: Default::default(),
         user_func_names: Default::default(),
-        annotations: annotations,
+        annotations,
         executables: Default::default(),
     };
 

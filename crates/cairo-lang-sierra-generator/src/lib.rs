@@ -24,7 +24,7 @@ pub mod replace_ids;
 mod resolve_labels;
 mod specialization_context;
 pub mod statements_functions;
-pub mod statements_lines;
+pub mod statements_code_locations;
 pub mod statements_locations;
 mod store_variables;
 #[cfg(any(feature = "testing", test))]

@@ -11,7 +11,7 @@ use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 use crate::statements_functions::StatementsFunctions;
-use crate::statements_lines::{SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, StatementsLines};
+use crate::statements_code_locations::{SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, StatementsSourceCodeLocations};
 
 #[cfg(test)]
 #[path = "statements_locations_test.rs"]
@@ -239,9 +239,9 @@ impl StatementsLocations {
         }
     }
 
-    /// Creates a new [StatementsLines] struct using [StatementsLocations] and [DefsGroup].
-    pub fn extract_statements_lines(&self, db: &dyn DefsGroup) -> StatementsLines {
-        StatementsLines {
+    /// Creates a new [StatementsSourceCodeLocations] struct using [StatementsLocations] and [DefsGroup].
+    pub fn extract_statements_source_code_locations(&self, db: &dyn DefsGroup) -> StatementsSourceCodeLocations {
+        StatementsSourceCodeLocations {
             statements_to_lines_map: self
                 .locations
                 .iter_sorted()

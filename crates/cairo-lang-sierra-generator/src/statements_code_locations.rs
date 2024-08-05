@@ -28,12 +28,12 @@ pub struct SourceCodeSpan {
 /// (if obtainable) which caused the statement to be generated. Should be created using
 /// [`crate::statements_locations::StatementsLocations::extract_statements_functions`].
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-pub struct StatementsLines {
+pub struct StatementsSourceCodeLocations {
     pub statements_to_lines_map: HashMap<StatementIdx, Vec<(SourceFileFullPath, SourceCodeSpan)>>,
 }
 
-impl From<StatementsLines> for Annotations {
-    fn from(value: StatementsLines) -> Self {
+impl From<StatementsSourceCodeLocations> for Annotations {
+    fn from(value: StatementsSourceCodeLocations) -> Self {
         let mapping = serde_json::to_value(value.statements_to_lines_map).unwrap();
         OrderedHashMap::from([(
             "github.com/software-mansion/cairo-coverage".to_string(),
