@@ -238,7 +238,7 @@ impl TestCompiler {
     pub fn build(&self) -> Result<TestCompilation> {
         compile_test_prepared_db(
             &self.db,
-            TestsCompilationConfig { starknet: self.starknet, add_statements_functions: false },
+            TestsCompilationConfig { starknet: self.starknet, add_statements_functions: false, add_statements_lines: false },
             self.main_crate_ids.clone(),
             self.test_crate_ids.clone(),
             self.allow_warnings,

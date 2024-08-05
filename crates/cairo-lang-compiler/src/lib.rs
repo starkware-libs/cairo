@@ -49,6 +49,10 @@ pub struct CompilerConfig<'c> {
     /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
     /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
     pub add_statements_functions: bool,
+
+    /// Adds mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
+    /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
+    pub add_statements_lines: bool,
 }
 
 /// Compiles a Cairo project at the given path.
@@ -243,6 +247,7 @@ pub fn compile_prepared_db_program_artifact(
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ProgramArtifact> {
     let add_statements_functions = compiler_config.add_statements_functions;
+    let add_statements_lines = compiler_config.add_statements_lines;
 
     compiler_config.diagnostics_reporter.ensure(db)?;
 
@@ -270,22 +275,32 @@ pub fn compile_prepared_db_program_artifact(
             replace_sierra_ids_in_program(db, &sierra_program_with_debug.program);
     }
 
-    // Calculate debug info.
-    let mut debug_info = DebugInfo::default();
-    if add_statements_functions {
-        let statements_functions = sierra_program_with_debug
+    let mut annotations = if add_statements_functions {
+        Annotations::from(sierra_program_with_debug
             .debug_info
             .statements_locations
-            .extract_statements_functions(db);
+            .extract_statements_functions(db))
+    } else {
+        Annotations::default()
+    };
 
-        debug_info = DebugInfo {
-            type_names: Default::default(),
-            libfunc_names: Default::default(),
-            user_func_names: Default::default(),
-            annotations: Annotations::from(statements_functions),
-            executables: Default::default(),
-        };
-    }
+    let statements_lines_annotations = if add_statements_lines {
+        Annotations::from(sierra_program_with_debug
+            .debug_info
+            .statements_locations
+            .extract_statements_lines(db))
+    } else {
+        Annotations::default()
+    };
+    annotations.extend(statements_lines_annotations);
+
+    let debug_info = DebugInfo {
+        type_names: Default::default(),
+        libfunc_names: Default::default(),
+        user_func_names: Default::default(),
+        annotations: annotations,
+        executables: Default::default(),
+    };
 
     // Calculate executable function Sierra ids.
     let executables =

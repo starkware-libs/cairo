@@ -148,12 +148,21 @@ fn compile_contract_with_prepared_and_checked_db(
         constructor: get_entry_points(db, &constructor, &replacer)?,
     };
 
-    let annotations = if compiler_config.add_statements_functions {
+    let mut annotations = if compiler_config.add_statements_functions {
         let statements_functions = debug_info.statements_locations.extract_statements_functions(db);
         Annotations::from(statements_functions)
     } else {
         Default::default()
     };
+
+    let statements_lines_annotations = if compiler_config.add_statements_lines {
+        let statements_functions = debug_info.statements_locations.extract_statements_functions(db);
+        Annotations::from(statements_functions)
+    } else {
+        Default::default()
+    };
+
+    annotations.extend(statements_lines_annotations);
 
     let contract_class = ContractClass::new(
         &sierra_program,
