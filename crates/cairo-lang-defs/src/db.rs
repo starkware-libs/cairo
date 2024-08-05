@@ -6,8 +6,9 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
-    DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR,
-    INTERNAL_ATTR, MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
+    ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR,
+    INLINE_ATTR, INTERNAL_ATTR, MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR,
+    UNSTABLE_ATTR,
 };
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -18,7 +19,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, Upcast};
-use itertools::Itertools;
+use itertools::{chain, Itertools};
 
 use crate::ids::*;
 use crate::plugin::{
@@ -229,44 +230,42 @@ pub trait DefsGroup:
 }
 
 fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
-    let mut all_attributes = OrderedHashSet::from_iter([
-        INLINE_ATTR.into(),
-        MUST_USE_ATTR.into(),
-        UNSTABLE_ATTR.into(),
-        DEPRECATED_ATTR.into(),
-        INTERNAL_ATTR.into(),
-        FEATURE_ATTR.into(),
-        PHANTOM_ATTR.into(),
-        IMPLICIT_PRECEDENCE_ATTR.into(),
-        FMT_SKIP_ATTR.into(),
+    let base_attrs = [
+        INLINE_ATTR,
+        MUST_USE_ATTR,
+        UNSTABLE_ATTR,
+        DEPRECATED_ATTR,
+        INTERNAL_ATTR,
+        ALLOW_ATTR,
+        FEATURE_ATTR,
+        PHANTOM_ATTR,
+        IMPLICIT_PRECEDENCE_ATTR,
+        FMT_SKIP_ATTR,
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
-        STARKNET_INTERFACE_ATTR.into(),
-    ]);
-    for plugin in db.macro_plugins() {
-        all_attributes.extend(plugin.declared_attributes());
-    }
-    Arc::new(all_attributes)
+        STARKNET_INTERFACE_ATTR,
+    ];
+    Arc::new(OrderedHashSet::from_iter(chain!(
+        base_attrs.map(|attr| attr.into()),
+        db.macro_plugins().into_iter().flat_map(|plugin| plugin.declared_attributes())
+    )))
 }
 
 fn allowed_statement_attributes(_db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
-    let all_attributes = OrderedHashSet::from_iter([FMT_SKIP_ATTR.into(), FEATURE_ATTR.into()]);
-    Arc::new(all_attributes)
+    let all_attributes = [FMT_SKIP_ATTR, ALLOW_ATTR, FEATURE_ATTR];
+    Arc::new(OrderedHashSet::from_iter(all_attributes.map(|attr| attr.into())))
 }
 
 fn declared_derives(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
-    let mut all_derives = OrderedHashSet::default();
-    for plugin in db.macro_plugins() {
-        all_derives.extend(plugin.declared_derives());
-    }
-    Arc::new(all_derives)
+    Arc::new(OrderedHashSet::from_iter(
+        db.macro_plugins().into_iter().flat_map(|plugin| plugin.declared_derives()),
+    ))
 }
 
 fn declared_phantom_type_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
-    let mut all_phantom_type_attributes = OrderedHashSet::from_iter([PHANTOM_ATTR.into()]);
-    for plugin in db.macro_plugins() {
-        all_phantom_type_attributes.extend(plugin.phantom_type_attributes());
-    }
-    Arc::new(all_phantom_type_attributes)
+    Arc::new(OrderedHashSet::from_iter(chain!(
+        [PHANTOM_ATTR.into()],
+        db.macro_plugins().into_iter().flat_map(|plugin| plugin.phantom_type_attributes())
+    )))
 }
 
 fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {

@@ -15,7 +15,6 @@ use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, require, try_extract_matches, Intern, LookupIntern};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
@@ -38,7 +37,7 @@ use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ImplConstantId};
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::{extract_allowed_features, FeatureKind};
+use crate::items::feature_kind::{extract_feature_config, FeatureConfig, FeatureKind};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
@@ -116,7 +115,8 @@ pub struct ResolverData {
     pub inference_data: InferenceData,
     /// The trait/impl context the resolver is currently in. Used to resolve "Self::" paths.
     pub trait_or_impl_ctx: TraitOrImplContext,
-    pub allowed_features: OrderedHashSet<SmolStr>,
+    /// The configuration of allowed features.
+    pub feature_config: FeatureConfig,
 }
 impl ResolverData {
     pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
@@ -127,7 +127,7 @@ impl ResolverData {
             resolved_items: Default::default(),
             inference_data: InferenceData::new(inference_id),
             trait_or_impl_ctx: TraitOrImplContext::None,
-            allowed_features: Default::default(),
+            feature_config: Default::default(),
         }
     }
     pub fn clone_with_inference_id(
@@ -142,7 +142,7 @@ impl ResolverData {
             resolved_items: self.resolved_items.clone(),
             inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
             trait_or_impl_ctx: self.trait_or_impl_ctx,
-            allowed_features: self.allowed_features.clone(),
+            feature_config: self.feature_config.clone(),
         }
     }
 }
@@ -169,14 +169,14 @@ impl DerefMut for Resolver<'_> {
 impl Resolver<'_> {
     /// Extracts the allowed node from the syntax, and sets it as the allowed features of the
     /// resolver.
-    pub fn set_allowed_features(
+    pub fn set_feature_config(
         &mut self,
         element_id: &impl LanguageElementId,
         syntax: &impl QueryAttrs,
         diagnostics: &mut SemanticDiagnostics,
     ) {
-        self.allowed_features =
-            extract_allowed_features(self.db.upcast(), element_id, syntax, diagnostics);
+        self.feature_config =
+            extract_feature_config(self.db.upcast(), element_id, syntax, diagnostics);
     }
 }
 
@@ -1274,7 +1274,7 @@ impl<'db> Resolver<'db> {
         }
         match &item_info.feature_kind {
             FeatureKind::Unstable { feature, note }
-                if !self.data.allowed_features.contains(feature) =>
+                if !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
                     identifier,
@@ -1282,7 +1282,8 @@ impl<'db> Resolver<'db> {
                 );
             }
             FeatureKind::Deprecated { feature, note }
-                if !self.data.allowed_features.contains(feature) =>
+                if !self.data.feature_config.allow_deprecated
+                    && !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
                     identifier,
@@ -1290,7 +1291,7 @@ impl<'db> Resolver<'db> {
                 );
             }
             FeatureKind::Internal { feature, note }
-                if !self.data.allowed_features.contains(feature) =>
+                if !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
                     identifier,
