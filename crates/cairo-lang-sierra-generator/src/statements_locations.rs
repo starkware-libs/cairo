@@ -11,7 +11,7 @@ use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 use crate::statements_functions::StatementsFunctions;
-use crate::statements_lines::{FilePath, LineNumber, StatementsLines};
+use crate::statements_lines::{SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, StatementsLines};
 
 #[cfg(test)]
 #[path = "statements_locations_test.rs"]
@@ -142,26 +142,26 @@ pub fn function_identifier_relative_to_file_module(
 pub fn maybe_file_and_line(
     db: &dyn DefsGroup,
     location: StableLocation,
-) -> Option<(FilePath, LineNumber)> {
+) -> Option<(SourceFileFullPath, SourceCodeSpan)> {
     let file_full_path = location.file_id(db.upcast()).full_path(db.upcast());
     let location = location.diagnostic_location(db.upcast());
-    println!("XDDDDDDDDDDDDDDDD");
-    println!("{:?}", file_full_path);
-    println!("{:?}", location);
-
-    Some((String::from("xddd"), 0))
+    let position = location.span.position_in_file(db.upcast(), location.file_id);
+    if let Some(position) = position {
+        let source_location = SourceCodeSpan {
+            start: SourceCodeLocation {
+                col: position.start.col,
+                line: position.start.line,
+            },
+            end: SourceCodeLocation {
+                col: position.start.col,
+                line: position.start.line,
+            },
+        };
     
-    // let absolute_semantic_path_to_file_module = file_module_absolute_identifier(db, file_id)?;
-
-    // let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
-    // if relative_semantic_path.is_empty() {
-    //     // In some cases the stable location maps to a code that is a statement like a function call
-    //     // directly in a file module, e.g. `Self::eq(lhs, rhs)` in `core::traits`. This brings no
-    //     // information about the function it was called from.
-    //     None
-    // } else {
-    //     Some(absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path))
-    // }
+        Some((SourceFileFullPath(file_full_path), source_location))
+    } else {
+        None
+    }
 }
 
 /// This function returns a fully qualified path to the file module.
