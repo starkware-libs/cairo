@@ -4,6 +4,7 @@ use cairo_lang_lowering::ids::FunctionLongId;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::statements_functions::StatementsFunctions;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{require, LookupIntern};
@@ -229,14 +230,14 @@ pub struct ProfilingInfoProcessor<'a> {
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
     /// path (modules and impls) to the function in the file.
-    statements_functions: UnorderedHashMap<StatementIdx, String>,
+    statements_functions: StatementsFunctions,
     params: ProfilingInfoProcessorParams,
 }
 impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
         db: Option<&'a dyn SierraGenGroup>,
         sierra_program: Program,
-        statements_functions: UnorderedHashMap<StatementIdx, String>,
+        statements_functions: StatementsFunctions,
     ) -> Self {
         Self {
             db,
@@ -475,11 +476,13 @@ impl<'a> ProfilingInfoProcessor<'a> {
         let mut cairo_functions = UnorderedHashMap::<_, _>::default();
         for (statement_idx, weight) in sierra_statement_weights {
             // TODO(Gil): Fill all the `Unknown functions` in the cairo functions profiling.
-            let function_identifier = self
+            let function_identifier: String = self
                 .statements_functions
+                .statements_to_functions_map
                 .get(statement_idx)
-                .unwrap_or(&"unknown".to_string())
-                .clone();
+                .and_then(|funcs| funcs.first().map(|s| s.as_str()))
+                .unwrap_or("unknown")
+                .into();
             *(cairo_functions.entry(function_identifier).or_insert(0)) += weight;
         }
 

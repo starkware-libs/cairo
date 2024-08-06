@@ -55,8 +55,7 @@ pub fn test_profiling(
             "`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics",
         ));
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
-    let statements_functions =
-        debug_info.statements_locations.get_statements_functions_map_for_tests(&db);
+    let statements_functions = debug_info.statements_locations.extract_statements_functions(&db);
     let runner = SierraCasmRunner::new(
         sierra_program.clone(),
         Some(Default::default()),

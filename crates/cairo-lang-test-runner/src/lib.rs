@@ -18,8 +18,9 @@ use cairo_lang_runner::{
 };
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::statements_functions::StatementsFunctions;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -30,7 +31,6 @@ use cairo_lang_test_plugin::{
 };
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -110,7 +110,10 @@ impl CompiledTestRunner {
             if self.config.run_profiler == RunProfilerConfig::Cairo {
                 Some(PorfilingAuxData {
                     db: db.expect("db must be passed when profiling."),
-                    statements_functions: compiled.metadata.statements_functions.unwrap(),
+                    statements_functions: StatementsFunctions::from_annotations(
+                        &compiled.sierra_program.debug_info.as_ref().unwrap().annotations,
+                    )
+                    .unwrap(),
                 })
             } else {
                 None
@@ -322,7 +325,7 @@ pub struct TestsSummary {
 /// Auxiliary data that is required when running tests with profiling.
 pub struct PorfilingAuxData<'a> {
     pub db: &'a dyn SierraGenGroup,
-    pub statements_functions: UnorderedHashMap<StatementIdx, String>,
+    pub statements_functions: StatementsFunctions,
 }
 
 /// Runs the tests and process the results for a summary.

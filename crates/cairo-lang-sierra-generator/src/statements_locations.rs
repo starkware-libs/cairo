@@ -173,25 +173,6 @@ impl StatementsLocations {
         }
         Self { locations }
     }
-    /// Builds a map between each Sierra statement index and a string representation of the Cairo
-    /// function that it was generated from. It is used for places
-    /// without db access such as the profiler.
-    // TODO(Gil): Add a db access to the profiler and remove this function.
-    pub fn get_statements_functions_map_for_tests(
-        &self,
-        db: &dyn DefsGroup,
-    ) -> UnorderedHashMap<StatementIdx, String> {
-        self.locations
-            .iter_sorted()
-            .filter_map(|(statement_idx, stable_locations)| {
-                maybe_containing_function_identifier_for_tests(
-                    db,
-                    *stable_locations.first().unwrap(),
-                )
-                .map(|function_identifier| (*statement_idx, function_identifier))
-            })
-            .collect()
-    }
 
     /// Creates a new [StatementsFunctions] struct using [StatementsLocations] and [DefsGroup].
     pub fn extract_statements_functions(&self, db: &dyn DefsGroup) -> StatementsFunctions {
