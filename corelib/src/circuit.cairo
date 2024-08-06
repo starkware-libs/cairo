@@ -39,6 +39,7 @@ pub struct u384 {
     pub limb2: u96,
     pub limb3: u96,
 }
+impl NumericLiteralU384 of NumericLiteral<u384>;
 
 pub type u96 = core::internal::BoundedInt<0, 79228162514264337593543950335>;
 pub extern type RangeCheck96;

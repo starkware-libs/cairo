@@ -860,10 +860,16 @@ pub fn validate_literal(
         value.to_i64().is_none()
     } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
         value.to_i128().is_none()
+    } else if ty == get_core_ty_by_name(db, "u384".into(), vec![]) {
+        value.is_negative() || value.bits() > 384
     } else {
         return Err(LiteralError::InvalidTypeForLiteral(ty));
     };
-    if is_out_of_range { Err(LiteralError::OutOfRange(ty)) } else { Ok(()) }
+    if is_out_of_range {
+        Err(LiteralError::OutOfRange(ty))
+    } else {
+        Ok(())
+    }
 }
 
 /// Returns the type if the inner value of a `NonZero` type, if it is wrapped in one.

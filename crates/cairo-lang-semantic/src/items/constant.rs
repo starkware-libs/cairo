@@ -389,10 +389,9 @@ pub fn value_as_const_value(
     validate_literal(db.upcast(), ty, value.clone())?;
     let get_basic_const_value = |ty| {
         let u256_ty = get_core_ty_by_name(db.upcast(), "u256".into(), vec![]);
+        let u384_ty = get_core_ty_by_name(db.upcast(), "u384".into(), vec![]);
 
-        if ty != u256_ty {
-            ConstValue::Int(value.clone(), ty)
-        } else {
+        if ty == u256_ty {
             let u128_ty = get_core_ty_by_name(db.upcast(), "u128".into(), vec![]);
             let mask128 = BigInt::from(u128::MAX);
             let low = value & mask128;
@@ -401,6 +400,21 @@ pub fn value_as_const_value(
                 vec![(ConstValue::Int(low, u128_ty)), (ConstValue::Int(high, u128_ty))],
                 ty,
             )
+        } else if ty == u384_ty {
+            let u96_ty = get_core_ty_by_name(db.upcast(), "u96".into(), vec![]);
+            let mask96 = BigInt::from(2).pow(96) - 1;
+
+            ConstValue::Struct(
+                vec![
+                    (ConstValue::Int(value & &mask96, u96_ty)),
+                    (ConstValue::Int((value >> 96) & &mask96, u96_ty)),
+                    (ConstValue::Int((value >> 192) & &mask96, u96_ty)),
+                    (ConstValue::Int((value >> 288) & &mask96, u96_ty)),
+                ],
+                ty,
+            )
+        } else {
+            ConstValue::Int(value.clone(), ty)
         }
     };
 
