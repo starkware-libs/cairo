@@ -106,6 +106,21 @@ impl ConcreteTraitId {
         };
         TraitFilter { trait_id: self.trait_id(db), generics_filter }
     }
+
+    /// Returns true if the `trait` does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        self.lookup_intern(db)
+            .generic_args
+            .iter()
+            .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
+    /// Returns true if the `trait` does not depend on impl or type variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        self.lookup_intern(db)
+            .generic_args
+            .iter()
+            .all(|generic_argument_id| generic_argument_id.is_var_free(db))
+    }
 }
 
 /// The ID of a generic function in a concrete trait.
