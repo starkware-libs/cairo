@@ -1,5 +1,7 @@
 use starknet::ContractAddress;
+#[allow(unused_imports)]
 use core::array::ArrayTrait;
+#[allow(unused_imports)]
 use core::array::SpanTrait;
 use core::traits::Into;
 

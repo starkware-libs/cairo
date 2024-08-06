@@ -2,7 +2,7 @@ use core::ec::{EcPoint, EcPointTrait, EcStateTrait};
 use core::ecdsa;
 use core::option::OptionTrait;
 use core::test::test_utils::assert_eq;
-use core::traits::{Into, TryInto};
+use core::traits::TryInto;
 
 #[test]
 #[should_panic]

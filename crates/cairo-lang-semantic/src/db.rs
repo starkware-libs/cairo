@@ -200,7 +200,10 @@ pub trait SemanticGroup:
 
     /// Finds all the trait ids usable in the module.
     #[salsa::invoke(items::module::module_usable_trait_ids)]
-    fn module_usable_trait_ids(&self, module_id: ModuleId) -> Maybe<Arc<OrderedHashSet<TraitId>>>;
+    fn module_usable_trait_ids(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<Arc<OrderedHashMap<TraitId, LookupItemId>>>;
 
     // Struct.
     // =======
@@ -1661,13 +1664,11 @@ fn add_unused_import_diagnostics(
 ) {
     let _iife = (|| {
         let item = db.use_resolved_item(use_id).ok()?;
-        // TODO(orizi): Properly handle usages of impls and traits, and than add warnings on
-        // their usages as well.
+        // TODO(orizi): Properly handle usages of impls, and than add warnings on their usages as
+        // well.
         require(!matches!(
             item,
-            ResolvedGenericItem::Trait(_)
-                | ResolvedGenericItem::Impl(_)
-                | ResolvedGenericItem::GenericImplAlias(_)
+            ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_)
         ))?;
         require(!all_used_items.contains(&LookupItemId::ModuleItem(ModuleItemId::Use(use_id))))?;
         let resolver_data = db.use_resolver_data(use_id).ok()?;

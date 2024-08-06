@@ -11,8 +11,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, MemberId,
-    NamedLanguageElementId, TraitFunctionId, TraitId, VarId,
+    EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, LookupItemId,
+    MemberId, ModuleItemId, NamedLanguageElementId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
@@ -32,7 +32,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern, OptionHelper};
-use itertools::zip_eq;
+use itertools::{zip_eq, Itertools};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use smol_str::SmolStr;
@@ -1330,7 +1330,7 @@ fn compute_expr_for_semantic(
     let into_iterator_trait =
         get_core_trait(ctx.db, CoreTraitContext::Iterator, "IntoIterator".into());
 
-    let (into_iterator_function_id, fixed_into_iter_var, into_iter_mutability) =
+    let (into_iterator_function_id, _, fixed_into_iter_var, into_iter_mutability) =
         compute_method_function_call_data(
             ctx,
             &[into_iterator_trait],
@@ -1379,7 +1379,7 @@ fn compute_expr_for_semantic(
 
     let iterator_trait = get_core_trait(ctx.db, CoreTraitContext::Iterator, "Iterator".into());
 
-    let (next_function_id, _, _) = compute_method_function_call_data(
+    let (next_function_id, _, _, _) = compute_method_function_call_data(
         ctx,
         &[iterator_trait],
         "next".into(),
@@ -1667,7 +1667,7 @@ fn compute_expr_indexed_semantic(
         .iter()
         .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::Ops, (*trait_name).into()))
         .collect();
-    let (function_id, fixed_expr, mutability) = compute_method_function_call_data(
+    let (function_id, _, fixed_expr, mutability) = compute_method_function_call_data(
         ctx,
         &candidate_traits[..],
         "index".into(),
@@ -1714,7 +1714,7 @@ fn compute_method_function_call_data(
         TraitFunctionId,
         TraitFunctionId,
     ) -> Option<SemanticDiagnosticKind>,
-) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
+) -> Maybe<(FunctionId, TraitId, ExprAndId, Mutability)> {
     let self_ty = ctx.reduce_ty(self_expr.ty());
     // Inference errors found when looking for candidates. Only relevant in the case of 0 candidates
     // found. If >0 candidates are found these are ignored as they may describe, e.g., "errors"
@@ -1762,7 +1762,12 @@ fn compute_method_function_call_data(
         fixed_expr = ExprAndId { expr: expr.clone(), id: ctx.arenas.exprs.alloc(expr) };
     }
 
-    Ok((function_id, fixed_expr, first_param.mutability))
+    Ok((
+        function_id,
+        trait_function_id.trait_id(ctx.db.upcast()),
+        fixed_expr,
+        first_param.mutability,
+    ))
 }
 
 /// Computes the semantic model of a pattern.
@@ -2482,10 +2487,17 @@ fn dot_expr(
 }
 
 /// Finds all the trait ids usable in the current context.
-fn traits_in_context(ctx: &mut ComputationContext<'_>) -> Maybe<OrderedHashSet<TraitId>> {
-    let mut traits = ctx.db.module_usable_trait_ids(ctx.resolver.module_file_id.0)?.deref().clone();
-    traits
-        .extend(ctx.db.module_usable_trait_ids(ctx.resolver.prelude_submodule())?.iter().copied());
+fn traits_in_context(
+    ctx: &mut ComputationContext<'_>,
+) -> Maybe<OrderedHashMap<TraitId, LookupItemId>> {
+    let mut traits =
+        ctx.db.module_usable_trait_ids(ctx.resolver.prelude_submodule())?.deref().clone();
+    traits.extend(
+        ctx.db
+            .module_usable_trait_ids(ctx.resolver.module_file_id.0)?
+            .iter()
+            .map(|(k, v)| (*k, *v)),
+    );
     Ok(traits)
 }
 
@@ -2518,24 +2530,28 @@ fn method_call_expr(
             let Ok(trait_id) = ctx.db.generic_impl_param_trait(*generic_param) else {
                 continue;
             };
-            candidate_traits.insert(trait_id);
+            candidate_traits
+                .insert(trait_id, LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
         }
     }
 
-    let (function_id, fixed_lexpr, mutability) = compute_method_function_call_data(
-        ctx,
-        Vec::from_iter(candidate_traits).as_slice(),
-        func_name,
-        lexpr,
-        path.stable_ptr().untyped(),
-        generic_args_syntax,
-        |ty, method_name, inference_errors| {
-            Some(CannotCallMethod { ty, method_name, inference_errors })
-        },
-        |_, trait_function_id0, trait_function_id1| {
-            Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
-        },
-    )?;
+    let (function_id, actual_trait_id, fixed_lexpr, mutability) =
+        compute_method_function_call_data(
+            ctx,
+            candidate_traits.keys().copied().collect_vec().as_slice(),
+            func_name,
+            lexpr,
+            path.stable_ptr().untyped(),
+            generic_args_syntax,
+            |ty, method_name, inference_errors| {
+                Some(CannotCallMethod { ty, method_name, inference_errors })
+            },
+            |_, trait_function_id0, trait_function_id1| {
+                Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
+            },
+        )?;
+    ctx.resolver.data.used_items.insert(candidate_traits[&actual_trait_id]);
+
     ctx.resolver.data.resolved_items.mark_concrete(
         ctx.db,
         &segment,
@@ -2758,7 +2774,7 @@ fn enriched_members(
         _ => false,
     };
 
-    while let Ok((function_id, cur_expr, mutability)) =
+    while let Ok((function_id, _, cur_expr, mutability)) =
         compute_deref_method_function_call_data(ctx, expr, use_deref_mut)
     {
         deref_functions.push((function_id, mutability));

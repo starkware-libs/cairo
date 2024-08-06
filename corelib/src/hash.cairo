@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use core::traits::Into;
 
 /// A trait for hash state accumulators.

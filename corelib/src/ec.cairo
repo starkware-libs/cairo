@@ -1,7 +1,9 @@
 //! This module contains functions and constructs related to elliptic curve operations on the Stark
 //! curve.
 
+#[allow(unused_imports)]
 use core::array::ArrayTrait;
+#[allow(unused_imports)]
 use core::traits::{Into, TryInto};
 use core::zeroable::IsZeroResult;
 use core::RangeCheck;

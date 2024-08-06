@@ -1,7 +1,7 @@
 use core::option::OptionTrait;
 use starknet::{secp256r1::Secp256r1Impl, SyscallResultTrait};
 use starknet::secp256_trait::{recover_public_key, Secp256PointTrait, Signature, is_valid_signature};
-use starknet::secp256r1::{Secp256r1Point, Secp256r1PointImpl};
+use starknet::secp256r1::Secp256r1Point;
 use core::test::test_utils::assert_eq;
 
 #[test]

@@ -12,7 +12,6 @@ struct Struct0 {
 
 #[starknet::contract]
 mod with_ignored {
-    use core::starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use super::Struct0;
     #[storage]
     pub struct Storage {
@@ -28,7 +27,6 @@ struct IgnoredMemberStruct {
 
 #[starknet::contract]
 mod without_ignored {
-    use core::starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use super::IgnoredMemberStruct;
     #[storage]
     pub struct Storage {
