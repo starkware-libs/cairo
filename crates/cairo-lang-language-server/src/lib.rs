@@ -264,6 +264,11 @@ struct Backend {
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
     db_mutex: tokio::sync::Mutex<AnalysisDatabase>,
+    // Lock making sure there is at most a single "diagnostic refresh" thread.
+    refresh_lock: tokio::sync::Mutex<()>,
+    // Lock making sure there is at most a single thread waiting to be a "diagnostic refresh"
+    // thread.
+    refresh_waiter_lock: tokio::sync::Mutex<()>,
     state_mutex: tokio::sync::Mutex<State>,
     config: tokio::sync::RwLock<Config>,
     scarb_toolchain: ScarbToolchain,
@@ -288,6 +293,8 @@ impl Backend {
             client_capabilities: Default::default(),
             tricks,
             db_mutex: db.into(),
+            refresh_lock: Default::default(),
+            refresh_waiter_lock: Default::default(),
             state_mutex: State::default().into(),
             config: Config::default().into(),
             scarb_toolchain,
@@ -329,6 +336,19 @@ impl Backend {
     /// Refresh diagnostics and send diffs to client.
     #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
+        // Making sure only a single set refreshes diagnostics as the same time.
+        // This way, following small updates to the db would not cause refreshes per sub-change,
+        // and threads would be freed for other tasks.
+        // TODO(orizi): Consider removing when request cancellation is supported.
+        let _lock = if let Ok(refresh_lock) = self.refresh_lock.try_lock() {
+            refresh_lock
+        } else if let Ok(_waiter_lock) = self.refresh_waiter_lock.try_lock() {
+            // This is the waiter thread now - awaiting to grab the lock.
+            self.refresh_lock.lock().await
+        } else {
+            // There is already a thread waiting to become the refresh thread - exiting.
+            return Ok(());
+        };
         let open_files = self.state_mut().await.open_files.clone();
 
         // First, refresh diagnostics for each open file.
