@@ -8,13 +8,13 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{require, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
 use semantic::items::structure::SemanticStructEx;
+use cairo_lang_semantic::usage::{MemberPath, Usage};
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
-use super::usage::{MemberPath, Usage};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
