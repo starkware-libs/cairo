@@ -8,7 +8,8 @@ use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::SemanticTokenType;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::semantic_extension::LsSemanticGroupExtension;
+use crate::lang::db::AnalysisDatabase;
 
 #[allow(dead_code)]
 pub enum SemanticTokenKind {

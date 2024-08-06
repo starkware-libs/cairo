@@ -28,7 +28,8 @@ mod syntax;
     ParserDatabase,
     SemanticDatabase,
     SyntaxDatabase,
-    DocDatabase
+    DocDatabase,
+    LsSemanticDatabase
 )]
 pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,

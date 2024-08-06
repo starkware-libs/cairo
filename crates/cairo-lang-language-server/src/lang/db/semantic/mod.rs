@@ -4,16 +4,55 @@ use cairo_lang_defs::ids::{
     LanguageElementId, ModuleId, NamedLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_semantic::corelib::{core_submodule, get_submodule};
+use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::us::SemanticUseEx;
+use cairo_lang_semantic::items::visibility::peek_visible_in;
+use cairo_lang_semantic::resolve::ResolvedGenericItem;
+use cairo_lang_semantic::types::TypeHead;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
-use crate::corelib::{core_submodule, get_submodule};
-use crate::db::SemanticGroup;
-use crate::items::us::SemanticUseEx;
-use crate::items::visibility::peek_visible_in;
-use crate::resolve::ResolvedGenericItem;
-use crate::types::TypeHead;
+pub mod semantic_extension;
+
+#[salsa::query_group(LsSemanticDatabase)]
+pub trait LsSemanticGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
+    /// Returns all methods in a module that match the given type filter.
+    fn methods_in_module(
+        &self,
+        module_id: ModuleId,
+        type_filter: TypeFilter,
+    ) -> Arc<[TraitFunctionId]>;
+    /// Returns all methods in a crate that match the given type filter.
+    fn methods_in_crate(
+        &self,
+        crate_id: CrateId,
+        type_filter: TypeFilter,
+    ) -> Arc<[TraitFunctionId]>;
+    /// Returns all the traits visible from a module, alongside a visible use path to the trait.
+    fn visible_traits_from_module(
+        &self,
+        module_id: ModuleId,
+    ) -> Result<Arc<OrderedHashMap<TraitId, String>>, ()>;
+    /// Returns all visible traits in a module, alongside a visible use path to the trait.
+    /// `user_module_id` is the module from which the traits are should be visible. If
+    /// `include_parent` is true, the parent module of `module_id` is also considered.
+    fn visible_traits_in_module(
+        &self,
+        module_id: ModuleId,
+        user_module_id: ModuleId,
+        include_parent: bool,
+    ) -> Arc<[(TraitId, String)]>;
+    /// Returns all visible traits in a crate, alongside a visible use path to the trait.
+    /// `user_module_id` is the module from which the traits are should be visible.
+    fn visible_traits_in_crate(
+        &self,
+        crate_id: CrateId,
+        user_module_id: ModuleId,
+    ) -> Arc<[(TraitId, String)]>;
+}
 
 /// A filter for types.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -26,7 +65,7 @@ pub enum TypeFilter {
 
 /// Query implementation of [crate::db::SemanticGroup::methods_in_module].
 pub fn methods_in_module(
-    db: &dyn SemanticGroup,
+    db: &dyn LsSemanticGroup,
     module_id: ModuleId,
     type_filter: TypeFilter,
 ) -> Arc<[TraitFunctionId]> {
@@ -46,7 +85,7 @@ pub fn methods_in_module(
                 continue;
             }
             if let TypeFilter::TypeHead(type_head) = &type_filter {
-                if let Some(head) = first_param.ty.head(db) {
+                if let Some(head) = first_param.ty.head(db.upcast()) {
                     if !fit_for_method(&head, type_head) {
                         continue;
                     }
@@ -72,7 +111,7 @@ fn fit_for_method(head: &TypeHead, type_head: &TypeHead) -> bool {
 
 /// Query implementation of [crate::db::SemanticGroup::methods_in_crate].
 pub fn methods_in_crate(
-    db: &dyn SemanticGroup,
+    db: &dyn LsSemanticGroup,
     crate_id: CrateId,
     type_filter: TypeFilter,
 ) -> Arc<[TraitFunctionId]> {
@@ -85,7 +124,7 @@ pub fn methods_in_crate(
 
 /// Query implementation of [crate::db::SemanticGroup::visible_traits_in_module].
 pub fn visible_traits_in_module(
-    db: &dyn SemanticGroup,
+    db: &dyn LsSemanticGroup,
     module_id: ModuleId,
     user_module_id: ModuleId,
     include_parent: bool,
@@ -98,7 +137,7 @@ pub fn visible_traits_in_module(
 /// Returns the visible traits in a module, including the traits in the parent module if needed.
 /// The visibility is relative to the module `user_module_id`.
 fn visible_traits_in_module_ex(
-    db: &dyn SemanticGroup,
+    db: &dyn LsSemanticGroup,
     module_id: ModuleId,
     user_module_id: ModuleId,
     include_parent: bool,
@@ -116,11 +155,11 @@ fn visible_traits_in_module_ex(
     visited_modules.insert(module_id);
     let mut modules_to_visit = vec![];
     // Add traits and traverse modules imported into the current module.
-    for use_id in db.module_uses_ids(module_id).unwrap().iter().copied() {
+    for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
         if !is_visible(use_id.name(db.upcast()))? {
             continue;
         }
-        let resolved_item = db.use_resolved_item(use_id).unwrap();
+        let resolved_item = db.use_resolved_item(use_id).ok()?;
         match resolved_item {
             ResolvedGenericItem::Module(inner_module_id) => {
                 modules_to_visit.push(inner_module_id);
@@ -132,14 +171,14 @@ fn visible_traits_in_module_ex(
         }
     }
     // Traverse the submodules of the current module.
-    for submodule_id in db.module_submodules_ids(module_id).unwrap().iter().copied() {
+    for submodule_id in db.module_submodules_ids(module_id).ok()?.iter().copied() {
         if !is_visible(submodule_id.name(db.upcast()))? {
             continue;
         }
         modules_to_visit.push(ModuleId::Submodule(submodule_id));
     }
     // Add the traits of the current module.
-    for trait_id in db.module_traits_ids(module_id).unwrap().iter().copied() {
+    for trait_id in db.module_traits_ids(module_id).ok()?.iter().copied() {
         if !is_visible(trait_id.name(db.upcast()))? {
             continue;
         }
@@ -184,7 +223,7 @@ fn visible_traits_in_module_ex(
 
 /// Query implementation of [crate::db::SemanticGroup::visible_traits_in_crate].
 pub fn visible_traits_in_crate(
-    db: &dyn SemanticGroup,
+    db: &dyn LsSemanticGroup,
     crate_id: CrateId,
     user_module_id: ModuleId,
 ) -> Arc<[(TraitId, String)]> {
@@ -200,9 +239,9 @@ pub fn visible_traits_in_crate(
 
 /// Query implementation of [crate::db::SemanticGroup::visible_traits_from_module].
 pub fn visible_traits_from_module(
-    db: &dyn SemanticGroup,
+    db: &dyn LsSemanticGroup,
     module_id: ModuleId,
-) -> Arc<OrderedHashMap<TraitId, String>> {
+) -> Result<Arc<OrderedHashMap<TraitId, String>>, ()> {
     let mut current_top_module = module_id;
     while let ModuleId::Submodule(submodule_id) = current_top_module {
         current_top_module = submodule_id.parent_module(db.upcast());
@@ -211,11 +250,11 @@ pub fn visible_traits_from_module(
         ModuleId::CrateRoot(crate_id) => crate_id,
         ModuleId::Submodule(_) => unreachable!("current module is not a top-level module"),
     };
-    let edition = db.crate_config(current_crate_id).unwrap().settings.edition;
+    let edition = db.crate_config(current_crate_id).ok_or(())?.settings.edition;
     let prelude_submodule_name = edition.prelude_submodule_name();
-    let core_prelude_submodule = core_submodule(db, "prelude");
+    let core_prelude_submodule = core_submodule(db.upcast(), "prelude");
     let prelude_submodule =
-        get_submodule(db, core_prelude_submodule, prelude_submodule_name).unwrap();
+        get_submodule(db.upcast(), core_prelude_submodule, prelude_submodule_name).ok_or(())?;
 
     let mut module_visible_traits = Vec::new();
     module_visible_traits.extend_from_slice(
@@ -243,5 +282,5 @@ pub fn visible_traits_from_module(
             }
         }
     }
-    result.into()
+    Ok(result.into())
 }

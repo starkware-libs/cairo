@@ -1,14 +1,12 @@
 use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
 use cairo_lang_semantic::expr::inference::solver::SolutionSet;
 use cairo_lang_semantic::expr::inference::InferenceId;
-use cairo_lang_semantic::lsp_helpers::TypeFilter;
 use cairo_lang_semantic::resolve::Resolver;
 use tracing::debug;
 
-use crate::lang::db::AnalysisDatabase;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, TypeFilter};
 
 /// Finds all methods that can be called on a type.
 #[tracing::instrument(level = "trace", skip_all)]

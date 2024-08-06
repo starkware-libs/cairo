@@ -40,9 +40,7 @@ use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::{ImplTypeId, TypeSizeInformation};
-use crate::{
-    corelib, items, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
-};
+use crate::{corelib, items, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId};
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
 /// SemanticGroup.
@@ -1492,47 +1490,6 @@ pub trait SemanticGroup:
     // ========
     #[salsa::input]
     fn analyzer_plugins(&self) -> Vec<Arc<dyn AnalyzerPlugin>>;
-
-    // Helpers for language server.
-    // ============================
-    /// Returns all methods in a module that match the given type filter.
-    #[salsa::invoke(lsp_helpers::methods_in_module)]
-    fn methods_in_module(
-        &self,
-        module_id: ModuleId,
-        type_filter: lsp_helpers::TypeFilter,
-    ) -> Arc<[TraitFunctionId]>;
-    /// Returns all methods in a crate that match the given type filter.
-    #[salsa::invoke(lsp_helpers::methods_in_crate)]
-    fn methods_in_crate(
-        &self,
-        crate_id: CrateId,
-        type_filter: lsp_helpers::TypeFilter,
-    ) -> Arc<[TraitFunctionId]>;
-    /// Returns all the traits visible from a module, alongside a visible use path to the trait.
-    #[salsa::invoke(lsp_helpers::visible_traits_from_module)]
-    fn visible_traits_from_module(
-        &self,
-        module_id: ModuleId,
-    ) -> Arc<OrderedHashMap<TraitId, String>>;
-    /// Returns all visible traits in a module, alongside a visible use path to the trait.
-    /// `user_module_id` is the module from which the traits are should be visible. If
-    /// `include_parent` is true, the parent module of `module_id` is also considered.
-    #[salsa::invoke(lsp_helpers::visible_traits_in_module)]
-    fn visible_traits_in_module(
-        &self,
-        module_id: ModuleId,
-        user_module_id: ModuleId,
-        include_parent: bool,
-    ) -> Arc<[(TraitId, String)]>;
-    /// Returns all visible traits in a crate, alongside a visible use path to the trait.
-    /// `user_module_id` is the module from which the traits are should be visible.
-    #[salsa::invoke(lsp_helpers::visible_traits_in_crate)]
-    fn visible_traits_in_crate(
-        &self,
-        crate_id: CrateId,
-        user_module_id: ModuleId,
-    ) -> Arc<[(TraitId, String)]>;
 }
 
 impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {
