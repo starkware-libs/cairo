@@ -1,6 +1,5 @@
 use core::traits::TryInto;
 use core::num::traits::Zero;
-use starknet::StorageAddress;
 
 use super::utils::serialized;
 

@@ -26,7 +26,7 @@ use super::functions::{
 use super::generics::{generic_params_to_args, semantic_generic_params, GenericParamsData};
 use super::imp::{GenericsHeadFilter, TraitFilter};
 use super::TraitOrImplContext;
-use crate::db::SemanticGroup;
+use crate::db::{get_resolver_data_options, SemanticGroup};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
@@ -529,6 +529,21 @@ pub fn trait_item_by_name(
     name: SmolStr,
 ) -> Maybe<Option<TraitItemId>> {
     Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.get(&name).cloned())
+}
+
+/// Query implementation of [SemanticGroup::trait_all_used_items].
+pub fn trait_all_used_items(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Maybe<Arc<OrderedHashSet<LookupItemId>>> {
+    let mut all_used_items = db.trait_resolver_data(trait_id)?.used_items.clone();
+    let data = db.priv_trait_definition_data(trait_id)?;
+    for item in data.item_id_by_name.values() {
+        for resolver_data in get_resolver_data_options(LookupItemId::TraitItem(*item), db) {
+            all_used_items.extend(resolver_data.used_items.iter().cloned());
+        }
+    }
+    Ok(all_used_items.into())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_functions].

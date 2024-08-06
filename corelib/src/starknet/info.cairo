@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use starknet::{
     SyscallResultTrait, SyscallResult, syscalls::get_execution_info_syscall,
     contract_address::ContractAddress

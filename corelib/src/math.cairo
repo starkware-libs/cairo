@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use core::traits::{Into, TryInto};
 use core::option::OptionTrait;

@@ -7,7 +7,6 @@ ExpandContractFromCrateTestRunner(expect_diagnostics: false)
 cairo_level_tests/contracts/with_ownable_mini.cairo
 
 //! > generated_cairo_code
-use starknet::ContractAddress;
 #[starknet::contract]
 mod ownable_mini_contract {
     use cairo_level_tests::components::ownable_mini;
@@ -125,6 +124,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 impl ContractStateTransferImpl of
@@ -370,6 +370,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 impl ContractStateTransferImpl of

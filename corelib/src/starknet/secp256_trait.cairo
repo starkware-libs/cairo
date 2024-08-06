@@ -1,6 +1,7 @@
 use core::array::ArrayTrait;
 use core::math::{u256_mul_mod_n, u256_inv_mod};
 use core::option::OptionTrait;
+#[allow(unused_imports)]
 use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, SyscallResultTrait};
 use core::traits::{Into, TryInto};
 use core::integer::U256TryIntoNonZero;
