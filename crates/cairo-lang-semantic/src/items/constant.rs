@@ -282,7 +282,7 @@ pub fn constant_semantic_data_helper(
         }
         None => Resolver::new(db, element_id.module_file_id(db.upcast()), inference_id),
     };
-    resolver.set_allowed_features(element_id, constant_ast, &mut diagnostics);
+    resolver.set_feature_config(element_id, constant_ast, &mut diagnostics);
 
     let constant_type = resolve_type(
         db,
@@ -315,7 +315,7 @@ pub fn constant_semantic_data_helper(
     ctx.apply_inference_rewriter_to_exprs();
 
     let resolver_data = Arc::new(ctx.resolver.data);
-    let constant = Constant { value: value.id, exprs: Arc::new(ctx.exprs) };
+    let constant = Constant { value: value.id, exprs: Arc::new(ctx.arenas.exprs) };
     Ok(ConstantData {
         diagnostics: diagnostics.build(),
         const_value,
@@ -376,7 +376,7 @@ pub fn resolve_const_expr_and_evaluate(
     match &value.expr {
         Expr::Constant(ExprConstant { const_value_id, .. }) => const_value_id.lookup_intern(db),
         // Check that the expression is a valid constant.
-        _ => evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics),
+        _ => evaluate_constant_expr(db, &ctx.arenas.exprs, value.id, ctx.diagnostics),
     }
 }
 

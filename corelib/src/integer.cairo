@@ -1,8 +1,11 @@
 use core::option::OptionTrait;
 use core::result::ResultTrait;
 use core::traits::{BitAnd, BitNot, BitOr, BitXor, Into, TryInto, Default, Felt252DictValue};
+#[allow(unused_imports)]
 use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+#[allow(unused_imports)]
 use core::array::ArrayTrait;
+#[allow(unused_imports)]
 use core::array::SpanTrait;
 use core::RangeCheck;
 
@@ -1353,7 +1356,9 @@ pub(crate) extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
 
 // TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
 //   will not lead to Sierra errors.
-extern fn downcast<FromType, ToType>(x: FromType) -> Option<ToType> implicits(RangeCheck) nopanic;
+pub(crate) extern fn downcast<FromType, ToType>(
+    x: FromType
+) -> Option<ToType> implicits(RangeCheck) nopanic;
 
 // Marks `FromType` as upcastable to `ToType`.
 // Do not add user code implementing this trait.

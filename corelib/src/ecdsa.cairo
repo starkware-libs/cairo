@@ -1,7 +1,10 @@
 use core::{ec, ec::{EcPoint, EcPointTrait, EcStateTrait}};
+#[allow(unused_imports)]
 use core::option::OptionTrait;
 use core::math;
+#[allow(unused_imports)]
 use core::traits::{Into, TryInto};
+#[allow(unused_imports)]
 use core::zeroable::IsZeroResult;
 
 /// Checks if (`signature_r`, `signature_s`) is a valid ECDSA signature for the given `public_key`

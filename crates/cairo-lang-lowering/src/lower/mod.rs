@@ -5,6 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::corelib::{unwrap_error_propagation_type, ErrorPropagationType};
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{corelib, ExprVar, LocalVariable, VarId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -27,7 +28,6 @@ use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
     MatchArmSelector, SemanticDiagnostic, TypeLongId,
 };
-use usage::MemberPath;
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use self::block_builder::SealedBlockBuilder;
@@ -65,7 +65,6 @@ mod logical_op;
 mod lower_if;
 mod lower_match;
 pub mod refs;
-pub mod usage;
 
 #[cfg(test)]
 mod generated_test;
@@ -875,9 +874,7 @@ fn lower_expr(
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, builder),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, builder),
         semantic::Expr::FixedSizeArray(expr) => lower_expr_fixed_size_array(ctx, expr, builder),
-        semantic::Expr::ExprClosure(expr) => Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), LoweringDiagnosticKind::Unsupported),
-        )),
+        semantic::Expr::ExprClosure(expr) => lower_expr_closure(ctx, expr, expr_id, builder),
         semantic::Expr::PropagateError(expr) => lower_expr_error_propagate(ctx, expr, builder),
         semantic::Expr::Missing(semantic::ExprMissing { diag_added, .. }) => {
             Err(LoweringFlowError::Failed(*diag_added))
@@ -1675,6 +1672,18 @@ fn lower_expr_struct_ctor(
         }
         .add(ctx, &mut builder.statements),
     ))
+}
+
+/// Lowers an expression of type [semantic::ExprClosure].
+fn lower_expr_closure(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprClosure,
+    expr_id: semantic::ExprId,
+    builder: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a closure expression: {:?}", expr.debug(&ctx.expr_formatter));
+    let usage = ctx.usages.usages[&expr_id].clone();
+    Ok(LoweredExpr::AtVariable(builder.capture(ctx, usage.clone(), expr)))
 }
 
 /// Lowers an expression of type [semantic::ExprPropagateError].

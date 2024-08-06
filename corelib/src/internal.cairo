@@ -1,4 +1,4 @@
-use core::integer::upcast;
+use core::integer::{downcast, upcast};
 pub extern fn revoke_ap_tracking() implicits() nopanic;
 
 /// Function to enforce that `Implicit` is used by a function calling it.
@@ -21,6 +21,19 @@ impl BoundedIntIntoFelt252<
         upcast(self)
     }
 }
+
+impl Felt252TryIntoBoundedInt<
+    const MIN: felt252, const MAX: felt252
+> of TryInto<felt252, BoundedInt<MIN, MAX>> {
+    fn try_into(self: felt252) -> Option<BoundedInt<MIN, MAX>> {
+        // Using `downcast` is allowed, since `BoundedInt` itself is not `pub`, and only has few
+        // specific `pub` instances, such as `u96`, `ConstZero` and `ConstOne`.
+        downcast(self)
+    }
+}
+
+impl BoundedIntSerde<const MIN: felt252, const MAX: felt252> =
+    core::serde::into_felt252_based::SerdeImpl<BoundedInt<MIN, MAX>>;
 
 impl BoundedIntPartialEq<
     const MIN: felt252, const MAX: felt252

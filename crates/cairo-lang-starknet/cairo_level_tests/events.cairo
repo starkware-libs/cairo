@@ -1,4 +1,4 @@
-use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
+use starknet::syscalls::deploy_syscall;
 use starknet::SyscallResultTrait;
 
 #[starknet::interface]
@@ -10,7 +10,7 @@ trait IContractWithEvent<T> {
 #[starknet::contract]
 mod contract_with_event {
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use starknet::get_contract_address;
+
     #[storage]
     struct Storage {
         value: u128,

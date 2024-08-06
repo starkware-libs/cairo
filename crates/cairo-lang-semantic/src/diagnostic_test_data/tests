@@ -530,6 +530,8 @@ test_expr_diagnostics(expect_diagnostics: warnings_only)
   let _fail = deprecated_function_no_note();
   #[feature("deprecated")]
   let _work = deprecated_function_no_note();
+  #[allow(deprecated)]
+  let _work = deprecated_function_no_note();
 }
 
 //! > module_code

@@ -7,13 +7,11 @@ ExpandContractFromCrateTestRunner(expect_diagnostics: false)
 cairo_level_tests/contracts/with_erc20_mini.cairo
 
 //! > generated_cairo_code
-use starknet::ContractAddress;
-
 #[starknet::contract]
 mod erc20_mini_contract {
     use cairo_level_tests::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageAsPath, StorageTraitMut, StorageTrait};
+    use starknet::storage::{StorageTraitMut, StorageTrait};
     #[storage]
     struct Storage {
         #[flat]
@@ -114,6 +112,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 impl ContractStateERC20Impl of
@@ -236,7 +235,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
     use cairo_level_tests::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageAsPath, StorageTraitMut, StorageTrait};
+    use starknet::storage::{StorageTraitMut, StorageTrait};
     #[storage]
     struct Storage {
         #[flat]
@@ -337,6 +336,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 impl ContractStateERC20Impl of

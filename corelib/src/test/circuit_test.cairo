@@ -4,13 +4,18 @@ use core::circuit::{
     AddInputResultTrait, CircuitInputs,
 };
 
-use core::test::test_utils::assert_eq;
 use core::traits::TryInto;
 
 #[test]
 fn test_u96() {
     let a: u96 = 0x123;
     assert_eq!(a, 0x123);
+}
+
+#[test]
+fn test_try_into_u96() {
+    assert_eq!(0x123_felt252.try_into(), Option::<u96>::Some(0x123));
+    assert_eq!(0x1000000000000000000000000_felt252.try_into(), Option::<u96>::None);
 }
 
 #[test]

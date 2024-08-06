@@ -1,5 +1,7 @@
+#[allow(unused_imports)]
 use core::zeroable::Zeroable;
 use core::serde::Serde;
+#[allow(unused_imports)]
 use core::hash::{Hash, HashStateTrait};
 use core::RangeCheck;
 

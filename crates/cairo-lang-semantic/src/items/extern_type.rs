@@ -63,7 +63,7 @@ pub fn extern_type_declaration_generic_params_data(
         ModuleItemId::ExternType(extern_type_id),
     ));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    resolver.set_allowed_features(&extern_type_id, &extern_type_syntax, &mut diagnostics);
+    resolver.set_feature_config(&extern_type_id, &extern_type_syntax, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,

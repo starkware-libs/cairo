@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use starknet::storage::{StoragePathEntry, Map};
+use starknet::storage::Map;
 
 #[starknet::interface]
 trait IERC20<TContractState> {
