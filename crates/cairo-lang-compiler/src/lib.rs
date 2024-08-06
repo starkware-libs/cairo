@@ -275,28 +275,29 @@ pub fn compile_prepared_db_program_artifact(
             replace_sierra_ids_in_program(db, &sierra_program_with_debug.program);
     }
 
-    let mut annotations = if add_statements_functions {
-        Annotations::from(
-            sierra_program_with_debug
-                .debug_info
-                .statements_locations
-                .extract_statements_functions(db),
+    let mut annotations = Annotations::default();
+    
+    if add_statements_functions {
+        annotations.extend(
+            Annotations::from(
+                sierra_program_with_debug
+                    .debug_info
+                    .statements_locations
+                    .extract_statements_functions(db),
+            )
         )
-    } else {
-        Annotations::default()
     };
 
-    let statements_code_locations_annotations = if add_statements_code_locations {
-        Annotations::from(
-            sierra_program_with_debug
-                .debug_info
-                .statements_locations
-                .extract_statements_source_code_locations(db),
+    if add_statements_code_locations {
+        annotations.extend(
+            Annotations::from(
+                sierra_program_with_debug
+                    .debug_info
+                    .statements_locations
+                    .extract_statements_source_code_locations(db),
+            )
         )
-    } else {
-        Annotations::default()
     };
-    annotations.extend(statements_code_locations_annotations);
 
     let debug_info = DebugInfo {
         type_names: Default::default(),
