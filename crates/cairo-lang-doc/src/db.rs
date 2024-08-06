@@ -10,7 +10,7 @@ use itertools::Itertools;
 use crate::markdown::cleanup_doc_markdown;
 
 /// Item which documentation can be fetched from source code.
-#[derive(Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum DocumentableItemId {
     LookupItem(LookupItemId),
     Member(MemberId),

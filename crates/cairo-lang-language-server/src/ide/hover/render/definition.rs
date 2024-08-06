@@ -8,7 +8,7 @@ use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::inspect::defs::SymbolDef;
+use crate::lang::inspect::defs::{MemberDef, SymbolDef};
 use crate::lang::lsp::ToLsp;
 use crate::markdown::{fenced_code_block, RULE};
 
@@ -42,8 +42,8 @@ pub fn definition(
             }
             md
         }
-        SymbolDef::Member((member_id, struct_def)) => {
-            let documentable_item = DocumentableItemId::Member(*member_id);
+        SymbolDef::Member(MemberDef { member, r#struct: struct_def }) => {
+            let documentable_item = DocumentableItemId::Member(*member);
 
             let mut md = String::new();
 

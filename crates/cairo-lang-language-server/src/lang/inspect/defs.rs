@@ -23,8 +23,6 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::inspect::defs::SymbolDef::Member;
 use crate::{find_definition, ResolvedItem};
 
-type StructDef = ItemDef;
-
 /// Keeps information about the symbol that is being searched for/inspected.
 ///
 /// This is an ephemeral data structure.
@@ -33,7 +31,12 @@ pub enum SymbolDef {
     Item(ItemDef),
     Variable(VariableDef),
     ExprInlineMacro(String),
-    Member((MemberId, StructDef)),
+    Member(MemberDef),
+}
+
+pub struct MemberDef {
+    pub member: MemberId,
+    pub r#struct: ItemDef,
 }
 
 impl SymbolDef {
@@ -85,9 +88,10 @@ impl SymbolDef {
             ResolvedItem::Generic(ResolvedGenericItem::Variable(_)) => {
                 VariableDef::new(db, definition_node).map(Self::Variable)
             }
-            ResolvedItem::Member(member_id) => {
-                Some(Member((member_id, StructDef::new(db, &definition_node)?)))
-            }
+            ResolvedItem::Member(member_id) => Some(Member(MemberDef {
+                member: member_id,
+                r#struct: ItemDef::new(db, &definition_node)?,
+            })),
         }
     }
 }
