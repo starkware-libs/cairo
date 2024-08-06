@@ -1,4 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_doc::db::DocGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -7,7 +8,7 @@ use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::inspect::defs::SymbolDef;
+use crate::lang::inspect::defs::{MemberDef, SymbolDef};
 use crate::lang::lsp::ToLsp;
 use crate::markdown::{fenced_code_block, RULE};
 
@@ -36,6 +37,20 @@ pub fn definition(
         SymbolDef::ExprInlineMacro(macro_name) => {
             let mut md = fenced_code_block(macro_name);
             if let Some(doc) = db.inline_macro_plugins().get(macro_name)?.documentation() {
+                md += RULE;
+                md += &doc;
+            }
+            md
+        }
+        SymbolDef::Member(MemberDef { member, structure }) => {
+            let mut md = String::new();
+
+            // Signature is the signature of the struct, so it makes sense that the definition
+            // path is too.
+            md += &fenced_code_block(&structure.definition_path(db));
+            md += &fenced_code_block(&structure.signature(db));
+
+            if let Some(doc) = db.get_item_documentation((*member).into()) {
                 md += RULE;
                 md += &doc;
             }

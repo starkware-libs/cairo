@@ -51,6 +51,21 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
             find(TextPosition { col, ..position })
         })
     }
+
+    /// Finds first ancestor of a given kind.
+    fn first_ancestor_of_kind(&self, mut node: SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
+        let db = self.upcast();
+        let syntax_db = db.upcast();
+
+        while let Some(parent) = node.parent() {
+            if parent.kind(syntax_db) == kind {
+                return Some(parent);
+            } else {
+                node = parent;
+            }
+        }
+        None
+    }
 }
 
 impl<T> LsSyntaxGroup for T where T: Upcast<dyn ParserGroup> + ?Sized {}

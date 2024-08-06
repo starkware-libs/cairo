@@ -86,10 +86,15 @@ pub struct ContractState {}
 // = source context
         self.va<caret>lue.write(value_);
 // = highlight
-No highlight information.
+        self.<sel>value</sel>.write(value_);
 // = popover
 ```cairo
-core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>
+hello
+```
+```cairo
+pub struct StorageStorageBaseMut {
+    pub value: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+}
 ```
 
 //! > hover #4
