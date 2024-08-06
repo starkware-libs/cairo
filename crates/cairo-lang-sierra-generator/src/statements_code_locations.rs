@@ -26,7 +26,8 @@ pub struct SourceCodeSpan {
 /// [`crate::statements_locations::StatementsLocations::extract_statements_functions`].
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct StatementsSourceCodeLocations {
-    pub statements_to_code_location_map: HashMap<StatementIdx, Vec<(SourceFileFullPath, SourceCodeSpan)>>,
+    pub statements_to_code_location_map:
+        HashMap<StatementIdx, Vec<(SourceFileFullPath, SourceCodeSpan)>>,
 }
 
 impl From<StatementsSourceCodeLocations> for Annotations {

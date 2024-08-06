@@ -130,17 +130,18 @@ pub fn compile_test_prepared_db(
     let replacer = DebugReplacer { db };
     replacer.enrich_function_names(&mut sierra_program);
 
-    let statements_functions_for_tests = Some(debug_info.statements_locations.get_statements_functions_map_for_tests(db));
+    let statements_functions_for_tests =
+        Some(debug_info.statements_locations.get_statements_functions_map_for_tests(db));
     let mut annotations = Annotations::default();
     if tests_compilation_config.add_statements_functions {
-        annotations.extend(
-            Annotations::from(debug_info.statements_locations.extract_statements_functions(db))
-        )
+        annotations.extend(Annotations::from(
+            debug_info.statements_locations.extract_statements_functions(db),
+        ))
     }
     if tests_compilation_config.add_statements_code_locations {
-        annotations.extend(
-            Annotations::from(debug_info.statements_locations.extract_statements_source_code_locations(db))
-        )
+        annotations.extend(Annotations::from(
+            debug_info.statements_locations.extract_statements_source_code_locations(db),
+        ))
     }
 
     let executables = collect_executables(db, executable_functions, &sierra_program);
