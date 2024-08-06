@@ -4,6 +4,7 @@ use core::traits::IndexView;
 use core::box::BoxTrait;
 #[allow(unused_imports)]
 use core::gas::withdraw_gas;
+#[allow(unused_imports)]
 use core::option::OptionTrait;
 use core::serde::Serde;
 use core::metaprogramming::TypeEqual;

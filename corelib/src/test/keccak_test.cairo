@@ -1,5 +1,4 @@
-use starknet::SyscallResultTrait;
-pub use core::keccak;
+use core::keccak;
 
 #[test]
 fn test_keccak_syscall() {
