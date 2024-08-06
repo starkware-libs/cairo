@@ -5,6 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::corelib::{unwrap_error_propagation_type, ErrorPropagationType};
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{corelib, ExprVar, LocalVariable, VarId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -27,7 +28,6 @@ use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
     MatchArmSelector, SemanticDiagnostic, TypeLongId,
 };
-use usage::MemberPath;
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use self::block_builder::SealedBlockBuilder;
@@ -65,7 +65,6 @@ mod logical_op;
 mod lower_if;
 mod lower_match;
 pub mod refs;
-pub mod usage;
 
 #[cfg(test)]
 mod generated_test;
