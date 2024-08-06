@@ -21,18 +21,17 @@ pub struct SourceCodeSpan {
     pub start: SourceCodeLocation,
     pub end: SourceCodeLocation,
 }
-
-/// The mapping from sierra statement index to fully qualified Cairo path of the Cairo function TODO
+/// The mapping between sierra statement indexes and lines in cairo code
 /// (if obtainable) which caused the statement to be generated. Should be created using
 /// [`crate::statements_locations::StatementsLocations::extract_statements_functions`].
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct StatementsSourceCodeLocations {
-    pub statements_to_lines_map: HashMap<StatementIdx, Vec<(SourceFileFullPath, SourceCodeSpan)>>,
+    pub statements_to_code_location_map: HashMap<StatementIdx, Vec<(SourceFileFullPath, SourceCodeSpan)>>,
 }
 
 impl From<StatementsSourceCodeLocations> for Annotations {
     fn from(value: StatementsSourceCodeLocations) -> Self {
-        let mapping = serde_json::to_value(value.statements_to_lines_map).unwrap();
+        let mapping = serde_json::to_value(value.statements_to_code_location_map).unwrap();
         OrderedHashMap::from([(
             "github.com/software-mansion/cairo-coverage".to_string(),
             serde_json::Value::from_iter([("statements_code_locations", mapping)]),
