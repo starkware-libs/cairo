@@ -144,7 +144,7 @@ impl TypeLongId {
                 )
             }
             TypeLongId::Closure(closure) => {
-                format!("{{closure@{:?}}}", closure.wrapper_location.debug(def_db))
+                format!("{:?}", closure.debug(db.elongate()))
             }
         }
     }
@@ -415,6 +415,16 @@ pub struct ClosureTypeLongId {
     /// Every closure has a unique type that is based on the stable location of its wrapper.
     #[dont_rewrite]
     pub wrapper_location: StableLocation,
+}
+
+impl DebugWithDb<dyn SemanticGroup> for ClosureTypeLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{{closure@{:?}}}", self.wrapper_location.debug(db.upcast()))
+    }
 }
 
 /// An impl item of kind type.
