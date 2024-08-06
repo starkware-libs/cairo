@@ -2,12 +2,12 @@ use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
+use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::zip_eq;
 
-use super::usage::MemberPath;
 use crate::db::LoweringGroup;
 use crate::VariableId;
 

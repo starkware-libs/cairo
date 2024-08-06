@@ -3,20 +3,19 @@ use std::fmt::Write;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::LanguageElementId;
-use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::expr::fmt::ExprFormatter;
-use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::Usages;
-use crate::test_utils::LoweringDatabaseForTesting;
+use crate::db::SemanticGroup;
+use crate::expr::fmt::ExprFormatter;
+use crate::test_utils::{setup_test_function, SemanticDatabaseForTesting};
+use crate::Expr;
 
 cairo_lang_test_utils::test_file_test!(
     usage,
-    "src/lower/test_data",
+    "src/usage/test_data",
     {
         usage :"usage",
     },
@@ -27,7 +26,7 @@ fn test_function_usage(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut LoweringDatabaseForTesting::default();
+    let db = &mut SemanticDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
         inputs["function"].as_str(),
@@ -51,10 +50,10 @@ fn test_function_usage(
         let position = node.span_start_without_trivia(db).position_in_file(db, file_id).unwrap();
 
         match expr {
-            semantic::Expr::Loop(_) => write!(usages_str, "Loop").unwrap(),
-            semantic::Expr::While(_) => write!(usages_str, "While").unwrap(),
-            semantic::Expr::For(_) => write!(usages_str, "For").unwrap(),
-            semantic::Expr::ExprClosure(_) => write!(usages_str, "Closure").unwrap(),
+            Expr::Loop(_) => write!(usages_str, "Loop").unwrap(),
+            Expr::While(_) => write!(usages_str, "While").unwrap(),
+            Expr::For(_) => write!(usages_str, "For").unwrap(),
+            Expr::ExprClosure(_) => write!(usages_str, "Closure").unwrap(),
             _ => unreachable!(),
         }
         writeln!(usages_str, " {}:{}:", position.line, position.col).unwrap();

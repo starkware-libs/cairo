@@ -2,6 +2,7 @@ use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
+use cairo_lang_semantic::usage::{MemberPath, Usage};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -14,7 +15,6 @@ use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringRe
 use super::generators;
 use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
-use super::usage::{MemberPath, Usage};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
