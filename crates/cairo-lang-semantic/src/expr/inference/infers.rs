@@ -140,6 +140,9 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                 self.conform_traits(concrete_trait_id, imp_concrete_trait_id)?;
                 ImplLongId::GenericParameter(param_id).intern(self.db)
             }
+            UninferredImpl::ClosureImpl(closure_impl) => {
+                ImplLongId::ClosureImpl(closure_impl).intern(self.db)
+            }
         };
         Ok(impl_id)
     }

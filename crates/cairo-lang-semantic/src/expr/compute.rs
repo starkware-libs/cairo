@@ -1490,17 +1490,18 @@ fn compute_expr_closure_semantic(
     if matches!(ctx.function_id, ContextFunction::Global) {
         ctx.diagnostics.report(syntax, ClosureInGlobalScope);
     }
+    let closure_type = TypeLongId::Closure(ClosureTypeLongId {
+        param_tys: params.iter().map(|param| param.ty).collect(),
+        ret_ty,
+        wrapper_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
+    })
+    .intern(ctx.db);
     Ok(Expr::ExprClosure(ExprClosure {
         body,
         param_ids: params.iter().map(|param| param.id).collect(),
 
         stable_ptr: syntax.stable_ptr().into(),
-        ty: TypeLongId::Closure(ClosureTypeLongId {
-            param_tys: params.iter().map(|param| param.ty).collect(),
-            ret_ty,
-            wrapper_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
-        })
-        .intern(ctx.db),
+        ty: closure_type,
     }))
 }
 

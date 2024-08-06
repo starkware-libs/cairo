@@ -169,6 +169,7 @@ pub enum ImplLongId {
     ImplVar(ImplVarId),
     ImplImpl(ImplImplId),
     TraitImpl(TraitImplId),
+    ClosureImpl(ClosureImplId),
 }
 impl ImplLongId {
     /// Returns the [ImplHead] of an impl if available.
@@ -178,7 +179,8 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_)
             | ImplLongId::ImplVar(_)
             | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_) => {
+            | ImplLongId::TraitImpl(_)
+            | ImplLongId::ClosureImpl(_) => {
                 return None;
             }
         })
@@ -201,6 +203,7 @@ impl ImplLongId {
             )
             .into(),
             ImplLongId::TraitImpl(trait_impl) => trait_impl.name(db.upcast()),
+            ImplLongId::ClosureImpl(closure_impl) => closure_impl.format(db),
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -214,6 +217,9 @@ impl ImplLongId {
             ImplLongId::ImplVar(var) => format!("{var:?}"),
             ImplLongId::ImplImpl(impl_impl) => format!("{:?}", impl_impl.debug(db.elongate())),
             ImplLongId::TraitImpl(trait_impl) => format!("{:?}", trait_impl.debug(db.elongate())),
+            ImplLongId::ClosureImpl(closure_impl) => {
+                format!("{:?}", closure_impl.debug(db.elongate()))
+            }
         }
     }
 
@@ -224,6 +230,7 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => true,
             ImplLongId::ImplVar(_) => false,
             ImplLongId::ImplImpl(impl_impl) => impl_impl.impl_id().is_var_free(db),
+            ImplLongId::ClosureImpl(closure_impl) => closure_impl.is_var_free(db),
         }
     }
 
@@ -234,6 +241,7 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_) => false,
             ImplLongId::ImplVar(_) => false,
             ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => false,
+            ImplLongId::ClosureImpl(_) => false,
         }
     }
 }
@@ -249,6 +257,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplLongId {
             ImplLongId::ImplVar(var) => write!(f, "?{}", var.lookup_intern(db).id.0),
             ImplLongId::ImplImpl(impl_impl) => write!(f, "{:?}", impl_impl.debug(db)),
             ImplLongId::TraitImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
+            ImplLongId::ClosureImpl(closure_impl) => write!(f, "{:?}", closure_impl.debug(db)),
         }
     }
 }
@@ -282,6 +291,65 @@ impl ImplId {
 
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         self.lookup_intern(db).format(db)
+    }
+}
+
+/// An impl item of a closure.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct ClosureImplId {
+    pub concrete_trait_id: ConcreteTraitId,
+}
+impl ClosureImplId {
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("+{:?}FN", self.concrete_trait_id.debug(db.elongate())).into()
+        // format!(
+        //     "Fn({:?}) -> ?",
+        //     extract_matches!(self.args.lookup_intern(db), TypeLongId::Tuple)
+        //         .iter()
+        //         .map(|ty| ty.format(db)),
+        // )
+        // .into()
+    }
+    pub fn trait_id(&self, db: &dyn SemanticGroup) -> TraitId {
+        self.concrete_trait_id.trait_id(db)
+    }
+
+    pub fn ret_ty(&self, db: &dyn SemanticGroup) -> Option<TypeId> {
+        let GenericArgumentId::Type(closure_type) =
+            *self.concrete_trait_id.generic_args(db).first()?
+        else {
+            unreachable!("FnOnce trait should have a type argument");
+        };
+        Some(match closure_type.lookup_intern(db) {
+            TypeLongId::Closure(closure) => closure.ret_ty,
+            TypeLongId::Var(_) | TypeLongId::GenericParameter(_) => {
+                let trait_id = crate::corelib::fn_once_trait(db);
+                let trait_type = db.trait_type_by_name(trait_id, "Output".into()).unwrap().unwrap();
+                TypeLongId::ImplType(ImplTypeId::new(
+                    ImplLongId::ClosureImpl(*self).intern(db),
+                    trait_type,
+                    db,
+                ))
+                .intern(db)
+            }
+            _ => return None,
+        })
+    }
+    /// Returns true if the `impl` does not depend on impl or type variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        self.concrete_trait_id
+            .generic_args(db)
+            .iter()
+            .all(|generic_argument_id| generic_argument_id.is_var_free(db))
+    }
+}
+impl DebugWithDb<dyn SemanticGroup> for ClosureImplId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
     }
 }
 
@@ -492,6 +560,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
         ImplLongId::ImplVar(var) => Ok(var.lookup_intern(db).concrete_trait_id),
         ImplLongId::ImplImpl(impl_impl) => impl_impl_concrete_trait(db, impl_impl),
         ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl),
+        ImplLongId::ClosureImpl(generated_impl) => Ok(generated_impl.concrete_trait_id),
     }
 }
 
@@ -1381,20 +1450,31 @@ impl PartialOrd for ImplOrModuleById {
 pub struct ImplLookupContext {
     pub modules_and_impls: BTreeSet<ImplOrModuleById>,
     pub generic_params: Vec<GenericParamId>,
+    pub closure_impls: Option<ImplId>,
 }
 impl ImplLookupContext {
     pub fn new(module_id: ModuleId, generic_params: Vec<GenericParamId>) -> ImplLookupContext {
-        Self { modules_and_impls: [ImplOrModuleById::Module(module_id)].into(), generic_params }
-    }
-    pub fn insert_lookup_scope(&mut self, item: ImplOrModuleById) {
-        match item {
-            ImplOrModuleById::Impl(impl_id) => {
-                self.modules_and_impls.insert(ImplOrModuleById::Impl(impl_id));
-            }
-            ImplOrModuleById::Module(module_id) => {
-                self.modules_and_impls.insert(ImplOrModuleById::Module(module_id));
-            }
+        Self {
+            modules_and_impls: [ImplOrModuleById::Module(module_id)].into(),
+            generic_params,
+            closure_impls: None,
         }
+    }
+    pub fn insert_lookup_scope(&mut self, db: &dyn SemanticGroup, imp: &UninferredImpl) {
+        let defs_db = db.upcast();
+        let item = match imp {
+            UninferredImpl::Def(impl_def_id) => impl_def_id.module_file_id(defs_db).0.into(),
+            UninferredImpl::ImplAlias(impl_alias_id) => {
+                impl_alias_id.module_file_id(defs_db).0.into()
+            }
+            UninferredImpl::GenericParam(param) => param.module_file_id(defs_db).0.into(),
+            UninferredImpl::ImplImpl(impl_impl_id) => impl_impl_id.impl_id.into(),
+            UninferredImpl::ClosureImpl(_) => {
+                // ClosureImpl are not looked up inside module.
+                return;
+            }
+        };
+        self.modules_and_impls.insert(item);
     }
     pub fn insert_module(&mut self, module_id: ModuleId) -> bool {
         self.modules_and_impls.insert(ImplOrModuleById::Module(module_id))
@@ -1402,6 +1482,11 @@ impl ImplLookupContext {
 
     pub fn insert_impl(&mut self, impl_id: ImplId) -> bool {
         self.modules_and_impls.insert(ImplOrModuleById::Impl(impl_id))
+    }
+    pub fn set_closure_impl(&mut self, closure_impl_id: ImplId) {
+        // There should be only one closure impl in the context.
+        assert!(self.closure_impls.is_none());
+        self.closure_impls = Some(closure_impl_id);
     }
 }
 
@@ -1412,6 +1497,7 @@ pub enum UninferredImpl {
     ImplAlias(ImplAliasId),
     GenericParam(GenericParamId),
     ImplImpl(ImplImplId),
+    ClosureImpl(ClosureImplId),
 }
 impl UninferredImpl {
     pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
@@ -1427,6 +1513,7 @@ impl UninferredImpl {
                 param.concrete_trait
             }
             UninferredImpl::ImplImpl(impl_impl_id) => db.impl_impl_concrete_trait(*impl_impl_id),
+            UninferredImpl::ClosureImpl(closure_impl_id) => Ok(closure_impl_id.concrete_trait_id),
         }
     }
 
@@ -1445,6 +1532,7 @@ impl UninferredImpl {
             UninferredImpl::ImplImpl(impl_impl_id) => db
                 .impl_impl_concrete_trait(*impl_impl_id)
                 .map(|concrete_trait| concrete_trait.trait_id(db)),
+            UninferredImpl::ClosureImpl(closure_impl_id) => Ok(closure_impl_id.trait_id(db)),
         }
     }
 
@@ -1457,6 +1545,9 @@ impl UninferredImpl {
             }
             UninferredImpl::GenericParam(param) => param.module_file_id(defs_db).0.into(),
             UninferredImpl::ImplImpl(impl_impl_id) => impl_impl_id.impl_id.into(),
+            UninferredImpl::ClosureImpl(_) => {
+                unreachable!("Closure impls are not part of the lookup scope.")
+            }
         }
     }
 }
@@ -1471,6 +1562,7 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
                 write!(f, "generic param {}", param.name(db.upcast()).unwrap_or_else(|| "_".into()))
             }
             UninferredImpl::ImplImpl(impl_impl) => impl_impl.fmt(f, db.elongate()),
+            UninferredImpl::ClosureImpl(closure_impl) => closure_impl.fmt(f, db.elongate()),
         }
     }
 }
@@ -1520,6 +1612,18 @@ pub fn find_candidates_at_context(
         };
         for imp in imps {
             res.insert(imp);
+        }
+    }
+    if let Some(closure_impl) = &lookup_context.closure_impls {
+        let ImplLongId::ClosureImpl(closure_impl_id) = closure_impl.lookup_intern(db) else {
+            unreachable!();
+        };
+        if let Ok(trait_fits_filter) =
+            concrete_trait_fits_trait_filter(db, closure_impl_id.concrete_trait_id, &filter)
+        {
+            if trait_fits_filter {
+                res.insert(UninferredImpl::ClosureImpl(closure_impl_id));
+            }
         }
     }
     Ok(res)
@@ -1867,6 +1971,12 @@ pub fn impl_type_concrete_implized(
         ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) | ImplLongId::ImplVar(_) => {
             return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
         }
+        ImplLongId::ClosureImpl(closure_impl) => {
+            if let Some(ty) = closure_impl.ret_ty(db) {
+                return Ok(ty);
+            }
+            return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
+        }
     };
 
     let impl_def_id = concrete_impl.impl_def_id(db);
@@ -2145,6 +2255,7 @@ pub fn impl_constant_concrete_implized_type(
         ImplLongId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
         ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(impl_impl)?,
         ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl)?,
+        ImplLongId::ClosureImpl(closure_impl) => closure_impl.concrete_trait_id,
     };
 
     let ty = db.concrete_trait_constant_type(ConcreteTraitConstantId::new(

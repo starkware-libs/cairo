@@ -365,6 +365,9 @@ impl<'db> InferenceConform for Inference<'db> {
             ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => {
                 Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
             }
+            ImplLongId::ClosureImpl(_) => {
+                unreachable!("Closure impls are not conformed")
+            }
         }
     }
 
@@ -459,6 +462,10 @@ impl<'db> InferenceConform for Inference<'db> {
                 )
             }
             ImplLongId::ImplImpl(impl_impl) => self.impl_contains_var(impl_impl.impl_id(), var),
+            ImplLongId::ClosureImpl(closure_impl) => self.generic_args_contain_var(
+                &closure_impl.concrete_trait_id.generic_args(self.db),
+                var,
+            ),
         }
     }
 
