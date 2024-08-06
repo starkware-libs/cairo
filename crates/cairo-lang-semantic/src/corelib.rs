@@ -415,7 +415,7 @@ pub fn unwrap_error_propagation_type(
 /// builds a semantic unit expression. This is not necessarily located in the AST, so it is received
 /// as a param.
 pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> ExprId {
-    ctx.exprs.alloc(Expr::Tuple(ExprTuple {
+    ctx.arenas.exprs.alloc(Expr::Tuple(ExprTuple {
         items: Vec::new(),
         ty: TypeLongId::Tuple(Vec::new()).intern(ctx.db),
         stable_ptr,

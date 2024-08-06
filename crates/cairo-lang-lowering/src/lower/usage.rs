@@ -4,7 +4,7 @@
 use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
-use cairo_lang_semantic::items::function_with_body::Arenas;
+use cairo_lang_semantic::expr::objects::Arenas;
 use cairo_lang_semantic::{
     self as semantic, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath, FunctionBody, Pattern,
     Statement, VarId,

@@ -8,7 +8,6 @@ use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, Attribut
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{try_extract_matches, Upcast};
-use id_arena::Arena;
 use itertools::Itertools;
 
 use super::functions::InlineConfiguration;
@@ -18,7 +17,7 @@ use crate::diagnostic::{
 };
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
-use crate::{semantic, ExprId, PatternId, SemanticDiagnostic, TypeId};
+use crate::{semantic, Arenas, ExprId, PatternId, SemanticDiagnostic, TypeId};
 
 // === Declaration ===
 
@@ -145,15 +144,6 @@ pub struct FunctionBodyData {
     pub pattern_lookup: UnorderedHashMap<ast::PatternPtr, PatternId>,
     pub resolver_data: Arc<ResolverData>,
     pub body: Arc<FunctionBody>,
-}
-
-/// Arena for semantic expressions, patterns, and statements.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct Arenas {
-    pub exprs: Arena<semantic::Expr>,
-    pub patterns: Arena<semantic::Pattern>,
-    pub statements: Arena<semantic::Statement>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
