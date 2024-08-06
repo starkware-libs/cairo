@@ -8,7 +8,7 @@ cairo_level_tests/contracts/storage_accesses.cairo
 
 //! > generated_cairo_code
 use starknet::ContractAddress;
-use starknet::storage::{StoragePathEntry, Map};
+use starknet::storage::Map;
 
 #[starknet::interface]
 trait IERC20<TContractState> {

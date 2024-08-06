@@ -1,8 +1,11 @@
 use core::option::OptionTrait;
 use core::result::ResultTrait;
 use core::traits::{BitAnd, BitNot, BitOr, BitXor, Into, TryInto, Default, Felt252DictValue};
+#[allow(unused_imports)]
 use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+#[allow(unused_imports)]
 use core::array::ArrayTrait;
+#[allow(unused_imports)]
 use core::array::SpanTrait;
 use core::RangeCheck;
 

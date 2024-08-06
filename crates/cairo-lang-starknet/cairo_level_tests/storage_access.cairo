@@ -1,11 +1,9 @@
-use core::traits::TryInto;
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 use super::utils::{deserialized, serialized};
 
 #[feature("deprecated-bounded-int-trait")]
 use core::integer::BoundedInt;
 use core::num::traits::Zero;
-use core::byte_array::ByteArrayTrait;
 use starknet::storage::Vec;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
@@ -98,14 +96,12 @@ enum QueryableEnum {
 #[starknet::contract]
 mod test_contract {
     use core::starknet::storage::{SubPointersForward, SubPointersMutForward};
-    use core::option::OptionTrait;
     use super::{
         AbcEtc, ByteArrays, NonZeros, Vecs, QueryableEnum, QueryableEnumVariants,
         QueryableEnumVariantsMut
     };
     use starknet::storage::{
-        VecTrait, MutableVecTrait, StorageAsPath, StoragePointerWriteAccess,
-        StoragePointerReadAccess,
+        VecTrait, MutableVecTrait, StoragePointerWriteAccess, StoragePointerReadAccess
     };
 
     #[storage]

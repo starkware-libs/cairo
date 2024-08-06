@@ -1,5 +1,5 @@
-use core::array::ArrayTrait;
-use core::array::SpanTrait;
+#[allow(unused_imports)]
+use core::array::{ArrayTrait, SpanTrait};
 
 pub trait Serde<T> {
     fn serialize(self: @T, ref output: Array<felt252>);
