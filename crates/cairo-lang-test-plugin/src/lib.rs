@@ -130,8 +130,12 @@ pub fn compile_test_prepared_db(
     let replacer = DebugReplacer { db };
     replacer.enrich_function_names(&mut sierra_program);
 
-    let statements_functions_for_tests =
-        Some(debug_info.statements_locations.get_statements_functions_map_for_tests(db));
+    let statements_functions_for_tests = if tests_compilation_config.add_statements_functions {
+        Some(debug_info.statements_locations.get_statements_functions_map_for_tests(db))
+    } else {
+        None
+    };
+
     let mut annotations = Annotations::default();
     if tests_compilation_config.add_statements_functions {
         annotations.extend(Annotations::from(

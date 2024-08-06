@@ -21,9 +21,9 @@ pub struct SourceCodeSpan {
     pub start: SourceCodeLocation,
     pub end: SourceCodeLocation,
 }
-/// The mapping between sierra statement indexes and lines in cairo code
+/// The mapping between sierra statement indexes and locations in cairo code
 /// (if obtainable) which caused the statement to be generated. Should be created using
-/// [`crate::statements_locations::StatementsLocations::extract_statements_functions`].
+/// [`crate::statements_locations::StatementsLocations::extract_statements_source_code_locations`].
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct StatementsSourceCodeLocations {
     pub statements_to_code_location_map:
