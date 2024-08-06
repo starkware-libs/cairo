@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_doc::db::{DocGroup, DocumentableItemId};
+use cairo_lang_doc::db::DocGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -42,17 +42,15 @@ pub fn definition(
             }
             md
         }
-        SymbolDef::Member(MemberDef { member, r#struct: struct_def }) => {
-            let documentable_item = DocumentableItemId::Member(*member);
-
+        SymbolDef::Member(MemberDef { member, structure }) => {
             let mut md = String::new();
 
             // Signature is the signature of the struct, so it makes sense that the definition
             // path is too.
-            md += &fenced_code_block(&struct_def.definition_path(db));
-            md += &fenced_code_block(&struct_def.signature(db));
+            md += &fenced_code_block(&structure.definition_path(db));
+            md += &fenced_code_block(&structure.signature(db));
 
-            if let Some(doc) = db.get_item_documentation(documentable_item) {
+            if let Some(doc) = db.get_item_documentation((*member).into()) {
                 md += RULE;
                 md += &doc;
             }

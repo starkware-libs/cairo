@@ -3,7 +3,7 @@ use std::iter;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MemberId, ModuleItemId, TopLevelLanguageElementId, TraitItemId,
 };
-use cairo_lang_doc::db::{DocGroup, DocumentableItemId};
+use cairo_lang_doc::db::DocGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -34,9 +34,10 @@ pub enum SymbolDef {
     Member(MemberDef),
 }
 
+/// Information about a struct member.
 pub struct MemberDef {
     pub member: MemberId,
-    pub r#struct: ItemDef,
+    pub structure: ItemDef,
 }
 
 impl SymbolDef {
@@ -90,7 +91,7 @@ impl SymbolDef {
             }
             ResolvedItem::Member(member_id) => Some(Member(MemberDef {
                 member: member_id,
-                r#struct: ItemDef::new(db, &definition_node)?,
+                structure: ItemDef::new(db, &definition_node)?,
             })),
         }
     }
@@ -140,15 +141,12 @@ impl ItemDef {
     pub fn signature(&self, db: &AnalysisDatabase) -> String {
         let contexts = self.context_items.iter().copied().rev();
         let this = iter::once(self.lookup_item_id);
-        contexts
-            .chain(this)
-            .map(|item| db.get_item_signature(DocumentableItemId::LookupItem(item)))
-            .join("\n")
+        contexts.chain(this).map(|item| db.get_item_signature(item.into())).join("\n")
     }
 
     /// Gets item documentation in a final form usable for display.
     pub fn documentation(&self, db: &AnalysisDatabase) -> Option<String> {
-        db.get_item_documentation(DocumentableItemId::LookupItem(self.lookup_item_id))
+        db.get_item_documentation(self.lookup_item_id.into())
     }
 
     /// Gets the full path (including crate name and defining trait/impl if applicable)

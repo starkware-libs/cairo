@@ -1,31 +1,12 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MemberId, VariantId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 
+use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
-
-/// Item which documentation can be fetched from source code.
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-pub enum DocumentableItemId {
-    LookupItem(LookupItemId),
-    Member(MemberId),
-    Variant(VariantId),
-}
-
-impl DocumentableItemId {
-    fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
-        match self {
-            DocumentableItemId::LookupItem(lookup_item_id) => lookup_item_id.stable_location(db),
-            DocumentableItemId::Member(member_id) => member_id.stable_location(db),
-            DocumentableItemId::Variant(variant_id) => variant_id.stable_location(db),
-        }
-    }
-}
 
 #[salsa::query_group(DocDatabase)]
 pub trait DocGroup: Upcast<dyn DefsGroup> + Upcast<dyn SyntaxGroup> + SyntaxGroup {
