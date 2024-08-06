@@ -140,6 +140,8 @@ pub fn function_identifier_relative_to_file_module(
     relative_semantic_path_segments.into_iter().rev().join("::")
 }
 
+/// Returns a location in the user file corresponding to the given [StableLocation].
+/// It consists of a full path to the file and a text span in the file.
 pub fn maybe_code_location(
     db: &dyn DefsGroup,
     location: StableLocation,
