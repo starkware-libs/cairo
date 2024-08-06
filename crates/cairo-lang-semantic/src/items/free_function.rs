@@ -92,7 +92,7 @@ pub fn free_function_generic_params_data(
         ModuleItemId::FreeFunction(free_function_id),
     ));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    resolver.set_allowed_features(&free_function_id, &free_function_syntax, &mut diagnostics);
+    resolver.set_feature_config(&free_function_id, &free_function_syntax, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,

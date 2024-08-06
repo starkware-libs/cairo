@@ -62,7 +62,7 @@ use crate::diagnostic::{
 };
 use crate::items::constant::ConstValue;
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::extract_item_allowed_features;
+use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
@@ -379,7 +379,7 @@ fn compute_expr_inline_macro_semantic(
         &MacroPluginMetadata {
             cfg_set: &ctx.cfg_set,
             declared_derives: &ctx.db.declared_derives(),
-            allowed_features: &ctx.resolver.data.allowed_features,
+            allowed_features: &ctx.resolver.data.feature_config.allowed_features,
             edition: ctx.resolver.edition,
         },
     );
@@ -3100,12 +3100,11 @@ pub fn compute_statement_semantic(
     // As for now, statement attributes does not have any semantic affect, so we only validate they
     // are allowed.
     validate_statement_attributes(ctx, &syntax);
-    let mut features_to_remove = vec![];
-    for feature_name in extract_item_allowed_features(syntax_db, &syntax, ctx.diagnostics) {
-        if ctx.resolver.data.allowed_features.insert(feature_name.clone()) {
-            features_to_remove.push(feature_name);
-        }
-    }
+    let feature_restore = ctx
+        .resolver
+        .data
+        .feature_config
+        .override_with(extract_item_feature_config(syntax_db, &syntax, ctx.diagnostics));
     let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let rhs_syntax = &let_syntax.rhs(syntax_db);
@@ -3280,9 +3279,7 @@ pub fn compute_statement_semantic(
         }
         ast::Statement::Missing(_) => todo!(),
     };
-    for feature_name in features_to_remove {
-        ctx.resolver.data.allowed_features.swap_remove(&feature_name);
-    }
+    ctx.resolver.data.feature_config.restore(feature_restore);
     Ok(ctx.statements.alloc(statement))
 }
 

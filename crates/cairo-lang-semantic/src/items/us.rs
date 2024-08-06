@@ -36,7 +36,7 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     // the item instead of all the module data.
     let use_ast = ast::UsePath::Leaf(db.module_use_by_id(use_id)?.to_maybe()?);
     let item = use_ast.get_item(db.upcast());
-    resolver.set_allowed_features(&use_id, &item, &mut diagnostics);
+    resolver.set_feature_config(&use_id, &item, &mut diagnostics);
     let mut segments = vec![];
     get_use_segments(db.upcast(), &use_ast, &mut segments)?;
     let resolved_item =

@@ -23,6 +23,9 @@ pub const DEPRECATED_ATTR: &str = "deprecated";
 /// the usage is marked with their feature active.
 pub const INTERNAL_ATTR: &str = "internal";
 
+/// An attribute to allow code that would normally result in a warning.
+pub const ALLOW_ATTR: &str = "allow";
+
 /// An attribute to allow usage of a feature under a statement.
 pub const FEATURE_ATTR: &str = "feature";
 
