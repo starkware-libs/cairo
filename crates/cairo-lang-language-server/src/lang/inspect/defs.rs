@@ -19,7 +19,8 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 use tracing::error;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::semantic_extension::LsSemanticGroupExtension;
+use crate::lang::db::AnalysisDatabase;
 use crate::lang::inspect::defs::SymbolDef::Member;
 use crate::{find_definition, ResolvedItem};
 

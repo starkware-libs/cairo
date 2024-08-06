@@ -17,7 +17,7 @@ use cairo_lang_utils::{Intern, Upcast};
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// Language server-specific extensions to the semantic group.
-pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
+pub trait LsSemanticGroupExtension: Upcast<dyn SemanticGroup> {
     /// Returns a [`LookupItemId`] corresponding to the node or its first parent all the way up to
     /// syntax root in the file.
     ///
@@ -117,7 +117,7 @@ pub trait LsSemanticGroup: Upcast<dyn SemanticGroup> {
     }
 }
 
-impl<T> LsSemanticGroup for T where T: Upcast<dyn SemanticGroup> + ?Sized {}
+impl<T> LsSemanticGroupExtension for T where T: Upcast<dyn SemanticGroup> + ?Sized {}
 
 /// If the ast node is a lookup item, return corresponding ids. Otherwise, returns `None`.
 /// See [LookupItemId].

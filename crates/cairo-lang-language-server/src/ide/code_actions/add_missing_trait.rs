@@ -15,6 +15,7 @@ use tower_lsp::lsp_types::{CodeAction, CodeActionKind, Range, TextEdit, Url, Wor
 use tracing::debug;
 
 use crate::ide::utils::find_methods_for_type;
+use crate::lang::db::semantic_extension::LsSemanticGroupExtension;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
@@ -78,7 +79,7 @@ fn missing_traits_actions(
         module_start_offset.position_in_file(db.upcast(), file_id).unwrap().to_lsp();
     let relevant_methods = find_methods_for_type(db, resolver, ty, stable_ptr);
     let current_module = db.find_module_containing_node(node)?;
-    let module_visible_traits = db.visible_traits_from_module(current_module);
+    let module_visible_traits = db.visible_traits_from_module(current_module).ok()?;
     let mut code_actions = vec![];
     for method in relevant_methods {
         let method_name = method.name(db.upcast());

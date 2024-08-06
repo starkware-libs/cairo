@@ -9,7 +9,8 @@ use tower_lsp::lsp_types::{CompletionParams, CompletionResponse, CompletionTrigg
 use tracing::debug;
 
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
+use crate::lang::db::semantic_extension::LsSemanticGroupExtension;
+use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod completions;
