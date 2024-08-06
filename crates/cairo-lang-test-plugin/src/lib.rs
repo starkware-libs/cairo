@@ -47,6 +47,7 @@ const AVAILABLE_GAS_ATTR: &str = "available_gas";
 const STATIC_GAS_ARG: &str = "static";
 
 /// Configuration for test compilation.
+#[derive(Clone)]
 pub struct TestsCompilationConfig {
     /// Adds the starknet contracts to the compiled tests.
     pub starknet: bool,
