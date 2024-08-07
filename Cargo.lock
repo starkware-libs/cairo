@@ -3521,7 +3521,7 @@ dependencies = [
 
 [[package]]
 name = "sierra-compile-json"
-version = "2.6.4"
+version = "2.7.0"
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -3690,7 +3690,6 @@ version = "2.7.0"
 dependencies = [
  "anyhow",
  "async-channel",
- "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet-classes",
  "cairo-lang-utils",
  "clap",
