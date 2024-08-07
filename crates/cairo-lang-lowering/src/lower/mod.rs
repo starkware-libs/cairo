@@ -1387,7 +1387,7 @@ fn lower_expr_loop(
         _ => unreachable!("Loop expression must be either loop, while or for."),
     };
 
-    let usage = &ctx.usages.usages[&loop_expr_id];
+    let usage = ctx.db.function_expr_usage(ctx.semantic_function_id, loop_expr_id).unwrap();
 
     // Determine signature.
     let params = usage
@@ -1428,7 +1428,7 @@ fn lower_expr_loop(
     }
     .intern(ctx.db);
 
-    let snap_usage = ctx.usages.usages[&loop_expr_id].snap_usage.clone();
+    let snap_usage = usage.snap_usage.clone();
 
     // Generate the function.
     let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
@@ -1682,7 +1682,7 @@ fn lower_expr_closure(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a closure expression: {:?}", expr.debug(&ctx.expr_formatter));
-    let usage = ctx.usages.usages[&expr_id].clone();
+    let usage = ctx.db.function_expr_usage(ctx.semantic_function_id, expr_id).unwrap();
     Ok(LoweredExpr::AtVariable(builder.capture(ctx, usage.clone(), expr)))
 }
 

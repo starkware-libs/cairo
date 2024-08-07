@@ -1,18 +1,20 @@
 //! Introduces [Usages], which is responsible for computing variables usage in semantic blocks\
 //! of a function.
 
-use cairo_lang_defs::ids::MemberId;
+use cairo_lang_defs::ids::{FunctionWithBodyId, MemberId};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use id_arena::Arena;
 
+use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
 use crate::{
     ConcreteStructId, Condition, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath,
-    FixedSizeArrayItems, FunctionBody, Pattern, PatternId, Statement, VarId,
+    FixedSizeArrayItems, Pattern, PatternId, Statement, VarId,
 };
 
 #[cfg(test)]
@@ -50,7 +52,7 @@ impl From<&ExprVarMemberPath> for MemberPath {
 }
 
 /// Usages of variables and member paths in semantic code.
-#[derive(Clone, Debug, Default, DebugWithDb)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct Usage {
     /// Member paths that are read.
@@ -151,21 +153,12 @@ impl Usage {
 }
 
 /// Usages of member paths in expressions of interest, currently loops and closures.
-#[derive(Debug, DebugWithDb)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct Usages {
-    /// Mapping from an [ExprId] to its [Usage].
-    pub usages: OrderedHashMap<ExprId, Usage>,
+pub struct Usages<'db> {
+    db: &'db dyn SemanticGroup,
+    function_id: FunctionWithBodyId,
 }
-impl Usages {
-    pub fn from_function_body(function_body: &FunctionBody) -> Self {
-        let mut current = Usage::default();
-        let mut usages = Self { usages: Default::default() };
-        usages.handle_expr(&function_body.arenas, function_body.body_expr, &mut current);
-        usages
-    }
-
-    fn handle_expr(&mut self, arenas: &Arenas, expr_id: ExprId, current: &mut Usage) {
+impl Usages<'_> {
+    fn handle_expr(&self, arenas: &Arenas, expr_id: ExprId, current: &mut Usage) {
         match &arenas.exprs[expr_id] {
             Expr::Tuple(expr) => {
                 for expr_id in &expr.items {
@@ -240,58 +233,24 @@ impl Usages {
                 usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
             }
-            Expr::Loop(expr) => {
-                let mut usage = Default::default();
-                self.handle_expr(arenas, expr.body, &mut usage);
+            Expr::Loop(_expr) => {
+                let usage = self.db.function_expr_usage(self.function_id, expr_id).unwrap();
                 current.add_usage_and_changes(&usage);
-                self.usages.insert(expr_id, usage);
             }
-            Expr::While(expr) => {
-                let mut usage = Default::default();
-                match &expr.condition {
-                    Condition::BoolExpr(expr) => {
-                        self.handle_expr(arenas, *expr, &mut usage);
-                    }
-                    Condition::Let(expr, patterns) => {
-                        self.handle_expr(arenas, *expr, &mut usage);
-                        for pattern in patterns {
-                            Self::handle_pattern(&arenas.patterns, *pattern, &mut usage);
-                        }
-                    }
-                }
-                self.handle_expr(arenas, expr.body, &mut usage);
-                usage.finalize_as_scope();
+            Expr::While(_expr) => {
+                let usage = self.db.function_expr_usage(self.function_id, expr_id).unwrap();
                 current.add_usage_and_changes(&usage);
-
-                self.usages.insert(expr_id, usage);
             }
             Expr::For(expr) => {
                 current.introductions.insert(
                     extract_matches!(&expr.into_iter_member_path, ExprVarMemberPath::Var).var,
                 );
-                let mut usage: Usage = Default::default();
-                usage.usage.insert(
-                    (&expr.into_iter_member_path).into(),
-                    expr.into_iter_member_path.clone(),
-                );
-                usage.changes.insert(
-                    (&expr.into_iter_member_path).into(),
-                    expr.into_iter_member_path.clone(),
-                );
-                Self::handle_pattern(&arenas.patterns, expr.pattern, &mut usage);
-                self.handle_expr(arenas, expr.body, &mut usage);
-                usage.finalize_as_scope();
+                let usage = self.db.function_expr_usage(self.function_id, expr_id).unwrap();
                 current.add_usage_and_changes(&usage);
-                self.usages.insert(expr_id, usage);
             }
-            Expr::ExprClosure(expr) => {
-                let mut usage: Usage = Default::default();
-
-                usage.introductions.extend(expr.param_ids.iter().map(|id| VarId::Param(*id)));
-                self.handle_expr(arenas, expr.body, &mut usage);
-                usage.finalize_as_scope();
+            Expr::ExprClosure(_expr) => {
+                let usage = self.db.function_expr_usage(self.function_id, expr_id).unwrap();
                 current.add_usage_and_changes(&usage);
-                self.usages.insert(expr_id, usage);
             }
             Expr::FunctionCall(expr) => {
                 for arg in &expr.args {
@@ -392,4 +351,56 @@ impl Usages {
             Pattern::Missing(_) => {}
         }
     }
+}
+
+/// Query implementation of [crate::db::SemanticGroup::function_expr_usage].
+pub fn function_expr_usage(
+    db: &dyn SemanticGroup,
+    function_id: FunctionWithBodyId,
+    expr_id: ExprId,
+) -> Maybe<Usage> {
+    let function_body = db.function_body(function_id)?;
+
+    let usages = Usages { db, function_id };
+    let arenas = &function_body.arenas;
+    let mut usage = Default::default();
+    match &arenas.exprs[expr_id] {
+        Expr::Loop(expr) => {
+            // Since expr.body is a block, we don't need to call `finalize_as_scope` on usage.
+            usages.handle_expr(arenas, expr.body, &mut usage);
+        }
+        Expr::While(expr) => {
+            match &expr.condition {
+                Condition::BoolExpr(expr) => {
+                    usages.handle_expr(arenas, *expr, &mut usage);
+                }
+                Condition::Let(expr, patterns) => {
+                    usages.handle_expr(arenas, *expr, &mut usage);
+                    for pattern in patterns {
+                        Usages::handle_pattern(&arenas.patterns, *pattern, &mut usage);
+                    }
+                }
+            }
+            usages.handle_expr(arenas, expr.body, &mut usage);
+            usage.finalize_as_scope();
+        }
+        Expr::For(expr) => {
+            usage
+                .usage
+                .insert((&expr.into_iter_member_path).into(), expr.into_iter_member_path.clone());
+            usage
+                .changes
+                .insert((&expr.into_iter_member_path).into(), expr.into_iter_member_path.clone());
+            Usages::handle_pattern(&arenas.patterns, expr.pattern, &mut usage);
+            usages.handle_expr(arenas, expr.body, &mut usage);
+            usage.finalize_as_scope();
+        }
+        Expr::ExprClosure(expr) => {
+            usage.introductions.extend(expr.param_ids.iter().map(|id| VarId::Param(*id)));
+            usages.handle_expr(arenas, expr.body, &mut usage);
+            usage.finalize_as_scope();
+        }
+        _ => unreachable!("Usage query is only supported for loops, whiles, fors and closures"),
+    }
+    Ok(usage)
 }
