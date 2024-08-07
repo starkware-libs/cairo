@@ -3,6 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     LanguageElementId, ModuleId, NamedLanguageElementId, TraitFunctionId, TraitId,
 };
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -116,11 +117,11 @@ fn visible_traits_in_module_ex(
     visited_modules.insert(module_id);
     let mut modules_to_visit = vec![];
     // Add traits and traverse modules imported into the current module.
-    for use_id in db.module_uses_ids(module_id).unwrap().iter().copied() {
+    for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
         if !is_visible(use_id.name(db.upcast()))? {
             continue;
         }
-        let resolved_item = db.use_resolved_item(use_id).unwrap();
+        let resolved_item = db.use_resolved_item(use_id).ok()?;
         match resolved_item {
             ResolvedGenericItem::Module(inner_module_id) => {
                 modules_to_visit.push(inner_module_id);
@@ -132,14 +133,14 @@ fn visible_traits_in_module_ex(
         }
     }
     // Traverse the submodules of the current module.
-    for submodule_id in db.module_submodules_ids(module_id).unwrap().iter().copied() {
+    for submodule_id in db.module_submodules_ids(module_id).ok()?.iter().copied() {
         if !is_visible(submodule_id.name(db.upcast()))? {
             continue;
         }
         modules_to_visit.push(ModuleId::Submodule(submodule_id));
     }
     // Add the traits of the current module.
-    for trait_id in db.module_traits_ids(module_id).unwrap().iter().copied() {
+    for trait_id in db.module_traits_ids(module_id).ok()?.iter().copied() {
         if !is_visible(trait_id.name(db.upcast()))? {
             continue;
         }
@@ -202,7 +203,7 @@ pub fn visible_traits_in_crate(
 pub fn visible_traits_from_module(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-) -> Arc<OrderedHashMap<TraitId, String>> {
+) -> Maybe<Arc<OrderedHashMap<TraitId, String>>> {
     let mut current_top_module = module_id;
     while let ModuleId::Submodule(submodule_id) = current_top_module {
         current_top_module = submodule_id.parent_module(db.upcast());
@@ -211,11 +212,11 @@ pub fn visible_traits_from_module(
         ModuleId::CrateRoot(crate_id) => crate_id,
         ModuleId::Submodule(_) => unreachable!("current module is not a top-level module"),
     };
-    let edition = db.crate_config(current_crate_id).unwrap().settings.edition;
+    let edition = db.crate_config(current_crate_id).ok_or(DiagnosticAdded)?.settings.edition;
     let prelude_submodule_name = edition.prelude_submodule_name();
     let core_prelude_submodule = core_submodule(db, "prelude");
     let prelude_submodule =
-        get_submodule(db, core_prelude_submodule, prelude_submodule_name).unwrap();
+        get_submodule(db, core_prelude_submodule, prelude_submodule_name).ok_or(DiagnosticAdded)?;
 
     let mut module_visible_traits = Vec::new();
     module_visible_traits.extend_from_slice(
@@ -243,5 +244,5 @@ pub fn visible_traits_from_module(
             }
         }
     }
-    result.into()
+    Ok(result.into())
 }
