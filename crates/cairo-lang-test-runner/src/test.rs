@@ -241,9 +241,9 @@ fn to_test_compilation(tests: &[(&str, bool)]) -> TestCompilation {
         }),
         metadata: TestCompilationMetadata {
             named_tests: tests.iter().map(to_named_test).collect(),
-            statements_functions: Default::default(),
             contracts_info: Default::default(),
             function_set_costs: Default::default(),
+            statements_locations: None,
         },
     }
 }

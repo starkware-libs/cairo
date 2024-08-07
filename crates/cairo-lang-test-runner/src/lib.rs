@@ -108,9 +108,15 @@ impl CompiledTestRunner {
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
             if self.config.run_profiler == RunProfilerConfig::Cairo {
+                let db = db.expect("db must be passed when profiling.");
+                let statements_locations = compiled
+                    .metadata
+                    .statements_locations
+                    .expect("statements locations must be present when profiling.");
                 Some(PorfilingAuxData {
-                    db: db.expect("db must be passed when profiling."),
-                    statements_functions: compiled.metadata.statements_functions.unwrap(),
+                    db,
+                    statements_functions: statements_locations
+                        .get_statements_functions_map_for_tests(db),
                 })
             } else {
                 None
