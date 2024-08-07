@@ -33601,3 +33601,1286 @@ impl From<&TokenSkipped> for SyntaxStablePtrId {
         node.stable_ptr().untyped()
     }
 }
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum TokenNode {
+    TerminalIdentifier(TerminalIdentifier),
+    TerminalLiteralNumber(TerminalLiteralNumber),
+    TerminalShortString(TerminalShortString),
+    TerminalString(TerminalString),
+    TerminalAs(TerminalAs),
+    TerminalConst(TerminalConst),
+    TerminalElse(TerminalElse),
+    TerminalEnum(TerminalEnum),
+    TerminalExtern(TerminalExtern),
+    TerminalFalse(TerminalFalse),
+    TerminalFunction(TerminalFunction),
+    TerminalIf(TerminalIf),
+    TerminalWhile(TerminalWhile),
+    TerminalFor(TerminalFor),
+    TerminalLoop(TerminalLoop),
+    TerminalImpl(TerminalImpl),
+    TerminalImplicits(TerminalImplicits),
+    TerminalLet(TerminalLet),
+    TerminalMatch(TerminalMatch),
+    TerminalModule(TerminalModule),
+    TerminalMut(TerminalMut),
+    TerminalNoPanic(TerminalNoPanic),
+    TerminalOf(TerminalOf),
+    TerminalRef(TerminalRef),
+    TerminalContinue(TerminalContinue),
+    TerminalReturn(TerminalReturn),
+    TerminalBreak(TerminalBreak),
+    TerminalStruct(TerminalStruct),
+    TerminalTrait(TerminalTrait),
+    TerminalTrue(TerminalTrue),
+    TerminalType(TerminalType),
+    TerminalUse(TerminalUse),
+    TerminalPub(TerminalPub),
+    TerminalAnd(TerminalAnd),
+    TerminalAndAnd(TerminalAndAnd),
+    TerminalArrow(TerminalArrow),
+    TerminalAt(TerminalAt),
+    TerminalBadCharacters(TerminalBadCharacters),
+    TerminalColon(TerminalColon),
+    TerminalColonColon(TerminalColonColon),
+    TerminalComma(TerminalComma),
+    TerminalDiv(TerminalDiv),
+    TerminalDivEq(TerminalDivEq),
+    TerminalDot(TerminalDot),
+    TerminalDotDot(TerminalDotDot),
+    TerminalEndOfFile(TerminalEndOfFile),
+    TerminalEq(TerminalEq),
+    TerminalEqEq(TerminalEqEq),
+    TerminalGE(TerminalGE),
+    TerminalGT(TerminalGT),
+    TerminalHash(TerminalHash),
+    TerminalLBrace(TerminalLBrace),
+    TerminalLBrack(TerminalLBrack),
+    TerminalLE(TerminalLE),
+    TerminalLParen(TerminalLParen),
+    TerminalLT(TerminalLT),
+    TerminalMatchArrow(TerminalMatchArrow),
+    TerminalMinus(TerminalMinus),
+    TerminalMinusEq(TerminalMinusEq),
+    TerminalMod(TerminalMod),
+    TerminalModEq(TerminalModEq),
+    TerminalMul(TerminalMul),
+    TerminalMulEq(TerminalMulEq),
+    TerminalNeq(TerminalNeq),
+    TerminalNot(TerminalNot),
+    TerminalBitNot(TerminalBitNot),
+    TerminalOr(TerminalOr),
+    TerminalOrOr(TerminalOrOr),
+    TerminalPlus(TerminalPlus),
+    TerminalPlusEq(TerminalPlusEq),
+    TerminalQuestionMark(TerminalQuestionMark),
+    TerminalRBrace(TerminalRBrace),
+    TerminalRBrack(TerminalRBrack),
+    TerminalRParen(TerminalRParen),
+    TerminalSemicolon(TerminalSemicolon),
+    TerminalUnderscore(TerminalUnderscore),
+    TerminalXor(TerminalXor),
+    TerminalEmpty(TerminalEmpty),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenNodePtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenNodePtr {
+    type SyntaxNode = TokenNode;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenNode {
+        TokenNode::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenNodePtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenNodePtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<TerminalIdentifierPtr> for TokenNodePtr {
+    fn from(value: TerminalIdentifierPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLiteralNumberPtr> for TokenNodePtr {
+    fn from(value: TerminalLiteralNumberPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalShortStringPtr> for TokenNodePtr {
+    fn from(value: TerminalShortStringPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalStringPtr> for TokenNodePtr {
+    fn from(value: TerminalStringPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalAsPtr> for TokenNodePtr {
+    fn from(value: TerminalAsPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalConstPtr> for TokenNodePtr {
+    fn from(value: TerminalConstPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalElsePtr> for TokenNodePtr {
+    fn from(value: TerminalElsePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEnumPtr> for TokenNodePtr {
+    fn from(value: TerminalEnumPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalExternPtr> for TokenNodePtr {
+    fn from(value: TerminalExternPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalFalsePtr> for TokenNodePtr {
+    fn from(value: TerminalFalsePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalFunctionPtr> for TokenNodePtr {
+    fn from(value: TerminalFunctionPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalIfPtr> for TokenNodePtr {
+    fn from(value: TerminalIfPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalWhilePtr> for TokenNodePtr {
+    fn from(value: TerminalWhilePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalForPtr> for TokenNodePtr {
+    fn from(value: TerminalForPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLoopPtr> for TokenNodePtr {
+    fn from(value: TerminalLoopPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalImplPtr> for TokenNodePtr {
+    fn from(value: TerminalImplPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalImplicitsPtr> for TokenNodePtr {
+    fn from(value: TerminalImplicitsPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLetPtr> for TokenNodePtr {
+    fn from(value: TerminalLetPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMatchPtr> for TokenNodePtr {
+    fn from(value: TerminalMatchPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalModulePtr> for TokenNodePtr {
+    fn from(value: TerminalModulePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMutPtr> for TokenNodePtr {
+    fn from(value: TerminalMutPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalNoPanicPtr> for TokenNodePtr {
+    fn from(value: TerminalNoPanicPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalOfPtr> for TokenNodePtr {
+    fn from(value: TerminalOfPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalRefPtr> for TokenNodePtr {
+    fn from(value: TerminalRefPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalContinuePtr> for TokenNodePtr {
+    fn from(value: TerminalContinuePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalReturnPtr> for TokenNodePtr {
+    fn from(value: TerminalReturnPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalBreakPtr> for TokenNodePtr {
+    fn from(value: TerminalBreakPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalStructPtr> for TokenNodePtr {
+    fn from(value: TerminalStructPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalTraitPtr> for TokenNodePtr {
+    fn from(value: TerminalTraitPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalTruePtr> for TokenNodePtr {
+    fn from(value: TerminalTruePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalTypePtr> for TokenNodePtr {
+    fn from(value: TerminalTypePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUsePtr> for TokenNodePtr {
+    fn from(value: TerminalUsePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPubPtr> for TokenNodePtr {
+    fn from(value: TerminalPubPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalAndPtr> for TokenNodePtr {
+    fn from(value: TerminalAndPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalAndAndPtr> for TokenNodePtr {
+    fn from(value: TerminalAndAndPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalArrowPtr> for TokenNodePtr {
+    fn from(value: TerminalArrowPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalAtPtr> for TokenNodePtr {
+    fn from(value: TerminalAtPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalBadCharactersPtr> for TokenNodePtr {
+    fn from(value: TerminalBadCharactersPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalColonPtr> for TokenNodePtr {
+    fn from(value: TerminalColonPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalColonColonPtr> for TokenNodePtr {
+    fn from(value: TerminalColonColonPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalCommaPtr> for TokenNodePtr {
+    fn from(value: TerminalCommaPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDivPtr> for TokenNodePtr {
+    fn from(value: TerminalDivPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDivEqPtr> for TokenNodePtr {
+    fn from(value: TerminalDivEqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDotPtr> for TokenNodePtr {
+    fn from(value: TerminalDotPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDotDotPtr> for TokenNodePtr {
+    fn from(value: TerminalDotDotPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEndOfFilePtr> for TokenNodePtr {
+    fn from(value: TerminalEndOfFilePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEqPtr> for TokenNodePtr {
+    fn from(value: TerminalEqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEqEqPtr> for TokenNodePtr {
+    fn from(value: TerminalEqEqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalGEPtr> for TokenNodePtr {
+    fn from(value: TerminalGEPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalGTPtr> for TokenNodePtr {
+    fn from(value: TerminalGTPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalHashPtr> for TokenNodePtr {
+    fn from(value: TerminalHashPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLBracePtr> for TokenNodePtr {
+    fn from(value: TerminalLBracePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLBrackPtr> for TokenNodePtr {
+    fn from(value: TerminalLBrackPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLEPtr> for TokenNodePtr {
+    fn from(value: TerminalLEPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLParenPtr> for TokenNodePtr {
+    fn from(value: TerminalLParenPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLTPtr> for TokenNodePtr {
+    fn from(value: TerminalLTPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMatchArrowPtr> for TokenNodePtr {
+    fn from(value: TerminalMatchArrowPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMinusPtr> for TokenNodePtr {
+    fn from(value: TerminalMinusPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMinusEqPtr> for TokenNodePtr {
+    fn from(value: TerminalMinusEqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalModPtr> for TokenNodePtr {
+    fn from(value: TerminalModPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalModEqPtr> for TokenNodePtr {
+    fn from(value: TerminalModEqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMulPtr> for TokenNodePtr {
+    fn from(value: TerminalMulPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMulEqPtr> for TokenNodePtr {
+    fn from(value: TerminalMulEqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalNeqPtr> for TokenNodePtr {
+    fn from(value: TerminalNeqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalNotPtr> for TokenNodePtr {
+    fn from(value: TerminalNotPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalBitNotPtr> for TokenNodePtr {
+    fn from(value: TerminalBitNotPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalOrPtr> for TokenNodePtr {
+    fn from(value: TerminalOrPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalOrOrPtr> for TokenNodePtr {
+    fn from(value: TerminalOrOrPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPlusPtr> for TokenNodePtr {
+    fn from(value: TerminalPlusPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPlusEqPtr> for TokenNodePtr {
+    fn from(value: TerminalPlusEqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalQuestionMarkPtr> for TokenNodePtr {
+    fn from(value: TerminalQuestionMarkPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalRBracePtr> for TokenNodePtr {
+    fn from(value: TerminalRBracePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalRBrackPtr> for TokenNodePtr {
+    fn from(value: TerminalRBrackPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalRParenPtr> for TokenNodePtr {
+    fn from(value: TerminalRParenPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonPtr> for TokenNodePtr {
+    fn from(value: TerminalSemicolonPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUnderscorePtr> for TokenNodePtr {
+    fn from(value: TerminalUnderscorePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalXorPtr> for TokenNodePtr {
+    fn from(value: TerminalXorPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEmptyPtr> for TokenNodePtr {
+    fn from(value: TerminalEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalIdentifierGreen> for TokenNodeGreen {
+    fn from(value: TerminalIdentifierGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLiteralNumberGreen> for TokenNodeGreen {
+    fn from(value: TerminalLiteralNumberGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalShortStringGreen> for TokenNodeGreen {
+    fn from(value: TerminalShortStringGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalStringGreen> for TokenNodeGreen {
+    fn from(value: TerminalStringGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalAsGreen> for TokenNodeGreen {
+    fn from(value: TerminalAsGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalConstGreen> for TokenNodeGreen {
+    fn from(value: TerminalConstGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalElseGreen> for TokenNodeGreen {
+    fn from(value: TerminalElseGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEnumGreen> for TokenNodeGreen {
+    fn from(value: TerminalEnumGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalExternGreen> for TokenNodeGreen {
+    fn from(value: TerminalExternGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalFalseGreen> for TokenNodeGreen {
+    fn from(value: TerminalFalseGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalFunctionGreen> for TokenNodeGreen {
+    fn from(value: TerminalFunctionGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalIfGreen> for TokenNodeGreen {
+    fn from(value: TerminalIfGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalWhileGreen> for TokenNodeGreen {
+    fn from(value: TerminalWhileGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalForGreen> for TokenNodeGreen {
+    fn from(value: TerminalForGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLoopGreen> for TokenNodeGreen {
+    fn from(value: TerminalLoopGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalImplGreen> for TokenNodeGreen {
+    fn from(value: TerminalImplGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalImplicitsGreen> for TokenNodeGreen {
+    fn from(value: TerminalImplicitsGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLetGreen> for TokenNodeGreen {
+    fn from(value: TerminalLetGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMatchGreen> for TokenNodeGreen {
+    fn from(value: TerminalMatchGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalModuleGreen> for TokenNodeGreen {
+    fn from(value: TerminalModuleGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMutGreen> for TokenNodeGreen {
+    fn from(value: TerminalMutGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalNoPanicGreen> for TokenNodeGreen {
+    fn from(value: TerminalNoPanicGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalOfGreen> for TokenNodeGreen {
+    fn from(value: TerminalOfGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalRefGreen> for TokenNodeGreen {
+    fn from(value: TerminalRefGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalContinueGreen> for TokenNodeGreen {
+    fn from(value: TerminalContinueGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalReturnGreen> for TokenNodeGreen {
+    fn from(value: TerminalReturnGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalBreakGreen> for TokenNodeGreen {
+    fn from(value: TerminalBreakGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalStructGreen> for TokenNodeGreen {
+    fn from(value: TerminalStructGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalTraitGreen> for TokenNodeGreen {
+    fn from(value: TerminalTraitGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalTrueGreen> for TokenNodeGreen {
+    fn from(value: TerminalTrueGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalTypeGreen> for TokenNodeGreen {
+    fn from(value: TerminalTypeGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUseGreen> for TokenNodeGreen {
+    fn from(value: TerminalUseGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPubGreen> for TokenNodeGreen {
+    fn from(value: TerminalPubGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalAndGreen> for TokenNodeGreen {
+    fn from(value: TerminalAndGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalAndAndGreen> for TokenNodeGreen {
+    fn from(value: TerminalAndAndGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalArrowGreen> for TokenNodeGreen {
+    fn from(value: TerminalArrowGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalAtGreen> for TokenNodeGreen {
+    fn from(value: TerminalAtGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalBadCharactersGreen> for TokenNodeGreen {
+    fn from(value: TerminalBadCharactersGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalColonGreen> for TokenNodeGreen {
+    fn from(value: TerminalColonGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalColonColonGreen> for TokenNodeGreen {
+    fn from(value: TerminalColonColonGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalCommaGreen> for TokenNodeGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDivGreen> for TokenNodeGreen {
+    fn from(value: TerminalDivGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDivEqGreen> for TokenNodeGreen {
+    fn from(value: TerminalDivEqGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDotGreen> for TokenNodeGreen {
+    fn from(value: TerminalDotGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDotDotGreen> for TokenNodeGreen {
+    fn from(value: TerminalDotDotGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEndOfFileGreen> for TokenNodeGreen {
+    fn from(value: TerminalEndOfFileGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEqGreen> for TokenNodeGreen {
+    fn from(value: TerminalEqGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEqEqGreen> for TokenNodeGreen {
+    fn from(value: TerminalEqEqGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalGEGreen> for TokenNodeGreen {
+    fn from(value: TerminalGEGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalGTGreen> for TokenNodeGreen {
+    fn from(value: TerminalGTGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalHashGreen> for TokenNodeGreen {
+    fn from(value: TerminalHashGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLBraceGreen> for TokenNodeGreen {
+    fn from(value: TerminalLBraceGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLBrackGreen> for TokenNodeGreen {
+    fn from(value: TerminalLBrackGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLEGreen> for TokenNodeGreen {
+    fn from(value: TerminalLEGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLParenGreen> for TokenNodeGreen {
+    fn from(value: TerminalLParenGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLTGreen> for TokenNodeGreen {
+    fn from(value: TerminalLTGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMatchArrowGreen> for TokenNodeGreen {
+    fn from(value: TerminalMatchArrowGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMinusGreen> for TokenNodeGreen {
+    fn from(value: TerminalMinusGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMinusEqGreen> for TokenNodeGreen {
+    fn from(value: TerminalMinusEqGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalModGreen> for TokenNodeGreen {
+    fn from(value: TerminalModGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalModEqGreen> for TokenNodeGreen {
+    fn from(value: TerminalModEqGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMulGreen> for TokenNodeGreen {
+    fn from(value: TerminalMulGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMulEqGreen> for TokenNodeGreen {
+    fn from(value: TerminalMulEqGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalNeqGreen> for TokenNodeGreen {
+    fn from(value: TerminalNeqGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalNotGreen> for TokenNodeGreen {
+    fn from(value: TerminalNotGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalBitNotGreen> for TokenNodeGreen {
+    fn from(value: TerminalBitNotGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalOrGreen> for TokenNodeGreen {
+    fn from(value: TerminalOrGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalOrOrGreen> for TokenNodeGreen {
+    fn from(value: TerminalOrOrGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPlusGreen> for TokenNodeGreen {
+    fn from(value: TerminalPlusGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPlusEqGreen> for TokenNodeGreen {
+    fn from(value: TerminalPlusEqGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalQuestionMarkGreen> for TokenNodeGreen {
+    fn from(value: TerminalQuestionMarkGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalRBraceGreen> for TokenNodeGreen {
+    fn from(value: TerminalRBraceGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalRBrackGreen> for TokenNodeGreen {
+    fn from(value: TerminalRBrackGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalRParenGreen> for TokenNodeGreen {
+    fn from(value: TerminalRParenGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonGreen> for TokenNodeGreen {
+    fn from(value: TerminalSemicolonGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUnderscoreGreen> for TokenNodeGreen {
+    fn from(value: TerminalUnderscoreGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalXorGreen> for TokenNodeGreen {
+    fn from(value: TerminalXorGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEmptyGreen> for TokenNodeGreen {
+    fn from(value: TerminalEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenNodeGreen(pub GreenId);
+impl TypedSyntaxNode for TokenNode {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = TokenNodePtr;
+    type Green = TokenNodeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalIdentifier => {
+                TokenNode::TerminalIdentifier(TerminalIdentifier::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalLiteralNumber => {
+                TokenNode::TerminalLiteralNumber(TerminalLiteralNumber::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalShortString => {
+                TokenNode::TerminalShortString(TerminalShortString::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalString => {
+                TokenNode::TerminalString(TerminalString::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalAs => TokenNode::TerminalAs(TerminalAs::from_syntax_node(db, node)),
+            SyntaxKind::TerminalConst => {
+                TokenNode::TerminalConst(TerminalConst::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalElse => {
+                TokenNode::TerminalElse(TerminalElse::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalEnum => {
+                TokenNode::TerminalEnum(TerminalEnum::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalExtern => {
+                TokenNode::TerminalExtern(TerminalExtern::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalFalse => {
+                TokenNode::TerminalFalse(TerminalFalse::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalFunction => {
+                TokenNode::TerminalFunction(TerminalFunction::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalIf => TokenNode::TerminalIf(TerminalIf::from_syntax_node(db, node)),
+            SyntaxKind::TerminalWhile => {
+                TokenNode::TerminalWhile(TerminalWhile::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalFor => {
+                TokenNode::TerminalFor(TerminalFor::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalLoop => {
+                TokenNode::TerminalLoop(TerminalLoop::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalImpl => {
+                TokenNode::TerminalImpl(TerminalImpl::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalImplicits => {
+                TokenNode::TerminalImplicits(TerminalImplicits::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalLet => {
+                TokenNode::TerminalLet(TerminalLet::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalMatch => {
+                TokenNode::TerminalMatch(TerminalMatch::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalModule => {
+                TokenNode::TerminalModule(TerminalModule::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalMut => {
+                TokenNode::TerminalMut(TerminalMut::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalNoPanic => {
+                TokenNode::TerminalNoPanic(TerminalNoPanic::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalOf => TokenNode::TerminalOf(TerminalOf::from_syntax_node(db, node)),
+            SyntaxKind::TerminalRef => {
+                TokenNode::TerminalRef(TerminalRef::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalContinue => {
+                TokenNode::TerminalContinue(TerminalContinue::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalReturn => {
+                TokenNode::TerminalReturn(TerminalReturn::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalBreak => {
+                TokenNode::TerminalBreak(TerminalBreak::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalStruct => {
+                TokenNode::TerminalStruct(TerminalStruct::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalTrait => {
+                TokenNode::TerminalTrait(TerminalTrait::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalTrue => {
+                TokenNode::TerminalTrue(TerminalTrue::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalType => {
+                TokenNode::TerminalType(TerminalType::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalUse => {
+                TokenNode::TerminalUse(TerminalUse::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalPub => {
+                TokenNode::TerminalPub(TerminalPub::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalAnd => {
+                TokenNode::TerminalAnd(TerminalAnd::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalAndAnd => {
+                TokenNode::TerminalAndAnd(TerminalAndAnd::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalArrow => {
+                TokenNode::TerminalArrow(TerminalArrow::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalAt => TokenNode::TerminalAt(TerminalAt::from_syntax_node(db, node)),
+            SyntaxKind::TerminalBadCharacters => {
+                TokenNode::TerminalBadCharacters(TerminalBadCharacters::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalColon => {
+                TokenNode::TerminalColon(TerminalColon::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalColonColon => {
+                TokenNode::TerminalColonColon(TerminalColonColon::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalComma => {
+                TokenNode::TerminalComma(TerminalComma::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalDiv => {
+                TokenNode::TerminalDiv(TerminalDiv::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalDivEq => {
+                TokenNode::TerminalDivEq(TerminalDivEq::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalDot => {
+                TokenNode::TerminalDot(TerminalDot::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalDotDot => {
+                TokenNode::TerminalDotDot(TerminalDotDot::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalEndOfFile => {
+                TokenNode::TerminalEndOfFile(TerminalEndOfFile::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalEq => TokenNode::TerminalEq(TerminalEq::from_syntax_node(db, node)),
+            SyntaxKind::TerminalEqEq => {
+                TokenNode::TerminalEqEq(TerminalEqEq::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalGE => TokenNode::TerminalGE(TerminalGE::from_syntax_node(db, node)),
+            SyntaxKind::TerminalGT => TokenNode::TerminalGT(TerminalGT::from_syntax_node(db, node)),
+            SyntaxKind::TerminalHash => {
+                TokenNode::TerminalHash(TerminalHash::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalLBrace => {
+                TokenNode::TerminalLBrace(TerminalLBrace::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalLBrack => {
+                TokenNode::TerminalLBrack(TerminalLBrack::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalLE => TokenNode::TerminalLE(TerminalLE::from_syntax_node(db, node)),
+            SyntaxKind::TerminalLParen => {
+                TokenNode::TerminalLParen(TerminalLParen::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalLT => TokenNode::TerminalLT(TerminalLT::from_syntax_node(db, node)),
+            SyntaxKind::TerminalMatchArrow => {
+                TokenNode::TerminalMatchArrow(TerminalMatchArrow::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalMinus => {
+                TokenNode::TerminalMinus(TerminalMinus::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalMinusEq => {
+                TokenNode::TerminalMinusEq(TerminalMinusEq::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalMod => {
+                TokenNode::TerminalMod(TerminalMod::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalModEq => {
+                TokenNode::TerminalModEq(TerminalModEq::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalMul => {
+                TokenNode::TerminalMul(TerminalMul::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalMulEq => {
+                TokenNode::TerminalMulEq(TerminalMulEq::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalNeq => {
+                TokenNode::TerminalNeq(TerminalNeq::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalNot => {
+                TokenNode::TerminalNot(TerminalNot::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalBitNot => {
+                TokenNode::TerminalBitNot(TerminalBitNot::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalOr => TokenNode::TerminalOr(TerminalOr::from_syntax_node(db, node)),
+            SyntaxKind::TerminalOrOr => {
+                TokenNode::TerminalOrOr(TerminalOrOr::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalPlus => {
+                TokenNode::TerminalPlus(TerminalPlus::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalPlusEq => {
+                TokenNode::TerminalPlusEq(TerminalPlusEq::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalQuestionMark => {
+                TokenNode::TerminalQuestionMark(TerminalQuestionMark::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalRBrace => {
+                TokenNode::TerminalRBrace(TerminalRBrace::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalRBrack => {
+                TokenNode::TerminalRBrack(TerminalRBrack::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalRParen => {
+                TokenNode::TerminalRParen(TerminalRParen::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalSemicolon => {
+                TokenNode::TerminalSemicolon(TerminalSemicolon::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalUnderscore => {
+                TokenNode::TerminalUnderscore(TerminalUnderscore::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalXor => {
+                TokenNode::TerminalXor(TerminalXor::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalEmpty => {
+                TokenNode::TerminalEmpty(TerminalEmpty::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "TokenNode"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            TokenNode::TerminalIdentifier(x) => x.as_syntax_node(),
+            TokenNode::TerminalLiteralNumber(x) => x.as_syntax_node(),
+            TokenNode::TerminalShortString(x) => x.as_syntax_node(),
+            TokenNode::TerminalString(x) => x.as_syntax_node(),
+            TokenNode::TerminalAs(x) => x.as_syntax_node(),
+            TokenNode::TerminalConst(x) => x.as_syntax_node(),
+            TokenNode::TerminalElse(x) => x.as_syntax_node(),
+            TokenNode::TerminalEnum(x) => x.as_syntax_node(),
+            TokenNode::TerminalExtern(x) => x.as_syntax_node(),
+            TokenNode::TerminalFalse(x) => x.as_syntax_node(),
+            TokenNode::TerminalFunction(x) => x.as_syntax_node(),
+            TokenNode::TerminalIf(x) => x.as_syntax_node(),
+            TokenNode::TerminalWhile(x) => x.as_syntax_node(),
+            TokenNode::TerminalFor(x) => x.as_syntax_node(),
+            TokenNode::TerminalLoop(x) => x.as_syntax_node(),
+            TokenNode::TerminalImpl(x) => x.as_syntax_node(),
+            TokenNode::TerminalImplicits(x) => x.as_syntax_node(),
+            TokenNode::TerminalLet(x) => x.as_syntax_node(),
+            TokenNode::TerminalMatch(x) => x.as_syntax_node(),
+            TokenNode::TerminalModule(x) => x.as_syntax_node(),
+            TokenNode::TerminalMut(x) => x.as_syntax_node(),
+            TokenNode::TerminalNoPanic(x) => x.as_syntax_node(),
+            TokenNode::TerminalOf(x) => x.as_syntax_node(),
+            TokenNode::TerminalRef(x) => x.as_syntax_node(),
+            TokenNode::TerminalContinue(x) => x.as_syntax_node(),
+            TokenNode::TerminalReturn(x) => x.as_syntax_node(),
+            TokenNode::TerminalBreak(x) => x.as_syntax_node(),
+            TokenNode::TerminalStruct(x) => x.as_syntax_node(),
+            TokenNode::TerminalTrait(x) => x.as_syntax_node(),
+            TokenNode::TerminalTrue(x) => x.as_syntax_node(),
+            TokenNode::TerminalType(x) => x.as_syntax_node(),
+            TokenNode::TerminalUse(x) => x.as_syntax_node(),
+            TokenNode::TerminalPub(x) => x.as_syntax_node(),
+            TokenNode::TerminalAnd(x) => x.as_syntax_node(),
+            TokenNode::TerminalAndAnd(x) => x.as_syntax_node(),
+            TokenNode::TerminalArrow(x) => x.as_syntax_node(),
+            TokenNode::TerminalAt(x) => x.as_syntax_node(),
+            TokenNode::TerminalBadCharacters(x) => x.as_syntax_node(),
+            TokenNode::TerminalColon(x) => x.as_syntax_node(),
+            TokenNode::TerminalColonColon(x) => x.as_syntax_node(),
+            TokenNode::TerminalComma(x) => x.as_syntax_node(),
+            TokenNode::TerminalDiv(x) => x.as_syntax_node(),
+            TokenNode::TerminalDivEq(x) => x.as_syntax_node(),
+            TokenNode::TerminalDot(x) => x.as_syntax_node(),
+            TokenNode::TerminalDotDot(x) => x.as_syntax_node(),
+            TokenNode::TerminalEndOfFile(x) => x.as_syntax_node(),
+            TokenNode::TerminalEq(x) => x.as_syntax_node(),
+            TokenNode::TerminalEqEq(x) => x.as_syntax_node(),
+            TokenNode::TerminalGE(x) => x.as_syntax_node(),
+            TokenNode::TerminalGT(x) => x.as_syntax_node(),
+            TokenNode::TerminalHash(x) => x.as_syntax_node(),
+            TokenNode::TerminalLBrace(x) => x.as_syntax_node(),
+            TokenNode::TerminalLBrack(x) => x.as_syntax_node(),
+            TokenNode::TerminalLE(x) => x.as_syntax_node(),
+            TokenNode::TerminalLParen(x) => x.as_syntax_node(),
+            TokenNode::TerminalLT(x) => x.as_syntax_node(),
+            TokenNode::TerminalMatchArrow(x) => x.as_syntax_node(),
+            TokenNode::TerminalMinus(x) => x.as_syntax_node(),
+            TokenNode::TerminalMinusEq(x) => x.as_syntax_node(),
+            TokenNode::TerminalMod(x) => x.as_syntax_node(),
+            TokenNode::TerminalModEq(x) => x.as_syntax_node(),
+            TokenNode::TerminalMul(x) => x.as_syntax_node(),
+            TokenNode::TerminalMulEq(x) => x.as_syntax_node(),
+            TokenNode::TerminalNeq(x) => x.as_syntax_node(),
+            TokenNode::TerminalNot(x) => x.as_syntax_node(),
+            TokenNode::TerminalBitNot(x) => x.as_syntax_node(),
+            TokenNode::TerminalOr(x) => x.as_syntax_node(),
+            TokenNode::TerminalOrOr(x) => x.as_syntax_node(),
+            TokenNode::TerminalPlus(x) => x.as_syntax_node(),
+            TokenNode::TerminalPlusEq(x) => x.as_syntax_node(),
+            TokenNode::TerminalQuestionMark(x) => x.as_syntax_node(),
+            TokenNode::TerminalRBrace(x) => x.as_syntax_node(),
+            TokenNode::TerminalRBrack(x) => x.as_syntax_node(),
+            TokenNode::TerminalRParen(x) => x.as_syntax_node(),
+            TokenNode::TerminalSemicolon(x) => x.as_syntax_node(),
+            TokenNode::TerminalUnderscore(x) => x.as_syntax_node(),
+            TokenNode::TerminalXor(x) => x.as_syntax_node(),
+            TokenNode::TerminalEmpty(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenNodePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&TokenNode> for SyntaxStablePtrId {
+    fn from(node: &TokenNode) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl TokenNode {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalIdentifier => true,
+            SyntaxKind::TerminalLiteralNumber => true,
+            SyntaxKind::TerminalShortString => true,
+            SyntaxKind::TerminalString => true,
+            SyntaxKind::TerminalAs => true,
+            SyntaxKind::TerminalConst => true,
+            SyntaxKind::TerminalElse => true,
+            SyntaxKind::TerminalEnum => true,
+            SyntaxKind::TerminalExtern => true,
+            SyntaxKind::TerminalFalse => true,
+            SyntaxKind::TerminalFunction => true,
+            SyntaxKind::TerminalIf => true,
+            SyntaxKind::TerminalWhile => true,
+            SyntaxKind::TerminalFor => true,
+            SyntaxKind::TerminalLoop => true,
+            SyntaxKind::TerminalImpl => true,
+            SyntaxKind::TerminalImplicits => true,
+            SyntaxKind::TerminalLet => true,
+            SyntaxKind::TerminalMatch => true,
+            SyntaxKind::TerminalModule => true,
+            SyntaxKind::TerminalMut => true,
+            SyntaxKind::TerminalNoPanic => true,
+            SyntaxKind::TerminalOf => true,
+            SyntaxKind::TerminalRef => true,
+            SyntaxKind::TerminalContinue => true,
+            SyntaxKind::TerminalReturn => true,
+            SyntaxKind::TerminalBreak => true,
+            SyntaxKind::TerminalStruct => true,
+            SyntaxKind::TerminalTrait => true,
+            SyntaxKind::TerminalTrue => true,
+            SyntaxKind::TerminalType => true,
+            SyntaxKind::TerminalUse => true,
+            SyntaxKind::TerminalPub => true,
+            SyntaxKind::TerminalAnd => true,
+            SyntaxKind::TerminalAndAnd => true,
+            SyntaxKind::TerminalArrow => true,
+            SyntaxKind::TerminalAt => true,
+            SyntaxKind::TerminalBadCharacters => true,
+            SyntaxKind::TerminalColon => true,
+            SyntaxKind::TerminalColonColon => true,
+            SyntaxKind::TerminalComma => true,
+            SyntaxKind::TerminalDiv => true,
+            SyntaxKind::TerminalDivEq => true,
+            SyntaxKind::TerminalDot => true,
+            SyntaxKind::TerminalDotDot => true,
+            SyntaxKind::TerminalEndOfFile => true,
+            SyntaxKind::TerminalEq => true,
+            SyntaxKind::TerminalEqEq => true,
+            SyntaxKind::TerminalGE => true,
+            SyntaxKind::TerminalGT => true,
+            SyntaxKind::TerminalHash => true,
+            SyntaxKind::TerminalLBrace => true,
+            SyntaxKind::TerminalLBrack => true,
+            SyntaxKind::TerminalLE => true,
+            SyntaxKind::TerminalLParen => true,
+            SyntaxKind::TerminalLT => true,
+            SyntaxKind::TerminalMatchArrow => true,
+            SyntaxKind::TerminalMinus => true,
+            SyntaxKind::TerminalMinusEq => true,
+            SyntaxKind::TerminalMod => true,
+            SyntaxKind::TerminalModEq => true,
+            SyntaxKind::TerminalMul => true,
+            SyntaxKind::TerminalMulEq => true,
+            SyntaxKind::TerminalNeq => true,
+            SyntaxKind::TerminalNot => true,
+            SyntaxKind::TerminalBitNot => true,
+            SyntaxKind::TerminalOr => true,
+            SyntaxKind::TerminalOrOr => true,
+            SyntaxKind::TerminalPlus => true,
+            SyntaxKind::TerminalPlusEq => true,
+            SyntaxKind::TerminalQuestionMark => true,
+            SyntaxKind::TerminalRBrace => true,
+            SyntaxKind::TerminalRBrack => true,
+            SyntaxKind::TerminalRParen => true,
+            SyntaxKind::TerminalSemicolon => true,
+            SyntaxKind::TerminalUnderscore => true,
+            SyntaxKind::TerminalXor => true,
+            SyntaxKind::TerminalEmpty => true,
+            _ => false,
+        }
+    }
+}

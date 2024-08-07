@@ -893,5 +893,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_token("Whitespace")
     .add_token("Newline")
     .add_token("Missing")
-    .add_token("Skipped").get()
+    .add_token("Skipped")
+    .add_all_tokens_enum("TokenNode")
+    .get()
 }
