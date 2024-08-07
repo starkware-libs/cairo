@@ -290,6 +290,7 @@ impl Usages {
                 usage.introductions.extend(expr.param_ids.iter().map(|id| VarId::Param(*id)));
                 self.handle_expr(arenas, expr.body, &mut usage);
                 usage.finalize_as_scope();
+                current.add_usage_and_changes(&usage);
                 self.usages.insert(expr_id, usage);
             }
             Expr::FunctionCall(expr) => {

@@ -125,7 +125,7 @@ test_function_usage
 //! > function
 fn foo(a: u32) {
     |b: u32| {
-        a + b
+         || a + b;
     };
 }
 
@@ -137,6 +137,10 @@ foo
 //! > semantic_diagnostics
 
 //! > usage
+Closure 2:9:
+  Usage: ParamId(test::a), ParamId(test::b),
+  Changes:
+  Snapshot_Usage:
 Closure 1:4:
   Usage: ParamId(test::a),
   Changes:
