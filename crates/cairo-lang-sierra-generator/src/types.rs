@@ -165,7 +165,7 @@ pub fn get_concrete_long_type_id(
 /// See [SierraGenGroup::is_self_referential] for documentation.
 pub fn is_self_referential_cycle(
     _db: &dyn SierraGenGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _type_id: &semantic::TypeId,
 ) -> Maybe<bool> {
     Ok(true)

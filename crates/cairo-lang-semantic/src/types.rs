@@ -781,7 +781,7 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
 /// Cycle handling of [crate::db::SemanticGroup::type_size_info].
 pub fn type_size_info_cycle(
     _db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _ty: &TypeId,
 ) -> Maybe<TypeSizeInformation> {
     Ok(TypeSizeInformation::Infinite)

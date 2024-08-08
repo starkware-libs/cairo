@@ -450,7 +450,7 @@ pub fn impl_def_resolver_data(
 /// Trivial cycle handler for [crate::db::SemanticGroup::impl_def_resolver_data].
 pub fn impl_def_resolver_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_def_id: &ImplDefId,
 ) -> Maybe<Arc<ResolverData>> {
     // Forwarding (not as a query) cycle handling to `priv_impl_declaration_data` cycle handler.
@@ -468,7 +468,7 @@ pub fn impl_def_concrete_trait(
 /// Trivial cycle handler for [crate::db::SemanticGroup::impl_def_concrete_trait].
 pub fn impl_def_concrete_trait_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_def_id: &ImplDefId,
 ) -> Maybe<ConcreteTraitId> {
     // Forwarding (not as a query) cycle handling to `priv_impl_declaration_data` cycle handler.
@@ -539,7 +539,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_declaration_data].
 pub fn priv_impl_declaration_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_def_id: &ImplDefId,
 ) -> Maybe<ImplDeclarationData> {
     priv_impl_declaration_data_inner(db, *impl_def_id, false)
@@ -1320,7 +1320,7 @@ pub fn module_impl_ids_for_trait_filter(
 /// Cycle handling for [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
 pub fn module_impl_ids_for_trait_filter_cycle(
     _db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _module_id: &ModuleId,
     _trait_filter: &TraitFilter,
 ) -> Maybe<Vec<UninferredImpl>> {
@@ -1362,7 +1362,7 @@ pub fn impl_impl_ids_for_trait_filter(
 /// Cycle handling for [crate::db::SemanticGroup::impl_impl_ids_for_trait_filter].
 pub fn impl_impl_ids_for_trait_filter_cycle(
     _db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _imp: &ImplId,
     _trait_filter: &TraitFilter,
 ) -> Maybe<Vec<UninferredImpl>> {
@@ -1768,7 +1768,7 @@ pub fn impl_type_def_resolved_type(
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_def_resolved_type].
 pub fn impl_type_def_resolved_type_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_type_def_id: &ImplTypeDefId,
 ) -> Maybe<TypeId> {
     // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
@@ -1841,7 +1841,7 @@ pub fn priv_impl_type_semantic_data(
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_type_semantic_data].
 pub fn priv_impl_type_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_type_def_id: &ImplTypeDefId,
 ) -> Maybe<ImplItemTypeData> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -1962,7 +1962,7 @@ pub fn impl_type_concrete_implized(
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].
 pub fn impl_type_concrete_implized_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_type_id: &ImplTypeId,
 ) -> Maybe<TypeId> {
     // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
@@ -2007,7 +2007,7 @@ pub fn impl_constant_def_value(
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_def_value].
 pub fn impl_constant_def_value_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_constant_def_id: &ImplConstantDefId,
 ) -> Maybe<ConstValueId> {
     // Forwarding cycle handling to `priv_impl_constant_semantic_data` handler.
@@ -2071,7 +2071,7 @@ pub fn priv_impl_constant_semantic_data(
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_constant_semantic_data].
 pub fn priv_impl_constant_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_constant_def_id: &ImplConstantDefId,
 ) -> Maybe<ImplItemConstantData> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -2168,7 +2168,7 @@ pub fn impl_constant_implized_by_context(
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_implized_by_context].
 pub fn impl_constant_implized_by_context_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_constant_id: &ImplConstantId,
     impl_def_id: &ImplDefId,
 ) -> Maybe<ConstValueId> {
@@ -2198,7 +2198,7 @@ pub fn impl_constant_concrete_implized_value(
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_concrete_implized_value].
 pub fn impl_constant_concrete_implized_value_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_constant_id: &ImplConstantId,
 ) -> Maybe<ConstValueId> {
     // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
@@ -2240,7 +2240,7 @@ pub fn impl_constant_concrete_implized_type(
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_concrete_implized_type].
 pub fn impl_constant_concrete_implized_type_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_constant_id: &ImplConstantId,
 ) -> Maybe<TypeId> {
     // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
@@ -2296,7 +2296,7 @@ pub fn impl_impl_def_impl(
 /// Cycle handling for [crate::db::SemanticGroup::impl_impl_def_impl].
 pub fn impl_impl_def_impl_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_impl_def_id: &ImplImplDefId,
 ) -> Maybe<ImplId> {
     db.priv_impl_impl_semantic_data(*impl_impl_def_id)?.impl_data.resolved_impl
@@ -2364,7 +2364,7 @@ pub fn priv_impl_impl_semantic_data(
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_impl_semantic_data].
 pub fn priv_impl_impl_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_impl_def_id: &ImplImplDefId,
 ) -> Maybe<ImplItemImplData> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -2500,7 +2500,7 @@ pub fn implicit_impl_impl_impl(
 /// Query implementation of [crate::db::SemanticGroup::implicit_impl_impl_impl].
 pub fn implicit_impl_impl_impl_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_def_id: &ImplDefId,
     trait_impl_id: &TraitImplId,
 ) -> Maybe<ImplId> {
@@ -2551,7 +2551,7 @@ pub fn priv_implicit_impl_impl_semantic_data(
 /// Cycle handling for [crate::db::SemanticGroup::priv_implicit_impl_impl_semantic_data].
 pub fn priv_implicit_impl_impl_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_def_id: &ImplDefId,
     trait_impl_id: &TraitImplId,
 ) -> Maybe<ImplicitImplImplData> {
@@ -2586,7 +2586,7 @@ pub fn impl_impl_implized_by_context(
 /// Cycle handling for [crate::db::SemanticGroup::impl_impl_implized_by_context].
 pub fn impl_impl_implized_by_context_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_impl_id: &ImplImplId,
     impl_def_id: &ImplDefId,
 ) -> Maybe<ImplId> {
@@ -2623,7 +2623,7 @@ pub fn impl_impl_concrete_trait(
 /// Cycle handling for [crate::db::SemanticGroup::impl_impl_concrete_implized].
 pub fn impl_impl_concrete_implized_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_impl_id: &ImplImplId,
 ) -> Maybe<ImplId> {
     // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.

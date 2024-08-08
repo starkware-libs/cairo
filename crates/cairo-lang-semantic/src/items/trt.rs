@@ -363,7 +363,7 @@ pub fn trait_generic_params(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<
 /// Cycle handling for [crate::db::SemanticGroup::trait_generic_params].
 pub fn trait_generic_params_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     trait_id: &TraitId,
 ) -> Maybe<Vec<GenericParam>> {
     // Forwarding cycle handling to `priv_generic_param_data` handler.
@@ -403,7 +403,7 @@ pub fn trait_generic_params_data(
 /// Cycle handling for [crate::db::SemanticGroup::trait_generic_params_data].
 pub fn trait_generic_params_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     trait_id: &TraitId,
 ) -> Maybe<GenericParamsData> {
     // Forwarding cycle handling to `priv_generic_param_data` handler.

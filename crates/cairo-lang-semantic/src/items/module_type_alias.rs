@@ -45,7 +45,7 @@ pub fn module_type_alias_resolved_type(
 /// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_resolved_type].
 pub fn module_type_alias_resolved_type_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     module_type_alias_id: &ModuleTypeAliasId,
 ) -> Maybe<TypeId> {
     // Forwarding (not as a query) cycle handling to `priv_module_type_alias_semantic_data` cycle
@@ -72,7 +72,7 @@ pub fn module_type_alias_resolver_data(
 /// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_resolver_data].
 pub fn module_type_alias_resolver_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     module_type_alias_id: &ModuleTypeAliasId,
 ) -> Maybe<Arc<ResolverData>> {
     // Forwarding (not as a query) cycle handling to `priv_module_type_alias_semantic_data` cycle
@@ -112,7 +112,7 @@ pub fn priv_module_type_alias_semantic_data(
 /// Cycle handling for [crate::db::SemanticGroup::priv_module_type_alias_semantic_data].
 pub fn priv_module_type_alias_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     module_type_alias_id: &ModuleTypeAliasId,
 ) -> Maybe<ModuleTypeAliasData> {
     let module_file_id = module_type_alias_id.module_file_id(db.upcast());
