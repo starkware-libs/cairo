@@ -184,11 +184,13 @@ function setupEnv(serverExecutable: lc.Executable, ctx: Context) {
   const extraEnv = ctx.config.get("languageServerExtraEnv");
 
   serverExecutable.options ??= {};
-  serverExecutable.options.env ??= {};
-
-  // By default, the server environment variables are not inherited from the parent process.
-  serverExecutable.options.env = process.env;
-  Object.assign(serverExecutable.options.env, logEnv, extraEnv);
+  serverExecutable.options.env = {
+    // Inherit env from parent process.
+    ...process.env,
+    ...(serverExecutable.options.env ?? {}),
+    ...logEnv,
+    ...extraEnv,
+  };
 }
 
 function buildEnvFilter(ctx: Context): string {
