@@ -31,7 +31,7 @@ log.workspace = true
 num-bigint = { workspace = true, default-features = true }
 pretty_assertions.workspace = true
 rstest.workspace = true
-salsa.workspace = true
+rust-analyzer-salsa.workspace = true
 starknet-types-core.workspace = true
 test-log.workspace = true
 

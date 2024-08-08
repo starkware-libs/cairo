@@ -12,7 +12,7 @@ cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.7.0" }
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.7.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.7.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.7.0" }
-salsa.workspace = true
+rust-analyzer-salsa.workspace = true
 itertools.workspace = true
 
 [dev-dependencies]
