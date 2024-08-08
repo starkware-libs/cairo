@@ -274,7 +274,7 @@ pub fn completion_for_method(
 
     // If the trait is not in scope, add a use statement.
     if !module_has_trait(db, module_id, trait_id)? {
-        if let Some(trait_path) = db.visible_traits_from_module(module_id).get(&trait_id) {
+        if let Some(trait_path) = db.visible_traits_from_module(module_id)?.get(&trait_id) {
             additional_text_edits.push(TextEdit {
                 range: Range::new(position, position),
                 new_text: format!("use {};\n", trait_path),
