@@ -8,3 +8,5 @@ pub use deref::{Deref, SnapshotDeref};
 #[feature("deref_mut")]
 pub use deref::DerefMut;
 
+mod function;
+pub use function::FnOnce;
