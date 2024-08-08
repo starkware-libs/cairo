@@ -182,3 +182,91 @@ error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:7
     |a| {
       ^
+
+//! > ==========================================================================
+
+//! > Test closure infer type from impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let c = |a| {
+        let d = a;
+        d.into()
+    };
+    let _k: felt252 = bar(c);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    core::ops::FnOnce::call(c, (2,))
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test closure infer type from impl wrong param.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let c = |a| {
+        let d = a;
+        d.into()
+    };
+    let _f: felt252 = core::ops::FnOnce::call(c, (2_u64,));
+    let _k: felt252 = bar(c);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    core::ops::FnOnce::call(c, (2,))
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `core::integer::u32` and `core::integer::u64`.
+ --> lib.cairo:4:10
+fn foo() {
+         ^
+
+//! > ==========================================================================
+
+//! > Test closure infer type from impl wrong return type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let c = |a| {
+        let d = a;
+        d.into()
+    };
+    let _f: u128 = core::ops::FnOnce::call(c, (2,));
+    let _k: felt252 = bar(c);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    core::ops::FnOnce::call(c, (2,))
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `core::felt252` and `core::integer::u128`.
+ --> lib.cairo:4:10
+fn foo() {
+         ^

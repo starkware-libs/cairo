@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
+use std::hash::Hash;
 use std::sync::Arc;
-use std::{mem, panic, vec};
+use std::{iter, mem, panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -236,6 +237,12 @@ impl ImplLongId {
             ImplLongId::ImplImpl(impl_impl) => impl_impl.impl_id().is_var_free(db),
             ImplLongId::GeneratedImpl(generated_impl) => {
                 generated_impl.concrete_trait(db).is_var_free(db)
+                    && generated_impl
+                        .lookup_intern(db)
+                        .impl_items
+                        .0
+                        .values()
+                        .all(|type_id| type_id.is_var_free(db))
             }
         }
     }
@@ -249,6 +256,12 @@ impl ImplLongId {
             ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => false,
             ImplLongId::GeneratedImpl(generated_impl) => {
                 generated_impl.concrete_trait(db).is_fully_concrete(db)
+                    && generated_impl
+                        .lookup_intern(db)
+                        .impl_items
+                        .0
+                        .values()
+                        .all(|type_id| type_id.is_fully_concrete(db))
             }
         }
     }
@@ -336,6 +349,23 @@ pub struct GeneratedImplLongId {
     pub concrete_trait: ConcreteTraitId,
     /// The generic arguments used by the generated impl, typically impls and negative impls.
     pub generic_args: Vec<GenericArgumentId>,
+    pub impl_items: GeneratedImplItems,
+}
+#[derive(Clone, Debug, PartialEq, Eq, SemanticObject)]
+pub struct GeneratedImplItems(pub OrderedHashMap<TraitTypeId, TypeId>);
+impl Hash for GeneratedImplItems {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.iter().for_each(|(trait_type_id, type_id)| {
+            trait_type_id.hash(state);
+            type_id.hash(state);
+        });
+    }
+}
+pub enum GeneratedImplAssociatedTypes {
+    /// The associated types are not yet resolved.
+    Unresolved,
+    /// The associated types are resolved.
+    Resolved(OrderedHashMap<TraitTypeId, TypeId>),
 }
 
 impl DebugWithDb<dyn SemanticGroup> for GeneratedImplLongId {
@@ -1477,15 +1507,21 @@ impl ImplLookupContext {
     pub fn new(module_id: ModuleId, generic_params: Vec<GenericParamId>) -> ImplLookupContext {
         Self { modules_and_impls: [ImplOrModuleById::Module(module_id)].into(), generic_params }
     }
-    pub fn insert_lookup_scope(&mut self, item: ImplOrModuleById) {
-        match item {
-            ImplOrModuleById::Impl(impl_id) => {
-                self.modules_and_impls.insert(ImplOrModuleById::Impl(impl_id));
+    pub fn insert_lookup_scope(&mut self, db: &dyn SemanticGroup, imp: &UninferredImpl) {
+        let defs_db = db.upcast();
+        let item = match imp {
+            UninferredImpl::Def(impl_def_id) => impl_def_id.module_file_id(defs_db).0.into(),
+            UninferredImpl::ImplAlias(impl_alias_id) => {
+                impl_alias_id.module_file_id(defs_db).0.into()
             }
-            ImplOrModuleById::Module(module_id) => {
-                self.modules_and_impls.insert(ImplOrModuleById::Module(module_id));
+            UninferredImpl::GenericParam(param) => param.module_file_id(defs_db).0.into(),
+            UninferredImpl::ImplImpl(impl_impl_id) => impl_impl_id.impl_id.into(),
+            UninferredImpl::GeneratedImpl(_) => {
+                // GeneratedImpls do not extend the lookup context.
+                return;
             }
-        }
+        };
+        self.modules_and_impls.insert(item);
     }
     pub fn insert_module(&mut self, module_id: ModuleId) -> bool {
         self.modules_and_impls.insert(ImplOrModuleById::Module(module_id))
@@ -1552,7 +1588,7 @@ impl UninferredImpl {
             UninferredImpl::GenericParam(param) => param.module_file_id(defs_db).0.into(),
             UninferredImpl::ImplImpl(impl_impl_id) => impl_impl_id.impl_id.into(),
             UninferredImpl::GeneratedImpl(generated_impl) => {
-                generated_impl.trait_id(db).module_file_id(defs_db).0.into()
+                generated_impl.concrete_trait(db).trait_id(db).module_file_id(defs_db).0.into()
             }
         }
     }
@@ -1602,6 +1638,7 @@ impl UninferredGeneratedImplId {
 pub struct UninferredGeneratedImplLongId {
     pub concrete_trait: ConcreteTraitId,
     pub generic_params: Vec<GenericParam>,
+    pub impl_items: GeneratedImplItems,
 }
 
 impl DebugWithDb<dyn SemanticGroup> for UninferredGeneratedImplLongId {
@@ -1617,7 +1654,7 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredGeneratedImplLongId {
 pub fn find_candidates_at_context(
     db: &dyn SemanticGroup,
     lookup_context: &ImplLookupContext,
-    filter: TraitFilter,
+    filter: &TraitFilter,
 ) -> Maybe<OrderedHashSet<UninferredImpl>> {
     let mut res = OrderedHashSet::default();
     for generic_param_id in &lookup_context.generic_params {
@@ -1636,7 +1673,7 @@ pub fn find_candidates_at_context(
         let param = extract_matches!(generic_param_semantic, GenericParam::Impl);
         let Ok(imp_concrete_trait_id) = param.concrete_trait else { continue };
         let Ok(trait_fits_filter) =
-            concrete_trait_fits_trait_filter(db, imp_concrete_trait_id, &filter)
+            concrete_trait_fits_trait_filter(db, imp_concrete_trait_id, filter)
         else {
             continue;
         };
@@ -1661,6 +1698,46 @@ pub fn find_candidates_at_context(
         }
     }
     Ok(res)
+}
+pub fn find_generated_candidate(
+    db: &dyn SemanticGroup,
+    concrete_trait_id: ConcreteTraitId,
+    filter: &TraitFilter,
+) -> Option<UninferredImpl> {
+    let fn_once_trait = crate::corelib::fn_once_trait(db);
+    let GenericArgumentId::Type(closure_type) = *concrete_trait_id.generic_args(db).first()? else {
+        return None;
+    };
+    let TypeLongId::Closure(closure_type_long) = closure_type.lookup_intern(db) else {
+        return None;
+    };
+    if concrete_trait_id.trait_id(db) == fn_once_trait {
+        let concrete_trait = ConcreteTraitLongId {
+            trait_id: fn_once_trait,
+            generic_args: vec![
+                GenericArgumentId::Type(closure_type),
+                GenericArgumentId::Type(
+                    TypeLongId::Tuple(closure_type_long.param_tys.clone()).intern(db),
+                ),
+            ],
+        }
+        .intern(db);
+        if !concrete_trait_fits_trait_filter(db, concrete_trait_id, filter).ok()? {
+            return None;
+        };
+        let ret_ty = db.trait_type_by_name(fn_once_trait, "Output".into()).unwrap().unwrap();
+        return Some(UninferredImpl::GeneratedImpl(
+            UninferredGeneratedImplLongId {
+                concrete_trait,
+                generic_params: vec![],
+                impl_items: GeneratedImplItems(
+                    iter::once((ret_ty, closure_type_long.ret_ty)).collect(),
+                ),
+            }
+            .intern(db),
+        ));
+    }
+    None
 }
 
 /// Checks if an impl of a trait function with a given self_ty exists.
@@ -2002,11 +2079,11 @@ pub fn impl_type_concrete_implized(
             };
             concrete_impl
         }
-        ImplLongId::GenericParameter(_)
-        | ImplLongId::TraitImpl(_)
-        | ImplLongId::ImplVar(_)
-        | ImplLongId::GeneratedImpl(_) => {
+        ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) | ImplLongId::ImplVar(_) => {
             return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
+        }
+        ImplLongId::GeneratedImpl(generated) => {
+            return Ok(*generated.lookup_intern(db).impl_items.0.get(&impl_type_id.ty()).unwrap());
         }
     };
 
