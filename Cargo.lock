@@ -525,7 +525,7 @@ dependencies = [
  "cairo-lang-utils",
  "indoc",
  "rayon",
- "salsa",
+ "rust-analyzer-salsa",
  "semver",
  "smol_str",
  "thiserror",
@@ -538,7 +538,7 @@ dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
  "env_logger",
- "salsa",
+ "rust-analyzer-salsa",
  "test-log",
 ]
 
@@ -557,7 +557,7 @@ dependencies = [
  "indoc",
  "itertools 0.12.1",
  "pretty_assertions",
- "salsa",
+ "rust-analyzer-salsa",
  "smol_str",
  "test-log",
 ]
@@ -587,7 +587,7 @@ dependencies = [
  "cairo-lang-utils",
  "indoc",
  "itertools 0.12.1",
- "salsa",
+ "rust-analyzer-salsa",
 ]
 
 [[package]]
@@ -608,7 +608,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "path-clean",
- "salsa",
+ "rust-analyzer-salsa",
  "semver",
  "serde",
  "serde_json",
@@ -630,7 +630,7 @@ dependencies = [
  "ignore",
  "itertools 0.12.1",
  "pretty_assertions",
- "salsa",
+ "rust-analyzer-salsa",
  "serde",
  "smol_str",
  "test-case",
@@ -664,7 +664,7 @@ dependencies = [
  "indoc",
  "itertools 0.12.1",
  "pathdiff",
- "salsa",
+ "rust-analyzer-salsa",
  "scarb-metadata",
  "serde",
  "serde_json",
@@ -701,7 +701,7 @@ dependencies = [
  "num-bigint",
  "num-traits 0.2.19",
  "pretty_assertions",
- "salsa",
+ "rust-analyzer-salsa",
  "smol_str",
  "test-log",
 ]
@@ -722,7 +722,7 @@ dependencies = [
  "num-bigint",
  "num-traits 0.2.19",
  "pretty_assertions",
- "salsa",
+ "rust-analyzer-salsa",
  "smol_str",
  "test-log",
  "unescaper",
@@ -744,7 +744,7 @@ dependencies = [
  "indent",
  "indoc",
  "itertools 0.12.1",
- "salsa",
+ "rust-analyzer-salsa",
  "serde_json",
  "smol_str",
  "test-log",
@@ -831,7 +831,7 @@ dependencies = [
  "num-bigint",
  "num-traits 0.2.19",
  "pretty_assertions",
- "salsa",
+ "rust-analyzer-salsa",
  "smol_str",
  "test-log",
  "toml",
@@ -858,7 +858,7 @@ dependencies = [
  "num-traits 0.2.19",
  "pretty_assertions",
  "regex",
- "salsa",
+ "rust-analyzer-salsa",
  "serde",
  "serde_json",
  "sha3",
@@ -926,7 +926,7 @@ dependencies = [
  "log",
  "num-traits 0.2.19",
  "pretty_assertions",
- "salsa",
+ "rust-analyzer-salsa",
  "serde",
  "serde_json",
  "smol_str",
@@ -1039,7 +1039,7 @@ dependencies = [
  "num-bigint",
  "num-traits 0.2.19",
  "pretty_assertions",
- "salsa",
+ "rust-analyzer-salsa",
  "smol_str",
  "test-log",
  "unescaper",
@@ -1447,7 +1447,7 @@ dependencies = [
  "hashbrown 0.14.5",
  "lock_api",
  "once_cell",
- "parking_lot_core 0.9.10",
+ "parking_lot_core",
 ]
 
 [[package]]
@@ -1943,12 +1943,9 @@ dependencies = [
 
 [[package]]
 name = "heck"
-version = "0.3.3"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
-dependencies = [
- "unicode-segmentation",
-]
+checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 
 [[package]]
 name = "heck"
@@ -2733,37 +2730,12 @@ checksum = "bb813b8af86854136c6922af0598d719255ecb2179515e6e7730d468f05c9cae"
 
 [[package]]
 name = "parking_lot"
-version = "0.11.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
-dependencies = [
- "instant",
- "lock_api",
- "parking_lot_core 0.8.6",
-]
-
-[[package]]
-name = "parking_lot"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1bf18183cf54e8d6059647fc3063646a1801cf30896933ec2311622cc4b9a27"
 dependencies = [
  "lock_api",
- "parking_lot_core 0.9.10",
-]
-
-[[package]]
-name = "parking_lot_core"
-version = "0.8.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60a2cfe6f0ad2bfc16aefa463b497d5c7a5ecd44a23efa72aa342d90177356dc"
-dependencies = [
- "cfg-if",
- "instant",
- "libc",
- "redox_syscall 0.2.16",
- "smallvec",
- "winapi",
+ "parking_lot_core",
 ]
 
 [[package]]
@@ -2774,7 +2746,7 @@ checksum = "1e401f977ab385c9e4e3ab30627d6f26d00e2c73eef317493c4ec6d468726cf8"
 dependencies = [
  "cfg-if",
  "libc",
- "redox_syscall 0.5.3",
+ "redox_syscall",
  "smallvec",
  "windows-targets 0.52.6",
 ]
@@ -3044,15 +3016,6 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.2.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb5a58c1855b4b6819d59012155603f0b22ad30cad752600aadfcb695265519a"
-dependencies = [
- "bitflags 1.3.2",
-]
-
-[[package]]
-name = "redox_syscall"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a908a6e00f1fdd0dfd9c0eb08ce85126f6d8bbda50017e74bc4a4b7d4a926a4"
@@ -3219,6 +3182,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "rust-analyzer-salsa"
+version = "0.17.0-pre.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "719825638c59fd26a55412a24561c7c5bcf54364c88b9a7a04ba08a6eafaba8d"
+dependencies = [
+ "indexmap 2.3.0",
+ "lock_api",
+ "oorandom",
+ "parking_lot",
+ "rust-analyzer-salsa-macros",
+ "rustc-hash",
+ "smallvec",
+ "tracing",
+ "triomphe",
+]
+
+[[package]]
+name = "rust-analyzer-salsa-macros"
+version = "0.17.0-pre.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d96498e9684848c6676c399032ebc37c52da95ecbefa83d71ccc53b9f8a4a8e"
+dependencies = [
+ "heck 0.4.1",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
+]
+
+[[package]]
 name = "rust_decimal"
 version = "1.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3313,35 +3305,6 @@ name = "ryu"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
-
-[[package]]
-name = "salsa"
-version = "0.16.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b84d9f96071f3f3be0dc818eae3327625d8ebc95b58da37d6850724f31d3403"
-dependencies = [
- "crossbeam-utils",
- "indexmap 1.9.3",
- "lock_api",
- "log",
- "oorandom",
- "parking_lot 0.11.2",
- "rustc-hash",
- "salsa-macros",
- "smallvec",
-]
-
-[[package]]
-name = "salsa-macros"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd3904a4ba0a9d0211816177fd34b04c7095443f8cdacd11175064fe541c8fe2"
-dependencies = [
- "heck 0.3.3",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
 
 [[package]]
 name = "same-file"
@@ -3633,6 +3596,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "stable_deref_trait"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
+
+[[package]]
 name = "starknet-compile"
 version = "2.7.1"
 dependencies = [
@@ -3758,7 +3727,7 @@ checksum = "f91138e76242f575eb1d3b38b4f1362f10d3a43f47d182a5b359af488a02293b"
 dependencies = [
  "new_debug_unreachable",
  "once_cell",
- "parking_lot 0.12.3",
+ "parking_lot",
  "phf_shared",
  "precomputed-hash",
 ]
@@ -3943,7 +3912,7 @@ dependencies = [
  "num-bigint",
  "pretty_assertions",
  "rstest",
- "salsa",
+ "rust-analyzer-salsa",
  "starknet-types-core",
  "test-log",
 ]
@@ -4065,7 +4034,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
- "parking_lot 0.12.3",
+ "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",
@@ -4294,6 +4263,16 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "triomphe"
+version = "0.1.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6631e42e10b40c0690bf92f404ebcfe6e1fdb480391d15f17cc8e96eeed5369"
+dependencies = [
+ "serde",
+ "stable_deref_trait",
 ]
 
 [[package]]
