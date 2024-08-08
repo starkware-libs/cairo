@@ -187,7 +187,7 @@ function setupEnv(serverExecutable: lc.Executable, ctx: Context) {
   serverExecutable.options.env ??= {};
 
   // By default, the server environment variables are not inherited from the parent process.
-  serverExecutable.options.env.PATH = process.env["PATH"];
+  serverExecutable.options.env = process.env;
   Object.assign(serverExecutable.options.env, logEnv, extraEnv);
 }
 
