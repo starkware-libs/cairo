@@ -104,12 +104,12 @@
           },
           "cairo1.scarbPath": {
             "type": "string",
-            "description": "Path to the Scarb package manager binary.",
+            "description": "Absolute path to the Scarb package manager binary.",
             "scope": "window"
           },
           "cairo1.corelibPath": {
             "type": "string",
-            "description": "Path to the Cairo core library, used in non-Scarb projects.",
+            "description": "Absolute path to the Cairo core library, used in non-Scarb projects.",
             "scope": "window"
           },
           "cairo1.languageServerExtraEnv": {
