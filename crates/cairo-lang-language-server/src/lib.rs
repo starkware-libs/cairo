@@ -948,7 +948,7 @@ fn find_definition(
             let item = ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id));
             return Some((
                 ResolvedItem::Generic(item.clone()),
-                resolved_generic_item_def(db, item),
+                resolved_generic_item_def(db, item)?,
             ));
         }
     }
@@ -963,7 +963,7 @@ fn find_definition(
         {
             return Some((
                 ResolvedItem::Generic(item.clone()),
-                resolved_generic_item_def(db, item),
+                resolved_generic_item_def(db, item)?,
             ));
         }
 
@@ -1005,9 +1005,9 @@ fn resolved_concrete_item_def(
 fn resolved_generic_item_def(
     db: &AnalysisDatabase,
     item: ResolvedGenericItem,
-) -> SyntaxStablePtrId {
+) -> Option<SyntaxStablePtrId> {
     let defs_db = db.upcast();
-    match item {
+    Some(match item {
         ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(defs_db),
         ResolvedGenericItem::Module(module_id) => {
             // Check if the module is an inline submodule.
@@ -1016,11 +1016,11 @@ fn resolved_generic_item_def(
                     submodule_id.stable_ptr(defs_db).lookup(db.upcast()).body(db.upcast())
                 {
                     // Inline module.
-                    return submodule_id.stable_ptr().untyped();
+                    return Some(submodule_id.stable_ptr().untyped());
                 }
             }
-            let module_file = db.module_main_file(module_id).unwrap();
-            let file_syntax = db.file_module_syntax(module_file).unwrap();
+            let module_file = db.module_main_file(module_id).ok()?;
+            let file_syntax = db.file_module_syntax(module_file).ok()?;
             file_syntax.as_syntax_node().stable_ptr()
         }
         ResolvedGenericItem::GenericFunction(item) => {
@@ -1045,7 +1045,7 @@ fn resolved_generic_item_def(
             trait_function.stable_ptr(defs_db).untyped()
         }
         ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(defs_db),
-    }
+    })
 }
 
 fn is_cairo_file_path(file_path: &Url) -> bool {
