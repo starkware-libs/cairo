@@ -77,6 +77,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use salsa::ParallelDatabase;
 use serde_json::Value;
+use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::request::Request;
@@ -264,6 +265,10 @@ struct Backend {
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
     db_mutex: tokio::sync::Mutex<AnalysisDatabase>,
+    // Lock making sure there is at most a single "diagnostic refresh" thread.
+    refresh_lock: tokio::sync::Mutex<()>,
+    // Semaphore making sure there are at most one worker and one waiter for refresh.
+    refresh_waiters_semaphore: tokio::sync::Semaphore,
     state_mutex: tokio::sync::Mutex<State>,
     config: tokio::sync::RwLock<Config>,
     scarb_toolchain: ScarbToolchain,
@@ -289,6 +294,8 @@ impl Backend {
             client_capabilities: Default::default(),
             tricks,
             db_mutex: db.into(),
+            refresh_lock: Default::default(),
+            refresh_waiters_semaphore: Semaphore::new(2),
             state_mutex: State::default().into(),
             config: Config::default().into(),
             scarb_toolchain,
@@ -330,6 +337,13 @@ impl Backend {
     /// Refresh diagnostics and send diffs to client.
     #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
+        // Making sure only a single thread is refreshing diagnostics at a time, and that at most
+        // one thread is waiting to start refreshing. This allows changed to be grouped
+        // together before querying the database, as well as releasing extra threads waiting to
+        // start diagnostics updates.
+        // TODO(orizi): Consider removing when request cancellation is supported.
+        let Ok(waiter_permit) = self.refresh_waiters_semaphore.try_acquire() else { return Ok(()) };
+        let refresh_lock = self.refresh_lock.lock().await;
         let open_files = self.state_mut().await.open_files.clone();
 
         // First, refresh diagnostics for each open file.
@@ -389,6 +403,9 @@ impl Backend {
         .instrument(trace_span!("clear_old_diagnostics"))
         .await;
 
+        // Release locks prior to potentially swapping the database.
+        drop(refresh_lock);
+        drop(waiter_permit);
         // After handling of all diagnostics attempting to swap the database to reduce memory
         // consumption.
         self.maybe_swap_database().await
