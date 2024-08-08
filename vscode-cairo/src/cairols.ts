@@ -175,7 +175,9 @@ async function determineLanguageServerExecutableProvider(
   }
 }
 
+// By default, the server environment variables are not from the parent process
 function setupEnv(serverExecutable: lc.Executable, ctx: Context) {
+
   const logEnv = {
     CAIRO_LS_LOG: buildEnvFilter(ctx),
     RUST_BACKTRACE: "1",
@@ -185,6 +187,8 @@ function setupEnv(serverExecutable: lc.Executable, ctx: Context) {
 
   serverExecutable.options ??= {};
   serverExecutable.options.env ??= {};
+
+  serverExecutable.options.env.PATH = process.env["PATH"];
   Object.assign(serverExecutable.options.env, logEnv, extraEnv);
 }
 
