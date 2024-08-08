@@ -68,7 +68,7 @@ cairo_lang_test_utils::test_file_test!(
         assignment: "assignment",
         block: "block",
         call: "call",
-        calosure: "closure",
+        closure: "closure",
         coupon: "coupon",
         inline_macros: "inline_macros",
         let_statement: "let_statement",

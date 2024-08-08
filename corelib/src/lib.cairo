@@ -403,3 +403,7 @@ mod prelude;
 
 /// Iterators.
 pub mod iter;
+/// Function.
+//pub mod function;
+
+
