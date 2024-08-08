@@ -266,6 +266,7 @@ impl Usages {
                 self.usages.insert(expr_id, usage);
             }
             Expr::For(expr) => {
+                self.handle_expr(arenas, expr.expr_id, current);
                 current.introductions.insert(
                     extract_matches!(&expr.into_iter_member_path, ExprVarMemberPath::Var).var,
                 );
