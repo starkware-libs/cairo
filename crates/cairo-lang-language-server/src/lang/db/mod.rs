@@ -58,7 +58,7 @@ impl AnalysisDatabase {
     }
 
     /// Returns the [`CfgSet`] that should be assumed in the initial database state.
-    fn initial_cfg_set() -> CfgSet {
+    pub fn initial_cfg_set() -> CfgSet {
         CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")])
     }
 

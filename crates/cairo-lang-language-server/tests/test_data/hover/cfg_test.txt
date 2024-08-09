@@ -1,0 +1,34 @@
+//! > Hover
+
+//! > test_runner_name
+test_hover
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2023_11"
+
+//! > cairo_code
+#[cfg(test)]
+mod tests {
+    fn fib() {}
+
+    fn fib_wrapper() {
+        fi<caret>b();
+    }
+}
+
+//! > hover #0
+// = source context
+        fi<caret>b();
+// = highlight
+        <sel>fib</sel>();
+// = popover
+```cairo
+hello::tests
+```
+```cairo
+fn fib()
+```
