@@ -130,6 +130,8 @@ pub struct FeatureConfig {
     pub allowed_features: OrderedHashSet<SmolStr>,
     /// Whether to allow all deprecated features.
     pub allow_deprecated: bool,
+    /// Whether to allow unused imports.
+    pub allow_unused_imports: bool,
 }
 
 impl FeatureConfig {
@@ -140,6 +142,7 @@ impl FeatureConfig {
         let mut restore = FeatureConfigRestore {
             features_to_remove: vec![],
             allow_deprecated: self.allow_deprecated,
+            allow_unused_imports: self.allow_unused_imports,
         };
         for feature_name in other.allowed_features {
             if self.allowed_features.insert(feature_name.clone()) {
@@ -147,6 +150,7 @@ impl FeatureConfig {
             }
         }
         self.allow_deprecated |= other.allow_deprecated;
+        self.allow_unused_imports |= other.allow_unused_imports;
         restore
     }
 
@@ -156,6 +160,7 @@ impl FeatureConfig {
             self.allowed_features.swap_remove(&feature_name);
         }
         self.allow_deprecated = restore.allow_deprecated;
+        self.allow_unused_imports = restore.allow_unused_imports;
     }
 }
 
@@ -165,6 +170,8 @@ pub struct FeatureConfigRestore {
     features_to_remove: Vec<SmolStr>,
     /// The previous state of the allow deprecated flag.
     allow_deprecated: bool,
+    /// The previous state of the allow unused imports flag.
+    allow_unused_imports: bool,
 }
 
 /// Returns the allowed features of an object which supports attributes.
@@ -198,6 +205,10 @@ pub fn extract_item_feature_config(
         |value| match value.as_syntax_node().get_text_without_trivia(db).as_str() {
             "deprecated" => {
                 config.allow_deprecated = true;
+                true
+            }
+            "unused_imports" => {
+                config.allow_unused_imports = true;
                 true
             }
             _ => false,
@@ -244,8 +255,15 @@ pub fn extract_feature_config(
     let mut config_stack = vec![extract_item_feature_config(syntax_db, syntax, diagnostics)];
     let mut config = loop {
         match current_module_id {
-            // TODO(orizi): Add crate root edition based default feature config.
-            ModuleId::CrateRoot(_) => break FeatureConfig::default(),
+            ModuleId::CrateRoot(crate_id) => {
+                let settings =
+                    db.crate_config(crate_id).map(|config| config.settings).unwrap_or_default();
+                break FeatureConfig {
+                    allowed_features: OrderedHashSet::default(),
+                    allow_deprecated: false,
+                    allow_unused_imports: settings.edition.ignore_visibility(),
+                };
+            }
             ModuleId::Submodule(id) => {
                 current_module_id = id.parent_module(db);
                 let module = &db.module_submodules(current_module_id).unwrap()[&id];

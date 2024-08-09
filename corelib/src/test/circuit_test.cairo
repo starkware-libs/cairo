@@ -4,7 +4,6 @@ use core::circuit::{
     AddInputResultTrait, CircuitInputs,
 };
 
-use core::test::test_utils::assert_eq;
 use core::traits::TryInto;
 
 #[test]

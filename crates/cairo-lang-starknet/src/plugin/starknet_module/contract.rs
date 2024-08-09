@@ -209,6 +209,7 @@ impl ContractSpecificGenerationData {
                     feature: \"deprecated_legacy_map\",
                     note: \"Use `starknet::storage::Map` instead.\"
                 )]
+                #[allow(unused_imports)]
                 use starknet::storage::Map as LegacyMap;
                 $test_config$
                 $entry_points_code$

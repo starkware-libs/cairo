@@ -1,4 +1,3 @@
-use starknet::ClassHash;
 #[starknet::interface]
 trait ICounterContract<TContractState> {
     fn increase_counter(ref self: TContractState, amount: u128);

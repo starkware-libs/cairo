@@ -394,6 +394,10 @@ pub fn semantic_generic_params(
                 let generic_param = generic_param_data.generic_param;
                 diagnostics.extend(generic_param_data.diagnostics);
                 resolver.add_generic_param(generic_param_id);
+                resolver
+                    .data
+                    .used_items
+                    .extend(generic_param_data.resolver_data.used_items.iter().copied());
                 generic_param.ok()
             })
             .collect(),

@@ -26,7 +26,7 @@ use super::functions::{
 use super::generics::{generic_params_to_args, semantic_generic_params, GenericParamsData};
 use super::imp::{GenericsHeadFilter, TraitFilter};
 use super::TraitOrImplContext;
-use crate::db::SemanticGroup;
+use crate::db::{get_resolver_data_options, SemanticGroup};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
@@ -105,6 +105,21 @@ impl ConcreteTraitId {
             None => GenericsHeadFilter::NoGenerics,
         };
         TraitFilter { trait_id: self.trait_id(db), generics_filter }
+    }
+
+    /// Returns true if the `trait` does not depend on any generics.
+    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+        self.lookup_intern(db)
+            .generic_args
+            .iter()
+            .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
+    }
+    /// Returns true if the `trait` does not depend on impl or type variables.
+    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+        self.lookup_intern(db)
+            .generic_args
+            .iter()
+            .all(|generic_argument_id| generic_argument_id.is_var_free(db))
     }
 }
 
@@ -529,6 +544,21 @@ pub fn trait_item_by_name(
     name: SmolStr,
 ) -> Maybe<Option<TraitItemId>> {
     Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.get(&name).cloned())
+}
+
+/// Query implementation of [SemanticGroup::trait_all_used_items].
+pub fn trait_all_used_items(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Maybe<Arc<OrderedHashSet<LookupItemId>>> {
+    let mut all_used_items = db.trait_resolver_data(trait_id)?.used_items.clone();
+    let data = db.priv_trait_definition_data(trait_id)?;
+    for item in data.item_id_by_name.values() {
+        for resolver_data in get_resolver_data_options(LookupItemId::TraitItem(*item), db) {
+            all_used_items.extend(resolver_data.used_items.iter().cloned());
+        }
+    }
+    Ok(all_used_items.into())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_functions].

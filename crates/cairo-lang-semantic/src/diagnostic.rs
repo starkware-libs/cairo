@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleItemId, NamedLanguageElementId,
-    StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitImplId,
+    StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitImplId, UseId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
@@ -530,6 +530,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ItemNotVisible(item_id) => {
                 format!("Item `{}` is not visible in this context.", item_id.full_path(db.upcast()))
             }
+            SemanticDiagnosticKind::UnusedImport(use_id) => {
+                format!("Unused import: `{}`", use_id.full_path(db.upcast()))
+            }
             SemanticDiagnosticKind::UnexpectedEnumPattern(ty) => {
                 format!(r#"Unexpected type for enum pattern. "{}" is not an enum."#, ty.format(db),)
             }
@@ -867,7 +870,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::TraitItemForbiddenInItsImpl
             | SemanticDiagnosticKind::ImplItemForbiddenInTheImpl
             | SemanticDiagnosticKind::UnstableFeature { .. }
-            | SemanticDiagnosticKind::DeprecatedFeature { .. } => Severity::Warning,
+            | SemanticDiagnosticKind::DeprecatedFeature { .. }
+            | SemanticDiagnosticKind::UnusedImport { .. } => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1087,6 +1091,7 @@ pub enum SemanticDiagnosticKind {
     ImplItemForbiddenInTheImpl,
     SuperUsedInRootModule,
     ItemNotVisible(ModuleItemId),
+    UnusedImport(UseId),
     RedundantModifier {
         current_modifier: SmolStr,
         previous_modifier: SmolStr,

@@ -20,7 +20,7 @@ mod test_contract {
         IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
         IAnotherContractDispatcherTrait, MyType
     };
-    use core::dict::{Felt252Dict, Felt252DictTrait};
+    use core::dict::Felt252Dict;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
