@@ -1,12 +1,18 @@
+use std::collections::HashSet;
 use std::fs;
 use std::io::BufReader;
 
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
+use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
 
+use crate::allowed_libfuncs::{
+    lookup_allowed_libfuncs_list, ListSelector, BUILTIN_AUDITED_LIBFUNCS_LIST,
+};
 use crate::casm_contract_class::{BigUintAsHex, CasmContractClass, StarknetSierraCompilationError};
 use crate::contract_class::ContractClass;
+use crate::felt252_serde::sierra_from_felt252s;
 use crate::test_utils::get_example_file_path;
 
 #[test_case("test_contract__test_contract")]
@@ -52,6 +58,44 @@ fn test_casm_contract_from_contract_class_from_contracts_crate(name: &str) {
         &get_example_file_path(&format!("{name}.compiled_contract_class.json")),
         serde_json::to_string_pretty(&casm_contract).unwrap() + "\n",
     );
+}
+
+// TODO(Tomer-C): Check for more concrete types per libfunc.
+/// Tests that the contract covers part of the libfuncs.
+#[test_case("libfuncs_coverage__libfuncs_coverage")]
+fn test_contract_libfuncs_coverage(name: &str) {
+    let libfunc_to_cover = lookup_allowed_libfuncs_list(ListSelector::ListName(
+        BUILTIN_AUDITED_LIBFUNCS_LIST.to_string(),
+    ))
+    .unwrap()
+    .allowed_libfuncs;
+
+    let contract_path = get_example_file_path(&format!("{name}.contract_class.json"));
+    let contract: ContractClass =
+        serde_json::from_reader(BufReader::new(std::fs::File::open(contract_path).unwrap()))
+            .unwrap();
+
+    let (_, _, program) = sierra_from_felt252s(&contract.sierra_program).unwrap();
+    let used_libfuncs = HashSet::from_iter(
+        program.libfunc_declarations.into_iter().map(|decl| decl.long_id.generic_id),
+    );
+
+    let missing_libfuncs = libfunc_to_cover.difference(&used_libfuncs).collect_vec();
+    let extra_libfuncs = used_libfuncs.difference(&libfunc_to_cover).collect_vec();
+    // TODO(Tomer-C): Make this threshold more strict - as close to 0 as possible.
+    const MISSING_THRESHOLD: usize = 48;
+    if missing_libfuncs.len() > MISSING_THRESHOLD || !extra_libfuncs.is_empty() {
+        println!("Missing {} libfuncs:", missing_libfuncs.len());
+        for libfunc_name in missing_libfuncs.into_iter().map(|id| id.to_string()).sorted() {
+            println!("{libfunc_name}");
+        }
+        println!();
+        println!("Has extra {} libfuncs:", extra_libfuncs.len());
+        for libfunc_name in extra_libfuncs.into_iter().map(|id| id.to_string()).sorted() {
+            println!("{libfunc_name}");
+        }
+        panic!("Failed coverage.")
+    }
 }
 
 /// Tests that compiled_class_hash() returns the correct hash, by comparing it to hard-coded

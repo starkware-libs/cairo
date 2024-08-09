@@ -14,9 +14,7 @@ mod token_bridge {
     use starknet::{
         ContractAddress, get_caller_address, EthAddress, syscalls::send_message_to_l1_syscall
     };
-    use super::{
-        IMintableTokenDispatcher, IMintableTokenLibraryDispatcher, IMintableTokenDispatcherTrait
-    };
+    use super::{IMintableTokenDispatcher, IMintableTokenDispatcherTrait};
 
     const WITHDRAW_MESSAGE: felt252 = 0;
     const CONTRACT_IDENTITY: felt252 = 'STARKGATE';

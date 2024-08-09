@@ -107,7 +107,7 @@ pub fn enum_generic_params_data(
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id)));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    resolver.set_allowed_features(&enum_id, &enum_ast, &mut diagnostics);
+    resolver.set_feature_config(&enum_id, &enum_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,

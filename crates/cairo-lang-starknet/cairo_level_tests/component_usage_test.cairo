@@ -31,7 +31,6 @@ struct ComponentNewStorage {
 
 #[starknet::contract]
 mod contract_new {
-    use starknet::storage::{StorageTrait, StorageTraitMut};
     use super::ComponentNewStorage;
     #[storage]
     pub struct Storage {

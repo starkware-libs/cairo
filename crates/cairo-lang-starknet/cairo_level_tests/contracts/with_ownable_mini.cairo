@@ -1,4 +1,3 @@
-use starknet::ContractAddress;
 #[starknet::contract]
 mod ownable_mini_contract {
     use cairo_level_tests::components::ownable_mini;

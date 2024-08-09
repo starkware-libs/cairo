@@ -49,7 +49,7 @@ use anyhow::{bail, Context};
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, LanguageElementId, LookupItemId, ModuleId, SubmoduleLongId,
+    FunctionTitleId, LanguageElementId, LookupItemId, MemberId, ModuleId, SubmoduleLongId,
 };
 use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::db::{
@@ -63,11 +63,13 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
+use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
+use cairo_lang_semantic::{Expr, SemanticDiagnostic, TypeLongId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
@@ -75,6 +77,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use salsa::ParallelDatabase;
 use serde_json::Value;
+use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::request::Request;
@@ -262,6 +265,10 @@ struct Backend {
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
     db_mutex: tokio::sync::Mutex<AnalysisDatabase>,
+    // Lock making sure there is at most a single "diagnostic refresh" thread.
+    refresh_lock: tokio::sync::Mutex<()>,
+    // Semaphore making sure there are at most one worker and one waiter for refresh.
+    refresh_waiters_semaphore: tokio::sync::Semaphore,
     state_mutex: tokio::sync::Mutex<State>,
     config: tokio::sync::RwLock<Config>,
     scarb_toolchain: ScarbToolchain,
@@ -274,6 +281,7 @@ impl Backend {
         LspService::build(|client| Self::new(client, tricks))
             .custom_method("vfs/provide", Self::vfs_provide)
             .custom_method(lsp::ext::ViewAnalyzedCrates::METHOD, Self::view_analyzed_crates)
+            .custom_method(lsp::ext::ExpandMacro::METHOD, Self::expand_macro)
             .finish()
     }
 
@@ -286,6 +294,8 @@ impl Backend {
             client_capabilities: Default::default(),
             tricks,
             db_mutex: db.into(),
+            refresh_lock: Default::default(),
+            refresh_waiters_semaphore: Semaphore::new(2),
             state_mutex: State::default().into(),
             config: Config::default().into(),
             scarb_toolchain,
@@ -327,6 +337,13 @@ impl Backend {
     /// Refresh diagnostics and send diffs to client.
     #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
+        // Making sure only a single thread is refreshing diagnostics at a time, and that at most
+        // one thread is waiting to start refreshing. This allows changed to be grouped
+        // together before querying the database, as well as releasing extra threads waiting to
+        // start diagnostics updates.
+        // TODO(orizi): Consider removing when request cancellation is supported.
+        let Ok(waiter_permit) = self.refresh_waiters_semaphore.try_acquire() else { return Ok(()) };
+        let refresh_lock = self.refresh_lock.lock().await;
         let open_files = self.state_mut().await.open_files.clone();
 
         // First, refresh diagnostics for each open file.
@@ -386,6 +403,9 @@ impl Backend {
         .instrument(trace_span!("clear_old_diagnostics"))
         .await;
 
+        // Release locks prior to potentially swapping the database.
+        drop(refresh_lock);
+        drop(waiter_permit);
         // After handling of all diagnostics attempting to swap the database to reduce memory
         // consumption.
         self.maybe_swap_database().await
@@ -521,6 +541,11 @@ impl Backend {
     #[tracing::instrument(level = "trace", skip_all)]
     async fn view_analyzed_crates(&self) -> LSPResult<String> {
         self.with_db(lang::inspect::crates::inspect_analyzed_crates).await
+    }
+
+    #[tracing::instrument(level = "trace", skip_all)]
+    async fn expand_macro(&self, params: TextDocumentPositionParams) -> LSPResult<Option<String>> {
+        self.with_db(|db| ide::macros::expand::expand_macro(db, &params)).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
@@ -868,10 +893,49 @@ impl LanguageServer for Backend {
     }
 }
 
-/// Either [`ResolvedGenericItem`] or [`ResolvedConcreteItem`].
+/// Extracts [`MemberId`] if the [`ast::TerminalIdentifier`] points to
+/// right-hand side of access member expression e.g., to `xyz` in `self.xyz`.
+fn try_extract_member(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<MemberId> {
+    let syntax_node = identifier.as_syntax_node();
+    let binary_expr_syntax_node =
+        db.first_ancestor_of_kind(syntax_node.clone(), SyntaxKind::ExprBinary)?;
+    let binary_expr = ast::ExprBinary::from_syntax_node(db, binary_expr_syntax_node);
+
+    let function_with_body = lookup_items.first()?.function_with_body()?;
+
+    let expr_id =
+        db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr().into()).ok()?;
+    let semantic_expr = db.expr_semantic(function_with_body, expr_id);
+
+    if let Expr::MemberAccess(expr_member_access) = semantic_expr {
+        let pointer_to_rhs = binary_expr.rhs(db).stable_ptr().untyped();
+
+        let mut current_node = syntax_node;
+        // Check if the terminal identifier points to a member, not a struct variable.
+        while pointer_to_rhs != current_node.stable_ptr() {
+            // If we found the node with the binary expression, then we are sure we won't find the
+            // node with the member.
+            if current_node.stable_ptr() == binary_expr.stable_ptr().untyped() {
+                return None;
+            }
+            current_node = current_node.parent().unwrap();
+        }
+
+        Some(expr_member_access.member)
+    } else {
+        None
+    }
+}
+
+/// Either [`ResolvedGenericItem`], [`ResolvedConcreteItem`] or [`MemberId`].
 enum ResolvedItem {
     Generic(ResolvedGenericItem),
     Concrete(ResolvedConcreteItem),
+    Member(MemberId),
 }
 
 // TODO(mkaput): Move this to crate::lang::inspect::defs and make private.
@@ -897,17 +961,22 @@ fn find_definition(
             let item = ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id));
             return Some((
                 ResolvedItem::Generic(item.clone()),
-                resolved_generic_item_def(db, item),
+                resolved_generic_item_def(db, item)?,
             ));
         }
     }
+
+    if let Some(member_id) = try_extract_member(db, identifier, lookup_items) {
+        return Some((ResolvedItem::Member(member_id), member_id.untyped_stable_ptr(db)));
+    }
+
     for lookup_item_id in lookup_items.iter().copied() {
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
             return Some((
                 ResolvedItem::Generic(item.clone()),
-                resolved_generic_item_def(db, item),
+                resolved_generic_item_def(db, item)?,
             ));
         }
 
@@ -949,9 +1018,9 @@ fn resolved_concrete_item_def(
 fn resolved_generic_item_def(
     db: &AnalysisDatabase,
     item: ResolvedGenericItem,
-) -> SyntaxStablePtrId {
+) -> Option<SyntaxStablePtrId> {
     let defs_db = db.upcast();
-    match item {
+    Some(match item {
         ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(defs_db),
         ResolvedGenericItem::Module(module_id) => {
             // Check if the module is an inline submodule.
@@ -960,11 +1029,11 @@ fn resolved_generic_item_def(
                     submodule_id.stable_ptr(defs_db).lookup(db.upcast()).body(db.upcast())
                 {
                     // Inline module.
-                    return submodule_id.stable_ptr().untyped();
+                    return Some(submodule_id.stable_ptr().untyped());
                 }
             }
-            let module_file = db.module_main_file(module_id).unwrap();
-            let file_syntax = db.file_module_syntax(module_file).unwrap();
+            let module_file = db.module_main_file(module_id).ok()?;
+            let file_syntax = db.file_module_syntax(module_file).ok()?;
             file_syntax.as_syntax_node().stable_ptr()
         }
         ResolvedGenericItem::GenericFunction(item) => {
@@ -989,7 +1058,7 @@ fn resolved_generic_item_def(
             trait_function.stable_ptr(defs_db).untyped()
         }
         ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(defs_db),
-    }
+    })
 }
 
 fn is_cairo_file_path(file_path: &Url) -> bool {

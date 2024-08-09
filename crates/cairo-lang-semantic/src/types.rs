@@ -113,40 +113,7 @@ impl TypeId {
 }
 impl TypeLongId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        let def_db = db.upcast();
-        match self {
-            TypeLongId::Concrete(concrete) => concrete.format(db),
-            TypeLongId::Tuple(inner_types) => {
-                if inner_types.len() == 1 {
-                    format!("({},)", inner_types[0].format(db))
-                } else {
-                    format!("({})", inner_types.iter().map(|ty| ty.format(db)).join(", "))
-                }
-            }
-            TypeLongId::Snapshot(ty) => format!("@{}", ty.format(db)),
-            TypeLongId::GenericParameter(generic_param) => {
-                format!("{}", generic_param.name(def_db).unwrap_or_else(|| "_".into()))
-            }
-            TypeLongId::ImplType(impl_type_id) => {
-                format!("{}::{}", impl_type_id.impl_id.name(db), impl_type_id.ty.name(def_db))
-            }
-            TypeLongId::Var(var) => format!("?{}", var.id.0),
-            TypeLongId::Coupon(function_id) => format!("{}::Coupon", function_id.full_name(db)),
-            TypeLongId::Missing(_) => "<missing>".to_string(),
-            TypeLongId::FixedSizeArray { type_id, size } => {
-                format!("[{}; {:?}]", type_id.format(db), size.debug(db.elongate()))
-            }
-            TypeLongId::TraitType(trait_type_id) => {
-                format!(
-                    "{}::{}",
-                    trait_type_id.trait_id(def_db).name(def_db),
-                    trait_type_id.name(def_db)
-                )
-            }
-            TypeLongId::Closure(closure) => {
-                format!("{{closure@{:?}}}", closure.wrapper_location.debug(def_db))
-            }
-        }
+        format!("{:?}", self.debug(db.elongate()))
     }
 
     /// Returns the [TypeHead] for a type if available.
@@ -205,7 +172,41 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{}", self.format(db))
+        let def_db = db.upcast();
+        match self {
+            TypeLongId::Concrete(concrete) => write!(f, "{}", concrete.format(db)),
+            TypeLongId::Tuple(inner_types) => {
+                if inner_types.len() == 1 {
+                    write!(f, "({},)", inner_types[0].format(db))
+                } else {
+                    write!(f, "({})", inner_types.iter().map(|ty| ty.format(db)).join(", "))
+                }
+            }
+            TypeLongId::Snapshot(ty) => write!(f, "@{}", ty.format(db)),
+            TypeLongId::GenericParameter(generic_param) => {
+                write!(f, "{}", generic_param.name(def_db).unwrap_or_else(|| "_".into()))
+            }
+            TypeLongId::ImplType(impl_type_id) => {
+                write!(f, "{}::{}", impl_type_id.impl_id.name(db), impl_type_id.ty.name(def_db))
+            }
+            TypeLongId::Var(var) => write!(f, "?{}", var.id.0),
+            TypeLongId::Coupon(function_id) => write!(f, "{}::Coupon", function_id.full_name(db)),
+            TypeLongId::Missing(_) => write!(f, "<missing>"),
+            TypeLongId::FixedSizeArray { type_id, size } => {
+                write!(f, "[{}; {:?}]", type_id.format(db), size.debug(db.elongate()))
+            }
+            TypeLongId::TraitType(trait_type_id) => {
+                write!(
+                    f,
+                    "{}::{}",
+                    trait_type_id.trait_id(def_db).name(def_db),
+                    trait_type_id.name(def_db)
+                )
+            }
+            TypeLongId::Closure(closure) => {
+                write!(f, "{:?}", closure.debug(db.elongate()))
+            }
+        }
     }
 }
 
@@ -415,6 +416,16 @@ pub struct ClosureTypeLongId {
     /// Every closure has a unique type that is based on the stable location of its wrapper.
     #[dont_rewrite]
     pub wrapper_location: StableLocation,
+}
+
+impl DebugWithDb<dyn SemanticGroup> for ClosureTypeLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{{closure@{:?}}}", self.wrapper_location.debug(db.upcast()))
+    }
 }
 
 /// An impl item of kind type.

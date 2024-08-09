@@ -113,7 +113,7 @@ pub fn struct_generic_params_data(
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Struct(struct_id)));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    resolver.set_allowed_features(&struct_id, &struct_ast, &mut diagnostics);
+    resolver.set_feature_config(&struct_id, &struct_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -257,7 +257,7 @@ pub fn struct_definition_resolver_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_struct_declaration_data(struct_id)?.resolver_data)
+    Ok(db.priv_struct_definition_data(struct_id)?.resolver_data)
 }
 
 pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {

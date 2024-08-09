@@ -1,14 +1,18 @@
 use core::array::{ArrayTrait, SpanTrait};
+#[allow(unused_imports)]
 use core::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, one_shift_left_bytes_felt252, one_shift_left_bytes_u128,
     POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31
 };
 use core::clone::Clone;
 use core::cmp::min;
+#[allow(unused_imports)]
 use core::integer::{u128_safe_divmod, U32TryIntoNonZero};
 use core::option::OptionTrait;
 use core::traits::{Into, TryInto};
+#[allow(unused_imports)]
 use core::serde::Serde;
+#[allow(unused_imports)]
 use core::zeroable::NonZeroIntoImpl;
 
 /// A magic constant for identifying serialization of ByteArrays. An array of felt252s with this

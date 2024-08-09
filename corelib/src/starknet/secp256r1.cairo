@@ -3,6 +3,7 @@
 
 use core::option::OptionTrait;
 use core::gas::GasBuiltin;
+#[allow(unused_imports)]
 use starknet::{
     EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait
 };

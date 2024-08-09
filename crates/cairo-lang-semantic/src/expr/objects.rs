@@ -4,11 +4,12 @@ use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use id_arena::Id;
+use id_arena::{Arena, Id};
 use num_bigint::BigInt;
 
 use super::fmt::ExprFormatter;
 use super::pattern::Pattern;
+use crate::db::SemanticGroup;
 use crate::items::constant::ConstValueId;
 use crate::{semantic, ConcreteStructId, FunctionId, TypeId};
 
@@ -574,4 +575,13 @@ pub struct ExprMissing {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub diag_added: DiagnosticAdded,
+}
+
+/// Arena for semantic expressions, patterns, and statements.
+#[derive(Clone, Debug, Default, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct Arenas {
+    pub exprs: Arena<semantic::Expr>,
+    pub patterns: Arena<semantic::Pattern>,
+    pub statements: Arena<semantic::Statement>,
 }

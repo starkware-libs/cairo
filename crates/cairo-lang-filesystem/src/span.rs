@@ -1,5 +1,5 @@
 use std::iter::Sum;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Range, Sub};
 
 use crate::db::FilesGroup;
 use crate::ids::FileId;
@@ -92,6 +92,11 @@ impl TextSpan {
     /// Get the span of width 0, located right at the beginning of this span.
     pub fn start_only(self) -> Self {
         Self { start: self.start, end: self.start }
+    }
+
+    /// Returns self.start..self.end as [`Range<usize>`]
+    pub fn to_str_range(&self) -> Range<usize> {
+        self.start.0.0 as usize..self.end.0.0 as usize
     }
 
     /// Convert this span to a [`TextPositionSpan`] in the file.

@@ -5,9 +5,9 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplConstantDefId, ImplDefId,
-    ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LookupItemId, ModuleId, ModuleItemId,
-    ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId, TraitImplId,
-    TraitItemId, TraitTypeId, UseId, VariantId,
+    ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId, LookupItemId,
+    ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
+    TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -17,7 +17,7 @@ use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{LookupIntern, Upcast};
+use cairo_lang_utils::{require, LookupIntern, Upcast};
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -34,6 +34,8 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
     TraitItemTypeData,
 };
+use crate::items::us::SemanticUseEx;
+use crate::items::visibility::Visibility;
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
@@ -185,13 +187,23 @@ pub trait SemanticGroup:
         name: SmolStr,
     ) -> Maybe<Option<ModuleItemInfo>>;
 
+    /// Returns all the items used within the module.
+    #[salsa::invoke(items::module::module_all_used_items)]
+    fn module_all_used_items(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;
+
     /// Returns the attributes of a module.
     #[salsa::invoke(items::module::module_attributes)]
     fn module_attributes(&self, module_id: ModuleId) -> Maybe<Vec<Attribute>>;
 
     /// Finds all the trait ids usable in the module.
     #[salsa::invoke(items::module::module_usable_trait_ids)]
-    fn module_usable_trait_ids(&self, module_id: ModuleId) -> Maybe<Arc<OrderedHashSet<TraitId>>>;
+    fn module_usable_trait_ids(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<Arc<OrderedHashMap<TraitId, LookupItemId>>>;
 
     // Struct.
     // =======
@@ -402,6 +414,9 @@ pub trait SemanticGroup:
     /// Returns the item of the trait, by the given `name`, if exists.
     #[salsa::invoke(items::trt::trait_item_by_name)]
     fn trait_item_by_name(&self, trait_id: TraitId, name: SmolStr) -> Maybe<Option<TraitItemId>>;
+    /// Returns all the items used within the trait.
+    #[salsa::invoke(items::trt::trait_all_used_items)]
+    fn trait_all_used_items(&self, trait_id: TraitId) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;
     /// Returns the functions of a trait.
     #[salsa::invoke(items::trt::trait_functions)]
     fn trait_functions(&self, trait_id: TraitId)
@@ -713,6 +728,12 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
         name: SmolStr,
     ) -> Maybe<Option<TraitImplId>>;
+    /// Returns all the items used within the impl.
+    #[salsa::invoke(items::imp::impl_all_used_items)]
+    fn impl_all_used_items(
+        &self,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<Arc<OrderedHashSet<LookupItemId>>>;
     /// Returns the type items in the impl.
     #[salsa::invoke(items::imp::impl_types)]
     fn impl_types(
@@ -1493,7 +1514,7 @@ pub trait SemanticGroup:
     fn visible_traits_from_module(
         &self,
         module_id: ModuleId,
-    ) -> Arc<OrderedHashMap<TraitId, String>>;
+    ) -> Option<Arc<OrderedHashMap<TraitId, String>>>;
     /// Returns all visible traits in a module, alongside a visible use path to the trait.
     /// `user_module_id` is the module from which the traits are should be visible. If
     /// `include_parent` is true, the parent module of `module_id` is also considered.
@@ -1531,8 +1552,8 @@ fn module_semantic_diagnostics(
             SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
         ));
     }
-
-    diagnostics.extend(db.priv_module_semantic_data(module_id)?.diagnostics.clone());
+    let data = db.priv_module_semantic_data(module_id)?;
+    diagnostics.extend(data.diagnostics.clone());
     // TODO(Gil): Aggregate diagnostics for subitems with semantic model (i.e. impl function, trait
     // functions and generic params) directly and not via the parent item.
     for item in db.module_items(module_id)?.iter() {
@@ -1599,6 +1620,7 @@ fn module_semantic_diagnostics(
             }
         }
     }
+    add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
     for analyzer_plugin in db.analyzer_plugins().iter() {
         for diag in analyzer_plugin.diagnostics(db, module_id) {
             diagnostics.add(SemanticDiagnostic::new(
@@ -1609,6 +1631,53 @@ fn module_semantic_diagnostics(
     }
 
     Ok(diagnostics.build())
+}
+
+/// Adds diagnostics for unused items in a module.
+///
+/// Returns `None` if skipped attempt to add diagnostics.
+fn add_unused_item_diagnostics(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    data: &ModuleSemanticData,
+    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
+) {
+    let Ok(all_used_items) = db.module_all_used_items(module_id) else {
+        return;
+    };
+    for info in data.items.values() {
+        if info.visibility == Visibility::Public {
+            continue;
+        }
+        if let ModuleItemId::Use(use_id) = info.item_id {
+            add_unused_import_diagnostics(db, &all_used_items, use_id, diagnostics);
+        };
+    }
+}
+
+/// Adds diagnostics for unused imports.
+fn add_unused_import_diagnostics(
+    db: &dyn SemanticGroup,
+    all_used_items: &OrderedHashSet<LookupItemId>,
+    use_id: UseId,
+    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
+) {
+    let _iife = (|| {
+        let item = db.use_resolved_item(use_id).ok()?;
+        // TODO(orizi): Properly handle usages of impls, and than add warnings on their usages as
+        // well.
+        require(!matches!(
+            item,
+            ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_)
+        ))?;
+        require(!all_used_items.contains(&LookupItemId::ModuleItem(ModuleItemId::Use(use_id))))?;
+        let resolver_data = db.use_resolver_data(use_id).ok()?;
+        require(!resolver_data.feature_config.allow_unused_imports)?;
+        Some(diagnostics.add(SemanticDiagnostic::new(
+            StableLocation::new(use_id.untyped_stable_ptr(db.upcast())),
+            SemanticDiagnosticKind::UnusedImport(use_id),
+        )))
+    })();
 }
 
 fn file_semantic_diagnostics(
@@ -1644,7 +1713,10 @@ pub fn lookup_resolved_concrete_item_by_ptr(
         .find_map(|resolver_data| resolver_data.resolved_items.concrete.get(&ptr).cloned())
 }
 
-fn get_resolver_data_options(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<ResolverData>> {
+pub fn get_resolver_data_options(
+    id: LookupItemId,
+    db: &dyn SemanticGroup,
+) -> Vec<Arc<ResolverData>> {
     match id {
         LookupItemId::ModuleItem(module_item) => match module_item {
             ModuleItemId::Constant(id) => vec![db.constant_resolver_data(id)],
@@ -1672,7 +1744,11 @@ fn get_resolver_data_options(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Ar
         },
         LookupItemId::TraitItem(id) => match id {
             cairo_lang_defs::ids::TraitItemId::Function(id) => {
-                vec![db.trait_function_resolver_data(id)]
+                let mut res = vec![db.trait_function_resolver_data(id)];
+                if let Ok(Some(body)) = db.priv_trait_function_body_data(id) {
+                    res.push(Ok(body.resolver_data));
+                }
+                res
             }
             cairo_lang_defs::ids::TraitItemId::Type(id) => vec![db.trait_type_resolver_data(id)],
             cairo_lang_defs::ids::TraitItemId::Constant(id) => {

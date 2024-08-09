@@ -4,7 +4,6 @@ mod test_contract {
     use starknet::storage_read_syscall;
     use starknet::storage_write_syscall;
     use starknet::syscalls::emit_event_syscall;
-    use starknet::StorageAddress;
     use starknet::storage_access::storage_base_address_from_felt252;
     use starknet::storage_access::storage_address_from_base_and_offset;
     use starknet::ContractAddress;
