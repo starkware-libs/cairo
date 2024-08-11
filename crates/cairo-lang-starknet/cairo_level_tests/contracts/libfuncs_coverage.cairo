@@ -1,7 +1,7 @@
 use starknet::storage::StoragePathEntry;
 use starknet::storage::StoragePointerWriteAccess;
 use starknet::storage::StoragePointerReadAccess;
-use core::result::ResultTrait;
+
 #[starknet::contract]
 mod libfuncs_coverage {
     #[storage]
