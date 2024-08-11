@@ -162,10 +162,10 @@ extern type CircuitPartialOutputs<C>;
 extern type CircuitDescriptor<C>;
 
 impl CircuitDescriptorDrop<C> of Drop<CircuitDescriptor<C>>;
+impl CircuitModulusCopy of Copy<CircuitModulus>;
 impl CircuitModulusDrop of Drop<CircuitModulus>;
 impl CircuitOutputsDrop<C> of Drop<CircuitOutputs<C>>;
 impl CircuitPartialOutputsDrop<C> of Drop<CircuitPartialOutputs<C>>;
-
 impl CircuitOutputsCopy<C> of Copy<CircuitOutputs<C>>;
 
 /// A wrapper for circuit elements, used to construct circuits..

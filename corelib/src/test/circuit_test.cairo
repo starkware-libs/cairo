@@ -57,6 +57,7 @@ fn test_circuit_failure() {
 
     let modulus = TryInto::<_, CircuitModulus>::try_into([55, 0, 0, 0]).unwrap();
     (out0,).new_inputs().next([11, 0, 0, 0]).done().eval(modulus).unwrap_err();
+    (out0,).new_inputs().next([11, 0, 0, 0]).done().eval(modulus).unwrap_err();
 }
 
 #[test]
