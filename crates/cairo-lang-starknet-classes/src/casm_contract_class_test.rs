@@ -82,8 +82,7 @@ fn test_contract_libfuncs_coverage(name: &str) {
 
     let missing_libfuncs = libfunc_to_cover.difference(&used_libfuncs).collect_vec();
     let extra_libfuncs = used_libfuncs.difference(&libfunc_to_cover).collect_vec();
-    // TODO(Tomer-C): Make this threshold more strict - as close to 0 as possible.
-    const MISSING_THRESHOLD: usize = 16;
+    const MISSING_THRESHOLD: usize = 10;
     if missing_libfuncs.len() > MISSING_THRESHOLD || !extra_libfuncs.is_empty() {
         println!("Missing {} libfuncs:", missing_libfuncs.len());
         for libfunc_name in missing_libfuncs.into_iter().map(|id| id.to_string()).sorted() {

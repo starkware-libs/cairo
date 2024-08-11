@@ -1,4 +1,4 @@
-use core::dict::Felt252Dict;
+use core::dict::{Felt252Dict, Felt252DictEntryTrait};
 use starknet::storage::StoragePathEntry;
 use starknet::storage::StoragePointerWriteAccess;
 use starknet::storage::StoragePointerReadAccess;
@@ -32,19 +32,21 @@ enum Libfuncs {
     I64: IntLibfuncs<i64>,
     I128: IntLibfuncs<i128>,
     Bool: BitwiseLibfuncs<bool>,
-    Felt252: NumericLibfuncs<felt252>,
+    Felt252: Felt252Libfuncs,
     Conversions: ConversionsLibfuncs,
     CheckECDSA: (felt252, felt252, felt252, felt252),
     RecoverECDSA: (felt252, felt252, felt252, bool),
-    Keccak: ByteArray,
     Sha256: ByteArray,
     ArrayU128: ArrayLibfuncs<u128>,
     ArrayU256: ArrayLibfuncs<u256>,
+    DictU128: DictLibfuncs<u128>,
+    DictFelt252: DictLibfuncs<felt252>,
+    DictNullable: DictLibfuncs<Nullable<u256>>,
     NullableFelt252: NullableLibfuncs<felt252>,
     NullableU256: NullableLibfuncs<u256>,
     NullableNonCopy: NullableLibfuncs<Felt252Dict<felt252>>,
     Circuit: (u384, u384, u384),
-    Secp256K1: (u256, u256, u256, u256),
+    IsValidSignature: (u256, Signature, starknet::EthAddress),
     Secp256R1: (u256, u256, u256, u256),
     Starknet: StarknetLibfuncs,
     Consts: ConstsLibfuncs,
@@ -75,6 +77,11 @@ enum BitwiseLibfuncs<T> {
     And: (T, T),
     Or: (T, T),
     Xor: (T, T),
+}
+
+enum Felt252Libfuncs {
+    Div: (felt252, NonZero<felt252>),
+    Numeric: NumericLibfuncs<felt252>,
 }
 
 enum ConversionsLibfuncs {
@@ -133,6 +140,11 @@ enum ArrayLibfuncs<T> {
     BoxFromSpan: Span<T>,
 }
 
+enum DictLibfuncs<T> {
+    Default,
+    EntryGet: (Felt252Dict<T>, felt252),
+}
+
 enum NullableLibfuncs<T> {
     Default,
     New: T,
@@ -144,7 +156,7 @@ enum StarknetLibfuncs {
     LibraryCall: starknet::ClassHash,
     ContractCall: starknet::ContractAddress,
     StorageRead: starknet::storage::StorageBase<starknet::storage::Map<felt252, u256>>,
-    StorageWrite: starknet::storage::StorageBase<starknet::storage::Mutable<felt252>>,
+    StorageWrite: starknet::storage::StorageBase<starknet::storage::Mutable<ByteArray>>,
     Deploy: (starknet::ClassHash, felt252, Span<felt252>, bool),
     EmitEvent: (Span<felt252>, Span<felt252>),
     GetBlockHash: u64,
@@ -193,7 +205,7 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::I64(libfuncs) => int_libfuncs(libfuncs),
         Libfuncs::I128(libfuncs) => int_libfuncs(libfuncs),
         Libfuncs::Bool(libfuncs) => bitwise_libfuncs(libfuncs),
-        Libfuncs::Felt252(libfuncs) => numeric_libfuncs(libfuncs),
+        Libfuncs::Felt252(libfuncs) => felt252_libfuncs(libfuncs),
         Libfuncs::Conversions(libfuncs) => conversions_libfuncs(libfuncs),
         Libfuncs::CheckECDSA((
             a, b, c, d
@@ -201,15 +213,19 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::RecoverECDSA((
             a, b, c, d
         )) => use_and_panic(core::ecdsa::recover_public_key(a, b, c, d)),
-        Libfuncs::Keccak(input) => use_and_panic(core::keccak::compute_keccak_byte_array(@input)),
         Libfuncs::Sha256(input) => use_and_panic(core::sha256::compute_sha256_byte_array(@input)),
         Libfuncs::ArrayU128(libfuncs) => array_libfuncs(libfuncs),
         Libfuncs::ArrayU256(libfuncs) => array_libfuncs(libfuncs),
+        Libfuncs::DictU128(libfuncs) => dict_libfuncs(libfuncs),
+        Libfuncs::DictFelt252(libfuncs) => dict_libfuncs(libfuncs),
+        Libfuncs::DictNullable(libfuncs) => dict_libfuncs(libfuncs),
         Libfuncs::NullableFelt252(libfuncs) => nullable_libfuncs(libfuncs),
         Libfuncs::NullableU256(libfuncs) => nullable_libfuncs(libfuncs),
         Libfuncs::NullableNonCopy(libfuncs) => nullable_libfuncs(libfuncs),
         Libfuncs::Circuit((n, in1, in2)) => circuit_libfuncs(n, in1, in2),
-        Libfuncs::Secp256K1(sign) => secp_libfuncs::<starknet::secp256k1::Secp256k1Point>(sign),
+        Libfuncs::IsValidSignature((
+            msg_hash, signature, eth_address
+        )) => starknet::eth_signature::verify_eth_signature(msg_hash, signature, eth_address),
         Libfuncs::Secp256R1(sign) => secp_libfuncs::<starknet::secp256r1::Secp256r1Point>(sign),
         Libfuncs::Starknet(libfuncs) => starknet_libfuncs(libfuncs),
         Libfuncs::Consts(libfuncs) => consts_libfuncs(libfuncs),
@@ -256,6 +272,13 @@ fn int_libfuncs<
         IntLibfuncs::Mod((a, b)) => use_and_panic(a % b),
         IntLibfuncs::Lt((a, b)) => use_and_panic(a < b),
         IntLibfuncs::Numeric(libfuncs) => numeric_libfuncs(libfuncs),
+    }
+}
+
+fn felt252_libfuncs(libfuncs: Felt252Libfuncs) {
+    match libfuncs {
+        Felt252Libfuncs::Div((a, b)) => use_and_panic(core::felt252_div(a, b)),
+        Felt252Libfuncs::Numeric(libfuncs) => numeric_libfuncs(libfuncs),
     }
 }
 
@@ -350,6 +373,18 @@ fn array_libfuncs<T, +Drop<T>, impl BoxFromSpan: TryInto<Span<T>, @Box<[T; 5]>>>
     }
 }
 
+fn dict_libfuncs<T, +Drop<T>, +Felt252DictValue<T>, +Felt252DictEntryTrait<T>>(
+    libfuncs: DictLibfuncs<T>
+) {
+    match libfuncs {
+        DictLibfuncs::Default => use_and_panic(Default::<Felt252Dict<T>>::default()),
+        DictLibfuncs::EntryGet((dict, key)) => {
+            let (e, _v) = dict.entry(key);
+            use_and_panic(e)
+        },
+    }
+}
+
 // Handling missing destructor.
 impl NullableDictDestruct of Destruct<Nullable<Felt252Dict<felt252>>> {
     fn destruct(self: Nullable<Felt252Dict<felt252>>) nopanic {
@@ -395,7 +430,7 @@ fn circuit_libfuncs(n: u384, input0: u384, input1: u384) {
     use_and_panic(outputs.get_output(add));
 }
 
-use starknet::secp256_trait::{Secp256Trait, Secp256PointTrait, is_valid_signature};
+use starknet::secp256_trait::{Secp256Trait, Secp256PointTrait, is_valid_signature, Signature};
 
 fn secp_libfuncs<
     Secp256Point,
@@ -423,7 +458,7 @@ fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
         StarknetLibfuncs::ContractCall(contract_address) => FooDispatcher { contract_address }
             .foo(),
         StarknetLibfuncs::StorageRead(storage) => use_and_panic(storage.entry(0).high.read()),
-        StarknetLibfuncs::StorageWrite(storage) => use_and_panic(storage.write(0)),
+        StarknetLibfuncs::StorageWrite(storage) => use_and_panic(storage.write("0")),
         StarknetLibfuncs::Deploy((
             class_hash, address, code, is_init
         )) => use_and_panic(syscalls::deploy_syscall(class_hash, address, code, is_init)),
