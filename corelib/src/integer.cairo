@@ -1135,22 +1135,32 @@ fn u128_add_with_carry(a: u128, b: u128) -> (u128, u128) nopanic {
 pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
     let (limb1, limb0) = u128_wide_mul(a.low, b.low);
     let (limb2, limb1_part) = u128_wide_mul(a.low, b.high);
-    let (limb1, limb1_overflow0) = u128_add_with_carry(limb1, limb1_part);
+    let (limb1, limb1_overflow0) = u128_add_with_bounded_int_carry(limb1, limb1_part);
     let (limb2_part, limb1_part) = u128_wide_mul(a.high, b.low);
-    let (limb1, limb1_overflow1) = u128_add_with_carry(limb1, limb1_part);
-    let (limb2, limb2_overflow) = u128_add_with_carry(limb2, limb2_part);
+    let (limb1, limb1_overflow1) = u128_add_with_bounded_int_carry(limb1, limb1_part);
+    let (limb2, limb2_overflow0) = u128_add_with_bounded_int_carry(limb2, limb2_part);
     let (limb3, limb2_part) = u128_wide_mul(a.high, b.high);
+    let (limb2, limb2_overflow1) = u128_add_with_bounded_int_carry(limb2, limb2_part);
+    // Packing together the overflow bits, making a cheaper addition into limb2.
+    let limb1_overflow = core::internal::bounded_int::add(limb1_overflow0, limb1_overflow1);
+    let (limb2, limb2_overflow2) = u128_add_with_bounded_int_carry(limb2, upcast(limb1_overflow));
+    // Packing together the overflow bits, making a cheaper addition into limb3.
+    let limb2_overflow = core::internal::bounded_int::add(limb2_overflow0, limb2_overflow1);
+    let limb2_overflow = core::internal::bounded_int::add(limb2_overflow, limb2_overflow2);
     // No overflow since no limb4.
-    let limb3 = u128_wrapping_add(limb3, limb2_overflow);
-    let (limb2, limb2_overflow) = u128_add_with_carry(limb2, limb2_part);
-    // No overflow since no limb4.
-    let limb3 = u128_wrapping_add(limb3, limb2_overflow);
-    // No overflow possible in this addition since both operands are 0/1.
-    let limb1_overflow = u128_wrapping_add(limb1_overflow0, limb1_overflow1);
-    let (limb2, limb2_overflow) = u128_add_with_carry(limb2, limb1_overflow);
-    // No overflow since no limb4.
-    let limb3 = u128_wrapping_add(limb3, limb2_overflow);
+    let limb3 = u128_wrapping_add(limb3, upcast(limb2_overflow));
     u512 { limb0, limb1, limb2, limb3 }
+}
+
+/// Helper function for implementation of `u256_wide_mul`.
+/// Used for adding two u128s and receiving a BoundedInt for the carry result.
+fn u128_add_with_bounded_int_carry(
+    a: u128, b: u128
+) -> (u128, core::internal::bounded_int::BoundedInt<0, 1>) nopanic {
+    match u128_overflowing_add(a, b) {
+        Result::Ok(v) => (v, 0),
+        Result::Err(v) => (v, 1),
+    }
 }
 
 /// Calculates division with remainder of a u512 by a non-zero u256.
@@ -2066,36 +2076,10 @@ impl I128PartialOrd of PartialOrd<i128> {
 }
 
 mod signed_div_rem {
-    use core::internal::BoundedInt;
-    use core::RangeCheck;
+    use core::internal::{
+        bounded_int, bounded_int::{BoundedInt, MulHelper, DivRemHelper, ConstrainHelper}
+    };
 
-    trait ConstrainHelper<T, const BOUNDARY: felt252> {
-        type LowT;
-        type HighT;
-    }
-    impl NonZeroHelper<
-        T, const BOUNDARY: felt252, impl H: ConstrainHelper<T, BOUNDARY>
-    > of ConstrainHelper<NonZero<T>, BOUNDARY> {
-        type LowT = NonZero<H::LowT>;
-        type HighT = NonZero<H::HighT>;
-    }
-    extern fn bounded_int_constrain<
-        T, const BOUNDARY: felt252, impl H: ConstrainHelper<T, BOUNDARY>
-    >(
-        value: T
-    ) -> Result<H::LowT, H::HighT> implicits(RangeCheck) nopanic;
-
-    trait MulHelper<Lhs, Rhs> {
-        type Result;
-    }
-    impl NonZeroMulHelper<
-        Lhs, Rhs, impl H: MulHelper<Lhs, Rhs>
-    > of MulHelper<NonZero<Lhs>, NonZero<Rhs>> {
-        type Result = NonZero<H::Result>;
-    }
-    extern fn bounded_int_mul<Lhs, Rhs, impl H: MulHelper<Lhs, Rhs>>(
-        lhs: Lhs, rhs: Rhs
-    ) -> H::Result nopanic;
     type MinusOne = BoundedInt<-1, -1>;
     mod minus_1 {
         pub extern type Const<T, const VALUE: felt252>;
@@ -2106,10 +2090,10 @@ mod signed_div_rem {
         pub extern fn const_as_immediate<C>() -> NonZero<super::MinusOne> nopanic;
     }
     fn minus<T, impl H: MulHelper<T, MinusOne>>(a: T) -> H::Result {
-        bounded_int_mul(a, minus_1::const_as_immediate::<minus_1::Const<MinusOne, -1>>())
+        bounded_int::mul(a, minus_1::const_as_immediate::<minus_1::Const<MinusOne, -1>>())
     }
     fn nz_minus<T, impl H: MulHelper<T, MinusOne>>(a: NonZero<T>) -> NonZero<H::Result> {
-        bounded_int_mul(
+        bounded_int::mul(
             a,
             nz_minus_1::const_as_immediate::<
                 nz_minus_1::Const<NonZero<MinusOne>, minus_1::Const<MinusOne, -1>,>
@@ -2117,15 +2101,7 @@ mod signed_div_rem {
         )
     }
 
-    trait DivRemHelper<Lhs, Rhs> {
-        type DivT;
-        type RemT;
-    }
-    extern fn bounded_int_div_rem<Lhs, Rhs, impl H: DivRemHelper<Lhs, Rhs>>(
-        lhs: Lhs, rhs: NonZero<Rhs>,
-    ) -> (H::DivT, H::RemT) implicits(RangeCheck) nopanic;
-
-    pub impl DivRemImpl<
+    impl DivRemImpl<
         T,
         impl CH: ConstrainHelper<T, 0>,
         impl MH: MulHelper<CH::LowT, MinusOne>,
@@ -2150,11 +2126,11 @@ mod signed_div_rem {
         +Drop<NNDR::RemT>,
     > of DivRem<T> {
         fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T) {
-            match bounded_int_constrain::<T, 0>(lhs) {
+            match bounded_int::constrain::<T, 0>(lhs) {
                 Result::Ok(lhs_lt0) => {
-                    match bounded_int_constrain::<NonZero<T>, 0>(rhs) {
+                    match bounded_int::constrain::<NonZero<T>, 0>(rhs) {
                         Result::Ok(rhs_lt0) => {
-                            let (q, r) = bounded_int_div_rem(minus(lhs_lt0), nz_minus(rhs_lt0));
+                            let (q, r) = bounded_int::div_rem(minus(lhs_lt0), nz_minus(rhs_lt0));
                             (
                                 // Catching the case for division of `i{8,16,32,64,128}::MIN` by
                                 // `-1`, which overflows.
@@ -2163,19 +2139,19 @@ mod signed_div_rem {
                             )
                         },
                         Result::Err(rhs_ge0) => {
-                            let (q, r) = bounded_int_div_rem(minus(lhs_lt0), rhs_ge0);
+                            let (q, r) = bounded_int::div_rem(minus(lhs_lt0), rhs_ge0);
                             (super::upcast(minus(q)), super::upcast(minus(r)))
                         },
                     }
                 },
                 Result::Err(lhs_ge0) => {
-                    match bounded_int_constrain::<NonZero<T>, 0>(rhs) {
+                    match bounded_int::constrain::<NonZero<T>, 0>(rhs) {
                         Result::Ok(rhs_lt0) => {
-                            let (q, r) = bounded_int_div_rem(lhs_ge0, nz_minus(rhs_lt0));
+                            let (q, r) = bounded_int::div_rem(lhs_ge0, nz_minus(rhs_lt0));
                             (super::upcast(minus(q)), super::upcast(r))
                         },
                         Result::Err(rhs_ge0) => {
-                            let (q, r) = bounded_int_div_rem(lhs_ge0, rhs_ge0);
+                            let (q, r) = bounded_int::div_rem(lhs_ge0, rhs_ge0);
                             (super::upcast(q), super::upcast(r))
                         },
                     }
@@ -2211,6 +2187,7 @@ mod signed_div_rem {
     impl I8MHUC0 = impls::Minus<BoundedInt<0, 0x7e>, BoundedInt<-0x7e, 0>>;
     impl I8MHUC1 = impls::Minus<BoundedInt<0, 0x7f>, BoundedInt<-0x7f, 0>>;
     impl I8MHUC2 = impls::Minus<BoundedInt<0, 0x80>, BoundedInt<-0x80, 0>>;
+    pub impl I8DivRem = DivRemImpl<i8>;
 
     impl I16C0 = impls::Constrain0<i16, -0x8000, 0x7fff>;
     impl I16MH = impls::Minus<I16C0::LowT, BoundedInt<1, 0x8000>>;
@@ -2225,6 +2202,7 @@ mod signed_div_rem {
     impl I16MHUC0 = impls::Minus<BoundedInt<0, 0x7ffe>, BoundedInt<-0x7ffe, 0>>;
     impl I16MHUC1 = impls::Minus<BoundedInt<0, 0x7fff>, BoundedInt<-0x7fff, 0>>;
     impl I16MHUC2 = impls::Minus<BoundedInt<0, 0x8000>, BoundedInt<-0x8000, 0>>;
+    pub impl I16DivRem = DivRemImpl<i16>;
 
     impl I32C0 = impls::Constrain0<i32, -0x80000000, 0x7fffffff>;
     impl I32MH = impls::Minus<I32C0::LowT, BoundedInt<1, 0x80000000>>;
@@ -2247,6 +2225,7 @@ mod signed_div_rem {
     impl I32MHUC0 = impls::Minus<BoundedInt<0, 0x7ffffffe>, BoundedInt<-0x7ffffffe, 0>>;
     impl I32MHUC1 = impls::Minus<BoundedInt<0, 0x7fffffff>, BoundedInt<-0x7fffffff, 0>>;
     impl I32MHUC2 = impls::Minus<BoundedInt<0, 0x80000000>, BoundedInt<-0x80000000, 0>>;
+    pub impl I32DivRem = DivRemImpl<i32>;
 
     impl I64C0 = impls::Constrain0<i64, -0x8000000000000000, 0x7fffffffffffffff>;
     impl I64MH = impls::Minus<I64C0::LowT, BoundedInt<1, 0x8000000000000000>>;
@@ -2284,6 +2263,7 @@ mod signed_div_rem {
         impls::Minus<BoundedInt<0, 0x7fffffffffffffff>, BoundedInt<-0x7fffffffffffffff, 0>>;
     impl I64MHUC2 =
         impls::Minus<BoundedInt<0, 0x8000000000000000>, BoundedInt<-0x8000000000000000, 0>>;
+    pub impl I64DivRem = DivRemImpl<i64>;
 
     impl I128C0 =
         impls::Constrain0<
@@ -2333,6 +2313,7 @@ mod signed_div_rem {
             BoundedInt<0, 0x80000000000000000000000000000000>,
             BoundedInt<-0x80000000000000000000000000000000, 0>
         >;
+    pub impl I128DivRem = DivRemImpl<i128>;
 
     extern fn bounded_int_is_zero<T>(value: T) -> super::IsZeroResult<T> implicits() nopanic;
     pub impl TryIntoNonZero<T> of TryInto<T, NonZero<T>> {
@@ -2345,15 +2326,15 @@ mod signed_div_rem {
     }
 }
 
-impl I8DivRem = signed_div_rem::DivRemImpl<i8>;
+impl I8DivRem = signed_div_rem::I8DivRem;
 impl I8TryIntoNonZero = signed_div_rem::TryIntoNonZero<i8>;
-impl I16DivRem = signed_div_rem::DivRemImpl<i16>;
+impl I16DivRem = signed_div_rem::I16DivRem;
 impl I16TryIntoNonZero = signed_div_rem::TryIntoNonZero<i16>;
-impl I32DivRem = signed_div_rem::DivRemImpl<i32>;
+impl I32DivRem = signed_div_rem::I32DivRem;
 impl I32TryIntoNonZero = signed_div_rem::TryIntoNonZero<i32>;
-impl I64DivRem = signed_div_rem::DivRemImpl<i64>;
+impl I64DivRem = signed_div_rem::I64DivRem;
 impl I64TryIntoNonZero = signed_div_rem::TryIntoNonZero<i64>;
-impl I128DivRem = signed_div_rem::DivRemImpl<i128>;
+impl I128DivRem = signed_div_rem::I128DivRem;
 impl I128TryIntoNonZero = signed_div_rem::TryIntoNonZero<i128>;
 
 // Implementations for `Div` and `Rem` given `DivRem`.
