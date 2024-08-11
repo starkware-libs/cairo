@@ -156,7 +156,7 @@ pub fn file_module_absolute_identifier(db: &dyn DefsGroup, mut file_id: FileId) 
     Some(full_path)
 }
 
-/// The location of the Cairo source code which caused a statement to be generated.
+/// The locations in the Cairo source code which caused a statement to be generated.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct StatementsLocations {
     pub locations: UnorderedHashMap<StatementIdx, Vec<StableLocation>>,

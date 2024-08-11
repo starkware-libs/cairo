@@ -6,6 +6,7 @@ import { Context } from "./context";
 import { Scarb } from "./scarb";
 import { isScarbProject } from "./scarbProject";
 import { StandaloneLS } from "./standalonels";
+import { registerMacroExpandProvider, registerVfsProvider } from "./textDocumentProviders";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
@@ -41,41 +42,26 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
   // CairoLS pulls configuration properties it is interested in by itself, so it
   // is not needed to attach any details in the notification payload.
   const weakClient = new WeakRef(client);
-  vscode.workspace.onDidChangeConfiguration(
-    async () => {
-      const client = weakClient.deref();
-      if (client != undefined) {
-        await client.sendNotification(lc.DidChangeConfigurationNotification.type, {
-          settings: "",
-        });
-      }
-    },
-    null,
-    ctx.extension.subscriptions,
+
+  ctx.extension.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(
+      async () => {
+        const client = weakClient.deref();
+        if (client != undefined) {
+          await client.sendNotification(lc.DidChangeConfigurationNotification.type, {
+            settings: "",
+          });
+        }
+      },
+      null,
+      ctx.extension.subscriptions,
+    ),
   );
 
   client.registerFeature(new SemanticTokensFeature(client));
 
-  const myProvider = new (class implements vscode.TextDocumentContentProvider {
-    async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-      interface ProvideVirtualFileResponse {
-        content?: string;
-      }
-
-      const res = await client.sendRequest<ProvideVirtualFileResponse>("vfs/provide", {
-        uri: uri.toString(),
-      });
-
-      return res.content ?? "";
-    }
-
-    onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
-    onDidChange = this.onDidChangeEmitter.event;
-  })();
-  client.onNotification("vfs/update", (param) => {
-    myProvider.onDidChangeEmitter.fire(param.uri);
-  });
-  vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
+  registerVfsProvider(client, ctx);
+  registerMacroExpandProvider(client, ctx);
 
   client.onNotification("scarb/could-not-find-scarb-executable", () => notifyScarbMissing(ctx));
 
@@ -198,8 +184,13 @@ function setupEnv(serverExecutable: lc.Executable, ctx: Context) {
   const extraEnv = ctx.config.get("languageServerExtraEnv");
 
   serverExecutable.options ??= {};
-  serverExecutable.options.env ??= {};
-  Object.assign(serverExecutable.options.env, logEnv, extraEnv);
+  serverExecutable.options.env = {
+    // Inherit env from parent process.
+    ...process.env,
+    ...(serverExecutable.options.env ?? {}),
+    ...logEnv,
+    ...extraEnv,
+  };
 }
 
 function buildEnvFilter(ctx: Context): string {

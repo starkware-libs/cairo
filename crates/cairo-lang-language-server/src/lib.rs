@@ -77,6 +77,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use salsa::ParallelDatabase;
 use serde_json::Value;
+use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::request::Request;
@@ -264,6 +265,10 @@ struct Backend {
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
     db_mutex: tokio::sync::Mutex<AnalysisDatabase>,
+    // Lock making sure there is at most a single "diagnostic refresh" thread.
+    refresh_lock: tokio::sync::Mutex<()>,
+    // Semaphore making sure there are at most one worker and one waiter for refresh.
+    refresh_waiters_semaphore: tokio::sync::Semaphore,
     state_mutex: tokio::sync::Mutex<State>,
     config: tokio::sync::RwLock<Config>,
     scarb_toolchain: ScarbToolchain,
@@ -276,6 +281,7 @@ impl Backend {
         LspService::build(|client| Self::new(client, tricks))
             .custom_method("vfs/provide", Self::vfs_provide)
             .custom_method(lsp::ext::ViewAnalyzedCrates::METHOD, Self::view_analyzed_crates)
+            .custom_method(lsp::ext::ExpandMacro::METHOD, Self::expand_macro)
             .finish()
     }
 
@@ -288,6 +294,8 @@ impl Backend {
             client_capabilities: Default::default(),
             tricks,
             db_mutex: db.into(),
+            refresh_lock: Default::default(),
+            refresh_waiters_semaphore: Semaphore::new(2),
             state_mutex: State::default().into(),
             config: Config::default().into(),
             scarb_toolchain,
@@ -329,6 +337,13 @@ impl Backend {
     /// Refresh diagnostics and send diffs to client.
     #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
+        // Making sure only a single thread is refreshing diagnostics at a time, and that at most
+        // one thread is waiting to start refreshing. This allows changed to be grouped
+        // together before querying the database, as well as releasing extra threads waiting to
+        // start diagnostics updates.
+        // TODO(orizi): Consider removing when request cancellation is supported.
+        let Ok(waiter_permit) = self.refresh_waiters_semaphore.try_acquire() else { return Ok(()) };
+        let refresh_lock = self.refresh_lock.lock().await;
         let open_files = self.state_mut().await.open_files.clone();
 
         // First, refresh diagnostics for each open file.
@@ -388,6 +403,9 @@ impl Backend {
         .instrument(trace_span!("clear_old_diagnostics"))
         .await;
 
+        // Release locks prior to potentially swapping the database.
+        drop(refresh_lock);
+        drop(waiter_permit);
         // After handling of all diagnostics attempting to swap the database to reduce memory
         // consumption.
         self.maybe_swap_database().await
@@ -523,6 +541,11 @@ impl Backend {
     #[tracing::instrument(level = "trace", skip_all)]
     async fn view_analyzed_crates(&self) -> LSPResult<String> {
         self.with_db(lang::inspect::crates::inspect_analyzed_crates).await
+    }
+
+    #[tracing::instrument(level = "trace", skip_all)]
+    async fn expand_macro(&self, params: TextDocumentPositionParams) -> LSPResult<Option<String>> {
+        self.with_db(|db| ide::macros::expand::expand_macro(db, &params)).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
@@ -938,7 +961,7 @@ fn find_definition(
             let item = ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id));
             return Some((
                 ResolvedItem::Generic(item.clone()),
-                resolved_generic_item_def(db, item),
+                resolved_generic_item_def(db, item)?,
             ));
         }
     }
@@ -953,7 +976,7 @@ fn find_definition(
         {
             return Some((
                 ResolvedItem::Generic(item.clone()),
-                resolved_generic_item_def(db, item),
+                resolved_generic_item_def(db, item)?,
             ));
         }
 
@@ -995,9 +1018,9 @@ fn resolved_concrete_item_def(
 fn resolved_generic_item_def(
     db: &AnalysisDatabase,
     item: ResolvedGenericItem,
-) -> SyntaxStablePtrId {
+) -> Option<SyntaxStablePtrId> {
     let defs_db = db.upcast();
-    match item {
+    Some(match item {
         ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(defs_db),
         ResolvedGenericItem::Module(module_id) => {
             // Check if the module is an inline submodule.
@@ -1006,11 +1029,11 @@ fn resolved_generic_item_def(
                     submodule_id.stable_ptr(defs_db).lookup(db.upcast()).body(db.upcast())
                 {
                     // Inline module.
-                    return submodule_id.stable_ptr().untyped();
+                    return Some(submodule_id.stable_ptr().untyped());
                 }
             }
-            let module_file = db.module_main_file(module_id).unwrap();
-            let file_syntax = db.file_module_syntax(module_file).unwrap();
+            let module_file = db.module_main_file(module_id).ok()?;
+            let file_syntax = db.file_module_syntax(module_file).ok()?;
             file_syntax.as_syntax_node().stable_ptr()
         }
         ResolvedGenericItem::GenericFunction(item) => {
@@ -1035,7 +1058,7 @@ fn resolved_generic_item_def(
             trait_function.stable_ptr(defs_db).untyped()
         }
         ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(defs_db),
-    }
+    })
 }
 
 fn is_cairo_file_path(file_path: &Url) -> bool {

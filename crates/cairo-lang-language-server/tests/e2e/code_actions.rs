@@ -13,6 +13,7 @@ cairo_lang_test_utils::test_file_test!(
     "tests/test_data/code_actions",
     {
         missing_trait: "missing_trait.txt",
+        macro_expand: "macro_expand.txt",
     },
     test_quick_fix
 );
