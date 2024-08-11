@@ -413,6 +413,8 @@ impl ConcreteExternTypeId {
 pub struct ClosureTypeLongId {
     pub param_tys: Vec<TypeId>,
     pub ret_ty: TypeId,
+    /// The set of types captured by the closure, we use vector as the fields needs to be hashable.
+    pub captured_types: Vec<TypeId>,
     /// Every closure has a unique type that is based on the stable location of its wrapper.
     #[dont_rewrite]
     pub wrapper_location: StableLocation,
