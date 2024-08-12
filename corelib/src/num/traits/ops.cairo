@@ -4,3 +4,4 @@ pub mod checked;
 pub mod saturating;
 pub(crate) mod sqrt;
 pub(crate) mod widemul;
+pub(crate) mod widepow2;

@@ -1154,7 +1154,7 @@ pub fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
 
 /// Helper function for implementation of `u256_wide_mul`.
 /// Used for adding two u128s and receiving a BoundedInt for the carry result.
-fn u128_add_with_bounded_int_carry(
+pub(crate) fn u128_add_with_bounded_int_carry(
     a: u128, b: u128
 ) -> (u128, core::internal::bounded_int::BoundedInt<0, 1>) nopanic {
     match u128_overflowing_add(a, b) {
