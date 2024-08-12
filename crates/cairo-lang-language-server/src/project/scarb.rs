@@ -56,9 +56,9 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
             );
 
             let cfg_set = if metadata.workspace.members.contains(&component.package) {
-                cfg_set_from_scarb.map(|cfg_set| cfg_set.union(&initial_member_cfg_set()))
+                cfg_set_from_scarb.map(|cfg_set| cfg_set.union(&initial_cfg_set()))
             } else {
-                None
+                cfg_set_from_scarb
             };
 
             let settings = CrateSettings {
@@ -181,6 +181,6 @@ fn scarb_package_experimental_features(
 /// Returns the [`CfgSet`] that should be included in [`CfgSet`] for workspace members.
 /// This enables code fragments tagged with `#[cfg(test)]` and `#[cfg(target: 'test')]` to be
 /// included in analysis by Language Server.
-fn initial_member_cfg_set() -> CfgSet {
+fn initial_cfg_set() -> CfgSet {
     CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")])
 }

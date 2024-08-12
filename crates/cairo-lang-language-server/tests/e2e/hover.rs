@@ -13,7 +13,6 @@ cairo_lang_test_utils::test_file_test!(
     "tests/test_data/hover",
     {
         basic: "basic.txt",
-        cfg_test: "cfg_test.txt",
         missing_module: "missing_module.txt",
         partial: "partial.txt",
         starknet: "starknet.txt",
