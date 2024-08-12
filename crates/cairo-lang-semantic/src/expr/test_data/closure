@@ -270,3 +270,151 @@ error: Type mismatch: `core::felt252` and `core::integer::u128`.
  --> lib.cairo:4:10
 fn foo() {
          ^
+
+//! > ==========================================================================
+
+//! > Test closure calling.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let c = |a, b, c| {
+        a.into() + b.into() + c.into()
+    };
+    let _f: u32 = c(2_felt252, 2_u256, 6_u64);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::traits::Into::<core::integer::u256, core::integer::u32>.
+ --> lib.cairo:3:22
+        a.into() + b.into() + c.into()
+                     ^**^
+
+//! > ==========================================================================
+
+//! > Test overshadowing a function with a variable.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let bar: u8 = 3;
+    let _f: u32 = bar(2);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar() -> u32 {
+    2
+}
+
+//! > expected_diagnostics
+warning: Function `bar` is shadowed by a local variable.
+ --> lib.cairo:6:19
+    let _f: u32 = bar(2);
+                  ^*^
+
+//! > ==========================================================================
+
+//! > Test overshadowing a function with a variable when closure are in context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _y: u16 = baz(|a| {
+        a.into()
+    });
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar() -> u32 {
+    2
+}
+
+fn baz<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    let bar = 3;
+    let _x: u32 = bar();
+    c(9)
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::ops::function::FnOnce::<core::felt252, ()>.
+ --> lib.cairo:7:19
+    let _x: u32 = bar();
+                  ^***^
+
+error: Trait has no implementation in context: core::traits::Into::<core::integer::u32, core::integer::u16>.
+ --> lib.cairo:12:11
+        a.into()
+          ^**^
+
+//! > ==========================================================================
+
+//! > Test overshadowing a function with a closure.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let bar = |_a, _b, _c| -> u32 {
+        3
+    };
+    let _f: u32 = bar(2);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(a: felt252) -> u32 {
+    2
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `(?6,)` and `(?0, ?1, ?2)`.
+ --> lib.cairo:4:10
+fn foo() {
+         ^
+
+//! > ==========================================================================
+
+//! > Closure ref argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let bar = |a| -> u32 {
+        a
+    };
+    let a = 5;
+    let _f: u32 = bar(ref a);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Arguments to closure functions cannot be refrences
+ --> lib.cairo:6:23
+    let _f: u32 = bar(ref a);
+                      ^***^
