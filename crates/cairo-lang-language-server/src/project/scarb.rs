@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{bail, ensure, Context, Result};
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{CrateSettings, Edition, ExperimentalFeaturesConfig};
 use scarb_metadata::{Metadata, PackageMetadata};
 use tracing::{debug, warn};
@@ -54,10 +55,15 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                 crate_name,
             );
 
+            let cfg_set = if metadata.workspace.members.contains(&component.package) {
+                cfg_set_from_scarb.map(|cfg_set| cfg_set.union(&initial_member_cfg_set()))
+            } else {
+                None
+            };
+
             let settings = CrateSettings {
                 edition: scarb_package_edition(&package, crate_name),
-                cfg_set: cfg_set_from_scarb
-                    .map(|cfg_set| cfg_set.union(&AnalysisDatabase::initial_cfg_set())),
+                cfg_set,
                 experimental_features: scarb_package_experimental_features(&package),
             };
 
@@ -170,4 +176,11 @@ fn scarb_package_experimental_features(
         negative_impls: contains("negative_impls"),
         coupons: contains("coupons"),
     }
+}
+
+/// Returns the [`CfgSet`] that should be included in [`CfgSet`] for workspace members.
+/// This enables code fragments tagged with `#[cfg(test)]` and `#[cfg(target: 'test')]` to be
+/// included in analysis by Language Server.
+fn initial_member_cfg_set() -> CfgSet {
+    CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")])
 }

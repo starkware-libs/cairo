@@ -1,6 +1,5 @@
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_doc::db::DocDatabase;
-use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use cairo_lang_lowering::utils::InliningStrategy;
@@ -42,8 +41,6 @@ impl AnalysisDatabase {
         init_files_group(&mut db);
         init_lowering_group(&mut db, InliningStrategy::Default);
 
-        db.set_cfg_set(Self::initial_cfg_set().into());
-
         let plugin_suite =
             [get_default_plugin_suite(), starknet_plugin_suite(), test_plugin_suite()]
                 .into_iter()
@@ -55,11 +52,6 @@ impl AnalysisDatabase {
         db.apply_plugin_suite(plugin_suite);
 
         db
-    }
-
-    /// Returns the [`CfgSet`] that should be assumed in the initial database state.
-    pub fn initial_cfg_set() -> CfgSet {
-        CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")])
     }
 
     /// Shortcut for settings compiler plugins from a [`PluginSuite`].
