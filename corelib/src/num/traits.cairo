@@ -17,4 +17,5 @@ pub use ops::wrapping::{WrappingAdd, WrappingSub, WrappingMul};
 pub use ops::checked::{CheckedAdd, CheckedSub, CheckedMul};
 pub use ops::saturating::{SaturatingAdd, SaturatingSub, SaturatingMul};
 pub use ops::widemul::WideMul;
+pub use ops::widepow2::WidePow2;
 pub use ops::sqrt::Sqrt;
