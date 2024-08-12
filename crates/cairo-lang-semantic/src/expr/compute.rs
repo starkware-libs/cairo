@@ -142,6 +142,9 @@ pub struct ComputationContext<'ctx> {
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
     loop_ctx: Option<LoopContext>,
     cfg_set: Arc<CfgSet>,
+    /// whether to look for closures when calling variables.
+    /// TODO(TomerStarkware): Remove this once we disallow calling shadowed functions.
+    are_closures_in_context: bool,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
@@ -169,6 +172,7 @@ impl<'ctx> ComputationContext<'ctx> {
                 .crate_config(owning_crate_id)
                 .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
                 .unwrap_or(db.cfg_set()),
+            are_closures_in_context: false,
         }
     }
 
@@ -753,9 +757,81 @@ fn compute_expr_function_call_semantic(
     let syntax_db = db.upcast();
 
     let path = syntax.path(syntax_db);
+    let args_syntax = syntax.arguments(syntax_db).arguments(syntax_db);
+    // Check if this is a variable.
+    let segments = path.elements(syntax_db);
+    let mut is_shadowed_by_variable = false;
+    if let [PathSegment::Simple(ident_segment)] = &segments[..] {
+        let identifier = ident_segment.ident(syntax_db);
+        let variable_name = identifier.text(ctx.db.upcast());
+        if let Some(var) = get_variable_by_name(ctx, &variable_name, path.stable_ptr().into()) {
+            is_shadowed_by_variable = true;
+            // if closures are not in context, we want to call the function instead of the variable.
+            if ctx.are_closures_in_context {
+                // TODO(TomerStarkware): find the correct trait based on captured variables.
+                let fn_once_trait = crate::corelib::fn_once_trait(db);
+                let self_expr = ExprAndId { expr: var.clone(), id: ctx.arenas.exprs.alloc(var) };
+                let (call_function_id, _, fixed_closure, closure_mutability) =
+                    compute_method_function_call_data(
+                        ctx,
+                        &[fn_once_trait],
+                        "call".into(),
+                        self_expr,
+                        syntax.into(),
+                        None,
+                        |ty, _, inference_errors| {
+                            Some(NoImplementationOfTrait {
+                                ty,
+                                inference_errors,
+                                trait_name: "FnOnce".into(),
+                            })
+                        },
+                        |_, _, _| {
+                            unreachable!(
+                                "There is one explicit trait, FnOnce trait. No implementations of \
+                                 the trait, caused by both lack of implementation or multiple \
+                                 implementations of the trait, are handled in \
+                                 NoImplementationOfTrait function."
+                            )
+                        },
+                    )?;
+
+                let args_iter = args_syntax.elements(syntax_db).into_iter();
+                // Normal parameters
+                let mut args = vec![];
+                let mut arg_types = vec![];
+                for arg_syntax in args_iter {
+                    let stable_ptr = arg_syntax.stable_ptr();
+                    let arg = compute_named_argument_clause(ctx, arg_syntax);
+                    if arg.2 != Mutability::Immutable {
+                        return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
+                    }
+                    args.push(arg.0.id);
+                    arg_types.push(arg.0.ty());
+                }
+                let args_expr = Expr::Tuple(ExprTuple {
+                    items: args,
+                    ty: TypeLongId::Tuple(arg_types).intern(db),
+                    stable_ptr: syntax.stable_ptr().into(),
+                });
+                let args_expr =
+                    ExprAndId { expr: args_expr.clone(), id: ctx.arenas.exprs.alloc(args_expr) };
+                return expr_function_call(
+                    ctx,
+                    call_function_id,
+                    vec![
+                        NamedArg(fixed_closure, None, closure_mutability),
+                        NamedArg(args_expr, None, Mutability::Immutable),
+                    ],
+                    syntax,
+                    syntax.stable_ptr().into(),
+                );
+            }
+        }
+    }
+
     let item =
         ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path, NotFoundItemType::Function)?;
-    let args_syntax = syntax.arguments(syntax_db).arguments(syntax_db);
 
     match item {
         ResolvedConcreteItem::Variant(variant) => {
@@ -803,6 +879,18 @@ fn compute_expr_function_call_semantic(
             }))
         }
         ResolvedConcreteItem::Function(function) => {
+            if is_shadowed_by_variable {
+                return Err(ctx.diagnostics.report(
+                    &path,
+                    CallingShadowedFunction {
+                        shadowed_function_name: path
+                            .elements(syntax_db)
+                            .first()
+                            .unwrap()
+                            .identifier(syntax_db),
+                    },
+                ));
+            }
             // TODO(Gil): Consider not invoking the TraitFunction inference below if there were
             // errors in argument semantics, in order to avoid unnecessary diagnostics.
 
@@ -886,6 +974,9 @@ pub fn compute_root_expr(
         };
         let ConcreteTraitLongId { trait_id, generic_args } =
             concrete_trait_id.lookup_intern(ctx.db);
+        if trait_id == crate::corelib::fn_once_trait(ctx.db) {
+            ctx.are_closures_in_context = true;
+        }
         if trait_id != get_core_trait(ctx.db, CoreTraitContext::MetaProgramming, "TypeEqual".into())
         {
             continue;
@@ -1485,6 +1576,7 @@ fn compute_expr_closure_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprClosure,
 ) -> Maybe<Expr> {
+    ctx.are_closures_in_context = true;
     let syntax_db = ctx.db.upcast();
     let (params, ret_ty, body) = ctx.run_in_subscope(|new_ctx| {
         let params = if let ClosureParamWrapper::NAry(params) = syntax.wrapper(syntax_db) {

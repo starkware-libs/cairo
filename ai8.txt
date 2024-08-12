@@ -1,0 +1,348 @@
+0. before_all: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+End:
+  Return(v3)
+
+
+1. after_add_withdraw_gas: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+End:
+  Return(v3)
+
+
+2. after_lower_panics: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+3. after_add_destructs: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+4. scrub_units: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+5. apply_inlining: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+6. return_optimization: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+7. reorganize_blocks: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+8. reorder_statements: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+9. branch_inversion: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+10. reorder_statements: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+11. cancel_ops: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+12. const_folding: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+13. optimize_matches: Parameters:
+blk0 (root):
+Statements:
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v1: core::integer::i8) <- 2
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+14. split_structs: Parameters:
+blk0 (root):
+Statements:
+  (v1: core::integer::i8) <- 2
+  (v0: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v1)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v0, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+15. reorganize_blocks: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+16. reorder_statements: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+17. optimize_matches: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+18. reorganize_blocks: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+19. cancel_ops: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+20. reorder_statements: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+21. reorganize_blocks: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+22. lower_implicits: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+23. reorganize_blocks: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+24. cancel_ops: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+25. reorder_statements: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+26. reorganize_blocks: Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 2
+  (v1: {closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}) <- struct_construct()
+  (v2: (core::integer::i8,)) <- struct_construct(v0)
+  (v3: core::integer::i8) <- Generated core::ops::function::FnOnce::<{closure@/home/tomer/workspace/temp.cairo:2:13: 2:16}, (core::integer::i8,)>::call(v1, v2)
+  (v4: (core::integer::i8,)) <- struct_construct(v3)
+  (v5: core::panics::PanicResult::<(core::integer::i8,)>) <- PanicResult::Ok(v4)
+End:
+  Return(v5)
+
+
+
