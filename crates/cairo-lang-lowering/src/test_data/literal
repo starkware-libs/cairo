@@ -12,7 +12,7 @@ fn foo() {
     let _c = 0x100000000000000000000000000000000_u128;
     let _d = 0x800000000000011000000000000000000000000000000000000000000000001;
     let _e: NonZero<felt252> = 0;
-    let _f: core::internal::BoundedInt<3, 15> = 2;
+    let _f: core::internal::bounded_int::BoundedInt<3, 15> = 2;
 }
 
 //! > function_name
@@ -56,10 +56,10 @@ error: The value does not fit within the range of type core::zeroable::NonZero::
     let _e: NonZero<felt252> = 0;
                                ^
 
-error: The value does not fit within the range of type core::internal::BoundedInt::<3, 15>.
- --> lib.cairo:9:49
-    let _f: core::internal::BoundedInt<3, 15> = 2;
-                                                ^
+error: The value does not fit within the range of type core::internal::bounded_int::BoundedInt::<3, 15>.
+ --> lib.cairo:9:62
+    let _f: core::internal::bounded_int::BoundedInt<3, 15> = 2;
+                                                             ^
 
 //! > lowering_flat
 Parameters:
@@ -153,7 +153,7 @@ fn foo() -> (
     i64,
     i128,
     u256,
-    core::internal::BoundedInt<10, 100>
+    core::internal::bounded_int::BoundedInt<10, 100>
 ) {
     (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
 }
@@ -183,7 +183,7 @@ Statements:
   (v9: core::integer::i64) <- 10
   (v10: core::integer::i128) <- 11
   (v11: core::integer::u256) <- { 12: core::integer::u128, 0: core::integer::u128 }
-  (v12: core::internal::BoundedInt::<10, 100>) <- 13
-  (v13: (core::felt252, core::integer::u8, core::integer::u16, core::integer::u32, core::integer::u64, core::integer::u128, core::integer::i8, core::integer::i16, core::integer::i32, core::integer::i64, core::integer::i128, core::integer::u256, core::internal::BoundedInt::<10, 100>)) <- struct_construct(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12)
+  (v12: core::internal::bounded_int::BoundedInt::<10, 100>) <- 13
+  (v13: (core::felt252, core::integer::u8, core::integer::u16, core::integer::u32, core::integer::u64, core::integer::u128, core::integer::i8, core::integer::i16, core::integer::i32, core::integer::i64, core::integer::i128, core::integer::u256, core::internal::bounded_int::BoundedInt::<10, 100>)) <- struct_construct(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12)
 End:
   Return(v13)
