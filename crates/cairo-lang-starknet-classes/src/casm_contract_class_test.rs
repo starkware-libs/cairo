@@ -38,6 +38,7 @@ fn test_casm_contract_from_contract_class_failure(name: &str) {
 #[test_case("new_syntax_test_contract__counter_contract")]
 #[test_case("minimal_contract__minimal_contract")]
 #[test_case("hello_starknet__hello_starknet")]
+#[test_case("libfuncs_coverage__libfuncs_coverage")]
 #[test_case("erc20__erc_20")]
 #[test_case("token_bridge__token_bridge")]
 #[test_case("with_erc20__erc20_contract")]
