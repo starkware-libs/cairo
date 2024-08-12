@@ -183,20 +183,12 @@ impl U128PartialEq of PartialEq<u128> {
 
 impl U128PartialOrd of PartialOrd<u128> {
     #[inline(always)]
-    fn le(lhs: u128, rhs: u128) -> bool {
-        u128_overflowing_sub(rhs, lhs).into_is_ok()
-    }
-    #[inline(always)]
     fn ge(lhs: u128, rhs: u128) -> bool {
         u128_overflowing_sub(lhs, rhs).into_is_ok()
     }
     #[inline(always)]
     fn lt(lhs: u128, rhs: u128) -> bool {
         u128_overflowing_sub(lhs, rhs).into_is_err()
-    }
-    #[inline(always)]
-    fn gt(lhs: u128, rhs: u128) -> bool {
-        u128_overflowing_sub(rhs, lhs).into_is_err()
     }
 }
 
@@ -261,20 +253,12 @@ impl U8PartialEq of PartialEq<u8> {
 
 impl U8PartialOrd of PartialOrd<u8> {
     #[inline(always)]
-    fn le(lhs: u8, rhs: u8) -> bool {
-        u8_overflowing_sub(rhs, lhs).into_is_ok()
-    }
-    #[inline(always)]
-    fn ge(lhs: u8, rhs: u8) -> bool {
-        u8_overflowing_sub(lhs, rhs).into_is_ok()
-    }
-    #[inline(always)]
     fn lt(lhs: u8, rhs: u8) -> bool {
         u8_overflowing_sub(lhs, rhs).into_is_err()
     }
     #[inline(always)]
-    fn gt(lhs: u8, rhs: u8) -> bool {
-        u8_overflowing_sub(rhs, lhs).into_is_err()
+    fn ge(lhs: u8, rhs: u8) -> bool {
+        u8_overflowing_sub(lhs, rhs).into_is_ok()
     }
 }
 
@@ -418,20 +402,12 @@ impl U16PartialEq of PartialEq<u16> {
 
 impl U16PartialOrd of PartialOrd<u16> {
     #[inline(always)]
-    fn le(lhs: u16, rhs: u16) -> bool {
-        u16_overflowing_sub(rhs, lhs).into_is_ok()
-    }
-    #[inline(always)]
-    fn ge(lhs: u16, rhs: u16) -> bool {
-        u16_overflowing_sub(lhs, rhs).into_is_ok()
-    }
-    #[inline(always)]
     fn lt(lhs: u16, rhs: u16) -> bool {
         u16_overflowing_sub(lhs, rhs).into_is_err()
     }
     #[inline(always)]
-    fn gt(lhs: u16, rhs: u16) -> bool {
-        u16_overflowing_sub(rhs, lhs).into_is_err()
+    fn ge(lhs: u16, rhs: u16) -> bool {
+        u16_overflowing_sub(lhs, rhs).into_is_ok()
     }
 }
 
@@ -581,20 +557,12 @@ impl U32PartialEq of PartialEq<u32> {
 
 impl U32PartialOrd of PartialOrd<u32> {
     #[inline(always)]
-    fn le(lhs: u32, rhs: u32) -> bool {
-        u32_overflowing_sub(rhs, lhs).into_is_ok()
-    }
-    #[inline(always)]
-    fn ge(lhs: u32, rhs: u32) -> bool {
-        u32_overflowing_sub(lhs, rhs).into_is_ok()
-    }
-    #[inline(always)]
     fn lt(lhs: u32, rhs: u32) -> bool {
         u32_overflowing_sub(lhs, rhs).into_is_err()
     }
     #[inline(always)]
-    fn gt(lhs: u32, rhs: u32) -> bool {
-        u32_overflowing_sub(rhs, lhs).into_is_err()
+    fn ge(lhs: u32, rhs: u32) -> bool {
+        u32_overflowing_sub(lhs, rhs).into_is_ok()
     }
 }
 
@@ -744,20 +712,12 @@ impl U64PartialEq of PartialEq<u64> {
 
 impl U64PartialOrd of PartialOrd<u64> {
     #[inline(always)]
-    fn le(lhs: u64, rhs: u64) -> bool {
-        u64_overflowing_sub(rhs, lhs).into_is_ok()
-    }
-    #[inline(always)]
-    fn ge(lhs: u64, rhs: u64) -> bool {
-        u64_overflowing_sub(lhs, rhs).into_is_ok()
-    }
-    #[inline(always)]
     fn lt(lhs: u64, rhs: u64) -> bool {
         u64_overflowing_sub(lhs, rhs).into_is_err()
     }
     #[inline(always)]
-    fn gt(lhs: u64, rhs: u64) -> bool {
-        u64_overflowing_sub(rhs, lhs).into_is_err()
+    fn ge(lhs: u64, rhs: u64) -> bool {
+        u64_overflowing_sub(lhs, rhs).into_is_ok()
     }
 }
 
@@ -1017,14 +977,6 @@ impl U256Mul of Mul<u256> {
 }
 
 impl U256PartialOrd of PartialOrd<u256> {
-    #[inline(always)]
-    fn le(lhs: u256, rhs: u256) -> bool {
-        !(rhs < lhs)
-    }
-    #[inline(always)]
-    fn ge(lhs: u256, rhs: u256) -> bool {
-        !(lhs < rhs)
-    }
     fn lt(lhs: u256, rhs: u256) -> bool {
         if lhs.high < rhs.high {
             true
@@ -1033,10 +985,6 @@ impl U256PartialOrd of PartialOrd<u256> {
         } else {
             false
         }
-    }
-    #[inline(always)]
-    fn gt(lhs: u256, rhs: u256) -> bool {
-        rhs < lhs
     }
 }
 
@@ -1705,20 +1653,12 @@ impl I8Mul of Mul<i8> {
 pub extern fn i8_diff(lhs: i8, rhs: i8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
 impl I8PartialOrd of PartialOrd<i8> {
     #[inline(always)]
-    fn le(lhs: i8, rhs: i8) -> bool {
-        i8_diff(rhs, lhs).into_is_ok()
-    }
-    #[inline(always)]
-    fn ge(lhs: i8, rhs: i8) -> bool {
-        i8_diff(lhs, rhs).into_is_ok()
-    }
-    #[inline(always)]
     fn lt(lhs: i8, rhs: i8) -> bool {
         i8_diff(lhs, rhs).into_is_err()
     }
     #[inline(always)]
-    fn gt(lhs: i8, rhs: i8) -> bool {
-        i8_diff(rhs, lhs).into_is_err()
+    fn ge(lhs: i8, rhs: i8) -> bool {
+        i8_diff(lhs, rhs).into_is_ok()
     }
 }
 
@@ -1790,20 +1730,12 @@ impl I16Mul of Mul<i16> {
 pub extern fn i16_diff(lhs: i16, rhs: i16) -> Result<u16, u16> implicits(RangeCheck) nopanic;
 impl I16PartialOrd of PartialOrd<i16> {
     #[inline(always)]
-    fn le(lhs: i16, rhs: i16) -> bool {
-        i16_diff(rhs, lhs).into_is_ok()
-    }
-    #[inline(always)]
-    fn ge(lhs: i16, rhs: i16) -> bool {
-        i16_diff(lhs, rhs).into_is_ok()
-    }
-    #[inline(always)]
     fn lt(lhs: i16, rhs: i16) -> bool {
         i16_diff(lhs, rhs).into_is_err()
     }
     #[inline(always)]
-    fn gt(lhs: i16, rhs: i16) -> bool {
-        i16_diff(rhs, lhs).into_is_err()
+    fn ge(lhs: i16, rhs: i16) -> bool {
+        i16_diff(lhs, rhs).into_is_ok()
     }
 }
 
@@ -1875,20 +1807,12 @@ impl I32Mul of Mul<i32> {
 pub extern fn i32_diff(lhs: i32, rhs: i32) -> Result<u32, u32> implicits(RangeCheck) nopanic;
 impl I32PartialOrd of PartialOrd<i32> {
     #[inline(always)]
-    fn le(lhs: i32, rhs: i32) -> bool {
-        i32_diff(rhs, lhs).into_is_ok()
-    }
-    #[inline(always)]
-    fn ge(lhs: i32, rhs: i32) -> bool {
-        i32_diff(lhs, rhs).into_is_ok()
-    }
-    #[inline(always)]
     fn lt(lhs: i32, rhs: i32) -> bool {
         i32_diff(lhs, rhs).into_is_err()
     }
     #[inline(always)]
-    fn gt(lhs: i32, rhs: i32) -> bool {
-        i32_diff(rhs, lhs).into_is_err()
+    fn ge(lhs: i32, rhs: i32) -> bool {
+        i32_diff(lhs, rhs).into_is_ok()
     }
 }
 
@@ -1960,20 +1884,12 @@ impl I64Mul of Mul<i64> {
 pub extern fn i64_diff(lhs: i64, rhs: i64) -> Result<u64, u64> implicits(RangeCheck) nopanic;
 impl I64PartialOrd of PartialOrd<i64> {
     #[inline(always)]
-    fn le(lhs: i64, rhs: i64) -> bool {
-        i64_diff(rhs, lhs).into_is_ok()
-    }
-    #[inline(always)]
-    fn ge(lhs: i64, rhs: i64) -> bool {
-        i64_diff(lhs, rhs).into_is_ok()
-    }
-    #[inline(always)]
     fn lt(lhs: i64, rhs: i64) -> bool {
         i64_diff(lhs, rhs).into_is_err()
     }
     #[inline(always)]
-    fn gt(lhs: i64, rhs: i64) -> bool {
-        i64_diff(rhs, lhs).into_is_err()
+    fn ge(lhs: i64, rhs: i64) -> bool {
+        i64_diff(lhs, rhs).into_is_ok()
     }
 }
 
@@ -2058,20 +1974,12 @@ impl I128Mul of Mul<i128> {
 pub extern fn i128_diff(lhs: i128, rhs: i128) -> Result<u128, u128> implicits(RangeCheck) nopanic;
 impl I128PartialOrd of PartialOrd<i128> {
     #[inline(always)]
-    fn le(lhs: i128, rhs: i128) -> bool {
-        i128_diff(rhs, lhs).into_is_ok()
-    }
-    #[inline(always)]
-    fn ge(lhs: i128, rhs: i128) -> bool {
-        i128_diff(lhs, rhs).into_is_ok()
-    }
-    #[inline(always)]
     fn lt(lhs: i128, rhs: i128) -> bool {
         i128_diff(lhs, rhs).into_is_err()
     }
     #[inline(always)]
-    fn gt(lhs: i128, rhs: i128) -> bool {
-        i128_diff(rhs, lhs).into_is_err()
+    fn ge(lhs: i128, rhs: i128) -> bool {
+        i128_diff(lhs, rhs).into_is_ok()
     }
 }
 

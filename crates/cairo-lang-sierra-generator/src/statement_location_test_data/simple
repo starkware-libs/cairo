@@ -189,45 +189,60 @@ Originating location:
 In function: lib.cairo::foo
 dup<u8>([9]) -> ([9], [10])
 Originating location:
-        u8_overflowing_sub(rhs, lhs).into_is_err()
+        u8_overflowing_sub(lhs, rhs).into_is_err()
         ^**************************^
-In function: core::integer::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^****************^
 Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^*****^
 In function: lib.cairo::foo
 dup<u8>([8]) -> ([8], [11])
 Originating location:
-        u8_overflowing_sub(rhs, lhs).into_is_err()
+        u8_overflowing_sub(lhs, rhs).into_is_err()
         ^**************************^
-In function: core::integer::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^****************^
 Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^*****^
 In function: lib.cairo::foo
 u8_overflowing_sub([0], [10], [11]) { fallthrough([12], [13]) label_test::foo::5([14], [15]) }
 Originating location:
-        u8_overflowing_sub(rhs, lhs).into_is_err()
+        u8_overflowing_sub(lhs, rhs).into_is_err()
         ^**************************^
-In function: core::integer::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^****************^
 Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^*****^
 In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-        u8_overflowing_sub(rhs, lhs).into_is_err()
+        u8_overflowing_sub(lhs, rhs).into_is_err()
         ^**************************^
-In function: core::integer::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^****************^
 Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^*****^
 In function: lib.cairo::foo
 drop<u8>([13]) -> ()
 Originating location:
-        u8_overflowing_sub(rhs, lhs).into_is_err()
+        u8_overflowing_sub(lhs, rhs).into_is_err()
         ^**************************^
-In function: core::integer::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^****************^
 Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^*****^
@@ -564,27 +579,36 @@ Inlined at:
 In function: lib.cairo::foo
 label_test::foo::5:
 Originating location:
-        u8_overflowing_sub(rhs, lhs).into_is_err()
+        u8_overflowing_sub(lhs, rhs).into_is_err()
         ^**************************^
-In function: core::integer::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^****************^
 Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^*****^
 In function: lib.cairo::foo
 branch_align() -> ()
 Originating location:
-        u8_overflowing_sub(rhs, lhs).into_is_err()
+        u8_overflowing_sub(lhs, rhs).into_is_err()
         ^**************************^
-In function: core::integer::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^****************^
 Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^*****^
 In function: lib.cairo::foo
 drop<u8>([15]) -> ()
 Originating location:
-        u8_overflowing_sub(rhs, lhs).into_is_err()
+        u8_overflowing_sub(lhs, rhs).into_is_err()
         ^**************************^
-In function: core::integer::U8PartialOrd::gt
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^****************^
 Inlined at:
         MyEnum::C((c1, c2)) => { if c1 > c2 {
                                     ^*****^
