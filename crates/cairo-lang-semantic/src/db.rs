@@ -120,6 +120,18 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_impl_var(&self, id: ImplVar) -> ImplVarId;
 
+    #[salsa::interned]
+    fn intern_generated_impl(
+        &self,
+        id: items::imp::GeneratedImplLongId,
+    ) -> items::imp::GeneratedImplId;
+
+    #[salsa::interned]
+    fn intern_uninferred_generated_impl(
+        &self,
+        id: items::imp::UninferredGeneratedImplLongId,
+    ) -> items::imp::UninferredGeneratedImplId;
+
     // Const.
     // ====
     /// Private query to compute data about a constant definition.
