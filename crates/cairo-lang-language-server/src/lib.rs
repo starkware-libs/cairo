@@ -279,13 +279,8 @@ impl Backend {
     fn build_service(tricks: Tricks) -> (LspService<Self>, ClientSocket) {
         LspService::build(|client| Self::new(client, tricks))
             .custom_method("vfs/provide", Self::vfs_provide)
-<<<<<<< HEAD
-||||||| parent of 246cb078a... LS: Expand Macro tests (#6076)
-            .custom_method(lsp::ext::ViewAnalyzedCrates::METHOD, Self::view_analyzed_crates)
-=======
             .custom_method(lsp::ext::ViewAnalyzedCrates::METHOD, Self::view_analyzed_crates)
             .custom_method(lsp::ext::ExpandMacro::METHOD, Self::expand_macro)
->>>>>>> 246cb078a... LS: Expand Macro tests (#6076)
             .finish()
     }
 
@@ -543,14 +538,6 @@ impl Backend {
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
-<<<<<<< HEAD
-||||||| parent of 246cb078a... LS: Expand Macro tests (#6076)
-    async fn view_analyzed_crates(&self) -> LSPResult<String> {
-        self.with_db(lang::inspect::crates::inspect_analyzed_crates).await
-    }
-
-    #[tracing::instrument(level = "trace", skip_all)]
-=======
     async fn view_analyzed_crates(&self) -> LSPResult<String> {
         self.with_db(lang::inspect::crates::inspect_analyzed_crates).await
     }
@@ -561,7 +548,6 @@ impl Backend {
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
->>>>>>> 246cb078a... LS: Expand Macro tests (#6076)
     async fn vfs_provide(
         &self,
         params: ProvideVirtualFileRequest,

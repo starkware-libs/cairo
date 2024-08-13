@@ -67,18 +67,12 @@
       {
         "command": "cairo1.reload",
         "title": "Reload workspace",
-<<<<<<< HEAD
-        "category": "cairo1"
-||||||| parent of 246cb078a... LS: Expand Macro tests (#6076)
-        "category": "Cairo"
-=======
         "category": "Cairo"
       },
       {
         "command": "cairo.expandMacro",
         "title": "Recursively expand macros for item at caret",
         "category": "Cairo"
->>>>>>> 246cb078a... LS: Expand Macro tests (#6076)
       }
     ],
     "configuration": [
