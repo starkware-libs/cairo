@@ -21,6 +21,7 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.7.1" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.7.1" }
 indoc.workspace = true
 salsa.workspace = true
+semver.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
 
