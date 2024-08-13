@@ -90,9 +90,10 @@ impl Crate {
 fn inject_virtual_wrapper_lib(db: &mut AnalysisDatabase, crate_id: CrateId, file_stem: &str) {
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
+    let file_content = db.file_content(file_id).unwrap_or_default().to_string();
     // Inject virtual lib file wrapper.
     db.as_files_group_mut()
-        .override_file_content(file_id, Some(format!("mod {file_stem};").into()));
+        .override_file_content(file_id, Some(format!("{file_content}\nmod {file_stem};").into()));
 }
 
 /// The inverse of [`inject_virtual_wrapper_lib`],
