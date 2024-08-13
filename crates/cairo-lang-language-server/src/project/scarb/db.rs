@@ -65,6 +65,7 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
 
             let settings = CrateSettings {
                 edition: scarb_package_edition(&package, crate_name),
+                version: package.map(|p| p.version.clone()),
                 cfg_set: scarb_cfg_set_to_cairo(
                     component.cfg.as_ref().unwrap_or(&compilation_unit.cfg),
                     crate_name,
