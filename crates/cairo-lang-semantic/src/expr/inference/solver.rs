@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
@@ -9,10 +10,18 @@ use super::infers::InferenceEmbeddings;
 use super::{
     InferenceData, InferenceError, InferenceId, InferenceResult, InferenceVar, LocalImplVarId,
 };
+use crate::corelib::{concrete_destruct_trait, concrete_drop_trait, concrete_panic_destruct_trait};
 use crate::db::SemanticGroup;
-use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
+use crate::items::generics::GenericParamImpl;
+use crate::items::imp::{
+    find_candidates_at_context, ImplId, ImplLookupContext, UninferredGeneratedImplLongId,
+    UninferredImpl,
+};
 use crate::substitution::SemanticRewriter;
-use crate::{ConcreteTraitId, GenericArgumentId, TypeId, TypeLongId};
+use crate::types::ClosureTypeLongId;
+use crate::{
+    ConcreteTraitId, ConcreteTraitLongId, GenericArgumentId, GenericParam, TypeId, TypeLongId,
+};
 
 /// A generic solution set for an inference constraint system.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -138,12 +147,14 @@ impl Solver {
         let filter = canonical_trait.0.filter(db);
         let candidates =
             find_candidates_at_context(db, &lookup_context, filter).unwrap_or_default();
-        let candidate_solvers = candidates
+        let mut candidate_solvers = candidates
             .into_iter()
             .filter_map(|candidate| {
                 CandidateSolver::new(db, canonical_trait, candidate, &lookup_context).ok()
             })
             .collect();
+
+        add_generated_impl(db, canonical_trait, &lookup_context, &mut candidate_solvers);
 
         Self { canonical_trait, lookup_context, candidate_solvers }
     }
@@ -235,5 +246,66 @@ impl CandidateSolver {
                 }
             }
         })
+    }
+}
+
+fn add_generated_impl(
+    db: &dyn SemanticGroup,
+    canonical_trait: CanonicalTrait,
+    lookup_context: &ImplLookupContext,
+    candidate_solvers: &mut Vec<CandidateSolver>,
+) {
+    let concrete_trait = canonical_trait.0;
+    let gargs = concrete_trait.generic_args(db);
+    let Some(GenericArgumentId::Type(ty)) = gargs.first() else {
+        return;
+    };
+    let TypeLongId::Closure(ClosureTypeLongId { captured_types, .. }) = db.lookup_intern_type(*ty)
+    else {
+        // Currently only closure types have generated impls.
+        return;
+    };
+    let drop_trait = concrete_drop_trait(db, *ty);
+    let destruct_trait = concrete_destruct_trait(db, *ty);
+    let panic_destruct_trait = concrete_panic_destruct_trait(db, *ty);
+
+    let opt_neg_impl_trait = if concrete_trait == drop_trait {
+        None
+    } else if concrete_trait == destruct_trait {
+        Some(drop_trait)
+    } else if concrete_trait == panic_destruct_trait {
+        Some(destruct_trait)
+    } else {
+        return;
+    };
+
+    let trait_id = concrete_trait.trait_id(db);
+    let generic_param_id = db.trait_generic_params(trait_id).unwrap().first().unwrap().id();
+
+    let mut generic_params = captured_types
+        .iter()
+        .map(|ty| {
+            GenericParam::Impl(GenericParamImpl {
+                id: generic_param_id,
+                concrete_trait: Maybe::Ok(db.intern_concrete_trait(ConcreteTraitLongId {
+                    trait_id,
+                    generic_args: vec![GenericArgumentId::Type(*ty)],
+                })),
+            })
+        })
+        .collect_vec();
+
+    if let Some(neg_impl_trait) = opt_neg_impl_trait {
+        generic_params.push(GenericParam::NegImpl(GenericParamImpl {
+            id: generic_param_id,
+            concrete_trait: Maybe::Ok(neg_impl_trait),
+        }));
+    }
+
+    let candidate = UninferredImpl::GeneratedImpl(db.intern_uninferred_generated_impl(
+        UninferredGeneratedImplLongId { concrete_trait: canonical_trait.0, generic_params },
+    ));
+    if let Ok(solver) = CandidateSolver::new(db, canonical_trait, candidate, lookup_context) {
+        candidate_solvers.push(solver)
     }
 }

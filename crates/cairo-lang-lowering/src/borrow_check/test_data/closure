@@ -18,13 +18,6 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable not dropped.
- --> lib.cairo:2:5
-    |b: u32| {
-    ^********^
-note: Trait has no implementation in context: core::traits::Drop::<{closure@lib.cairo:2:5: 2:13}>.
-note: Trait has no implementation in context: core::traits::Destruct::<{closure@lib.cairo:2:5: 2:13}>.
-
 error: Unsupported feature.
  --> lib.cairo:2:5
     |b: u32| {
