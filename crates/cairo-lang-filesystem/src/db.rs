@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use semver::Version;
 use serde::{Deserialize, Serialize};
 
 use crate::cfg::CfgSet;
@@ -18,6 +19,7 @@ use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 mod test;
 
 pub const CORELIB_CRATE_NAME: &str = "core";
+pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// A configuration per crate.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -38,6 +40,8 @@ impl CrateConfiguration {
 pub struct CrateSettings {
     /// The crate's Cairo edition.
     pub edition: Edition,
+    /// The crate's version.
+    pub version: Option<Version>,
 
     pub cfg_set: Option<CfgSet>,
 
@@ -164,6 +168,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
             root: Directory::Real(core_lib_dir),
             settings: CrateSettings {
                 edition: Edition::V2024_07,
+                version: Version::parse(CORELIB_VERSION).ok(),
                 cfg_set: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig {
                     negative_impls: true,

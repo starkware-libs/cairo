@@ -138,6 +138,7 @@ pub fn setup_test_crate_ex(
     } else {
         CrateSettings {
             edition: Edition::default(),
+            version: None,
             experimental_features: ExperimentalFeaturesConfig {
                 negative_impls: true,
                 coupons: true,
