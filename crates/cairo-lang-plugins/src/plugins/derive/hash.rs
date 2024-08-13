@@ -6,7 +6,7 @@ use itertools::Itertools;
 use super::{unsupported_for_extern_diagnostic, DeriveInfo, DeriveResult};
 use crate::plugins::derive::TypeVariantInfo;
 
-/// Adds derive result for the `Serde` trait.
+/// Adds derive result for the `Hash` trait.
 pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mut DeriveResult) {
     let full_typename = info.full_typename();
     let ty = &info.name;
