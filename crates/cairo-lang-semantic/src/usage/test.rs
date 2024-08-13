@@ -7,7 +7,6 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::Usages;
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
 use crate::test_utils::{setup_test_function, SemanticDatabaseForTesting};
@@ -40,22 +39,22 @@ fn test_function_usage(
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
     let function_def =
         db.function_body(test_function.concrete_function_id.function_with_body_id(db)).unwrap();
-    let usages = Usages::from_function_body(&function_def);
 
     let mut usages_str = String::new();
-    for (expr_id, usage) in usages.usages.iter() {
-        let expr = &function_def.arenas.exprs[*expr_id];
-        let stable_ptr = expr.stable_ptr();
-        let node = stable_ptr.untyped().lookup(db);
-        let position = node.span_start_without_trivia(db).position_in_file(db, file_id).unwrap();
-
+    for (expr_id, expr) in function_def.arenas.exprs.iter() {
         match expr {
             Expr::Loop(_) => write!(usages_str, "Loop").unwrap(),
             Expr::While(_) => write!(usages_str, "While").unwrap(),
             Expr::For(_) => write!(usages_str, "For").unwrap(),
             Expr::ExprClosure(_) => write!(usages_str, "Closure").unwrap(),
-            _ => unreachable!(),
+            _ => continue,
         }
+
+        let usage = db.function_expr_usage(test_function.function_id, expr_id).unwrap();
+        let stable_ptr = expr.stable_ptr();
+        let node = stable_ptr.untyped().lookup(db);
+        let position = node.span_start_without_trivia(db).position_in_file(db, file_id).unwrap();
+
         writeln!(usages_str, " {}:{}:", position.line, position.col).unwrap();
         write!(usages_str, "  Usage:").unwrap();
         for (_, expr) in usage.usage.iter() {

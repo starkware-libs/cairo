@@ -6,7 +6,6 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
-use cairo_lang_semantic::usage::Usages;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -111,8 +110,6 @@ pub struct EncapsulatingLoweringContext<'db> {
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
     /// Expression formatter of the free function.
     pub expr_formatter: ExprFormatter<'db>,
-    /// Block usages for the entire encapsulating function.
-    pub usages: Usages,
     /// Lowerings of generated functions.
     pub lowerings: OrderedHashMap<semantic::ExprId, FlatLowered>,
 }
@@ -122,14 +119,12 @@ impl<'db> EncapsulatingLoweringContext<'db> {
         semantic_function_id: defs::ids::FunctionWithBodyId,
     ) -> Maybe<Self> {
         let function_body = db.function_body(semantic_function_id)?;
-        let usages = Usages::from_function_body(&function_body);
         Ok(Self {
             db,
             semantic_function_id,
             function_body,
             semantic_defs: Default::default(),
             expr_formatter: ExprFormatter { db: db.upcast(), function_id: semantic_function_id },
-            usages,
             lowerings: Default::default(),
         })
     }

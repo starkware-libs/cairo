@@ -41,7 +41,8 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::{ImplTypeId, TypeSizeInformation};
 use crate::{
-    corelib, items, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
+    corelib, items, lsp_helpers, semantic, types, usage, ExprId, FunctionId, Parameter,
+    SemanticDiagnostic, TypeId,
 };
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
@@ -1478,6 +1479,15 @@ pub trait SemanticGroup:
 
     /// Aggregates file level semantic diagnostics.
     fn file_semantic_diagnostics(&self, file_id: FileId) -> Maybe<Diagnostics<SemanticDiagnostic>>;
+
+    // usage.
+    // ========
+    #[salsa::invoke(usage::function_expr_usage)]
+    fn function_expr_usage(
+        &self,
+        function_id: FunctionWithBodyId,
+        expr_id: ExprId,
+    ) -> Maybe<usage::Usage>;
 
     // Corelib.
     // ========
