@@ -122,6 +122,7 @@ rayon = "1.10.0"
 rstest = "0.19.0"
 salsa = "0.16.1"
 schemars = { version = "0.8.19", features = ["preserve_order"] }
+semver = { version = "1.0.23", features = ["serde"] }
 serde = { version = "1.0.200", default-features = false, features = ["derive"] }
 serde_json = "1.0.116"
 sha2 = "0.10.8"

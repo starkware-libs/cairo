@@ -525,6 +525,7 @@ dependencies = [
  "cairo-lang-utils",
  "indoc",
  "salsa",
+ "semver",
  "smol_str",
  "thiserror",
 ]
@@ -607,6 +608,7 @@ dependencies = [
  "env_logger",
  "path-clean",
  "salsa",
+ "semver",
  "serde",
  "serde_json",
  "smol_str",
