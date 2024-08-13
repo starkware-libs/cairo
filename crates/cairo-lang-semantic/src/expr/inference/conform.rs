@@ -468,7 +468,7 @@ impl<'db> InferenceConform for Inference<'db> {
             }
             ImplLongId::ImplImpl(impl_impl) => self.impl_contains_var(impl_impl.impl_id(), var),
             ImplLongId::GeneratedImpl(generated_impl) => self.generic_args_contain_var(
-                &generated_impl.concrete_trait.generic_args(self.db),
+                &generated_impl.concrete_trait(self.db).generic_args(self.db),
                 var,
             ),
         }

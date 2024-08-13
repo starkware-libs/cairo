@@ -9,7 +9,9 @@ use super::{Inference, InferenceError, InferenceResult};
 use crate::items::constant::ImplConstantId;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::GenericParamConst;
-use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{
+    GeneratedImplLongId, ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl,
+};
 use crate::items::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitImplId,
     ConcreteTraitTypeId,
@@ -141,7 +143,19 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                 ImplLongId::GenericParameter(param_id).intern(self.db)
             }
             UninferredImpl::GeneratedImpl(generated_impl) => {
-                ImplLongId::GeneratedImpl(generated_impl).intern(self.db)
+                let long_id = generated_impl.lookup_intern(self.db);
+                ImplLongId::GeneratedImpl(
+                    GeneratedImplLongId {
+                        concrete_trait: long_id.concrete_trait,
+                        generic_args: self.infer_generic_args(
+                            &long_id.generic_params[..],
+                            lookup_context,
+                            stable_ptr,
+                        )?,
+                    }
+                    .intern(self.db),
+                )
+                .intern(self.db)
             }
         };
         Ok(impl_id)
