@@ -1493,7 +1493,7 @@ pub trait SemanticGroup:
     fn visible_traits_from_module(
         &self,
         module_id: ModuleId,
-    ) -> Arc<OrderedHashMap<TraitId, String>>;
+    ) -> Option<Arc<OrderedHashMap<TraitId, String>>>;
     /// Returns all visible traits in a module, alongside a visible use path to the trait.
     /// `user_module_id` is the module from which the traits are should be visible. If
     /// `include_parent` is true, the parent module of `module_id` is also considered.

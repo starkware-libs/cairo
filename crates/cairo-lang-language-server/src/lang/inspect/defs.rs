@@ -1,7 +1,7 @@
 use std::iter;
 
 use cairo_lang_defs::ids::{
-    LanguageElementId, LookupItemId, ModuleItemId, TopLevelLanguageElementId, TraitItemId,
+    LanguageElementId, LookupItemId, MemberId, ModuleItemId, TopLevelLanguageElementId, TraitItemId,
 };
 use cairo_lang_doc::db::DocGroup;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -20,6 +20,7 @@ use smol_str::SmolStr;
 use tracing::error;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::inspect::defs::SymbolDef::Member;
 use crate::{find_definition, ResolvedItem};
 
 /// Keeps information about the symbol that is being searched for/inspected.
@@ -30,6 +31,13 @@ pub enum SymbolDef {
     Item(ItemDef),
     Variable(VariableDef),
     ExprInlineMacro(String),
+    Member(MemberDef),
+}
+
+/// Information about a struct member.
+pub struct MemberDef {
+    pub member: MemberId,
+    pub structure: ItemDef,
 }
 
 impl SymbolDef {
@@ -81,6 +89,10 @@ impl SymbolDef {
             ResolvedItem::Generic(ResolvedGenericItem::Variable(_)) => {
                 VariableDef::new(db, definition_node).map(Self::Variable)
             }
+            ResolvedItem::Member(member_id) => Some(Member(MemberDef {
+                member: member_id,
+                structure: ItemDef::new(db, &definition_node)?,
+            })),
         }
     }
 }
@@ -129,12 +141,12 @@ impl ItemDef {
     pub fn signature(&self, db: &AnalysisDatabase) -> String {
         let contexts = self.context_items.iter().copied().rev();
         let this = iter::once(self.lookup_item_id);
-        contexts.chain(this).map(|item| db.get_item_signature(item)).join("\n")
+        contexts.chain(this).map(|item| db.get_item_signature(item.into())).join("\n")
     }
 
     /// Gets item documentation in a final form usable for display.
     pub fn documentation(&self, db: &AnalysisDatabase) -> Option<String> {
-        db.get_item_documentation(self.lookup_item_id)
+        db.get_item_documentation(self.lookup_item_id.into())
     }
 
     /// Gets the full path (including crate name and defining trait/impl if applicable)
