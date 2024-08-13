@@ -1171,9 +1171,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-vm"
-version = "1.0.0-rc6"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f905a936b3287d085706d3d68e405be4844ec7bc1c95eaa3d53220dd33efd4ff"
+checksum = "58363ad8065ed891e3b14a8191b707677c7c7cb5b9d10030822506786d8d8108"
 dependencies = [
  "anyhow",
  "bincode",
