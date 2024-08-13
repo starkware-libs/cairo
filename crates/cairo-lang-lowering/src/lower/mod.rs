@@ -1683,6 +1683,8 @@ fn lower_expr_closure(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a closure expression: {:?}", expr.debug(&ctx.expr_formatter));
     let usage = ctx.usages.usages[&expr_id].clone();
+
+    ctx.diagnostics.report(expr.stable_ptr, LoweringDiagnosticKind::Unsupported);
     Ok(LoweredExpr::AtVariable(builder.capture(ctx, usage.clone(), expr)))
 }
 
