@@ -56,7 +56,11 @@ impl<'de, const V: u8> Deserialize<'de> for Version<V> {
         D: serde::Deserializer<'de>,
     {
         let value = u8::deserialize(deserializer)?;
-        if value == V { Ok(Version::<V>) } else { Err(serde::de::Error::custom(VersionError)) }
+        if value == V {
+            Ok(Version::<V>)
+        } else {
+            Err(serde::de::Error::custom(VersionError))
+        }
     }
 }
 
