@@ -35,7 +35,8 @@ use crate::items::functions::{
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{
-    GeneratedImplId, ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl,
+    GeneratedImplId, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId, ImplLookupContext,
+    UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
