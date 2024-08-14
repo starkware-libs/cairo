@@ -1535,6 +1535,8 @@ fn compute_expr_closure_semantic(
     }
 
     let param_ids = params.iter().map(|param| param.id).collect_vec();
+
+    // TODO(ilya): Cache usage computation.
     let mut usages = Usages { usages: Default::default() };
     let usage = usages.handle_closure(&ctx.arenas, &param_ids, body);
 
