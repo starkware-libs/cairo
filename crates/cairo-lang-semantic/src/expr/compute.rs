@@ -1530,6 +1530,10 @@ fn compute_expr_closure_semantic(
         }
         (params, ret_ty, body)
     });
+    let parent_function = match ctx.function_id {
+        ContextFunction::Global => Maybe::Err(ctx.diagnostics.report(syntax, ClosureInGlobalScope)),
+        ContextFunction::Function(function_id) => function_id,
+    };
     if matches!(ctx.function_id, ContextFunction::Global) {
         ctx.diagnostics.report(syntax, ClosureInGlobalScope);
     }
@@ -1553,6 +1557,7 @@ fn compute_expr_closure_semantic(
             param_tys: params.iter().map(|param| param.ty).collect(),
             ret_ty,
             captured_types,
+            parent_function,
             wrapper_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
         })
         .intern(ctx.db),
