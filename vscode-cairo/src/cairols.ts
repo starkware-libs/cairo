@@ -85,7 +85,7 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
 
   client.onNotification(new NotificationType<string>("corelib/version-mismatch"), (params) => {
     const errorMessage =
-      "Corelib version missmatch. If you are using Scarb try reopening the project to fix this error. Resort to `scarb cache clean` if it doesn't help. ERROR: " +
+      "Corelib version mismatch. If you are using Scarb try reopening the project to fix this error. Resort to `scarb cache clean` if it doesn't help. ERROR: " +
       params;
 
     vscode.window.showErrorMessage(errorMessage);
