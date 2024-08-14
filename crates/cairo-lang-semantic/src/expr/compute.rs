@@ -32,9 +32,10 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern, OptionHelper};
-use itertools::{zip_eq, Itertools};
+use itertools::{chain, zip_eq, Itertools};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
+use salsa::InternKey;
 use smol_str::SmolStr;
 use utils::Intern;
 
@@ -76,6 +77,7 @@ use crate::types::{
     peel_snapshots_ex, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots,
     ClosureTypeLongId, ConcreteTypeId,
 };
+use crate::usage::Usages;
 use crate::{
     ConcreteEnumId, ConcreteTraitLongId, GenericArgumentId, GenericParam, Member, Mutability,
     Parameter, PatternStringLiteral, PatternStruct, Signature,
@@ -1531,14 +1533,26 @@ fn compute_expr_closure_semantic(
     if matches!(ctx.function_id, ContextFunction::Global) {
         ctx.diagnostics.report(syntax, ClosureInGlobalScope);
     }
+
+    let param_ids = params.iter().map(|param| param.id).collect_vec();
+    let mut usages = Usages { usages: Default::default() };
+    let usage = usages.handle_closure(&ctx.arenas, &param_ids, body);
+
+    let captured_types = chain!(
+        usage.snap_usage.values().map(|item| wrap_in_snapshots(ctx.db, item.ty(), 1)),
+        chain!(usage.usage.values(), usage.changes.values()).map(|item| item.ty())
+    )
+    .sorted_by_key(|ty| ty.as_intern_id())
+    .dedup()
+    .collect_vec();
     Ok(Expr::ExprClosure(ExprClosure {
         body,
-        param_ids: params.iter().map(|param| param.id).collect(),
-
+        param_ids,
         stable_ptr: syntax.stable_ptr().into(),
         ty: TypeLongId::Closure(ClosureTypeLongId {
             param_tys: params.iter().map(|param| param.ty).collect(),
             ret_ty,
+            captured_types,
             wrapper_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
         })
         .intern(ctx.db),

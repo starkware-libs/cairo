@@ -1,7 +1,7 @@
 //! Introduces [Usages], which is responsible for computing variables usage in semantic blocks\
 //! of a function.
 
-use cairo_lang_defs::ids::MemberId;
+use cairo_lang_defs::ids::{MemberId, ParamId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -165,6 +165,20 @@ impl Usages {
         usages
     }
 
+    pub fn handle_closure(
+        &mut self,
+        arenas: &Arenas,
+        param_ids: &[ParamId],
+        body: ExprId,
+    ) -> Usage {
+        let mut usage: Usage = Default::default();
+
+        usage.introductions.extend(param_ids.iter().map(|id| VarId::Param(*id)));
+        self.handle_expr(arenas, body, &mut usage);
+        usage.finalize_as_scope();
+        usage
+    }
+
     fn handle_expr(&mut self, arenas: &Arenas, expr_id: ExprId, current: &mut Usage) {
         match &arenas.exprs[expr_id] {
             Expr::Tuple(expr) => {
@@ -286,11 +300,8 @@ impl Usages {
                 self.usages.insert(expr_id, usage);
             }
             Expr::ExprClosure(expr) => {
-                let mut usage: Usage = Default::default();
+                let usage = self.handle_closure(arenas, &expr.param_ids, expr.body);
 
-                usage.introductions.extend(expr.param_ids.iter().map(|id| VarId::Param(*id)));
-                self.handle_expr(arenas, expr.body, &mut usage);
-                usage.finalize_as_scope();
                 current.add_usage_and_changes(&usage);
                 self.usages.insert(expr_id, usage);
             }
