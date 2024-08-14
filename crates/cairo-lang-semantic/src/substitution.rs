@@ -24,7 +24,7 @@ use crate::items::functions::{
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{
-    GeneratedImplId, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
+    GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
@@ -195,6 +195,24 @@ impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Box<T>, E> for TR
         self.internal_rewrite(value.as_mut())
     }
 }
+
+impl<T: Clone, V: Clone, E, TRewriter: SemanticRewriter<V, E>>
+    SemanticRewriter<OrderedHashMap<T, V>, E> for TRewriter
+{
+    fn internal_rewrite(&mut self, value: &mut OrderedHashMap<T, V>) -> Result<RewriteResult, E> {
+        let mut result = RewriteResult::NoChange;
+        for el in value.iter_mut() {
+            match self.internal_rewrite(el.1)? {
+                RewriteResult::Modified => {
+                    result = RewriteResult::Modified;
+                }
+                RewriteResult::NoChange => {}
+            }
+        }
+
+        Ok(result)
+    }
+}
 impl<T0, T1, E, TRewriter: SemanticRewriter<T0, E> + SemanticRewriter<T1, E>>
     SemanticRewriter<(T0, T1), E> for TRewriter
 {
@@ -330,6 +348,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionId, $($exclude)*);
         $crate::prune_single!(__regular_helper, GeneratedImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, GeneratedImplLongId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, GeneratedImplItems, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplTypeId, $($exclude)*);

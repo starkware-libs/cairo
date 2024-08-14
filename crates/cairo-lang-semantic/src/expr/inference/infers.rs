@@ -152,6 +152,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                             lookup_context,
                             stable_ptr,
                         )?,
+                        impl_items: long_id.impl_items,
                     }
                     .intern(self.db),
                 )
