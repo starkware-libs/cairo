@@ -46,6 +46,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use anyhow::{bail, Context};
+use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
@@ -80,6 +81,7 @@ use serde_json::Value;
 use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
+use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::request::Request;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
@@ -597,6 +599,14 @@ impl Backend {
                     // Try to set up a corelib at least.
                     try_to_init_unmanaged_core(&*self.config.read().await, db);
                 }
+
+                let corelib_validation = validate_corelib(db);
+                if let Err(result) = corelib_validation {
+                    let notifier = Notifier::new(&self.client);
+                    spawn_blocking(move || {
+                        notifier.send_notification::<CorelibVersionMismatch>(result.to_string());
+                    });
+                }
             }
 
             Some(ProjectManifestPath::CairoProject(config_path)) => {
@@ -646,6 +656,14 @@ impl Backend {
             config.reload(&self.client, &client_capabilities).await;
         }
     }
+}
+
+#[derive(Debug)]
+struct CorelibVersionMismatch {}
+
+impl Notification for CorelibVersionMismatch {
+    type Params = String;
+    const METHOD: &'static str = "corelib/version-mismatch";
 }
 
 enum ServerCommands {
