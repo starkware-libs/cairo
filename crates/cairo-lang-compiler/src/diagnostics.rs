@@ -8,6 +8,7 @@ use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{LookupIntern, Upcast};
 use thiserror::Error;
 
@@ -134,11 +135,14 @@ impl<'a> DiagnosticsReporter<'a> {
             }
 
             let modules = db.crate_modules(*crate_id);
+            let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {
                 if let Ok(module_files) = db.module_files(*module_id) {
                     for file_id in module_files.iter().copied() {
-                        found_diagnostics |=
-                            self.check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
+                        if processed_file_ids.insert(file_id) {
+                            found_diagnostics |= self
+                                .check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
+                        }
                     }
                 }
 
