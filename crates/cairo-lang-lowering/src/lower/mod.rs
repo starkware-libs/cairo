@@ -44,8 +44,8 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{
-    FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction, LocationId,
-    SemanticFunctionIdEx, Signature,
+    FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction,
+    GeneratedFunctionKey, LocationId, SemanticFunctionIdEx, Signature,
 };
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::lower::generators::StructDestructure;
@@ -73,7 +73,7 @@ mod generated_test;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MultiLowering {
     pub main_lowering: FlatLowered,
-    pub generated_lowerings: OrderedHashMap<semantic::ExprId, FlatLowered>,
+    pub generated_lowerings: OrderedHashMap<GeneratedFunctionKey, FlatLowered>,
 }
 
 /// Lowers a semantic free function.
@@ -1424,7 +1424,7 @@ fn lower_expr_loop(
     // Get the function id.
     let function = FunctionWithBodyLongId::Generated {
         parent: ctx.semantic_function_id,
-        element: loop_expr_id,
+        key: GeneratedFunctionKey::Loop(loop_expr_id),
     }
     .intern(ctx.db);
 
@@ -1441,7 +1441,7 @@ fn lower_expr_loop(
     )
     .map_err(LoweringFlowError::Failed)?;
     // TODO(spapini): Recursive call.
-    encapsulating_ctx.lowerings.insert(loop_expr_id, lowered);
+    encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(loop_expr_id), lowered);
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
     let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
     for snapshot_param in snap_usage.values() {
@@ -1476,7 +1476,7 @@ fn call_loop_func(
     // Call it.
     let function = FunctionLongId::Generated(GeneratedFunction {
         parent: ctx.concrete_function_id.base_semantic_function(ctx.db),
-        element: loop_expr_id,
+        key: GeneratedFunctionKey::Loop(loop_expr_id),
     })
     .intern(ctx.db);
     let inputs = loop_signature

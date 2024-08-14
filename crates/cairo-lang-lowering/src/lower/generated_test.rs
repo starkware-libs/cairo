@@ -61,10 +61,10 @@ fn test_generated_function(
         )
         .unwrap();
 
-        for (expr_id, lowering) in multi_lowering.generated_lowerings.iter() {
+        for (key, lowering) in multi_lowering.generated_lowerings.iter() {
             let generated_id = ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                 parent: test_function.concrete_function_id,
-                element: *expr_id,
+                key: *key,
             })
             .intern(db);
 
