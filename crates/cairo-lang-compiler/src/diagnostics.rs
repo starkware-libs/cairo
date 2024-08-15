@@ -130,6 +130,7 @@ impl<'a> DiagnosticsReporter<'a> {
                         ))
                     }
                     FileLongId::Virtual(_) => panic!("Missing virtual file."),
+                    FileLongId::External(_) => panic!("Missing external file."),
                 }
                 found_diagnostics = true;
             }
