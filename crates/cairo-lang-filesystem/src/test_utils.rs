@@ -1,6 +1,6 @@
 use cairo_lang_utils::Upcast;
 
-use crate::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
+use crate::db::{init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup};
 
 // Test salsa database.
 #[salsa::database(FilesDatabase)]
@@ -8,6 +8,7 @@ pub struct FilesDatabaseForTesting {
     storage: salsa::Storage<FilesDatabaseForTesting>,
 }
 impl salsa::Database for FilesDatabaseForTesting {}
+impl ExternalFiles for FilesDatabaseForTesting {}
 impl Default for FilesDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
