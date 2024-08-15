@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use cairo_lang_filesystem::db::{FilesDatabase, FilesGroup};
+use cairo_lang_filesystem::db::{ExternalFiles, FilesDatabase, FilesGroup};
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
 use cairo_lang_syntax::node::db::SyntaxDatabase;
 use cairo_lang_utils::Upcast;
@@ -16,6 +16,7 @@ pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,
 }
 impl salsa::Database for DatabaseImpl {}
+impl ExternalFiles for DatabaseImpl {}
 impl Upcast<dyn FilesGroup> for DatabaseImpl {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
         self
