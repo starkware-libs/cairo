@@ -2,7 +2,7 @@ use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
@@ -26,6 +26,7 @@ pub struct LoweringDatabaseForTesting {
     storage: salsa::Storage<LoweringDatabaseForTesting>,
 }
 impl salsa::Database for LoweringDatabaseForTesting {}
+impl ExternalFiles for LoweringDatabaseForTesting {}
 impl salsa::ParallelDatabase for LoweringDatabaseForTesting {
     fn snapshot(&self) -> salsa::Snapshot<LoweringDatabaseForTesting> {
         salsa::Snapshot::new(LoweringDatabaseForTesting { storage: self.storage.snapshot() })

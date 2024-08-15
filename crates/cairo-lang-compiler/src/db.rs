@@ -5,8 +5,8 @@ use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
-    CORELIB_CRATE_NAME, CORELIB_VERSION,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup,
+    FilesGroupEx, CORELIB_CRATE_NAME, CORELIB_VERSION,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
@@ -38,6 +38,7 @@ pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }
 impl salsa::Database for RootDatabase {}
+impl ExternalFiles for RootDatabase {}
 impl salsa::ParallelDatabase for RootDatabase {
     fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
         salsa::Snapshot::new(RootDatabase { storage: self.storage.snapshot() })

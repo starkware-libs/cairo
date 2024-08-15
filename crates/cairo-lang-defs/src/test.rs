@@ -3,7 +3,8 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{
-    init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase,
+    FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
@@ -30,6 +31,7 @@ pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
 }
 impl salsa::Database for DatabaseForTesting {}
+impl ExternalFiles for DatabaseForTesting {}
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };

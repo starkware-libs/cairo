@@ -1627,7 +1627,9 @@ fn module_semantic_diagnostics(
 
                         let path = match file_id.lookup_intern(db) {
                             FileLongId::OnDisk(path) => path.display().to_string(),
-                            FileLongId::Virtual(_) => panic!("Expected OnDisk file."),
+                            FileLongId::Virtual(_) | FileLongId::External(_) => {
+                                panic!("Expected OnDisk file.")
+                            }
                         };
 
                         let stable_location =
