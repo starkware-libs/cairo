@@ -91,7 +91,7 @@ End:
   Return(v18, v19, v28)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     for _x in iter {
     ^**************^
 
