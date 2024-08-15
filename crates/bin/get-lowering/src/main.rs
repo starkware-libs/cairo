@@ -15,6 +15,7 @@ use cairo_lang_lowering::destructs::add_destructs;
 use cairo_lang_lowering::fmt::LoweredFormatter;
 use cairo_lang_lowering::ids::{
     ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,
+    GeneratedFunctionKey,
 };
 use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
@@ -238,20 +239,28 @@ fn main() -> anyhow::Result<()> {
                     function_id.function_with_body_id(db).base_semantic_function(db),
                 )
                 .unwrap();
-            let element = *multi
+            let key = *multi
                 .generated_lowerings
                 .keys()
-                .find(|generated| generated.index() == expr_id)
+                .find(|key| match key {
+                    GeneratedFunctionKey::Loop(id) => id.index() == expr_id,
+                })
                 .with_context(|| {
                     format!(
                         "expr_id not found - available expr_ids: {:?}",
-                        multi.generated_lowerings.keys().map(|x| x.index()).collect_vec()
+                        multi
+                            .generated_lowerings
+                            .keys()
+                            .map(|key| match key {
+                                GeneratedFunctionKey::Loop(id) => id.index(),
+                            })
+                            .collect_vec()
                     )
                 })?;
             function_id = db.intern_lowering_concrete_function_with_body(
                 ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                     parent: function_id.base_semantic_function(db),
-                    element,
+                    key,
                 }),
             );
         }

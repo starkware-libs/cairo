@@ -26,7 +26,8 @@ use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::ids::{
-    ConcreteFunctionWithBodyId, FunctionWithBodyId, LocationId, SemanticFunctionIdEx, Signature,
+    ConcreteFunctionWithBodyId, FunctionWithBodyId, GeneratedFunctionKey, LocationId,
+    SemanticFunctionIdEx, Signature,
 };
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
@@ -114,7 +115,7 @@ pub struct EncapsulatingLoweringContext<'db> {
     /// Block usages for the entire encapsulating function.
     pub usages: Usages,
     /// Lowerings of generated functions.
-    pub lowerings: OrderedHashMap<semantic::ExprId, FlatLowered>,
+    pub lowerings: OrderedHashMap<GeneratedFunctionKey, FlatLowered>,
 }
 impl<'db> EncapsulatingLoweringContext<'db> {
     pub fn new(
