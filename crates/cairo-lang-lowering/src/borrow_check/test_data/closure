@@ -185,3 +185,44 @@ Statements:
   (v7: ()) <- struct_construct()
 End:
   Return(v7)
+
+//! > ==========================================================================
+
+//! > Capture changed but unused variable.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut a: Array<u32>) {
+    |_b: u32| {
+        a = array![];
+    };
+    a.append(0);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_f<T>(f: T) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:3:5
+    |_b: u32| {
+    ^*********^
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:3:5: 3:14}) <- struct_construct(v0{`a`})
+  (v2: core::integer::u32) <- 0
+  (v3: core::array::Array::<core::integer::u32>) <- struct_destructure(v1{`a`})
+  (v5: core::array::Array::<core::integer::u32>, v4: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v3{`a`}, v2{`0`})
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
