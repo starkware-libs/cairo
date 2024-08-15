@@ -1,7 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{TraitFunctionId, UnstableSalsaId};
+use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionId;
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern};
 use defs::diagnostic_utils::StableLocation;
@@ -307,7 +308,7 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
 pub enum GeneratedFunctionKey {
     /// Generated loop functions are identified by the loop expr_id.
     Loop(semantic::ExprId),
-    TraitFunc(TraitFunctionId, StableLocation),
+    TraitFunc(ConcreteTraitGenericFunctionId, StableLocation),
 }
 
 /// Generated function.
