@@ -390,6 +390,21 @@ impl BlockBuilder {
         };
         Some((expr, following_block))
     }
+
+    /// Destructures a closure, invalidating the closure variable and captured variables.
+    pub fn destructure_closure(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        location: LocationId,
+        closure_var: VariableId,
+        closure_info: &ClosureInfo,
+    ) -> Vec<VariableId> {
+        self.semantics.destructure_closure(
+            &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+            closure_var,
+            closure_info,
+        )
+    }
 }
 
 /// Remapping of lowered variables with more semantic information regarding what is the semantic
