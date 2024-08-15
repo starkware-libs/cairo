@@ -91,10 +91,20 @@ fn foo() {
     bar::<felt252, felt252>();
     bar::<felt252>();
     bar::<usize, -1, A>();
+    1_felt252.method_no_generics::<felt252>();
+    1_felt252.method_one_generic::<felt252, felt252>();
+    1_felt252.method_two_generics::<felt252, felt252, felt252>();
 }
 
 //! > module_code
 fn bar<A, const B: usize, impl C: MyTrait<felt252>>() {}
+
+#[generate_trait]
+impl MyImpl of Generics {
+    fn method_no_generics(self: felt252) {}
+    fn method_one_generic<T>(self: felt252) {}
+    fn method_two_generics<T, S>(self: felt252) {}
+}
 
 //! > function_name
 foo
@@ -106,24 +116,39 @@ fn bar<A, const B: usize, impl C: MyTrait<felt252>>() {}
                                   ^*****^
 
 error: Expected 3 generic arguments, found 4.
- --> lib.cairo:3:20
+ --> lib.cairo:10:20
     bar::<1, 1, 1, 1>();
                    ^
 
 error: Expected variable or constant, found type.
- --> lib.cairo:4:20
+ --> lib.cairo:11:20
     bar::<felt252, felt252>();
                    ^*****^
 
 error: The value does not fit within the range of type core::integer::u32.
- --> lib.cairo:6:18
+ --> lib.cairo:13:18
     bar::<usize, -1, A>();
                  ^^
 
 error: Impl not found.
- --> lib.cairo:6:22
+ --> lib.cairo:13:22
     bar::<usize, -1, A>();
                      ^
+
+error: Expected 0 generic arguments, found 1.
+ --> lib.cairo:14:36
+    1_felt252.method_no_generics::<felt252>();
+                                   ^*****^
+
+error: Expected 1 generic arguments, found 2.
+ --> lib.cairo:15:45
+    1_felt252.method_one_generic::<felt252, felt252>();
+                                            ^*****^
+
+error: Expected 2 generic arguments, found 3.
+ --> lib.cairo:16:55
+    1_felt252.method_two_generics::<felt252, felt252, felt252>();
+                                                      ^*****^
 
 //! > ==========================================================================
 
