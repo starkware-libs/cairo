@@ -67,26 +67,36 @@ impl SemanticLoweringMapping {
         )
     }
 
+    pub fn destructure_closure<TContext: StructRecomposer>(
+        &mut self,
+        ctx: &mut TContext,
+        closure_var: VariableId,
+        closure_info: &ClosureInfo,
+    ) -> Vec<VariableId> {
+        ctx.deconstruct_by_types(
+            closure_var,
+            chain!(closure_info.members.values(), closure_info.snapshot_types.iter()).cloned(),
+        )
+    }
+
     pub fn invalidate_closure<TContext: StructRecomposer>(
         &mut self,
         ctx: &mut TContext,
         closure_var: VariableId,
     ) {
         let opt_closure = self.closures.remove(&closure_var);
-        if let Some(ClosureInfo { members, snapshot_types }) = opt_closure {
-            let new_vars = ctx.deconstruct_by_types(
-                closure_var,
-                chain!(members.values(), snapshot_types.iter()).cloned(),
-            );
+        if let Some(closure_info) = opt_closure {
+            let new_vars = self.destructure_closure(ctx, closure_var, &closure_info);
 
             // Note that members.keys() can be shorter than new_vars, as the members captured
             // as snapshots don't need to be updated.
-            for (path, new_var) in members.keys().zip(new_vars) {
+            for (path, new_var) in closure_info.members.keys().zip(new_vars) {
                 self.captured.remove(path);
                 self.update(ctx, path, new_var).unwrap();
             }
         }
     }
+
     pub fn get<TContext: StructRecomposer>(
         &mut self,
         mut ctx: TContext,
