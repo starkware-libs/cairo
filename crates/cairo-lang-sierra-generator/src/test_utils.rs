@@ -3,7 +3,8 @@ use std::sync::{Arc, LazyLock, Mutex};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup,
+    FilesGroupEx,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
@@ -41,6 +42,7 @@ pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
 }
 impl salsa::Database for SierraGenDatabaseForTesting {}
+impl ExternalFiles for SierraGenDatabaseForTesting {}
 impl salsa::ParallelDatabase for SierraGenDatabaseForTesting {
     fn snapshot(&self) -> salsa::Snapshot<SierraGenDatabaseForTesting> {
         salsa::Snapshot::new(SierraGenDatabaseForTesting { storage: self.storage.snapshot() })
