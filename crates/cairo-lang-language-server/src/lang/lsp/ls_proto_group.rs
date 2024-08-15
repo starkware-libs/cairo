@@ -52,6 +52,9 @@ pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
                 url.path_segments_mut().unwrap().push(&format!("{}.cairo", virtual_file.name));
                 url
             }
+            FileLongId::External(id) => {
+                unimplemented!("External files are not supported yet: {id}")
+            }
         }
     }
 }
