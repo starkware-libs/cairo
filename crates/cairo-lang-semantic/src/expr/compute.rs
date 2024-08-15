@@ -1765,8 +1765,7 @@ fn compute_method_function_call_data(
         }
     };
     let (function_id, n_snapshots) =
-        infer_impl_by_self(ctx, trait_function_id, self_ty, method_syntax, generic_args_syntax)
-            .unwrap();
+        infer_impl_by_self(ctx, trait_function_id, self_ty, method_syntax, generic_args_syntax)?;
 
     let signature = ctx.db.trait_function_signature(trait_function_id).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();

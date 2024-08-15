@@ -1862,30 +1862,31 @@ pub fn infer_impl_by_self(
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,
     generic_args_syntax: Option<Vec<GenericArg>>,
-) -> Option<(FunctionId, usize)> {
+) -> Maybe<(FunctionId, usize)> {
     let lookup_context = ctx.resolver.impl_lookup_context();
-    let (concrete_trait_id, n_snapshots) = ctx.resolver.inference().infer_concrete_trait_by_self(
-        trait_function_id,
-        self_ty,
-        &lookup_context,
-        Some(stable_ptr),
-        |_| {},
-    )?;
+    let (concrete_trait_id, n_snapshots) = ctx
+        .resolver
+        .inference()
+        .infer_concrete_trait_by_self(
+            trait_function_id,
+            self_ty,
+            &lookup_context,
+            Some(stable_ptr),
+            |_| {},
+        )
+        .ok_or_else(skip_diagnostic)?;
 
     let concrete_trait_function_id =
         ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id)
             .intern(ctx.db);
     let trait_func_generic_params =
         ctx.db.concrete_trait_function_generic_params(concrete_trait_function_id).unwrap();
-    let generic_args = ctx
-        .resolver
-        .resolve_generic_args(
-            ctx.diagnostics,
-            &trait_func_generic_params,
-            &generic_args_syntax.unwrap_or_default(),
-            stable_ptr,
-        )
-        .unwrap();
+    let generic_args = ctx.resolver.resolve_generic_args(
+        ctx.diagnostics,
+        &trait_func_generic_params,
+        &generic_args_syntax.unwrap_or_default(),
+        stable_ptr,
+    )?;
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
@@ -1895,7 +1896,7 @@ pub fn infer_impl_by_self(
         Some(stable_ptr),
     );
 
-    Some((
+    Ok((
         FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
             .intern(ctx.db),
         n_snapshots,
