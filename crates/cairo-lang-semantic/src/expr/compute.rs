@@ -879,8 +879,7 @@ pub fn compute_root_expr(
     // Conform TypeEqual constraints for Associated type bounds.
     let inference = &mut ctx.resolver.data.inference_data.inference(ctx.db);
     for param in &ctx.resolver.data.generic_params {
-        let Ok(GenericParam::Impl(imp)) = ctx.db.priv_generic_param_data(*param)?.generic_param
-        else {
+        let Ok(GenericParam::Impl(imp)) = ctx.db.generic_param_semantic(*param) else {
             continue;
         };
         let Ok(concrete_trait_id) = imp.concrete_trait else {

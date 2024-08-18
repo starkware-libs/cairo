@@ -140,6 +140,7 @@ pub trait SemanticGroup:
     fn priv_constant_semantic_data(
         &self,
         const_id: ConstantId,
+        in_cycle: bool,
     ) -> Maybe<items::constant::ConstantData>;
     /// Returns the semantic diagnostics of a constant definition.
     #[salsa::invoke(items::constant::constant_semantic_diagnostics)]
@@ -342,6 +343,7 @@ pub trait SemanticGroup:
     fn priv_module_type_alias_semantic_data(
         &self,
         module_type_alias_id: ModuleTypeAliasId,
+        in_cycle: bool,
     ) -> Maybe<items::module_type_alias::ModuleTypeAliasData>;
 
     // Impl Alias.
@@ -357,6 +359,7 @@ pub trait SemanticGroup:
     fn priv_impl_alias_semantic_data(
         &self,
         impl_alias_id: ImplAliasId,
+        in_cycle: bool,
     ) -> Maybe<items::impl_alias::ImplAliasData>;
     /// Returns the semantic diagnostics of a type alias.
     #[salsa::invoke(items::impl_alias::impl_alias_semantic_diagnostics)]
@@ -400,7 +403,11 @@ pub trait SemanticGroup:
     /// Returns the generic parameters data of a trait.
     #[salsa::invoke(items::trt::trait_generic_params_data)]
     #[salsa::cycle(items::trt::trait_generic_params_data_cycle)]
-    fn trait_generic_params_data(&self, trait_id: TraitId) -> Maybe<GenericParamsData>;
+    fn trait_generic_params_data(
+        &self,
+        trait_id: TraitId,
+        in_cycle: bool,
+    ) -> Maybe<GenericParamsData>;
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
     fn trait_attributes(&self, trait_id: TraitId) -> Maybe<Vec<Attribute>>;
@@ -876,6 +883,7 @@ pub trait SemanticGroup:
     fn priv_impl_type_semantic_data(
         &self,
         impl_type_def_id: ImplTypeDefId,
+        in_cycle: bool,
     ) -> Maybe<items::imp::ImplItemTypeData>;
     /// Private query to compute data about the generic parameters of an impl item type.
     #[salsa::invoke(items::imp::priv_impl_type_def_generic_params_data)]
@@ -888,6 +896,7 @@ pub trait SemanticGroup:
     // ================
     /// Returns the implized impl type if the impl is concrete. Returns a TypeId that's not an impl
     /// type with a concrete impl.
+    // TODO(Gil): Consider removing the cycle handling here if we will upgrade the salsa version.
     #[salsa::invoke(items::imp::impl_type_concrete_implized)]
     #[salsa::cycle(items::imp::impl_type_concrete_implized_cycle)]
     fn impl_type_concrete_implized(&self, impl_type_def_id: ImplTypeId) -> Maybe<TypeId>;
@@ -926,6 +935,7 @@ pub trait SemanticGroup:
     fn priv_impl_constant_semantic_data(
         &self,
         impl_constant_def_id: ImplConstantDefId,
+        in_cycle: bool,
     ) -> Maybe<items::imp::ImplItemConstantData>;
 
     // Impl constant.
@@ -939,6 +949,7 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
     ) -> Maybe<ConstValueId>;
     /// Returns the implized impl constant value if the impl is concrete.
+    // TODO(Gil): Consider removing the cycle handling here if we will upgrade the salsa version.
     #[salsa::invoke(items::imp::impl_constant_concrete_implized_value)]
     #[salsa::cycle(items::imp::impl_constant_concrete_implized_value_cycle)]
     fn impl_constant_concrete_implized_value(
@@ -946,6 +957,7 @@ pub trait SemanticGroup:
         impl_constant_id: ImplConstantId,
     ) -> Maybe<ConstValueId>;
     /// Returns the implized impl constant type if the impl is concrete.
+    // TODO(Gil): Consider removing the cycle handling here if we will upgrade the salsa version.
     #[salsa::invoke(items::imp::impl_constant_concrete_implized_type)]
     #[salsa::cycle(items::imp::impl_constant_concrete_implized_type_cycle)]
     fn impl_constant_concrete_implized_type(
@@ -974,7 +986,7 @@ pub trait SemanticGroup:
     /// Returns the resolved impl of an impl item impl.
     #[salsa::invoke(items::imp::impl_impl_def_impl)]
     #[salsa::cycle(items::imp::impl_impl_def_impl_cycle)]
-    fn impl_impl_def_impl(&self, impl_impl_def_id: ImplImplDefId) -> Maybe<ImplId>;
+    fn impl_impl_def_impl(&self, impl_impl_def_id: ImplImplDefId, in_cycle: bool) -> Maybe<ImplId>;
 
     /// Private query to compute data about an impl item impl.
     #[salsa::invoke(items::imp::priv_impl_impl_semantic_data)]
@@ -982,6 +994,7 @@ pub trait SemanticGroup:
     fn priv_impl_impl_semantic_data(
         &self,
         impl_impl_def_id: ImplImplDefId,
+        in_cycle: bool,
     ) -> Maybe<items::imp::ImplItemImplData>;
 
     /// Private query to compute data about the generic parameters of an impl item impl.
@@ -1006,6 +1019,7 @@ pub trait SemanticGroup:
         &self,
         impl_def_id: ImplDefId,
         trait_impl_id: TraitImplId,
+        in_cycle: bool,
     ) -> Maybe<ImplId>;
     // Private query to compute data about an implicit impl.
     #[salsa::invoke(items::imp::priv_implicit_impl_impl_semantic_data)]
@@ -1014,6 +1028,7 @@ pub trait SemanticGroup:
         &self,
         impl_def_id: ImplDefId,
         trait_impl_id: TraitImplId,
+        in_cycle: bool,
     ) -> Maybe<ImplicitImplImplData>;
 
     // Impl impl.
@@ -1025,6 +1040,7 @@ pub trait SemanticGroup:
         &self,
         impl_impl_id: ImplImplId,
         impl_def_id: ImplDefId,
+        in_cycle: bool,
     ) -> Maybe<ImplId>;
     /// Returns the implized impl impl value if the impl is concrete.
     #[salsa::invoke(items::imp::impl_impl_concrete_implized)]
@@ -1126,6 +1142,7 @@ pub trait SemanticGroup:
     // ==============
     /// Returns the impl type for the given trait type, by implization by the given impl context, if
     /// the impl matches the trait of the trait type.
+    // TODO(Gil): Consider removing the cycle handling here if we will upgrade the salsa version.
     #[salsa::invoke(items::implization::trait_type_implized_by_context)]
     #[salsa::cycle(items::implization::trait_type_implized_by_context_cycle)]
     fn trait_type_implized_by_context(
@@ -1410,7 +1427,11 @@ pub trait SemanticGroup:
     /// Private query to compute data about a generic param.
     #[salsa::invoke(items::generics::priv_generic_param_data)]
     #[salsa::cycle(items::generics::priv_generic_param_data_cycle)]
-    fn priv_generic_param_data(&self, generic_param: GenericParamId) -> Maybe<GenericParamData>;
+    fn priv_generic_param_data(
+        &self,
+        generic_param: GenericParamId,
+        in_cycle: bool,
+    ) -> Maybe<GenericParamData>;
 
     // Concrete type.
     // ==============

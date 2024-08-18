@@ -34,13 +34,23 @@ pub struct ImplAliasData {
 pub fn priv_impl_alias_semantic_data(
     db: &(dyn SemanticGroup),
     impl_alias_id: ImplAliasId,
+    in_cycle: bool,
 ) -> Maybe<ImplAliasData> {
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id));
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?.to_maybe()?;
 
     let generic_params_data = db.impl_alias_generic_params_data(impl_alias_id)?;
 
-    impl_alias_semantic_data_helper(db, &impl_alias_ast, lookup_item_id, generic_params_data)
+    if in_cycle {
+        impl_alias_semantic_data_cycle_helper(
+            db,
+            &impl_alias_ast,
+            lookup_item_id,
+            generic_params_data,
+        )
+    } else {
+        impl_alias_semantic_data_helper(db, &impl_alias_ast, lookup_item_id, generic_params_data)
+    }
 }
 
 /// An helper function to compute the semantic data of an impl-alias item.
@@ -96,14 +106,9 @@ pub fn priv_impl_alias_semantic_data_cycle(
     db: &dyn SemanticGroup,
     _cycle: &[String],
     impl_alias_id: &ImplAliasId,
+    _in_cycle: &bool,
 ) -> Maybe<ImplAliasData> {
-    let impl_alias_ast = db.module_impl_alias_by_id(*impl_alias_id)?.to_maybe()?;
-    impl_alias_semantic_data_cycle_helper(
-        db,
-        &impl_alias_ast,
-        LookupItemId::ModuleItem(ModuleItemId::ImplAlias(*impl_alias_id)),
-        db.impl_alias_generic_params_data(*impl_alias_id)?,
-    )
+    priv_impl_alias_semantic_data(db, *impl_alias_id, true)
 }
 
 /// An helper function to compute the semantic data of an impl-alias item when a cycle is detected.
@@ -140,7 +145,9 @@ pub fn impl_alias_semantic_diagnostics(
     db: &dyn SemanticGroup,
     impl_alias_id: ImplAliasId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_alias_semantic_data(impl_alias_id).map(|data| data.diagnostics).unwrap_or_default()
+    db.priv_impl_alias_semantic_data(impl_alias_id, false)
+        .map(|data| data.diagnostics)
+        .unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_resolved_impl].
@@ -148,7 +155,7 @@ pub fn impl_alias_resolved_impl(
     db: &dyn SemanticGroup,
     impl_alias_id: ImplAliasId,
 ) -> Maybe<ImplId> {
-    db.priv_impl_alias_semantic_data(impl_alias_id)?.resolved_impl
+    db.priv_impl_alias_semantic_data(impl_alias_id, false)?.resolved_impl
 }
 
 /// Trivial cycle handling for [crate::db::SemanticGroup::impl_alias_resolved_impl].
@@ -158,7 +165,7 @@ pub fn impl_alias_resolved_impl_cycle(
     impl_alias_id: &ImplAliasId,
 ) -> Maybe<ImplId> {
     // Forwarding (not as a query) cycle handling to `priv_impl_alias_semantic_data` cycle handler.
-    impl_alias_resolved_impl(db, *impl_alias_id)
+    db.priv_impl_alias_semantic_data(*impl_alias_id, true)?.resolved_impl
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_generic_params].
@@ -224,7 +231,7 @@ pub fn impl_alias_resolver_data(
     db: &dyn SemanticGroup,
     impl_alias_id: ImplAliasId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_impl_alias_semantic_data(impl_alias_id)?.resolver_data)
+    Ok(db.priv_impl_alias_semantic_data(impl_alias_id, false)?.resolver_data)
 }
 
 /// Trivial cycle handling for [crate::db::SemanticGroup::impl_alias_resolver_data].
@@ -242,7 +249,7 @@ pub fn impl_alias_attributes(
     db: &dyn SemanticGroup,
     impl_alias_id: ImplAliasId,
 ) -> Maybe<Vec<Attribute>> {
-    Ok(db.priv_impl_alias_semantic_data(impl_alias_id)?.attributes)
+    Ok(db.priv_impl_alias_semantic_data(impl_alias_id, false)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_impl_def].
