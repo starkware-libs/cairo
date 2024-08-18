@@ -665,6 +665,10 @@ pub fn panic_destruct_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
     )
 }
 
+pub fn panic_ty(db: &dyn SemanticGroup) -> semantic::TypeId {
+    get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![])
+}
+
 pub fn into_iterator_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::Iterator, "IntoIterator".into())
 }

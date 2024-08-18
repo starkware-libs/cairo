@@ -4,8 +4,9 @@ mod test;
 
 use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
-use cairo_lang_semantic::corelib::{destruct_trait_fn, panic_destruct_trait_fn};
+use cairo_lang_semantic::corelib::{destruct_trait_fn, panic_destruct_trait_fn, panic_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{zip_eq, Itertools};
@@ -33,6 +34,7 @@ pub struct BorrowChecker<'a> {
     potential_destruct_calls: PotentialDestructCalls,
     destruct_fn: TraitFunctionId,
     panic_destruct_fn: TraitFunctionId,
+    panic_ty: TypeId,
 }
 
 /// A state saved for each position in the back analysis.
@@ -250,7 +252,15 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         vars: &[VarUsage],
     ) -> Self::Info {
-        let mut info = BorrowCheckerDemand::default();
+        let mut info = match vars {
+            [panic_var, _ret_var]
+                if self.lowered.variables[panic_var.var_id].ty == self.panic_ty =>
+            {
+                BorrowCheckerDemand { aux: PanicState::EndsWithPanic, ..Default::default() }
+            }
+            _ => BorrowCheckerDemand::default(),
+        };
+
         info.variables_used(
             self,
             vars.iter().map(|VarUsage { var_id, location }| (var_id, *location)),
@@ -282,6 +292,7 @@ pub fn borrow_check(db: &dyn LoweringGroup, lowered: &mut FlatLowered) -> Potent
     diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
     let destruct_fn = destruct_trait_fn(db.upcast());
     let panic_destruct_fn = panic_destruct_trait_fn(db.upcast());
+
     let checker = BorrowChecker {
         db,
         diagnostics: &mut diagnostics,
@@ -290,6 +301,7 @@ pub fn borrow_check(db: &dyn LoweringGroup, lowered: &mut FlatLowered) -> Potent
         potential_destruct_calls: Default::default(),
         destruct_fn,
         panic_destruct_fn,
+        panic_ty: panic_ty(db.upcast()),
     };
     let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();
