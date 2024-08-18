@@ -2,6 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_semantic::corelib::panic_destruct_trait_fn;
 use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionId;
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern};
@@ -92,6 +93,23 @@ define_short_id!(
     lookup_intern_lowering_concrete_function_with_body,
     intern_lowering_concrete_function_with_body
 );
+
+impl ConcreteFunctionWithBodyId {
+    pub fn is_panic_destruct_fn(&self, db: &dyn LoweringGroup) -> Maybe<bool> {
+        match db.lookup_intern_lowering_concrete_function_with_body(*self) {
+            ConcreteFunctionWithBodyLongId::Semantic(semantic_func) => {
+                semantic_func.is_panic_destruct_fn(db.upcast())
+            }
+            ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
+                parent: _,
+                key: GeneratedFunctionKey::TraitFunc(concrete_trait_function, _),
+            }) => Ok(concrete_trait_function.trait_function(db.upcast())
+                == panic_destruct_trait_fn(db.upcast())),
+            _ => Ok(false),
+        }
+    }
+}
+
 impl UnstableSalsaId for ConcreteFunctionWithBodyId {
     fn get_internal_id(&self) -> &salsa::InternId {
         &self.0

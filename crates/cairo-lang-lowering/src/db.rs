@@ -399,7 +399,8 @@ fn function_with_body_lowering_with_borrow_check(
     function_id: ids::FunctionWithBodyId,
 ) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)> {
     let mut lowered = (*db.priv_function_with_body_lowering(function_id)?).clone();
-    let block_extra_calls = borrow_check(db, &mut lowered);
+    let block_extra_calls =
+        borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, &mut lowered);
     Ok((Arc::new(lowered), Arc::new(block_extra_calls)))
 }
 
