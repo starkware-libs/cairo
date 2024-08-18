@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::UnstableSalsaId;
+use cairo_lang_defs::ids::{TraitFunctionId, UnstableSalsaId};
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
@@ -200,6 +200,7 @@ impl ConcreteFunctionWithBodyId {
                     GeneratedFunctionKey::Loop(expr_id) => StableLocation::new(
                         db.function_body(parent_id)?.arenas.exprs[expr_id].stable_ptr().untyped(),
                     ),
+                    GeneratedFunctionKey::TraitFunc(_, stable_location) => stable_location,
                 }
             }
         })
@@ -306,6 +307,7 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
 pub enum GeneratedFunctionKey {
     /// Generated loop functions are identified by the loop expr_id.
     Loop(semantic::ExprId),
+    TraitFunc(TraitFunctionId, StableLocation),
 }
 
 /// Generated function.
@@ -324,6 +326,9 @@ impl GeneratedFunction {
         match self.key {
             GeneratedFunctionKey::Loop(expr_id) => {
                 format!("{}[expr{}]", self.parent.full_path(db.upcast()), expr_id.index()).into()
+            }
+            GeneratedFunctionKey::TraitFunc(trait_func, _) => {
+                format!("{:?}", trait_func.debug(db)).into()
             }
         }
     }

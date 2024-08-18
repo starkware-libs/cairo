@@ -244,6 +244,8 @@ fn main() -> anyhow::Result<()> {
                 .keys()
                 .find(|key| match key {
                     GeneratedFunctionKey::Loop(id) => id.index() == expr_id,
+                    // TODO(ilya): Support other types of generated functions.
+                    _ => false,
                 })
                 .with_context(|| {
                     format!(
@@ -251,8 +253,9 @@ fn main() -> anyhow::Result<()> {
                         multi
                             .generated_lowerings
                             .keys()
-                            .map(|key| match key {
-                                GeneratedFunctionKey::Loop(id) => id.index(),
+                            .filter_map(|key| match key {
+                                GeneratedFunctionKey::Loop(id) => Some(id.index()),
+                                _ => None,
                             })
                             .collect_vec()
                     )
