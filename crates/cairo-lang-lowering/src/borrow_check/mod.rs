@@ -33,6 +33,7 @@ pub struct BorrowChecker<'a> {
     potential_destruct_calls: PotentialDestructCalls,
     destruct_fn: TraitFunctionId,
     panic_destruct_fn: TraitFunctionId,
+    is_panic_destruct_fn: bool,
 }
 
 /// A state saved for each position in the back analysis.
@@ -250,7 +251,12 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         vars: &[VarUsage],
     ) -> Self::Info {
-        let mut info = BorrowCheckerDemand::default();
+        let mut info = if self.is_panic_destruct_fn {
+            BorrowCheckerDemand { aux: PanicState::EndsWithPanic, ..Default::default() }
+        } else {
+            BorrowCheckerDemand::default()
+        };
+
         info.variables_used(
             self,
             vars.iter().map(|VarUsage { var_id, location }| (var_id, *location)),
@@ -274,7 +280,11 @@ pub type PotentialDestructCalls = UnorderedHashMap<BlockId, Vec<FunctionId>>;
 
 /// Report borrow checking diagnostics.
 /// Returns the potential destruct function calls per block.
-pub fn borrow_check(db: &dyn LoweringGroup, lowered: &mut FlatLowered) -> PotentialDestructCalls {
+pub fn borrow_check(
+    db: &dyn LoweringGroup,
+    is_panic_destruct_fn: bool,
+    lowered: &mut FlatLowered,
+) -> PotentialDestructCalls {
     if lowered.blocks.has_root().is_err() {
         return Default::default();
     }
@@ -282,6 +292,7 @@ pub fn borrow_check(db: &dyn LoweringGroup, lowered: &mut FlatLowered) -> Potent
     diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
     let destruct_fn = destruct_trait_fn(db.upcast());
     let panic_destruct_fn = panic_destruct_trait_fn(db.upcast());
+
     let checker = BorrowChecker {
         db,
         diagnostics: &mut diagnostics,
@@ -290,6 +301,7 @@ pub fn borrow_check(db: &dyn LoweringGroup, lowered: &mut FlatLowered) -> Potent
         potential_destruct_calls: Default::default(),
         destruct_fn,
         panic_destruct_fn,
+        is_panic_destruct_fn,
     };
     let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();
