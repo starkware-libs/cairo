@@ -10,7 +10,8 @@ use serde::{Deserialize, Serialize};
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
-    CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId, VirtualFile,
+    CodeMapping, CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId,
+    VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -109,19 +110,9 @@ pub struct ExperimentalFeaturesConfig {
 
 /// A trait for defining files external to the `filesystem` crate.
 pub trait ExternalFiles {
-    /// Returns the content of an external file.
-    fn ext_file_content(&self, _external_id: u32) -> Option<Arc<str>> {
-        None
-    }
-
-    /// Returns the name of an external file.
-    fn ext_file_name(&self, _external_id: u32) -> String {
-        "<external>".to_string()
-    }
-
-    /// Returns the full path of an external file.
-    fn ext_file_full_path(&self, _external_id: u32) -> String {
-        "<external>".to_string()
+    /// Returns the virtual file matching the external id.
+    fn ext_as_virtual(&self, _external_id: salsa::InternId) -> VirtualFile {
+        panic!("Should not be called, unless specifically implemented!");
     }
 }
 
@@ -262,7 +253,7 @@ fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> 
             Err(_) => None,
         },
         FileLongId::Virtual(virt) => Some(virt.content),
-        FileLongId::External(external_id) => db.ext_file_content(external_id),
+        FileLongId::External(external_id) => Some(db.ext_as_virtual(external_id).content),
     }
 }
 fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
@@ -291,9 +282,7 @@ pub fn get_originating_location(
     mut file_id: FileId,
     mut span: TextSpan,
 ) -> (FileId, TextSpan) {
-    while let FileLongId::Virtual(VirtualFile { parent: Some(parent), code_mappings, .. }) =
-        file_id.lookup_intern(db)
-    {
+    while let Some((parent, code_mappings)) = get_parent_and_mapping(db, file_id) {
         if let Some(origin) = code_mappings.iter().find_map(|mapping| mapping.translate(span)) {
             span = origin;
             file_id = parent;
@@ -302,4 +291,17 @@ pub fn get_originating_location(
         }
     }
     (file_id, span)
+}
+
+/// Returns the parent file and the code mappings of the file.
+fn get_parent_and_mapping(
+    db: &dyn FilesGroup,
+    file_id: FileId,
+) -> Option<(FileId, Arc<[CodeMapping]>)> {
+    let vf = match file_id.lookup_intern(db) {
+        FileLongId::OnDisk(_) => return None,
+        FileLongId::Virtual(vf) => vf,
+        FileLongId::External(id) => db.ext_as_virtual(id),
+    };
+    Some((vf.parent?, vf.code_mappings))
 }
