@@ -283,7 +283,8 @@ impl FormattingInfo {
                             &mut pending_chars,
                             RewriteNode::mapped_text(
                                 &format!("__write_macro_arg{positional}__"),
-                                arg.as_syntax_node().span_without_trivia(builder.db),
+                                builder.db,
+                                arg,
                             ),
                             argument_info.formatting_trait,
                         );
@@ -297,7 +298,8 @@ impl FormattingInfo {
                                 &mut pending_chars,
                                 RewriteNode::mapped_text(
                                     &format!("__write_macro_arg{i}__"),
-                                    self.args[i].as_syntax_node().span_without_trivia(builder.db),
+                                    builder.db,
+                                    &self.args[i],
                                 ),
                                 argument_info.formatting_trait,
                             );
@@ -315,7 +317,10 @@ impl FormattingInfo {
                             &mut pending_chars,
                             RewriteNode::new_modified(vec![
                                 RewriteNode::text("@"),
-                                RewriteNode::mapped_text(&argument, TextSpan { start, end }),
+                                RewriteNode::Mapped {
+                                    origin: TextSpan { start, end },
+                                    node: RewriteNode::text(&argument).into(),
+                                },
                             ]),
                             argument_info.formatting_trait,
                         );

@@ -136,7 +136,8 @@ pub fn handle_storage_struct(
             ("members_init_code".to_string(), RewriteNode::new_modified(members_init_code)),
         ]
         .into(),
-    );
+    )
+    .mapped(db, &struct_ast);
 }
 
 /// Returns the relevant code for a substorage storage member.

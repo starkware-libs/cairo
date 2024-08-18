@@ -231,9 +231,9 @@ fn handle_component_impl(
     let Some(attr) = item_impl.find_attr(db, EMBEDDABLE_AS_ATTR) else {
         return;
     };
-    let origin = attr.as_syntax_node().span_without_trivia(db);
 
-    let Some(params) = EmbeddableAsImplParams::from_impl(db, diagnostics, item_impl, attr) else {
+    let Some(params) = EmbeddableAsImplParams::from_impl(db, diagnostics, item_impl, attr.clone())
+    else {
         return;
     };
     for param in &params.generic_params_node.elements(db) {
@@ -305,7 +305,7 @@ fn handle_component_impl(
         .into(),
     );
 
-    data.specific.generated_impls.push(generated_impl_node.mapped(origin));
+    data.specific.generated_impls.push(generated_impl_node.mapped(db, &attr));
 }
 
 /// Returns a RewriteNode of a path similar to the given path, but without generic params.
