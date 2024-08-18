@@ -38,7 +38,7 @@ impl RewriteNode {
     }
 
     pub fn mapped_text(text: &str, origin: TextSpan) -> Self {
-        Self::Mapped { origin, node: Box::new(RewriteNode::Text(text.to_string())) }
+        RewriteNode::Text(text.to_string()).mapped(origin)
     }
 
     pub fn empty() -> Self {
@@ -200,6 +200,11 @@ impl RewriteNode {
         separator: RewriteNode,
     ) -> RewriteNode {
         RewriteNode::new_modified(itertools::intersperse(children, separator).collect_vec())
+    }
+
+    /// Creates a new rewrite node wrapped in a mapping to the original code.
+    pub fn mapped(self, origin: TextSpan) -> Self {
+        RewriteNode::Mapped { origin, node: Box::new(self) }
     }
 }
 impl Default for RewriteNode {
