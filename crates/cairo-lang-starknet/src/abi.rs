@@ -837,8 +837,8 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
 
     // Attempt to extract the event data from the aux data from the impl generation.
     let module_file = impl_def_id.module_file_id(db.upcast());
-    let file_infos = db.module_generated_file_infos(module_file.0).ok()?;
-    let aux_data = file_infos.get(module_file.1.0)?.as_ref()?.aux_data.as_ref()?;
+    let all_aux_data = db.module_generated_file_aux_data(module_file.0).ok()?;
+    let aux_data = all_aux_data.get(module_file.1.0)?.as_ref()?;
     Some(aux_data.0.as_any().downcast_ref::<StarkNetEventAuxData>()?.event_data.clone())
 }
 
