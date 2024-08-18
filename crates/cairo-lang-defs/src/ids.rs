@@ -303,6 +303,11 @@ impl ModuleFileId {
     }
 }
 
+/// An id for a file defined out of the filesystem crate.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ExtFileLongId(pub ModuleId, pub SyntaxStablePtrId, pub SmolStr);
+define_short_id!(ExtFileId, ExtFileLongId, DefsGroup, lookup_intern_ext_file, intern_ext_file);
+
 define_language_element_id_as_enum! {
     #[toplevel]
     /// Id for direct children of a module.

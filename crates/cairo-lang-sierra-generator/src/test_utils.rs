@@ -1,6 +1,6 @@
 use std::sync::{Arc, LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
+use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     init_dev_corelib, init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup,
@@ -8,7 +8,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::FlagId;
+use cairo_lang_filesystem::ids::{FlagId, VirtualFile};
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
@@ -42,7 +42,11 @@ pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
 }
 impl salsa::Database for SierraGenDatabaseForTesting {}
-impl ExternalFiles for SierraGenDatabaseForTesting {}
+impl ExternalFiles for SierraGenDatabaseForTesting {
+    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
+        ext_as_virtual_impl(self.upcast(), external_id)
+    }
+}
 impl salsa::ParallelDatabase for SierraGenDatabaseForTesting {
     fn snapshot(&self) -> salsa::Snapshot<SierraGenDatabaseForTesting> {
         salsa::Snapshot::new(SierraGenDatabaseForTesting { storage: self.storage.snapshot() })
