@@ -52,6 +52,53 @@ End:
 
 //! > ==========================================================================
 
+//! > Panic destructable capture
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(a: PanicDestructable) {
+    || {
+        let PanicDestructable { } = a;
+    };
+    panic_with_felt252('Panic');
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct PanicDestructable {}
+
+pub(crate) impl PanicDestructForDestruct of PanicDestruct<PanicDestructable> {
+    #[inline(always)]
+    fn panic_destruct(self: PanicDestructable, ref panic: Panic) nopanic {
+        let PanicDestructable { } = self;
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:10:5
+    || {
+    ^**^
+
+//! > lowering
+Parameters: v0: test::PanicDestructable
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:10:5: 10:7}) <- struct_construct(v0{`a`})
+  (v2: core::felt252) <- 345232009571
+  (v3: core::never) <- core::panic_with_felt252(v2{`'Panic'`})
+End:
+  Match(match_enum(v3{`panic_with_felt252('Panic')`}) {
+  })
+
+//! > ==========================================================================
+
 //! > invalidated capture
 
 //! > test_runner_name
