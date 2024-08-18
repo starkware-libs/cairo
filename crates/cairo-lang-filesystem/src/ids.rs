@@ -62,7 +62,7 @@ impl FlagId {
 pub enum FileLongId {
     OnDisk(PathBuf),
     Virtual(VirtualFile),
-    External(u32),
+    External(salsa::InternId),
 }
 /// Whether the file holds syntax for a module or for an expression.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -132,14 +132,14 @@ impl<'b> FileId {
                 path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
             }
             FileLongId::Virtual(vf) => vf.name.to_string(),
-            FileLongId::External(external_id) => db.ext_file_name(external_id),
+            FileLongId::External(external_id) => db.ext_as_virtual(external_id).name.to_string(),
         }
     }
     pub fn full_path(self, db: &dyn FilesGroup) -> String {
         match self.lookup_intern(db) {
             FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
             FileLongId::Virtual(vf) => vf.full_path(db),
-            FileLongId::External(external_id) => db.ext_file_full_path(external_id),
+            FileLongId::External(external_id) => db.ext_as_virtual(external_id).full_path(db),
         }
     }
     pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
