@@ -1302,18 +1302,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:11:1
-#[starknet::component]
-^********************^
+lib.cairo:13:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:11:1
-#[starknet::component]
-^********************^
+lib.cairo:13:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1659,18 +1659,18 @@ impl EventCompEventIntoEvent of Into<super::comp::Event, Event> {
 
 
 
-lib.cairo:38:1
-#[starknet::contract]
-^*******************^
+lib.cairo:42:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:38:1
-#[starknet::contract]
-^*******************^
+lib.cairo:42:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;

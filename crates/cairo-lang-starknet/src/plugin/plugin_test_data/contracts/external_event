@@ -266,18 +266,18 @@ pub mod __constructor {
 
 
 
-lib.cairo:11:1
-#[starknet::contract]
-^*******************^
+lib.cairo:16:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:11:1
-#[starknet::contract]
-^*******************^
+lib.cairo:16:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
