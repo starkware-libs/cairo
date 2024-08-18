@@ -401,6 +401,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprConstant, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFixedSizeArray, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprClosure, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprCaesar, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMissing, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFunctionCallArg, $($exclude)*);
         $crate::prune_single!(__regular_helper, FixedSizeArrayItems, $($exclude)*);

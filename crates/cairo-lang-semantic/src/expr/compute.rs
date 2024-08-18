@@ -49,8 +49,8 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_bool_ty, core_unary_operator, deref_mut_trait, deref_trait,
-    false_literal_expr, get_core_trait, get_usize_ty, never_ty, numeric_literal_trait,
+    core_binary_operator, core_bool_ty, core_felt252_ty, core_unary_operator, deref_mut_trait,
+    deref_trait, false_literal_expr, get_core_trait, get_usize_ty, never_ty, numeric_literal_trait,
     true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type,
     CoreTraitContext,
 };
@@ -60,7 +60,7 @@ use crate::diagnostic::{
     ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics,
     SemanticDiagnosticsBuilder, TraitInferenceErrors, UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::items::constant::ConstValue;
+use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
@@ -357,6 +357,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
         ast::Expr::For(expr) => compute_expr_for_semantic(ctx, expr),
         ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr),
+        ast::Expr::Caesar(expr) => compute_expr_caesar_semantic(ctx, expr),
     }
 }
 
@@ -1479,6 +1480,31 @@ fn compute_loop_body_semantic(
 
         (body, loop_ctx)
     })
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprCaesar].
+fn compute_expr_caesar_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprCaesar,
+) -> Maybe<Expr> {
+    let db = ctx.db;
+    let size_expr_syntax =
+        Expr::Literal(short_string_to_semantic(ctx, &syntax.param(db.upcast()))?);
+    let id = ctx.arenas.exprs.alloc(size_expr_syntax.clone());
+    let size = ExprAndId { expr: size_expr_syntax.clone(), id };
+    let const_value = resolve_const_expr_and_evaluate(
+        db.upcast(),
+        ctx,
+        &size,
+        size_expr_syntax.stable_ptr().untyped(),
+        core_felt252_ty(ctx.db.upcast()),
+    );
+    let const_value_id = const_value.intern(db);
+    Ok(Expr::ExprCaesar(ExprCaesar {
+        const_value_id,
+        stable_ptr: syntax.stable_ptr().into(),
+        ty: const_value_id.ty(ctx.db.upcast())?,
+    }))
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprClosure].

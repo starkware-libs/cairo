@@ -183,6 +183,7 @@ cairo_lang_test_utils::test_file_test!(
         logical_operator: "logical_operator",
         module: "module",
         op_eq: "op_eq",
+        caesar: "caesar",
         array: "array",
         attrs: "attrs",
         inline_macro: "inline_macro",

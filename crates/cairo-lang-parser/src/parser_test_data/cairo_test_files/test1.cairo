@@ -5,6 +5,7 @@ use submod::something;
 // Second line
 ;
 fn foo(,var1: int,, mut ref var2: felt252,) -> int {
+    let a = caesar('hello world');
     let bla3 = --7; // succeeds, ok
     let bla4 = -!-!8; // succeeds, ok
     let x = 1;

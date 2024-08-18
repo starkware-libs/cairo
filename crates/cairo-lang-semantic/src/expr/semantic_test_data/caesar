@@ -1,0 +1,19 @@
+//! > Test assignment
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > function_body
+
+//! > expr_code
+caesar('hello')
+
+//! > expected_semantics
+ExprCaesar(
+    ExprCaesar {
+        const_value_id: 448378203247,
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics

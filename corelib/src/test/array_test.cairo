@@ -136,6 +136,7 @@ fn test_fixed_size_array() {
     assert_eq!(x, 10);
     assert_eq!(y, 11);
     assert_eq!(z, 12);
+    assert_eq!(caesar('hAZ2'), 'kDC5');
 }
 
 fn consume<const N: usize>(_arr: [felt252; N]) {}

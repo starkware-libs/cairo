@@ -39,6 +39,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("Indexed")
         .node("InlineMacro")
         .node("FixedSizeArray")
+        .node("Caesar")
     )
     .add_separated_list("ExprList", "Expr", "TerminalComma")
     .add_struct(StructBuilder::new("Arg")
@@ -427,6 +428,12 @@ pub fn get_spec() -> Vec<Node> {
         .node("ret_ty", "OptionReturnTypeClause")
         .node("implicits_clause", "OptionImplicitsClause")
         .node("optional_no_panic", "OptionTerminalNoPanic")
+    )
+    .add_struct(StructBuilder::new("ExprCaesar")
+        .node("caesar", "TerminalCaesar")
+        .node("lparen", "TerminalLParen")
+        .node("param", "TerminalShortString")
+        .node("rparen", "TerminalRParen")
     )
     // --- Struct Members ---
     // Struct member and enum variant have the same structure.
@@ -824,6 +831,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_keyword_token_and_terminal("Type")
     .add_keyword_token_and_terminal("Use")
     .add_keyword_token_and_terminal("Pub")
+    .add_keyword_token_and_terminal("Caesar")
     .add_token_and_terminal("And")
     .add_token_and_terminal("AndAnd")
     .add_token_and_terminal("Arrow")

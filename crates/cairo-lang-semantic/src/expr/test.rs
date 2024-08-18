@@ -67,6 +67,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         assignment: "assignment",
         block: "block",
+        caesar: "caesar",
         call: "call",
         closure: "closure",
         coupon: "coupon",

@@ -879,7 +879,34 @@ fn lower_expr(
         semantic::Expr::Missing(semantic::ExprMissing { diag_added, .. }) => {
             Err(LoweringFlowError::Failed(*diag_added))
         }
+        semantic::Expr::ExprCaesar(expr) => lower_expr_caesar(ctx, expr, builder),
     }
+}
+
+fn lower_expr_caesar(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprCaesar,
+    builder: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    let ty = expr.ty;
+    let ConstValue::Int(val, _) = expr.const_value_id.lookup_intern(ctx.db) else {
+        unreachable!("value is always int")
+    };
+    let (sign, mut bytes) = val.to_bytes_be();
+    let caesar_indentation = 3;
+    for byte in bytes.iter_mut() {
+        match byte {
+            b'a'..=b'z' => *byte = ((*byte - b'a' + caesar_indentation) % (b'z' - b'a' + 1)) + b'a',
+            b'A'..=b'Z' => *byte = ((*byte - b'A' + caesar_indentation) % (b'Z' - b'A' + 1)) + b'A',
+            b'0'..=b'9' => *byte = ((*byte - b'0' + caesar_indentation) % (b'9' - b'0' + 1)) + b'0',
+            _ => {}
+        }
+    }
+    let value = ConstValue::Int(BigInt::from_bytes_be(sign, &bytes), ty);
+    Ok(LoweredExpr::AtVariable(
+        generators::Const { value, ty, location: ctx.get_location(expr.stable_ptr.untyped()) }
+            .add(ctx, &mut builder.statements),
+    ))
 }
 
 fn lower_expr_literal(

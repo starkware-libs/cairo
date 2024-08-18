@@ -229,6 +229,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::FunctionSignature => {
             vec![]
         }
+        SyntaxKind::ExprCaesar => {
+            vec![]
+        }
         SyntaxKind::Member => {
             vec![/* name */ children[2]]
         }
@@ -512,6 +515,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TokenPub => vec![],
         SyntaxKind::TerminalPub => {
+            vec![]
+        }
+        SyntaxKind::TokenCaesar => vec![],
+        SyntaxKind::TerminalCaesar => {
             vec![]
         }
         SyntaxKind::TokenAnd => vec![],

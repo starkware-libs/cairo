@@ -1,0 +1,153 @@
+//! > Test Caesar
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    let x = caesar ('hello world');
+}
+
+//! > top_level_kind
+StatementList
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementList
+    └── child #0 (kind: StatementLet)
+        ├── attributes (kind: AttributeList) []
+        ├── let_kw (kind: TokenLet): 'let'
+        ├── pattern (kind: ExprPath)
+        │   └── item #0 (kind: PathSegmentSimple)
+        │       └── ident (kind: TokenIdentifier): 'x'
+        ├── type_clause (kind: OptionTypeClauseEmpty) []
+        ├── eq (kind: TokenEq): '='
+        ├── rhs (kind: ExprCaesar)
+        │   ├── caesar (kind: TokenCaesar): 'caesar'
+        │   ├── lparen (kind: TokenLParen): '('
+        │   ├── param (kind: TokenShortString): ''hello world''
+        │   └── rparen (kind: TokenRParen): ')'
+        └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test Caesar non full path left.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn test() {
+    let x = caesar 'hello world');
+}
+
+//! > top_level_kind
+StatementList
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing token TerminalLParen.
+ --> dummy_file.cairo:2:19
+    let x = caesar 'hello world');
+                  ^
+
+//! > expected_tree
+└── Top level kind: StatementList
+    └── child #0 (kind: StatementLet)
+        ├── attributes (kind: AttributeList) []
+        ├── let_kw (kind: TokenLet): 'let'
+        ├── pattern (kind: ExprPath)
+        │   └── item #0 (kind: PathSegmentSimple)
+        │       └── ident (kind: TokenIdentifier): 'x'
+        ├── type_clause (kind: OptionTypeClauseEmpty) []
+        ├── eq (kind: TokenEq): '='
+        ├── rhs (kind: ExprCaesar)
+        │   ├── caesar (kind: TokenCaesar): 'caesar'
+        │   ├── lparen: Missing
+        │   ├── param (kind: TokenShortString): ''hello world''
+        │   └── rparen (kind: TokenRParen): ')'
+        └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test Caesar non full path right.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn test() {
+    let x = caesar ('hello world';
+}
+
+//! > top_level_kind
+StatementList
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing token TerminalRParen.
+ --> dummy_file.cairo:2:34
+    let x = caesar ('hello world';
+                                 ^
+
+//! > expected_tree
+└── Top level kind: StatementList
+    └── child #0 (kind: StatementLet)
+        ├── attributes (kind: AttributeList) []
+        ├── let_kw (kind: TokenLet): 'let'
+        ├── pattern (kind: ExprPath)
+        │   └── item #0 (kind: PathSegmentSimple)
+        │       └── ident (kind: TokenIdentifier): 'x'
+        ├── type_clause (kind: OptionTypeClauseEmpty) []
+        ├── eq (kind: TokenEq): '='
+        ├── rhs (kind: ExprCaesar)
+        │   ├── caesar (kind: TokenCaesar): 'caesar'
+        │   ├── lparen (kind: TokenLParen): '('
+        │   ├── param (kind: TokenShortString): ''hello world''
+        │   └── rparen: Missing
+        └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test Caesar non full path middle.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn test() {
+    let x = caesar ();
+}
+
+//! > top_level_kind
+StatementList
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing token TerminalShortString.
+ --> dummy_file.cairo:2:21
+    let x = caesar ();
+                    ^
+
+//! > expected_tree
+└── Top level kind: StatementList
+    └── child #0 (kind: StatementLet)
+        ├── attributes (kind: AttributeList) []
+        ├── let_kw (kind: TokenLet): 'let'
+        ├── pattern (kind: ExprPath)
+        │   └── item #0 (kind: PathSegmentSimple)
+        │       └── ident (kind: TokenIdentifier): 'x'
+        ├── type_clause (kind: OptionTypeClauseEmpty) []
+        ├── eq (kind: TokenEq): '='
+        ├── rhs (kind: ExprCaesar)
+        │   ├── caesar (kind: TokenCaesar): 'caesar'
+        │   ├── lparen (kind: TokenLParen): '('
+        │   ├── param: Missing
+        │   └── rparen (kind: TokenRParen): ')'
+        └── semicolon (kind: TokenSemicolon): ';'

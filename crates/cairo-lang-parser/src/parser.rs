@@ -1202,6 +1202,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalOrOr if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.expect_closure_expr_nullary().into())
             }
+            SyntaxKind::TerminalCaesar if lbrace_allowed == LbraceAllowed::Allow => {
+                Ok(self.expect_caesar_expr().into())
+            }
 
             _ => {
                 // TODO(yuval): report to diagnostics.
@@ -1748,6 +1751,14 @@ impl<'a> Parser<'a> {
         let expr = if block_required { self.parse_block().into() } else { self.parse_expr() };
 
         ExprClosure::new_green(self.db, wrapper, return_type_clause, optional_no_panic, expr)
+    }
+
+    fn expect_caesar_expr(&mut self) -> ExprCaesarGreen {
+        let caesar_kw = self.take::<TerminalCaesar>();
+        let lparen = self.parse_token::<TerminalLParen>();
+        let pattern = self.parse_token::<TerminalShortString>();
+        let rparen = self.parse_token::<TerminalRParen>();
+        ExprCaesar::new_green(self.db, caesar_kw, lparen, pattern, rparen)
     }
 
     /// Assumes the current token is LBrack.

@@ -2,7 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::ast::{self};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use id_arena::{Arena, Id};
 use num_bigint::BigInt;
@@ -146,6 +146,7 @@ pub enum Expr {
     Constant(ExprConstant),
     FixedSizeArray(ExprFixedSizeArray),
     ExprClosure(ExprClosure),
+    ExprCaesar(ExprCaesar),
     Missing(ExprMissing),
 }
 impl Expr {
@@ -174,6 +175,7 @@ impl Expr {
             Expr::Missing(expr) => expr.ty,
             Expr::FixedSizeArray(expr) => expr.ty,
             Expr::ExprClosure(expr) => expr.ty,
+            Expr::ExprCaesar(expr) => expr.ty,
         }
     }
     pub fn stable_ptr(&self) -> ast::ExprPtr {
@@ -201,6 +203,7 @@ impl Expr {
             Expr::Missing(expr) => expr.stable_ptr,
             Expr::FixedSizeArray(expr) => expr.stable_ptr,
             Expr::ExprClosure(expr) => expr.stable_ptr,
+            Expr::ExprCaesar(expr) => expr.stable_ptr,
         }
     }
 
@@ -368,6 +371,16 @@ impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVarMemberPath {
 pub struct ExprClosure {
     pub body: ExprId,
     pub param_ids: Vec<semantic::ParamId>,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+    pub ty: TypeId,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprCaesar {
+    pub const_value_id: ConstValueId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,

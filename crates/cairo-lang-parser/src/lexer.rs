@@ -211,6 +211,7 @@ impl<'a> Lexer<'a> {
             "for" => TokenKind::For,
             "nopanic" => TokenKind::NoPanic,
             "pub" => TokenKind::Pub,
+            "caesar" => TokenKind::Caesar,
             "_" => TokenKind::Underscore,
             _ => TokenKind::Identifier,
         }
@@ -420,6 +421,7 @@ enum TokenKind {
     RParen,
     Arrow,
     MatchArrow,
+    Caesar,
 
     // Meta.
     EndOfFile,
@@ -505,5 +507,6 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::MatchArrow => SyntaxKind::TerminalMatchArrow,
         TokenKind::BadCharacters => SyntaxKind::TerminalBadCharacters,
         TokenKind::EndOfFile => SyntaxKind::TerminalEndOfFile,
+        TokenKind::Caesar => SyntaxKind::TerminalCaesar,
     }
 }

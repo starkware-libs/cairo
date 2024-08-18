@@ -370,6 +370,7 @@ impl Usages {
             Expr::PropagateError(expr) => self.handle_expr(arenas, expr.inner, current),
             Expr::Constant(_) => {}
             Expr::Missing(_) => {}
+            Expr::ExprCaesar(_) => {}
         }
     }
 

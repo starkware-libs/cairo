@@ -85,6 +85,7 @@ pub enum SyntaxKind {
     OptionImplicitsClauseEmpty,
     OptionTerminalNoPanicEmpty,
     FunctionSignature,
+    ExprCaesar,
     Member,
     MemberList,
     Variant,
@@ -208,6 +209,8 @@ pub enum SyntaxKind {
     TerminalUse,
     TokenPub,
     TerminalPub,
+    TokenCaesar,
+    TerminalCaesar,
     TokenAnd,
     TerminalAnd,
     TokenAndAnd,
@@ -340,6 +343,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenType
                 | SyntaxKind::TokenUse
                 | SyntaxKind::TokenPub
+                | SyntaxKind::TokenCaesar
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd
                 | SyntaxKind::TokenArrow
@@ -427,6 +431,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalType
                 | SyntaxKind::TerminalUse
                 | SyntaxKind::TerminalPub
+                | SyntaxKind::TerminalCaesar
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
                 | SyntaxKind::TerminalArrow
@@ -505,6 +510,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenType
                 | SyntaxKind::TokenUse
                 | SyntaxKind::TokenPub
+                | SyntaxKind::TokenCaesar
         )
     }
     pub fn is_keyword_terminal(&self) -> bool {
@@ -539,6 +545,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalType
                 | SyntaxKind::TerminalUse
                 | SyntaxKind::TerminalPub
+                | SyntaxKind::TerminalCaesar
         )
     }
 }

@@ -245,6 +245,7 @@ pub enum Expr {
     Indexed(ExprIndexed),
     InlineMacro(ExprInlineMacro),
     FixedSizeArray(ExprFixedSizeArray),
+    Caesar(ExprCaesar),
     Missing(ExprMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -383,6 +384,11 @@ impl From<ExprFixedSizeArrayPtr> for ExprPtr {
         Self(value.0)
     }
 }
+impl From<ExprCaesarPtr> for ExprPtr {
+    fn from(value: ExprCaesarPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingPtr> for ExprPtr {
     fn from(value: ExprMissingPtr) -> Self {
         Self(value.0)
@@ -508,6 +514,11 @@ impl From<ExprFixedSizeArrayGreen> for ExprGreen {
         Self(value.0)
     }
 }
+impl From<ExprCaesarGreen> for ExprGreen {
+    fn from(value: ExprCaesarGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingGreen> for ExprGreen {
     fn from(value: ExprMissingGreen) -> Self {
         Self(value.0)
@@ -569,6 +580,7 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprFixedSizeArray => {
                 Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node))
             }
+            SyntaxKind::ExprCaesar => Expr::Caesar(ExprCaesar::from_syntax_node(db, node)),
             SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
@@ -599,6 +611,7 @@ impl TypedSyntaxNode for Expr {
             Expr::Indexed(x) => x.as_syntax_node(),
             Expr::InlineMacro(x) => x.as_syntax_node(),
             Expr::FixedSizeArray(x) => x.as_syntax_node(),
+            Expr::Caesar(x) => x.as_syntax_node(),
             Expr::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -639,6 +652,7 @@ impl Expr {
             SyntaxKind::ExprIndexed => true,
             SyntaxKind::ExprInlineMacro => true,
             SyntaxKind::ExprFixedSizeArray => true,
+            SyntaxKind::ExprCaesar => true,
             SyntaxKind::ExprMissing => true,
             _ => false,
         }
@@ -11178,6 +11192,112 @@ impl TypedSyntaxNode for FunctionSignature {
 }
 impl From<&FunctionSignature> for SyntaxStablePtrId {
     fn from(node: &FunctionSignature) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprCaesar {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl ExprCaesar {
+    pub const INDEX_CAESAR: usize = 0;
+    pub const INDEX_LPAREN: usize = 1;
+    pub const INDEX_PARAM: usize = 2;
+    pub const INDEX_RPAREN: usize = 3;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        caesar: TerminalCaesarGreen,
+        lparen: TerminalLParenGreen,
+        param: TerminalShortStringGreen,
+        rparen: TerminalRParenGreen,
+    ) -> ExprCaesarGreen {
+        let children: Vec<GreenId> = vec![caesar.0, lparen.0, param.0, rparen.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        ExprCaesarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprCaesar,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl ExprCaesar {
+    pub fn caesar(&self, db: &dyn SyntaxGroup) -> TerminalCaesar {
+        TerminalCaesar::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
+        TerminalLParen::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn param(&self, db: &dyn SyntaxGroup) -> TerminalShortString {
+        TerminalShortString::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
+        TerminalRParen::from_syntax_node(db, self.children[3].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprCaesarPtr(pub SyntaxStablePtrId);
+impl ExprCaesarPtr {}
+impl TypedStablePtr for ExprCaesarPtr {
+    type SyntaxNode = ExprCaesar;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> ExprCaesar {
+        ExprCaesar::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<ExprCaesarPtr> for SyntaxStablePtrId {
+    fn from(ptr: ExprCaesarPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprCaesarGreen(pub GreenId);
+impl TypedSyntaxNode for ExprCaesar {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprCaesar);
+    type StablePtr = ExprCaesarPtr;
+    type Green = ExprCaesarGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprCaesarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::ExprCaesar,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalCaesar::missing(db).0,
+                        TerminalLParen::missing(db).0,
+                        TerminalShortString::missing(db).0,
+                        TerminalRParen::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprCaesar,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprCaesar
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprCaesarPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&ExprCaesar> for SyntaxStablePtrId {
+    fn from(node: &ExprCaesar) -> Self {
         node.stable_ptr().untyped()
     }
 }
@@ -24769,6 +24889,183 @@ impl TypedSyntaxNode for TerminalPub {
 }
 impl From<&TerminalPub> for SyntaxStablePtrId {
     fn from(node: &TerminalPub) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenCaesar {
+    node: SyntaxNode,
+}
+impl Token for TokenCaesar {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenCaesarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenCaesar,
+                details: GreenNodeDetails::Token(text),
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
+            .clone()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenCaesarPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenCaesarPtr {
+    type SyntaxNode = TokenCaesar;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenCaesar {
+        TokenCaesar::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenCaesarPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenCaesarPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenCaesarGreen(pub GreenId);
+impl TokenCaesarGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.0.lookup_intern(db).details, GreenNodeDetails::Token).clone()
+    }
+}
+impl TypedSyntaxNode for TokenCaesar {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenCaesar);
+    type StablePtr = TokenCaesarPtr;
+    type Green = TokenCaesarGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenCaesarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenCaesar)
+            }
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenCaesarPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenCaesar> for SyntaxStablePtrId {
+    fn from(node: &TokenCaesar) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalCaesar {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl Terminal for TerminalCaesar {
+    const KIND: SyntaxKind = SyntaxKind::TerminalCaesar;
+    type TokenType = TokenCaesar;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalCaesar as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        TerminalCaesarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalCaesar,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalCaesar {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenCaesar {
+        TokenCaesar::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalCaesarPtr(pub SyntaxStablePtrId);
+impl TerminalCaesarPtr {}
+impl TypedStablePtr for TerminalCaesarPtr {
+    type SyntaxNode = TerminalCaesar;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TerminalCaesar {
+        TerminalCaesar::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TerminalCaesarPtr> for SyntaxStablePtrId {
+    fn from(ptr: TerminalCaesarPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalCaesarGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalCaesar {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalCaesar);
+    type StablePtr = TerminalCaesarPtr;
+    type Green = TerminalCaesarGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalCaesarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TerminalCaesar,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        Trivia::missing(db).0,
+                        TokenCaesar::missing(db).0,
+                        Trivia::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalCaesar,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalCaesar
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalCaesarPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TerminalCaesar> for SyntaxStablePtrId {
+    fn from(node: &TerminalCaesar) -> Self {
         node.stable_ptr().untyped()
     }
 }
