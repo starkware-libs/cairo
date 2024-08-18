@@ -3354,17 +3354,10 @@ fn check_struct_member_is_visible(
 /// reported.
 fn validate_statement_attributes(ctx: &mut ComputationContext<'_>, syntax: &ast::Statement) {
     let allowed_attributes = ctx.db.allowed_statement_attributes();
-    let module_file_id = ctx.resolver.module_file_id;
     let mut diagnostics = vec![];
-    validate_attributes_flat(
-        ctx.db.upcast(),
-        &allowed_attributes,
-        module_file_id,
-        syntax,
-        &mut diagnostics,
-    );
+    validate_attributes_flat(ctx.db.upcast(), &allowed_attributes, syntax, &mut diagnostics);
     // Translate the plugin diagnostics to semantic diagnostics.
-    for (_, diagnostic) in diagnostics {
+    for diagnostic in diagnostics {
         ctx.diagnostics
             .report(diagnostic.stable_ptr, SemanticDiagnosticKind::UnknownStatementAttribute);
     }
