@@ -143,7 +143,6 @@ pub fn compile_test_prepared_db(
         ))
     }
 
-
     let executables = collect_executables(db, executable_functions, &sierra_program);
     let named_tests = all_tests
         .into_iter()
