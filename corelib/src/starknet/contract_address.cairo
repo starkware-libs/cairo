@@ -71,18 +71,6 @@ impl ContractAddressPartialOrd of PartialOrd<ContractAddress> {
         let lhs: u256 = contract_address_to_felt252(lhs).into();
         lhs < contract_address_to_felt252(rhs).into()
     }
-    #[inline(always)]
-    fn le(lhs: ContractAddress, rhs: ContractAddress) -> bool {
-        !(rhs < lhs)
-    }
-    #[inline(always)]
-    fn gt(lhs: ContractAddress, rhs: ContractAddress) -> bool {
-        rhs < lhs
-    }
-    #[inline(always)]
-    fn ge(lhs: ContractAddress, rhs: ContractAddress) -> bool {
-        !(lhs < rhs)
-    }
 }
 
 impl HashContractAddress<S, +HashStateTrait<S>, +Drop<S>> =

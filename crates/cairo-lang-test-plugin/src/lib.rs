@@ -16,11 +16,12 @@ use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_sierra::program::{ProgramArtifact, StatementIdx};
+use cairo_lang_sierra::program::ProgramArtifact;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::DebugReplacer;
+use cairo_lang_sierra_generator::statements_locations::StatementsLocations;
 use cairo_lang_starknet::contract::{
     find_contracts, get_contract_abi_functions, get_contracts_info, ContractInfo,
 };
@@ -29,7 +30,6 @@ use cairo_lang_starknet_classes::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_utils::ordered_hash_map::{
     deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
 };
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, Itertools};
 pub use plugin::TestPlugin;
 use serde::{Deserialize, Serialize};
@@ -131,12 +131,6 @@ pub fn compile_test_prepared_db(
     let replacer = DebugReplacer { db };
     replacer.enrich_function_names(&mut sierra_program);
 
-    let statements_functions_for_tests = if tests_compilation_config.add_statements_functions {
-        Some(debug_info.statements_locations.get_statements_functions_map_for_tests(db))
-    } else {
-        None
-    };
-
     let mut annotations = Annotations::default();
     if tests_compilation_config.add_statements_functions {
         annotations.extend(Annotations::from(
@@ -148,6 +142,7 @@ pub fn compile_test_prepared_db(
             debug_info.statements_locations.extract_statements_source_code_locations(db),
         ))
     }
+
 
     let executables = collect_executables(db, executable_functions, &sierra_program);
     let named_tests = all_tests
@@ -181,7 +176,7 @@ pub fn compile_test_prepared_db(
             named_tests,
             function_set_costs,
             contracts_info,
-            statements_functions: statements_functions_for_tests,
+            statements_locations: Some(debug_info.statements_locations),
         },
     })
 }
@@ -213,13 +208,11 @@ pub struct TestCompilationMetadata {
     )]
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     pub named_tests: Vec<(String, TestConfig)>,
-    /// A map between sierra statement index and the string representation of the Cairo function
-    /// that generated it. The function representation is composed of the function name and the
-    /// path (modules and impls) to the function in the file. Used only if the tests are running
-    /// with profiling.
+    /// Optional `StatementsLocations` for the compiled tests.
+    /// See [StatementsLocations] for more information.
     // TODO(Gil): consider serializing this field once it is stable.
     #[serde(skip)]
-    pub statements_functions: Option<UnorderedHashMap<StatementIdx, String>>,
+    pub statements_locations: Option<StatementsLocations>,
 }
 
 /// Finds the tests in the requested crates.

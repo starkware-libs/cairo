@@ -65,7 +65,7 @@ End:
   Return(v3, v4, v12)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     loop {
     ^****^
 
@@ -219,7 +219,7 @@ End:
   Return(v3, v4, v12)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     loop {
     ^****^
 
@@ -393,7 +393,7 @@ End:
   Return(v7, v8, v18)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     loop {
     ^****^
 
@@ -539,7 +539,7 @@ End:
   Return(v3, v4, v12)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     loop {
     ^****^
 
@@ -708,7 +708,7 @@ End:
   Return()
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     loop {
     ^****^
 
@@ -809,7 +809,7 @@ End:
   Return(v3, v4, v11)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     loop {
     ^****^
 
@@ -974,7 +974,7 @@ End:
   Return(v1)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     loop {
     ^****^
 
@@ -1059,7 +1059,7 @@ End:
   Return()
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     loop {
     ^****^
 
@@ -1155,7 +1155,7 @@ End:
   Return()
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
         loop {
         ^****^
 
@@ -1177,7 +1177,7 @@ End:
   Return()
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     loop {
     ^****^
 
@@ -1272,7 +1272,7 @@ End:
   Return()
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
         loop {
         ^****^
 
@@ -1294,7 +1294,7 @@ End:
   Return()
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     loop {
     ^****^
 
@@ -1399,7 +1399,7 @@ End:
   Return(v5, v6, v13)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     while i != 5 {
     ^************^
 

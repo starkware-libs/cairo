@@ -44,6 +44,13 @@ fn cairo_projects() {
                 ```rust
                 CrateSettings {
                     edition: V2024_07,
+                    version: Some(
+                        Version {
+                            major: 2,
+                            minor: 7,
+                            patch: 1,
+                        },
+                    ),
                     cfg_set: None,
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: true,
@@ -55,6 +62,7 @@ fn cairo_projects() {
                 ```rust
                 CrateSettings {
                     edition: V2023_01,
+                    version: None,
                     cfg_set: None,
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: false,
@@ -66,6 +74,7 @@ fn cairo_projects() {
                 ```rust
                 CrateSettings {
                     edition: V2023_01,
+                    version: None,
                     cfg_set: None,
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: false,
@@ -77,6 +86,7 @@ fn cairo_projects() {
                 ```rust
                 CrateSettings {
                     edition: V2023_01,
+                    version: None,
                     cfg_set: None,
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: false,

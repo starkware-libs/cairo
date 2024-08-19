@@ -38,6 +38,7 @@ fn test_casm_contract_from_contract_class_failure(name: &str) {
 #[test_case("new_syntax_test_contract__counter_contract")]
 #[test_case("minimal_contract__minimal_contract")]
 #[test_case("hello_starknet__hello_starknet")]
+#[test_case("libfuncs_coverage__libfuncs_coverage")]
 #[test_case("erc20__erc_20")]
 #[test_case("token_bridge__token_bridge")]
 #[test_case("with_erc20__erc20_contract")]
@@ -82,8 +83,7 @@ fn test_contract_libfuncs_coverage(name: &str) {
 
     let missing_libfuncs = libfunc_to_cover.difference(&used_libfuncs).collect_vec();
     let extra_libfuncs = used_libfuncs.difference(&libfunc_to_cover).collect_vec();
-    // TODO(Tomer-C): Make this threshold more strict - as close to 0 as possible.
-    const MISSING_THRESHOLD: usize = 48;
+    const MISSING_THRESHOLD: usize = 10;
     if missing_libfuncs.len() > MISSING_THRESHOLD || !extra_libfuncs.is_empty() {
         println!("Missing {} libfuncs:", missing_libfuncs.len());
         for libfunc_name in missing_libfuncs.into_iter().map(|id| id.to_string()).sorted() {

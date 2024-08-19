@@ -2,6 +2,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_semantic::corelib::panic_destruct_trait_fn;
+use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionId;
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern};
 use defs::diagnostic_utils::StableLocation;
@@ -19,7 +21,7 @@ use crate::Location;
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FunctionWithBodyLongId {
     Semantic(defs::ids::FunctionWithBodyId),
-    Generated { parent: defs::ids::FunctionWithBodyId, element: semantic::ExprId },
+    Generated { parent: defs::ids::FunctionWithBodyId, key: GeneratedFunctionKey },
 }
 define_short_id!(
     FunctionWithBodyId,
@@ -43,13 +45,13 @@ impl FunctionWithBodyLongId {
             FunctionWithBodyLongId::Semantic(semantic) => ConcreteFunctionWithBodyLongId::Semantic(
                 semantic::ConcreteFunctionWithBodyId::from_generic(db.upcast(), semantic)?,
             ),
-            FunctionWithBodyLongId::Generated { parent, element } => {
+            FunctionWithBodyLongId::Generated { parent, key } => {
                 ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                     parent: semantic::ConcreteFunctionWithBodyId::from_generic(
                         db.upcast(),
                         parent,
                     )?,
-                    element,
+                    key,
                 })
             }
         })
@@ -91,6 +93,23 @@ define_short_id!(
     lookup_intern_lowering_concrete_function_with_body,
     intern_lowering_concrete_function_with_body
 );
+
+impl ConcreteFunctionWithBodyId {
+    pub fn is_panic_destruct_fn(&self, db: &dyn LoweringGroup) -> Maybe<bool> {
+        match db.lookup_intern_lowering_concrete_function_with_body(*self) {
+            ConcreteFunctionWithBodyLongId::Semantic(semantic_func) => {
+                semantic_func.is_panic_destruct_fn(db.upcast())
+            }
+            ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
+                parent: _,
+                key: GeneratedFunctionKey::TraitFunc(concrete_trait_function, _),
+            }) => Ok(concrete_trait_function.trait_function(db.upcast())
+                == panic_destruct_trait_fn(db.upcast())),
+            _ => Ok(false),
+        }
+    }
+}
+
 impl UnstableSalsaId for ConcreteFunctionWithBodyId {
     fn get_internal_id(&self) -> &salsa::InternId {
         &self.0
@@ -103,10 +122,10 @@ impl ConcreteFunctionWithBodyLongId {
             ConcreteFunctionWithBodyLongId::Semantic(id) => {
                 FunctionWithBodyLongId::Semantic(id.function_with_body_id(semantic_db))
             }
-            ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, element }) => {
+            ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, key }) => {
                 FunctionWithBodyLongId::Generated {
                     parent: parent.function_with_body_id(semantic_db),
-                    element,
+                    key,
                 }
             }
         };
@@ -196,11 +215,12 @@ impl ConcreteFunctionWithBodyId {
             ConcreteFunctionWithBodyLongId::Semantic(id) => id.stable_location(semantic_db),
             ConcreteFunctionWithBodyLongId::Generated(generated) => {
                 let parent_id = generated.parent.function_with_body_id(semantic_db);
-                StableLocation::new(
-                    db.function_body(parent_id)?.arenas.exprs[generated.element]
-                        .stable_ptr()
-                        .untyped(),
-                )
+                match generated.key {
+                    GeneratedFunctionKey::Loop(expr_id) => StableLocation::new(
+                        db.function_body(parent_id)?.arenas.exprs[expr_id].stable_ptr().untyped(),
+                    ),
+                    GeneratedFunctionKey::TraitFunc(_, stable_location) => stable_location,
+                }
             }
         })
     }
@@ -301,21 +321,35 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
     }
 }
 
+/// A key for a generated functions.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GeneratedFunctionKey {
+    /// Generated loop functions are identified by the loop expr_id.
+    Loop(semantic::ExprId),
+    TraitFunc(ConcreteTraitGenericFunctionId, StableLocation),
+}
+
 /// Generated function.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct GeneratedFunction {
     pub parent: semantic::ConcreteFunctionWithBodyId,
-    pub element: semantic::ExprId,
+    pub key: GeneratedFunctionKey,
 }
 impl GeneratedFunction {
     pub fn body(&self, db: &dyn LoweringGroup) -> ConcreteFunctionWithBodyId {
-        let GeneratedFunction { parent, element } = *self;
-        let long_id =
-            ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, element });
+        let GeneratedFunction { parent, key } = *self;
+        let long_id = ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, key });
         long_id.intern(db)
     }
     pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
-        format!("{}[expr{}]", self.parent.full_path(db.upcast()), self.element.index()).into()
+        match self.key {
+            GeneratedFunctionKey::Loop(expr_id) => {
+                format!("{}[expr{}]", self.parent.full_path(db.upcast()), expr_id.index()).into()
+            }
+            GeneratedFunctionKey::TraitFunc(trait_func, _) => {
+                format!("{:?}", trait_func.debug(db)).into()
+            }
+        }
     }
 }
 

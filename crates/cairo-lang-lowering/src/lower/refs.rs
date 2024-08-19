@@ -6,7 +6,7 @@ use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::zip_eq;
+use itertools::chain;
 
 use crate::db::LoweringGroup;
 use crate::VariableId;
@@ -14,8 +14,10 @@ use crate::VariableId;
 //  Information about members captured by the closure and their types.
 #[derive(Clone, Debug)]
 pub struct ClosureInfo {
-    pub members: Vec<MemberPath>,
-    pub types: Vec<semantic::TypeId>,
+    /// The members captured by the closure (not as snapshot).
+    pub members: OrderedHashMap<MemberPath, semantic::TypeId>,
+    /// The types of the captured snapshot variables.
+    pub snapshot_types: Vec<semantic::TypeId>,
 }
 
 #[derive(Clone, Default, Debug)]
@@ -65,20 +67,36 @@ impl SemanticLoweringMapping {
         )
     }
 
+    pub fn destructure_closure<TContext: StructRecomposer>(
+        &mut self,
+        ctx: &mut TContext,
+        closure_var: VariableId,
+        closure_info: &ClosureInfo,
+    ) -> Vec<VariableId> {
+        ctx.deconstruct_by_types(
+            closure_var,
+            chain!(closure_info.members.values(), closure_info.snapshot_types.iter()).cloned(),
+        )
+    }
+
     pub fn invalidate_closure<TContext: StructRecomposer>(
         &mut self,
         ctx: &mut TContext,
         closure_var: VariableId,
     ) {
         let opt_closure = self.closures.remove(&closure_var);
-        if let Some(ClosureInfo { members, types }) = opt_closure {
-            let new_vars = ctx.deconstruct_by_types(closure_var, types.into_iter());
-            for (path, new_var) in zip_eq(members, new_vars) {
-                self.captured.remove(&path);
-                self.update(ctx, &path, new_var).unwrap();
+        if let Some(closure_info) = opt_closure {
+            let new_vars = self.destructure_closure(ctx, closure_var, &closure_info);
+
+            // Note that members.keys() can be shorter than new_vars, as the members captured
+            // as snapshots don't need to be updated.
+            for (path, new_var) in closure_info.members.keys().zip(new_vars) {
+                self.captured.remove(path);
+                self.update(ctx, path, new_var).unwrap();
             }
         }
     }
+
     pub fn get<TContext: StructRecomposer>(
         &mut self,
         mut ctx: TContext,

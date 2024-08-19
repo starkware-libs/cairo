@@ -387,8 +387,8 @@ fn priv_function_with_body_lowering(
     let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
     let lowered = match &function_id.lookup_intern(db) {
         ids::FunctionWithBodyLongId::Semantic(_) => multi_lowering.main_lowering.clone(),
-        ids::FunctionWithBodyLongId::Generated { element, .. } => {
-            multi_lowering.generated_lowerings[element].clone()
+        ids::FunctionWithBodyLongId::Generated { key, .. } => {
+            multi_lowering.generated_lowerings[key].clone()
         }
     };
     Ok(Arc::new(lowered))
@@ -399,7 +399,8 @@ fn function_with_body_lowering_with_borrow_check(
     function_id: ids::FunctionWithBodyId,
 ) -> Maybe<(Arc<FlatLowered>, Arc<PotentialDestructCalls>)> {
     let mut lowered = (*db.priv_function_with_body_lowering(function_id)?).clone();
-    let block_extra_calls = borrow_check(db, &mut lowered);
+    let block_extra_calls =
+        borrow_check(db, function_id.to_concrete(db)?.is_panic_destruct_fn(db)?, &mut lowered);
     Ok((Arc::new(lowered), Arc::new(block_extra_calls)))
 }
 
@@ -678,12 +679,10 @@ fn semantic_function_with_body_lowering_diagnostics(
         let function_id = ids::FunctionWithBodyLongId::Semantic(semantic_function_id).intern(db);
         diagnostics
             .extend(db.function_with_body_lowering_diagnostics(function_id).unwrap_or_default());
-        for (element, _) in multi_lowering.generated_lowerings.iter() {
-            let function_id = ids::FunctionWithBodyLongId::Generated {
-                parent: semantic_function_id,
-                element: *element,
-            }
-            .intern(db);
+        for (key, _) in multi_lowering.generated_lowerings.iter() {
+            let function_id =
+                ids::FunctionWithBodyLongId::Generated { parent: semantic_function_id, key: *key }
+                    .intern(db);
             diagnostics.extend(
                 db.function_with_body_lowering_diagnostics(function_id).unwrap_or_default(),
             );

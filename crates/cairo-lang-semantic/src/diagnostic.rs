@@ -848,6 +848,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Closures are not allowed in this context.".into()
             }
             SemanticDiagnosticKind::MaybeMissingColonColon => "Are you missing a `::`?.".into(),
+            SemanticDiagnosticKind::CallingShadowedFunction { shadowed_function_name } => {
+                format!("Function `{}` is shadowed by a local variable.", shadowed_function_name)
+            }
+            SemanticDiagnosticKind::RefClosureArgument => {
+                "Arguments to closure functions cannot be references".into()
+            }
         }
     }
 
@@ -871,7 +877,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::ImplItemForbiddenInTheImpl
             | SemanticDiagnosticKind::UnstableFeature { .. }
             | SemanticDiagnosticKind::DeprecatedFeature { .. }
-            | SemanticDiagnosticKind::UnusedImport { .. } => Severity::Warning,
+            | SemanticDiagnosticKind::UnusedImport { .. }
+            | SemanticDiagnosticKind::CallingShadowedFunction { .. } => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1197,6 +1204,10 @@ pub enum SemanticDiagnosticKind {
     TypeEqualTraitReImplementation,
     ClosureInGlobalScope,
     MaybeMissingColonColon,
+    CallingShadowedFunction {
+        shadowed_function_name: SmolStr,
+    },
+    RefClosureArgument,
 }
 
 /// The kind of an expression with multiple possible return types.

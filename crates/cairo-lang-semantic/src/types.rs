@@ -413,6 +413,12 @@ impl ConcreteExternTypeId {
 pub struct ClosureTypeLongId {
     pub param_tys: Vec<TypeId>,
     pub ret_ty: TypeId,
+    /// The set of types captured by the closure, this field is used to determined if the
+    /// closure has Drop, Destruct or PanicDestruct.
+    /// A vector as the fields needs to be hashable.
+    pub captured_types: Vec<TypeId>,
+    /// The parent function of the closure or an error.
+    pub parent_function: Maybe<FunctionId>,
     /// Every closure has a unique type that is based on the stable location of its wrapper.
     #[dont_rewrite]
     pub wrapper_location: StableLocation,

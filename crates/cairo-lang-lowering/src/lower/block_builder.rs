@@ -279,18 +279,21 @@ impl BlockBuilder {
         .map(|expr| expr.as_var_usage(ctx, self).unwrap())
         .collect_vec();
 
+        let members: OrderedHashMap<MemberPath, semantic::TypeId> =
+            chain!(usage.usage.values(), usage.changes.values())
+                .map(|expr| (expr.into(), expr.ty()))
+                .collect();
+
+        let snapshot_types = inputs
+            .iter()
+            .skip(members.len())
+            .map(|var_usage| ctx.variables.variables[var_usage.var_id].ty)
+            .collect();
+
         let var_usage = generators::StructConstruct { inputs, ty: expr.ty, location }
             .add(ctx, &mut self.statements);
 
-        let members: Vec<MemberPath> = chain!(usage.usage.values(), usage.snap_usage.values())
-            .map(|expr| expr.into())
-            .collect_vec();
-
-        let types = chain!(usage.usage.iter(), usage.snap_usage.iter())
-            .map(|(_, expr)| expr.ty())
-            .collect_vec();
-
-        self.semantics.closures.insert(var_usage.var_id, ClosureInfo { members, types });
+        self.semantics.closures.insert(var_usage.var_id, ClosureInfo { members, snapshot_types });
         for member in usage.usage.keys() {
             self.semantics.captured.insert(member.clone(), var_usage.var_id);
         }
@@ -386,6 +389,22 @@ impl BlockBuilder {
             None => LoweredExpr::Tuple { exprs: vec![], location },
         };
         Some((expr, following_block))
+    }
+
+    /// Destructures a closure.
+    /// Invalidates the closure variable and returns the captured variables.
+    pub fn destructure_closure(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        location: LocationId,
+        closure_var: VariableId,
+        closure_info: &ClosureInfo,
+    ) -> Vec<VariableId> {
+        self.semantics.destructure_closure(
+            &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+            closure_var,
+            closure_info,
+        )
     }
 }
 

@@ -2,9 +2,11 @@ use std::vec;
 
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::corelib::{unwrap_error_propagation_type, ErrorPropagationType};
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionLongId;
 use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{corelib, ExprVar, LocalVariable, VarId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -44,8 +46,8 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{
-    FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction, LocationId,
-    SemanticFunctionIdEx, Signature,
+    FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction,
+    GeneratedFunctionKey, LocationId, SemanticFunctionIdEx, Signature,
 };
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::lower::generators::StructDestructure;
@@ -65,6 +67,7 @@ mod logical_op;
 mod lower_if;
 mod lower_match;
 pub mod refs;
+use crate::lower::refs::ClosureInfo;
 
 #[cfg(test)]
 mod generated_test;
@@ -73,7 +76,7 @@ mod generated_test;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MultiLowering {
     pub main_lowering: FlatLowered,
-    pub generated_lowerings: OrderedHashMap<semantic::ExprId, FlatLowered>,
+    pub generated_lowerings: OrderedHashMap<GeneratedFunctionKey, FlatLowered>,
 }
 
 /// Lowers a semantic free function.
@@ -153,6 +156,7 @@ pub fn lower_function(
             Ok(root_block_id)
         })
     };
+
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
         .unwrap_or_else(FlatBlocks::new_errored);
@@ -1424,7 +1428,7 @@ fn lower_expr_loop(
     // Get the function id.
     let function = FunctionWithBodyLongId::Generated {
         parent: ctx.semantic_function_id,
-        element: loop_expr_id,
+        key: GeneratedFunctionKey::Loop(loop_expr_id),
     }
     .intern(ctx.db);
 
@@ -1441,7 +1445,7 @@ fn lower_expr_loop(
     )
     .map_err(LoweringFlowError::Failed)?;
     // TODO(spapini): Recursive call.
-    encapsulating_ctx.lowerings.insert(loop_expr_id, lowered);
+    encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(loop_expr_id), lowered);
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
     let old_loop_expr_id = std::mem::replace(&mut ctx.current_loop_expr_id, Some(loop_expr_id));
     for snapshot_param in snap_usage.values() {
@@ -1476,7 +1480,7 @@ fn call_loop_func(
     // Call it.
     let function = FunctionLongId::Generated(GeneratedFunction {
         parent: ctx.concrete_function_id.base_semantic_function(ctx.db),
-        element: loop_expr_id,
+        key: GeneratedFunctionKey::Loop(loop_expr_id),
     })
     .intern(ctx.db);
     let inputs = loop_signature
@@ -1674,6 +1678,97 @@ fn lower_expr_struct_ctor(
     ))
 }
 
+/// Adds the lowering for the destruct or panic_destruct of a capture variable.
+fn add_capture_destruct_impl(
+    ctx: &mut LoweringContext<'_, '_>,
+    capture_var_usage: VarUsage,
+    closure_info: &ClosureInfo,
+    location: StableLocation,
+) -> Maybe<()> {
+    let capture_var = &ctx.variables.variables[capture_var_usage.var_id];
+    // Skipping generation for the case of `Drop`.
+    let Some(Ok(impl_id)) = [&capture_var.destruct_impl, &capture_var.panic_destruct_impl]
+        .iter()
+        .find(|infer_result| infer_result.is_ok())
+    else {
+        return Ok(());
+    };
+
+    let semantic_db = ctx.db.upcast();
+    let concrete_trait = impl_id.concrete_trait(semantic_db)?;
+
+    let trait_functions = semantic_db.trait_functions(concrete_trait.trait_id(semantic_db))?;
+
+    assert_eq!(trait_functions.len(), 1);
+    let trait_function = *trait_functions.values().next().unwrap();
+
+    let concrete_trait_function =
+        ConcreteTraitGenericFunctionLongId::new(semantic_db, concrete_trait, trait_function)
+            .intern(semantic_db);
+
+    let signature = Signature::from_semantic(
+        ctx.db,
+        semantic_db.concrete_trait_function_signature(concrete_trait_function)?,
+    );
+
+    let func_key = GeneratedFunctionKey::TraitFunc(concrete_trait_function, location);
+    let function_id =
+        FunctionWithBodyLongId::Generated { parent: ctx.semantic_function_id, key: func_key }
+            .intern(ctx.db);
+
+    let location_id = LocationId::from_stable_location(ctx.db, location);
+
+    let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
+    let lowered_impl_res = get_destruct_lowering(
+        LoweringContext::new(encapsulating_ctx, function_id, signature)?,
+        location_id,
+        closure_info,
+    );
+    // Restore the encapsulating context before unwrapping the result.
+    ctx.encapsulating_ctx = Some(encapsulating_ctx);
+    ctx.lowerings.insert(func_key, lowered_impl_res?);
+    Ok(())
+}
+
+/// Returns the lowering of the destruct function of a capture variable.
+fn get_destruct_lowering(
+    mut ctx: LoweringContext<'_, '_>,
+    location_id: LocationId,
+    closure_info: &ClosureInfo,
+) -> Maybe<FlatLowered> {
+    let root_block_id = alloc_empty_block(&mut ctx);
+    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+
+    let parameters = ctx
+        .signature
+        .params
+        .clone()
+        .into_iter()
+        .map(|param| {
+            let var = ctx.new_var(VarRequest { ty: param.ty(), location: location_id });
+            builder.semantics.introduce((&param).into(), var);
+            var
+        })
+        .collect_vec();
+
+    builder.destructure_closure(&mut ctx, location_id, parameters[0], closure_info);
+    let var_usage = generators::StructConstruct {
+        inputs: vec![],
+        ty: unit_ty(ctx.db.upcast()),
+        location: location_id,
+    }
+    .add(&mut ctx, &mut builder.statements);
+    builder.ret(&mut ctx, var_usage, location_id)?;
+    let lowered_impl = FlatLowered {
+        diagnostics: ctx.diagnostics.build(),
+        variables: ctx.variables.variables,
+        blocks: ctx.blocks.build().unwrap(),
+        signature: ctx.signature,
+        parameters,
+    };
+    Ok(lowered_impl)
+}
+
 /// Lowers an expression of type [semantic::ExprClosure].
 fn lower_expr_closure(
     ctx: &mut LoweringContext<'_, '_>,
@@ -1683,7 +1778,18 @@ fn lower_expr_closure(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a closure expression: {:?}", expr.debug(&ctx.expr_formatter));
     let usage = ctx.usages.usages[&expr_id].clone();
-    Ok(LoweredExpr::AtVariable(builder.capture(ctx, usage.clone(), expr)))
+
+    let capture_var_usage = builder.capture(ctx, usage.clone(), expr);
+
+    let _ = add_capture_destruct_impl(
+        ctx,
+        capture_var_usage,
+        builder.semantics.closures.get(&capture_var_usage.var_id).unwrap(),
+        StableLocation::new(expr.stable_ptr.untyped()),
+    );
+
+    ctx.diagnostics.report(expr.stable_ptr, LoweringDiagnosticKind::Unsupported);
+    Ok(LoweredExpr::AtVariable(capture_var_usage))
 }
 
 /// Lowers an expression of type [semantic::ExprPropagateError].
