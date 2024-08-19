@@ -87,7 +87,7 @@ foo
 //! > module_code
 struct PanicDestructable {}
 
-impl PanicDestructForDestruct of PanicDestruct<PanicDestructable> {
+impl MyPanicDesruct of PanicDestruct<PanicDestructable> {
     // Disable inlining to see the panic_destruct call in the lowering output.
     #[inline(never)]
     fn panic_destruct(self: PanicDestructable, ref panic: Panic) nopanic {
@@ -164,6 +164,6 @@ Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: core::panics::Panic
 blk0 (root):
 Statements:
   (v2: test::PanicDestructable) <- struct_destructure(v0)
-  (v3: core::panics::Panic) <- test::PanicDestructForDestruct::panic_destruct(v2, v1)
+  (v3: core::panics::Panic) <- test::MyPanicDesruct::panic_destruct(v2, v1)
 End:
   Return(v3)
