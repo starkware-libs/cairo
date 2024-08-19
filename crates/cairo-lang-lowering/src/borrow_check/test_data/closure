@@ -71,7 +71,7 @@ foo
 //! > module_code
 struct PanicDestructable {}
 
-impl PanicDestructForDestruct of PanicDestruct<PanicDestructable> {
+impl MyPanicDesruct of PanicDestruct<PanicDestructable> {
     fn panic_destruct(self: PanicDestructable, ref panic: Panic) nopanic {
         let PanicDestructable { } = self;
     }
