@@ -20,7 +20,7 @@ impl EthAddressStorePacking of starknet::StorePacking<EthAddress, felt252> {
     }
 }
 
-pub(crate) impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
+pub impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
     fn try_into(self: felt252) -> Option<EthAddress> {
         let ETH_ADDRESS_BOUND = 0x10000000000000000000000000000000000000000_u256; // 2 ** 160
 
@@ -31,12 +31,12 @@ pub(crate) impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
         }
     }
 }
-pub(crate) impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
+pub impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
     fn into(self: EthAddress) -> felt252 {
         self.address
     }
 }
-pub(crate) impl U256IntoEthAddress of Into<u256, EthAddress> {
+pub impl U256IntoEthAddress of Into<u256, EthAddress> {
     fn into(self: u256) -> EthAddress {
         // The Ethereum address is the 20 least significant bytes (=160=128+32 bits) of the value.
         let high_32_bits = self.high % 0x100000000_u128;
@@ -46,7 +46,8 @@ pub(crate) impl U256IntoEthAddress of Into<u256, EthAddress> {
         }
     }
 }
-pub(crate) impl EthAddressSerde of Serde<EthAddress> {
+
+pub impl EthAddressSerde of Serde<EthAddress> {
     fn serialize(self: @EthAddress, ref output: Array<felt252>) {
         self.address.serialize(ref output);
     }
