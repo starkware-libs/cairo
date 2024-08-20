@@ -305,9 +305,7 @@ fn handle_component_impl(
         .into(),
     );
 
-    data.specific
-        .generated_impls
-        .push(RewriteNode::Mapped { origin, node: generated_impl_node.into() });
+    data.specific.generated_impls.push(generated_impl_node.mapped(origin));
 }
 
 /// Returns a RewriteNode of a path similar to the given path, but without generic params.

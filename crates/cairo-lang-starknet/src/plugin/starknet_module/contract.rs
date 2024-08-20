@@ -539,21 +539,24 @@ fn handle_embed_impl_alias(
         impl_module.iter().map(|segment| RewriteNode::new_trimmed(segment.as_syntax_node())),
         RewriteNode::text("::"),
     );
-    data.generated_wrapper_functions.push(RewriteNode::interpolate_patched(
-        &formatdoc! {"
-        impl ContractState$impl_name$ of
-            $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
-            fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
-                unsafe_new_contract_state()
+    data.generated_wrapper_functions.push(
+        RewriteNode::interpolate_patched(
+            &formatdoc! {"
+            impl ContractState$impl_name$ of
+                $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
+                fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
+                    unsafe_new_contract_state()
+                }}
             }}
-        }}
-    "},
-        &[
-            ("impl_name".to_string(), RewriteNode::new_trimmed(impl_name.as_syntax_node())),
-            ("impl_module".to_string(), impl_module),
-        ]
-        .into(),
-    ));
+        "},
+            &[
+                ("impl_name".to_string(), RewriteNode::new_trimmed(impl_name.as_syntax_node())),
+                ("impl_module".to_string(), impl_module),
+            ]
+            .into(),
+        )
+        .mapped(alias_ast.as_syntax_node().span_without_trivia(db)),
+    );
 }
 
 /// Handles a `component!` inline macro. Assumes that the macro name is `COMPONENT_INLINE_MACRO`.
