@@ -477,6 +477,18 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnusedVariable => {
                 "Unused variable. Consider ignoring by prefixing with `_`.".into()
             }
+            SemanticDiagnosticKind::UnusedConstant => {
+                "Unused constant. Consider ignoring by prefixing with `_`.".into()
+            }
+            SemanticDiagnosticKind::MultipleConstantDefinition(constant_name) => {
+                format!(r#"Multiple definitions of constant "{}"."#, constant_name)
+            }
+            SemanticDiagnosticKind::MultipleDefinitionforConstantVariable(identifier_name) => {
+                format!(
+                    r#"Multiple definitions of identifier '{}' as constant and variable."#,
+                    identifier_name
+                )
+            }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
             SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
@@ -878,7 +890,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::UnstableFeature { .. }
             | SemanticDiagnosticKind::DeprecatedFeature { .. }
             | SemanticDiagnosticKind::UnusedImport { .. }
-            | SemanticDiagnosticKind::CallingShadowedFunction { .. } => Severity::Warning,
+            | SemanticDiagnosticKind::CallingShadowedFunction { .. }
+            | SemanticDiagnosticKind::UnusedConstant => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1079,6 +1092,9 @@ pub enum SemanticDiagnosticKind {
     FeatureMarkerDiagnostic(FeatureMarkerDiagnostic),
     UnhandledMustUseFunction,
     UnusedVariable,
+    UnusedConstant,
+    MultipleConstantDefinition(SmolStr),
+    MultipleDefinitionforConstantVariable(SmolStr),
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,
     NegativeImplsOnlyOnImpls,

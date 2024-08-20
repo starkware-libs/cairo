@@ -46,6 +46,28 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data })
 }
 
+mod x {
+    pub fn y() -> i32 {
+        return 2;
+    }
+}
+
+fn fpp() {
+    let a = 2;
+    // let x = 2;
+    // let y = 2;
+    let x = 2;
+
+    // let z = x + y();
+    {
+        let x = 2;
+        // let y = 2;
+        use x::y;
+
+        let z = x + y();
+    }
+}
+
 /// Returns the segments of a use path.
 pub fn get_use_segments(
     db: &dyn SyntaxGroup,
