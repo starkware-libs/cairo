@@ -107,9 +107,27 @@ pub struct ExperimentalFeaturesConfig {
     pub coupons: bool,
 }
 
+/// A trait for defining files external to the `filesystem` crate.
+pub trait ExternalFiles {
+    /// Returns the content of an external file.
+    fn ext_file_content(&self, _external_id: u32) -> Option<Arc<str>> {
+        None
+    }
+
+    /// Returns the name of an external file.
+    fn ext_file_name(&self, _external_id: u32) -> String {
+        "<external>".to_string()
+    }
+
+    /// Returns the full path of an external file.
+    fn ext_file_full_path(&self, _external_id: u32) -> String {
+        "<external>".to_string()
+    }
+}
+
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
-pub trait FilesGroup {
+pub trait FilesGroup: ExternalFiles {
     #[salsa::interned]
     fn intern_crate(&self, crt: CrateLongId) -> CrateId;
     #[salsa::interned]
@@ -244,6 +262,7 @@ fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> 
             Err(_) => None,
         },
         FileLongId::Virtual(virt) => Some(virt.content),
+        FileLongId::External(external_id) => db.ext_file_content(external_id),
     }
 }
 fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {

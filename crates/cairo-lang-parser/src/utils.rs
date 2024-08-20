@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
-use cairo_lang_filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
+use cairo_lang_filesystem::db::{init_files_group, ExternalFiles, FilesDatabase, FilesGroup};
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::SyntaxFile;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
@@ -18,6 +18,7 @@ pub struct SimpleParserDatabase {
     storage: salsa::Storage<SimpleParserDatabase>,
 }
 impl salsa::Database for SimpleParserDatabase {}
+impl ExternalFiles for SimpleParserDatabase {}
 impl Default for SimpleParserDatabase {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
