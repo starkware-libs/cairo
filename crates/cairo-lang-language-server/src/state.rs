@@ -27,6 +27,12 @@ pub struct FileDiagnostics {
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
 }
+
+impl FileDiagnostics {
+    pub fn is_empty(&self) -> bool {
+        self.semantic.is_empty() && self.lowering.is_empty() && self.parser.is_empty()
+    }
+}
 impl std::panic::UnwindSafe for FileDiagnostics {}
 
 impl State {
@@ -46,6 +52,7 @@ impl State {
             open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
             client_capabilities: self.client_capabilities.snapshot(),
+            file_diagnostics: self.file_diagnostics.snapshot(),
         }
     }
 }
@@ -54,6 +61,7 @@ impl State {
 pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,
     pub open_files: Snapshot<HashSet<Url>>,
+    pub file_diagnostics: Snapshot<HashMap<Url, FileDiagnostics>>,
     pub config: Snapshot<Config>,
     pub client_capabilities: Snapshot<ClientCapabilities>,
 }
