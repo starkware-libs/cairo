@@ -1,8 +1,10 @@
+/// Header comment, should not be moved by the formatter.
 use openzeppelin::introspection::first;
 use openzeppelin::introspection::interface;
 
 #[starknet::contract]
 mod SRC5 {
+    /// Header comment, should not be moved by the formatter.
     mod F;
     mod G;
 

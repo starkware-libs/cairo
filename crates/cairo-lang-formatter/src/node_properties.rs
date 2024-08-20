@@ -360,7 +360,7 @@ impl SyntaxNodeFormat for SyntaxNode {
     ) -> BreakLinePointsPositions {
         // TODO(Gil): Make it easier to order the break points precedence.
         match parent_kind(db, self) {
-            Some(SyntaxKind::ModuleItemList) => {
+            Some(SyntaxKind::ModuleItemList) if self.kind(db) != SyntaxKind::ItemHeaderDoc => {
                 BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
                     1,
                     BreakLinePointIndentation::NotIndented,
@@ -656,6 +656,9 @@ impl SyntaxNodeFormat for SyntaxNode {
     }
 
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool {
+        if self.kind(db) == SyntaxKind::TerminalEmpty {
+            return true;
+        }
         if self.kind(db) == SyntaxKind::TerminalColonColon
             && parent_kind(db, self) == Some(SyntaxKind::PathSegmentWithGenericArgs)
         {

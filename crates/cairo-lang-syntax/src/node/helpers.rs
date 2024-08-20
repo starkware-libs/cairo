@@ -330,6 +330,7 @@ impl QueryAttrs for ModuleItem {
             ModuleItem::TypeAlias(item) => item.attributes_elements(db),
             ModuleItem::InlineMacro(item) => item.attributes_elements(db),
             ModuleItem::Missing(_) => vec![],
+            ModuleItem::HeaderDoc(_) => vec![],
         }
     }
 }

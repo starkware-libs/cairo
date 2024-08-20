@@ -925,6 +925,7 @@ impl<'a> FormatterImpl<'a> {
 enum MovableNode {
     ItemModule(SmolStr),
     ItemUse(SmolStr),
+    ItemHeaderDoc,
     Immovable,
 }
 impl MovableNode {
@@ -939,6 +940,7 @@ impl MovableNode {
                 }
             }
             SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db).into()),
+            SyntaxKind::ItemHeaderDoc => Self::ItemHeaderDoc,
             _ => Self::Immovable,
         }
     }
@@ -947,6 +949,8 @@ impl MovableNode {
 impl Ord for MovableNode {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
+            (MovableNode::ItemHeaderDoc, _) => Ordering::Less,
+            (_, MovableNode::ItemHeaderDoc) => Ordering::Greater,
             (MovableNode::Immovable, MovableNode::Immovable) => Ordering::Equal,
             (MovableNode::ItemModule(a), MovableNode::ItemModule(b))
             | (MovableNode::ItemUse(a), MovableNode::ItemUse(b)) => a.cmp(b),

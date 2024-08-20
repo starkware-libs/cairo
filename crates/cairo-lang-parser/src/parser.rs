@@ -181,14 +181,17 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse_syntax_file(mut self) -> SyntaxFileGreen {
-        let items = ModuleItemList::new_green(
-            self.db,
-            self.parse_attributed_list(
-                Self::try_parse_module_item,
-                is_of_kind!(),
-                MODULE_ITEM_DESCRIPTION,
-            ),
-        );
+        let mut module_items = vec![];
+        if let Some(doc_item) = self.take_doc() {
+            module_items.push(doc_item.into());
+        }
+        module_items.extend(self.parse_attributed_list(
+            Self::try_parse_module_item,
+            is_of_kind!(),
+            MODULE_ITEM_DESCRIPTION,
+        ));
+        // Create a new vec with the doc item as the children.
+        let items = ModuleItemList::new_green(self.db, module_items);
         // This will not panic since the above parsing only stops when reaches EOF.
         assert_eq!(self.peek().kind, SyntaxKind::TerminalEndOfFile);
 
@@ -346,14 +349,16 @@ impl<'a> Parser<'a> {
         let body = match self.peek().kind {
             SyntaxKind::TerminalLBrace => {
                 let lbrace = self.take::<TerminalLBrace>();
-                let items = ModuleItemList::new_green(
-                    self.db,
-                    self.parse_attributed_list(
-                        Self::try_parse_module_item,
-                        is_of_kind!(rbrace),
-                        MODULE_ITEM_DESCRIPTION,
-                    ),
-                );
+                let mut module_items = vec![];
+                if let Some(doc_item) = self.take_doc() {
+                    module_items.push(doc_item.into());
+                }
+                module_items.extend(self.parse_attributed_list(
+                    Self::try_parse_module_item,
+                    is_of_kind!(rbrace),
+                    MODULE_ITEM_DESCRIPTION,
+                ));
+                let items = ModuleItemList::new_green(self.db, module_items);
                 let rbrace = self.parse_token::<TerminalRBrace>();
                 ModuleBody::new_green(self.db, lbrace, items, rbrace).into()
             }
@@ -2833,6 +2838,30 @@ impl<'a> Parser<'a> {
         let token = self.take_raw();
         assert_eq!(token.kind, Terminal::KIND);
         self.add_trivia_to_terminal::<Terminal>(token)
+    }
+
+    fn take_doc(&mut self) -> Option<ItemHeaderDocGreen> {
+        if !self.next_terminal.leading_trivia.iter().any(|trivium: &TriviumGreen| {
+            trivium.0.lookup_intern(self.db).kind == SyntaxKind::TokenSingleLineComment
+        }) {
+            return None;
+        }
+        println!("Last trivia length: {:?}", self.last_trivia_length);
+        println!("width1: {:?}", self.next_terminal.width(self.db));
+        let empty_lexer_terminal = LexerTerminal {
+            text: "".into(),
+            kind: SyntaxKind::TerminalEmpty,
+            leading_trivia: mem::take(&mut self.next_terminal.leading_trivia),
+            trailing_trivia: vec![],
+        };
+        println!("width2: {:?}", self.next_terminal.width(self.db));
+        println!("width3: {:?}", empty_lexer_terminal.width(self.db));
+        self.offset = self.offset.add_width(empty_lexer_terminal.width(self.db));
+        self.current_width = self.next_terminal.width(self.db);
+
+        println!("Last trivia length2: {:?}", self.last_trivia_length);
+        let empty_terminal = self.add_trivia_to_terminal::<TerminalEmpty>(empty_lexer_terminal);
+        Some(ItemHeaderDoc::new_green(self.db, empty_terminal))
     }
 
     /// If the current terminal is of kind `Terminal`, returns its Green wrapper. Otherwise, returns

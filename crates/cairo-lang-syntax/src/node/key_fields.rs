@@ -306,6 +306,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ItemInlineMacro => {
             vec![]
         }
+        SyntaxKind::ItemHeaderDoc => {
+            vec![]
+        }
         SyntaxKind::ImplBody => {
             vec![]
         }
@@ -691,6 +694,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::SyntaxFile => {
+            vec![]
+        }
+        SyntaxKind::TokenEmpty => vec![],
+        SyntaxKind::TerminalEmpty => {
             vec![]
         }
         SyntaxKind::TokenSingleLineComment => vec![],
