@@ -83,6 +83,7 @@ cairo_lang_test_utils::test_file_test!(
         while_: "while",
         for_: "for",
         range: "range",
+        const_: "const",
     },
     test_expr_semantics
 );
