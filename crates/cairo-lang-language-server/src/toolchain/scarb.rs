@@ -4,7 +4,7 @@ use std::sync::{Arc, OnceLock};
 use anyhow::{bail, Context, Result};
 use scarb_metadata::{Metadata, MetadataCommand};
 use tower_lsp::lsp_types::notification::Notification;
-use tracing::warn;
+use tracing::{error, warn};
 
 use crate::env_config;
 use crate::server::notifier::Notifier;
@@ -22,33 +22,83 @@ pub const SCARB_TOML: &str = "Scarb.toml";
 pub struct ScarbToolchain {
     /// Cached path to the `scarb` executable.
     scarb_path_cell: Arc<OnceLock<Option<PathBuf>>>,
+
     /// The notifier object used to send notifications to the language client.
     notifier: Notifier,
+
+    /// States whether this instance is in _silent mode_.
+    ///
+    /// See [`ScarbToolchain::silent`] for more info.
+    is_silent: bool,
 }
 
 impl ScarbToolchain {
     /// Constructs a new [`ScarbToolchain`].
     pub fn new(notifier: &Notifier) -> Self {
-        ScarbToolchain { scarb_path_cell: Default::default(), notifier: notifier.clone() }
+        ScarbToolchain {
+            scarb_path_cell: Default::default(),
+            notifier: notifier.clone(),
+            is_silent: false,
+        }
     }
 
     /// Finds the path to the `scarb` executable to use.
     ///
     /// This method may send notifications to the language client if there are any actionable issues
-    /// with the found `scarb` installation, or if it could not be found.
+    /// with the found `scarb` installation or if it could not be found.
     fn discover(&self) -> Option<&Path> {
         self.scarb_path_cell
             .get_or_init(|| {
                 let path = env_config::scarb_path();
                 // TODO(mkaput): Perhaps we should display this notification again after reloading?
                 if path.is_none() {
-                    warn!("attempt to use scarb without SCARB env being set");
-                    self.notifier.send_notification::<ScarbPathMissing>(());
+                    if self.is_silent {
+                        // If we are in silent mode, then missing Scarb is probably dealt with
+                        // at the caller site.
+                        warn!("attempt to use scarb without SCARB env being set");
+                    } else {
+                        error!("attempt to use scarb without SCARB env being set");
+                        self.notifier.send_notification::<ScarbPathMissing>(());
+                    }
                 }
                 path
             })
             .as_ref()
             .map(PathBuf::as_path)
+    }
+
+    /// Creates a clone instance of this object that will be in _silent mode_.
+    ///
+    /// Silent mode means that any operations invoked through this instance should avoid performing
+    /// any user-visible actions.
+    pub fn silent(&self) -> Self {
+        if self.is_silent {
+            // Going silent from silent is noop, so skip any shenanigans we do here.
+            self.clone()
+        } else {
+            Self {
+                // Disassociate this instance from the shared path cell if it has not been
+                // initialized yet.
+                //
+                // This maintains a good UX for the following scenario (timeline):
+                // 1. CairoLS is started without a path to Scarb provided.
+                // 2. Some internal operation is silently attempting to query Scarb, which will
+                //    initialize the cell but only log a warning.
+                // 3. User-invoked operation makes an attempt to query Scarb.
+                //
+                // At this point we want to show missing Scarb notification,
+                // but without this trick we would never do
+                // as the path cell would be already initialized.
+                scarb_path_cell: match self.scarb_path_cell.get() {
+                    Some(_) => self.scarb_path_cell.clone(),
+                    None => Default::default(),
+                },
+
+                notifier: self.notifier.clone(),
+
+                is_silent: true,
+            }
+        }
     }
 
     /// Calls `scarb metadata` for the given `Scarb.toml` and parse its output.
@@ -66,7 +116,9 @@ impl ScarbToolchain {
             bail!("could not find scarb executable");
         };
 
-        self.notifier.send_notification::<ScarbResolvingStart>(());
+        if !self.is_silent {
+            self.notifier.send_notification::<ScarbResolvingStart>(());
+        }
 
         let result = MetadataCommand::new()
             .scarb_path(scarb_path)
@@ -75,7 +127,9 @@ impl ScarbToolchain {
             .exec()
             .context("failed to execute: scarb metadata");
 
-        self.notifier.send_notification::<ScarbResolvingFinish>(());
+        if !self.is_silent {
+            self.notifier.send_notification::<ScarbResolvingFinish>(());
+        }
 
         result
     }
