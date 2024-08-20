@@ -461,6 +461,7 @@ pub fn get_spec() -> Vec<Node> {
         .node_with_explicit_kind("Enum", "ItemEnum")
         .node_with_explicit_kind("TypeAlias", "ItemTypeAlias")
         .node_with_explicit_kind("InlineMacro", "ItemInlineMacro")
+        .node_with_explicit_kind("HeaderDoc", "ItemHeaderDoc")
     )
     .add_list("ModuleItemList", "ModuleItem")
     .add_struct(StructBuilder::new("ModuleItemMissing"))
@@ -617,6 +618,11 @@ pub fn get_spec() -> Vec<Node> {
         .node("arguments", "WrappedArgList")
         .node("semicolon", "TerminalSemicolon")
     )
+    // Empty struct, which is used for separating the first comments in a file or module from the
+    // rest of the items. This is needed to prevent the first comments from being moved by the
+    // formatter.
+    .add_struct(StructBuilder::new("ItemHeaderDoc")
+        .node("empty", "TerminalEmpty"))
     .add_enum(EnumBuilder::new("MaybeImplBody")
         .node_with_explicit_kind("Some", "ImplBody")
         .node_with_explicit_kind("None", "TerminalSemicolon")
@@ -875,6 +881,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("items", "ModuleItemList")
         .node("eof", "TerminalEndOfFile")
     )
+    .add_token_and_terminal("Empty")
     .add_token("SingleLineComment")
     .add_token("SingleLineInnerComment")
     .add_token("SingleLineDocComment")
