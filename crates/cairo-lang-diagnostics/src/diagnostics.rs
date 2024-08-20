@@ -357,3 +357,12 @@ impl<TEntry: DiagnosticEntry> Default for Diagnostics<TEntry> {
         Self::new()
     }
 }
+impl<TEntry: DiagnosticEntry> FromIterator<TEntry> for Diagnostics<TEntry> {
+    fn from_iter<T: IntoIterator<Item = TEntry>>(diags_iter: T) -> Self {
+        let mut builder = DiagnosticsBuilder::<TEntry>::default();
+        for diag in diags_iter {
+            builder.add(diag);
+        }
+        builder.build()
+    }
+}

@@ -75,6 +75,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use itertools::Itertools;
 use salsa::ParallelDatabase;
 use serde_json::Value;
 use tokio::sync::Semaphore;
@@ -431,13 +432,31 @@ impl Backend {
             };
         }
 
-        let new_file_diagnostics = FileDiagnostics {
+        let mut new_file_diagnostics = FileDiagnostics {
             parser: diags!(db.file_syntax_diagnostics(file_id), |r| r),
             semantic: diags!(db.file_semantic_diagnostics(file_id), Result::unwrap_or_default),
             lowering: diags!(db.file_lowering_diagnostics(file_id), Result::unwrap_or_default),
         };
 
         let mut state = self.state_mut().await;
+
+        // Skip repeated diagnostics for vfs files
+        if uri.scheme() == "vfs" {
+            let all_current_semantic_diagnostics = state
+                .file_diagnostics
+                .iter()
+                .flat_map(|(_url, diagnostics)| diagnostics.semantic.get_all())
+                .collect_vec();
+            let filtered_semantic_diags = new_file_diagnostics
+                .semantic
+                .get_all()
+                .into_iter()
+                .filter(|new_semantic_diagnostic| {
+                    !all_current_semantic_diagnostics.contains(new_semantic_diagnostic)
+                })
+                .collect();
+            new_file_diagnostics.semantic = filtered_semantic_diags;
+        }
 
         // Since we are using Arcs, this comparison should be efficient.
         if let Some(old_file_diagnostics) = state.file_diagnostics.get(uri) {
