@@ -484,6 +484,7 @@ impl QueryAttrs for Statement {
             Statement::Return(statement) => statement.attributes_elements(db),
             Statement::Let(statement) => statement.attributes_elements(db),
             Statement::Expr(statement) => statement.attributes_elements(db),
+            Statement::Item(_) => todo!(),
             Statement::Missing(_) => vec![],
         }
     }
