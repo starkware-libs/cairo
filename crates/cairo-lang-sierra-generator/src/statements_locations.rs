@@ -10,6 +10,9 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
+use crate::statements_code_locations::{
+    SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, StatementsSourceCodeLocations,
+};
 use crate::statements_functions::StatementsFunctions;
 
 #[cfg(test)]
@@ -137,6 +140,23 @@ pub fn function_identifier_relative_to_file_module(
     relative_semantic_path_segments.into_iter().rev().join("::")
 }
 
+/// Returns a location in the user file corresponding to the given [StableLocation].
+/// It consists of a full path to the file and a text span in the file.
+pub fn maybe_code_location(
+    db: &dyn DefsGroup,
+    location: StableLocation,
+) -> Option<(SourceFileFullPath, SourceCodeSpan)> {
+    let file_full_path = location.file_id(db.upcast()).full_path(db.upcast());
+    let location = location.diagnostic_location(db.upcast()).user_location(db.upcast());
+    let position = location.span.position_in_file(db.upcast(), location.file_id)?;
+    let source_location = SourceCodeSpan {
+        start: SourceCodeLocation { col: position.start.col, line: position.start.line },
+        end: SourceCodeLocation { col: position.start.col, line: position.start.line },
+    };
+
+    Some((SourceFileFullPath(file_full_path), source_location))
+}
+
 /// This function returns a fully qualified path to the file module.
 /// `None` should be returned only for compiler tests where files of type `VirtualFile` may be non
 /// generated files.
@@ -205,6 +225,29 @@ impl StatementsLocations {
                         stable_locations
                             .iter()
                             .filter_map(|s| maybe_containing_function_identifier(db, *s))
+                            .collect(),
+                    )
+                })
+                .collect(),
+        }
+    }
+
+    /// Creates a new [StatementsSourceCodeLocations] struct using [StatementsLocations] and
+    /// [DefsGroup].
+    pub fn extract_statements_source_code_locations(
+        &self,
+        db: &dyn DefsGroup,
+    ) -> StatementsSourceCodeLocations {
+        StatementsSourceCodeLocations {
+            statements_to_code_location_map: self
+                .locations
+                .iter_sorted()
+                .map(|(statement_idx, stable_locations)| {
+                    (
+                        *statement_idx,
+                        stable_locations
+                            .iter()
+                            .filter_map(|s| maybe_code_location(db, *s))
                             .collect(),
                     )
                 })

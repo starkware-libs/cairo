@@ -148,11 +148,17 @@ fn compile_contract_with_prepared_and_checked_db(
         constructor: get_entry_points(db, &constructor, &replacer)?,
     };
 
-    let annotations = if compiler_config.add_statements_functions {
+    let mut annotations = Annotations::default();
+
+    if compiler_config.add_statements_functions {
         let statements_functions = debug_info.statements_locations.extract_statements_functions(db);
-        Annotations::from(statements_functions)
-    } else {
-        Default::default()
+        annotations.extend(Annotations::from(statements_functions))
+    };
+
+    if compiler_config.add_statements_code_locations {
+        let statements_functions =
+            debug_info.statements_locations.extract_statements_source_code_locations(db);
+        annotations.extend(Annotations::from(statements_functions))
     };
 
     let contract_class = ContractClass::new(

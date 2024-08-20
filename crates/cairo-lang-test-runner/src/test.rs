@@ -16,7 +16,11 @@ fn test_compiled_serialization() {
         &path,
         true,
         false,
-        TestsCompilationConfig { starknet: true, add_statements_functions: false },
+        TestsCompilationConfig {
+            starknet: true,
+            add_statements_functions: false,
+            add_statements_code_locations: false,
+        },
     )
     .unwrap();
     let compiled = compiler.build().unwrap();
