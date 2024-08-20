@@ -132,3 +132,13 @@ fn test_two_complex_enums() {
             .unbox() == (ThreeOptions2::A(1337), ThreeOptions2::C),
     );
 }
+
+#[test]
+fn test_const_shadowing() {
+    const Y: u8 = 4_u8;
+    {
+        const Y: u8 = 2;
+        assert!(Y == 2);
+    }
+    assert!(Y == 4);
+}
