@@ -211,6 +211,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::StatementBreak => {
             vec![]
         }
+        SyntaxKind::StatementItem => {
+            vec![]
+        }
         SyntaxKind::Param => {
             vec![/* name */ children[1]]
         }

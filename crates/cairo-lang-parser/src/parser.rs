@@ -1983,6 +1983,10 @@ impl<'a> Parser<'a> {
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Ok(StatementBreak::new_green(self.db, attributes, break_kw, expr, semicolon).into())
             }
+            SyntaxKind::TerminalConst => {
+                let mod_item_green = Self::try_parse_module_item(self)?;
+                Ok(StatementItem::new_green(self.db, mod_item_green).into())
+            }
             _ => match self.try_parse_expr() {
                 Ok(expr) => {
                     let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
