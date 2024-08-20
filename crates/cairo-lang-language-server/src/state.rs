@@ -27,6 +27,12 @@ pub struct FileDiagnostics {
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
 }
+
+impl FileDiagnostics {
+    pub fn is_empty(&self) -> bool {
+        self.semantic.is_empty() && self.lowering.is_empty() && self.parser.is_empty()
+    }
+}
 impl std::panic::UnwindSafe for FileDiagnostics {}
 
 impl State {

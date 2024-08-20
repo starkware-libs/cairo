@@ -270,6 +270,11 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         if self.0.error_count == 0 { Ok(()) } else { Err(DiagnosticAdded) }
     }
 
+    /// Checks if there are no entries inside `Diagnostics`
+    pub fn is_empty(&self) -> bool {
+        self.0.leaves.is_empty() && self.0.subtrees.iter().all(|subtree| subtree.is_empty())
+    }
+
     /// Format entries to pairs of severity and message.
     pub fn format_with_severity(&self, db: &TEntry::DbType) -> Vec<FormattedDiagnosticEntry> {
         let mut res: Vec<FormattedDiagnosticEntry> = Vec::new();
@@ -297,18 +302,12 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 
     /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
     pub fn expect(&self, error_message: &str) {
-        assert!(self.0.leaves.is_empty(), "{error_message}\n{self:?}");
-        for subtree in &self.0.subtrees {
-            subtree.expect(error_message);
-        }
+        assert!(self.is_empty(), "{error_message}\n{self:?}");
     }
 
     /// Same as [Self::expect], except that the diagnostics are formatted.
     pub fn expect_with_db(&self, db: &TEntry::DbType, error_message: &str) {
-        assert!(self.0.leaves.is_empty(), "{}\n{}", error_message, self.format(db));
-        for subtree in &self.0.subtrees {
-            subtree.expect_with_db(db, error_message);
-        }
+        assert!(self.is_empty(), "{}\n{}", error_message, self.format(db));
     }
 
     // TODO(spapini): This is temporary. Remove once the logic in language server doesn't use this.
@@ -355,5 +354,14 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 impl<TEntry: DiagnosticEntry> Default for Diagnostics<TEntry> {
     fn default() -> Self {
         Self::new()
+    }
+}
+impl<TEntry: DiagnosticEntry> FromIterator<TEntry> for Diagnostics<TEntry> {
+    fn from_iter<T: IntoIterator<Item = TEntry>>(diags_iter: T) -> Self {
+        let mut builder = DiagnosticsBuilder::<TEntry>::default();
+        for diag in diags_iter {
+            builder.add(diag);
+        }
+        builder.build()
     }
 }
