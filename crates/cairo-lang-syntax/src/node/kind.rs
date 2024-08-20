@@ -77,6 +77,7 @@ pub enum SyntaxKind {
     OptionExprClauseEmpty,
     StatementReturn,
     StatementBreak,
+    StatementItem,
     Param,
     ModifierList,
     ParamList,

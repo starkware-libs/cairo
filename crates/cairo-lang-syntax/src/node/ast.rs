@@ -8926,6 +8926,7 @@ pub enum Statement {
     Continue(StatementContinue),
     Return(StatementReturn),
     Break(StatementBreak),
+    Item(StatementItem),
     Missing(StatementMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8969,6 +8970,11 @@ impl From<StatementBreakPtr> for StatementPtr {
         Self(value.0)
     }
 }
+impl From<StatementItemPtr> for StatementPtr {
+    fn from(value: StatementItemPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<StatementMissingPtr> for StatementPtr {
     fn from(value: StatementMissingPtr) -> Self {
         Self(value.0)
@@ -8996,6 +9002,11 @@ impl From<StatementReturnGreen> for StatementGreen {
 }
 impl From<StatementBreakGreen> for StatementGreen {
     fn from(value: StatementBreakGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<StatementItemGreen> for StatementGreen {
+    fn from(value: StatementItemGreen) -> Self {
         Self(value.0)
     }
 }
@@ -9027,6 +9038,7 @@ impl TypedSyntaxNode for Statement {
             SyntaxKind::StatementBreak => {
                 Statement::Break(StatementBreak::from_syntax_node(db, node))
             }
+            SyntaxKind::StatementItem => Statement::Item(StatementItem::from_syntax_node(db, node)),
             SyntaxKind::StatementMissing => {
                 Statement::Missing(StatementMissing::from_syntax_node(db, node))
             }
@@ -9040,6 +9052,7 @@ impl TypedSyntaxNode for Statement {
             Statement::Continue(x) => x.as_syntax_node(),
             Statement::Return(x) => x.as_syntax_node(),
             Statement::Break(x) => x.as_syntax_node(),
+            Statement::Item(x) => x.as_syntax_node(),
             Statement::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -9061,6 +9074,7 @@ impl Statement {
             SyntaxKind::StatementContinue => true,
             SyntaxKind::StatementReturn => true,
             SyntaxKind::StatementBreak => true,
+            SyntaxKind::StatementItem => true,
             SyntaxKind::StatementMissing => true,
             _ => false,
         }
@@ -10166,6 +10180,89 @@ impl TypedSyntaxNode for StatementBreak {
 }
 impl From<&StatementBreak> for SyntaxStablePtrId {
     fn from(node: &StatementBreak) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct StatementItem {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl StatementItem {
+    pub const INDEX_ITEM: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, item: ModuleItemGreen) -> StatementItemGreen {
+        let children: Vec<GreenId> = vec![item.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        StatementItemGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::StatementItem,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl StatementItem {
+    pub fn item(&self, db: &dyn SyntaxGroup) -> ModuleItem {
+        ModuleItem::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct StatementItemPtr(pub SyntaxStablePtrId);
+impl StatementItemPtr {}
+impl TypedStablePtr for StatementItemPtr {
+    type SyntaxNode = StatementItem;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> StatementItem {
+        StatementItem::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<StatementItemPtr> for SyntaxStablePtrId {
+    fn from(ptr: StatementItemPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct StatementItemGreen(pub GreenId);
+impl TypedSyntaxNode for StatementItem {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementItem);
+    type StablePtr = StatementItemPtr;
+    type Green = StatementItemGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        StatementItemGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::StatementItem,
+                details: GreenNodeDetails::Node {
+                    children: vec![ModuleItem::missing(db).0],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::StatementItem,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::StatementItem
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StatementItemPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&StatementItem> for SyntaxStablePtrId {
+    fn from(node: &StatementItem) -> Self {
         node.stable_ptr().untyped()
     }
 }
