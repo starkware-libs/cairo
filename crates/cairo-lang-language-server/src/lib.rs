@@ -81,7 +81,6 @@ use serde_json::Value;
 use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
-use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::request::Request;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
@@ -93,6 +92,7 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
+use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
@@ -600,12 +600,10 @@ impl Backend {
                     try_to_init_unmanaged_core(&*self.config.read().await, db);
                 }
 
-                let corelib_validation = validate_corelib(db);
-                if let Err(result) = corelib_validation {
-                    let notifier = Notifier::new(&self.client);
-                    spawn_blocking(move || {
-                        notifier.send_notification::<CorelibVersionMismatch>(result.to_string());
-                    });
+                if let Err(result) = validate_corelib(db) {
+                    self.client
+                        .send_notification::<CorelibVersionMismatch>(result.to_string())
+                        .await;
                 }
             }
 
@@ -656,14 +654,6 @@ impl Backend {
             config.reload(&self.client, &client_capabilities).await;
         }
     }
-}
-
-#[derive(Debug)]
-struct CorelibVersionMismatch {}
-
-impl Notification for CorelibVersionMismatch {
-    type Params = String;
-    const METHOD: &'static str = "corelib/version-mismatch";
 }
 
 enum ServerCommands {

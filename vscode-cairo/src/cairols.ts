@@ -83,14 +83,17 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
     );
   });
 
-  client.onNotification(new NotificationType<string>("corelib/version-mismatch"), (params) => {
-    const errorMessage =
-      "Corelib version mismatch. If you are using Scarb try reopening the project to fix this error. Resort to `scarb cache clean` if it doesn't help. ERROR: " +
-      params;
+  client.onNotification(
+    new NotificationType<string>("cairo/corelib-version-mismatch"),
+    (errMessage) => {
+      const errorMessage =
+        "Core crate version mismatch. If you are using Scarb try reopening the project to fix this error. Resort to `scarb cache clean` if it doesn't help. ERROR: " +
+        errMessage;
 
-    vscode.window.showErrorMessage(errorMessage);
-    ctx.log.error(errorMessage);
-  });
+      vscode.window.showErrorMessage(errorMessage);
+      ctx.log.error(errorMessage);
+    },
+  );
 
   await client.start();
 
