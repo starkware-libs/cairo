@@ -69,7 +69,7 @@ impl TestRunner {
             TestsCompilationConfig {
                 starknet,
                 add_statements_functions: config.run_profiler == RunProfilerConfig::Cairo,
-                add_statements_code_locations: false
+                add_statements_code_locations: false,
             },
         )?;
         Ok(Self { compiler, config })
