@@ -1005,18 +1005,18 @@ impl LogIsEvent of starknet::Event<Log> {
 }
 
 
-lib.cairo:6:1
-#[starknet::component]
-^********************^
+lib.cairo:11:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:6:1
-#[starknet::component]
-^********************^
+lib.cairo:11:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1103,6 +1103,6 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
              ^*******^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:6:1
-#[starknet::component]
-^********************^
+ --> lib.cairo:11:5
+    #[storage]
+    ^********^
