@@ -175,7 +175,7 @@ impl BlockBuilder {
         member_path: &MemberPath,
     ) -> semantic::TypeId {
         match member_path {
-            MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
+            MemberPath::Var(var) => ctx.semantic_defs[var].ty(ctx.db.upcast()),
             MemberPath::Member { member_id, concrete_struct_id, .. } => {
                 ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
                     [&member_id.name(ctx.db.upcast())]

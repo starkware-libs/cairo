@@ -311,3 +311,39 @@ error: The value does not fit within the range of type core::zeroable::NonZero::
  --> lib.cairo:31:38
     }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true, };
                                      ^
+
+//! > ==========================================================================
+
+//! > const in block
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> () {
+    {
+        const X: u8 = 2;
+    }
+    let y = X;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:15
+        const X: u8 = 2;
+              ^
+
+error: Identifier not found.
+ --> lib.cairo:5:13
+    let y = X;
+            ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:5:9
+    let y = X;
+        ^
