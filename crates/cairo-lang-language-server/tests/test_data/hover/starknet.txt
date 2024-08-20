@@ -53,9 +53,14 @@ mod Balance {
 // = source context
 use Balance::contr<caret>act_state_for_testing;
 // = highlight
-No highlight information.
+use Balance::<sel>contract_state_for_testing</sel>;
 // = popover
-No hover information.
+```cairo
+hello
+```
+```cairo
+pub fn contract_state_for_testing() -> ContractState
+```
 
 //! > hover #1
 // = source context
