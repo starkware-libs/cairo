@@ -3401,6 +3401,7 @@ pub fn compute_statement_semantic(
                 stable_ptr: syntax.stable_ptr(),
             })
         }
+        ast::Statement::Item(_) => todo!(),
         ast::Statement::Missing(_) => todo!(),
     };
     ctx.resolver.data.feature_config.restore(feature_restore);
