@@ -11,8 +11,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::validate_attributes_flat;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, LookupItemId,
-    MemberId, ModuleItemId, NamedLanguageElementId, TraitFunctionId, TraitId, VarId,
+    EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalConstLongId, LocalVarLongId,
+    LookupItemId, MemberId, ModuleItemId, NamedLanguageElementId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
@@ -60,7 +60,7 @@ use crate::diagnostic::{
     ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics,
     SemanticDiagnosticsBuilder, TraitInferenceErrors, UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::items::constant::ConstValue;
+use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
@@ -69,7 +69,7 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
-use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
+use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
     add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots,
@@ -78,8 +78,8 @@ use crate::types::{
 };
 use crate::usage::Usages;
 use crate::{
-    ConcreteEnumId, ConcreteTraitLongId, GenericArgumentId, GenericParam, Member, Mutability,
-    Parameter, PatternStringLiteral, PatternStruct, Signature,
+    ConcreteEnumId, ConcreteTraitLongId, GenericArgumentId, GenericParam, LocalConstant, Member,
+    Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature,
 };
 
 /// Expression with its id.
@@ -142,7 +142,7 @@ pub struct ComputationContext<'ctx> {
     pub arenas: Arenas,
     function_id: ContextFunction,
     /// Definitions of semantic variables.
-    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
+    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Binding>,
     inner_ctx: Option<InnerContext>,
     cfg_set: Arc<CfgSet>,
     /// whether to look for closures when calling variables.
@@ -204,9 +204,16 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 
     /// Adds warning for unused variables if required.
-    fn add_unused_variable_warning(&mut self, var_name: &str, var: &Variable) {
+    fn add_unused_variable_warning(&mut self, var_name: &str, var: &Binding) {
         if !self.environment.used_variables.contains(&var.id()) && !var_name.starts_with('_') {
-            self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedVariable);
+            match var {
+                Binding::LocalConst(_) => {
+                    self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedConstant);
+                }
+                Binding::LocalVar(_) | Binding::Param(_) => {
+                    self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedVariable);
+                }
+            }
         }
     }
 
@@ -260,7 +267,7 @@ impl<'ctx> ComputationContext<'ctx> {
 }
 
 // TODO(ilya): Change value to VarId.
-pub type EnvVariables = OrderedHashMap<SmolStr, Variable>;
+pub type EnvVariables = OrderedHashMap<SmolStr, Binding>;
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
@@ -283,7 +290,7 @@ impl Environment {
         if let utils::ordered_hash_map::Entry::Vacant(entry) =
             self.variables.entry(semantic_param.name.clone())
         {
-            entry.insert(Variable::Param(semantic_param));
+            entry.insert(Binding::Param(semantic_param));
             Ok(())
         } else {
             Err(diagnostics.report(
@@ -774,7 +781,7 @@ fn compute_expr_function_call_semantic(
     if let [PathSegment::Simple(ident_segment)] = &segments[..] {
         let identifier = ident_segment.ident(syntax_db);
         let variable_name = identifier.text(ctx.db.upcast());
-        if let Some(var) = get_variable_by_name(ctx, &variable_name, path.stable_ptr().into()) {
+        if let Some(var) = get_binded_expr_by_name(ctx, &variable_name, path.stable_ptr().into()) {
             is_shadowed_by_variable = true;
             // if closures are not in context, we want to call the function instead of the variable.
             if ctx.are_closures_in_context {
@@ -1213,7 +1220,7 @@ fn compute_arm_semantic(
             }
 
             for v in variables {
-                let var_def = Variable::Local(v.var.clone());
+                let var_def = Binding::LocalVar(v.var.clone());
                 // TODO(spapini): Wrap this in a function to couple with semantic_defs
                 // insertion.
                 new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
@@ -1515,7 +1522,7 @@ fn compute_expr_for_semantic(
         );
         let variables = inner_pattern.variables(&new_ctx.arenas.patterns);
         for v in variables {
-            let var_def = Variable::Local(v.var.clone());
+            let var_def = Binding::LocalVar(v.var.clone());
             new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
             new_ctx.semantic_defs.insert(var_def.id(), var_def);
         }
@@ -2985,14 +2992,25 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
     if let [PathSegment::Simple(ident_segment)] = &segments[..] {
         let identifier = ident_segment.ident(syntax_db);
         let variable_name = identifier.text(ctx.db.upcast());
-        if let Some(res) = get_variable_by_name(ctx, &variable_name, path.stable_ptr().into()) {
-            let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
-            ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(), item);
+        if let Some(res) = get_binded_expr_by_name(ctx, &variable_name, path.stable_ptr().into()) {
+            match res.clone() {
+                Expr::Var(expr_var) => {
+                    let item = ResolvedGenericItem::Variable(expr_var.var);
+                    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(), item);
+                }
+                Expr::Constant(expr_const) => {
+                    let item = ResolvedConcreteItem::Constant(expr_const.const_value_id);
+                    ctx.resolver.data.resolved_items.concrete.insert(identifier.stable_ptr(), item);
+                }
+                _ => unreachable!(
+                    "get_binded_expr_by_name should only return variables or constants"
+                ),
+            };
             return Ok(res);
         }
     }
 
-    let resolved_item =
+    let resolved_item: ResolvedConcreteItem =
         ctx.resolver.resolve_concrete_path(ctx.diagnostics, path, NotFoundItemType::Identifier)?;
 
     match resolved_item {
@@ -3031,7 +3049,7 @@ pub fn resolve_variable_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
-    let res = get_variable_by_name(ctx, &variable_name, stable_ptr)
+    let res = get_binded_expr_by_name(ctx, &variable_name, stable_ptr)
         .ok_or_else(|| ctx.diagnostics.report(identifier, VariableNotFound(variable_name)))?;
     let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
     ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(), item);
@@ -3039,7 +3057,7 @@ pub fn resolve_variable_by_name(
 }
 
 /// Returns the requested variable from the environment if it exists. Returns None otherwise.
-pub fn get_variable_by_name(
+pub fn get_binded_expr_by_name(
     ctx: &mut ComputationContext<'_>,
     variable_name: &SmolStr,
     stable_ptr: ast::ExprPtr,
@@ -3048,7 +3066,16 @@ pub fn get_variable_by_name(
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(variable_name) {
             env.used_variables.insert(var.id());
-            return Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }));
+            return match var {
+                Binding::LocalConst(local_const) => Some(Expr::Constant(ExprConstant {
+                    const_value_id: local_const.value,
+                    ty: local_const.value.lookup_intern(ctx.db).ty(ctx.db).unwrap(),
+                    stable_ptr,
+                })),
+                Binding::LocalVar(_) | Binding::Param(_) => {
+                    Some(Expr::Var(ExprVar { var: var.id(), ty: var.ty(), stable_ptr }))
+                }
+            };
         }
         maybe_env = env.parent.as_deref_mut();
     }
@@ -3287,11 +3314,21 @@ pub fn compute_statement_semantic(
             );
             let variables = pattern.variables(&ctx.arenas.patterns);
             for v in variables {
-                let var_def = Variable::Local(v.var.clone());
+                let var_def = Binding::LocalVar(v.var.clone());
                 if let Some(old_var) =
                     ctx.environment.variables.insert(v.name.clone(), var_def.clone())
                 {
-                    ctx.add_unused_variable_warning(&v.name, &old_var);
+                    match old_var {
+                        Binding::LocalConst(_) => {
+                            return Err(ctx.diagnostics.report(
+                                v.stable_ptr,
+                                MultipleDefinitionforConstantVariable(v.name.clone()),
+                            ));
+                        }
+                        Binding::LocalVar(_) | Binding::Param(_) => {
+                            ctx.add_unused_variable_warning(&v.name, &old_var);
+                        }
+                    }
                 }
                 ctx.semantic_defs.insert(var_def.id(), var_def);
             }
@@ -3424,7 +3461,88 @@ pub fn compute_statement_semantic(
                 stable_ptr: syntax.stable_ptr(),
             })
         }
-        ast::Statement::Item(_) => todo!(),
+        ast::Statement::Item(stmt_item_syntax) => {
+            let item_syntax = &stmt_item_syntax.item(syntax_db);
+            match item_syntax {
+                ast::ModuleItem::Constant(const_syntax) => {
+                    let lhs = const_syntax.type_clause(db.upcast()).ty(db.upcast());
+                    let rhs = const_syntax.value(db.upcast());
+                    let rhs_expr = compute_expr_semantic(ctx, &rhs);
+                    let explicit_type = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &lhs);
+                    let rhs_resolved_expr = resolve_const_expr_and_evaluate(
+                        db,
+                        ctx,
+                        &rhs_expr,
+                        stmt_item_syntax.stable_ptr().untyped(),
+                        explicit_type,
+                    );
+                    let rhs_id = LocalConstLongId(
+                        ctx.resolver.module_file_id,
+                        const_syntax.name(db.upcast()).stable_ptr(),
+                    )
+                    .intern(ctx.db);
+                    // db.lookup_intern_const_value(local.value).ty(db).unwrap()
+                    if let Some(old_var) = ctx.environment.variables.insert(
+                        const_syntax.name(syntax_db).text(db.upcast()),
+                        Binding::LocalConst(LocalConstant {
+                            id: rhs_id,
+                            value: db.intern_const_value(rhs_resolved_expr.clone()),
+                            ty: rhs_resolved_expr.ty(db.upcast())?,
+                        }),
+                    ) {
+                        match old_var {
+                            Binding::LocalConst(_) => {
+                                return Err(ctx.diagnostics.report(
+                                    stmt_item_syntax.stable_ptr(),
+                                    MultipleConstantDefinition(
+                                        const_syntax.name(syntax_db).text(db.upcast()),
+                                    ),
+                                ));
+                            }
+                            Binding::LocalVar(_) | Binding::Param(_) => {
+                                return Err(ctx.diagnostics.report(
+                                    stmt_item_syntax.stable_ptr(),
+                                    MultipleDefinitionforConstantVariable(
+                                        const_syntax.name(syntax_db).text(db.upcast()),
+                                    ),
+                                ));
+                            }
+                        }
+                    }
+                    ctx.semantic_defs.insert(
+                        VarId::Const(rhs_id),
+                        Binding::LocalConst(LocalConstant {
+                            id: rhs_id,
+                            value: db.intern_const_value(rhs_resolved_expr.clone()),
+                            ty: rhs_resolved_expr.ty(db.upcast())?,
+                        }),
+                    );
+                    semantic::Statement::Item(semantic::StatementItem {
+                        stable_ptr: syntax.stable_ptr(),
+                    })
+                }
+                ast::ModuleItem::Module(_) => {
+                    unreachable!("Modules are not supported inside a function.")
+                }
+                ast::ModuleItem::Use(_) => unreachable!("Use type not supported."),
+                ast::ModuleItem::FreeFunction(_) => {
+                    unreachable!("FreeFunction type not supported.")
+                }
+                ast::ModuleItem::ExternFunction(_) => {
+                    unreachable!("ExternFunction type not supported.")
+                }
+                ast::ModuleItem::ExternType(_) => unreachable!("ExternType type not supported."),
+                ast::ModuleItem::Trait(_) => unreachable!("Trait type not supported."),
+                ast::ModuleItem::Impl(_) => unreachable!("Impl type not supported."),
+                ast::ModuleItem::ImplAlias(_) => unreachable!("ImplAlias type not supported."),
+                ast::ModuleItem::Struct(_) => unreachable!("Struct type not supported."),
+                ast::ModuleItem::Enum(_) => unreachable!("Enum type not supported."),
+                ast::ModuleItem::TypeAlias(_) => unreachable!("TypeAlias type not supported."),
+                ast::ModuleItem::InlineMacro(_) => unreachable!("InlineMacro type not supported."),
+                ast::ModuleItem::HeaderDoc(_) => unreachable!("HeaderDoc type not supported."),
+                ast::ModuleItem::Missing(_) => unreachable!("Missing type not supported."),
+            }
+        }
         ast::Statement::Missing(_) => todo!(),
     };
     ctx.resolver.data.feature_config.restore(feature_restore);

@@ -96,7 +96,7 @@ pub fn lower_semantic_function(
     for semantic_var in &signature.params {
         encapsulating_ctx.semantic_defs.insert(
             semantic::VarId::Param(semantic_var.id),
-            semantic::Variable::Param(semantic_var.clone()),
+            semantic::Binding::Param(semantic_var.clone()),
         );
     }
 
@@ -668,6 +668,7 @@ pub fn lower_statement(
             };
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
+        semantic::Statement::Item(_) => {}
     }
     Ok(())
 }
@@ -699,7 +700,7 @@ fn lower_single_pattern(
             var: sem_var,
             stable_ptr,
         }) => {
-            let sem_var = semantic::Variable::Local(sem_var);
+            let sem_var = semantic::Binding::LocalVar(sem_var);
             // Deposit the owned variable in the semantic variables store.
             let var = lowered_expr.as_var_usage(ctx, builder)?.var_id;
             // Override variable location.
@@ -1384,7 +1385,7 @@ fn lower_expr_loop(
             builder.put_semantic(into_iter_member_path.base_var(), into_iter_var.var_id);
 
             ctx.semantic_defs
-                .insert(into_iter_member_path.base_var(), semantic::Variable::Local(sem_var));
+                .insert(into_iter_member_path.base_var(), semantic::Binding::LocalVar(sem_var));
 
             (stable_ptr, ty)
         }
