@@ -311,3 +311,130 @@ error: The value does not fit within the range of type core::zeroable::NonZero::
  --> lib.cairo:31:38
     }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true, };
                                      ^
+
+//! > ==========================================================================
+
+//! > const in block
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> () {
+    {
+        const X: u8 = 2;
+    }
+    let y = X;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+warning: Unused constant. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:15
+        const X: u8 = 2;
+              ^
+
+error: Identifier not found.
+ --> lib.cairo:5:13
+    let y = X;
+            ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:5:9
+    let y = X;
+        ^
+
+//! > ==========================================================================
+
+//! > multiple definitions of the same const
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> () {
+    const A: u8 = 1;
+    const A: u8 = 2;
+    const B: u8 = 3;
+    let B = 4;
+    let C = 5;
+    const C: u8 = 6;
+    {
+        const D: u8 = 7;
+        const D: u8 = 8;
+        const E: u8 = 9;
+        let E = 10;
+        let F = 11;
+        const F: u8 = 12;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Multiple definitions of constant "A".
+ --> lib.cairo:3:5
+    const A: u8 = 2;
+    ^**************^
+
+error: Multiple definitions of identifier 'B' as constant and variable.
+ --> lib.cairo:5:9
+    let B = 4;
+        ^
+
+error: Multiple definitions of identifier 'C' as constant and variable.
+ --> lib.cairo:7:5
+    const C: u8 = 6;
+    ^**************^
+
+error: Multiple definitions of constant "D".
+ --> lib.cairo:10:9
+        const D: u8 = 8;
+        ^**************^
+
+error: Multiple definitions of identifier 'E' as constant and variable.
+ --> lib.cairo:12:13
+        let E = 10;
+            ^
+
+error: Multiple definitions of identifier 'F' as constant and variable.
+ --> lib.cairo:14:9
+        const F: u8 = 12;
+        ^***************^
+
+warning: Unused constant. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:10:15
+        const D: u8 = 8;
+              ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:12:13
+        let E = 10;
+            ^
+
+warning: Unused constant. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:14:15
+        const F: u8 = 12;
+              ^
+
+warning: Unused constant. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:11
+    const A: u8 = 2;
+          ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:5:9
+    let B = 4;
+        ^
+
+warning: Unused constant. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:7:11
+    const C: u8 = 6;
+          ^

@@ -56,6 +56,7 @@ pub enum Statement {
     Continue(StatementContinue),
     Return(StatementReturn),
     Break(StatementBreak),
+    Item(StatementItem),
 }
 impl Statement {
     pub fn stable_ptr(&self) -> ast::StatementPtr {
@@ -65,6 +66,7 @@ impl Statement {
             Statement::Continue(stmt) => stmt.stable_ptr,
             Statement::Return(stmt) => stmt.stable_ptr,
             Statement::Break(stmt) => stmt.stable_ptr,
+            Statement::Item(stmt) => stmt.stable_ptr,
         }
     }
 }
@@ -115,6 +117,14 @@ pub struct StatementReturn {
 #[debug_db(ExprFormatter<'a>)]
 pub struct StatementBreak {
     pub expr_option: Option<ExprId>,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::StatementPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct StatementItem {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::StatementPtr,
