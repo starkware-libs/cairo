@@ -107,9 +107,9 @@ pub struct EncapsulatingLoweringContext<'db> {
     pub semantic_function_id: defs::ids::FunctionWithBodyId,
     /// Semantic model for current function body.
     pub function_body: Arc<semantic::FunctionBody>,
-    /// Definitions encountered for semantic variables.
+    /// Definitions encountered for semantic bindings.
     // TODO(spapini): consider moving to semantic model.
-    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
+    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Binding>,
     /// Expression formatter of the free function.
     pub expr_formatter: ExprFormatter<'db>,
     /// Block usages for the entire encapsulating function.
