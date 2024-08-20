@@ -8,6 +8,7 @@ import { isScarbProject } from "./scarbProject";
 import { StandaloneLS } from "./standalonels";
 import { registerMacroExpandProvider, registerVfsProvider } from "./textDocumentProviders";
 import { NotificationType } from "vscode-jsonrpc/lib/common/messages";
+import * as cp from "node:child_process";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
@@ -85,13 +86,30 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
 
   client.onNotification(
     new NotificationType<string>("cairo/corelib-version-mismatch"),
-    (errMessage) => {
+    async (errMessage) => {
       const errorMessage =
         "Core crate version mismatch. If you are using Scarb try reopening the project to fix this error. Resort to `scarb cache clean` if it doesn't help. ERROR: " +
         errMessage;
 
-      vscode.window.showErrorMessage(errorMessage);
       ctx.log.error(errorMessage);
+
+      const selectedValue = await vscode.window.showErrorMessage(
+        errorMessage,
+        "Reload window",
+        "Clean Scarb's cache",
+      );
+
+      if (selectedValue === "Reload window") {
+        await vscode.commands.executeCommand("workbench.action.reloadWindow");
+      } else if (selectedValue === "Clean Scarb's cache") {
+        cp.exec("scarb cache clean", (err, stdout, stderr) => {
+          ctx.log.trace("stdout: " + stdout);
+          ctx.log.trace("stderr: " + stderr);
+          if (err) {
+            ctx.log.warn("error: " + err);
+          }
+        });
+      }
     },
   );
 
