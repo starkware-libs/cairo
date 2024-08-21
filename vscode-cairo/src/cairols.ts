@@ -89,15 +89,18 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
     async (errorMessage) => {
       ctx.log.error(errorMessage);
 
+      const reloadWindow = "Reload window";
+      const cleanScarbCache = "Clean Scarb's cache";
+
       const selectedValue = await vscode.window.showErrorMessage(
         errorMessage,
-        "Reload window",
-        "Clean Scarb's cache",
+        reloadWindow,
+        cleanScarbCache,
       );
 
-      if (selectedValue === "Reload window") {
+      if (selectedValue === reloadWindow) {
         await vscode.commands.executeCommand("workbench.action.reloadWindow");
-      } else if (selectedValue === "Clean Scarb's cache") {
+      } else if (selectedValue === cleanScarbCache) {
         cp.exec("scarb cache clean", (err, stdout, stderr) => {
           ctx.log.trace("`scarb cache clean` stdout: " + stdout);
           ctx.log.trace("`scarb cache clean` stderr: " + stderr);
