@@ -55,7 +55,7 @@ pub fn contains_cycle(
 /// Cycle handling for [LoweringGroup::contains_cycle].
 pub fn contains_cycle_handle_cycle(
     _db: &dyn LoweringGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _function_id: &ConcreteFunctionWithBodyId,
     _dependency_type: &DependencyType,
 ) -> Maybe<bool> {
