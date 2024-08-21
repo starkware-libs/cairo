@@ -52,7 +52,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, MemberId, ModuleId, SubmoduleLongId,
 };
-use cairo_lang_diagnostics::Diagnostics;
+use cairo_lang_diagnostics::{Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
@@ -995,6 +995,18 @@ fn find_definition(
             return Some((ResolvedItem::Concrete(item), stable_ptr));
         }
     }
+
+    for lookup_item_id in lookup_items.iter().copied() {
+        if let LookupItemId::ModuleItem(item) = lookup_item_id {
+            let item = ResolvedGenericItem::from_module_item(db, item).to_option()?;
+
+            return Some((
+                ResolvedItem::Generic(item.clone()),
+                resolved_generic_item_def(db, item)?,
+            ));
+        }
+    }
+
     None
 }
 

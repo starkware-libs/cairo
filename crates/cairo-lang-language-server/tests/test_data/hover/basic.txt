@@ -79,9 +79,14 @@ pub mod front_of_house {
 // = source context
     let mut x<caret> = 5;
 // = highlight
-No highlight information.
+    let mut <sel>x</sel> = 5;
 // = popover
-Type: `core::integer::u32`
+```cairo
+hello
+```
+```cairo
+fn main()
+```
 
 //! > hover #1
 // = source context
@@ -202,9 +207,14 @@ Add to waitlist function.
 // = source context
     let mut re<caret>ct = Rectangle { width: 30, height: 50 };
 // = highlight
-No highlight information.
+    let mut <sel>rect</sel> = Rectangle { width: 30, height: 50 };
 // = popover
-Type: `hello::Rectangle`
+```cairo
+hello
+```
+```cairo
+fn main()
+```
 
 //! > hover #10
 // = source context
@@ -230,19 +240,27 @@ Rectangle struct.
 // = source context
     let mut rect = Rectangle { wid<caret>th: 30, height: 50 };
 // = highlight
-No highlight information.
+    let mut rect = Rectangle { <sel>width</sel>: 30, height: 50 };
 // = popover
 ```cairo
-hello::Rectangle
+hello
+```
+```cairo
+fn main()
 ```
 
 //! > hover #12
 // = source context
     let ar<caret>ea = rect.area();
 // = highlight
-No highlight information.
+    let <sel>area</sel> = rect.area();
 // = popover
-Type: `core::integer::u64`
+```cairo
+hello
+```
+```cairo
+fn main()
+```
 
 //! > hover #13
 // = source context
@@ -264,15 +282,31 @@ Calculate the area of the rectangle.
 // = source context
 fn add_t<caret>wo(x: u32) -> u32 { x + 2 }
 // = highlight
-No highlight information.
+fn <sel>add_two</sel>(x: u32) -> u32 { x + 2 }
 // = popover
+```cairo
+hello
+```
+```cairo
+fn add_two(x: u32) -> u32
+```
+---
+`add_two` documentation.
 
 //! > hover #15
 // = source context
     fn area(sel<caret>f: @Rectangle) -> u64;
 // = highlight
-No highlight information.
+    fn area(<sel>self</sel>: @Rectangle) -> u64;
 // = popover
+```cairo
+hello
+```
+```cairo
+trait RectangleTrait
+```
+---
+Rectangle trait.
 
 //! > hover #16
 // = source context
@@ -298,8 +332,16 @@ Rectangle struct.
 // = source context
     fn area(se<caret>lf: @Rectangle) -> u64 {
 // = highlight
-No highlight information.
+    fn area(<sel>self</sel>: @Rectangle) -> u64 {
 // = popover
+```cairo
+hello
+```
+```cairo
+impl RectangleImpl of RectangleTrait
+```
+---
+Implementing the `RectangleTrait` for the `Rectangle` struct.
 
 //! > hover #18
 // = source context
@@ -445,31 +487,57 @@ Width of the rectangle.
 // = source context
 enum Co<caret>in {
 // = highlight
-No highlight information.
+enum <sel>Coin</sel> {
 // = popover
-No hover information.
+```cairo
+hello
+```
+```cairo
+enum Coin {
+    Penny,
+}
+```
 
 //! > hover #27
 // = source context
     Pen<caret>ny,
 // = highlight
-No highlight information.
+    <sel>Penny</sel>,
 // = popover
-No hover information.
+```cairo
+hello
+```
+```cairo
+enum Coin {
+    Penny,
+}
+```
 
 //! > hover #28
 // = source context
 fn value_i<caret>n_cents(coin: Coin) -> felt252 {
 // = highlight
-No highlight information.
+fn <sel>value_in_cents</sel>(coin: Coin) -> felt252 {
 // = popover
+```cairo
+hello
+```
+```cairo
+fn value_in_cents(coin: Coin) -> felt252
+```
 
 //! > hover #29
 // = source context
 fn value_in_cents(co<caret>in: Coin) -> felt252 {
 // = highlight
-No highlight information.
+fn value_in_cents(<sel>coin</sel>: Coin) -> felt252 {
 // = popover
+```cairo
+hello
+```
+```cairo
+fn value_in_cents(coin: Coin) -> felt252
+```
 
 //! > hover #30
 // = source context

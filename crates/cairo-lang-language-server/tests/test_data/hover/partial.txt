@@ -24,18 +24,26 @@ fn f(ab<caret>c) -> felt252 {
 // = source context
     let mut xy<caret>z = unknown_function();
 // = highlight
-No highlight information.
+    let mut <sel>xyz</sel> = unknown_function();
 // = popover
-Type: `<missing>`
+```cairo
+hello
+```
+```cairo
+fn main()
+```
 
 //! > hover #1
 // = source context
     let mut xyz = unkn<caret>own_function();
 // = highlight
-No highlight information.
+    let mut xyz = <sel>unknown_function</sel>();
 // = popover
 ```cairo
-<missing>
+hello
+```
+```cairo
+fn main()
 ```
 
 //! > hover #2
@@ -52,8 +60,14 @@ let mut xyz: <missing>
 // = source context
 fn f(ab<caret>c) -> felt252 {
 // = highlight
-No highlight information.
+fn f(<sel>abc</sel>) -> felt252 {
 // = popover
+```cairo
+hello
+```
+```cairo
+fn f(abc) -> felt252
+```
 
 //! > hover #4
 // = source context
