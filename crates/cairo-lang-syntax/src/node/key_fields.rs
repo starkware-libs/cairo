@@ -694,6 +694,8 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::TokenSingleLineComment => vec![],
+        SyntaxKind::TokenSingleLineInnerComment => vec![],
+        SyntaxKind::TokenSingleLineDocComment => vec![],
         SyntaxKind::TokenWhitespace => vec![],
         SyntaxKind::TokenNewline => vec![],
         SyntaxKind::TokenMissing => vec![],

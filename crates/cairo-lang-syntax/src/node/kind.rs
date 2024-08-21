@@ -298,6 +298,8 @@ pub enum SyntaxKind {
     TerminalXor,
     SyntaxFile,
     TokenSingleLineComment,
+    TokenSingleLineInnerComment,
+    TokenSingleLineDocComment,
     TokenWhitespace,
     TokenNewline,
     TokenMissing,
@@ -385,6 +387,8 @@ impl SyntaxKind {
                 | SyntaxKind::TokenUnderscore
                 | SyntaxKind::TokenXor
                 | SyntaxKind::TokenSingleLineComment
+                | SyntaxKind::TokenSingleLineInnerComment
+                | SyntaxKind::TokenSingleLineDocComment
                 | SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenMissing
