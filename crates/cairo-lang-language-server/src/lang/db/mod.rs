@@ -57,11 +57,11 @@ impl AnalysisDatabase {
         db
     }
 
-    /// Returns the [`CfgSet`] that should be should be assumed in the initial database state
+    /// Returns the [`CfgSet`] that should be assumed in the initial database state
     /// and in [`CfgSet`] for workspace members.
     /// This enables code fragments tagged with `#[cfg(test)]` and `#[cfg(target: 'test')]` to be
     /// included in analysis by Language Server.
-    fn initial_cfg_set() -> CfgSet {
+    pub(crate) fn initial_cfg_set() -> CfgSet {
         CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")])
     }
 
