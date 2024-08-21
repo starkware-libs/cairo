@@ -440,3 +440,162 @@ error: Arguments to closure functions cannot be references
  --> lib.cairo:6:23
     let _f: u32 = bar(ref a);
                       ^***^
+
+//! > ==========================================================================
+
+//! > Closure with return statement argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let bar = |a| {
+        return a;
+    };
+    let a = 5;
+    let _f: u32 = bar(a);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Closure with option propagation.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let bar = |a: Option<u32>| -> Option<u32> {
+        Option::Some(a?)
+    };
+    let a = Option::Some(5);
+    let _f: u32 = bar(a).unwrap();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Closure with option propagation inference required.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+//TODO(Tomer): Add support for inference of Option type in closures.
+fn foo() {
+    let bar1 = |a| -> Option<u32> {
+        Option::Some(a?)
+    };
+    let bar2 = |b: Option<u32>| {
+        Option::Some(b?)
+    };
+    let a = Option::Some(5);
+    let _f: u32 = bar(a).unwrap();
+    let _f: u32 = bar2(a).unwrap();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Type "?0" can not error propagate
+ --> lib.cairo:4:22
+        Option::Some(a?)
+                     ^^
+
+error: `?` can only be used in a function with `Option` or `Result` return type.
+ --> lib.cairo:7:22
+        Option::Some(b?)
+                     ^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:6:17
+    let bar2 = |b: Option<u32>| {
+                ^************^
+
+error: Function not found.
+ --> lib.cairo:10:19
+    let _f: u32 = bar(a).unwrap();
+                  ^*^
+
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: OptionTrait::unwrap and ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:10:26
+    let _f: u32 = bar(a).unwrap();
+                         ^****^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:9
+    let bar1 = |a| -> Option<u32> {
+        ^**^
+
+//! > ==========================================================================
+
+//! > break inside a closure.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    loop {
+        let c =  || {
+            break;
+        };
+        c();
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `break` only allowed inside a `loop`.
+ --> lib.cairo:4:13
+            break;
+            ^****^
+
+//! > ==========================================================================
+
+//! > continue inside a closure.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    loop {
+        let c =  || {
+            continue;
+        };
+        c();
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `continue` only allowed inside a `loop`.
+ --> lib.cairo:4:13
+            continue;
+            ^*******^
