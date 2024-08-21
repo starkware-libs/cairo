@@ -86,11 +86,7 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
 
   client.onNotification(
     new NotificationType<string>("cairo/corelib-version-mismatch"),
-    async (errMessage) => {
-      const errorMessage =
-        "Core crate version mismatch. If you are using Scarb try reopening the project to fix this error. Resort to `scarb cache clean` if it doesn't help. ERROR: " +
-        errMessage;
-
+    async (errorMessage) => {
       ctx.log.error(errorMessage);
 
       const selectedValue = await vscode.window.showErrorMessage(
@@ -103,8 +99,8 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
         await vscode.commands.executeCommand("workbench.action.reloadWindow");
       } else if (selectedValue === "Clean Scarb's cache") {
         cp.exec("scarb cache clean", (err, stdout, stderr) => {
-          ctx.log.trace("stdout: " + stdout);
-          ctx.log.trace("stderr: " + stderr);
+          ctx.log.trace("`scarb cache clean` stdout: " + stdout);
+          ctx.log.trace("`scarb cache clean` stderr: " + stderr);
           if (err) {
             ctx.log.warn("error: " + err);
           }
