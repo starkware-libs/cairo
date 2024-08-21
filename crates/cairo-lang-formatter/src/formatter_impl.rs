@@ -863,7 +863,9 @@ impl<'a> FormatterImpl<'a> {
     fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, is_leading: bool) {
         for trivium in trivia.elements(self.db) {
             match trivium {
-                ast::Trivium::SingleLineComment(_) => {
+                ast::Trivium::SingleLineComment(_)
+                | ast::Trivium::SingleLineDocComment(_)
+                | ast::Trivium::SingleLineInnerComment(_) => {
                     if !is_leading {
                         self.line_state.line_buffer.push_space();
                     }

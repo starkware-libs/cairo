@@ -91,6 +91,8 @@ impl From<&Trivia> for SyntaxStablePtrId {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Trivium {
     SingleLineComment(TokenSingleLineComment),
+    SingleLineDocComment(TokenSingleLineDocComment),
+    SingleLineInnerComment(TokenSingleLineInnerComment),
     Whitespace(TokenWhitespace),
     Newline(TokenNewline),
     Skipped(TokenSkipped),
@@ -117,6 +119,16 @@ impl From<TokenSingleLineCommentPtr> for TriviumPtr {
         Self(value.0)
     }
 }
+impl From<TokenSingleLineDocCommentPtr> for TriviumPtr {
+    fn from(value: TokenSingleLineDocCommentPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenSingleLineInnerCommentPtr> for TriviumPtr {
+    fn from(value: TokenSingleLineInnerCommentPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TokenWhitespacePtr> for TriviumPtr {
     fn from(value: TokenWhitespacePtr) -> Self {
         Self(value.0)
@@ -139,6 +151,16 @@ impl From<TriviumSkippedNodePtr> for TriviumPtr {
 }
 impl From<TokenSingleLineCommentGreen> for TriviumGreen {
     fn from(value: TokenSingleLineCommentGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenSingleLineDocCommentGreen> for TriviumGreen {
+    fn from(value: TokenSingleLineDocCommentGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenSingleLineInnerCommentGreen> for TriviumGreen {
+    fn from(value: TokenSingleLineInnerCommentGreen) -> Self {
         Self(value.0)
     }
 }
@@ -177,6 +199,12 @@ impl TypedSyntaxNode for Trivium {
             SyntaxKind::TokenSingleLineComment => {
                 Trivium::SingleLineComment(TokenSingleLineComment::from_syntax_node(db, node))
             }
+            SyntaxKind::TokenSingleLineDocComment => {
+                Trivium::SingleLineDocComment(TokenSingleLineDocComment::from_syntax_node(db, node))
+            }
+            SyntaxKind::TokenSingleLineInnerComment => Trivium::SingleLineInnerComment(
+                TokenSingleLineInnerComment::from_syntax_node(db, node),
+            ),
             SyntaxKind::TokenWhitespace => {
                 Trivium::Whitespace(TokenWhitespace::from_syntax_node(db, node))
             }
@@ -191,6 +219,8 @@ impl TypedSyntaxNode for Trivium {
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             Trivium::SingleLineComment(x) => x.as_syntax_node(),
+            Trivium::SingleLineDocComment(x) => x.as_syntax_node(),
+            Trivium::SingleLineInnerComment(x) => x.as_syntax_node(),
             Trivium::Whitespace(x) => x.as_syntax_node(),
             Trivium::Newline(x) => x.as_syntax_node(),
             Trivium::Skipped(x) => x.as_syntax_node(),
@@ -211,6 +241,8 @@ impl Trivium {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         match kind {
             SyntaxKind::TokenSingleLineComment => true,
+            SyntaxKind::TokenSingleLineDocComment => true,
+            SyntaxKind::TokenSingleLineInnerComment => true,
             SyntaxKind::TokenWhitespace => true,
             SyntaxKind::TokenNewline => true,
             SyntaxKind::TokenSkipped => true,
@@ -32725,6 +32757,158 @@ impl TypedSyntaxNode for TokenSingleLineComment {
 }
 impl From<&TokenSingleLineComment> for SyntaxStablePtrId {
     fn from(node: &TokenSingleLineComment) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenSingleLineInnerComment {
+    node: SyntaxNode,
+}
+impl Token for TokenSingleLineInnerComment {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenSingleLineInnerCommentGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenSingleLineInnerComment,
+                details: GreenNodeDetails::Token(text),
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
+            .clone()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenSingleLineInnerCommentPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenSingleLineInnerCommentPtr {
+    type SyntaxNode = TokenSingleLineInnerComment;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenSingleLineInnerComment {
+        TokenSingleLineInnerComment::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenSingleLineInnerCommentPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenSingleLineInnerCommentPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenSingleLineInnerCommentGreen(pub GreenId);
+impl TokenSingleLineInnerCommentGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.0.lookup_intern(db).details, GreenNodeDetails::Token).clone()
+    }
+}
+impl TypedSyntaxNode for TokenSingleLineInnerComment {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSingleLineInnerComment);
+    type StablePtr = TokenSingleLineInnerCommentPtr;
+    type Green = TokenSingleLineInnerCommentGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenSingleLineInnerCommentGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::TokenSingleLineInnerComment
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenSingleLineInnerCommentPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenSingleLineInnerComment> for SyntaxStablePtrId {
+    fn from(node: &TokenSingleLineInnerComment) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenSingleLineDocComment {
+    node: SyntaxNode,
+}
+impl Token for TokenSingleLineDocComment {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenSingleLineDocCommentGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenSingleLineDocComment,
+                details: GreenNodeDetails::Token(text),
+            })
+            .intern(db),
+        )
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.node.0.green.lookup_intern(db).details, GreenNodeDetails::Token)
+            .clone()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenSingleLineDocCommentPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for TokenSingleLineDocCommentPtr {
+    type SyntaxNode = TokenSingleLineDocComment;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> TokenSingleLineDocComment {
+        TokenSingleLineDocComment::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<TokenSingleLineDocCommentPtr> for SyntaxStablePtrId {
+    fn from(ptr: TokenSingleLineDocCommentPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenSingleLineDocCommentGreen(pub GreenId);
+impl TokenSingleLineDocCommentGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(&self.0.lookup_intern(db).details, GreenNodeDetails::Token).clone()
+    }
+}
+impl TypedSyntaxNode for TokenSingleLineDocComment {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSingleLineDocComment);
+    type StablePtr = TokenSingleLineDocCommentPtr;
+    type Green = TokenSingleLineDocCommentGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenSingleLineDocCommentGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match node.0.green.lookup_intern(db).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => panic!(
+                "Expected a token {:?}, not an internal node",
+                SyntaxKind::TokenSingleLineDocComment
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenSingleLineDocCommentPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&TokenSingleLineDocComment> for SyntaxStablePtrId {
+    fn from(node: &TokenSingleLineDocComment) -> Self {
         node.stable_ptr().untyped()
     }
 }

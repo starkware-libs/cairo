@@ -7,6 +7,8 @@ pub fn get_spec() -> Vec<Node> {
     .add_enum(
         EnumBuilder::new("Trivium")
             .node_with_explicit_kind("SingleLineComment", "TokenSingleLineComment")
+            .node_with_explicit_kind("SingleLineDocComment", "TokenSingleLineDocComment")
+            .node_with_explicit_kind("SingleLineInnerComment", "TokenSingleLineInnerComment")
             .node_with_explicit_kind("Whitespace", "TokenWhitespace")
             .node_with_explicit_kind("Newline", "TokenNewline")
             .node_with_explicit_kind("Skipped", "TokenSkipped")
@@ -874,6 +876,8 @@ pub fn get_spec() -> Vec<Node> {
         .node("eof", "TerminalEndOfFile")
     )
     .add_token("SingleLineComment")
+    .add_token("SingleLineInnerComment")
+    .add_token("SingleLineDocComment")
     .add_token("Whitespace")
     .add_token("Newline")
     .add_token("Missing")
