@@ -66,8 +66,14 @@ pub fn contract_state_for_testing() -> ContractState
 // = source context
     fn constructor(ref se<caret>lf: ContractState, value_: u128) {
 // = highlight
-No highlight information.
+    fn constructor(ref <sel>self</sel>: ContractState, value_: u128) {
 // = popover
+```cairo
+hello::Balance
+```
+```cairo
+fn constructor(ref self: ContractState, value_: u128)
+```
 
 //! > hover #2
 // = source context
