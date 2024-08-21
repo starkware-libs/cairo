@@ -119,3 +119,146 @@ ItemConstant
     │   ├── size (kind: OptionFixedSizeArraySizeEmpty) []
     │   └── rbrack (kind: TokenRBrack): ']'
     └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Const Statements
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+struct A {
+    member: felt252,
+}
+
+fn foo() {
+    const X: felt252 = 3;
+    const Y: A = A { member: 3 };
+}
+
+//! > top_level_kind
+ItemConstant
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemConstant
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── const_kw (kind: TokenConst): 'const'
+    ├── name (kind: TokenIdentifier): 'X'
+    ├── type_clause (kind: TypeClause)
+    │   ├── colon (kind: TokenColon): ':'
+    │   └── ty (kind: ExprPath)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'felt252'
+    ├── eq (kind: TokenEq): '='
+    ├── value (kind: TokenLiteralNumber): '3'
+    └── semicolon (kind: TokenSemicolon): ';'
+└── Top level kind: ItemConstant
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── const_kw (kind: TokenConst): 'const'
+    ├── name (kind: TokenIdentifier): 'Y'
+    ├── type_clause (kind: TypeClause)
+    │   ├── colon (kind: TokenColon): ':'
+    │   └── ty (kind: ExprPath)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'A'
+    ├── eq (kind: TokenEq): '='
+    ├── value (kind: ExprStructCtorCall)
+    │   ├── path (kind: ExprPath)
+    │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       └── ident (kind: TokenIdentifier): 'A'
+    │   └── arguments (kind: StructArgListBraced)
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── arguments (kind: StructArgList)
+    │       │   └── item #0 (kind: StructArgSingle)
+    │       │       ├── identifier (kind: TokenIdentifier): 'member'
+    │       │       └── arg_expr (kind: StructArgExpr)
+    │       │           ├── colon (kind: TokenColon): ':'
+    │       │           └── expr (kind: TokenLiteralNumber): '3'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Const Statements Missing Type
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    const X = 3;
+}
+
+//! > top_level_kind
+ItemConstant
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Unexpected token, expected ':' followed by a type.
+ --> dummy_file.cairo:2:12
+    const X = 3;
+           ^
+
+//! > expected_tree
+└── Top level kind: ItemConstant
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── const_kw (kind: TokenConst): 'const'
+    ├── name (kind: TokenIdentifier): 'X'
+    ├── type_clause (kind: TypeClause)
+    │   ├── colon: Missing
+    │   └── ty: Missing []
+    ├── eq (kind: TokenEq): '='
+    ├── value (kind: TokenLiteralNumber): '3'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Const Statements with attribute
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    #[flat]
+    const X: felt252 = 3;
+}
+
+//! > top_level_kind
+ItemConstant
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemConstant
+    ├── attributes (kind: AttributeList)
+    │   └── child #0 (kind: Attribute)
+    │       ├── hash (kind: TokenHash): '#'
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── attr (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'flat'
+    │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       └── rbrack (kind: TokenRBrack): ']'
+    ├── visibility (kind: VisibilityDefault) []
+    ├── const_kw (kind: TokenConst): 'const'
+    ├── name (kind: TokenIdentifier): 'X'
+    ├── type_clause (kind: TypeClause)
+    │   ├── colon (kind: TokenColon): ':'
+    │   └── ty (kind: ExprPath)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'felt252'
+    ├── eq (kind: TokenEq): '='
+    ├── value (kind: TokenLiteralNumber): '3'
+    └── semicolon (kind: TokenSemicolon): ';'
