@@ -182,7 +182,7 @@ impl RootDatabaseBuilder {
 }
 
 /// Validates that the corelib version matches the expected one.
-fn validate_corelib(db: &RootDatabase) -> Result<()> {
+pub fn validate_corelib(db: &dyn FilesGroup) -> Result<()> {
     let Some(config) = db.crate_config(CrateLongId::Real(CORELIB_CRATE_NAME.into()).intern(db))
     else {
         return Ok(());
