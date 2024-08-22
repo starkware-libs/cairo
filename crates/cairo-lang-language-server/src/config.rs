@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::path::PathBuf;
 
 use anyhow::Context;
+use serde_json::Value;
 use tower_lsp::lsp_types::{ClientCapabilities, ConfigurationItem};
 use tower_lsp::Client;
 use tracing::{debug, error, warn};
@@ -64,8 +65,12 @@ impl Config {
             // This conversion is O(1), and makes popping from front also O(1).
             let mut response = VecDeque::from(response);
 
-            self.unmanaged_core_path =
-                response.pop_front().as_ref().and_then(|v| v.as_str()).map(Into::into);
+            self.unmanaged_core_path = response
+                .pop_front()
+                .as_ref()
+                .and_then(Value::as_str)
+                .filter(|s| !s.is_empty())
+                .map(Into::into);
 
             debug!("reloaded configuration: {self:#?}");
         }
