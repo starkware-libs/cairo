@@ -1,6 +1,7 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
+    Severity,
 };
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::LiteralError;
@@ -81,6 +82,13 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => {
                 "Fixed size array repeated element size must be greater than 0.".into()
             }
+        }
+    }
+
+    fn severity(&self) -> Severity {
+        match self.kind {
+            LoweringDiagnosticKind::Unreachable { .. } => Severity::Warning,
+            _ => Severity::Error,
         }
     }
 
