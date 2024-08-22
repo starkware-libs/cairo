@@ -539,6 +539,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         ),
                     ),
                 )),
+                ast::ModuleItem::HeaderDoc(_) => {}
                 ast::ModuleItem::Missing(_) => {}
             }
         }
