@@ -21,7 +21,9 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::{
     LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder,
 };
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId, LocationId};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, FunctionWithBodyId, FunctionWithBodyLongId, LocationId,
+};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{InliningStrategy, Rebuilder, RebuilderEx};
 use crate::{
@@ -33,7 +35,11 @@ pub fn get_inline_diagnostics(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Diagnostics<LoweringDiagnostic>> {
-    let semantic_function_id = function_id.base_semantic_function(db);
+    let FunctionWithBodyLongId::Semantic(semantic_function_id) = function_id.lookup_intern(db)
+    else {
+        // Diagnostics are not relevant for generated functions.
+        return Ok(Default::default());
+    };
     let mut diagnostics = LoweringDiagnostics::default();
 
     if let InlineConfiguration::Always(_) =
