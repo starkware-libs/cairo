@@ -6,7 +6,11 @@ import { Context } from "./context";
 import { Scarb } from "./scarb";
 import { isScarbProject } from "./scarbProject";
 import { StandaloneLS } from "./standalonels";
-import { registerMacroExpandProvider, registerVfsProvider } from "./textDocumentProviders";
+import {
+  registerMacroExpandProvider,
+  registerVfsProvider,
+  registerViewAnalyzedCratesProvider,
+} from "./textDocumentProviders";
 import { NotificationType } from "vscode-jsonrpc/lib/common/messages";
 import * as cp from "node:child_process";
 
@@ -64,6 +68,7 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
 
   registerVfsProvider(client, ctx);
   registerMacroExpandProvider(client, ctx);
+  registerViewAnalyzedCratesProvider(client, ctx);
 
   client.onNotification("scarb/could-not-find-scarb-executable", () => notifyScarbMissing(ctx));
 

@@ -73,6 +73,11 @@
         "command": "cairo.expandMacro",
         "title": "Recursively expand macros for item at caret",
         "category": "Cairo"
+      },
+      {
+        "command": "cairo.viewAnalyzedCrates",
+        "title": "View crates currently analyzed by LS",
+        "category": "Cairo"
       }
     ],
     "configuration": [
@@ -130,6 +135,7 @@
       }
     ],
     "configurationDefaults": {
+      "explorer.fileNesting.enabled": true,
       "[cairo]": {
         "editor.tabSize": 4,
         "editor.insertSpaces": true,
