@@ -76,7 +76,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use salsa::ParallelDatabase;
+use salsa::{Cancelled, ParallelDatabase};
 use serde_json::Value;
 use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
@@ -117,7 +117,7 @@ mod vfs;
 ///
 /// [lib]: crate#running-with-customizations
 #[non_exhaustive]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Tricks {
     /// A function that returns a list of additional compiler plugin suites to be loaded in the
     /// language server database.
@@ -134,6 +134,14 @@ pub fn start() {
     start_with_tricks(Tricks::default());
 }
 
+/// Number of LSP requests that can be processed concurrently.
+/// Higher number than default tower_lsp::DEFAULT_MAX_CONCURRENCY = 4.
+/// This is increased because we don't have to limit requests this way now.
+/// Cancellation will skip requests that are no longer relevant so only latest ones will be
+/// processed. Effectively there will be similar number of requests processed at once, but under
+/// heavy load these will be more actual ones.
+const REQUESTS_PROCESSED_CONCURRENTLY: usize = 100;
+
 /// Starts the language server with customizations.
 ///
 /// See [the top-level documentation][lib] documentation for usage examples.
@@ -149,7 +157,10 @@ pub async fn start_with_tricks(tricks: Tricks) {
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
     let (service, socket) = Backend::build_service(tricks);
-    Server::new(stdin, stdout, socket).serve(service).await;
+    Server::new(stdin, stdout, socket)
+        .concurrency_level(REQUESTS_PROCESSED_CONCURRENTLY)
+        .serve(service)
+        .await;
 
     info!("language server stopped");
 }
@@ -310,14 +321,28 @@ impl Backend {
     /// Catches panics and returns Err.
     async fn with_db<F, T>(&self, f: F) -> LSPResult<T>
     where
-        F: FnOnce(&AnalysisDatabase) -> T + std::panic::UnwindSafe,
+        F: FnOnce(&AnalysisDatabase) -> T + Send + 'static + std::panic::UnwindSafe,
+        T: Send + 'static,
     {
         let db_mut = self.db_mut().await;
         let db = db_mut.snapshot();
         drop(db_mut);
-        catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
-            error!("caught panic in LSP worker thread");
-            LSPError::internal_error()
+
+        spawn_blocking(move || {
+            catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|err| {
+                if err.is::<Cancelled>() {
+                    debug!("LSP worker thread was cancelled");
+                    LSPError::request_cancelled()
+                } else {
+                    error!("caught panic in LSP worker thread");
+                    LSPError::internal_error()
+                }
+            })
+        })
+        .await
+        .unwrap_or_else(|_| {
+            error!("failed to join LSP worker thread");
+            Err(LSPError::internal_error())
         })
     }
 
@@ -504,10 +529,12 @@ impl Backend {
         debug!("scheduled");
         let mut new_db = self
             .with_db({
-                let tricks = &self.tricks;
-                |db| {
-                    let mut new_db = AnalysisDatabase::new(tricks);
-                    ensure_exists_in_db(&mut new_db, db, open_files.iter().cloned());
+                let open_files = open_files.clone();
+                let tricks = self.tricks.clone();
+
+                move |db| {
+                    let mut new_db = AnalysisDatabase::new(&tricks);
+                    ensure_exists_in_db(&mut new_db, db, open_files.into_iter());
                     new_db
                 }
             })
@@ -563,7 +590,7 @@ impl Backend {
 
     #[tracing::instrument(level = "trace", skip_all)]
     async fn expand_macro(&self, params: TextDocumentPositionParams) -> LSPResult<Option<String>> {
-        self.with_db(|db| ide::macros::expand::expand_macro(db, &params)).await
+        self.with_db(move |db| ide::macros::expand::expand_macro(db, &params)).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
@@ -571,7 +598,7 @@ impl Backend {
         &self,
         params: ProvideVirtualFileRequest,
     ) -> LSPResult<ProvideVirtualFileResponse> {
-        self.with_db(|db| {
+        self.with_db(move |db| {
             let content = db
                 .file_for_url(&params.uri)
                 .and_then(|file_id| db.file_content(file_id))
