@@ -2479,6 +2479,7 @@ pub enum BinaryOperator {
     GE(TerminalGE),
     LT(TerminalLT),
     GT(TerminalGT),
+    DotDot(TerminalDotDot),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct BinaryOperatorPtr(pub SyntaxStablePtrId);
@@ -2616,6 +2617,11 @@ impl From<TerminalGTPtr> for BinaryOperatorPtr {
         Self(value.0)
     }
 }
+impl From<TerminalDotDotPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalDotDotPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalDotGreen> for BinaryOperatorGreen {
     fn from(value: TerminalDotGreen) -> Self {
         Self(value.0)
@@ -2736,6 +2742,11 @@ impl From<TerminalGTGreen> for BinaryOperatorGreen {
         Self(value.0)
     }
 }
+impl From<TerminalDotDotGreen> for BinaryOperatorGreen {
+    fn from(value: TerminalDotDotGreen) -> Self {
+        Self(value.0)
+    }
+}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct BinaryOperatorGreen(pub GreenId);
 impl TypedSyntaxNode for BinaryOperator {
@@ -2792,6 +2803,9 @@ impl TypedSyntaxNode for BinaryOperator {
             SyntaxKind::TerminalGE => BinaryOperator::GE(TerminalGE::from_syntax_node(db, node)),
             SyntaxKind::TerminalLT => BinaryOperator::LT(TerminalLT::from_syntax_node(db, node)),
             SyntaxKind::TerminalGT => BinaryOperator::GT(TerminalGT::from_syntax_node(db, node)),
+            SyntaxKind::TerminalDotDot => {
+                BinaryOperator::DotDot(TerminalDotDot::from_syntax_node(db, node))
+            }
             _ => {
                 panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "BinaryOperator")
             }
@@ -2823,6 +2837,7 @@ impl TypedSyntaxNode for BinaryOperator {
             BinaryOperator::GE(x) => x.as_syntax_node(),
             BinaryOperator::LT(x) => x.as_syntax_node(),
             BinaryOperator::GT(x) => x.as_syntax_node(),
+            BinaryOperator::DotDot(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -2862,6 +2877,7 @@ impl BinaryOperator {
             SyntaxKind::TerminalGE => true,
             SyntaxKind::TerminalLT => true,
             SyntaxKind::TerminalGT => true,
+            SyntaxKind::TerminalDotDot => true,
             _ => false,
         }
     }
