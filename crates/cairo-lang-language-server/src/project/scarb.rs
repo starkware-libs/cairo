@@ -6,7 +6,7 @@ use anyhow::{bail, ensure, Context, Result};
 use cairo_lang_filesystem::db::{CrateSettings, Edition, ExperimentalFeaturesConfig};
 use itertools::Itertools;
 use scarb_metadata::{CompilationUnitMetadata, Metadata, PackageMetadata};
-use serde_json::json;
+use serde_json::Value;
 use tracing::{debug, error, warn};
 
 use crate::lang::db::AnalysisDatabase;
@@ -50,7 +50,7 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                     .package
                     .repr
                     .split("_integrationtest")
-                    .collect_vec()
+                    .collect::<Vec<_>>()
                     .first()
                     .unwrap()
                     .to_string();
@@ -266,5 +266,6 @@ fn scarb_package_experimental_features(
 
 fn is_integration_test_cu(compilation_unit: &CompilationUnitMetadata) -> bool {
     compilation_unit.target.kind == "test"
-        && compilation_unit.target.params.get("test-type") == Some(&json!("integration"))
+        && compilation_unit.target.params.get("test-type").and_then(Value::as_str)
+            == Some("integration")
 }

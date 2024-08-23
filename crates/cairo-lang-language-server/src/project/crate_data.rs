@@ -92,15 +92,13 @@ impl Crate {
 fn inject_virtual_wrapper_lib(
     db: &mut AnalysisDatabase,
     crate_id: CrateId,
-    file_stems: &Vec<SmolStr>,
+    file_stems: &[SmolStr],
 ) {
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
 
-    let mut file_content = String::new();
-    for stem in file_stems {
-        file_content.push_str(&format!("mod {stem};\n"))
-    }
+    let file_content =
+        file_stems.iter().map(|stem| format!("mod {stem};")).collect::<Vec<_>>().join("\n");
 
     // Inject virtual lib file wrapper.
     db.as_files_group_mut().override_file_content(file_id, Some(file_content.into()));
@@ -121,11 +119,9 @@ fn extract_custom_file_stems(db: &AnalysisDatabase, crate_id: CrateId) -> Option
     let file_id = db.module_main_file(module_id).ok()?;
     let content = db.file_content(file_id)?;
 
-    let names = content
+    content
         .lines()
         .filter(|line| !line.is_empty())
         .map(|line| Some(line.strip_prefix("mod ")?.strip_suffix(';')?.into()))
-        .collect::<Option<_>>();
-
-    names
+        .collect::<Option<Vec<_>>>()
 }
