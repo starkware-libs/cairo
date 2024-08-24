@@ -347,3 +347,10 @@ impl TupleNextDestruct<
         let (_head, _rest) = TH::split_head(self);
     }
 }
+
+pub trait RangeOp<T> {
+    type RangeType;
+
+    /// Handles the `..` operator. Returns the value of the expression `lower_bound..upper_bound`.
+    fn range(lower_bound: T, upper_bound: T) -> Self::RangeType;
+}
