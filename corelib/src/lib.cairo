@@ -7,6 +7,8 @@ use traits::{
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not, Neg, Into,
     TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct
 };
+#[allow(unused_imports)]
+use ops::RangeOp;
 use serde::Serde;
 
 pub type usize = u32;

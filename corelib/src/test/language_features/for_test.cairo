@@ -1,4 +1,5 @@
 use core::iter::IntoIterator;
+use core::ops::RangeOpImpl;
 
 #[test]
 fn test_for_loop_array_sum() {
@@ -53,4 +54,15 @@ fn test_for_loop_array_iter() {
         sum += x;
     };
     assert_eq!(sum, 6);
+}
+
+#[test]
+fn test_for_loop_range() {
+    let mut sum = 0_u8;
+    for i in 5_u8..11 {
+        for j in 7..i {
+            sum += j;
+        };
+    };
+    assert_eq!(sum, 46);
 }
