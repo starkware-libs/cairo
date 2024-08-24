@@ -54,3 +54,14 @@ fn test_for_loop_array_iter() {
     };
     assert_eq!(sum, 6);
 }
+
+#[test]
+fn test_for_loop_range() {
+    let mut sum = 0_u8;
+    for i in 5_u8..11 {
+        for j in 7..i {
+            sum += j;
+        };
+    };
+    assert_eq!(sum, 46);
+}

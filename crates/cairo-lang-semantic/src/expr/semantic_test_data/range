@@ -1,7 +1,7 @@
 //! > Test range
 
 //! > test_runner_name
-test_expr_semantics(expect_diagnostics: true)
+test_expr_semantics(expect_diagnostics: false)
 
 //! > function_body
 
@@ -11,14 +11,30 @@ test_expr_semantics(expect_diagnostics: true)
 //! > module_code
 
 //! > expected_semantics
-Missing(
-    ExprMissing {
-        ty: <missing>,
+FunctionCall(
+    ExprFunctionCall {
+        function: core::ops::range::RangeOpImpl::<core::integer::u8>::range,
+        args: [
+            Value(
+                Literal(
+                    ExprLiteral {
+                        value: 1,
+                        ty: core::integer::u8,
+                    },
+                ),
+            ),
+            Value(
+                Literal(
+                    ExprLiteral {
+                        value: 10,
+                        ty: core::integer::u8,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: None,
+        ty: core::ops::range::Range::<core::integer::u8>,
     },
 )
 
 //! > expected_diagnostics
-error: Unknown binary operator.
- --> lib.cairo:2:2
-1..10_u8
- ^^
