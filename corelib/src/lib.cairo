@@ -4,8 +4,8 @@ pub mod traits;
 #[allow(unused_imports)]
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
-    PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not, Neg, Into,
-    TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct
+    PartialEq, PartialOrd, RangeOp, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not,
+    Neg, Into, TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct
 };
 use serde::Serde;
 
