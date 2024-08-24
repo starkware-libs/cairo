@@ -7,6 +7,8 @@ mod deref;
 pub use deref::{Deref, SnapshotDeref};
 #[feature("deref_mut")]
 pub use deref::DerefMut;
+mod range;
+pub use range::{Range, RangeOp};
 
 mod function;
 pub use function::FnOnce;
