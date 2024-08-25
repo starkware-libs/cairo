@@ -13,6 +13,7 @@ use std::time::Duration;
 use tracing::debug;
 
 pub const CAIRO_LS_DB_REPLACE_INTERVAL: &'_ str = "CAIRO_LS_DB_REPLACE_INTERVAL";
+pub const CAIRO_LS_INCLUDE_DIAG_MAPPING: &'_ str = "CAIRO_LS_INCLUDE_DIAG_MAPPING";
 pub const CAIRO_LS_LOG: &'_ str = "CAIRO_LS_LOG";
 pub const CAIRO_LS_PROFILE: &'_ str = "CAIRO_LS_PROFILE";
 pub const SCARB: &'_ str = "SCARB";
@@ -26,6 +27,11 @@ pub fn db_replace_interval() -> Duration {
         .and_then(|v| v.parse().ok())
         .map(Duration::from_secs)
         .unwrap_or_else(|| Duration::from_secs(DEFAULT))
+}
+
+/// Whether to include the diagnostic mapping as a note for all diagnostic locations.
+pub fn include_diag_mapping() -> bool {
+    env::var_os(CAIRO_LS_INCLUDE_DIAG_MAPPING).map(env_to_bool).unwrap_or_default()
 }
 
 /// LS tracing filter, see [`tracing_subscriber::EnvFilter`] for more.
