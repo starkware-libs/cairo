@@ -636,6 +636,10 @@ pub fn fn_once_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::Ops, "FnOnce".into())
 }
 
+pub fn fn_once_call_trait_fn(db: &dyn SemanticGroup) -> TraitFunctionId {
+    get_core_trait_fn(db, CoreTraitContext::Ops, "FnOnce".into(), "call".into())
+}
+
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::TopLevel, "Copy".into())
 }

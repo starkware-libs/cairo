@@ -19,8 +19,7 @@ use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
 use crate::lower::refs::ClosureInfo;
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VarUsage, Variable,
-    VariableId,
+    BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
 };
 
 /// FlatBlock builder, describing its current state.
@@ -284,16 +283,22 @@ impl BlockBuilder {
                 .map(|expr| (expr.into(), expr.ty()))
                 .collect();
 
-        let snapshot_types = inputs
-            .iter()
-            .skip(members.len())
-            .map(|var_usage| ctx.variables.variables[var_usage.var_id].ty)
+        let snapshots = usage
+            .snap_usage
+            .keys()
+            .cloned()
+            .zip(
+                inputs
+                    .iter()
+                    .skip(members.len())
+                    .map(|var_usage| (ctx.variables.variables[var_usage.var_id].ty)),
+            )
             .collect();
 
         let var_usage =
             generators::StructConstruct { inputs: inputs.clone(), ty: expr.ty, location }
                 .add(ctx, &mut self.statements);
-        let closure_info = ClosureInfo { members, snapshot_types };
+        let closure_info = ClosureInfo { members, snapshots };
 
         for (var_usage, member) in izip!(inputs, usage.usage.keys()) {
             if ctx.variables[var_usage.var_id].copyable.is_ok()
