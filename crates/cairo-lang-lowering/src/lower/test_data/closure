@@ -4,9 +4,9 @@
 test_generated_function
 
 //! > function
-fn foo(mut a: Felt252Dict<felt252>,) {
-    |b: felt252| {
-        let _ = a.insert(b, b);
+fn foo(a: Felt252Dict<felt252>,) {
+    || {
+        let _ = a;
     };
 }
 
@@ -20,15 +20,15 @@ foo
 //! > lowering_diagnostics
 error: Unsupported feature.
  --> lib.cairo:2:5
-    |b: felt252| {
-    ^************^
+    || {
+    ^**^
 
 //! > lowering
 Main:
 Parameters: v0: core::dict::Felt252Dict::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:2:5: 2:17}) <- struct_construct(v0)
+  (v1: {closure@lib.cairo:2:5: 2:7}) <- struct_construct(v0)
   (v2: ()) <- struct_construct()
 End:
   Return(v2)
@@ -38,17 +38,17 @@ Final lowering:
 Parameters: v0: core::dict::Felt252Dict::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:2:5: 2:17}) <- struct_construct(v0)
-  (v2: ()) <- Generated core::traits::Destruct::<{closure@lib.cairo:2:5: 2:17}>::destruct(v1)
+  (v1: {closure@lib.cairo:2:5: 2:7}) <- struct_construct(v0)
+  (v2: ()) <- Generated core::traits::Destruct::<{closure@lib.cairo:2:5: 2:7}>::destruct(v1)
 End:
   Return()
 
 
 Generated Destruct::destruct lowering for source location:
-    |b: felt252| {
-    ^************^
+    || {
+    ^**^
 
-Parameters: v0: {closure@lib.cairo:2:5: 2:17}
+Parameters: v0: {closure@lib.cairo:2:5: 2:7}
 blk0 (root):
 Statements:
   (v1: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v0)
@@ -58,7 +58,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@lib.cairo:2:5: 2:17}
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@lib.cairo:2:5: 2:7}
 blk0 (root):
 Statements:
   (v4: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
@@ -74,7 +74,7 @@ End:
 test_generated_function
 
 //! > function
-fn foo(mut a: PanicDestructable) {
+fn foo(a: PanicDestructable) {
     || {
         let PanicDestructable { } = a;
     };

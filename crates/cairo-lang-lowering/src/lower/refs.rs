@@ -9,7 +9,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::chain;
 
 use crate::db::LoweringGroup;
-use crate::VariableId;
+use crate::{Variable, VariableId};
 
 //  Information about members captured by the closure and their types.
 #[derive(Clone, Debug)]
@@ -26,6 +26,8 @@ pub struct SemanticLoweringMapping {
     scattered: OrderedHashMap<MemberPath, Value>,
     /// Maps captured member paths to a clusure that captured them.
     pub captured: UnorderedHashMap<MemberPath, VariableId>,
+    /// Maps captured member paths which are copiable to a clusure that captured them.
+    pub copiable_captured: UnorderedHashMap<MemberPath, VariableId>,
     /// Maps the variable id of a closure to the closure info.
     pub closures: UnorderedHashMap<VariableId, ClosureInfo>,
 }
@@ -92,6 +94,7 @@ impl SemanticLoweringMapping {
             // as snapshots don't need to be updated.
             for (path, new_var) in closure_info.members.keys().zip(new_vars) {
                 self.captured.remove(path);
+                self.copiable_captured.remove(path);
                 self.update(ctx, path, new_var).unwrap();
             }
         }
@@ -119,6 +122,12 @@ impl SemanticLoweringMapping {
         path: &MemberPath,
         var: VariableId,
     ) -> Option<()> {
+        if self.copiable_captured.get(path).is_some() {
+            // Note, this can only right now if we take a snapshot of the variable (as the snapshot
+            // function returns a new var).
+            // we need the make sure the borrow checker invalidates the closure when mutable capture
+            // is supported.
+        }
         let value = self.break_into_value(ctx, path)?;
         *value = Value::Var(var);
         Some(())
@@ -193,6 +202,7 @@ pub trait StructRecomposer {
         members: Vec<VariableId>,
     ) -> VariableId;
     fn var_ty(&self, var: VariableId) -> semantic::TypeId;
+    fn var(&self, var: VariableId) -> &Variable;
     fn db(&self) -> &dyn LoweringGroup;
 }
 
