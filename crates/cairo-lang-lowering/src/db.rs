@@ -6,7 +6,6 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::{self as semantic, corelib, ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -766,7 +765,7 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
             ConcreteTypeId::Struct(struct_id) => db
                 .concrete_struct_members(struct_id)
                 .unwrap()
-                .into_iter()
+                .iter()
                 .map(|(_, member)| db.type_size(member.ty))
                 .sum::<usize>(),
             ConcreteTypeId::Enum(enum_id) => {

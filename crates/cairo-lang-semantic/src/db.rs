@@ -260,10 +260,16 @@ pub trait SemanticGroup:
     fn struct_members(
         &self,
         struct_id: StructId,
-    ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>>;
+    ) -> Maybe<Arc<OrderedHashMap<SmolStr, semantic::Member>>>;
     /// Returns the resolution resolved_items of a struct definition.
     #[salsa::invoke(items::structure::struct_definition_resolver_data)]
     fn struct_definition_resolver_data(&self, structure_id: StructId) -> Maybe<Arc<ResolverData>>;
+    /// Returns the concrete members of a struct.
+    #[salsa::invoke(items::structure::concrete_struct_members)]
+    fn concrete_struct_members(
+        &self,
+        concrete_struct_id: types::ConcreteStructId,
+    ) -> Maybe<Arc<OrderedHashMap<SmolStr, semantic::Member>>>;
 
     // Enum.
     // =======
