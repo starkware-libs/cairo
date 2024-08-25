@@ -35,5 +35,12 @@ pub extern fn withdraw_gas_all(
     costs: BuiltinCosts
 ) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
+
+/// Returns unused gas into the gas builtin.
+///
+/// Useful for cases where different branches take different amounts of gas, but gas withdrawal is
+/// the same for both.
+pub extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
+
 /// Returns the `BuiltinCosts` table to be used in `withdraw_gas_all`.
 pub extern fn get_builtin_costs() -> BuiltinCosts nopanic;

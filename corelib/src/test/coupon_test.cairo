@@ -1,5 +1,3 @@
-use crate::test::test_utils::assert_eq;
-
 extern fn coupon_buy<T>() -> T nopanic;
 
 #[feature("corelib-internal-use")]
@@ -22,6 +20,6 @@ fn test_arr_sum() {
     let available_gas = crate::testing::get_available_gas();
     let res = arr_sum(arr);
     // Check that arr_sum did not consume any gas.
-    assert_eq(@crate::testing::get_available_gas(), @available_gas, 'Gas was consumed by arr_sum');
-    assert_eq(@res, @12, 'Wrong array sum.');
+    assert_ge!(core::testing::get_available_gas(), available_gas, "Gas was consumed by arr_sum.");
+    assert_eq!(res, 12);
 }
