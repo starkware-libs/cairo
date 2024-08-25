@@ -599,3 +599,30 @@ error: `continue` only allowed inside a `loop`.
  --> lib.cairo:4:13
             continue;
             ^*******^
+
+//! > ==========================================================================
+
+//! > capturing mutable variables.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let mut a = 5;
+    let b = a;
+    || -> u32 {
+        a + b
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Mutable variables capture by closure is not supported
+ --> lib.cairo:5:9
+        a + b
+        ^

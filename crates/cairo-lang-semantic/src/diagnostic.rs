@@ -854,6 +854,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RefClosureArgument => {
                 "Arguments to closure functions cannot be references".into()
             }
+            SemanticDiagnosticKind::MutableCapturedVariable => {
+                "Mutable variables capture by closure is not supported".into()
+            }
         }
     }
 
@@ -1208,6 +1211,7 @@ pub enum SemanticDiagnosticKind {
         shadowed_function_name: SmolStr,
     },
     RefClosureArgument,
+    MutableCapturedVariable,
 }
 
 /// The kind of an expression with multiple possible return types.
