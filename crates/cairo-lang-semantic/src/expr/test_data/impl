@@ -43,27 +43,7 @@ error: Type not found.
     fn foo(x: T, y: u8, z: u16) -> T {}
                                    ^
 
-error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u8`, actual: `<missing>`.
- --> lib.cairo:7:15
-    fn foo(x: T, y: u8, z: u16) -> T {}
-              ^
-
-error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `<missing>`, actual: `core::integer::u8`.
- --> lib.cairo:7:21
-    fn foo(x: T, y: u8, z: u16) -> T {}
-                    ^^
-
 error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u8`, actual: `core::integer::u16`.
  --> lib.cairo:7:28
     fn foo(x: T, y: u8, z: u16) -> T {}
                            ^*^
-
-error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u8`, actual: `<missing>`.
- --> lib.cairo:7:36
-    fn foo(x: T, y: u8, z: u16) -> T {}
-                                   ^
-
-error: Return type of impl function `MyImpl::bar` is incompatible with `MyTrait::bar`. Expected: `<missing>`, actual: `core::integer::u8`.
- --> lib.cairo:8:17
-    fn bar() -> u8 {
-                ^^
