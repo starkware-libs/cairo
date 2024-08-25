@@ -8,6 +8,7 @@ interface ConfigProps {
   preferScarbLanguageServer: boolean;
   scarbPath: string;
   corelibPath: string;
+  includeDiagMappings: boolean;
   languageServerExtraEnv: null | Record<string, string | number>;
 }
 

@@ -28,6 +28,11 @@ pub struct Config {
     ///
     /// The property is set by the user under the `cairo1.corelibPath` key in client configuration.
     pub unmanaged_core_path: Option<PathBuf>,
+    /// Whether to include the diagnostic mapping as a note for all diagnostic locations.
+    ///
+    /// The property is set by the user under the `cairo1.includeDiagMapping` key in client
+    /// configuration.
+    pub include_diag_mapping: bool,
 }
 
 impl Config {
@@ -42,10 +47,13 @@ impl Config {
             return;
         }
 
-        let items = vec![ConfigurationItem {
-            scope_uri: None,
-            section: Some("cairo1.corelibPath".to_owned()),
-        }];
+        let items = vec![
+            ConfigurationItem { scope_uri: None, section: Some("cairo1.corelibPath".to_owned()) },
+            ConfigurationItem {
+                scope_uri: None,
+                section: Some("cairo1.includeDiagMapping".to_owned()),
+            },
+        ];
         let expected_len = items.len();
         if let Ok(response) = client
             .configuration(items)
@@ -71,6 +79,8 @@ impl Config {
                 .and_then(Value::as_str)
                 .filter(|s| !s.is_empty())
                 .map(Into::into);
+            self.include_diag_mapping =
+                response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default();
 
             debug!("reloaded configuration: {self:#?}");
         }
