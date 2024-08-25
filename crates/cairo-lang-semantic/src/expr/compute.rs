@@ -3,6 +3,7 @@
 //! It is invoked by queries for function bodies and other code blocks.
 
 use core::panic;
+use std::collections::HashSet;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -1650,6 +1651,20 @@ fn compute_expr_closure_semantic(
     let param_ids = params.iter().map(|param| param.id).collect_vec();
     let mut usages = Usages { usages: Default::default() };
     let usage = usages.handle_closure(&ctx.arenas, &param_ids, body);
+    let mut reported = HashSet::new();
+    // TODO(TomerStarkware): Add support for capturing mutable variables when then we have borrow.
+    for (captured_var, expr) in
+        usage.usage.iter().chain(usage.snap_usage.iter()).chain(usage.changes.iter())
+    {
+        let Some(var) = ctx.semantic_defs.get(&captured_var.base_var()) else {
+            // if the variable is not found in the semantic defs, it is closure parameter.
+            continue;
+        };
+
+        if var.is_mut() && reported.insert(expr.stable_ptr()) {
+            ctx.diagnostics.report(expr.stable_ptr(), MutableCapturedVariable);
+        }
+    }
 
     let captured_types = chain!(
         usage.snap_usage.values().map(|item| wrap_in_snapshots(ctx.db, item.ty(), 1)),
