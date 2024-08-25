@@ -23,7 +23,6 @@ use semantic::corelib::{
     never_ty, unit_ty,
 };
 use semantic::items::constant::{value_as_const_value, ConstValue};
-use semantic::items::structure::SemanticStructEx;
 use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
@@ -736,7 +735,8 @@ fn lower_single_pattern(
                     })
                     .collect(),
             };
-            for (var_id, (_, member)) in izip!(generator.add(ctx, &mut builder.statements), members)
+            for (var_id, (_, member)) in
+                izip!(generator.add(ctx, &mut builder.statements), members.iter())
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
                     let member_pattern = ctx.function_body.arenas.patterns[*member_pattern].clone();
@@ -1598,7 +1598,7 @@ fn lower_expr_member_access(
         generators::StructMemberAccess {
             input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
             member_tys: members
-                .into_iter()
+                .iter()
                 .map(|(_, member)| wrap_in_snapshots(ctx.db.upcast(), member.ty, expr.n_snapshots))
                 .collect(),
             member_idx,
@@ -1668,7 +1668,7 @@ fn lower_expr_struct_ctor(
     Ok(LoweredExpr::AtVariable(
         generators::StructConstruct {
             inputs: members
-                .into_iter()
+                .iter()
                 .map(|(_, member)| member_expr_usages.remove(&member.id).unwrap())
                 .collect::<Result<Vec<_>, _>>()?,
             ty: expr.ty,

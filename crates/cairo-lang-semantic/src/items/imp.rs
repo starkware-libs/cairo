@@ -51,7 +51,6 @@ use super::impl_alias::{
     impl_alias_generic_params_data_helper, impl_alias_semantic_data_cycle_helper,
     impl_alias_semantic_data_helper, ImplAliasData,
 };
-use super::structure::SemanticStructEx;
 use super::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId,
 };

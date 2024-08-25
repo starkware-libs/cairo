@@ -21,7 +21,6 @@ use smol_str::SmolStr;
 
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::ImplId;
-use super::structure::SemanticStructEx;
 use crate::corelib::{
     core_box_ty, core_felt252_ty, core_nonzero_ty, get_core_trait, get_core_ty_by_name,
     try_extract_nz_wrapped_type, validate_literal, CoreTraitContext, LiteralError,

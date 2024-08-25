@@ -66,7 +66,6 @@ use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
-use crate::items::structure::SemanticStructEx;
 use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
@@ -2058,7 +2057,7 @@ fn maybe_compute_pattern_semantic(
                 })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
-            let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?;
+            let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?.as_ref().clone();
             let mut used_members = UnorderedHashSet::<_>::default();
             let mut get_member = |ctx: &mut ComputationContext<'_>,
                                   member_name: SmolStr,
@@ -2121,8 +2120,8 @@ fn maybe_compute_pattern_semantic(
                 }
             }
             if !has_tail {
-                for (member_name, _) in members {
-                    ctx.diagnostics.report(pattern_struct, MissingMember(member_name));
+                for (member_name, _) in members.iter() {
+                    ctx.diagnostics.report(pattern_struct, MissingMember(member_name.clone()));
                 }
             }
             Pattern::Struct(PatternStruct {
@@ -2851,12 +2850,16 @@ fn enriched_members(
 
     if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
         let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-        for (member_name, member) in members.iter() {
-            res.insert(member_name.clone(), (member.clone(), 0));
-            if let Some(ref accessed_member_name) = accessed_member_name {
-                if *member_name == *accessed_member_name {
-                    return Ok(EnrichedMembers { members: res, deref_functions });
-                }
+        if let Some(accessed_member_name) = &accessed_member_name {
+            if let Some(member) = members.get(accessed_member_name) {
+                return Ok(EnrichedMembers {
+                    members: [(accessed_member_name.clone(), (member.clone(), 0))].into(),
+                    deref_functions,
+                });
+            }
+        } else {
+            for (member_name, member) in members.iter() {
+                res.insert(member_name.clone(), (member.clone(), 0));
             }
         }
     }
@@ -2881,28 +2884,18 @@ fn enriched_members(
 
     // Add members of derefed types.
     let mut n_deref = 0;
-    // If the variable is mutable, and implements DerefMut, we use DerefMut in the first iteration.
-    let mut use_deref_mut = match expr.clone().expr {
-        Expr::Var(expr_var) => {
-            let var_id = expr_var.var;
-            match ctx.semantic_defs.get(&var_id) {
-                Some(variable) if variable.is_mut() => {
-                    compute_deref_method_function_call_data(ctx, expr.clone(), true).is_ok()
-                }
-                _ => false,
-            }
-        }
+    let base_var = match &expr.expr {
+        Expr::Var(expr_var) => Some(expr_var.var),
         Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
-            let var_id = member_path.base_var();
-            match ctx.semantic_defs.get(&var_id) {
-                Some(variable) if variable.is_mut() => {
-                    compute_deref_method_function_call_data(ctx, expr.clone(), true).is_ok()
-                }
-                _ => false,
-            }
+            Some(member_path.base_var())
         }
-        _ => false,
+        _ => None,
     };
+    // If the variable is mutable, and implements DerefMut, we use DerefMut in the first iteration.
+    let mut use_deref_mut = base_var
+        .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
+        .is_some()
+        && compute_deref_method_function_call_data(ctx, expr.clone(), true).is_ok();
 
     while let Ok((function_id, _, cur_expr, mutability)) =
         compute_deref_method_function_call_data(ctx, expr, use_deref_mut)
@@ -2928,14 +2921,18 @@ fn enriched_members(
         expr = ExprAndId { expr: derefed_expr.clone(), id: ctx.arenas.exprs.alloc(derefed_expr) };
         if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
             let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-            for (member_name, member) in members.iter() {
-                // Insert member if there is not already a member with the same name.
-                if res.get(&member_name.clone()).is_none() {
-                    res.insert(member_name.clone(), (member.clone(), n_deref));
-                    if let Some(ref accessed_member_name) = accessed_member_name {
-                        if *member_name == *accessed_member_name {
-                            return Ok(EnrichedMembers { members: res, deref_functions });
-                        }
+            if let Some(accessed_member_name) = &accessed_member_name {
+                if let Some(member) = members.get(accessed_member_name) {
+                    return Ok(EnrichedMembers {
+                        members: [(accessed_member_name.clone(), (member.clone(), n_deref))].into(),
+                        deref_functions,
+                    });
+                }
+            } else {
+                for (member_name, member) in members.iter() {
+                    // Insert member if there is not already a member with the same name.
+                    if !res.contains_key(member_name) {
+                        res.insert(member_name.clone(), (member.clone(), n_deref));
                     }
                 }
             }

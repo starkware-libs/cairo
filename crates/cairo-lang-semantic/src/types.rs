@@ -733,7 +733,7 @@ pub fn type_size_info(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<TypeSizeInfor
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
                 let mut zero_sized = true;
-                for (_, member) in db.struct_members(id.struct_id(db))? {
+                for (_, member) in db.struct_members(id.struct_id(db))?.iter() {
                     if db.type_size_info(member.ty)? != TypeSizeInformation::ZeroSized {
                         zero_sized = false;
                     }
