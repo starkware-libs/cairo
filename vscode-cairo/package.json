@@ -112,6 +112,11 @@
             "description": "Absolute path to the Cairo core library, used in non-Scarb projects.",
             "scope": "window"
           },
+          "cairo1.includeDiagMapping": {
+            "type": "boolean",
+            "description": "Enable getting unmapped diagnostics information.",
+            "scope": "window"
+          },
           "cairo1.languageServerExtraEnv": {
             "type": [
               "null",

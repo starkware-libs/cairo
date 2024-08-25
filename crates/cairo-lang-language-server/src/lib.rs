@@ -452,9 +452,25 @@ impl Backend {
         drop(state);
 
         let mut diags = Vec::new();
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
+        let include_diag_mapping = self.config.read().await.include_diag_mapping;
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.parser,
+            include_diag_mapping,
+        );
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.semantic,
+            include_diag_mapping,
+        );
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.lowering,
+            include_diag_mapping,
+        );
 
         // Drop database snapshot before we wait for the client responding to our notification.
         drop(db);
