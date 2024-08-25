@@ -1644,6 +1644,18 @@ fn compute_expr_closure_semantic(
     let mut usages = Usages { usages: Default::default() };
     let usage = usages.handle_closure(&ctx.arenas, &param_ids, body);
 
+    // TODO(TomerStarkware): Add support for capturing mutable variables when then we have borrow.
+    for (captured_var, expr) in usage.usage.iter().chain(usage.snap_usage.iter()) {
+        let Some(var) = ctx.semantic_defs.get(&captured_var.base_var()) else {
+            // if the variable is not found in the semantic defs, it is closure parameter.
+            continue;
+        };
+
+        if var.is_mut() {
+            ctx.diagnostics.report(expr.stable_ptr(), MutableCapturedVariable);
+        }
+    }
+
     let captured_types = chain!(
         usage.snap_usage.values().map(|item| wrap_in_snapshots(ctx.db, item.ty(), 1)),
         chain!(usage.usage.values(), usage.changes.values()).map(|item| item.ty())
