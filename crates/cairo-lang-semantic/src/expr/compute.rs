@@ -1641,9 +1641,8 @@ fn compute_expr_closure_semantic(
         ctx.diagnostics.report(syntax, ClosureInGlobalScope);
     }
 
-    let param_ids = params.iter().map(|param| param.id).collect_vec();
     let mut usages = Usages { usages: Default::default() };
-    let usage = usages.handle_closure(&ctx.arenas, &param_ids, body);
+    let usage = usages.handle_closure(&ctx.arenas, &params, body);
     let mut reported = HashSet::new();
     // TODO(TomerStarkware): Add support for capturing mutable variables when then we have borrow.
     for (captured_var, expr) in
@@ -1666,19 +1665,17 @@ fn compute_expr_closure_semantic(
     .sorted_by_key(|ty| ty.as_intern_id())
     .dedup()
     .collect_vec();
-    Ok(Expr::ExprClosure(ExprClosure {
-        body,
-        param_ids,
-        stable_ptr: syntax.stable_ptr().into(),
-        ty: TypeLongId::Closure(ClosureTypeLongId {
-            param_tys: params.iter().map(|param| param.ty).collect(),
-            ret_ty,
-            captured_types,
-            parent_function,
-            wrapper_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
-        })
-        .intern(ctx.db),
-    }))
+
+    let ty = TypeLongId::Closure(ClosureTypeLongId {
+        param_tys: params.iter().map(|param| param.ty).collect(),
+        ret_ty,
+        captured_types,
+        parent_function,
+        wrapper_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
+    })
+    .intern(ctx.db);
+
+    Ok(Expr::ExprClosure(ExprClosure { body, params, stable_ptr: syntax.stable_ptr().into(), ty }))
 }
 
 /// Computes the semantic model for a body of a closure.

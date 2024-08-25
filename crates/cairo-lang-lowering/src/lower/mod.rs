@@ -8,7 +8,7 @@ use cairo_lang_semantic::corelib::{unwrap_error_propagation_type, ErrorPropagati
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionLongId;
 use cairo_lang_semantic::usage::MemberPath;
-use cairo_lang_semantic::{corelib, ExprVar, LocalVariable, VarId};
+use cairo_lang_semantic::{corelib, ConcreteTraitLongId, ExprVar, LocalVariable, VarId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -18,6 +18,7 @@ use defs::ids::TopLevelLanguageElementId;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
+use refs::ClosureInfo;
 use semantic::corelib::{
     core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
     never_ty, unit_ty,
@@ -45,8 +46,8 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{
-    FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction,
-    GeneratedFunctionKey, LocationId, SemanticFunctionIdEx, Signature,
+    parameter_as_member_path, FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId,
+    GeneratedFunction, GeneratedFunctionKey, LocationId, SemanticFunctionIdEx, Signature,
 };
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::lower::generators::StructDestructure;
@@ -66,7 +67,6 @@ mod logical_op;
 mod lower_if;
 mod lower_match;
 pub mod refs;
-use crate::lower::refs::ClosureInfo;
 
 #[cfg(test)]
 mod generated_test;
@@ -106,7 +106,8 @@ pub fn lower_semantic_function(
         function_id,
         Signature::from_semantic(db, signature),
         block_expr_id,
-    )?;
+    )
+    .unwrap();
     Ok(MultiLowering { main_lowering, generated_lowerings: encapsulating_ctx.lowerings })
 }
 
@@ -155,7 +156,6 @@ pub fn lower_function(
             Ok(root_block_id)
         })
     };
-
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
         .unwrap_or_else(FlatBlocks::new_errored);
@@ -1769,6 +1769,106 @@ fn get_destruct_lowering(
     Ok(lowered_impl)
 }
 
+fn closure_call_function(
+    encapsulated_ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprClosure,
+    closure_info: &ClosureInfo,
+) -> Maybe<()> {
+    let semantic_db = encapsulated_ctx.db.upcast();
+    let closure_ty =
+        extract_matches!(expr.ty.lookup_intern(encapsulated_ctx.db), TypeLongId::Closure);
+    let expr_location = encapsulated_ctx.get_location(expr.stable_ptr.untyped());
+    let trait_id = semantic::corelib::fn_once_trait(semantic_db);
+    let parameters_ty = TypeLongId::Tuple(closure_ty.param_tys.clone()).intern(semantic_db);
+    let concrete_trait = ConcreteTraitLongId {
+        trait_id,
+        generic_args: vec![
+            GenericArgumentId::Type(expr.ty),
+            GenericArgumentId::Type(parameters_ty),
+        ],
+    }
+    .intern(semantic_db);
+    let trait_function = semantic::corelib::fn_once_call_trait_fn(semantic_db);
+    let concrete_trait_function: cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionId =
+        ConcreteTraitGenericFunctionLongId::new(semantic_db, concrete_trait, trait_function)
+            .intern(semantic_db);
+
+    let function_id = FunctionWithBodyLongId::Generated {
+        parent: encapsulated_ctx.semantic_function_id,
+        key: GeneratedFunctionKey::TraitFunc(concrete_trait_function, closure_ty.wrapper_location),
+    }
+    .intern(encapsulated_ctx.db);
+    let signature = Signature::from_semantic(
+        encapsulated_ctx.db,
+        semantic_db.concrete_trait_function_signature(concrete_trait_function)?,
+    );
+
+    let mut ctx = LoweringContext::new(encapsulated_ctx, function_id, signature)?;
+
+    let root_block_id = alloc_empty_block(&mut ctx);
+    let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
+
+    let parameters: Vec<VariableId> = [
+        ctx.new_var(VarRequest { ty: expr.ty, location: expr_location }),
+        ctx.new_var(VarRequest { ty: parameters_ty, location: expr_location }),
+    ]
+    .into();
+
+    let root_ok = {
+        let captured_vars = generators::StructDestructure {
+            input: VarUsage { var_id: parameters[0], location: expr_location },
+            var_reqs: chain!(closure_info.members.iter(), closure_info.snapshots.iter())
+                .map(|(_, ty)| VarRequest { ty: *ty, location: expr_location })
+                .collect_vec(),
+        }
+        .add(&mut ctx, &mut builder.statements);
+        for (i, (param, _)) in closure_info.members.iter().enumerate() {
+            builder.semantics.introduce(param.clone(), captured_vars[i]);
+        }
+        for (i, (param, _)) in closure_info.snapshots.iter().enumerate() {
+            builder
+                .snapped_semantics
+                .insert(param.clone(), captured_vars[i + closure_info.members.len()]);
+        }
+        let param_requests = generators::StructDestructure {
+            input: VarUsage { var_id: parameters[1], location: expr_location },
+            var_reqs: closure_ty
+                .param_tys
+                .iter()
+                .map(|ty| VarRequest { ty: *ty, location: expr_location })
+                .collect_vec(),
+        }
+        .add(&mut ctx, &mut builder.statements);
+        for (param_request, param) in param_requests.into_iter().zip(expr.params.iter()) {
+            builder
+                .semantics
+                .introduce((&parameter_as_member_path(param.clone())).into(), param_request);
+        }
+        let lowered_expr = lower_expr(&mut ctx, &mut builder, expr.body);
+        let maybe_sealed_block = lowered_expr_to_block_scope_end(&mut ctx, builder, lowered_expr);
+        maybe_sealed_block.and_then(|block_sealed| {
+            wrap_sealed_block_as_function(&mut ctx, block_sealed, expr.stable_ptr.untyped())?;
+            Ok(root_block_id)
+        })
+    };
+    let blocks = root_ok
+        .map(|_| ctx.blocks.build().expect("Root block must exist."))
+        .unwrap_or_else(FlatBlocks::new_errored);
+
+    let lowered = FlatLowered {
+        diagnostics: ctx.diagnostics.build(),
+        variables: ctx.variables.variables,
+        blocks,
+        signature: ctx.signature.clone(),
+        parameters,
+    };
+    encapsulated_ctx.lowerings.insert(
+        GeneratedFunctionKey::TraitFunc(concrete_trait_function, closure_ty.wrapper_location),
+        lowered.clone(),
+    );
+    Ok(())
+}
+
 /// Lowers an expression of type [semantic::ExprClosure].
 fn lower_expr_closure(
     ctx: &mut LoweringContext<'_, '_>,
@@ -1777,19 +1877,24 @@ fn lower_expr_closure(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a closure expression: {:?}", expr.debug(&ctx.expr_formatter));
+
     let usage = ctx.usages.usages[&expr_id].clone();
-
     let capture_var_usage = builder.capture(ctx, usage.clone(), expr);
-
+    let closure_variable = LoweredExpr::AtVariable(capture_var_usage);
+    let closure_ty = extract_matches!(expr.ty.lookup_intern(ctx.db), TypeLongId::Closure);
     let _ = add_capture_destruct_impl(
         ctx,
         capture_var_usage,
         builder.semantics.closures.get(&capture_var_usage.var_id).unwrap(),
-        StableLocation::new(expr.stable_ptr.untyped()),
+        closure_ty.wrapper_location,
     );
-
-    ctx.diagnostics.report(expr.stable_ptr, LoweringDiagnosticKind::Unsupported);
-    Ok(LoweredExpr::AtVariable(capture_var_usage))
+    closure_call_function(
+        ctx,
+        expr,
+        builder.semantics.closures.get(&capture_var_usage.var_id).unwrap(),
+    )
+    .unwrap();
+    Ok(closure_variable)
 }
 
 /// Lowers an expression of type [semantic::ExprPropagateError].

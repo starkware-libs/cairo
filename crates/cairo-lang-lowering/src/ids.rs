@@ -3,7 +3,12 @@ use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_semantic::corelib::panic_destruct_trait_fn;
-use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionId;
+use cairo_lang_semantic::items::functions::ImplGenericFunctionId;
+use cairo_lang_semantic::items::imp::ImplLongId;
+use cairo_lang_semantic::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId,
+};
+use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern};
 use defs::diagnostic_utils::StableLocation;
@@ -244,16 +249,62 @@ define_short_id!(
 impl FunctionLongId {
     pub fn body(&self, db: &dyn LoweringGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
         let semantic_db = db.upcast();
-        let long_id = match *self {
+        Ok(Some(match *self {
             FunctionLongId::Semantic(id) => {
-                let Some(body) = id.get_concrete(semantic_db).body(semantic_db)? else {
+                let concrete_function = id.get_concrete(semantic_db);
+                if let GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }) =
+                    concrete_function.generic_function
+                {
+                    if let ImplLongId::GeneratedImpl(imp) = db.lookup_intern_impl(impl_id) {
+                        let semantic_db = db.upcast();
+                        let concrete_trait = imp.concrete_trait(semantic_db);
+
+                        assert!(
+                            [
+                                semantic::corelib::destruct_trait_fn(semantic_db),
+                                semantic::corelib::panic_destruct_trait_fn(semantic_db),
+                                semantic::corelib::fn_once_call_trait_fn(semantic_db),
+                            ]
+                            .contains(&function)
+                        );
+
+                        let generic_args = concrete_trait.generic_args(semantic_db);
+                        let Some(GenericArgumentId::Type(ty)) = generic_args.first() else {
+                            unreachable!("Expected Generated Impl to have a type argument");
+                        };
+                        let TypeLongId::Closure(ty) = ty.lookup_intern(semantic_db) else {
+                            unreachable!("Expected Generated Impl to have a closure type argument");
+                        };
+
+                        let Some(parent) =
+                            ty.parent_function?.get_concrete(semantic_db).body(semantic_db)?
+                        else {
+                            return Ok(None);
+                        };
+                        let concrete_trait_function: cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionId =
+                            ConcreteTraitGenericFunctionLongId::new(semantic_db, concrete_trait, function)
+                                .intern(semantic_db);
+
+                        return Ok(Some(
+                            GeneratedFunction {
+                                parent,
+                                key: GeneratedFunctionKey::TraitFunc(
+                                    concrete_trait_function,
+                                    ty.wrapper_location,
+                                ),
+                            }
+                            .body(db),
+                        ));
+                    }
+                }
+
+                let Some(body) = concrete_function.body(semantic_db)? else {
                     return Ok(None);
                 };
-                ConcreteFunctionWithBodyLongId::Semantic(body)
+                ConcreteFunctionWithBodyLongId::Semantic(body).intern(db)
             }
-            FunctionLongId::Generated(generated) => return Ok(Some(generated.body(db))),
-        };
-        Ok(Some(long_id.intern(db)))
+            FunctionLongId::Generated(generated) => generated.body(db),
+        }))
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         match self {
@@ -399,7 +450,7 @@ impl Signature {
 semantic::add_rewrite!(<'a>, SubstitutionRewriter<'a>, DiagnosticAdded, Signature);
 
 /// Converts a [semantic::Parameter] to a [semantic::ExprVarMemberPath].
-fn parameter_as_member_path(param: semantic::Parameter) -> semantic::ExprVarMemberPath {
+pub(crate) fn parameter_as_member_path(param: semantic::Parameter) -> semantic::ExprVarMemberPath {
     let semantic::Parameter { id, ty, stable_ptr, .. } = param;
     semantic::ExprVarMemberPath::Var(ExprVar {
         var: semantic::VarId::Param(id),
