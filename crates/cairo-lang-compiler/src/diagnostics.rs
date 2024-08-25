@@ -37,6 +37,9 @@ impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
 /// Collects compilation diagnostics and presents them in preconfigured way.
 pub struct DiagnosticsReporter<'a> {
     callback: Option<Box<dyn DiagnosticCallback + 'a>>,
+    // Ignore warnings for these crates.
+    ignore_warnings_crate_ids: Vec<CrateId>,
+    // Check diagnostics for these crates only.
     crate_ids: Vec<CrateId>,
     /// If true, compilation will not fail due to warnings.
     allow_warnings: bool,
@@ -45,7 +48,12 @@ pub struct DiagnosticsReporter<'a> {
 impl DiagnosticsReporter<'static> {
     /// Create a reporter which does not print or collect diagnostics at all.
     pub fn ignoring() -> Self {
-        Self { callback: None, crate_ids: vec![], allow_warnings: false }
+        Self {
+            callback: None,
+            crate_ids: vec![],
+            ignore_warnings_crate_ids: vec![],
+            allow_warnings: false,
+        }
     }
 
     /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
@@ -83,12 +91,23 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Create a reporter which calls [`DiagnosticCallback::on_diagnostic`].
     fn new(callback: impl DiagnosticCallback + 'a) -> Self {
-        Self { callback: Some(Box::new(callback)), crate_ids: vec![], allow_warnings: false }
+        Self {
+            callback: Some(Box::new(callback)),
+            crate_ids: vec![],
+            ignore_warnings_crate_ids: vec![],
+            allow_warnings: false,
+        }
     }
 
     /// Sets crates to be checked, instead of all crates in the db.
     pub fn with_crates(mut self, crate_ids: &[CrateId]) -> Self {
         self.crate_ids = crate_ids.to_vec();
+        self
+    }
+
+    // Ignores warnings for these crates.
+    pub fn with_ignore_warnings_crates(mut self, crate_ids: &[CrateId]) -> Self {
+        self.ignore_warnings_crate_ids = crate_ids.to_vec();
         self
     }
 
@@ -135,24 +154,30 @@ impl<'a> DiagnosticsReporter<'a> {
                 found_diagnostics = true;
             }
 
+            let ignore_warnings_in_crate = self.ignore_warnings_crate_ids.contains(crate_id);
             let modules = db.crate_modules(*crate_id);
             let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {
                 if let Ok(module_files) = db.module_files(*module_id) {
                     for file_id in module_files.iter().copied() {
                         if processed_file_ids.insert(file_id) {
-                            found_diagnostics |= self
-                                .check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
+                            found_diagnostics |= self.check_diag_group(
+                                db.upcast(),
+                                db.file_syntax_diagnostics(file_id),
+                                ignore_warnings_in_crate,
+                            );
                         }
                     }
                 }
 
                 if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
-                    found_diagnostics |= self.check_diag_group(db.upcast(), group);
+                    found_diagnostics |=
+                        self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
                 }
 
                 if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
-                    found_diagnostics |= self.check_diag_group(db.upcast(), group);
+                    found_diagnostics |=
+                        self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
                 }
             }
         }
@@ -165,9 +190,13 @@ impl<'a> DiagnosticsReporter<'a> {
         &mut self,
         db: &TEntry::DbType,
         group: Diagnostics<TEntry>,
+        skip_warnings: bool,
     ) -> bool {
         let mut found: bool = false;
         for entry in group.format_with_severity(db) {
+            if skip_warnings && entry.severity() == Severity::Warning {
+                continue;
+            }
             if !entry.is_empty() {
                 self.callback.on_diagnostic(entry);
                 found |= !self.allow_warnings || group.check_error_free().is_err();
