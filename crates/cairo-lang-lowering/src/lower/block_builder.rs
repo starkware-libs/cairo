@@ -19,7 +19,8 @@ use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
 use crate::lower::refs::ClosureInfo;
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
+    BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VarUsage, Variable,
+    VariableId,
 };
 
 /// FlatBlock builder, describing its current state.
@@ -289,13 +290,28 @@ impl BlockBuilder {
             .map(|var_usage| ctx.variables.variables[var_usage.var_id].ty)
             .collect();
 
+        let inputs_is_copy = inputs
+            .iter()
+            .map(|var_usage| ctx.variables[var_usage.var_id].copyable.is_ok())
+            .collect_vec();
+
         let var_usage = generators::StructConstruct { inputs, ty: expr.ty, location }
             .add(ctx, &mut self.statements);
+        let closure_info = ClosureInfo { members, snapshot_types };
 
-        self.semantics.closures.insert(var_usage.var_id, ClosureInfo { members, snapshot_types });
-        for member in usage.usage.keys() {
-            self.semantics.captured.insert(member.clone(), var_usage.var_id);
+        for (index, member) in usage.usage.keys().enumerate() {
+            if inputs_is_copy[index] && !usage.changes.contains_key(member) {
+                self.semantics.copiable_captured.insert(member.clone(), var_usage.var_id);
+            } else {
+                self.semantics.captured.insert(member.clone(), var_usage.var_id);
+            }
         }
+        for member in usage.snap_usage.keys() {
+            self.semantics.copiable_captured.insert(member.clone(), var_usage.var_id);
+        }
+
+        self.semantics.closures.insert(var_usage.var_id, closure_info);
+
         var_usage
     }
 
@@ -522,6 +538,10 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
 
     fn var_ty(&self, var: VariableId) -> semantic::TypeId {
         self.ctx.variables[var].ty
+    }
+
+    fn var(&self, var: VariableId) -> &Variable {
+        &self.ctx.variables[var]
     }
 
     fn db(&self) -> &dyn LoweringGroup {
