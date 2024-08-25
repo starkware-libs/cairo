@@ -190,6 +190,7 @@ cairo_lang_test_utils::test_file_test!(
         generic_params: "generic_params",
         while_: "while",
         for_: "for",
+        range: "range",
 },
     test_partial_parser_tree
 );
