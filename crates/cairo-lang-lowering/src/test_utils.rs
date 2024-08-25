@@ -38,24 +38,28 @@ impl salsa::ParallelDatabase for LoweringDatabaseForTesting {
     }
 }
 impl LoweringDatabaseForTesting {
+    pub fn new() -> Self {
+        let mut res = LoweringDatabaseForTesting { storage: Default::default() };
+        init_files_group(&mut res);
+        let suite = get_default_plugin_suite();
+        res.set_macro_plugins(suite.plugins);
+        res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
+        res.set_analyzer_plugins(suite.analyzer_plugins);
+
+        let corelib_path = detect_corelib().expect("Corelib not found in default location.");
+        init_dev_corelib(&mut res, corelib_path);
+        init_lowering_group(&mut res, InliningStrategy::Default);
+        res
+    }
+
     /// Snapshots the db for read only.
     pub fn snapshot(&self) -> LoweringDatabaseForTesting {
         LoweringDatabaseForTesting { storage: self.storage.snapshot() }
     }
 }
-pub static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> = LazyLock::new(|| {
-    let mut res = LoweringDatabaseForTesting { storage: Default::default() };
-    init_files_group(&mut res);
-    let suite = get_default_plugin_suite();
-    res.set_macro_plugins(suite.plugins);
-    res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
-    res.set_analyzer_plugins(suite.analyzer_plugins);
 
-    let corelib_path = detect_corelib().expect("Corelib not found in default location.");
-    init_dev_corelib(&mut res, corelib_path);
-    init_lowering_group(&mut res, InliningStrategy::Default);
-    Mutex::new(res)
-});
+pub static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> =
+    LazyLock::new(|| Mutex::new(LoweringDatabaseForTesting::new()));
 impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().snapshot()
