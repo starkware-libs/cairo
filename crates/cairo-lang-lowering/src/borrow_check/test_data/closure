@@ -66,10 +66,6 @@ impl MyPanicDesruct of PanicDestruct<PanicDestructable> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported feature.
- --> lib.cairo:9:5
-    || {
-    ^**^
 
 //! > lowering
 Parameters: v0: test::PanicDestructable
@@ -138,10 +134,6 @@ struct S {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported feature.
- --> lib.cairo:5:5
-    |b: u32| {
-    ^********^
 
 //! > lowering
 Parameters: v0: test::S
@@ -273,10 +265,6 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported feature.
- --> lib.cairo:3:13
-    let c = |a| {
-            ^***^
 
 //! > lowering
 Parameters:
@@ -316,10 +304,6 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported feature.
- --> lib.cairo:3:13
-    let c = |a| {
-            ^***^
 
 //! > lowering
 Parameters:
