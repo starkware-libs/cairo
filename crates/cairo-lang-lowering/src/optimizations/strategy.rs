@@ -1,6 +1,7 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
 
+use super::gas_redeposit::gas_redeposit;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
@@ -29,6 +30,7 @@ pub enum OptimizationPhase {
     ReorganizeBlocks,
     ReturnOptimization,
     SplitStructs,
+    GasRedeposit,
     /// The following is not really an optimization but we want to apply optimizations before and
     /// after it, so it is convenient to treat it as an optimization.
     LowerImplicits,
@@ -56,6 +58,7 @@ impl OptimizationPhase {
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
             OptimizationPhase::SplitStructs => split_structs(lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
+            OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
         }
         Ok(())
     }
@@ -120,6 +123,7 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
 /// Query implementation of [crate::db::LoweringGroup::final_optimization_strategy].
 pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
     OptimizationStrategy(vec![
+        OptimizationPhase::GasRedeposit,
         OptimizationPhase::LowerImplicits,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
