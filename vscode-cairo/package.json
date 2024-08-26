@@ -73,6 +73,11 @@
         "command": "cairo.expandMacro",
         "title": "Recursively expand macros for item at caret",
         "category": "Cairo"
+      },
+      {
+        "command": "cairo.viewAnalyzedCrates",
+        "title": "View currently analyzed crates",
+        "category": "Cairo"
       }
     ],
     "configuration": [

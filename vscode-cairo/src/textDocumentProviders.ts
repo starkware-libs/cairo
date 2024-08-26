@@ -1,7 +1,7 @@
 import * as lc from "vscode-languageclient/node";
 import * as vscode from "vscode";
 import { Context } from "./context";
-import { expandMacro, vfsProvide } from "./lspRequests";
+import { expandMacro, vfsProvide, viewAnalyzedCrates } from "./lspRequests";
 
 export const registerVfsProvider = (client: lc.LanguageClient, ctx: Context) => {
   const eventEmitter = new vscode.EventEmitter<vscode.Uri>();
@@ -58,6 +58,46 @@ export const registerMacroExpandProvider = (client: lc.LanguageClient, ctx: Cont
       eventEmitter.fire(uri);
 
       return vscode.window.showTextDocument(document, vscode.ViewColumn.Two, true);
+    }),
+  );
+};
+
+export const registerViewAnalyzedCratesProvider = (client: lc.LanguageClient, ctx: Context) => {
+  const uri = vscode.Uri.parse(
+    "cairo-view-analyzed-crates://viewAnalyzedCrates/[ANALYZED_CRATES].txt",
+  );
+  const eventEmitter = new vscode.EventEmitter<vscode.Uri>();
+
+  const tdcp: vscode.TextDocumentContentProvider = {
+    provideTextDocumentContent: () => client.sendRequest(viewAnalyzedCrates),
+    onDidChange: eventEmitter.event,
+  };
+
+  ctx.extension.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider("cairo-view-analyzed-crates", tdcp),
+  );
+
+  ctx.extension.subscriptions.push(
+    vscode.commands.registerCommand("cairo.viewAnalyzedCrates", async () => {
+      const document = await vscode.workspace.openTextDocument(uri);
+
+      eventEmitter.fire(uri);
+
+      return vscode.window.showTextDocument(document, vscode.ViewColumn.Two, true);
+    }),
+  );
+
+  ctx.extension.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument((e) => {
+      const path = e.document.uri.path;
+      const relevant_suffixes = [".cairo", "Scarb.toml", "Scarb.lock", "cairo_project.toml"];
+
+      for (const suffix of relevant_suffixes) {
+        if (path.endsWith(suffix)) {
+          eventEmitter.fire(uri);
+          break;
+        }
+      }
     }),
   );
 };
