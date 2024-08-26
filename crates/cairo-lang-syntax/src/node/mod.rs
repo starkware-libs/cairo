@@ -172,6 +172,10 @@ impl SyntaxNode {
         format!("{}", NodeTextFormatter { node: self, db })
     }
 
+    pub fn get_shallow_inner_comments_text(&self, db: &dyn SyntaxGroup) -> String {
+        format!("{}", NodeInnerCommentFormatter { node: self, db })
+    }
+
     /// Returns all the text under the syntax node, without the outmost trivia (the leading trivia
     /// of the first token and the trailing trivia of the last token).
     ///
@@ -276,6 +280,36 @@ impl<'a> Display for NodeTextFormatter<'a> {
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.db.get_children(self.node.clone()).iter() {
                     write!(f, "{}", NodeTextFormatter { node: child, db: self.db })?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+pub struct NodeInnerCommentFormatter<'a> {
+    /// The node to format.
+    pub node: &'a SyntaxNode,
+    /// The syntax db.
+    pub db: &'a dyn SyntaxGroup,
+}
+
+impl<'a> Display for NodeInnerCommentFormatter<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.node.green_node(self.db).as_ref().details {
+            green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
+            green::GreenNodeDetails::Node { .. } => {
+                for child in self.db.get_children(self.node.clone()).iter() {
+                    let kind = child.kind(self.db);
+                    println!("syntax node kind inner: {}", kind);
+
+                    // Checks all the items that the inner comment can be bubbled to (implementation function is also a FunctionWithBody).
+                    if kind != SyntaxKind::FunctionWithBody
+                        && kind != SyntaxKind::ItemModule
+                        && kind != SyntaxKind::TraitItemFunction
+                    {
+                        write!(f, "{}", NodeInnerCommentFormatter { node: child, db: self.db })?;
+                    }
                 }
             }
         }

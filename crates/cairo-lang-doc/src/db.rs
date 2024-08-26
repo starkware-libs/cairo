@@ -1,4 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleItemId, TraitItemId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -25,36 +26,36 @@ pub trait DocGroup: Upcast<dyn DefsGroup> + Upcast<dyn SyntaxGroup> + SyntaxGrou
 fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
     // Get the text of the item (trivia + definition)
     let doc = item_id.stable_location(db.upcast()).syntax_node(db.upcast()).get_text(db.upcast());
+    println!("doc string: {}", doc);
+    let prefix_comments = extract_prefixed_comments_from_raw_text(doc, &["///", "//!"]);
+    let inner_comments = get_item_inner_documentation(db, item_id);
+    match (prefix_comments, inner_comments) {
+        (Some(prefix_comments), Some(inner_comments)) => {
+            Some(format!("{}\n{}", inner_comments, prefix_comments))
+        }
+        (Some(prefix_comments), None) => Some(prefix_comments),
+        (None, Some(inner_comments)) => Some(inner_comments),
+        _ => None,
+    }
+}
 
-    // Only get the doc comments (start with `///` or `//!`) above the function.
-    let doc = doc
-        .lines()
-        .take_while_ref(|line| {
-            !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
-        })
-        .filter_map(|line| {
-            // Remove indentation.
-            let dedent = line.trim_start();
-            // Check if this is a doc comment.
-            for prefix in ["///", "//!"] {
-                if let Some(content) = dedent.strip_prefix(prefix) {
-                    // TODO(mkaput): The way how removing this indentation is performed is probably
-                    //   wrong. The code should probably learn how many spaces are used at the first
-                    //   line of comments block, and then remove the same amount of spaces in the
-                    //   block, instead of assuming just one space.
-                    // Remove inner indentation if one exists.
-                    return Some(content.strip_prefix(' ').unwrap_or(content));
-                }
+fn get_item_inner_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
+    match item_id {
+        DocumentableItemId::LookupItem(lookup_item_id) => match lookup_item_id {
+            LookupItemId::ModuleItem(ModuleItemId::FreeFunction(_))
+            | LookupItemId::ModuleItem(ModuleItemId::Submodule(_))
+            | LookupItemId::ImplItem(ImplItemId::Function(_))
+            | LookupItemId::TraitItem(TraitItemId::Function(_)) => {
+                let raw_text = item_id
+                    .stable_location(db.upcast())
+                    .syntax_node(db.upcast())
+                    .get_shallow_inner_comments_text(db.upcast());
+                extract_inner_comments_from_raw_text(raw_text, &["//!"])
             }
-            None
-        })
-        .join("\n");
-
-    // Cleanup the markdown.
-    let doc = cleanup_doc_markdown(doc);
-
-    // Nullify empty or just-whitespace documentation strings as they are not useful.
-    (!doc.trim().is_empty()).then_some(doc)
+            _ => None,
+        },
+        _ => None,
+    }
 }
 
 fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
@@ -143,4 +144,59 @@ fn fmt(code: String) -> String {
         // and that formatter tends to put in separate line.
         .trim_end_matches("\n;")
         .to_owned()
+}
+
+// Only gets the doc comments above the item.
+fn extract_prefixed_comments_from_raw_text(
+    raw_text: String,
+    prefixes: &[&'static str],
+) -> Option<String> {
+    let doc = raw_text
+        .lines()
+        .take_while_ref(|line| {
+            !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
+        })
+        .filter_map(|line| map_raw_text_line_to_comment(line, prefixes))
+        .join("\n");
+
+    // Cleanup the markdown.
+    let doc = cleanup_doc_markdown(doc);
+
+    // Nullify empty or just-whitespace documentation strings as they are not useful.
+    (!doc.trim().is_empty()).then_some(doc)
+}
+
+// Only gets the comments inside the item.
+fn extract_inner_comments_from_raw_text(
+    raw_text: String,
+    prefixes: &[&'static str],
+) -> Option<String> {
+    let doc = raw_text
+        .lines()
+        .skip_while(|line| !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic()))
+        .filter_map(|line| map_raw_text_line_to_comment(line, prefixes))
+        .join("\n");
+
+    // Cleanup the markdown.
+    let doc = cleanup_doc_markdown(doc);
+
+    // Nullify empty or just-whitespace documentation strings as they are not useful.
+    (!doc.trim().is_empty()).then_some(doc)
+}
+
+fn map_raw_text_line_to_comment(line: &str, prefixes: &[&'static str]) -> Option<String> {
+    // Remove indentation.
+    let dedent = line.trim_start();
+    // Check if this is a doc comment.
+    for prefix in prefixes {
+        if let Some(content) = dedent.strip_prefix(*prefix) {
+            // TODO(mkaput): The way how removing this indentation is performed is probably
+            //   wrong. The code should probably learn how many spaces are used at the first
+            //   line of comments block, and then remove the same amount of spaces in the
+            //   block, instead of assuming just one space.
+            // Remove inner indentation if one exists.
+            return Some(content.strip_prefix(' ').unwrap_or(content).to_string());
+        }
+    }
+    None
 }
