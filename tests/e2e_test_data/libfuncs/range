@@ -1,0 +1,60 @@
+//! > int_range_pop_front libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use core::internal::OptionRev;
+// TODO(lior): Move to `range.cairo`.
+extern type IntRange<T>;
+extern fn int_range_pop_front<T>(range: IntRange<T>) -> OptionRev<(IntRange<T>, T)> nopanic;
+
+fn foo(v: IntRange<i16>) -> OptionRev<(IntRange<i16>, i16)> {
+    int_range_pop_front(v)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+jmp rel 11 if [ap + -1] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [fp + -4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 600})
+
+//! > sierra_code
+type IntRange<i16> = IntRange<i16> [storable: true, drop: true, dup: true, zero_sized: false];
+type i16 = i16 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<IntRange<i16>, i16> = Struct<ut@Tuple, IntRange<i16>, i16> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)> = Enum<ut@core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>, Unit, Tuple<IntRange<i16>, i16>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc int_range_pop_front<i16> = int_range_pop_front<i16>;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>, 0> = enum_init<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>, 0>;
+libfunc store_temp<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>> = store_temp<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>>;
+libfunc struct_construct<Tuple<IntRange<i16>, i16>> = struct_construct<Tuple<IntRange<i16>, i16>>;
+libfunc enum_init<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>, 1> = enum_init<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>, 1>;
+
+int_range_pop_front<i16>([0]) { fallthrough() 6([1], [2]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([3]); // 2
+enum_init<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>, 0>([3]) -> ([4]); // 3
+store_temp<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>>([4]) -> ([4]); // 4
+return([4]); // 5
+branch_align() -> (); // 6
+struct_construct<Tuple<IntRange<i16>, i16>>([1], [2]) -> ([5]); // 7
+enum_init<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>, 1>([5]) -> ([6]); // 8
+store_temp<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>>([6]) -> ([6]); // 9
+return([6]); // 10
+
+test::foo@0([0]: IntRange<i16>) -> (core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>);

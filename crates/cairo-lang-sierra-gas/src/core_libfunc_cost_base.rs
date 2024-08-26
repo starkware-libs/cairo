@@ -42,6 +42,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::range::IntRangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
@@ -579,6 +580,11 @@ pub fn core_libfunc_cost(
                 // However, in the failure case `eval_circuit` uses at least one MulMod gate less
                 // than it actually costs, so the MulMod is already paid for.
                 vec![ConstCost { steps: 32, holes: 0, range_checks: 0, range_checks96: 6 }.into()]
+            }
+        },
+        IntRange(libfunc) => match libfunc {
+            IntRangeConcreteLibfunc::PopFront(_) => {
+                vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
             }
         },
     }
