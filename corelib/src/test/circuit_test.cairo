@@ -1,10 +1,10 @@
-use core::circuit::{
+use crate::circuit::{
     RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, circuit_add, circuit_sub,
     circuit_mul, circuit_inverse, EvalCircuitTrait, u384, CircuitOutputsTrait, CircuitModulus,
     AddInputResultTrait, CircuitInputs,
 };
 
-use core::traits::TryInto;
+use crate::traits::TryInto;
 
 #[test]
 fn test_u96() {
@@ -20,9 +20,9 @@ fn test_try_into_u96() {
 
 #[test]
 fn test_builtins() {
-    core::internal::require_implicit::<RangeCheck96>();
-    core::internal::require_implicit::<AddMod>();
-    core::internal::require_implicit::<MulMod>();
+    crate::internal::require_implicit::<RangeCheck96>();
+    crate::internal::require_implicit::<AddMod>();
+    crate::internal::require_implicit::<MulMod>();
 }
 
 #[test]

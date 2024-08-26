@@ -1,12 +1,12 @@
-use core::integer::{downcast, upcast};
-use core::RangeCheck;
+use crate::integer::{downcast, upcast};
+use crate::RangeCheck;
 
 #[derive(Copy, Drop)]
 pub(crate) extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 
 impl NumericLiteralBoundedInt<
     const MIN: felt252, const MAX: felt252
-> of core::integer::NumericLiteral<BoundedInt<MIN, MAX>>;
+> of crate::integer::NumericLiteral<BoundedInt<MIN, MAX>>;
 
 impl BoundedIntIntoFelt252<
     const MIN: felt252, const MAX: felt252
@@ -27,7 +27,7 @@ impl Felt252TryIntoBoundedInt<
 }
 
 impl BoundedIntSerde<const MIN: felt252, const MAX: felt252> =
-    core::serde::into_felt252_based::SerdeImpl<BoundedInt<MIN, MAX>>;
+    crate::serde::into_felt252_based::SerdeImpl<BoundedInt<MIN, MAX>>;
 
 impl BoundedIntPartialEq<
     const MIN: felt252, const MAX: felt252
@@ -39,7 +39,7 @@ impl BoundedIntPartialEq<
 }
 
 impl BoundedIntDebug<const MIN: felt252, const MAX: felt252> =
-    core::fmt::into_felt252_based::DebugImpl<BoundedInt<MIN, MAX>>;
+    crate::fmt::into_felt252_based::DebugImpl<BoundedInt<MIN, MAX>>;
 
 /// A helper trait for adding two `BoundedInt` instances.
 pub trait AddHelper<Lhs, Rhs> {

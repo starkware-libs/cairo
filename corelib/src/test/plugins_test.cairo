@@ -1,4 +1,4 @@
-use core::test::test_utils::assert_eq;
+use crate::test::test_utils::assert_eq;
 
 #[derive(Copy, Debug, Drop, Serde, PartialEq)]
 enum EnumForSerde {

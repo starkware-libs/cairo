@@ -1,7 +1,7 @@
-use core::byte_array::ByteArrayTrait;
-use core::traits::{Into, TryInto};
-use core::option::OptionTrait;
-use core::zeroable::Zeroable;
+use crate::byte_array::ByteArrayTrait;
+use crate::traits::{Into, TryInto};
+use crate::option::OptionTrait;
+use crate::zeroable::Zeroable;
 
 /// Formats a type that behaves like uint to its Ascii representation and appends the formatted
 /// result into the given ByteArray.

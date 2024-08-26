@@ -1,5 +1,5 @@
-use core::num::traits::{WrappingAdd, WrappingSub, WrappingMul};
-use core::integer::i8_diff;
+use crate::num::traits::{WrappingAdd, WrappingSub, WrappingMul};
+use crate::integer::i8_diff;
 
 /// Helper to prevent const folding.
 #[inline(never)]

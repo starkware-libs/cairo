@@ -1,10 +1,10 @@
 #[allow(unused_imports)]
-use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 #[allow(unused_imports)]
-use core::traits::{Into, TryInto};
-use core::option::OptionTrait;
-use core::integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
-use core::RangeCheck;
+use crate::traits::{Into, TryInto};
+use crate::option::OptionTrait;
+use crate::integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
+use crate::RangeCheck;
 
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
@@ -140,7 +140,7 @@ trait Oneable<T> {
 
 pub(crate) mod one_based {
     pub(crate) impl OneableImpl<
-        T, impl OneImpl: core::num::traits::One<T>, +Drop<T>, +Copy<T>
+        T, impl OneImpl: crate::num::traits::One<T>, +Drop<T>, +Copy<T>
     > of super::Oneable<T> {
         fn one() -> T {
             OneImpl::one()
