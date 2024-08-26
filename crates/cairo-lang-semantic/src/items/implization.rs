@@ -18,7 +18,7 @@ pub fn trait_type_implized_by_context(
 /// Cycle handling for [crate::db::SemanticGroup::trait_type_implized_by_context].
 pub fn trait_type_implized_by_context_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     trait_type_id: &TraitTypeId,
     impl_def_id: &ImplDefId,
 ) -> Maybe<TypeId> {

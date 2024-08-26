@@ -110,6 +110,9 @@ fn foo(x: T) -> S {
                             + (7
                                 + 0
                                 + (8 + 0 + (9 + 0 + (1 + 0 + (2 + 0 + (3 + 0 + (4 + 0)))))))))))));
+    for i in 1..2 {}
+    for i in 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4
+        ..1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 {}
 }
 
 fn bar(
@@ -233,7 +236,7 @@ fn function_for_a_comment() {}
 fn function_for_a_comment() {
     // A comment that should be broken because it is too long to fit in a single line. and the
     // broken line should not be added to the next line,
-    //     Because the comment prefix is different (idented).
+    //     Because the comment prefix is different (indented).
     let x = 1;
 }
 

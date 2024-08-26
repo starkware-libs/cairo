@@ -73,12 +73,14 @@ pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
 /// Returns the concrete type of a bounded int type with a given min and max.
 pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeId {
     let internal = core_submodule(db, "internal");
+    let bounded_int = get_submodule(db, internal, "bounded_int")
+        .expect("Could not find bounded_int submodule in corelib.");
     let size_ty = core_felt252_ty(db);
     let lower_id = ConstValue::Int(min, size_ty).intern(db);
     let upper_id = ConstValue::Int(max, size_ty).intern(db);
     try_get_ty_by_name(
         db,
-        internal,
+        bounded_int,
         "BoundedInt".into(),
         vec![GenericArgumentId::Constant(lower_id), GenericArgumentId::Constant(upper_id)],
     )
@@ -628,6 +630,10 @@ pub fn concrete_iterator_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTr
     let trait_id = get_core_trait(db, CoreTraitContext::Iterator, "Iterator".into());
     semantic::ConcreteTraitLongId { trait_id, generic_args: vec![GenericArgumentId::Type(ty)] }
         .intern(db)
+}
+
+pub fn fn_once_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, CoreTraitContext::Ops, "FnOnce".into())
 }
 
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {

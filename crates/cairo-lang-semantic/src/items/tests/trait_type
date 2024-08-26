@@ -1197,20 +1197,10 @@ error: Type annotations needed. Failed to infer ?0.
     fn foo1() -> AnotherTrait::AnotherType {
                                ^*********^
 
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `<missing>`.
- --> lib.cairo:9:18
-    fn foo1() -> AnotherTrait::AnotherType {
-                 ^***********************^
-
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:12:30
     fn foo2(x: AnotherTrait::AnotherType) {}
                              ^*********^
-
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `<missing>`.
- --> lib.cairo:12:16
-    fn foo2(x: AnotherTrait::AnotherType) {}
-               ^***********************^
 
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:14:28
@@ -1274,20 +1264,10 @@ error: Type annotations needed. Failed to infer ?0.
     fn foo1() -> AnotherTrait::AnotherType {
                                ^*********^
 
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `<missing>`.
- --> lib.cairo:15:18
-    fn foo1() -> AnotherTrait::AnotherType {
-                 ^***********************^
-
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:18:30
     fn foo2(x: AnotherTrait::AnotherType) {}
                              ^*********^
-
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `<missing>`.
- --> lib.cairo:18:16
-    fn foo2(x: AnotherTrait::AnotherType) {}
-               ^***********************^
 
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:20:28

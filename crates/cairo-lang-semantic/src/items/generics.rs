@@ -216,7 +216,7 @@ pub fn generic_param_semantic(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Maybe<GenericParam> {
-    db.priv_generic_param_data(generic_param_id)?.generic_param
+    db.priv_generic_param_data(generic_param_id, false)?.generic_param
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_diagnostics].
@@ -224,7 +224,9 @@ pub fn generic_param_diagnostics(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_generic_param_data(generic_param_id).map(|data| data.diagnostics).unwrap_or_default()
+    db.priv_generic_param_data(generic_param_id, false)
+        .map(|data| data.diagnostics)
+        .unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_param_resolver_data].
@@ -232,7 +234,7 @@ pub fn generic_param_resolver_data(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_generic_param_data(generic_param_id)?.resolver_data)
+    Ok(db.priv_generic_param_data(generic_param_id, false)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
@@ -281,7 +283,22 @@ pub fn generic_impl_param_trait(
 pub fn priv_generic_param_data(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
+    in_cycle: bool,
 ) -> Maybe<GenericParamData> {
+    if in_cycle {
+        let mut diagnostics = SemanticDiagnostics::default();
+        return Ok(GenericParamData {
+            generic_param: Err(diagnostics.report(
+                generic_param_id.stable_ptr(db.upcast()).untyped(),
+                SemanticDiagnosticKind::ImplRequirementCycle,
+            )),
+            diagnostics: diagnostics.build(),
+            resolver_data: Arc::new(ResolverData::new(
+                generic_param_id.module_file_id(db.upcast()),
+                InferenceId::GenericParam(generic_param_id),
+            )),
+        });
+    }
     let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = generic_param_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::default();
@@ -338,21 +355,11 @@ pub fn priv_generic_param_data(
 /// Cycle handling for [crate::db::SemanticGroup::priv_generic_param_data].
 pub fn priv_generic_param_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     generic_param_id: &GenericParamId,
+    _in_cycle: &bool,
 ) -> Maybe<GenericParamData> {
-    let mut diagnostics = SemanticDiagnostics::default();
-    Ok(GenericParamData {
-        generic_param: Err(diagnostics.report(
-            generic_param_id.stable_ptr(db.upcast()).untyped(),
-            SemanticDiagnosticKind::ImplRequirementCycle,
-        )),
-        diagnostics: diagnostics.build(),
-        resolver_data: Arc::new(ResolverData::new(
-            generic_param_id.module_file_id(db.upcast()),
-            InferenceId::GenericParam(*generic_param_id),
-        )),
-    })
+    priv_generic_param_data(db, *generic_param_id, true)
 }
 
 // --- Helpers ---
@@ -380,6 +387,17 @@ pub fn semantic_generic_params(
     module_file_id: ModuleFileId,
     generic_params: &ast::OptionWrappedGenericParamList,
 ) -> Vec<GenericParam> {
+    semantic_generic_params_ex(db, diagnostics, resolver, module_file_id, generic_params, false)
+}
+
+pub fn semantic_generic_params_ex(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    resolver: &mut Resolver<'_>,
+    module_file_id: ModuleFileId,
+    generic_params: &ast::OptionWrappedGenericParamList,
+    in_cycle: bool,
+) -> Vec<GenericParam> {
     let syntax_db = db.upcast();
     match generic_params {
         syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
@@ -390,7 +408,8 @@ pub fn semantic_generic_params(
             .filter_map(|param_syntax| {
                 let generic_param_id =
                     GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
-                let generic_param_data = db.priv_generic_param_data(generic_param_id).ok()?;
+                let generic_param_data =
+                    db.priv_generic_param_data(generic_param_id, in_cycle).ok()?;
                 let generic_param = generic_param_data.generic_param;
                 diagnostics.extend(generic_param_data.diagnostics);
                 resolver.add_generic_param(generic_param_id);

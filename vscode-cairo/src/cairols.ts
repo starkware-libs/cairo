@@ -7,6 +7,8 @@ import { Scarb } from "./scarb";
 import { isScarbProject } from "./scarbProject";
 import { StandaloneLS } from "./standalonels";
 import { registerMacroExpandProvider, registerVfsProvider } from "./textDocumentProviders";
+import { NotificationType } from "vscode-jsonrpc/lib/common/messages";
+import * as cp from "node:child_process";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
@@ -81,6 +83,34 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
       },
     );
   });
+
+  client.onNotification(
+    new NotificationType<string>("cairo/corelib-version-mismatch"),
+    async (errorMessage) => {
+      ctx.log.error(errorMessage);
+
+      const reloadWindow = "Reload window";
+      const cleanScarbCache = "Clean Scarb's cache";
+
+      const selectedValue = await vscode.window.showErrorMessage(
+        errorMessage,
+        reloadWindow,
+        cleanScarbCache,
+      );
+
+      if (selectedValue === reloadWindow) {
+        await vscode.commands.executeCommand("workbench.action.reloadWindow");
+      } else if (selectedValue === cleanScarbCache) {
+        cp.exec("scarb cache clean", (err, stdout, stderr) => {
+          ctx.log.trace("`scarb cache clean` stdout: " + stdout);
+          ctx.log.trace("`scarb cache clean` stderr: " + stderr);
+          if (err) {
+            ctx.log.warn("error: " + err);
+          }
+        });
+      }
+    },
+  );
 
   await client.start();
 

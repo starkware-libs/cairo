@@ -46,6 +46,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use anyhow::{bail, Context};
+use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
@@ -91,6 +92,7 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
+use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
@@ -596,6 +598,12 @@ impl Backend {
                 } else {
                     // Try to set up a corelib at least.
                     try_to_init_unmanaged_core(&*self.config.read().await, db);
+                }
+
+                if let Err(result) = validate_corelib(db) {
+                    self.client
+                        .send_notification::<CorelibVersionMismatch>(result.to_string())
+                        .await;
                 }
             }
 

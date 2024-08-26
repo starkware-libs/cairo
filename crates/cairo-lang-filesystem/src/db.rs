@@ -4,12 +4,14 @@ use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use semver::Version;
 use serde::{Deserialize, Serialize};
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
-    CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId, VirtualFile,
+    CodeMapping, CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId,
+    VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -18,6 +20,7 @@ use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 mod test;
 
 pub const CORELIB_CRATE_NAME: &str = "core";
+pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// A configuration per crate.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -38,6 +41,8 @@ impl CrateConfiguration {
 pub struct CrateSettings {
     /// The crate's Cairo edition.
     pub edition: Edition,
+    /// The crate's version.
+    pub version: Option<Version>,
 
     pub cfg_set: Option<CfgSet>,
 
@@ -103,9 +108,17 @@ pub struct ExperimentalFeaturesConfig {
     pub coupons: bool,
 }
 
+/// A trait for defining files external to the `filesystem` crate.
+pub trait ExternalFiles {
+    /// Returns the virtual file matching the external id.
+    fn ext_as_virtual(&self, _external_id: salsa::InternId) -> VirtualFile {
+        panic!("Should not be called, unless specifically implemented!");
+    }
+}
+
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
-pub trait FilesGroup {
+pub trait FilesGroup: ExternalFiles {
     #[salsa::interned]
     fn intern_crate(&self, crt: CrateLongId) -> CrateId;
     #[salsa::interned]
@@ -164,6 +177,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
             root: Directory::Real(core_lib_dir),
             settings: CrateSettings {
                 edition: Edition::V2024_07,
+                version: Version::parse(CORELIB_VERSION).ok(),
                 cfg_set: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig {
                     negative_impls: true,
@@ -239,6 +253,7 @@ fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> 
             Err(_) => None,
         },
         FileLongId::Virtual(virt) => Some(virt.content),
+        FileLongId::External(external_id) => Some(db.ext_as_virtual(external_id).content),
     }
 }
 fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
@@ -267,9 +282,7 @@ pub fn get_originating_location(
     mut file_id: FileId,
     mut span: TextSpan,
 ) -> (FileId, TextSpan) {
-    while let FileLongId::Virtual(VirtualFile { parent: Some(parent), code_mappings, .. }) =
-        file_id.lookup_intern(db)
-    {
+    while let Some((parent, code_mappings)) = get_parent_and_mapping(db, file_id) {
         if let Some(origin) = code_mappings.iter().find_map(|mapping| mapping.translate(span)) {
             span = origin;
             file_id = parent;
@@ -278,4 +291,17 @@ pub fn get_originating_location(
         }
     }
     (file_id, span)
+}
+
+/// Returns the parent file and the code mappings of the file.
+fn get_parent_and_mapping(
+    db: &dyn FilesGroup,
+    file_id: FileId,
+) -> Option<(FileId, Arc<[CodeMapping]>)> {
+    let vf = match file_id.lookup_intern(db) {
+        FileLongId::OnDisk(_) => return None,
+        FileLongId::Virtual(vf) => vf,
+        FileLongId::External(id) => db.ext_as_virtual(id),
+    };
+    Some((vf.parent?, vf.code_mappings))
 }

@@ -18,7 +18,10 @@ use crate::items::functions::{
     ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
-use crate::items::imp::{GeneratedImplId, ImplId, ImplImplId, ImplLongId, UninferredImpl};
+use crate::items::imp::{
+    GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
+    UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
+};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::substitution::{HasDb, RewriteResult, SemanticObject, SemanticRewriter};
 use crate::types::{
@@ -147,6 +150,7 @@ impl<T> ResultNoErrEx<T> for Result<T, NoError> {
     fn no_err(self) -> T {
         match self {
             Ok(v) => v,
+            #[allow(unreachable_patterns)]
             Err(err) => match err {},
         }
     }

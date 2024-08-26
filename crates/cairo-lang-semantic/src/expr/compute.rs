@@ -32,9 +32,10 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, try_extract_matches, LookupIntern, OptionHelper};
-use itertools::{zip_eq, Itertools};
+use itertools::{chain, zip_eq, Itertools};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
+use salsa::InternKey;
 use smol_str::SmolStr;
 use utils::Intern;
 
@@ -65,7 +66,6 @@ use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
-use crate::items::structure::SemanticStructEx;
 use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
@@ -76,6 +76,7 @@ use crate::types::{
     peel_snapshots_ex, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots,
     ClosureTypeLongId, ConcreteTypeId,
 };
+use crate::usage::Usages;
 use crate::{
     ConcreteEnumId, ConcreteTraitLongId, GenericArgumentId, GenericParam, Member, Mutability,
     Parameter, PatternStringLiteral, PatternStruct, Signature,
@@ -117,15 +118,17 @@ pub enum ContextFunction {
     Function(Maybe<FunctionId>),
 }
 
-/// Context inside loops.
+/// Context inside loops or closures.
 #[derive(Debug, Clone)]
-enum LoopContext {
+enum InnerContext {
     /// Context inside a `loop`
     Loop { type_merger: FlowMergeTypeHelper },
     /// Context inside a `while` loop
     While,
     /// Context inside a `for` loop
     For,
+    /// Context inside a `closure`
+    Closure { return_type: TypeId },
 }
 
 /// Context for computing the semantic model of expression trees.
@@ -140,8 +143,11 @@ pub struct ComputationContext<'ctx> {
     function_id: ContextFunction,
     /// Definitions of semantic variables.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
-    loop_ctx: Option<LoopContext>,
+    inner_ctx: Option<InnerContext>,
     cfg_set: Arc<CfgSet>,
+    /// whether to look for closures when calling variables.
+    /// TODO(TomerStarkware): Remove this once we disallow calling shadowed functions.
+    are_closures_in_context: bool,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
@@ -164,11 +170,12 @@ impl<'ctx> ComputationContext<'ctx> {
             arenas: Default::default(),
             function_id,
             semantic_defs,
-            loop_ctx: None,
+            inner_ctx: None,
             cfg_set: db
                 .crate_config(owning_crate_id)
                 .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
                 .unwrap_or(db.cfg_set()),
+            are_closures_in_context: false,
         }
     }
 
@@ -241,6 +248,13 @@ impl<'ctx> ComputationContext<'ctx> {
         }
         for (_id, stmt) in self.arenas.statements.iter_mut() {
             self.resolver.inference().internal_rewrite(stmt).no_err();
+        }
+    }
+    /// Returns whether the current context is inside a loop.
+    fn is_inside_loop(&self) -> bool {
+        match self.inner_ctx {
+            None | Some(InnerContext::Closure { .. }) => false,
+            Some(InnerContext::Loop { .. } | InnerContext::While | InnerContext::For) => true,
         }
     }
 }
@@ -753,9 +767,81 @@ fn compute_expr_function_call_semantic(
     let syntax_db = db.upcast();
 
     let path = syntax.path(syntax_db);
+    let args_syntax = syntax.arguments(syntax_db).arguments(syntax_db);
+    // Check if this is a variable.
+    let segments = path.elements(syntax_db);
+    let mut is_shadowed_by_variable = false;
+    if let [PathSegment::Simple(ident_segment)] = &segments[..] {
+        let identifier = ident_segment.ident(syntax_db);
+        let variable_name = identifier.text(ctx.db.upcast());
+        if let Some(var) = get_variable_by_name(ctx, &variable_name, path.stable_ptr().into()) {
+            is_shadowed_by_variable = true;
+            // if closures are not in context, we want to call the function instead of the variable.
+            if ctx.are_closures_in_context {
+                // TODO(TomerStarkware): find the correct trait based on captured variables.
+                let fn_once_trait = crate::corelib::fn_once_trait(db);
+                let self_expr = ExprAndId { expr: var.clone(), id: ctx.arenas.exprs.alloc(var) };
+                let (call_function_id, _, fixed_closure, closure_mutability) =
+                    compute_method_function_call_data(
+                        ctx,
+                        &[fn_once_trait],
+                        "call".into(),
+                        self_expr,
+                        syntax.into(),
+                        None,
+                        |ty, _, inference_errors| {
+                            Some(NoImplementationOfTrait {
+                                ty,
+                                inference_errors,
+                                trait_name: "FnOnce".into(),
+                            })
+                        },
+                        |_, _, _| {
+                            unreachable!(
+                                "There is one explicit trait, FnOnce trait. No implementations of \
+                                 the trait, caused by both lack of implementation or multiple \
+                                 implementations of the trait, are handled in \
+                                 NoImplementationOfTrait function."
+                            )
+                        },
+                    )?;
+
+                let args_iter = args_syntax.elements(syntax_db).into_iter();
+                // Normal parameters
+                let mut args = vec![];
+                let mut arg_types = vec![];
+                for arg_syntax in args_iter {
+                    let stable_ptr = arg_syntax.stable_ptr();
+                    let arg = compute_named_argument_clause(ctx, arg_syntax);
+                    if arg.2 != Mutability::Immutable {
+                        return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
+                    }
+                    args.push(arg.0.id);
+                    arg_types.push(arg.0.ty());
+                }
+                let args_expr = Expr::Tuple(ExprTuple {
+                    items: args,
+                    ty: TypeLongId::Tuple(arg_types).intern(db),
+                    stable_ptr: syntax.stable_ptr().into(),
+                });
+                let args_expr =
+                    ExprAndId { expr: args_expr.clone(), id: ctx.arenas.exprs.alloc(args_expr) };
+                return expr_function_call(
+                    ctx,
+                    call_function_id,
+                    vec![
+                        NamedArg(fixed_closure, None, closure_mutability),
+                        NamedArg(args_expr, None, Mutability::Immutable),
+                    ],
+                    syntax,
+                    syntax.stable_ptr().into(),
+                );
+            }
+        }
+    }
+
     let item =
         ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path, NotFoundItemType::Function)?;
-    let args_syntax = syntax.arguments(syntax_db).arguments(syntax_db);
 
     match item {
         ResolvedConcreteItem::Variant(variant) => {
@@ -803,6 +889,18 @@ fn compute_expr_function_call_semantic(
             }))
         }
         ResolvedConcreteItem::Function(function) => {
+            if is_shadowed_by_variable {
+                return Err(ctx.diagnostics.report(
+                    &path,
+                    CallingShadowedFunction {
+                        shadowed_function_name: path
+                            .elements(syntax_db)
+                            .first()
+                            .unwrap()
+                            .identifier(syntax_db),
+                    },
+                ));
+            }
             // TODO(Gil): Consider not invoking the TraitFunction inference below if there were
             // errors in argument semantics, in order to avoid unnecessary diagnostics.
 
@@ -877,8 +975,7 @@ pub fn compute_root_expr(
     // Conform TypeEqual constraints for Associated type bounds.
     let inference = &mut ctx.resolver.data.inference_data.inference(ctx.db);
     for param in &ctx.resolver.data.generic_params {
-        let Ok(GenericParam::Impl(imp)) = ctx.db.priv_generic_param_data(*param)?.generic_param
-        else {
+        let Ok(GenericParam::Impl(imp)) = ctx.db.generic_param_semantic(*param) else {
             continue;
         };
         let Ok(concrete_trait_id) = imp.concrete_trait else {
@@ -886,6 +983,9 @@ pub fn compute_root_expr(
         };
         let ConcreteTraitLongId { trait_id, generic_args } =
             concrete_trait_id.lookup_intern(ctx.db);
+        if trait_id == crate::corelib::fn_once_trait(ctx.db) {
+            ctx.are_closures_in_context = true;
+        }
         if trait_id != get_core_trait(ctx.db, CoreTraitContext::MetaProgramming, "TypeEqual".into())
         {
             continue;
@@ -1124,7 +1224,7 @@ fn compute_arm_semantic(
             let ast::Expr::Block(arm_expr_syntax) = arm_expr_syntax else {
                 unreachable!("Expected a block expression for a loop arm.");
             };
-            let (id, _) = compute_loop_body_semantic(new_ctx, arm_expr_syntax, LoopContext::While);
+            let (id, _) = compute_loop_body_semantic(new_ctx, arm_expr_syntax, InnerContext::While);
             let expr = new_ctx.arenas.exprs[id].clone();
             ExprAndId { expr, id }
         } else {
@@ -1257,15 +1357,15 @@ fn compute_expr_loop_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
 
-    let (body, loop_ctx) = compute_loop_body_semantic(
+    let (body, inner_ctx) = compute_loop_body_semantic(
         ctx,
         syntax.body(syntax_db),
-        LoopContext::Loop { type_merger: FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop) },
+        InnerContext::Loop { type_merger: FlowMergeTypeHelper::new(db, MultiArmExprKind::Loop) },
     );
     Ok(Expr::Loop(ExprLoop {
         body,
-        ty: match loop_ctx {
-            LoopContext::Loop { type_merger, .. } => type_merger.get_final_type(),
+        ty: match inner_ctx {
+            InnerContext::Loop { type_merger, .. } => type_merger.get_final_type(),
             _ => unreachable!("Expected loop context"),
         },
         stable_ptr: syntax.stable_ptr().into(),
@@ -1298,8 +1398,8 @@ fn compute_expr_while_semantic(
             (Condition::Let(expr.id, patterns.iter().map(|pattern| pattern.id).collect()), body.id)
         }
         ast::Condition::Expr(expr) => {
-            let (body, _loop_ctx) =
-                compute_loop_body_semantic(ctx, syntax.body(syntax_db), LoopContext::While);
+            let (body, _inner_ctx) =
+                compute_loop_body_semantic(ctx, syntax.body(syntax_db), InnerContext::While);
             (
                 Condition::BoolExpr(compute_bool_condition_semantic(ctx, &expr.expr(syntax_db)).id),
                 body,
@@ -1419,8 +1519,8 @@ fn compute_expr_for_semantic(
             new_ctx.environment.variables.insert(v.name.clone(), var_def.clone());
             new_ctx.semantic_defs.insert(var_def.id(), var_def);
         }
-        let (body, _loop_ctx) =
-            compute_loop_body_semantic(new_ctx, syntax.body(syntax_db), LoopContext::For);
+        let (body, _inner_ctx) =
+            compute_loop_body_semantic(new_ctx, syntax.body(syntax_db), InnerContext::For);
         (body, new_ctx.arenas.patterns.alloc(inner_pattern.pattern))
     });
     Ok(Expr::For(ExprFor {
@@ -1439,13 +1539,13 @@ fn compute_expr_for_semantic(
 fn compute_loop_body_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: ast::ExprBlock,
-    loop_ctx: LoopContext,
-) -> (ExprId, LoopContext) {
+    inner_ctx: InnerContext,
+) -> (ExprId, InnerContext) {
     let db = ctx.db;
     let syntax_db = db.upcast();
 
     ctx.run_in_subscope(|new_ctx| {
-        let old_loop_ctx = std::mem::replace(&mut new_ctx.loop_ctx, Some(loop_ctx));
+        let old_inner_ctx = std::mem::replace(&mut new_ctx.inner_ctx, Some(inner_ctx));
 
         let mut statements = syntax.statements(syntax_db).elements(syntax_db);
         // Remove the typed tail expression, if exists.
@@ -1468,7 +1568,7 @@ fn compute_loop_body_semantic(
             }
         }
 
-        let loop_ctx = std::mem::replace(&mut new_ctx.loop_ctx, old_loop_ctx).unwrap();
+        let inner_ctx = std::mem::replace(&mut new_ctx.inner_ctx, old_inner_ctx).unwrap();
         let body = new_ctx.arenas.exprs.alloc(Expr::Block(ExprBlock {
             statements: statements_semantic,
             tail: tail.map(|tail| tail.id),
@@ -1476,7 +1576,7 @@ fn compute_loop_body_semantic(
             stable_ptr: syntax.stable_ptr().into(),
         }));
 
-        (body, loop_ctx)
+        (body, inner_ctx)
     })
 }
 
@@ -1485,6 +1585,7 @@ fn compute_expr_closure_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprClosure,
 ) -> Maybe<Expr> {
+    ctx.are_closures_in_context = true;
     let syntax_db = ctx.db.upcast();
     let (params, ret_ty, body) = ctx.run_in_subscope(|new_ctx| {
         let params = if let ClosureParamWrapper::NAry(params) = syntax.wrapper(syntax_db) {
@@ -1501,7 +1602,7 @@ fn compute_expr_closure_semantic(
         } else {
             vec![]
         };
-        let ret_ty = match syntax.ret_ty(syntax_db) {
+        let return_type = match syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type(
                 new_ctx.db,
                 new_ctx.diagnostics,
@@ -1512,13 +1613,16 @@ fn compute_expr_closure_semantic(
                 new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr().untyped()))
             }
         };
+        let old_inner_ctx =
+            std::mem::replace(&mut new_ctx.inner_ctx, Some(InnerContext::Closure { return_type }));
         let body = match syntax.expr(syntax_db) {
             ast::Expr::Block(syntax) => compute_closure_body_semantic(new_ctx, syntax),
             _ => compute_expr_semantic(new_ctx, &syntax.expr(syntax_db)).id,
         };
+        std::mem::replace(&mut new_ctx.inner_ctx, old_inner_ctx).unwrap();
         let mut inference = new_ctx.resolver.inference();
         if let Err((err_set, actual_ty, expected_ty)) =
-            inference.conform_ty_for_diag(new_ctx.arenas.exprs[body].ty(), ret_ty)
+            inference.conform_ty_for_diag(new_ctx.arenas.exprs[body].ty(), return_type)
         {
             let diag_added = new_ctx.diagnostics.report(
                 syntax.expr(syntax_db).stable_ptr(),
@@ -1526,19 +1630,36 @@ fn compute_expr_closure_semantic(
             );
             inference.consume_reported_error(err_set, diag_added);
         }
-        (params, ret_ty, body)
+        (params, return_type, body)
     });
+    let parent_function = match ctx.function_id {
+        ContextFunction::Global => Maybe::Err(ctx.diagnostics.report(syntax, ClosureInGlobalScope)),
+        ContextFunction::Function(function_id) => function_id,
+    };
     if matches!(ctx.function_id, ContextFunction::Global) {
         ctx.diagnostics.report(syntax, ClosureInGlobalScope);
     }
+
+    let param_ids = params.iter().map(|param| param.id).collect_vec();
+    let mut usages = Usages { usages: Default::default() };
+    let usage = usages.handle_closure(&ctx.arenas, &param_ids, body);
+
+    let captured_types = chain!(
+        usage.snap_usage.values().map(|item| wrap_in_snapshots(ctx.db, item.ty(), 1)),
+        chain!(usage.usage.values(), usage.changes.values()).map(|item| item.ty())
+    )
+    .sorted_by_key(|ty| ty.as_intern_id())
+    .dedup()
+    .collect_vec();
     Ok(Expr::ExprClosure(ExprClosure {
         body,
-        param_ids: params.iter().map(|param| param.id).collect(),
-
+        param_ids,
         stable_ptr: syntax.stable_ptr().into(),
         ty: TypeLongId::Closure(ClosureTypeLongId {
             param_tys: params.iter().map(|param| param.ty).collect(),
             ret_ty,
+            captured_types,
+            parent_function,
             wrapper_location: StableLocation::new(syntax.wrapper(syntax_db).stable_ptr().into()),
         })
         .intern(ctx.db),
@@ -1594,9 +1715,18 @@ fn compute_expr_error_propagate_semantic(
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
 
-    let func_signature =
-        ctx.get_signature(syntax.into(), UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate)?;
-    let func_err_prop_ty = unwrap_error_propagation_type(ctx.db, func_signature.return_type)
+    let return_type = match ctx.inner_ctx {
+        Some(InnerContext::Closure { return_type }) => return_type,
+        None | Some(InnerContext::Loop { .. } | InnerContext::While | InnerContext::For) => {
+            ctx.get_signature(
+                syntax.into(),
+                UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate,
+            )?
+            .return_type
+        }
+    };
+
+    let func_err_prop_ty = unwrap_error_propagation_type(ctx.db, return_type)
         .ok_or_else(|| ctx.diagnostics.report(syntax, ReturnTypeNotErrorPropagateType))?;
 
     // `inner_expr` is the expr inside the `?`.
@@ -1619,7 +1749,7 @@ fn compute_expr_error_propagate_semantic(
     let inner_expr_err_variant = inner_expr_err_prop_ty.err_variant();
 
     // Disallow error propagation inside a loop.
-    if ctx.loop_ctx.is_some() {
+    if ctx.is_inside_loop() {
         ctx.diagnostics.report(syntax, SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop);
     }
 
@@ -1642,7 +1772,7 @@ fn compute_expr_error_propagate_semantic(
         ctx.diagnostics.report(
             syntax,
             IncompatibleErrorPropagateType {
-                return_ty: func_signature.return_type,
+                return_ty: return_type,
                 err_ty: inner_expr_err_variant.ty,
             },
         );
@@ -1746,8 +1876,7 @@ fn compute_method_function_call_data(
         }
     };
     let (function_id, n_snapshots) =
-        infer_impl_by_self(ctx, trait_function_id, self_ty, method_syntax, generic_args_syntax)
-            .unwrap();
+        infer_impl_by_self(ctx, trait_function_id, self_ty, method_syntax, generic_args_syntax)?;
 
     let signature = ctx.db.trait_function_signature(trait_function_id).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();
@@ -1928,7 +2057,7 @@ fn maybe_compute_pattern_semantic(
                 })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
-            let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?;
+            let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?.as_ref().clone();
             let mut used_members = UnorderedHashSet::<_>::default();
             let mut get_member = |ctx: &mut ComputationContext<'_>,
                                   member_name: SmolStr,
@@ -1991,8 +2120,8 @@ fn maybe_compute_pattern_semantic(
                 }
             }
             if !has_tail {
-                for (member_name, _) in members {
-                    ctx.diagnostics.report(pattern_struct, MissingMember(member_name));
+                for (member_name, _) in members.iter() {
+                    ctx.diagnostics.report(pattern_struct, MissingMember(member_name.clone()));
                 }
             }
             Pattern::Struct(PatternStruct {
@@ -2721,12 +2850,16 @@ fn enriched_members(
 
     if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
         let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-        for (member_name, member) in members.iter() {
-            res.insert(member_name.clone(), (member.clone(), 0));
-            if let Some(ref accessed_member_name) = accessed_member_name {
-                if *member_name == *accessed_member_name {
-                    return Ok(EnrichedMembers { members: res, deref_functions });
-                }
+        if let Some(accessed_member_name) = &accessed_member_name {
+            if let Some(member) = members.get(accessed_member_name) {
+                return Ok(EnrichedMembers {
+                    members: [(accessed_member_name.clone(), (member.clone(), 0))].into(),
+                    deref_functions,
+                });
+            }
+        } else {
+            for (member_name, member) in members.iter() {
+                res.insert(member_name.clone(), (member.clone(), 0));
             }
         }
     }
@@ -2751,28 +2884,18 @@ fn enriched_members(
 
     // Add members of derefed types.
     let mut n_deref = 0;
-    // If the variable is mutable, and implements DerefMut, we use DerefMut in the first iteration.
-    let mut use_deref_mut = match expr.clone().expr {
-        Expr::Var(expr_var) => {
-            let var_id = expr_var.var;
-            match ctx.semantic_defs.get(&var_id) {
-                Some(variable) if variable.is_mut() => {
-                    compute_deref_method_function_call_data(ctx, expr.clone(), true).is_ok()
-                }
-                _ => false,
-            }
-        }
+    let base_var = match &expr.expr {
+        Expr::Var(expr_var) => Some(expr_var.var),
         Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
-            let var_id = member_path.base_var();
-            match ctx.semantic_defs.get(&var_id) {
-                Some(variable) if variable.is_mut() => {
-                    compute_deref_method_function_call_data(ctx, expr.clone(), true).is_ok()
-                }
-                _ => false,
-            }
+            Some(member_path.base_var())
         }
-        _ => false,
+        _ => None,
     };
+    // If the variable is mutable, and implements DerefMut, we use DerefMut in the first iteration.
+    let mut use_deref_mut = base_var
+        .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
+        .is_some()
+        && compute_deref_method_function_call_data(ctx, expr.clone(), true).is_ok();
 
     while let Ok((function_id, _, cur_expr, mutability)) =
         compute_deref_method_function_call_data(ctx, expr, use_deref_mut)
@@ -2798,14 +2921,18 @@ fn enriched_members(
         expr = ExprAndId { expr: derefed_expr.clone(), id: ctx.arenas.exprs.alloc(derefed_expr) };
         if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
             let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-            for (member_name, member) in members.iter() {
-                // Insert member if there is not already a member with the same name.
-                if res.get(&member_name.clone()).is_none() {
-                    res.insert(member_name.clone(), (member.clone(), n_deref));
-                    if let Some(ref accessed_member_name) = accessed_member_name {
-                        if *member_name == *accessed_member_name {
-                            return Ok(EnrichedMembers { members: res, deref_functions });
-                        }
+            if let Some(accessed_member_name) = &accessed_member_name {
+                if let Some(member) = members.get(accessed_member_name) {
+                    return Ok(EnrichedMembers {
+                        members: [(accessed_member_name.clone(), (member.clone(), n_deref))].into(),
+                        deref_functions,
+                    });
+                }
+            } else {
+                for (member_name, member) in members.iter() {
+                    // Insert member if there is not already a member with the same name.
+                    if !res.contains_key(member_name) {
+                        res.insert(member_name.clone(), (member.clone(), n_deref));
                     }
                 }
             }
@@ -3206,7 +3333,7 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Continue(continue_syntax) => {
-            if ctx.loop_ctx.is_none() {
+            if !ctx.is_inside_loop() {
                 return Err(ctx
                     .diagnostics
                     .report(continue_syntax, ContinueOnlyAllowedInsideALoop));
@@ -3216,7 +3343,7 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Return(return_syntax) => {
-            if ctx.loop_ctx.is_some() {
+            if ctx.is_inside_loop() {
                 return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
             }
 
@@ -3230,12 +3357,17 @@ pub fn compute_statement_semantic(
                     (Some(expr.id), expr.ty(), expr_syntax.stable_ptr().untyped())
                 }
             };
-            let expected_ty = ctx
-                .get_signature(
-                    return_syntax.into(),
-                    UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
-                )?
-                .return_type;
+            let expected_ty = match ctx.inner_ctx {
+                None => {
+                    ctx.get_signature(
+                        return_syntax.into(),
+                        UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
+                    )?
+                    .return_type
+                }
+                Some(InnerContext::Closure { return_type }) => return_type,
+                _ => unreachable!("Return statement inside a loop"),
+            };
 
             let expected_ty = ctx.reduce_ty(expected_ty);
             let expr_ty = ctx.reduce_ty(expr_ty);
@@ -3268,11 +3400,11 @@ pub fn compute_statement_semantic(
                 }
             };
             let ty = ctx.reduce_ty(ty);
-            match &mut ctx.loop_ctx {
-                None => {
+            match &mut ctx.inner_ctx {
+                None | Some(InnerContext::Closure { .. }) => {
                     return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
                 }
-                Some(LoopContext::Loop { type_merger, .. }) => {
+                Some(InnerContext::Loop { type_merger, .. }) => {
                     type_merger.try_merge_types(
                         ctx.db,
                         ctx.diagnostics,
@@ -3281,7 +3413,7 @@ pub fn compute_statement_semantic(
                         stable_ptr,
                     );
                 }
-                Some(LoopContext::While | LoopContext::For) => {
+                Some(InnerContext::While | InnerContext::For) => {
                     if expr_option.is_some() {
                         ctx.diagnostics.report(break_syntax, BreakWithValueOnlyAllowedInsideALoop);
                     };
@@ -3292,6 +3424,7 @@ pub fn compute_statement_semantic(
                 stable_ptr: syntax.stable_ptr(),
             })
         }
+        ast::Statement::Item(_) => todo!(),
         ast::Statement::Missing(_) => todo!(),
     };
     ctx.resolver.data.feature_config.restore(feature_restore);
@@ -3337,17 +3470,10 @@ fn check_struct_member_is_visible(
 /// reported.
 fn validate_statement_attributes(ctx: &mut ComputationContext<'_>, syntax: &ast::Statement) {
     let allowed_attributes = ctx.db.allowed_statement_attributes();
-    let module_file_id = ctx.resolver.module_file_id;
     let mut diagnostics = vec![];
-    validate_attributes_flat(
-        ctx.db.upcast(),
-        &allowed_attributes,
-        module_file_id,
-        syntax,
-        &mut diagnostics,
-    );
+    validate_attributes_flat(ctx.db.upcast(), &allowed_attributes, syntax, &mut diagnostics);
     // Translate the plugin diagnostics to semantic diagnostics.
-    for (_, diagnostic) in diagnostics {
+    for diagnostic in diagnostics {
         ctx.diagnostics
             .report(diagnostic.stable_ptr, SemanticDiagnosticKind::UnknownStatementAttribute);
     }

@@ -57,6 +57,7 @@ cairo_lang_test_utils::test_file_test!(
         statements: "statements",
         structure: "structure",
         while_: "while",
+        impl_: "impl",
     },
     test_function_diagnostics
 );
@@ -68,7 +69,7 @@ cairo_lang_test_utils::test_file_test!(
         assignment: "assignment",
         block: "block",
         call: "call",
-        calosure: "closure",
+        closure: "closure",
         coupon: "coupon",
         inline_macros: "inline_macros",
         let_statement: "let_statement",
@@ -81,6 +82,7 @@ cairo_lang_test_utils::test_file_test!(
         tuple: "tuple",
         while_: "while",
         for_: "for",
+        range: "range",
     },
     test_expr_semantics
 );

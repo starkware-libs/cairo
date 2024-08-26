@@ -8,6 +8,8 @@ fn foo(x: T) -> S {
     let x4 = (1+2+3+4+5+6+7+8+9+1+2+3+4+5+6+7+8+9)+(1+2+3+4+5+6+7+8+9+1+2+3+4+5+6+7+8+9)+(1+2+3+4+5+6+7+8+9)+(1+2+3+4+5+6+7+8+9);
     let x5 = (1+2+3+4+5+6+7+8+9+1+2+3+4+5+6+7+8+9)+(1+2+3+4+5+6+7+8+9+1+2+3+4+5+6+7+8+9+1+2+3+4+5+6+7+8+9)+(1+2+3+4+5+6+7+8+9)+(1+2+3+4+5+6+7+8+9);
     let x6 = (1+0+(2+0+(3+0+(4+0+(5+0+(6+0+(7+0+(8+0+(9+0+(1+0+(2+0+(3+0+(4+0)))))))))))));
+    for i in 1 .. 2 {}
+    for i in 1+2+3+4+1+2+3+4+1+2+3+4+1+2+3+4+1+2+3+4..1+2+3+4+1+2+3+4+1+2+3+4+1+2+3+4 {}
     }
 
 fn bar(first_arg: T, second_arg: T, third_arg: T, fourth_arg: T, fifth_arg: T, sixth_arg: T, seventh_arg: T,) -> T {
@@ -41,7 +43,7 @@ fn function_for_a_comment() {}
 /// Because the comment prefix is different.
 fn function_for_a_comment() {
     // A comment that should be broken because it is too long to fit in a single line. and the broken line should not be added to the next line,
-    //     Because the comment prefix is different (idented).
+    //     Because the comment prefix is different (indented).
     let x = 1;
 }
 

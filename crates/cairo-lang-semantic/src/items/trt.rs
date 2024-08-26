@@ -23,7 +23,9 @@ use super::function_with_body::{get_implicit_precedence, get_inline_config, Func
 use super::functions::{
     FunctionDeclarationData, GenericFunctionId, ImplicitPrecedence, InlineConfiguration,
 };
-use super::generics::{generic_params_to_args, semantic_generic_params, GenericParamsData};
+use super::generics::{
+    generic_params_to_args, semantic_generic_params, semantic_generic_params_ex, GenericParamsData,
+};
 use super::imp::{GenericsHeadFilter, TraitFilter};
 use super::TraitOrImplContext;
 use crate::db::{get_resolver_data_options, SemanticGroup};
@@ -358,22 +360,23 @@ pub fn trait_semantic_declaration_diagnostics(
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params].
 pub fn trait_generic_params(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<GenericParam>> {
-    Ok(db.trait_generic_params_data(trait_id)?.generic_params)
+    Ok(db.trait_generic_params_data(trait_id, false)?.generic_params)
 }
 /// Cycle handling for [crate::db::SemanticGroup::trait_generic_params].
 pub fn trait_generic_params_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     trait_id: &TraitId,
 ) -> Maybe<Vec<GenericParam>> {
     // Forwarding cycle handling to `priv_generic_param_data` handler.
-    trait_generic_params(db, *trait_id)
+    Ok(db.trait_generic_params_data(*trait_id, true)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params_data].
 pub fn trait_generic_params_data(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
+    in_cycle: bool,
 ) -> Maybe<GenericParamsData> {
     let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = trait_id.module_file_id(db.upcast());
@@ -385,12 +388,13 @@ pub fn trait_generic_params_data(
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
     resolver.set_feature_config(&trait_id, &trait_ast, &mut diagnostics);
-    let generic_params = semantic_generic_params(
+    let generic_params = semantic_generic_params_ex(
         db,
         &mut diagnostics,
         &mut resolver,
         module_file_id,
         &trait_ast.generic_params(syntax_db),
+        in_cycle,
     );
 
     let inference = &mut resolver.inference();
@@ -403,11 +407,12 @@ pub fn trait_generic_params_data(
 /// Cycle handling for [crate::db::SemanticGroup::trait_generic_params_data].
 pub fn trait_generic_params_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     trait_id: &TraitId,
+    _in_cycle: &bool,
 ) -> Maybe<GenericParamsData> {
     // Forwarding cycle handling to `priv_generic_param_data` handler.
-    trait_generic_params_data(db, *trait_id)
+    trait_generic_params_data(db, *trait_id, true)
 }
 /// Query implementation of [crate::db::SemanticGroup::trait_attributes].
 pub fn trait_attributes(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<Attribute>> {
@@ -434,7 +439,7 @@ pub fn priv_trait_declaration_data(
     let trait_ast = db.module_trait_by_id(trait_id)?.to_maybe()?;
 
     // Generic params.
-    let generic_params_data = db.trait_generic_params_data(trait_id)?;
+    let generic_params_data = db.trait_generic_params_data(trait_id, false)?;
     let generic_params = generic_params_data.generic_params;
     let inference_id =
         InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));

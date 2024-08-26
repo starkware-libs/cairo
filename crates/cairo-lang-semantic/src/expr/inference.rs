@@ -35,7 +35,8 @@ use crate::items::functions::{
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{
-    GeneratedImplId, ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl,
+    GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
+    ImplLookupContext, UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
@@ -567,9 +568,8 @@ impl<'db> Inference<'db> {
         &mut self,
         concrete_trait_id: ConcreteTraitId,
         stable_ptr: Option<SyntaxStablePtrId>,
-        mut lookup_context: ImplLookupContext,
+        lookup_context: ImplLookupContext,
     ) -> ImplId {
-        enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
         let var = self.new_impl_var_raw(lookup_context, concrete_trait_id, stable_ptr);
         ImplLongId::ImplVar(self.impl_var(var).intern(self.db)).intern(self.db)
     }
@@ -1148,9 +1148,9 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                 let impl_id = impl_type_id.impl_id();
                 let trait_ty = impl_type_id.ty();
                 return Ok(match impl_id.lookup_intern(self.db) {
-                    ImplLongId::GenericParameter(_)
-                    | ImplLongId::TraitImpl(_)
-                    | ImplLongId::GeneratedImpl(_) => impl_type_id_rewrite_result,
+                    ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => {
+                        impl_type_id_rewrite_result
+                    }
                     ImplLongId::ImplImpl(impl_impl) => {
                         // The grand parent impl must be var free since we are rewriting the parent,
                         // and the parent is not var.
@@ -1170,6 +1170,20 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
                     ImplLongId::ImplVar(var) => {
                         *value = self.rewritten_impl_type(var, trait_ty).lookup_intern(self.db);
                         return Ok(RewriteResult::Modified);
+                    }
+                    ImplLongId::GeneratedImpl(generated) => {
+                        *value = self
+                            .rewrite(
+                                *generated
+                                    .lookup_intern(self.db)
+                                    .impl_items
+                                    .0
+                                    .get(&impl_type_id.ty())
+                                    .unwrap(),
+                            )
+                            .no_err()
+                            .lookup_intern(self.db);
+                        RewriteResult::Modified
                     }
                 });
             }

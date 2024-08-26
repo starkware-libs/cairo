@@ -99,10 +99,16 @@ pub trait BitNot<T> {
 }
 
 pub trait PartialOrd<T> {
-    fn le(lhs: T, rhs: T) -> bool;
-    fn ge(lhs: T, rhs: T) -> bool;
     fn lt(lhs: T, rhs: T) -> bool;
-    fn gt(lhs: T, rhs: T) -> bool;
+    fn ge(lhs: T, rhs: T) -> bool {
+        !Self::lt(lhs, rhs)
+    }
+    fn gt(lhs: T, rhs: T) -> bool {
+        Self::lt(rhs, lhs)
+    }
+    fn le(lhs: T, rhs: T) -> bool {
+        Self::ge(rhs, lhs)
+    }
 }
 
 impl PartialOrdSnap<T, +PartialOrd<T>, +Copy<T>> of PartialOrd<@T> {

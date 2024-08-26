@@ -77,6 +77,7 @@ pub enum SyntaxKind {
     OptionExprClauseEmpty,
     StatementReturn,
     StatementBreak,
+    StatementItem,
     Param,
     ModifierList,
     ParamList,
@@ -114,6 +115,7 @@ pub enum SyntaxKind {
     TraitItemImpl,
     ItemImpl,
     ItemInlineMacro,
+    ItemHeaderDoc,
     ImplBody,
     ImplItemList,
     ImplItemMissing,
@@ -297,7 +299,11 @@ pub enum SyntaxKind {
     TokenXor,
     TerminalXor,
     SyntaxFile,
+    TokenEmpty,
+    TerminalEmpty,
     TokenSingleLineComment,
+    TokenSingleLineInnerComment,
+    TokenSingleLineDocComment,
     TokenWhitespace,
     TokenNewline,
     TokenMissing,
@@ -384,7 +390,10 @@ impl SyntaxKind {
                 | SyntaxKind::TokenSemicolon
                 | SyntaxKind::TokenUnderscore
                 | SyntaxKind::TokenXor
+                | SyntaxKind::TokenEmpty
                 | SyntaxKind::TokenSingleLineComment
+                | SyntaxKind::TokenSingleLineInnerComment
+                | SyntaxKind::TokenSingleLineDocComment
                 | SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenMissing
@@ -471,6 +480,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalSemicolon
                 | SyntaxKind::TerminalUnderscore
                 | SyntaxKind::TerminalXor
+                | SyntaxKind::TerminalEmpty
         )
     }
     pub fn is_keyword_token(&self) -> bool {

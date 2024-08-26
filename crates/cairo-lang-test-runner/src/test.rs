@@ -16,7 +16,11 @@ fn test_compiled_serialization() {
         &path,
         true,
         false,
-        TestsCompilationConfig { starknet: true, add_statements_functions: false },
+        TestsCompilationConfig {
+            starknet: true,
+            add_statements_functions: false,
+            add_statements_code_locations: false,
+        },
     )
     .unwrap();
     let compiled = compiler.build().unwrap();
@@ -241,9 +245,9 @@ fn to_test_compilation(tests: &[(&str, bool)]) -> TestCompilation {
         }),
         metadata: TestCompilationMetadata {
             named_tests: tests.iter().map(to_named_test).collect(),
-            statements_functions: Default::default(),
             contracts_info: Default::default(),
             function_set_costs: Default::default(),
+            statements_locations: None,
         },
     }
 }

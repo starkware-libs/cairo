@@ -40,7 +40,7 @@ pub struct u384 {
     pub limb3: u96,
 }
 
-pub type u96 = core::internal::BoundedInt<0, 79228162514264337593543950335>;
+pub type u96 = core::internal::bounded_int::BoundedInt<0, 79228162514264337593543950335>;
 pub extern type RangeCheck96;
 pub extern type AddMod;
 pub extern type MulMod;
@@ -73,8 +73,8 @@ impl DestructU96Guarantee of Destruct<U96Guarantee> {
 extern type U96Guarantee;
 
 /// Expose the const required by the libfunc to allow the compiler const reusage.
-pub type ConstZero = core::internal::BoundedInt<0, 0>;
-pub type ConstOne = core::internal::BoundedInt<1, 1>;
+pub type ConstZero = core::internal::bounded_int::BoundedInt<0, 0>;
+pub type ConstOne = core::internal::bounded_int::BoundedInt<1, 1>;
 
 /// A type that creates a circuit from a tuple of outputs.
 pub extern type Circuit<Outputs>;
@@ -162,10 +162,10 @@ extern type CircuitPartialOutputs<C>;
 extern type CircuitDescriptor<C>;
 
 impl CircuitDescriptorDrop<C> of Drop<CircuitDescriptor<C>>;
+impl CircuitModulusCopy of Copy<CircuitModulus>;
 impl CircuitModulusDrop of Drop<CircuitModulus>;
 impl CircuitOutputsDrop<C> of Drop<CircuitOutputs<C>>;
 impl CircuitPartialOutputsDrop<C> of Drop<CircuitPartialOutputs<C>>;
-
 impl CircuitOutputsCopy<C> of Copy<CircuitOutputs<C>>;
 
 /// A wrapper for circuit elements, used to construct circuits..
@@ -426,31 +426,9 @@ extern fn get_circuit_output<C, Output>(
 
 /// Helper module to convert into `u384`.
 mod conversions {
-    use core::internal::BoundedInt;
-    use core::RangeCheck;
-
-
-    trait AddHelper<Lhs, Rhs> {
-        type Result;
-    }
-    extern fn bounded_int_add<Lhs, Rhs, impl H: AddHelper<Lhs, Rhs>>(
-        lhs: Lhs, rhs: Rhs
-    ) -> H::Result nopanic;
-
-    trait MulHelper<Lhs, Rhs> {
-        type Result;
-    }
-    extern fn bounded_int_mul<Lhs, Rhs, impl H: MulHelper<Lhs, Rhs>>(
-        lhs: Lhs, rhs: Rhs
-    ) -> H::Result nopanic;
-
-    trait DivRemHelper<Lhs, Rhs> {
-        type DivT;
-        type RemT;
-    }
-    extern fn bounded_int_div_rem<Lhs, Rhs, impl H: DivRemHelper<Lhs, Rhs>>(
-        lhs: Lhs, rhs: NonZero<Rhs>,
-    ) -> (H::DivT, H::RemT) implicits(RangeCheck) nopanic;
+    use core::internal::{
+        bounded_int, bounded_int::{BoundedInt, AddHelper, MulHelper, DivRemHelper}
+    };
 
     type ConstValue<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
     const POW96: felt252 = 0x1000000000000000000000000;
@@ -481,14 +459,14 @@ mod conversions {
     }
 
     pub fn from_u128(value: u128) -> super::u384 {
-        let (limb1, limb0) = bounded_int_div_rem(value, NZ_POW96_TYPED);
+        let (limb1, limb0) = bounded_int::div_rem(value, NZ_POW96_TYPED);
         core::circuit::u384 { limb0, limb1: core::integer::upcast(limb1), limb2: 0, limb3: 0 }
     }
 
     pub fn from_u256(value: u256) -> super::u384 {
-        let (limb1_low32, limb0) = bounded_int_div_rem(value.low, NZ_POW96_TYPED);
-        let (limb2, limb1_high64) = bounded_int_div_rem(value.high, NZ_POW64_TYPED);
-        let limb1 = bounded_int_add(bounded_int_mul(limb1_high64, POW32_TYPED), limb1_low32);
+        let (limb1_low32, limb0) = bounded_int::div_rem(value.low, NZ_POW96_TYPED);
+        let (limb2, limb1_high64) = bounded_int::div_rem(value.high, NZ_POW64_TYPED);
+        let limb1 = bounded_int::add(bounded_int::mul(limb1_high64, POW32_TYPED), limb1_low32);
         core::circuit::u384 { limb0, limb1, limb2: core::integer::upcast(limb2), limb3: 0 }
     }
 }

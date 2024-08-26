@@ -69,6 +69,7 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
 
             let edition = scarb_package_edition(&package, crate_name);
             let experimental_features = scarb_package_experimental_features(&package);
+            let version = package.map(|p| p.version.clone());
 
             let (root, file_stem) = match validate_and_chop_source_path(
                 component.source_path.as_std_path(),
@@ -98,7 +99,7 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                 cfg_set_from_scarb
             };
 
-            let settings = CrateSettings { edition, cfg_set, experimental_features };
+            let settings = CrateSettings { edition, version, cfg_set, experimental_features };
 
             let custom_main_file_stems = (file_stem != "lib").then_some(vec![file_stem.into()]);
 

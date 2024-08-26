@@ -126,7 +126,8 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
         SyntaxKind::TokenSkipped => text.on_red(), // red background
         SyntaxKind::TokenSingleLineComment
         | SyntaxKind::TokenWhitespace
-        | SyntaxKind::TokenNewline => text.clear(),
+        | SyntaxKind::TokenNewline
+        | SyntaxKind::TokenEmpty => text.clear(),
         // TODO(yuval): Can this be made exhaustive?
         _ => panic!("Unexpected syntax kind: {kind:?}"),
     }

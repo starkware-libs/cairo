@@ -10,7 +10,9 @@ use super::{
     InferenceData, InferenceError, InferenceId, InferenceResult, InferenceVar, LocalImplVarId,
 };
 use crate::db::SemanticGroup;
-use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{
+    find_candidates_at_context, find_generated_candidate, ImplId, ImplLookupContext, UninferredImpl,
+};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, GenericArgumentId, TypeId, TypeLongId};
 
@@ -83,7 +85,7 @@ pub fn canonic_trait_solutions(
 /// Cycle handling for [canonic_trait_solutions].
 pub fn canonic_trait_solutions_cycle(
     _db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _canonical_trait: &CanonicalTrait,
     _lookup_context: &ImplLookupContext,
 ) -> Result<SolutionSet<CanonicalImpl>, InferenceError> {
@@ -136,8 +138,10 @@ impl Solver {
         lookup_context: ImplLookupContext,
     ) -> Self {
         let filter = canonical_trait.0.filter(db);
-        let candidates =
-            find_candidates_at_context(db, &lookup_context, filter).unwrap_or_default();
+        let mut candidates =
+            find_candidates_at_context(db, &lookup_context, &filter).unwrap_or_default();
+        find_generated_candidate(db, canonical_trait.0, &filter)
+            .map(|candidate| candidates.insert(candidate));
         let candidate_solvers = candidates
             .into_iter()
             .filter_map(|candidate| {
@@ -198,7 +202,7 @@ impl CandidateSolver {
         let (concrete_trait_id, canonical_embedding) = canonical_trait.embed(&mut inference);
         // Add the defining module of the candidate to the lookup.
         let mut lookup_context = lookup_context.clone();
-        lookup_context.insert_lookup_scope(candidate.lookup_scope(db.upcast()));
+        lookup_context.insert_lookup_scope(db, &candidate);
         // Instantiate the candidate in the inference table.
         let candidate_impl =
             inference.infer_impl(candidate, concrete_trait_id, &lookup_context, None)?;
