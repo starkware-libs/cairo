@@ -87,16 +87,18 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                 crate_name,
             );
 
+            // If `cfg_set` is not `None`, it overrides global cfg settings.
+            // Therefore, we have to explicitly add `initial_cfg_set` to `cfg_set` of
+            // workspace members to enable test code analysis.
+            // For non-workspace members we only add `cfg(target: 'test')` to make sure
+            // importing test items tagged with `cfg(test)`
+            // from dependencies emits proper diagnostics.
             let cfg_set = if metadata.workspace.members.contains(&component.package) {
                 cfg_set_from_scarb
-                    // If `cfg_set` is not `None`, it overrides global cfg settings.
-                    // Therefore, we have to explicitly add `initial_cfg_set` to `cfg_set` of
-                    // workspace members to enable test code analysis.
-                    // We don't do that for non-workspace members to make sure importing test items
-                    // from dependencies emits proper diagnostics.
                     .map(|cfg_set| cfg_set.union(&AnalysisDatabase::initial_cfg_set()))
             } else {
                 cfg_set_from_scarb
+                    .map(|cfg_set| cfg_set.union(&AnalysisDatabase::initial_cfg_set_for_deps()))
             };
 
             let settings = CrateSettings { edition, version, cfg_set, experimental_features };
