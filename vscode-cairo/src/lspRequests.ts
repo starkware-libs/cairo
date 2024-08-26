@@ -21,7 +21,7 @@ export const vfsProvide = new lc.RequestType<
   void
 >("vfs/provide");
 
-export type viewAnalyzedCratesResponse = string;
-export const viewAnalyzedCrates = new lc.RequestType0<viewAnalyzedCratesResponse, void>(
+export type ViewAnalyzedCratesResponse = string;
+export const viewAnalyzedCrates = new lc.RequestType0<ViewAnalyzedCratesResponse, void>(
   "cairo/viewAnalyzedCrates",
 );

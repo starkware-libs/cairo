@@ -11,8 +11,6 @@ import {
   registerVfsProvider,
   registerViewAnalyzedCratesProvider,
 } from "./textDocumentProviders";
-import { NotificationType } from "vscode-jsonrpc/lib/common/messages";
-import * as cp from "node:child_process";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
