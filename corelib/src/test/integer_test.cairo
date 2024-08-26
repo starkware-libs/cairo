@@ -1,7 +1,7 @@
 #[feature("deprecated-bounded-int-trait")]
-use core::{integer, integer::{u512_safe_div_rem_by_u256, u512}};
-use core::test::test_utils::{assert_eq, assert_ne, assert_le, assert_lt, assert_gt, assert_ge};
-use core::num::traits::{Bounded, Sqrt, WideMul, WideSquare, WrappingSub};
+use crate::{integer, integer::{u512_safe_div_rem_by_u256, u512}};
+use crate::test::test_utils::{assert_eq, assert_ne, assert_le, assert_lt, assert_gt, assert_ge};
+use crate::num::traits::{Bounded, Sqrt, WideMul, WideSquare, WrappingSub};
 
 #[test]
 fn test_u8_operators() {
@@ -1873,11 +1873,11 @@ fn test_signed_int_diff() {
 }
 
 mod bounded_int {
-    use core::internal::{
+    use crate::internal::{
         bounded_int,
         bounded_int::{BoundedInt, AddHelper, SubHelper, MulHelper, DivRemHelper, ConstrainHelper}
     };
-    use core::RangeCheck;
+    use crate::RangeCheck;
 
     extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
     extern fn upcast<T, S>(index: T) -> S nopanic;

@@ -1,4 +1,4 @@
-use core::box::BoxTrait;
+use crate::box::BoxTrait;
 
 mod enum_value {
     pub extern type Const<T, const VARIANT_INDEX: felt252, V>;

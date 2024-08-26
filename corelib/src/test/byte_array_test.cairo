@@ -1,4 +1,4 @@
-use core::test::test_utils::{assert_eq, assert_ne};
+use crate::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
 fn test_append_byte() {
@@ -502,7 +502,7 @@ fn compare_byte_array(
     assert_eq!(ba_pending_word_felt, pending_word);
 }
 
-fn compare_spans<T, +core::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
+fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
     mut a: Span<T>, mut b: Span<T>
 ) {
     assert_eq!(a.len(), b.len());

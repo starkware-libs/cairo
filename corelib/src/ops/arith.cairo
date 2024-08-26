@@ -29,7 +29,7 @@ pub trait RemAssign<Lhs, Rhs> {
 }
 
 #[feature("deprecated-op-assign-traits")]
-use core::traits::{AddEq, SubEq, MulEq, DivEq, RemEq};
+use crate::traits::{AddEq, SubEq, MulEq, DivEq, RemEq};
 
 impl DeprecatedAddAssign<T, impl Deprecated: AddEq<T>> of AddAssign<T, T> {
     fn add_assign(ref self: T, rhs: T) {

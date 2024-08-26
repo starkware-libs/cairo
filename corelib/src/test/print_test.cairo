@@ -1,5 +1,5 @@
-use core::byte_array::BYTE_ARRAY_MAGIC;
-use core::debug::{PrintTrait, print_byte_array_as_string};
+use crate::byte_array::BYTE_ARRAY_MAGIC;
+use crate::debug::{PrintTrait, print_byte_array_as_string};
 
 #[ignore]
 #[test]

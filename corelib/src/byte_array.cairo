@@ -1,19 +1,19 @@
-use core::array::{ArrayTrait, SpanTrait};
+use crate::array::{ArrayTrait, SpanTrait};
 #[allow(unused_imports)]
-use core::bytes_31::{
+use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, one_shift_left_bytes_felt252, one_shift_left_bytes_u128,
     POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31
 };
-use core::clone::Clone;
-use core::cmp::min;
+use crate::clone::Clone;
+use crate::cmp::min;
 #[allow(unused_imports)]
-use core::integer::{u128_safe_divmod, U32TryIntoNonZero};
-use core::option::OptionTrait;
-use core::traits::{Into, TryInto};
+use crate::integer::{u128_safe_divmod, U32TryIntoNonZero};
+use crate::option::OptionTrait;
+use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
-use core::serde::Serde;
+use crate::serde::Serde;
 #[allow(unused_imports)]
-use core::zeroable::NonZeroIntoImpl;
+use crate::zeroable::NonZeroIntoImpl;
 
 /// A magic constant for identifying serialization of ByteArrays. An array of felt252s with this
 /// magic as one of the felt252s indicates that right after it you should expect a serialized
@@ -38,7 +38,7 @@ pub struct ByteArray {
     pub(crate) pending_word_len: usize,
 }
 
-pub(crate) impl ByteArrayStringLiteral of core::string::StringLiteral<ByteArray>;
+pub(crate) impl ByteArrayStringLiteral of crate::string::StringLiteral<ByteArray>;
 
 #[generate_trait]
 pub impl ByteArrayImpl of ByteArrayTrait {
@@ -353,7 +353,7 @@ impl ByteArrayAdd of Add<ByteArray> {
     }
 }
 #[feature("deprecated-op-assign-traits")]
-impl ByteArrayAddEq of core::traits::AddEq<ByteArray> {
+impl ByteArrayAddEq of crate::traits::AddEq<ByteArray> {
     #[inline]
     fn add_eq(ref self: ByteArray, other: ByteArray) {
         self.append(@other);
@@ -361,7 +361,7 @@ impl ByteArrayAddEq of core::traits::AddEq<ByteArray> {
 }
 
 #[feature("deprecated-index-traits")]
-pub(crate) impl ByteArrayIndexView of core::traits::IndexView<ByteArray, usize, u8> {
+pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize, u8> {
     fn index(self: @ByteArray, index: usize) -> u8 {
         self.at(index).expect('Index out of bounds')
     }

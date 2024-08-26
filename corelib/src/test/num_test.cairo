@@ -1,9 +1,9 @@
-use core::num::traits::BitSize;
-use core::num::traits::{
+use crate::num::traits::BitSize;
+use crate::num::traits::{
     OverflowingAdd, OverflowingSub, OverflowingMul, WrappingAdd, WrappingSub, WrappingMul,
     CheckedAdd, CheckedSub, CheckedMul, SaturatingAdd, SaturatingSub, SaturatingMul
 };
-use core::num::traits::Bounded;
+use crate::num::traits::Bounded;
 
 
 #[test]

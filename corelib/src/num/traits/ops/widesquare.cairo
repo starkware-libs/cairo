@@ -1,4 +1,4 @@
-use core::num::traits::WideMul;
+use crate::num::traits::WideMul;
 
 /// A trait for a type that can be squared to produce a wider type.
 pub trait WideSquare<T> {
@@ -27,16 +27,16 @@ impl WideSquareU32 = wide_mul_based::TWideSquare<u32>;
 impl WideSquareU64 = wide_mul_based::TWideSquare<u64>;
 impl WideSquareU128 = wide_mul_based::TWideSquare<u128>;
 impl WideSquareU256 of WideSquare<u256> {
-    type Target = core::integer::u512;
+    type Target = crate::integer::u512;
     fn wide_square(self: u256) -> Self::Target {
         inner::u256_wide_square(self)
     }
 }
 
 mod inner {
-    use core::integer::{u512, u128_add_with_bounded_int_carry, upcast};
-    use core::internal::bounded_int;
-    use core::num::traits::{WideSquare, WideMul, WrappingAdd};
+    use crate::integer::{u512, u128_add_with_bounded_int_carry, upcast};
+    use crate::internal::bounded_int;
+    use crate::num::traits::{WideSquare, WideMul, WrappingAdd};
 
     pub fn u256_wide_square(value: u256) -> u512 {
         let u256 { high: limb1, low: limb0 } = value.low.wide_square();
