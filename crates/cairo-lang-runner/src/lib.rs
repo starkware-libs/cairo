@@ -267,6 +267,10 @@ impl SierraCasmRunner {
             )?;
         let mut all_used_resources = hint_processor.syscalls_used_resources;
         all_used_resources.basic_resources += &used_resources;
+        // Remove the used resources of generated entry code - as it isn't a real part of the run.
+        // The used resources of the code is just its length, as it is a simple param setup, and a
+        // call and ret.
+        all_used_resources.basic_resources.n_steps -= entry_code.len();
         Ok(RunResultStarknet {
             gas_counter,
             memory,
