@@ -58,3 +58,72 @@ store_temp<core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, co
 return([6]); // 10
 
 test::foo@0([0]: IntRange<i16>) -> (core::internal::OptionRev::<(test::IntRange::<core::integer::i16>, core::integer::i16)>);
+
+//! > ==========================================================================
+
+//! > range_try_new libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+// TODO(lior): Move to `range.cairo`.
+extern type IntRange<T>;
+extern fn int_range_try_new<T>(x: T, y: T) -> Option<IntRange<T>> implicits(RangeCheck) nopanic;
+
+fn foo(x: i16, y: i16) -> Option<IntRange<i16>> {
+    int_range_try_new(x, y)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+%{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -2] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 12;
+[ap + -2] = [[fp + -5] + 0];
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 970})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type IntRange<i16> = IntRange<i16> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<test::IntRange::<core::integer::i16>> = Enum<ut@core::option::Option::<test::IntRange::<core::integer::i16>>, IntRange<i16>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type i16 = i16 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc int_range_try_new<i16> = int_range_try_new<i16>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<test::IntRange::<core::integer::i16>>, 0> = enum_init<core::option::Option::<test::IntRange::<core::integer::i16>>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<test::IntRange::<core::integer::i16>>> = store_temp<core::option::Option::<test::IntRange::<core::integer::i16>>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<test::IntRange::<core::integer::i16>>, 1> = enum_init<core::option::Option::<test::IntRange::<core::integer::i16>>, 1>;
+
+int_range_try_new<i16>([0], [1], [2]) { fallthrough([3], [4]) 6([5]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<test::IntRange::<core::integer::i16>>, 0>([4]) -> ([6]); // 2
+store_temp<RangeCheck>([3]) -> ([3]); // 3
+store_temp<core::option::Option::<test::IntRange::<core::integer::i16>>>([6]) -> ([6]); // 4
+return([3], [6]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([7]); // 7
+enum_init<core::option::Option::<test::IntRange::<core::integer::i16>>, 1>([7]) -> ([8]); // 8
+store_temp<RangeCheck>([5]) -> ([5]); // 9
+store_temp<core::option::Option::<test::IntRange::<core::integer::i16>>>([8]) -> ([8]); // 10
+return([5], [8]); // 11
+
+test::foo@0([0]: RangeCheck, [1]: i16, [2]: i16) -> (RangeCheck, core::option::Option::<test::IntRange::<core::integer::i16>>);
