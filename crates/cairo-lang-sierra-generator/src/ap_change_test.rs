@@ -2,7 +2,6 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_lowering::DependencyType;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -41,7 +40,7 @@ fn contains_cycles_test(
                 "{}: ap_change={:?}, has_cycles={:?}",
                 free_function_id.name(db),
                 db.get_ap_change(function_id),
-                db.contains_cycle(function_id, DependencyType::Call),
+                db.final_contains_call_cycle(function_id),
             )
         })
         .join("\n");

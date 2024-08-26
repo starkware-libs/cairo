@@ -1,4 +1,4 @@
-use core::gas::GasBuiltin;
+use crate::gas::GasBuiltin;
 
 /// Returns the amount of gas available in the `GasBuiltin`.
 ///

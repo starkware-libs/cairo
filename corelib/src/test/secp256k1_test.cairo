@@ -1,4 +1,4 @@
-use core::serde::Serde;
+use crate::serde::Serde;
 use starknet::{
     eth_address::U256IntoEthAddress, EthAddress, secp256k1::Secp256k1Impl, SyscallResultTrait
 };

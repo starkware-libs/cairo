@@ -1,10 +1,13 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
 use anyhow::{bail, ensure, Context, Result};
 use cairo_lang_filesystem::db::{CrateSettings, Edition, ExperimentalFeaturesConfig};
-use scarb_metadata::{Metadata, PackageMetadata};
-use tracing::{debug, warn};
+use itertools::Itertools;
+use scarb_metadata::{CompilationUnitMetadata, Metadata, PackageMetadata};
+use serde_json::Value;
+use tracing::{debug, error, warn};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::project::crate_data::Crate;
@@ -24,6 +27,8 @@ use crate::project::crate_data::Crate;
 //  which we do not know the solution yet.
 pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
     let mut crates = Vec::<Crate>::new();
+    let mut crates_grouped_by_group_id = HashMap::new();
+
     for compilation_unit in &metadata.compilation_units {
         if compilation_unit.target.kind == "cairo-plugin" {
             debug!("skipping cairo plugin compilation unit: {}", compilation_unit.id);
@@ -33,10 +38,38 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
         for component in &compilation_unit.components {
             let crate_name = component.name.as_str();
 
-            let package = metadata.packages.iter().find(|package| package.id == component.package);
-            if package.is_none() {
-                warn!("package for component is missing in scarb metadata: {crate_name}");
+            let mut package =
+                metadata.packages.iter().find(|package| package.id == component.package);
+
+            // TODO(pmagiera): this is a hack, remove this when `scarb metadata` is fixed.
+            if package.is_none()
+                && is_integration_test_cu(compilation_unit)
+                && compilation_unit.package == component.package
+            {
+                let human_readable_member_name = component
+                    .package
+                    .repr
+                    .split("_integrationtest")
+                    .collect::<Vec<_>>()
+                    .first()
+                    // NOTE: this `unwrap` cannot fail since `split` always returns a non-empty
+                    // vector.
+                    .unwrap()
+                    .to_string();
+
+                package = metadata
+                    .packages
+                    .iter()
+                    .find(|package| package.id.repr.starts_with(&human_readable_member_name));
             }
+
+            if package.is_none() {
+                error!("package for component is missing in scarb metadata: {crate_name}");
+            }
+
+            let edition = scarb_package_edition(&package, crate_name);
+            let experimental_features = scarb_package_experimental_features(&package);
+            let version = package.map(|p| p.version.clone());
 
             let (root, file_stem) = match validate_and_chop_source_path(
                 component.source_path.as_std_path(),
@@ -49,25 +82,91 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                 }
             };
 
-            let settings = CrateSettings {
-                edition: scarb_package_edition(&package, crate_name),
-                version: package.map(|p| p.version.clone()),
-                cfg_set: scarb_cfg_set_to_cairo(
-                    component.cfg.as_ref().unwrap_or(&compilation_unit.cfg),
-                    crate_name,
-                ),
-                experimental_features: scarb_package_experimental_features(&package),
+            let cfg_set_from_scarb = scarb_cfg_set_to_cairo(
+                component.cfg.as_ref().unwrap_or(&compilation_unit.cfg),
+                crate_name,
+            );
+
+            // If `cfg_set` is not `None`, it overrides global cfg settings.
+            // Therefore, we have to explicitly add `initial_cfg_set` to `cfg_set` of
+            // workspace members to enable test code analysis.
+            // For non-workspace members we only add `cfg(target: 'test')` to make sure
+            // importing test items tagged with `cfg(test)`
+            // from dependencies emits proper diagnostics.
+            let cfg_set = if metadata.workspace.members.contains(&component.package) {
+                cfg_set_from_scarb
+                    .map(|cfg_set| cfg_set.union(&AnalysisDatabase::initial_cfg_set()))
+            } else {
+                cfg_set_from_scarb
+                    .map(|cfg_set| cfg_set.union(&AnalysisDatabase::initial_cfg_set_for_deps()))
             };
 
-            let custom_main_file_stem = (file_stem != "lib").then_some(file_stem.into());
+            let settings = CrateSettings { edition, version, cfg_set, experimental_features };
 
-            crates.push(Crate {
+            let custom_main_file_stems = (file_stem != "lib").then_some(vec![file_stem.into()]);
+
+            let cr = Crate {
                 name: crate_name.into(),
                 root: root.into(),
-                custom_main_file_stem,
+                custom_main_file_stems,
                 settings,
-            });
+            };
+
+            if compilation_unit.package == component.package {
+                if let Some(group_id) = compilation_unit.target.params.get("group-id") {
+                    if let Some(group_id) = group_id.as_str() {
+                        if cr.custom_main_file_stems.is_none() {
+                            error!(
+                                "compilation unit component with name {} has `lib.cairo` root \
+                                 file while being part of target grouped by group_id {group_id}",
+                                crate_name
+                            )
+                        } else {
+                            let crates = crates_grouped_by_group_id
+                                .entry(group_id.to_string())
+                                .or_insert(vec![]);
+                            crates.push(cr);
+
+                            continue;
+                        }
+                    } else {
+                        error!(
+                            "group-id for target {} was not a string",
+                            compilation_unit.target.name
+                        )
+                    }
+                }
+            }
+
+            crates.push(cr);
         }
+    }
+
+    // Merging crates grouped by group id into single crates.
+    for (group_id, crs) in crates_grouped_by_group_id {
+        if !crs.iter().map(|cr| (&cr.settings, &cr.root)).all_equal() {
+            error!(
+                "main crates of targets with group_id {group_id} had different settings and/or \
+                 roots"
+            )
+        }
+        let first_crate = &crs[0];
+
+        // All crates within a group should have the same settings and root.
+        let settings = first_crate.settings.clone();
+        let root = first_crate.root.clone();
+        // The name doesn't really matter, so we take the first crate's name.
+        let name = first_crate.name.clone();
+
+        let custom_main_file_stems =
+            crs.into_iter().flat_map(|cr| cr.custom_main_file_stems.unwrap()).collect();
+
+        crates.push(Crate {
+            name,
+            root,
+            custom_main_file_stems: Some(custom_main_file_stems),
+            settings,
+        });
     }
 
     debug!("updating crate roots from scarb metadata: {crates:#?}");
@@ -168,4 +267,10 @@ fn scarb_package_experimental_features(
         negative_impls: contains("negative_impls"),
         coupons: contains("coupons"),
     }
+}
+
+fn is_integration_test_cu(compilation_unit: &CompilationUnitMetadata) -> bool {
+    compilation_unit.target.kind == "test"
+        && compilation_unit.target.params.get("test-type").and_then(Value::as_str)
+            == Some("integration")
 }

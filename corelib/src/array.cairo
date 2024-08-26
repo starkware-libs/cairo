@@ -1,15 +1,15 @@
 #[feature("deprecated-index-traits")]
-use core::traits::IndexView;
+use crate::traits::IndexView;
 
-use core::box::BoxTrait;
+use crate::box::BoxTrait;
 #[allow(unused_imports)]
-use core::gas::withdraw_gas;
+use crate::gas::withdraw_gas;
 #[allow(unused_imports)]
-use core::option::OptionTrait;
-use core::serde::Serde;
-use core::metaprogramming::TypeEqual;
-use core::iter::Iterator;
-use core::RangeCheck;
+use crate::option::OptionTrait;
+use crate::serde::Serde;
+use crate::metaprogramming::TypeEqual;
+use crate::iter::Iterator;
+use crate::RangeCheck;
 
 /// A collection of elements of the same type continuous in memory.
 #[derive(Drop)]
@@ -543,7 +543,7 @@ impl SpanIterator<T> of Iterator<SpanIter<T>> {
     }
 }
 
-impl SpanIntoIterator<T> of core::iter::IntoIterator<Span<T>> {
+impl SpanIntoIterator<T> of crate::iter::IntoIterator<Span<T>> {
     type IntoIter = SpanIter<T>;
     fn into_iter(self: Span<T>) -> SpanIter<T> {
         SpanIter { span: self }
@@ -556,9 +556,9 @@ pub struct ArrayIter<T> {
     array: Array<T>,
 }
 
-impl ArrayIterClone<T, +core::clone::Clone<T>, +Drop<T>> of core::clone::Clone<ArrayIter<T>> {
+impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone<ArrayIter<T>> {
     fn clone(self: @ArrayIter<T>) -> ArrayIter<T> {
-        ArrayIter { array: core::clone::Clone::clone(self.array), }
+        ArrayIter { array: crate::clone::Clone::clone(self.array), }
     }
 }
 
@@ -569,7 +569,7 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
     }
 }
 
-impl ArrayIntoIterator<T> of core::iter::IntoIterator<Array<T>> {
+impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
     fn into_iter(self: Array<T>) -> ArrayIter<T> {
         ArrayIter { array: self }

@@ -1,7 +1,7 @@
 #[feature("deprecated-index-traits")]
-use core::traits::IndexView as DeprecatedIndexView;
+use crate::traits::IndexView as DeprecatedIndexView;
 #[feature("deprecated-index-traits")]
-use core::traits::Index as DeprecatedIndex;
+use crate::traits::Index as DeprecatedIndex;
 
 /// The following two traits are for implementing the [] operator. Only one should be implemented
 /// for each type. Both are not consuming of self, the first gets a snapshot of the object and
@@ -15,7 +15,7 @@ pub trait IndexView<C, I> {
 }
 impl DeprecatedIndexViewImpl<
     C, I, V, impl Deprecated: DeprecatedIndexView<C, I, V>
-> of core::ops::IndexView<C, I> {
+> of crate::ops::IndexView<C, I> {
     type Target = V;
     fn index(self: @C, index: I) -> Self::Target {
         Deprecated::index(self, index)
@@ -32,7 +32,7 @@ pub trait Index<C, I> {
 #[feature("deprecated-index-traits")]
 impl DeprecatedIndexImpl<
     C, I, V, impl Deprecated: DeprecatedIndex<C, I, V>
-> of core::ops::Index<C, I> {
+> of crate::ops::Index<C, I> {
     type Target = V;
     fn index(ref self: C, index: I) -> Self::Target {
         Deprecated::index(ref self, index)

@@ -1,4 +1,4 @@
-use core::RangeCheck;
+use crate::RangeCheck;
 
 /// Type representing the table of the costs of the different builtin usages.
 #[derive(Copy, Drop)]

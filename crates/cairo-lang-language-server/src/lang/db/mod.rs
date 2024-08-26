@@ -60,9 +60,19 @@ impl AnalysisDatabase {
         db
     }
 
-    /// Returns the [`CfgSet`] that should be assumed in the initial database state.
-    fn initial_cfg_set() -> CfgSet {
+    /// Returns the [`CfgSet`] that should be assumed in the initial database state
+    /// and in [`CfgSet`] for workspace members.
+    /// This enables code fragments tagged with `#[cfg(test)]` and `#[cfg(target: 'test')]` to be
+    /// included in analysis by Language Server.
+    pub(crate) fn initial_cfg_set() -> CfgSet {
         CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")])
+    }
+
+    /// Returns the [`CfgSet`] that should be assumed for dependencies.
+    /// This enables code fragments tagged with `#[cfg(target: 'test')]` to be
+    /// included in analysis by Language Server.
+    pub(crate) fn initial_cfg_set_for_deps() -> CfgSet {
+        CfgSet::from_iter([Cfg::kv("target", "test")])
     }
 
     /// Shortcut for settings compiler plugins from a [`PluginSuite`].

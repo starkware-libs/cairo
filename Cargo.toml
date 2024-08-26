@@ -18,7 +18,7 @@ opt-level = 3
 [profile.ci-dev.package."bimap"]
 
 opt-level = 3
-[profile.ci-dev.package."salsa"]
+[profile.ci-dev.package."rust-analyzer-salsa"]
 opt-level = 3
 
 [workspace]
@@ -119,7 +119,7 @@ quote = "1.0.36"
 rand = "0.8.5"
 rayon = "1.10.0"
 rstest = "0.19.0"
-salsa = "0.16.1"
+salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
 schemars = { version = "0.8.19", features = ["preserve_order"] }
 semver = { version = "1.0.23", features = ["serde"] }
 serde = { version = "1.0.200", default-features = false, features = ["derive"] }

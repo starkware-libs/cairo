@@ -62,6 +62,11 @@ mod test;
 
 mod item;
 
+// Remove when these are added as actual keywords.
+pub const SELF_TYPE_KW: &str = "Self";
+pub const SUPER_KW: &str = "super";
+pub const CRATE_KW: &str = "crate";
+
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
 #[derive(Clone, Default, Debug, PartialEq, Eq, DebugWithDb)]
@@ -353,7 +358,7 @@ impl<'db> Resolver<'db> {
                 if let Some(resolved_item) =
                     resolve_self_segment(db, diagnostics, &identifier, &self.data.trait_or_impl_ctx)
                 {
-                    // The first segment is "Self". Consume it and return.
+                    // The first segment is `Self`. Consume it and return.
                     segments.next().unwrap();
                     return resolved_item;
                 }
@@ -365,12 +370,16 @@ impl<'db> Resolver<'db> {
                     ResolvedConcreteItem::Module(module_id)
                 } else {
                     // This identifier is a crate.
+                    let crate_ident = identifier.text(syntax_db);
+                    let crate_id = if crate_ident == CRATE_KW {
+                        self.owning_crate_id
+                    } else {
+                        CrateLongId::Real(crate_ident).intern(db)
+                    };
                     self.resolved_items.mark_concrete(
                         db,
                         segments.next().unwrap(),
-                        ResolvedConcreteItem::Module(ModuleId::CrateRoot(
-                            CrateLongId::Real(identifier.text(syntax_db)).intern(db),
-                        )),
+                        ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id)),
                     )
                 }
             }
@@ -482,12 +491,16 @@ impl<'db> Resolver<'db> {
                     ResolvedGenericItem::Module(module_id)
                 } else {
                     // This identifier is a crate.
+                    let crate_ident = identifier.text(syntax_db);
+                    let crate_id = if crate_ident == CRATE_KW {
+                        self.owning_crate_id
+                    } else {
+                        CrateLongId::Real(crate_ident).intern(db)
+                    };
                     self.resolved_items.mark_generic(
                         db,
                         segments.next().unwrap(),
-                        ResolvedGenericItem::Module(ModuleId::CrateRoot(
-                            CrateLongId::Real(identifier.text(syntax_db)).intern(db),
-                        )),
+                        ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)),
                     )
                 }
             }
@@ -506,7 +519,7 @@ impl<'db> Resolver<'db> {
         let mut module_id = self.module_file_id.0;
         for segment in segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) => false,
-            ast::PathSegment::Simple(simple) => simple.ident(syntax_db).text(syntax_db) == "super",
+            ast::PathSegment::Simple(simple) => simple.ident(syntax_db).text(syntax_db) == SUPER_KW,
         }) {
             module_id = match module_id {
                 ModuleId::CrateRoot(_) => {
@@ -532,15 +545,15 @@ impl<'db> Resolver<'db> {
 
         let ident = identifier.text(syntax_db);
 
-        if identifier.text(syntax_db) == "Self" {
+        if identifier.text(syntax_db) == SELF_TYPE_KW {
             return Err(diagnostics.report(identifier, SelfMustBeFirst));
         }
 
         match containing_item {
             ResolvedConcreteItem::Module(module_id) => {
-                // Prefix "super" segments should be removed earlier. Middle "super" segments are
+                // Prefix `super` segments should be removed earlier. Middle `super` segments are
                 // not allowed.
-                if ident == "super" {
+                if ident == SUPER_KW {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
                 let inner_item_info = self
@@ -950,6 +963,8 @@ impl<'db> Resolver<'db> {
             return Some(self.module_file_id.0);
         }
 
+        // If the first element is `crate`, use the crate's root module as the base module.
+        require(ident != CRATE_KW)?;
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
         let crate_id = CrateLongId::Real(ident).intern(self.db);
@@ -1482,19 +1497,19 @@ impl<'db> Resolver<'db> {
     }
 }
 
-/// Resolves the segment if it's "Self". Returns the Some(ResolvedConcreteItem) or Some(Err) if
-/// segment == "Self" or None otherwise.
+/// Resolves the segment if it's `Self`. Returns the Some(ResolvedConcreteItem) or Some(Err) if
+/// segment == `Self` or None otherwise.
 fn resolve_self_segment(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     identifier: &ast::TerminalIdentifier,
     trait_or_impl_ctx: &TraitOrImplContext,
 ) -> Option<Maybe<ResolvedConcreteItem>> {
-    require(identifier.text(db.upcast()) == "Self")?;
+    require(identifier.text(db.upcast()) == SELF_TYPE_KW)?;
     Some(resolve_actual_self_segment(db, diagnostics, identifier, trait_or_impl_ctx))
 }
 
-/// Resolves the "Self" segment given that it's actually "Self".
+/// Resolves the `Self` segment given that it's actually `Self`.
 fn resolve_actual_self_segment(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,

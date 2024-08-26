@@ -863,7 +863,9 @@ impl<'a> FormatterImpl<'a> {
     fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, is_leading: bool) {
         for trivium in trivia.elements(self.db) {
             match trivium {
-                ast::Trivium::SingleLineComment(_) => {
+                ast::Trivium::SingleLineComment(_)
+                | ast::Trivium::SingleLineDocComment(_)
+                | ast::Trivium::SingleLineInnerComment(_) => {
                     if !is_leading {
                         self.line_state.line_buffer.push_space();
                     }
@@ -925,6 +927,7 @@ impl<'a> FormatterImpl<'a> {
 enum MovableNode {
     ItemModule(SmolStr),
     ItemUse(SmolStr),
+    ItemHeaderDoc,
     Immovable,
 }
 impl MovableNode {
@@ -939,6 +942,7 @@ impl MovableNode {
                 }
             }
             SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db).into()),
+            SyntaxKind::ItemHeaderDoc => Self::ItemHeaderDoc,
             _ => Self::Immovable,
         }
     }
@@ -947,6 +951,8 @@ impl MovableNode {
 impl Ord for MovableNode {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
+            (MovableNode::ItemHeaderDoc, _) => Ordering::Less,
+            (_, MovableNode::ItemHeaderDoc) => Ordering::Greater,
             (MovableNode::Immovable, MovableNode::Immovable) => Ordering::Equal,
             (MovableNode::ItemModule(a), MovableNode::ItemModule(b))
             | (MovableNode::ItemUse(a), MovableNode::ItemUse(b)) => a.cmp(b),

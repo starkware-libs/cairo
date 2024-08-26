@@ -42,7 +42,7 @@ fn try_handle_simple_panic(
         return false;
     };
 
-    if format_str.find(|c| c == '{' || c == '}').is_some() {
+    if format_str.find(['{', '}']).is_some() {
         return false;
     }
 

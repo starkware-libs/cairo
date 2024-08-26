@@ -6,7 +6,6 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering::ids::SemanticFunctionIdEx;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
@@ -165,7 +164,7 @@ pub fn get_concrete_long_type_id(
 /// See [SierraGenGroup::is_self_referential] for documentation.
 pub fn is_self_referential_cycle(
     _db: &dyn SierraGenGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _type_id: &semantic::TypeId,
 ) -> Maybe<bool> {
     Ok(true)
@@ -186,11 +185,9 @@ pub fn type_dependencies(
 ) -> Maybe<Arc<[semantic::TypeId]>> {
     Ok(match type_id.lookup_intern(db) {
         semantic::TypeLongId::Concrete(ty) => match ty {
-            semantic::ConcreteTypeId::Struct(structure) => db
-                .concrete_struct_members(structure)?
-                .into_iter()
-                .map(|(_, member)| member.ty)
-                .collect(),
+            semantic::ConcreteTypeId::Struct(structure) => {
+                db.concrete_struct_members(structure)?.iter().map(|(_, member)| member.ty).collect()
+            }
             semantic::ConcreteTypeId::Enum(enm) => {
                 db.concrete_enum_variants(enm)?.into_iter().map(|variant| variant.ty).collect()
             }

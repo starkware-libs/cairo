@@ -1,0 +1,177 @@
+//! > Test comment types
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: false)
+
+//! > cairo_code
+// Regular comment
+//! Inner documentation comment
+/// Documentation comment
+fn foo() {}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+TerminalIdentifier
+FunctionSignature
+ExprBlock
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   ├── child #0 (kind: ItemHeaderDoc)
+    │   │   └── empty (kind: TerminalEmpty)
+    │   │       ├── leading_trivia (kind: Trivia)
+    │   │       │   ├── child #0 (kind: TokenSingleLineComment): '// Regular comment'
+    │   │       │   ├── child #1 (kind: TokenNewline).
+    │   │       │   ├── child #2 (kind: TokenSingleLineInnerComment): '//! Inner documentation comment'
+    │   │       │   └── child #3 (kind: TokenNewline).
+    │   │       ├── token (kind: TokenEmpty): ''
+    │   │       └── trailing_trivia (kind: Trivia) []
+    │   └── child #1 (kind: FunctionWithBody)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── function_kw (kind: TerminalFunction)
+    │       │   │   ├── leading_trivia (kind: Trivia)
+    │       │   │   │   ├── child #0 (kind: TokenSingleLineDocComment): '/// Documentation comment'
+    │       │   │   │   └── child #1 (kind: TokenNewline).
+    │       │   │   ├── token (kind: TokenFunction): 'fn'
+    │       │   │   └── trailing_trivia (kind: Trivia)
+    │       │   │       └── child #0 (kind: TokenWhitespace).
+    │       │   ├── name (kind: TerminalIdentifier) <ignored>
+    │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       │   └── signature (kind: FunctionSignature) <ignored>
+    │       └── body (kind: ExprBlock) <ignored>
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia) []
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test comment types not on first item
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: false)
+
+//! > cairo_code
+fn bar() {}
+// Regular comment
+/// Documentation comment
+//! Inner documentation comment
+fn foo() {}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+TerminalIdentifier
+FunctionSignature
+ExprBlock
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   ├── child #0 (kind: FunctionWithBody)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
+    │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── function_kw (kind: TerminalFunction)
+    │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   ├── token (kind: TokenFunction): 'fn'
+    │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │   │   ├── name (kind: TerminalIdentifier) <ignored>
+    │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │   │   │   └── signature (kind: FunctionSignature) <ignored>
+    │   │   └── body (kind: ExprBlock) <ignored>
+    │   └── child #1 (kind: FunctionWithBody)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── function_kw (kind: TerminalFunction)
+    │       │   │   ├── leading_trivia (kind: Trivia)
+    │       │   │   │   ├── child #0 (kind: TokenSingleLineComment): '// Regular comment'
+    │       │   │   │   ├── child #1 (kind: TokenNewline).
+    │       │   │   │   ├── child #2 (kind: TokenSingleLineDocComment): '/// Documentation comment'
+    │       │   │   │   ├── child #3 (kind: TokenNewline).
+    │       │   │   │   ├── child #4 (kind: TokenSingleLineInnerComment): '//! Inner documentation comment'
+    │       │   │   │   └── child #5 (kind: TokenNewline).
+    │       │   │   ├── token (kind: TokenFunction): 'fn'
+    │       │   │   └── trailing_trivia (kind: Trivia)
+    │       │   │       └── child #0 (kind: TokenWhitespace).
+    │       │   ├── name (kind: TerminalIdentifier) <ignored>
+    │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       │   └── signature (kind: FunctionSignature) <ignored>
+    │       └── body (kind: ExprBlock) <ignored>
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia) []
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
+
+//! > ==========================================================================
+
+//! > Test doc comment on top
+
+//! > test_runner_name
+test_partial_parser_tree_with_trivia(expect_diagnostics: false)
+
+//! > cairo_code
+fn bar() {}
+/// Documentation comment
+// Regular comment
+//! Inner documentation comment
+fn foo() {}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+TerminalIdentifier
+FunctionSignature
+ExprBlock
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   ├── child #0 (kind: FunctionWithBody)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
+    │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── function_kw (kind: TerminalFunction)
+    │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   ├── token (kind: TokenFunction): 'fn'
+    │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │   │   ├── name (kind: TerminalIdentifier) <ignored>
+    │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │   │   │   └── signature (kind: FunctionSignature) <ignored>
+    │   │   └── body (kind: ExprBlock) <ignored>
+    │   └── child #1 (kind: FunctionWithBody)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── function_kw (kind: TerminalFunction)
+    │       │   │   ├── leading_trivia (kind: Trivia)
+    │       │   │   │   ├── child #0 (kind: TokenSingleLineDocComment): '/// Documentation comment'
+    │       │   │   │   ├── child #1 (kind: TokenNewline).
+    │       │   │   │   ├── child #2 (kind: TokenSingleLineComment): '// Regular comment'
+    │       │   │   │   ├── child #3 (kind: TokenNewline).
+    │       │   │   │   ├── child #4 (kind: TokenSingleLineInnerComment): '//! Inner documentation comment'
+    │       │   │   │   └── child #5 (kind: TokenNewline).
+    │       │   │   ├── token (kind: TokenFunction): 'fn'
+    │       │   │   └── trailing_trivia (kind: Trivia)
+    │       │   │       └── child #0 (kind: TokenWhitespace).
+    │       │   ├── name (kind: TerminalIdentifier) <ignored>
+    │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       │   └── signature (kind: FunctionSignature) <ignored>
+    │       └── body (kind: ExprBlock) <ignored>
+    └── eof (kind: TerminalEndOfFile)
+        ├── leading_trivia (kind: Trivia) []
+        ├── token (kind: TokenEndOfFile).
+        └── trailing_trivia (kind: Trivia) []
