@@ -11,6 +11,15 @@ pub struct Range<T> {
     pub end: T,
 }
 
+/// Handles the range operator (`..`).
+#[generate_trait]
+pub impl RangeOpImpl<T> of RangeOp<T> {
+    /// Handles the `..` operator. Returns the value of the expression `start..end`.
+    fn range(start: T, end: T) -> Range<T> {
+        Range { start, end }
+    }
+}
+
 /// Represents an iterator located at `cur`, whose end is `end` (`cur <= end`).
 #[derive(Clone, Drop)]
 pub struct RangeIterator<T> {
@@ -20,17 +29,8 @@ pub struct RangeIterator<T> {
     end: T,
 }
 
-#[generate_trait]
-/// Handles the range operator (`..`).
-pub impl RangeOpImpl<T> of RangeOp<T> {
-    /// Handles the `..` operator. Returns the value of the expression `start..end`.
-    fn range(start: T, end: T) -> Range<T> {
-        Range::<T> { start: start, end: end }
-    }
-}
-
 impl RangeIteratorImpl<
-    T, impl OneT: One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>,
+    T, impl OneT: One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>
 > of Iterator<RangeIterator<T>> {
     type Item = T;
 
@@ -46,7 +46,14 @@ impl RangeIteratorImpl<
 }
 
 impl RangeIntoIterator<
-    T, +One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>, +PartialOrd<T>
+    T,
+    +One<T>,
+    +Add<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+    -SierraIntRangeSupport<T>
 > of IntoIterator<Range<T>> {
     type IntoIter = RangeIterator<T>;
 
@@ -58,6 +65,71 @@ impl RangeIntoIterator<
         } else {
             // Invalid range, return an empty range.
             Self::IntoIter { cur: end, end }
+        }
+    }
+}
+
+// Sierra optimization.
+
+mod internal {
+    use core::iter::Iterator;
+    use core::internal::OptionRev;
+
+    #[derive(Copy, Drop)]
+    pub extern type IntRange<T>;
+    pub extern fn int_range_try_new<T>(
+        x: T, y: T
+    ) -> Option<IntRange<T>> implicits(core::RangeCheck) nopanic;
+    pub extern fn int_range_pop_front<T>(range: IntRange<T>) -> OptionRev<(IntRange<T>, T)> nopanic;
+
+    impl IntRangeIteratorImpl<T, +Copy<T>, +Drop<T>> of Iterator<IntRange<T>> {
+        type Item = T;
+
+        fn next(ref self: IntRange<T>) -> Option<T> {
+            match int_range_pop_front(self) {
+                OptionRev::None => Option::None,
+                OptionRev::Some((new_range, value)) => {
+                    self = new_range;
+                    Option::Some(value)
+                },
+            }
+        }
+    }
+}
+
+/// Marker trait to enable using the Sierra libfuncs for integer range iteration (`IntRange`).
+trait SierraIntRangeSupport<T>;
+
+#[cfg(sierra: '1.7.0')]
+impl SierraIntRangeSupportU8 of SierraIntRangeSupport<u8>;
+#[cfg(sierra: '1.7.0')]
+impl SierraIntRangeSupportU16 of SierraIntRangeSupport<u16>;
+#[cfg(sierra: '1.7.0')]
+impl SierraIntRangeSupportU32 of SierraIntRangeSupport<u32>;
+#[cfg(sierra: '1.7.0')]
+impl SierraIntRangeSupportU64 of SierraIntRangeSupport<u64>;
+#[cfg(sierra: '1.7.0')]
+impl SierraIntRangeSupportU128 of SierraIntRangeSupport<u128>;
+#[cfg(sierra: '1.7.0')]
+impl SierraIntRangeSupportI8 of SierraIntRangeSupport<i8>;
+#[cfg(sierra: '1.7.0')]
+impl SierraIntRangeSupportI16 of SierraIntRangeSupport<i16>;
+#[cfg(sierra: '1.7.0')]
+impl SierraIntRangeSupportI32 of SierraIntRangeSupport<i32>;
+#[cfg(sierra: '1.7.0')]
+impl SierraIntRangeSupportI64 of SierraIntRangeSupport<i64>;
+#[cfg(sierra: '1.7.0')]
+impl SierraIntRangeSupportI128 of SierraIntRangeSupport<i128>;
+
+impl SierraRangeIntoIterator<
+    T, +Copy<T>, +Drop<T>, +SierraIntRangeSupport<T>
+> of IntoIterator<Range<T>> {
+    type IntoIter = internal::IntRange<T>;
+
+    fn into_iter(self: Range<T>) -> Self::IntoIter {
+        match internal::int_range_try_new(self.start, self.end) {
+            Option::Some(range) => range,
+            Option::None => internal::int_range_try_new(self.end, self.end).unwrap(),
         }
     }
 }
