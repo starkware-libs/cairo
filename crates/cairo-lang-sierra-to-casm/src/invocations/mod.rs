@@ -55,6 +55,7 @@ mod misc;
 mod nullable;
 mod pedersen;
 mod poseidon;
+mod range;
 mod range_reduction;
 mod starknet;
 mod structure;
@@ -721,6 +722,7 @@ pub fn compile_invocation(
         },
         BoundedInt(libfunc) => int::bounded::build(libfunc, builder),
         Circuit(libfunc) => circuit::build(libfunc, builder),
+        Range(libfunc) => range::build(libfunc, builder),
     }
 }
 

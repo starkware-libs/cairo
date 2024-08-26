@@ -41,7 +41,7 @@ use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::poseidon::{PoseidonLibfunc, PoseidonType};
-use super::range::IntRangeType;
+use super::range::{IntRangeLibfunc, IntRangeType};
 use super::range_check::{RangeCheck96Type, RangeCheckType};
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
@@ -139,6 +139,7 @@ define_libfunc_hierarchy! {
         Felt252DictEntry(Felt252DictEntryLibfunc),
         Pedersen(PedersenLibfunc),
         Poseidon(PoseidonLibfunc),
+        Range(IntRangeLibfunc),
         StarkNet(StarkNetLibfunc),
         Debug(DebugLibfunc),
         SnapshotTake(SnapshotTakeLibfunc),
