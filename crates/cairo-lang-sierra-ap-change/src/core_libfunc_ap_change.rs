@@ -413,6 +413,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             vec![ApChange::Known(0)]
         }
         Range(libfunc) => match libfunc {
+            RangeConcreteLibfunc::TryNew(_) => vec![ApChange::Known(2), ApChange::Known(3)],
             RangeConcreteLibfunc::PopFront(_) => vec![ApChange::Known(1), ApChange::Known(1)],
         },
     }

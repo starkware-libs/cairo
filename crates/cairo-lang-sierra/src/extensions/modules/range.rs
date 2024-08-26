@@ -3,6 +3,8 @@ use super::int::signed::{Sint16Type, Sint32Type, Sint64Type, Sint8Type};
 use super::int::signed128::Sint128Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
+use super::range_check::RangeCheckType;
+use super::utils::Range;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -72,8 +74,57 @@ pub type RangeType = GenericTypeArgGenericTypeWrapper<RangeTypeWrapped>;
 
 define_libfunc_hierarchy! {
     pub enum RangeLibfunc {
+        TryNew(RangeTryNewLibfunc),
         PopFront(RangePopFrontLibfunc),
     }, RangeConcreteLibfunc
+}
+
+/// Libfunc that constructs the range `[x, y)` if `x <= y` and fails otherwise.
+#[derive(Default)]
+pub struct RangeTryNewLibfunc {}
+impl SignatureOnlyGenericLibfunc for RangeTryNewLibfunc {
+    const STR_ID: &'static str = "range_try_new";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let range_ty = context.get_wrapped_concrete_type(RangeType::id(), ty.clone())?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+
+        if !Range::from_type(context, ty.clone())?.is_small_range() {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(ty.clone()),
+                ParamSignature::new(ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success.
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo::new_builtin(range_check_type.clone(), 0),
+                        OutputVarInfo {
+                            ty: range_ty,
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Failure.
+                BranchSignature {
+                    vars: vec![OutputVarInfo::new_builtin(range_check_type, 0)],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
 }
 
 /// Libfunc that takes the range `[x, y)` and if `x < y`, returns the range `[x + 1, y)` and the
