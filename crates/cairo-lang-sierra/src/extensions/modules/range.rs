@@ -3,11 +3,18 @@ use super::int::signed::{Sint16Type, Sint32Type, Sint64Type, Sint8Type};
 use super::int::signed128::Sint128Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
+use crate::define_libfunc_hierarchy;
+use crate::extensions::lib_func::{
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
+};
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
-use crate::extensions::{NamedType, SpecializationError};
+use crate::extensions::{
+    args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
+};
 use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
 
@@ -62,3 +69,54 @@ impl GenericTypeArgGenericType for RangeTypeWrapped {
     }
 }
 pub type RangeType = GenericTypeArgGenericTypeWrapper<RangeTypeWrapped>;
+
+define_libfunc_hierarchy! {
+    pub enum RangeLibfunc {
+        PopFront(RangePopFrontLibfunc),
+    }, RangeConcreteLibfunc
+}
+
+/// Libfunc that takes the range `[x, y)` and if `x < y`, returns the range `[x + 1, y)` and the
+/// value `x`.
+#[derive(Default)]
+pub struct RangePopFrontLibfunc {}
+impl SignatureOnlyGenericLibfunc for RangePopFrontLibfunc {
+    const STR_ID: &'static str = "range_pop_front";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let range_ty = context.get_wrapped_concrete_type(RangeType::id(), ty.clone())?;
+
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(range_ty.clone())],
+            branch_signatures: vec![
+                // Success.
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: range_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Failure.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
