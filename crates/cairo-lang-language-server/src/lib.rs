@@ -75,7 +75,6 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use itertools::Itertools;
 use salsa::ParallelDatabase;
 use serde_json::Value;
 use tokio::sync::Semaphore;
@@ -254,10 +253,22 @@ struct FileDiagnostics {
 impl std::panic::UnwindSafe for FileDiagnostics {}
 #[derive(Clone, Default)]
 struct State {
-    file_diagnostics: HashMap<Url, FileDiagnostics>,
+    file_diagnostics: HashMap<FileId, FileDiagnostics>,
     open_files: HashSet<Url>,
 }
 impl std::panic::UnwindSafe for State {}
+macro_rules! diags {
+    ($db:ident. $query:ident($file_id:expr), $f:expr) => {
+        trace_span!(stringify!($query)).in_scope(|| {
+            catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
+                .map($f)
+                .inspect_err(|_| {
+                    error!("caught panic when computing diagnostics");
+                })
+                .unwrap_or_default()
+        })
+    };
+}
 
 struct Backend {
     client: Client,
@@ -345,46 +356,68 @@ impl Backend {
         // TODO(orizi): Consider removing when request cancellation is supported.
         let Ok(waiter_permit) = self.refresh_waiters_semaphore.try_acquire() else { return Ok(()) };
         let refresh_lock = self.refresh_lock.lock().await;
-        let open_files = self.state_mut().await.open_files.clone();
 
-        // First, refresh diagnostics for each open file.
-        async {
-            for uri in &open_files {
-                self.refresh_file_diagnostics(uri).await;
-            }
-        }
-        .instrument(trace_span!("refresh_open_files_diagnostics"))
-        .await;
 
-        // Second, refresh diagnostics for the rest of the compilation unit.
-        let files_set = async {
+        // Get the compilation units mapping of file -> module
+        let file_to_modules: HashMap<FileId, Vec<ModuleId>> = async {
+            let mut file_to_modules: HashMap<FileId, Vec<ModuleId>> = HashMap::default();
             let db = self.db_mut().await;
-            let mut files_set = HashSet::new();
             for crate_id in db.crates() {
-                for module_files in db
-                    .crate_modules(crate_id)
-                    .iter()
-                    .filter_map(|module_id| db.module_files(*module_id).ok())
-                {
-                    for file_id in module_files.iter() {
-                        files_set.insert(db.url_for_file(*file_id));
+                for module_id in db.crate_modules(crate_id).iter() {
+                    if let Some(module_files) = db.module_files(*module_id).ok() {
+                        for file_id in module_files.into_iter() {
+                            file_to_modules.entry(*file_id).or_insert(vec![]);
+                            file_to_modules.entry(*file_id).and_modify(|v| v.push(*module_id));
+                        }
                     }
                 }
             }
-            files_set
+            file_to_modules
         }
-        .instrument(trace_span!("get_all_files"))
+        .instrument(trace_span!("get_file_to_module"))
         .await;
 
-        async {
-            for uri in files_set.iter().filter(|uri| !open_files.contains(uri)) {
-                self.refresh_file_diagnostics(uri).await;
+        // Get open file ids
+        let open_files_ids: HashSet<FileId> = async {
+            let db = self.db_mut().await;
+            let open_files = self.state_mut().await.open_files.clone();
+            open_files.iter().filter_map(|url| db.file_for_url(url)).collect()
+        }.instrument(trace_span!("get_open_files_ids")).await;
+
+
+        let (mut open_files_modules, mut rest_of_files_modules): (HashMap<FileId, Vec<ModuleId>>, HashMap<FileId, Vec<ModuleId>>) = (HashMap::default(), HashMap::default());
+
+        for (file_id, modules_ids) in file_to_modules.iter() {
+            if open_files_ids.contains(file_id) {
+                open_files_modules.insert(*file_id, modules_ids.clone());
+            } else {
+                rest_of_files_modules.insert(*file_id, modules_ids.clone());
             }
         }
-        .instrument(trace_span!("refresh_closed_files_diagnostics"))
+
+        let mut files_set: HashSet<FileId> = HashSet::default();
+        let mut processed_modules: HashSet<ModuleId> = HashSet::default();
+
+        // Refresh open files modules
+        async {
+            for (file, file_modules_ids) in open_files_modules {
+                self.refresh_file_diagnostics(&file, &file_modules_ids, &mut processed_modules, &mut files_set).await;
+            }
+        }
+        .instrument(trace_span!("refresh_open_files_modules"))
         .await;
 
-        // Finally, clear old diagnostics.
+        // Refresh rest of files modules
+        async {
+            for (file, file_modules_ids) in rest_of_files_modules {
+                self.refresh_file_diagnostics(&file, &file_modules_ids, &mut processed_modules, &mut files_set).await;
+            }
+        }
+        .instrument(trace_span!("refresh_open_files_modules"))
+        .await;
+
+
+        // Clear old diagnostics
         async {
             let mut removed_files = Vec::new();
             self.state_mut().await.file_diagnostics.retain(|uri, _| {
@@ -394,15 +427,18 @@ impl Backend {
                 }
                 retain
             });
-            for uri in removed_files {
+            let db = self.db_mut().await;
+
+            for file in removed_files {
                 self.client
-                    .publish_diagnostics(uri, Vec::new(), None)
+                    .publish_diagnostics(db.url_for_file(file), Vec::new(), None)
                     .instrument(trace_span!("publish_diagnostics"))
                     .await;
             }
         }
         .instrument(trace_span!("clear_old_diagnostics"))
         .await;
+
 
         // Release locks prior to potentially swapping the database.
         drop(refresh_lock);
@@ -413,71 +449,48 @@ impl Backend {
     }
 
     /// Refresh diagnostics for a single file.
-    #[tracing::instrument(level = "trace", skip_all, fields(%uri))]
-    async fn refresh_file_diagnostics(&self, uri: &Url) {
-        let db = self.db_mut().await;
+    // #[tracing::instrument(level = "trace", skip_all, fields(%file))]
+    async fn refresh_file_diagnostics(&self, file: &FileId, modules_ids: &Vec<ModuleId>, processed_modules: &mut HashSet<ModuleId>, files_set: &mut HashSet<FileId>) {
+       let db = self.db_mut().await;
+        let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
+        let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
 
-        let Some(file_id) = db.file_for_url(uri) else { return };
+        for module_id in modules_ids {
+            if !processed_modules.contains(&module_id) {
+                semantic_file_diagnostics.extend(diags!(db.module_semantic_diagnostics(module_id.clone()), Result::unwrap_or_default).get_all());
+                lowering_file_diagnostics.extend(diags!(db.module_lowering_diagnostics(module_id.clone()), Result::unwrap_or_default).get_all());
 
-        macro_rules! diags {
-            ($db:ident. $query:ident($file_id:expr), $f:expr) => {
-                trace_span!(stringify!($query)).in_scope(|| {
-                    catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
-                        .map($f)
-                        .inspect_err(|_| {
-                            error!("caught panic when computing diagnostics for {uri}");
-                        })
-                        .unwrap_or_default()
-                })
-            };
+                processed_modules.insert(module_id.clone());
+            }
         }
 
-        let mut new_file_diagnostics = FileDiagnostics {
-            parser: diags!(db.file_syntax_diagnostics(file_id), |r| r),
-            semantic: diags!(db.file_semantic_diagnostics(file_id), Result::unwrap_or_default),
-            lowering: diags!(db.file_lowering_diagnostics(file_id), Result::unwrap_or_default),
+        let parser_file_diagnostics =  diags!(db.file_syntax_diagnostics(file.clone()), |r| r);
+
+        if !semantic_file_diagnostics.is_empty() || !lowering_file_diagnostics.is_empty() || !parser_file_diagnostics.get_all().is_empty() {
+            files_set.insert(file.clone());
+        }
+
+        let new_file_diagnostics = FileDiagnostics {
+            parser: parser_file_diagnostics,
+            semantic: Diagnostics::from_iter(semantic_file_diagnostics),
+            lowering: Diagnostics::from_iter(lowering_file_diagnostics),
         };
 
         let mut state = self.state_mut().await;
-
-        // Skip repeated diagnostics for vfs files
-        if uri.scheme() == "vfs" {
-            let all_current_semantic_diagnostics = state
-                .file_diagnostics
-                .iter()
-                .flat_map(|(_url, diagnostics)| diagnostics.semantic.get_all())
-                .collect_vec();
-            let filtered_semantic_diags = new_file_diagnostics
-                .semantic
-                .get_all()
-                .into_iter()
-                .filter(|new_semantic_diagnostic| {
-                    !all_current_semantic_diagnostics.contains(new_semantic_diagnostic)
-                })
-                .collect();
-            new_file_diagnostics.semantic = filtered_semantic_diags;
-        }
-
-        // Since we are using Arcs, this comparison should be efficient.
-        if let Some(old_file_diagnostics) = state.file_diagnostics.get(uri) {
+        if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file) {
             if old_file_diagnostics == &new_file_diagnostics {
                 return;
             }
         }
-        state.file_diagnostics.insert(uri.clone(), new_file_diagnostics.clone());
-
-        drop(state);
+        state.file_diagnostics.insert(file.clone(), new_file_diagnostics.clone());
 
         let mut diags = Vec::new();
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
         map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
         map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
-
-        // Drop database snapshot before we wait for the client responding to our notification.
-        drop(db);
+        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
 
         self.client
-            .publish_diagnostics(uri.clone(), diags, None)
+            .publish_diagnostics(db.url_for_file(file.clone()), diags, None)
             .instrument(trace_span!("publish_diagnostics"))
             .await;
     }
