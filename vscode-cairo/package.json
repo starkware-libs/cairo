@@ -76,7 +76,7 @@
       },
       {
         "command": "cairo.viewAnalyzedCrates",
-        "title": "View crates currently analyzed by LS",
+        "title": "View currently analyzed crates",
         "category": "Cairo"
       }
     ],
@@ -135,7 +135,6 @@
       }
     ],
     "configurationDefaults": {
-      "explorer.fileNesting.enabled": true,
       "[cairo]": {
         "editor.tabSize": 4,
         "editor.insertSpaces": true,
