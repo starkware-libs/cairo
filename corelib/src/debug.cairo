@@ -1,12 +1,12 @@
 #[allow(unused_imports)]
-use core::array::ArrayTrait;
-use core::traits::Into;
+use crate::array::ArrayTrait;
+use crate::traits::Into;
 #[allow(unused_imports)]
-use core::option::Option;
+use crate::option::Option;
 
 /// Usage:
 /// ```
-/// use core::debug::PrintTrait;
+/// use crate::debug::PrintTrait;
 ///
 /// 1.print();
 ///
@@ -127,7 +127,7 @@ pub(crate) impl ArrayGenericPrintImpl of PrintTrait<Array<felt252>> {
 
 /// Prints a byte array as a string.
 pub fn print_byte_array_as_string(self: @ByteArray) {
-    let mut serialized = array![core::byte_array::BYTE_ARRAY_MAGIC];
+    let mut serialized = array![crate::byte_array::BYTE_ARRAY_MAGIC];
     self.serialize(ref serialized);
     print(serialized)
 }

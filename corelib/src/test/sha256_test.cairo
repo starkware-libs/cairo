@@ -1,4 +1,4 @@
-use core::sha256::compute_sha256_byte_array;
+use crate::sha256::compute_sha256_byte_array;
 
 #[test]
 fn test_sha256_byte_array() {

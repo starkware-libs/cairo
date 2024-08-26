@@ -2,7 +2,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{
-    ResolvedConcreteItem, ResolvedGenericItem, SELF_TYPE_KW, SUPER_KW,
+    ResolvedConcreteItem, ResolvedGenericItem, CRATE_KW, SELF_TYPE_KW, SUPER_KW,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::grandparent_kind;
@@ -86,7 +86,7 @@ impl SemanticTokenKind {
         node = node.parent().unwrap();
         let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.clone());
 
-        if [SUPER_KW, SELF_TYPE_KW].contains(&identifier.text(syntax_db).as_str()) {
+        if [SUPER_KW, SELF_TYPE_KW, CRATE_KW].contains(&identifier.text(syntax_db).as_str()) {
             return Some(SemanticTokenKind::Keyword);
         }
 

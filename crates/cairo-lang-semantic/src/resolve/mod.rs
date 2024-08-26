@@ -65,6 +65,7 @@ mod item;
 // Remove when these are added as actual keywords.
 pub const SELF_TYPE_KW: &str = "Self";
 pub const SUPER_KW: &str = "super";
+pub const CRATE_KW: &str = "crate";
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
@@ -369,12 +370,16 @@ impl<'db> Resolver<'db> {
                     ResolvedConcreteItem::Module(module_id)
                 } else {
                     // This identifier is a crate.
+                    let crate_ident = identifier.text(syntax_db);
+                    let crate_id = if crate_ident == CRATE_KW {
+                        self.owning_crate_id
+                    } else {
+                        CrateLongId::Real(crate_ident).intern(db)
+                    };
                     self.resolved_items.mark_concrete(
                         db,
                         segments.next().unwrap(),
-                        ResolvedConcreteItem::Module(ModuleId::CrateRoot(
-                            CrateLongId::Real(identifier.text(syntax_db)).intern(db),
-                        )),
+                        ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id)),
                     )
                 }
             }
@@ -486,12 +491,16 @@ impl<'db> Resolver<'db> {
                     ResolvedGenericItem::Module(module_id)
                 } else {
                     // This identifier is a crate.
+                    let crate_ident = identifier.text(syntax_db);
+                    let crate_id = if crate_ident == CRATE_KW {
+                        self.owning_crate_id
+                    } else {
+                        CrateLongId::Real(crate_ident).intern(db)
+                    };
                     self.resolved_items.mark_generic(
                         db,
                         segments.next().unwrap(),
-                        ResolvedGenericItem::Module(ModuleId::CrateRoot(
-                            CrateLongId::Real(identifier.text(syntax_db)).intern(db),
-                        )),
+                        ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)),
                     )
                 }
             }
@@ -954,6 +963,8 @@ impl<'db> Resolver<'db> {
             return Some(self.module_file_id.0);
         }
 
+        // If the first element is `crate`, use the crate's root module as the base module.
+        require(ident != CRATE_KW)?;
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
         let crate_id = CrateLongId::Real(ident).intern(self.db);
