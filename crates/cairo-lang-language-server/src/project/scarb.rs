@@ -52,6 +52,8 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                     .split("_integrationtest")
                     .collect::<Vec<_>>()
                     .first()
+                    // NOTE: this `unwrap` cannot fail since `split` always returns a non-empty
+                    // vector.
                     .unwrap()
                     .to_string();
 

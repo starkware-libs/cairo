@@ -29,7 +29,7 @@ fn inspect_crate(cr: Crate) -> String {
             ```
         "#,
         name = cr.name,
-        source_path = cr.source_paths().into_iter().map(|path| path.display().to_string()).collect_vec(),
+        source_path = cr.source_paths().into_iter().map(|path| path.display().to_string()).collect::<Vec<_>>(),
         settings = indent_by(4, format!("{:#?}", cr.settings)),
     }
 }
