@@ -583,6 +583,12 @@ pub fn core_libfunc_cost(
             }
         },
         Range(libfunc) => match libfunc {
+            IntRangeConcreteLibfunc::TryNew(_) => {
+                vec![
+                    ConstCost { steps: 3, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
+                    ConstCost { steps: 5, holes: 0, range_checks: 1, range_checks96: 0 }.into(),
+                ]
+            }
             IntRangeConcreteLibfunc::PopFront(_) => {
                 vec![ConstCost::steps(2).into(), ConstCost::steps(3).into()]
             }
