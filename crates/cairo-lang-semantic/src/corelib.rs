@@ -473,6 +473,7 @@ pub fn core_binary_operator(
         BinaryOperator::And(_) => ("BitAnd", "bitand", false, CoreTraitContext::TopLevel),
         BinaryOperator::Or(_) => ("BitOr", "bitor", false, CoreTraitContext::TopLevel),
         BinaryOperator::Xor(_) => ("BitXor", "bitxor", false, CoreTraitContext::TopLevel),
+        BinaryOperator::DotDot(_) => ("RangeOp", "range", false, CoreTraitContext::Ops),
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
     Ok(Ok((
@@ -753,14 +754,17 @@ fn get_core_trait_function_infer(
     function_name: SmolStr,
     stable_ptr: SyntaxStablePtrId,
 ) -> ConcreteTraitGenericFunctionId {
-    let trait_id = get_core_trait(db, context, trait_name);
+    let trait_id = get_core_trait(db, context, trait_name.clone());
     let generic_params = db.trait_generic_params(trait_id).unwrap();
     let generic_args = generic_params
         .iter()
         .map(|_| GenericArgumentId::Type(inference.new_type_var(Some(stable_ptr))))
         .collect();
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(db);
-    let trait_function = db.trait_function_by_name(trait_id, function_name).unwrap().unwrap();
+    let trait_function = db
+        .trait_function_by_name(trait_id, function_name.clone())
+        .unwrap()
+        .unwrap_or_else(move || panic!("Missing function '{function_name}' in '{trait_name}'."));
     ConcreteTraitGenericFunctionLongId::new(db, concrete_trait_id, trait_function).intern(db)
 }
 
