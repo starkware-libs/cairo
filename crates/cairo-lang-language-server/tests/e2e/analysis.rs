@@ -40,7 +40,7 @@ fn cairo_projects() {
         indoc! {r#"
             # Analyzed Crates
 
-            - `core`: `[CAIRO_SOURCE]/corelib/src/lib.cairo`
+            - `core`: `["[CAIRO_SOURCE]/corelib/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
                     edition: V2024_07,
@@ -58,7 +58,7 @@ fn cairo_projects() {
                     },
                 }
                 ```
-            - `project1`: `[ROOT]/project1/src/lib.cairo`
+            - `project1`: `["[ROOT]/project1/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
                     edition: V2023_01,
@@ -70,7 +70,7 @@ fn cairo_projects() {
                     },
                 }
                 ```
-            - `project2`: `[ROOT]/project2/src/lib.cairo`
+            - `project2`: `["[ROOT]/project2/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
                     edition: V2023_01,
@@ -82,7 +82,7 @@ fn cairo_projects() {
                     },
                 }
                 ```
-            - `subproject`: `[ROOT]/project2/subproject/src/lib.cairo`
+            - `subproject`: `["[ROOT]/project2/subproject/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
                     edition: V2023_01,
