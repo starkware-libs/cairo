@@ -4,9 +4,7 @@
 SmallE2ETestRunner
 
 //! > cairo
-// TODO(lior): Move to `range.cairo`.
-extern type Range<T>;
-extern fn range_pop_front<T>(range: Range<T>) -> Option<(Range<T>, T)> nopanic;
+use core::ops::range::internal::{Range, range_pop_front};
 
 fn foo(v: Range<i16>) -> Option<(Range<i16>, i16)> {
     range_pop_front(v)
@@ -35,29 +33,29 @@ type Range<i16> = Range<i16> [storable: true, drop: true, dup: true, zero_sized:
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type i16 = i16 [storable: true, drop: true, dup: true, zero_sized: false];
 type Tuple<Range<i16>, i16> = Struct<ut@Tuple, Range<i16>, i16> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)> = Enum<ut@core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>, Tuple<Range<i16>, i16>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)> = Enum<ut@core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>, Tuple<Range<i16>, i16>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc range_pop_front<i16> = range_pop_front<i16>;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Tuple<Range<i16>, i16>> = struct_construct<Tuple<Range<i16>, i16>>;
-libfunc enum_init<core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>, 0> = enum_init<core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>, 0>;
-libfunc store_temp<core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>> = store_temp<core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>>;
+libfunc enum_init<core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>, 0> = enum_init<core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>, 0>;
+libfunc store_temp<core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>> = store_temp<core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>, 1> = enum_init<core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>, 1>;
+libfunc enum_init<core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>, 1> = enum_init<core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>, 1>;
 
 range_pop_front<i16>([0]) { fallthrough([1], [2]) 6() }; // 0
 branch_align() -> (); // 1
 struct_construct<Tuple<Range<i16>, i16>>([1], [2]) -> ([3]); // 2
-enum_init<core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>, 0>([3]) -> ([4]); // 3
-store_temp<core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>>([4]) -> ([4]); // 4
+enum_init<core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>, 0>([3]) -> ([4]); // 3
+store_temp<core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>>([4]) -> ([4]); // 4
 return([4]); // 5
 branch_align() -> (); // 6
 struct_construct<Unit>() -> ([5]); // 7
-enum_init<core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>, 1>([5]) -> ([6]); // 8
-store_temp<core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>>([6]) -> ([6]); // 9
+enum_init<core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>, 1>([5]) -> ([6]); // 8
+store_temp<core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>>([6]) -> ([6]); // 9
 return([6]); // 10
 
-test::foo@0([0]: Range<i16>) -> (core::option::Option::<(test::Range::<core::integer::i16>, core::integer::i16)>);
+test::foo@0([0]: Range<i16>) -> (core::option::Option::<(core::ops::range::internal::Range::<core::integer::i16>, core::integer::i16)>);
 
 //! > ==========================================================================
 
@@ -67,9 +65,7 @@ test::foo@0([0]: Range<i16>) -> (core::option::Option::<(test::Range::<core::int
 SmallE2ETestRunner
 
 //! > cairo
-// TODO(lior): Move to `range.cairo`.
-extern type Range<T>;
-extern fn range_try_new<T>(x: T, y: T) -> Option<Range<T>> implicits(RangeCheck) nopanic;
+use core::ops::range::internal::{Range, range_try_new};
 
 fn foo(x: i16, y: i16) -> Option<Range<i16>> {
     range_try_new(x, y)
@@ -102,28 +98,311 @@ test::foo: OrderedHashMap({Const: 970})
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type Range<i16> = Range<i16> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::option::Option::<test::Range::<core::integer::i16>> = Enum<ut@core::option::Option::<test::Range::<core::integer::i16>>, Range<i16>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>> = Enum<ut@core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>, Range<i16>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type i16 = i16 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc range_try_new<i16> = range_try_new<i16>;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::option::Option::<test::Range::<core::integer::i16>>, 0> = enum_init<core::option::Option::<test::Range::<core::integer::i16>>, 0>;
+libfunc enum_init<core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>, 0> = enum_init<core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::option::Option::<test::Range::<core::integer::i16>>> = store_temp<core::option::Option::<test::Range::<core::integer::i16>>>;
+libfunc store_temp<core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>> = store_temp<core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<test::Range::<core::integer::i16>>, 1> = enum_init<core::option::Option::<test::Range::<core::integer::i16>>, 1>;
+libfunc enum_init<core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>, 1> = enum_init<core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>, 1>;
 
 range_try_new<i16>([0], [1], [2]) { fallthrough([3], [4]) 6([5]) }; // 0
 branch_align() -> (); // 1
-enum_init<core::option::Option::<test::Range::<core::integer::i16>>, 0>([4]) -> ([6]); // 2
+enum_init<core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>, 0>([4]) -> ([6]); // 2
 store_temp<RangeCheck>([3]) -> ([3]); // 3
-store_temp<core::option::Option::<test::Range::<core::integer::i16>>>([6]) -> ([6]); // 4
+store_temp<core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>>([6]) -> ([6]); // 4
 return([3], [6]); // 5
 branch_align() -> (); // 6
 struct_construct<Unit>() -> ([7]); // 7
-enum_init<core::option::Option::<test::Range::<core::integer::i16>>, 1>([7]) -> ([8]); // 8
+enum_init<core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>, 1>([7]) -> ([8]); // 8
 store_temp<RangeCheck>([5]) -> ([5]); // 9
-store_temp<core::option::Option::<test::Range::<core::integer::i16>>>([8]) -> ([8]); // 10
+store_temp<core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>>([8]) -> ([8]); // 10
 return([5], [8]); // 11
 
-test::foo@0([0]: RangeCheck, [1]: i16, [2]: i16) -> (RangeCheck, core::option::Option::<test::Range::<core::integer::i16>>);
+test::foo@0([0]: RangeCheck, [1]: i16, [2]: i16) -> (RangeCheck, core::option::Option::<core::ops::range::internal::Range::<core::integer::i16>>);
+
+//! > ==========================================================================
+
+//! > For loop with range
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo() {
+    for _i in 1_u8..10 {
+    }
+}
+
+//! > casm
+[ap + 0] = 1, ap++;
+[ap + 0] = 10, ap++;
+[ap + -1] = [ap + 0] + [ap + -2], ap++;
+%{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -2] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 9;
+[ap + -2] = [[fp + -4] + 0];
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+jmp rel 19;
+[ap + 0] = 10, ap++;
+[ap + 0] = 10, ap++;
+[ap + -1] = [ap + 0] + [ap + -2], ap++;
+%{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -2] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -4] + 1];
+jmp rel 31;
+[ap + -2] = [[fp + -4] + 1];
+[ap + 0] = [fp + -4] + 2, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -4], ap++;
+call rel 34;
+jmp rel 11 if [ap + -3] != 0;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [fp + -4] + 2, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -6] + 1, ap++;
+ret;
+%{ memory[ap + 0] = 1870 <= memory[fp + -5] %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -5] + 340282366920938463463374607431768209586, ap++;
+[ap + -1] = [[fp + -6] + 0];
+jmp rel 42;
+[fp + -5] = [ap + 0] + 1870, ap++;
+[ap + -1] = [[fp + -6] + 0];
+[ap + 0] = [fp + -6] + 1, ap++;
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 10;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 9 if [ap + -2] != 0;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+call rel -37;
+ret;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -7], ap++;
+[ap + 0] = [ap + -7], ap++;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 375233589013918064796019, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [fp + -6] + 1, ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -6] + 1, ap++;
+ret;
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<core::integer::u8> = Enum<ut@core::option::Option::<core::integer::u8>, u8, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
+type Const<felt252, 29721761890975875353235833581453094220424382983267374> = Const<felt252, 29721761890975875353235833581453094220424382983267374> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<Unit> = Struct<ut@Tuple, Unit> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::panics::PanicResult::<((),)> = Enum<ut@core::panics::PanicResult::<((),)>, Tuple<Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Range<u8> = Range<u8> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<Range<u8>, Unit> = Struct<ut@Tuple, Range<u8>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())> = Enum<ut@core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>, Tuple<Range<u8>, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<u8, 10> = Const<u8, 10> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u8, 1> = Const<u8, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc const_as_immediate<Const<u8, 1>> = const_as_immediate<Const<u8, 1>>;
+libfunc const_as_immediate<Const<u8, 10>> = const_as_immediate<Const<u8, 10>>;
+libfunc dup<u8> = dup<u8>;
+libfunc store_temp<u8> = store_temp<u8>;
+libfunc range_try_new<u8> = range_try_new<u8>;
+libfunc branch_align = branch_align;
+libfunc drop<u8> = drop<u8>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<Range<u8>> = store_temp<Range<u8>>;
+libfunc jump = jump;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc function_call<user@test::foo[expr5]> = function_call<user@test::foo[expr5]>;
+libfunc enum_match<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>> = enum_match<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>>;
+libfunc struct_deconstruct<Tuple<Range<u8>, Unit>> = struct_deconstruct<Tuple<Range<u8>, Unit>>;
+libfunc drop<Range<u8>> = drop<Range<u8>>;
+libfunc struct_construct<Tuple<Unit>> = struct_construct<Tuple<Unit>>;
+libfunc enum_init<core::panics::PanicResult::<((),)>, 0> = enum_init<core::panics::PanicResult::<((),)>, 0>;
+libfunc store_temp<core::panics::PanicResult::<((),)>> = store_temp<core::panics::PanicResult::<((),)>>;
+libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panics::PanicResult::<((),)>, 1>;
+libfunc array_new<felt252> = array_new<felt252>;
+libfunc const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>> = const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc array_append<felt252> = array_append<felt252>;
+libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
+libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
+libfunc withdraw_gas = withdraw_gas;
+libfunc enable_ap_tracking = enable_ap_tracking;
+libfunc dup<Range<u8>> = dup<Range<u8>>;
+libfunc range_pop_front<u8> = range_pop_front<u8>;
+libfunc enum_init<core::option::Option::<core::integer::u8>, 0> = enum_init<core::option::Option::<core::integer::u8>, 0>;
+libfunc store_temp<core::option::Option::<core::integer::u8>> = store_temp<core::option::Option::<core::integer::u8>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::integer::u8>, 1> = enum_init<core::option::Option::<core::integer::u8>, 1>;
+libfunc enum_match<core::option::Option::<core::integer::u8>> = enum_match<core::option::Option::<core::integer::u8>>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc struct_construct<Tuple<Range<u8>, Unit>> = struct_construct<Tuple<Range<u8>, Unit>>;
+libfunc enum_init<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>, 0> = enum_init<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>> = store_temp<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>>;
+libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
+libfunc enum_init<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>, 1> = enum_init<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>, 1>;
+
+disable_ap_tracking() -> (); // 0
+const_as_immediate<Const<u8, 1>>() -> ([2]); // 1
+const_as_immediate<Const<u8, 10>>() -> ([3]); // 2
+dup<u8>([3]) -> ([3], [4]); // 3
+store_temp<u8>([2]) -> ([2]); // 4
+store_temp<u8>([4]) -> ([4]); // 5
+range_try_new<u8>([0], [2], [4]) { fallthrough([5], [6]) 12([7]) }; // 6
+branch_align() -> (); // 7
+drop<u8>([3]) -> (); // 8
+store_temp<RangeCheck>([5]) -> ([8]); // 9
+store_temp<Range<u8>>([6]) -> ([9]); // 10
+jump() { 20() }; // 11
+branch_align() -> (); // 12
+dup<u8>([3]) -> ([3], [10]); // 13
+store_temp<u8>([10]) -> ([10]); // 14
+store_temp<u8>([3]) -> ([3]); // 15
+range_try_new<u8>([7], [10], [3]) { fallthrough([11], [12]) 40([13]) }; // 16
+branch_align() -> (); // 17
+store_temp<RangeCheck>([11]) -> ([8]); // 18
+store_temp<Range<u8>>([12]) -> ([9]); // 19
+store_temp<RangeCheck>([8]) -> ([8]); // 20
+store_temp<GasBuiltin>([1]) -> ([1]); // 21
+store_temp<Range<u8>>([9]) -> ([9]); // 22
+function_call<user@test::foo[expr5]>([8], [1], [9]) -> ([14], [15], [16]); // 23
+enum_match<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>>([16]) { fallthrough([17]) 34([18]) }; // 24
+branch_align() -> (); // 25
+struct_deconstruct<Tuple<Range<u8>, Unit>>([17]) -> ([19], [20]); // 26
+drop<Range<u8>>([19]) -> (); // 27
+struct_construct<Tuple<Unit>>([20]) -> ([21]); // 28
+enum_init<core::panics::PanicResult::<((),)>, 0>([21]) -> ([22]); // 29
+store_temp<RangeCheck>([14]) -> ([14]); // 30
+store_temp<GasBuiltin>([15]) -> ([15]); // 31
+store_temp<core::panics::PanicResult::<((),)>>([22]) -> ([22]); // 32
+return([14], [15], [22]); // 33
+branch_align() -> (); // 34
+enum_init<core::panics::PanicResult::<((),)>, 1>([18]) -> ([23]); // 35
+store_temp<RangeCheck>([14]) -> ([14]); // 36
+store_temp<GasBuiltin>([15]) -> ([15]); // 37
+store_temp<core::panics::PanicResult::<((),)>>([23]) -> ([23]); // 38
+return([14], [15], [23]); // 39
+branch_align() -> (); // 40
+array_new<felt252>() -> ([24]); // 41
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([25]); // 42
+store_temp<felt252>([25]) -> ([25]); // 43
+array_append<felt252>([24], [25]) -> ([26]); // 44
+struct_construct<core::panics::Panic>() -> ([27]); // 45
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([27], [26]) -> ([28]); // 46
+enum_init<core::panics::PanicResult::<((),)>, 1>([28]) -> ([29]); // 47
+store_temp<RangeCheck>([13]) -> ([13]); // 48
+store_temp<GasBuiltin>([1]) -> ([1]); // 49
+store_temp<core::panics::PanicResult::<((),)>>([29]) -> ([29]); // 50
+return([13], [1], [29]); // 51
+disable_ap_tracking() -> (); // 52
+withdraw_gas([0], [1]) { fallthrough([3], [4]) 89([5], [6]) }; // 53
+branch_align() -> (); // 54
+enable_ap_tracking() -> (); // 55
+dup<Range<u8>>([2]) -> ([2], [7]); // 56
+store_temp<RangeCheck>([3]) -> ([3]); // 57
+range_pop_front<u8>([7]) { fallthrough([8], [9]) 65() }; // 58
+branch_align() -> (); // 59
+drop<Range<u8>>([2]) -> (); // 60
+enum_init<core::option::Option::<core::integer::u8>, 0>([9]) -> ([10]); // 61
+store_temp<Range<u8>>([8]) -> ([11]); // 62
+store_temp<core::option::Option::<core::integer::u8>>([10]) -> ([12]); // 63
+jump() { 70() }; // 64
+branch_align() -> (); // 65
+struct_construct<Unit>() -> ([13]); // 66
+enum_init<core::option::Option::<core::integer::u8>, 1>([13]) -> ([14]); // 67
+store_temp<Range<u8>>([2]) -> ([11]); // 68
+store_temp<core::option::Option::<core::integer::u8>>([14]) -> ([12]); // 69
+enum_match<core::option::Option::<core::integer::u8>>([12]) { fallthrough([15]) 79([16]) }; // 70
+branch_align() -> (); // 71
+disable_ap_tracking() -> (); // 72
+drop<u8>([15]) -> (); // 73
+store_temp<RangeCheck>([3]) -> ([3]); // 74
+store_temp<GasBuiltin>([4]) -> ([4]); // 75
+store_temp<Range<u8>>([11]) -> ([11]); // 76
+function_call<user@test::foo[expr5]>([3], [4], [11]) -> ([17], [18], [19]); // 77
+return([17], [18], [19]); // 78
+branch_align() -> (); // 79
+disable_ap_tracking() -> (); // 80
+drop<Unit>([16]) -> (); // 81
+struct_construct<Unit>() -> ([20]); // 82
+struct_construct<Tuple<Range<u8>, Unit>>([11], [20]) -> ([21]); // 83
+enum_init<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>, 0>([21]) -> ([22]); // 84
+store_temp<RangeCheck>([3]) -> ([3]); // 85
+store_temp<GasBuiltin>([4]) -> ([4]); // 86
+store_temp<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>>([22]) -> ([22]); // 87
+return([3], [4], [22]); // 88
+branch_align() -> (); // 89
+drop<Range<u8>>([2]) -> (); // 90
+array_new<felt252>() -> ([23]); // 91
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([24]); // 92
+store_temp<felt252>([24]) -> ([24]); // 93
+array_append<felt252>([23], [24]) -> ([25]); // 94
+struct_construct<core::panics::Panic>() -> ([26]); // 95
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([26], [25]) -> ([27]); // 96
+enum_init<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>, 1>([27]) -> ([28]); // 97
+store_temp<RangeCheck>([5]) -> ([5]); // 98
+store_temp<GasBuiltin>([6]) -> ([6]); // 99
+store_temp<core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>>([28]) -> ([28]); // 100
+return([5], [6], [28]); // 101
+
+test::foo@0([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<((),)>);
+test::foo[expr5]@52([0]: RangeCheck, [1]: GasBuiltin, [2]: Range<u8>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::ops::range::internal::Range::<core::integer::u8>, ())>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 4110})
+test::foo[expr5]: OrderedHashMap({Const: 1270})
