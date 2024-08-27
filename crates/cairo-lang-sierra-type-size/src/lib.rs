@@ -53,7 +53,8 @@ pub fn get_type_size_map(
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::Span(_)
             | CoreTypeConcrete::EcPoint(_)
-            | CoreTypeConcrete::SquashedFelt252Dict(_) => Some(2),
+            | CoreTypeConcrete::SquashedFelt252Dict(_)
+            | CoreTypeConcrete::IntRange(_) => Some(2),
             CoreTypeConcrete::NonZero(wrapped_ty)
             | CoreTypeConcrete::Snapshot(wrapped_ty)
             | CoreTypeConcrete::Uninitialized(wrapped_ty) => {

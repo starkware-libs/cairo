@@ -41,6 +41,7 @@ use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::poseidon::{PoseidonLibfunc, PoseidonType};
+use super::range::IntRangeType;
 use super::range_check::{RangeCheck96Type, RangeCheckType};
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
@@ -94,6 +95,7 @@ define_type_hierarchy! {
         Snapshot(SnapshotType),
         Bytes31(Bytes31Type),
         BoundedInt(BoundedIntType),
+        IntRange(IntRangeType),
     }, CoreTypeConcrete
 }
 
