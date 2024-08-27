@@ -367,11 +367,11 @@ impl<'a> StorageInterfaceInfo<'a> {
         match self.node_type {
             StorageInterfaceType::StorageNode => {
                 if member.has_attr(self.db, FLAT_ATTR) {
-                    return "        let $field_name$_value = self.into();
+                    return "        let __$field_name$_value__ = self.into();
                     "
                     .to_string();
                 }
-                "        let $field_name$_value = starknet::storage::PendingStoragePathTrait::new(
+                "        let __$field_name$_value__ = starknet::storage::PendingStoragePathTrait::new(
                         @self,
                         selector!(\"$field_name$\")
                     );
@@ -388,7 +388,7 @@ impl<'a> StorageInterfaceInfo<'a> {
                     )
                 };
                 format!(
-                    "        let $field_name$_value = {member_type} {{
+                    "        let __$field_name$_value__ = {member_type} {{
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         }};
@@ -398,11 +398,11 @@ impl<'a> StorageInterfaceInfo<'a> {
             StorageInterfaceType::StorageTrait => {
                 if member.has_attr(self.db, SUBSTORAGE_ATTR) || member.has_attr(self.db, FLAT_ATTR)
                 {
-                    "        let $field_name$_value = starknet::storage::FlattenedStorage {};
+                    "        let __$field_name$_value__ = starknet::storage::FlattenedStorage {};
 "
                     .to_string()
                 } else {
-                    "        let $field_name$_value = starknet::storage::StorageBase \
+                    "        let __$field_name$_value__ = starknet::storage::StorageBase \
                      {__base_address__: selector!(\"$field_name$\")};
 "
                     .to_string()
@@ -602,7 +602,7 @@ fn add_interface_impl(
     for field in struct_ast.members(db).elements(db) {
         let field_name = field.name(db).as_syntax_node();
         builder.add_modified(RewriteNode::interpolate_patched(
-            "           $field_name$: $field_name$_value,\n",
+            "           $field_name$: __$field_name$_value__,\n",
             &[("field_name".to_string(), RewriteNode::new_trimmed(field_name))].into(),
         ));
     }

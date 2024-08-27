@@ -140,12 +140,12 @@ impl OuterTypeSubPointersImpl of starknet::storage::SubPointers<OuterType> {
     fn sub_pointers(self: starknet::storage::StoragePointer<OuterType>) -> OuterTypeSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let x_value = starknet::storage::StoragePointer {
+        let __x_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 OuterTypeSubPointers {
-           x: x_value,
+           x: __x_value__,
         }
     }
 }
@@ -158,12 +158,12 @@ impl OuterTypeSubPointersMutImpl of starknet::storage::SubPointersMut<OuterType>
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<OuterType>>) -> OuterTypeSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let x_value = starknet::storage::StoragePointer {
+        let __x_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 OuterTypeSubPointersMut {
-           x: x_value,
+           x: __x_value__,
         }
     }
 }
@@ -235,35 +235,35 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let var_felt252_value = starknet::storage::StorageBase {__base_address__: selector!("var_felt252")};
-        let var_u8_value = starknet::storage::StorageBase {__base_address__: selector!("var_u8")};
-        let var_u16_value = starknet::storage::StorageBase {__base_address__: selector!("var_u16")};
-        let var_u32_value = starknet::storage::StorageBase {__base_address__: selector!("var_u32")};
-        let var_u64_value = starknet::storage::StorageBase {__base_address__: selector!("var_u64")};
-        let var_u128_value = starknet::storage::StorageBase {__base_address__: selector!("var_u128")};
-        let var_bool_value = starknet::storage::StorageBase {__base_address__: selector!("var_bool")};
-        let felt252_to_u128_value = starknet::storage::StorageBase {__base_address__: selector!("felt252_to_u128")};
-        let u128_to_bool_value = starknet::storage::StorageBase {__base_address__: selector!("u128_to_bool")};
-        let bool_to_felt252_value = starknet::storage::StorageBase {__base_address__: selector!("bool_to_felt252")};
-        let outer_type_var_value = starknet::storage::StorageBase {__base_address__: selector!("outer_type_var")};
-        let outer_type_to_outer_type_value = starknet::storage::StorageBase {__base_address__: selector!("outer_type_to_outer_type")};
-        let inner_type_var_value = starknet::storage::StorageBase {__base_address__: selector!("inner_type_var")};
-        let inner_type_to_inner_type_value = starknet::storage::StorageBase {__base_address__: selector!("inner_type_to_inner_type")};
+        let __var_felt252_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_felt252")};
+        let __var_u8_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_u8")};
+        let __var_u16_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_u16")};
+        let __var_u32_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_u32")};
+        let __var_u64_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_u64")};
+        let __var_u128_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_u128")};
+        let __var_bool_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_bool")};
+        let __felt252_to_u128_value__ = starknet::storage::StorageBase {__base_address__: selector!("felt252_to_u128")};
+        let __u128_to_bool_value__ = starknet::storage::StorageBase {__base_address__: selector!("u128_to_bool")};
+        let __bool_to_felt252_value__ = starknet::storage::StorageBase {__base_address__: selector!("bool_to_felt252")};
+        let __outer_type_var_value__ = starknet::storage::StorageBase {__base_address__: selector!("outer_type_var")};
+        let __outer_type_to_outer_type_value__ = starknet::storage::StorageBase {__base_address__: selector!("outer_type_to_outer_type")};
+        let __inner_type_var_value__ = starknet::storage::StorageBase {__base_address__: selector!("inner_type_var")};
+        let __inner_type_to_inner_type_value__ = starknet::storage::StorageBase {__base_address__: selector!("inner_type_to_inner_type")};
         StorageStorageBase {
-           var_felt252: var_felt252_value,
-           var_u8: var_u8_value,
-           var_u16: var_u16_value,
-           var_u32: var_u32_value,
-           var_u64: var_u64_value,
-           var_u128: var_u128_value,
-           var_bool: var_bool_value,
-           felt252_to_u128: felt252_to_u128_value,
-           u128_to_bool: u128_to_bool_value,
-           bool_to_felt252: bool_to_felt252_value,
-           outer_type_var: outer_type_var_value,
-           outer_type_to_outer_type: outer_type_to_outer_type_value,
-           inner_type_var: inner_type_var_value,
-           inner_type_to_inner_type: inner_type_to_inner_type_value,
+           var_felt252: __var_felt252_value__,
+           var_u8: __var_u8_value__,
+           var_u16: __var_u16_value__,
+           var_u32: __var_u32_value__,
+           var_u64: __var_u64_value__,
+           var_u128: __var_u128_value__,
+           var_bool: __var_bool_value__,
+           felt252_to_u128: __felt252_to_u128_value__,
+           u128_to_bool: __u128_to_bool_value__,
+           bool_to_felt252: __bool_to_felt252_value__,
+           outer_type_var: __outer_type_var_value__,
+           outer_type_to_outer_type: __outer_type_to_outer_type_value__,
+           inner_type_var: __inner_type_var_value__,
+           inner_type_to_inner_type: __inner_type_to_inner_type_value__,
         }
     }
 }
@@ -287,35 +287,35 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let var_felt252_value = starknet::storage::StorageBase {__base_address__: selector!("var_felt252")};
-        let var_u8_value = starknet::storage::StorageBase {__base_address__: selector!("var_u8")};
-        let var_u16_value = starknet::storage::StorageBase {__base_address__: selector!("var_u16")};
-        let var_u32_value = starknet::storage::StorageBase {__base_address__: selector!("var_u32")};
-        let var_u64_value = starknet::storage::StorageBase {__base_address__: selector!("var_u64")};
-        let var_u128_value = starknet::storage::StorageBase {__base_address__: selector!("var_u128")};
-        let var_bool_value = starknet::storage::StorageBase {__base_address__: selector!("var_bool")};
-        let felt252_to_u128_value = starknet::storage::StorageBase {__base_address__: selector!("felt252_to_u128")};
-        let u128_to_bool_value = starknet::storage::StorageBase {__base_address__: selector!("u128_to_bool")};
-        let bool_to_felt252_value = starknet::storage::StorageBase {__base_address__: selector!("bool_to_felt252")};
-        let outer_type_var_value = starknet::storage::StorageBase {__base_address__: selector!("outer_type_var")};
-        let outer_type_to_outer_type_value = starknet::storage::StorageBase {__base_address__: selector!("outer_type_to_outer_type")};
-        let inner_type_var_value = starknet::storage::StorageBase {__base_address__: selector!("inner_type_var")};
-        let inner_type_to_inner_type_value = starknet::storage::StorageBase {__base_address__: selector!("inner_type_to_inner_type")};
+        let __var_felt252_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_felt252")};
+        let __var_u8_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_u8")};
+        let __var_u16_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_u16")};
+        let __var_u32_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_u32")};
+        let __var_u64_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_u64")};
+        let __var_u128_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_u128")};
+        let __var_bool_value__ = starknet::storage::StorageBase {__base_address__: selector!("var_bool")};
+        let __felt252_to_u128_value__ = starknet::storage::StorageBase {__base_address__: selector!("felt252_to_u128")};
+        let __u128_to_bool_value__ = starknet::storage::StorageBase {__base_address__: selector!("u128_to_bool")};
+        let __bool_to_felt252_value__ = starknet::storage::StorageBase {__base_address__: selector!("bool_to_felt252")};
+        let __outer_type_var_value__ = starknet::storage::StorageBase {__base_address__: selector!("outer_type_var")};
+        let __outer_type_to_outer_type_value__ = starknet::storage::StorageBase {__base_address__: selector!("outer_type_to_outer_type")};
+        let __inner_type_var_value__ = starknet::storage::StorageBase {__base_address__: selector!("inner_type_var")};
+        let __inner_type_to_inner_type_value__ = starknet::storage::StorageBase {__base_address__: selector!("inner_type_to_inner_type")};
         StorageStorageBaseMut {
-           var_felt252: var_felt252_value,
-           var_u8: var_u8_value,
-           var_u16: var_u16_value,
-           var_u32: var_u32_value,
-           var_u64: var_u64_value,
-           var_u128: var_u128_value,
-           var_bool: var_bool_value,
-           felt252_to_u128: felt252_to_u128_value,
-           u128_to_bool: u128_to_bool_value,
-           bool_to_felt252: bool_to_felt252_value,
-           outer_type_var: outer_type_var_value,
-           outer_type_to_outer_type: outer_type_to_outer_type_value,
-           inner_type_var: inner_type_var_value,
-           inner_type_to_inner_type: inner_type_to_inner_type_value,
+           var_felt252: __var_felt252_value__,
+           var_u8: __var_u8_value__,
+           var_u16: __var_u16_value__,
+           var_u32: __var_u32_value__,
+           var_u64: __var_u64_value__,
+           var_u128: __var_u128_value__,
+           var_bool: __var_bool_value__,
+           felt252_to_u128: __felt252_to_u128_value__,
+           u128_to_bool: __u128_to_bool_value__,
+           bool_to_felt252: __bool_to_felt252_value__,
+           outer_type_var: __outer_type_var_value__,
+           outer_type_to_outer_type: __outer_type_to_outer_type_value__,
+           inner_type_var: __inner_type_var_value__,
+           inner_type_to_inner_type: __inner_type_to_inner_type_value__,
         }
     }
 }
