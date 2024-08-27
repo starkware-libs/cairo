@@ -79,7 +79,8 @@ define_libfunc_hierarchy! {
     }, IntRangeConcreteLibfunc
 }
 
-/// Libfunc that constructs the range `[x, y)` if `x <= y` and fails otherwise.
+/// Libfunc that constructs the range `[x, y)` if `x <= y`.
+/// Otherwise, returns the empty range `[y, y)`.
 #[derive(Default)]
 pub struct IntRangeTryNewLibfunc {}
 impl SignatureOnlyGenericLibfunc for IntRangeTryNewLibfunc {
@@ -110,7 +111,7 @@ impl SignatureOnlyGenericLibfunc for IntRangeTryNewLibfunc {
                     vars: vec![
                         OutputVarInfo::new_builtin(range_check_type.clone(), 0),
                         OutputVarInfo {
-                            ty: range_ty,
+                            ty: range_ty.clone(),
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                     ],
@@ -118,7 +119,13 @@ impl SignatureOnlyGenericLibfunc for IntRangeTryNewLibfunc {
                 },
                 // Failure.
                 BranchSignature {
-                    vars: vec![OutputVarInfo::new_builtin(range_check_type, 0)],
+                    vars: vec![
+                        OutputVarInfo::new_builtin(range_check_type, 0),
+                        OutputVarInfo {
+                            ty: range_ty,
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],

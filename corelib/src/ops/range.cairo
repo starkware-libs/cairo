@@ -79,7 +79,7 @@ mod internal {
     pub extern type IntRange<T>;
     pub extern fn int_range_try_new<T>(
         x: T, y: T
-    ) -> Option<IntRange<T>> implicits(core::RangeCheck) nopanic;
+    ) -> Result<IntRange<T>, IntRange<T>> implicits(core::RangeCheck) nopanic;
     pub extern fn int_range_pop_front<T>(range: IntRange<T>) -> OptionRev<(IntRange<T>, T)> nopanic;
 
     impl IntRangeIteratorImpl<T, +Copy<T>, +Drop<T>> of Iterator<IntRange<T>> {
@@ -128,8 +128,8 @@ impl SierraRangeIntoIterator<
 
     fn into_iter(self: Range<T>) -> Self::IntoIter {
         match internal::int_range_try_new(self.start, self.end) {
-            Option::Some(range) => range,
-            Option::None => internal::int_range_try_new(self.end, self.end).unwrap(),
+            Result::Ok(range) => range,
+            Result::Err(range) => range,
         }
     }
 }
