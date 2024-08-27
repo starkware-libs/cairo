@@ -38,7 +38,7 @@
 //! }
 //! ```
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::io;
 use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
 use std::path::PathBuf;
@@ -53,16 +53,14 @@ use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, MemberId, ModuleId, SubmoduleLongId,
     TraitItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, ToOption};
+use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_filesystem::span::{TextPosition, TextSpan};
 use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -71,7 +69,7 @@ use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{Expr, SemanticDiagnostic, TypeLongId};
+use cairo_lang_semantic::{Expr, TypeLongId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
@@ -79,6 +77,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use salsa::{Cancelled, ParallelDatabase};
 use serde_json::Value;
+use state::{FileDiagnostics, Owned, StateSnapshot};
 use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
@@ -98,6 +97,7 @@ use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
 use crate::server::notifier::Notifier;
+use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
 use crate::vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
@@ -109,6 +109,7 @@ pub mod lsp;
 mod markdown;
 mod project;
 mod server;
+mod state;
 mod toolchain;
 mod vfs;
 
@@ -258,36 +259,30 @@ fn ensure_exists_in_db(
     new_db.set_file_overrides(Arc::new(new_overrides));
 }
 
-#[derive(Clone, Default, PartialEq, Eq)]
-struct FileDiagnostics {
-    parser: Diagnostics<ParserDiagnostic>,
-    semantic: Diagnostics<SemanticDiagnostic>,
-    lowering: Diagnostics<LoweringDiagnostic>,
-}
-impl std::panic::UnwindSafe for FileDiagnostics {}
-#[derive(Clone, Default)]
-struct State {
-    file_diagnostics: HashMap<Url, FileDiagnostics>,
-    open_files: HashSet<Url>,
-}
-impl std::panic::UnwindSafe for State {}
-
 struct Backend {
     client: Client,
-    client_capabilities: tokio::sync::RwLock<Box<ClientCapabilities>>,
     tricks: Tricks,
-    // TODO(spapini): Remove this once we support ParallelDatabase.
-    // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
-    db_mutex: tokio::sync::Mutex<AnalysisDatabase>,
     // Lock making sure there is at most a single "diagnostic refresh" thread.
     refresh_lock: tokio::sync::Mutex<()>,
     // Semaphore making sure there are at most one worker and one waiter for refresh.
     refresh_waiters_semaphore: tokio::sync::Semaphore,
     state_mutex: tokio::sync::Mutex<State>,
-    config: tokio::sync::RwLock<Config>,
     scarb_toolchain: ScarbToolchain,
     last_replace: tokio::sync::Mutex<SystemTime>,
     db_replace_interval: Duration,
+}
+
+/// TODO: Remove when we move to sync world.
+/// This is macro because of lifetimes problems with `self`.
+macro_rules! state_mut_async {
+    ($state:ident, $this:ident, $($f:tt)+) => {
+        async {
+            let mut state = $this.state_mutex.lock().await;
+            let $state = &mut *state;
+
+            $($f)+
+        }
+    };
 }
 
 impl Backend {
@@ -305,32 +300,24 @@ impl Backend {
         let scarb_toolchain = ScarbToolchain::new(&notifier);
         Self {
             client,
-            client_capabilities: Default::default(),
             tricks,
-            db_mutex: db.into(),
             refresh_lock: Default::default(),
             refresh_waiters_semaphore: Semaphore::new(2),
-            state_mutex: State::default().into(),
-            config: Config::default().into(),
+            state_mutex: State::new(db).into(),
             scarb_toolchain,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: env_config::db_replace_interval(),
         }
     }
 
-    /// Runs a function with a database snapshot.
     /// Catches panics and returns Err.
-    async fn with_db<F, T>(&self, f: F) -> LSPResult<T>
+    async fn catch_panics<F, T>(&self, f: F) -> LSPResult<T>
     where
-        F: FnOnce(&AnalysisDatabase) -> T + Send + 'static + std::panic::UnwindSafe,
+        F: FnOnce() -> T + Send + 'static,
         T: Send + 'static,
     {
-        let db_mut = self.db_mut().await;
-        let db = db_mut.snapshot();
-        drop(db_mut);
-
         spawn_blocking(move || {
-            catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|err| {
+            catch_unwind(AssertUnwindSafe(f)).map_err(|err| {
                 if err.is::<Cancelled>() {
                     debug!("LSP worker thread was cancelled");
                     LSPError::request_cancelled()
@@ -347,16 +334,27 @@ impl Backend {
         })
     }
 
-    /// Locks and gets a database instance.
-    #[tracing::instrument(level = "trace", skip_all)]
-    async fn db_mut(&self) -> tokio::sync::MutexGuard<'_, AnalysisDatabase> {
-        self.db_mutex.lock().await
-    }
-
     /// Locks and gets a server state.
     #[tracing::instrument(level = "trace", skip_all)]
-    async fn state_mut(&self) -> tokio::sync::MutexGuard<'_, State> {
-        self.state_mutex.lock().await
+    async fn with_state_mut<F, T>(&self, f: F) -> T
+    where
+        F: FnOnce(&mut State) -> T,
+    {
+        let mut state = self.state_mutex.lock().await;
+
+        f(&mut state)
+    }
+
+    /// Locks and produces server state snapshot.
+    #[tracing::instrument(level = "trace", skip_all)]
+    async fn state_snapshot(&self) -> StateSnapshot {
+        self.with_state_mut(|state| state.snapshot()).await
+    }
+
+    /// Locks and produces db snapshot.
+    #[tracing::instrument(level = "trace", skip_all)]
+    async fn db_snapshot(&self) -> salsa::Snapshot<AnalysisDatabase> {
+        self.with_state_mut(|state| state.db.snapshot()).await
     }
 
     // TODO(spapini): Consider managing vfs in a different way, using the
@@ -372,11 +370,11 @@ impl Backend {
         // TODO(orizi): Consider removing when request cancellation is supported.
         let Ok(waiter_permit) = self.refresh_waiters_semaphore.try_acquire() else { return Ok(()) };
         let refresh_lock = self.refresh_lock.lock().await;
-        let open_files = self.state_mut().await.open_files.clone();
+        let open_files = self.state_snapshot().await.open_files;
 
         // First, refresh diagnostics for each open file.
         async {
-            for uri in &open_files {
+            for uri in &*open_files {
                 self.refresh_file_diagnostics(uri).await;
             }
         }
@@ -385,7 +383,7 @@ impl Backend {
 
         // Second, refresh diagnostics for the rest of the compilation unit.
         let files_set = async {
-            let db = self.db_mut().await;
+            let db = self.db_snapshot().await;
             let mut files_set = HashSet::new();
             for crate_id in db.crates() {
                 for module_files in db
@@ -414,13 +412,16 @@ impl Backend {
         // Finally, clear old diagnostics.
         async {
             let mut removed_files = Vec::new();
-            self.state_mut().await.file_diagnostics.retain(|uri, _| {
-                let retain = files_set.contains(uri);
-                if !retain {
-                    removed_files.push(uri.clone());
-                }
-                retain
-            });
+            self.with_state_mut(|s| {
+                s.file_diagnostics.retain(|uri, _| {
+                    let retain = files_set.contains(uri);
+                    if !retain {
+                        removed_files.push(uri.clone());
+                    }
+                    retain
+                });
+            })
+            .await;
             for uri in removed_files {
                 self.client
                     .publish_diagnostics(uri, Vec::new(), None)
@@ -442,7 +443,9 @@ impl Backend {
     /// Refresh diagnostics for a single file.
     #[tracing::instrument(level = "trace", skip_all, fields(%uri))]
     async fn refresh_file_diagnostics(&self, uri: &Url) {
-        let db = self.db_mut().await;
+        let state = self.state_snapshot().await;
+        let db = state.db;
+        let config = state.config;
 
         let Some(file_id) = db.file_for_url(uri) else { return };
 
@@ -465,20 +468,19 @@ impl Backend {
             lowering: diags!(db.file_lowering_diagnostics(file_id), Result::unwrap_or_default),
         };
 
-        let mut state = self.state_mut().await;
-
-        // Since we are using Arcs, this comparison should be efficient.
-        if let Some(old_file_diagnostics) = state.file_diagnostics.get(uri) {
-            if old_file_diagnostics == &new_file_diagnostics {
-                return;
+        self.with_state_mut(|state| {
+            // Since we are using Arcs, this comparison should be efficient.
+            if let Some(old_file_diagnostics) = state.file_diagnostics.get(uri) {
+                if old_file_diagnostics == &new_file_diagnostics {
+                    return;
+                }
             }
-        }
-        state.file_diagnostics.insert(uri.clone(), new_file_diagnostics.clone());
-
-        drop(state);
+            state.file_diagnostics.insert(uri.clone(), new_file_diagnostics.clone());
+        })
+        .await;
 
         let mut diags = Vec::new();
-        let trace_macro_diagnostics = self.config.read().await.trace_macro_diagnostics;
+        let trace_macro_diagnostics = config.trace_macro_diagnostics;
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
             &mut diags,
@@ -526,28 +528,34 @@ impl Backend {
     /// Perform database swap
     #[tracing::instrument(level = "debug", skip_all)]
     async fn swap_database(&self) -> LSPResult<()> {
-        let open_files = self.state_mut().await.open_files.clone();
+        let state = self.state_snapshot().await;
+        let open_files = state.open_files;
+        let config = &state.config;
+
         debug!("scheduled");
         let mut new_db = self
-            .with_db({
+            .catch_panics({
                 let open_files = open_files.clone();
                 let tricks = self.tricks.clone();
 
-                move |db| {
+                move || {
                     let mut new_db = AnalysisDatabase::new(&tricks);
-                    ensure_exists_in_db(&mut new_db, db, open_files.into_iter());
+                    ensure_exists_in_db(&mut new_db, &state.db, open_files.iter().cloned());
                     new_db
                 }
             })
             .await?;
         debug!("initial setup done");
-        self.ensure_diagnostics_queries_up_to_date(&mut new_db, open_files.into_iter()).await;
+        self.ensure_diagnostics_queries_up_to_date(&mut new_db, config, open_files.iter().cloned())
+            .await;
         debug!("initial compilation done");
-        let mut db = self.db_mut().await;
         debug!("starting");
-        let state = self.state_mut().await;
-        ensure_exists_in_db(&mut new_db, &db, state.open_files.iter().cloned());
-        *db = new_db;
+        self.with_state_mut(|state| {
+            ensure_exists_in_db(&mut new_db, &state.db, state.open_files.iter().cloned());
+            state.db = new_db;
+        })
+        .await;
+
         debug!("done");
         Ok(())
     }
@@ -557,6 +565,7 @@ impl Backend {
     async fn ensure_diagnostics_queries_up_to_date(
         &self,
         db: &mut AnalysisDatabase,
+        config: &Config,
         open_files: impl Iterator<Item = Url>,
     ) {
         let query_diags = |db: &AnalysisDatabase, file_id| {
@@ -567,7 +576,7 @@ impl Backend {
         for uri in open_files {
             let Some(file_id) = db.file_for_url(&uri) else { continue };
             if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
-                self.detect_crate_for(db, file_path).await;
+                self.detect_crate_for(db, config, file_path).await;
             }
             query_diags(db, file_id);
         }
@@ -586,12 +595,14 @@ impl Backend {
 
     #[tracing::instrument(level = "trace", skip_all)]
     async fn view_analyzed_crates(&self) -> LSPResult<String> {
-        self.with_db(lang::inspect::crates::inspect_analyzed_crates).await
+        let db = self.db_snapshot().await;
+        self.catch_panics(move || lang::inspect::crates::inspect_analyzed_crates(&db)).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
     async fn expand_macro(&self, params: TextDocumentPositionParams) -> LSPResult<Option<String>> {
-        self.with_db(move |db| ide::macros::expand::expand_macro(db, &params)).await
+        let db = self.db_snapshot().await;
+        self.catch_panics(move || ide::macros::expand::expand_macro(&db, &params)).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
@@ -599,7 +610,8 @@ impl Backend {
         &self,
         params: ProvideVirtualFileRequest,
     ) -> LSPResult<ProvideVirtualFileResponse> {
-        self.with_db(move |db| {
+        let db = self.db_snapshot().await;
+        self.catch_panics(move || {
             let content = db
                 .file_for_url(&params.uri)
                 .and_then(|file_id| db.file_content(file_id))
@@ -612,7 +624,12 @@ impl Backend {
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
     #[tracing::instrument(level = "trace", skip_all)]
-    async fn detect_crate_for(&self, db: &mut AnalysisDatabase, file_path: PathBuf) {
+    async fn detect_crate_for(
+        &self,
+        db: &mut AnalysisDatabase,
+        config: &Config,
+        file_path: PathBuf,
+    ) {
         match ProjectManifestPath::discover(&file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
                 let Ok(metadata) = spawn_blocking({
@@ -643,11 +660,7 @@ impl Backend {
                     update_crate_roots(&metadata, db);
                 } else {
                     // Try to set up a corelib at least.
-                    try_to_init_unmanaged_core(
-                        db,
-                        &*self.config.read().await,
-                        &self.scarb_toolchain,
-                    );
+                    try_to_init_unmanaged_core(db, config, &self.scarb_toolchain);
                 }
 
                 if let Err(result) = validate_corelib(db) {
@@ -662,7 +675,7 @@ impl Backend {
                 // DB will also be absolute.
                 assert!(config_path.is_absolute());
 
-                try_to_init_unmanaged_core(db, &*self.config.read().await, &self.scarb_toolchain);
+                try_to_init_unmanaged_core(db, config, &self.scarb_toolchain);
 
                 if let Ok(config) = ProjectConfig::from_file(&config_path) {
                     update_crate_roots_from_project_config(db, &config);
@@ -670,7 +683,7 @@ impl Backend {
             }
 
             None => {
-                try_to_init_unmanaged_core(db, &*self.config.read().await, &self.scarb_toolchain);
+                try_to_init_unmanaged_core(db, config, &self.scarb_toolchain);
 
                 if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
                     let file_path_s = file_path.to_string_lossy();
@@ -685,24 +698,28 @@ impl Backend {
     async fn reload(&self) -> LSPResult<()> {
         self.reload_config().await;
 
-        let mut db = self.db_mut().await;
-        for uri in self.state_mutex.lock().await.open_files.iter() {
-            let Some(file_id) = db.file_for_url(uri) else { continue };
-            if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
-                self.detect_crate_for(&mut db, file_path).await;
+        state_mut_async! {state, self,
+            let db = &mut state.db;
+
+            for uri in state.open_files.iter() {
+                let Some(file_id) = db.file_for_url(uri) else { continue };
+                if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
+                    self.detect_crate_for(db, &state.config, file_path).await;
+                }
             }
         }
-        drop(db);
+        .await;
+
         self.refresh_diagnostics().await
     }
 
     /// Reload the [`Config`] and all its dependencies.
     async fn reload_config(&self) {
-        {
-            let mut config = self.config.write().await;
-            let client_capabilities = self.client_capabilities.read().await;
-            config.reload(&self.client, &client_capabilities).await;
+        state_mut_async! {state, self,
+            state.config.reload(&self.client, &state.client_capabilities).await;
         }
+        .await;
+
         self.refresh_diagnostics().await.ok();
     }
 }
@@ -726,10 +743,10 @@ impl TryFrom<String> for ServerCommands {
 impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
     async fn initialize(&self, params: InitializeParams) -> LSPResult<InitializeResult> {
-        {
-            let mut client_capabilities = self.client_capabilities.write().await;
-            *client_capabilities = Box::new(params.capabilities);
-        }
+        self.with_state_mut(|state| {
+            state.client_capabilities = Owned::new(Arc::new(params.capabilities));
+        })
+        .await;
 
         Ok(InitializeResult {
             server_info: None,
@@ -780,7 +797,9 @@ impl LanguageServer for Backend {
         // Initialize the configuration.
         self.reload_config().await;
 
-        if self.client_capabilities.read().await.did_change_watched_files_dynamic_registration() {
+        let client_capabilities = self.state_snapshot().await.client_capabilities;
+
+        if client_capabilities.did_change_watched_files_dynamic_registration() {
             // Register patterns for client file watcher.
             // This is used to detect changes to Scarb.toml and invalidate .cairo files.
             let registration_options = DidChangeWatchedFilesRegistrationOptions {
@@ -819,14 +838,18 @@ impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
         // Invalidate changed cairo files.
-        let mut db = self.db_mut().await;
-        for change in &params.changes {
-            if is_cairo_file_path(&change.uri) {
-                let Some(file) = db.file_for_url(&change.uri) else { continue };
-                PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
+        self.with_state_mut(|state| {
+            for change in &params.changes {
+                if is_cairo_file_path(&change.uri) {
+                    let Some(file) = state.db.file_for_url(&change.uri) else { continue };
+                    PrivRawFileContentQuery
+                        .in_db_mut(state.db.as_files_group_mut())
+                        .invalidate(&file);
+                }
             }
-        }
-        drop(db);
+        })
+        .await;
+
         // Reload workspace if Scarb.toml changed.
         for change in params.changes {
             let changed_file_path = change.uri.to_file_path().unwrap_or_default();
@@ -859,21 +882,27 @@ impl LanguageServer for Backend {
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        let mut db = self.db_mut().await;
-        let uri = params.text_document.uri;
+        let refresh = state_mut_async! {state, self,
+                let uri = params.text_document.uri;
 
-        // Try to detect the crate for physical files.
-        // The crate for virtual files is already known.
-        if uri.scheme() == "file" {
-            let Ok(path) = uri.to_file_path() else { return };
-            self.detect_crate_for(&mut db, path).await;
+                // Try to detect the crate for physical files.
+                // The crate for virtual files is already known.
+                if uri.scheme() == "file" {
+                    let Ok(path) = uri.to_file_path() else { return false };
+                    self.detect_crate_for(&mut state.db, &state.config, path).await;
+                }
+
+                let Some(file_id) = state.db.file_for_url(&uri) else { return false };
+                state.open_files.insert(uri);
+                state.db.override_file_content(file_id, Some(params.text_document.text.into()));
+
+                true
         }
+        .await;
 
-        let Some(file_id) = db.file_for_url(&uri) else { return };
-        self.state_mut().await.open_files.insert(uri);
-        db.override_file_content(file_id, Some(params.text_document.text.into()));
-        drop(db);
-        self.refresh_diagnostics().await.ok();
+        if refresh {
+            self.refresh_diagnostics().await.ok();
+        }
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
@@ -886,35 +915,54 @@ impl LanguageServer for Backend {
             error!("unexpected format of document change");
             return;
         };
-        let mut db = self.db_mut().await;
-        let uri = params.text_document.uri;
-        let Some(file) = db.file_for_url(&uri) else { return };
-        db.override_file_content(file, Some(text.into()));
-        drop(db);
-        self.refresh_diagnostics().await.ok();
+        let refresh = self
+            .with_state_mut(|state| {
+                let uri = params.text_document.uri;
+                let Some(file) = state.db.file_for_url(&uri) else { return false };
+                state.db.override_file_content(file, Some(text.into()));
+
+                true
+            })
+            .await;
+
+        if refresh {
+            self.refresh_diagnostics().await.ok();
+        }
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
-        let mut db = self.db_mut().await;
-        let Some(file) = db.file_for_url(&params.text_document.uri) else { return };
-        PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
-        db.override_file_content(file, None);
+        self.with_state_mut(|state| {
+            let Some(file) = state.db.file_for_url(&params.text_document.uri) else { return };
+            PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
+            state.db.override_file_content(file, None);
+        })
+        .await;
     }
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
-        let mut db = self.db_mut().await;
-        self.state_mut().await.open_files.remove(&params.text_document.uri);
-        let Some(file) = db.file_for_url(&params.text_document.uri) else { return };
-        db.override_file_content(file, None);
-        drop(db);
-        self.refresh_diagnostics().await.ok();
+        let refresh = self
+            .with_state_mut(|state| {
+                state.open_files.remove(&params.text_document.uri);
+                let Some(file) = state.db.file_for_url(&params.text_document.uri) else {
+                    return false;
+                };
+                state.db.override_file_content(file, None);
+
+                true
+            })
+            .await;
+
+        if refresh {
+            self.refresh_diagnostics().await.ok();
+        }
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
     async fn completion(&self, params: CompletionParams) -> LSPResult<Option<CompletionResponse>> {
-        self.with_db(|db| ide::completion::complete(params, db)).await
+        let db = self.db_snapshot().await;
+        self.catch_panics(move || ide::completion::complete(params, &db)).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
@@ -922,7 +970,9 @@ impl LanguageServer for Backend {
         &self,
         params: SemanticTokensParams,
     ) -> LSPResult<Option<SemanticTokensResult>> {
-        self.with_db(|db| ide::semantic_highlighting::semantic_highlight_full(params, db)).await
+        let db = self.db_snapshot().await;
+        self.catch_panics(move || ide::semantic_highlighting::semantic_highlight_full(params, &db))
+            .await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
@@ -930,12 +980,14 @@ impl LanguageServer for Backend {
         &self,
         params: DocumentFormattingParams,
     ) -> LSPResult<Option<Vec<TextEdit>>> {
-        self.with_db(|db| ide::formatter::format(params, db)).await
+        let db = self.db_snapshot().await;
+        self.catch_panics(move || ide::formatter::format(params, &db)).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
     async fn hover(&self, params: HoverParams) -> LSPResult<Option<Hover>> {
-        self.with_db(|db| ide::hover::hover(params, db)).await
+        let db = self.db_snapshot().await;
+        self.catch_panics(move || ide::hover::hover(params, &db)).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
@@ -943,12 +995,15 @@ impl LanguageServer for Backend {
         &self,
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
-        self.with_db(|db| ide::navigation::goto_definition::goto_definition(params, db)).await
+        let db = self.db_snapshot().await;
+        self.catch_panics(move || ide::navigation::goto_definition::goto_definition(params, &db))
+            .await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
     async fn code_action(&self, params: CodeActionParams) -> LSPResult<Option<CodeActionResponse>> {
-        self.with_db(|db| ide::code_actions::code_actions(params, db)).await
+        let db = self.db_snapshot().await;
+        self.catch_panics(move || ide::code_actions::code_actions(params, &db)).await
     }
 }
 
