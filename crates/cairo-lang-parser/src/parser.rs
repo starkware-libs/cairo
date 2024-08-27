@@ -107,7 +107,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         text: &'a str,
     ) -> SyntaxFile {
-        let mut lexer = Lexer::from_text(db, file_id, text);
+        let mut lexer = Lexer::from_text(db, text);
         let next_terminal = lexer.next().unwrap();
         let parser = Parser {
             db,
@@ -132,7 +132,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         text: &'a str,
     ) -> Expr {
-        let mut lexer = Lexer::from_text(db, file_id, text);
+        let mut lexer = Lexer::from_text(db, text);
         let next_terminal = lexer.next().unwrap();
         let mut parser = Parser {
             db,
