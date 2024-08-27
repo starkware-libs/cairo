@@ -5,8 +5,7 @@ use std::path::Path;
 use anyhow::{bail, ensure, Context, Result};
 use cairo_lang_filesystem::db::{CrateSettings, Edition, ExperimentalFeaturesConfig};
 use itertools::Itertools;
-use scarb_metadata::{CompilationUnitMetadata, Metadata, PackageMetadata};
-use serde_json::Value;
+use scarb_metadata::{Metadata, PackageMetadata};
 use tracing::{debug, error, warn};
 
 use crate::lang::db::AnalysisDatabase;
@@ -41,26 +40,16 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
             let mut package =
                 metadata.packages.iter().find(|package| package.id == component.package);
 
-            // TODO(pmagiera): this is a hack, remove this when `scarb metadata` is fixed.
-            if package.is_none()
-                && is_integration_test_cu(compilation_unit)
-                && compilation_unit.package == component.package
-            {
-                let human_readable_member_name = component
-                    .package
-                    .repr
-                    .split("_integrationtest")
-                    .collect::<Vec<_>>()
-                    .first()
-                    // NOTE: this `unwrap` cannot fail since `split` always returns a non-empty
-                    // vector.
-                    .unwrap()
-                    .to_string();
-
+            // For some compilation units corresponding to integration tests,
+            // a main package of the compilation unit may not be found in a list of packages
+            // (metadata hack, intended by scarb).
+            // We instead find a package that specifies the target of the compilation unit
+            // and later use it to extract edition and experimental features.
+            if package.is_none() && compilation_unit.package == component.package {
                 package = metadata
                     .packages
                     .iter()
-                    .find(|package| package.id.repr.starts_with(&human_readable_member_name));
+                    .find(|p| p.targets.iter().any(|t| t.name == compilation_unit.target.name));
             }
 
             if package.is_none() {
@@ -267,10 +256,4 @@ fn scarb_package_experimental_features(
         negative_impls: contains("negative_impls"),
         coupons: contains("coupons"),
     }
-}
-
-fn is_integration_test_cu(compilation_unit: &CompilationUnitMetadata) -> bool {
-    compilation_unit.target.kind == "test"
-        && compilation_unit.target.params.get("test-type").and_then(Value::as_str)
-            == Some("integration")
 }
