@@ -655,17 +655,17 @@ impl BadEnumWithDefaultSerde of core::serde::Serde::<BadEnumWithDefault> {
 }
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+lib.cairo:6:5
+    #[storage]
+    ^********^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+lib.cairo:6:5
+    #[storage]
+    ^********^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -703,9 +703,9 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 
-lib.cairo:13:26
+lib.cairo:13:5
     #[derive(Drop, Hash, starknet::Store)]
-                         ^*************^
+    ^************************************^
 impls:
 
 impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPointers>;

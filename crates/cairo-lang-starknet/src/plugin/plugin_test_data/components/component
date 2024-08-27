@@ -353,9 +353,9 @@ impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatch
 }
 
 
-lib.cairo:1:16
+lib.cairo:1:1
 #[derive(Drop, starknet::Store)]
-               ^*************^
+^******************************^
 impls:
 
 impl MyTypeSubPointersDrop of core::traits::Drop::<MyTypeSubPointers>;

@@ -2966,17 +2966,17 @@ pub mod __constructor {
 
 
 
-lib.cairo:59:1
-#[starknet::contract]
-^*******************^
+lib.cairo:70:5
+    #[storage]
+    ^********^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:59:1
-#[starknet::contract]
-^*******************^
+lib.cairo:70:5
+    #[storage]
+    ^********^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

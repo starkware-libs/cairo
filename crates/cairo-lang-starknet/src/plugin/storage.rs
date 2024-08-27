@@ -69,12 +69,13 @@ pub fn handle_storage_struct(
     } else {
         "".to_string()
     };
-    let (storage_base_code, _) = handle_storage_interface_struct(db, &struct_ast, metadata);
+    let storage_base_code =
+        handle_storage_interface_struct(db, &struct_ast, metadata).into_rewrite_node();
     data.state_struct_code = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
             {storage_struct_code}
-            {storage_base_code}
+            $storage_base_code$
             pub struct {full_state_struct_name} {{$substorage_members_struct_code$
             }}
 
@@ -110,6 +111,7 @@ pub fn handle_storage_struct(
             ",
         ),
         &[
+            ("storage_base_code".to_string(), storage_base_code),
             (
                 "storage_struct_members".to_string(),
                 RewriteNode::new_modified(storage_struct_members),

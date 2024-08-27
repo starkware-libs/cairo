@@ -681,17 +681,17 @@ pub impl MyImpl<
     }
 }
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {

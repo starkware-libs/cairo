@@ -875,17 +875,17 @@ pub mod __constructor {
 
 
 
-lib.cairo:17:1
-#[starknet::contract]
-^*******************^
+lib.cairo:19:5
+    #[storage]
+    ^********^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:17:1
-#[starknet::contract]
-^*******************^
+lib.cairo:19:5
+    #[storage]
+    ^********^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -2333,17 +2333,17 @@ pub mod __constructor {
 
 
 
-lib.cairo:29:1
-#[starknet::contract]
-^*******************^
+lib.cairo:31:5
+    #[storage]
+    ^********^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:29:1
-#[starknet::contract]
-^*******************^
+lib.cairo:31:5
+    #[storage]
+    ^********^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -3157,17 +3157,17 @@ pub mod __constructor {
 
 
 
-lib.cairo:15:1
-#[starknet::contract]
-^*******************^
+lib.cairo:17:5
+    #[storage]
+    ^********^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:15:1
-#[starknet::contract]
-^*******************^
+lib.cairo:17:5
+    #[storage]
+    ^********^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
