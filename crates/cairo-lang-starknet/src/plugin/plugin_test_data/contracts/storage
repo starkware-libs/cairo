@@ -178,9 +178,9 @@ impl OuterTypeSubPointersDrop of core::traits::Drop::<OuterTypeSubPointers>;
 impl OuterTypeSubPointersCopy of core::traits::Copy::<OuterTypeSubPointers>;
 
 
-lib.cairo:1:16
+lib.cairo:1:1
 #[derive(Drop, starknet::Store, Hash)]
-               ^*************^
+^************************************^
 impls:
 
 impl OuterTypeSubPointersMutDrop of core::traits::Drop::<OuterTypeSubPointersMut>;
@@ -457,8 +457,3 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
  --> lib.cairo:24:35
         inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
                                   ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:9:5
-    #[storage]
-    ^********^

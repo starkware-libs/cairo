@@ -362,9 +362,9 @@ impl MyTypeSubPointersDrop of core::traits::Drop::<MyTypeSubPointers>;
 impl MyTypeSubPointersCopy of core::traits::Copy::<MyTypeSubPointers>;
 
 
-lib.cairo:1:16
+lib.cairo:1:1
 #[derive(Drop, starknet::Store)]
-               ^*************^
+^******************************^
 impls:
 
 impl MyTypeSubPointersMutDrop of core::traits::Drop::<MyTypeSubPointersMut>;
@@ -1101,8 +1101,3 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
  --> lib.cairo:14:14
         map: LegacyMap<u32, u32>,
              ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:11:5
-    #[storage]
-    ^********^
