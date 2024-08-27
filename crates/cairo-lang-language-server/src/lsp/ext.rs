@@ -4,7 +4,6 @@ use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::request::Request;
 use tower_lsp::lsp_types::TextDocumentPositionParams;
 
-// TODO(mkaput): Provide this as a command in VSCode.
 /// Collects information about all Cairo crates that are currently being analyzed.
 pub struct ViewAnalyzedCrates;
 
