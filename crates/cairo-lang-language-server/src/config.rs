@@ -19,7 +19,7 @@ use crate::lsp::client_capabilities::ClientCapabilitiesExt;
 /// Therefore, holding any references or copies of this struct or its values for
 /// longer periods of time should be avoided, unless the copy will be reactively updated on
 /// `workspace/didChangeConfiguration` requests.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Config {
     /// A user-provided path to the `core` crate source code for use in projects where `core` is
     /// unmanaged by the toolchain.
