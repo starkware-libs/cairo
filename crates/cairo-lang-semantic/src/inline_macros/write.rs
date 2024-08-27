@@ -134,7 +134,11 @@ fn generate_code_inner(
 
 /// Gets the macro name according to the `with_newline` flag.
 fn get_macro_name(with_newline: bool) -> &'static str {
-    if with_newline { WritelnMacro::NAME } else { WriteMacro::NAME }
+    if with_newline {
+        WritelnMacro::NAME
+    } else {
+        WriteMacro::NAME
+    }
 }
 
 /// Information about a formatting a string for the write macros.
@@ -454,12 +458,15 @@ enum FormattingTrait {
     Display,
     /// Got `{:?}` and we should use the `Debug` trait.
     Debug,
+    /// Got `{:x}` and we should use the `LowerHex` trait.
+    LowerHex,
 }
 impl fmt::Display for FormattingTrait {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             FormattingTrait::Display => write!(f, "Display"),
             FormattingTrait::Debug => write!(f, "Debug"),
+            FormattingTrait::LowerHex => write!(f, "LowerHex"),
         }
     }
 }
@@ -513,6 +520,8 @@ fn extract_placeholder_argument(
         FormattingTrait::Display
     } else if formatting_spec == "?" {
         FormattingTrait::Debug
+    } else if formatting_spec == "x" {
+        FormattingTrait::LowerHex
     } else {
         return Err("Unsupported formatting trait: only `Display` and `Debug` are supported");
     };

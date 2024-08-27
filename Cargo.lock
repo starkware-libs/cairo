@@ -240,9 +240,9 @@ dependencies = [
 
 [[package]]
 name = "arrayvec"
-version = "0.7.4"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96d30a06541fbafbc7f82ed10c06164cfbd2c401138f6addd8404629c4b16711"
+checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 
 [[package]]
 name = "ascii-canvas"
@@ -494,7 +494,7 @@ name = "cairo-lang-casm"
 version = "2.8.0"
 dependencies = [
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "indoc",
  "itertools 0.12.1",
  "num-bigint",
@@ -553,7 +553,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "indoc",
  "itertools 0.12.1",
  "pretty_assertions",
@@ -569,7 +569,7 @@ dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "indoc",
  "itertools 0.12.1",
  "pretty_assertions",
@@ -595,7 +595,7 @@ name = "cairo-lang-eq-solver"
 version = "2.8.0"
 dependencies = [
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "good_lp",
  "test-log",
 ]
@@ -606,7 +606,7 @@ version = "2.8.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "path-clean",
  "rust-analyzer-salsa",
  "semver",
@@ -694,7 +694,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "id-arena",
  "indoc",
  "itertools 0.12.1",
@@ -741,7 +741,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "indent",
  "indoc",
  "itertools 0.12.1",
@@ -794,7 +794,7 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "cairo-vm",
- "env_logger",
+ "env_logger 0.10.2",
  "indoc",
  "itertools 0.12.1",
  "keccak",
@@ -824,7 +824,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "id-arena",
  "indoc",
  "itertools 0.12.1",
@@ -849,7 +849,7 @@ dependencies = [
  "const-fnv1a-hash",
  "convert_case",
  "derivative",
- "env_logger",
+ "env_logger 0.10.2",
  "indoc",
  "itertools 0.12.1",
  "lalrpop",
@@ -894,7 +894,7 @@ dependencies = [
  "cairo-lang-sierra-type-size",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "indoc",
  "itertools 0.12.1",
  "num-bigint",
@@ -921,7 +921,7 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "indoc",
  "itertools 0.12.1",
  "log",
@@ -947,7 +947,7 @@ dependencies = [
  "cairo-lang-sierra-type-size",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "indoc",
  "itertools 0.12.1",
  "num-bigint",
@@ -987,7 +987,7 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "const_format",
- "env_logger",
+ "env_logger 0.10.2",
  "indent",
  "indoc",
  "itertools 0.12.1",
@@ -1012,7 +1012,7 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "convert_case",
- "env_logger",
+ "env_logger 0.10.2",
  "indoc",
  "itertools 0.12.1",
  "num-bigint",
@@ -1036,7 +1036,7 @@ dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
  "cairo-lang-utils",
- "env_logger",
+ "env_logger 0.10.2",
  "num-bigint",
  "num-traits 0.2.19",
  "pretty_assertions",
@@ -1050,7 +1050,7 @@ dependencies = [
 name = "cairo-lang-syntax-codegen"
 version = "2.8.0"
 dependencies = [
- "env_logger",
+ "env_logger 0.10.2",
  "genco",
  "test-log",
  "xshell",
@@ -1110,7 +1110,7 @@ dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-utils",
  "colored",
- "env_logger",
+ "env_logger 0.10.2",
  "log",
  "pretty_assertions",
  "test-log",
@@ -1370,9 +1370,9 @@ checksum = "06ea2b9bc92be3c2baa9334a323ebca2d6f074ff852cd1d7b11064035cd3868f"
 
 [[package]]
 name = "cpufeatures"
-version = "0.2.12"
+version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53fe5e26ff1b7aef8bca9c6080520cfb8d9333c7568e1829cef191a9723e5504"
+checksum = "51e852e6dc9a5bed1fae92dd2375037bf2b768725bf3be87811edee3249d09ad"
 dependencies = [
  "libc",
 ]
@@ -1586,6 +1586,18 @@ dependencies = [
  "anstyle",
  "env_filter",
  "humantime",
+ "log",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.11.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e13fa619b91fb2381732789fc5de83b45675e882f66623b7d8cb4f643017018d"
+dependencies = [
+ "anstream",
+ "anstyle",
+ "env_filter",
  "log",
 ]
 
@@ -1946,7 +1958,7 @@ dependencies = [
 name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
+checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "heck"
@@ -2207,6 +2219,12 @@ name = "ipnet"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f518f335dce6725a761382244631d86cf0ccb2863413590b31338feb467f9c3"
+
+[[package]]
+name = "is_terminal_polyfill"
+version = "1.70.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 
 [[package]]
 name = "is_terminal_polyfill"
@@ -3518,6 +3536,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "shlex"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
+
+[[package]]
 name = "sierra-compile"
 version = "2.8.0"
 dependencies = [
@@ -3869,7 +3893,7 @@ version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3dffced63c2b5c7be278154d76b479f9f9920ed34e7574201407f0b14e2bbb93"
 dependencies = [
- "env_logger",
+ "env_logger 0.11.5",
  "test-log-macros",
  "tracing-subscriber",
 ]
@@ -4150,9 +4174,9 @@ dependencies = [
 
 [[package]]
 name = "tower-layer"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c20c8dbed6283a09604c3e69b4b7eeb54e298b8a600d4d5ecb5ad39de609f1d0"
+checksum = "121c2a6cda46980bb0fcd1647ffaf6cd3fc79a013de288782836f6df9c48780e"
 
 [[package]]
 name = "tower-lsp"
@@ -4190,9 +4214,9 @@ dependencies = [
 
 [[package]]
 name = "tower-service"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6bc1c9ce2b5135ac7f93c72918fc37feb872bdc6a5533a8b85eb4b86bfdae52"
+checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 
 [[package]]
 name = "tracing"
@@ -4332,9 +4356,9 @@ checksum = "0336d538f7abc86d282a4189614dfaa90810dfc2c6f6427eaf88e16311dd225d"
 
 [[package]]
 name = "unicode-xid"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f962df74c8c05a667b5ee8bcf162993134c104e96440b663c8daa176dc772d8c"
+checksum = "229730647fbc343e3a80e463c1db7f78f3855d3f3739bee0dda773c9a037c90a"
 
 [[package]]
 name = "untrusted"
@@ -4410,6 +4434,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4be2531df63900aeb2bca0daaaddec08491ee64ceecbee5076636a3b026795a8"
 dependencies = [
  "cfg-if",
+ "once_cell",
  "wasm-bindgen-macro",
 ]
 
