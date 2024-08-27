@@ -301,7 +301,6 @@ impl<'a> Display for NodeInnerCommentFormatter<'a> {
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.db.get_children(self.node.clone()).iter() {
                     let kind = child.kind(self.db);
-                    println!("syntax node kind inner: {}", kind);
 
                     // Checks all the items that the inner comment can be bubbled to (implementation function is also a FunctionWithBody).
                     if kind != SyntaxKind::FunctionWithBody

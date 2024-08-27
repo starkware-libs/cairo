@@ -223,12 +223,8 @@ fn extract_module_level_commets_from_file(db: &dyn DocGroup, file_id: FileId) ->
         file_content
             .lines()
             .take_while_ref(|line| {
-                !line
-                    .trim_start()
-                    .chars()
-                    .next()
-                    .map_or(false, |c| c.is_alphabetic() && !c.is_whitespace())
-                    && line.trim().is_empty()
+                !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
+                    || line.trim().is_empty()
             })
             .filter_map(|line| {
                 if line.is_empty() {
