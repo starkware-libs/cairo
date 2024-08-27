@@ -571,21 +571,23 @@ impl Backend {
     async fn detect_crate_for(&self, db: &mut AnalysisDatabase, file_path: PathBuf) {
         match ProjectManifestPath::discover(&file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                let scarb = self.scarb_toolchain.clone();
-                let Ok(metadata) = spawn_blocking(move || {
-                    scarb
-                        .metadata(&manifest_path)
-                        .with_context(|| {
-                            format!(
-                                "failed to refresh scarb workspace: {}",
-                                manifest_path.display()
-                            )
-                        })
-                        .inspect_err(|e| {
-                            // TODO(mkaput): Send a notification to the language client.
-                            warn!("{e:?}");
-                        })
-                        .ok()
+                let Ok(metadata) = spawn_blocking({
+                    let scarb = self.scarb_toolchain.clone();
+                    move || {
+                        scarb
+                            .metadata(&manifest_path)
+                            .with_context(|| {
+                                format!(
+                                    "failed to refresh scarb workspace: {}",
+                                    manifest_path.display()
+                                )
+                            })
+                            .inspect_err(|e| {
+                                // TODO(mkaput): Send a notification to the language client.
+                                warn!("{e:?}");
+                            })
+                            .ok()
+                    }
                 })
                 .await
                 else {
@@ -597,7 +599,11 @@ impl Backend {
                     update_crate_roots(&metadata, db);
                 } else {
                     // Try to set up a corelib at least.
-                    try_to_init_unmanaged_core(&*self.config.read().await, db);
+                    try_to_init_unmanaged_core(
+                        db,
+                        &*self.config.read().await,
+                        &self.scarb_toolchain,
+                    );
                 }
 
                 if let Err(result) = validate_corelib(db) {
@@ -612,7 +618,7 @@ impl Backend {
                 // DB will also be absolute.
                 assert!(config_path.is_absolute());
 
-                try_to_init_unmanaged_core(&*self.config.read().await, db);
+                try_to_init_unmanaged_core(db, &*self.config.read().await, &self.scarb_toolchain);
 
                 if let Ok(config) = ProjectConfig::from_file(&config_path) {
                     update_crate_roots_from_project_config(db, &config);
@@ -620,7 +626,7 @@ impl Backend {
             }
 
             None => {
-                try_to_init_unmanaged_core(&*self.config.read().await, db);
+                try_to_init_unmanaged_core(db, &*self.config.read().await, &self.scarb_toolchain);
 
                 if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
                     let file_path_s = file_path.to_string_lossy();
