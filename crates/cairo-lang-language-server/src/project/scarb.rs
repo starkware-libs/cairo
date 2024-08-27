@@ -46,8 +46,10 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
             // We instead find a package that specifies the target of the compilation unit
             // and later use it to extract edition and experimental features.
             if package.is_none() && compilation_unit.package == component.package {
-                package =
-                    metadata.packages.iter().find(|p| p.targets.contains(&compilation_unit.target));
+                package = metadata
+                    .packages
+                    .iter()
+                    .find(|p| p.targets.iter().any(|t| t.name == compilation_unit.target.name));
             }
 
             if package.is_none() {
