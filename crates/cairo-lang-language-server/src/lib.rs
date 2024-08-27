@@ -51,8 +51,9 @@ use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_projec
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, MemberId, ModuleId, SubmoduleLongId,
+    TraitItemId,
 };
-use cairo_lang_diagnostics::Diagnostics;
+use cairo_lang_diagnostics::{Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
@@ -1045,7 +1046,29 @@ fn find_definition(
             return Some((ResolvedItem::Concrete(item), stable_ptr));
         }
     }
-    None
+
+    // Skip variable definition, otherwise we would get parent ModuleItem for variable.
+    if db.first_ancestor_of_kind(identifier.as_syntax_node(), SyntaxKind::StatementLet).is_none() {
+        let item = match lookup_items.first().copied()? {
+            LookupItemId::ModuleItem(item) => {
+                ResolvedGenericItem::from_module_item(db, item).to_option()?
+            }
+            LookupItemId::TraitItem(trait_item) => {
+                if let TraitItemId::Function(trait_fn) = trait_item {
+                    ResolvedGenericItem::TraitFunction(trait_fn)
+                } else {
+                    ResolvedGenericItem::Trait(trait_item.trait_id(db))
+                }
+            }
+            LookupItemId::ImplItem(impl_item) => {
+                ResolvedGenericItem::Impl(impl_item.impl_def_id(db))
+            }
+        };
+
+        Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?))
+    } else {
+        None
+    }
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
