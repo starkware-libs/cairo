@@ -167,18 +167,18 @@ impl ASubPointersImpl of starknet::storage::SubPointers<A> {
     fn sub_pointers(self: starknet::storage::StoragePointer<A>) -> ASubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let x_value = starknet::storage::StoragePointer {
+        let __x_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<felt252>::size();
-        let data_value = starknet::storage::StoragePointer {
+        let __data_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 ASubPointers {
-           x: x_value,
-           data: data_value,
+           x: __x_value__,
+           data: __data_value__,
         }
     }
 }
@@ -192,18 +192,18 @@ impl ASubPointersMutImpl of starknet::storage::SubPointersMut<A> {
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<A>>) -> ASubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let x_value = starknet::storage::StoragePointer {
+        let __x_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<felt252>::size();
-        let data_value = starknet::storage::StoragePointer {
+        let __data_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 ASubPointersMut {
-           x: x_value,
-           data: data_value,
+           x: __x_value__,
+           data: __data_value__,
         }
     }
 }
