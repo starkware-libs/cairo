@@ -24,7 +24,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     // Ctors.
-    pub fn from_text(db: &'a dyn SyntaxGroup, _source: FileId, text: &'a str) -> Lexer<'a> {
+    pub fn from_text(db: &'a dyn SyntaxGroup, text: &'a str) -> Lexer<'a> {
         Lexer {
             db,
             text,
