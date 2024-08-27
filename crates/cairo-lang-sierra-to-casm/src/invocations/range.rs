@@ -58,7 +58,7 @@ fn build_try_new(
         casm_builder,
         [
             ("Fallthrough", &[&[range_check], &[start, end]], None),
-            ("Failure", &[&[range_check]], Some(failure_handle)),
+            ("Failure", &[&[range_check], &[end, end]], Some(failure_handle)),
         ],
         CostValidationInfo {
             builtin_infos: vec![BuiltinInfo {
