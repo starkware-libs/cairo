@@ -581,6 +581,7 @@ name = "cairo-lang-doc"
 version = "2.7.1"
 dependencies = [
  "cairo-lang-defs",
+ "cairo-lang-filesystem",
  "cairo-lang-formatter",
  "cairo-lang-parser",
  "cairo-lang-syntax",
@@ -588,6 +589,7 @@ dependencies = [
  "indoc",
  "itertools 0.12.1",
  "rust-analyzer-salsa",
+ "serde",
 ]
 
 [[package]]

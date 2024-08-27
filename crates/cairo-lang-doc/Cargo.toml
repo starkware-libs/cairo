@@ -12,6 +12,8 @@ cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.7.1" }
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.7.1" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.7.1" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.7.1" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.7.1" }
+serde = { workspace = true, default-features = true }
 salsa.workspace = true
 itertools.workspace = true
 

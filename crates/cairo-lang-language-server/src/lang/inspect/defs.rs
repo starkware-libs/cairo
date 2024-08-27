@@ -3,7 +3,7 @@ use std::iter;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MemberId, ModuleItemId, TopLevelLanguageElementId, TraitItemId,
 };
-use cairo_lang_doc::db::DocGroup;
+use cairo_lang_doc::db::{DocGroup, Documentation};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -145,7 +145,7 @@ impl ItemDef {
     }
 
     /// Gets item documentation in a final form usable for display.
-    pub fn documentation(&self, db: &AnalysisDatabase) -> Option<String> {
+    pub fn documentation(&self, db: &AnalysisDatabase) -> Documentation {
         db.get_item_documentation(self.lookup_item_id.into())
     }
 

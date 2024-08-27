@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_doc::db::DocGroup;
+use cairo_lang_doc::db::{DocGroup, Documentation};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -26,11 +26,8 @@ pub fn definition(
             let mut md = String::new();
             md += &fenced_code_block(&item.definition_path(db));
             md += &fenced_code_block(&item.signature(db));
-            if let Some(doc) = item.documentation(db) {
-                md += RULE;
-                md += &doc;
-            }
-            md
+            let item_documentation = item.documentation(db);
+            parse_and_concat_documentation(md, item_documentation)
         }
 
         SymbolDef::Variable(var) => fenced_code_block(&var.signature(db)),
@@ -49,12 +46,8 @@ pub fn definition(
             // path is too.
             md += &fenced_code_block(&structure.definition_path(db));
             md += &fenced_code_block(&structure.signature(db));
-
-            if let Some(doc) = db.get_item_documentation((*member).into()) {
-                md += RULE;
-                md += &doc;
-            }
-            md
+            let item_documentation = db.get_item_documentation((*member).into());
+            parse_and_concat_documentation(md, item_documentation)
         }
     };
 
@@ -66,4 +59,35 @@ pub fn definition(
             .position_in_file(db.upcast(), file_id)
             .map(|p| p.to_lsp()),
     })
+}
+
+fn parse_and_concat_documentation(mut md: String, item_documentation: Documentation) -> String {
+    match (
+        item_documentation.prefix_comments,
+        item_documentation.inner_comments,
+        item_documentation.module_level_comments,
+    ) {
+        (None, None, None) => (),
+        (prefix_comments, inner_comments, module_level_comments) => {
+            md += RULE;
+            let mut comments: Vec<String> = Vec::new();
+            if let Some(prefix_comments) = prefix_comments {
+                // md += &format!(" {}", &prefix_comments);
+                comments.push(prefix_comments.trim_end().to_string());
+                // md = md.trim_end().to_string();
+            }
+            if let Some(inner_comments) = inner_comments {
+                // md += &format!(" {}", &inner_comments);
+                comments.push(inner_comments.trim_end().to_string());
+                // md = md.trim_end().to_string();
+            }
+            if let Some(module_level_comments) = module_level_comments {
+                // md += &format!(" {}", &module_level_comments);
+                comments.push(module_level_comments.trim_end().to_string());
+                // md = md.trim_end().to_string();
+            }
+            md += &comments.join(" ");
+        }
+    }
+    md
 }
