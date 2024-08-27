@@ -453,9 +453,9 @@ impl ASubPointersDrop of core::traits::Drop::<ASubPointers>;
 impl ASubPointersCopy of core::traits::Copy::<ASubPointers>;
 
 
-lib.cairo:1:27
+lib.cairo:1:1
 #[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
-                          ^*************^
+^*****************************************************************^
 impls:
 
 impl ASubPointersMutDrop of core::traits::Drop::<ASubPointersMut>;

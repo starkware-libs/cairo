@@ -712,9 +712,9 @@ impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPoin
 impl WrappedFelt252SubPointersCopy of core::traits::Copy::<WrappedFelt252SubPointers>;
 
 
-lib.cairo:13:26
+lib.cairo:13:5
     #[derive(Drop, Hash, starknet::Store)]
-                         ^*************^
+    ^************************************^
 impls:
 
 impl WrappedFelt252SubPointersMutDrop of core::traits::Drop::<WrappedFelt252SubPointersMut>;
@@ -735,8 +735,3 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
  --> lib.cairo:11:28
         zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
                            ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:6:5
-    #[storage]
-    ^********^
