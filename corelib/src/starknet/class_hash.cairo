@@ -63,3 +63,4 @@ impl HashClassHash<S, +HashStateTrait<S>, +Drop<S>> =
     core::hash::into_felt252_based::HashImpl<ClassHash, S>;
 
 impl DebugClassHash = core::fmt::into_felt252_based::DebugImpl<ClassHash>;
+impl LowerHexClassHash = core::fmt::into_felt252_based::LowerHexImpl<ClassHash>;

@@ -77,3 +77,4 @@ impl HashContractAddress<S, +HashStateTrait<S>, +Drop<S>> =
     core::hash::into_felt252_based::HashImpl<ContractAddress, S>;
 
 impl DebugContractAddress = core::fmt::into_felt252_based::DebugImpl<ContractAddress>;
+impl LowerHexContractAddress = core::fmt::into_felt252_based::LowerHexImpl<ContractAddress>;
