@@ -452,9 +452,25 @@ impl Backend {
         drop(state);
 
         let mut diags = Vec::new();
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
+        let trace_macro_diagnostics = self.config.read().await.trace_macro_diagnostics;
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.parser,
+            trace_macro_diagnostics,
+        );
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.semantic,
+            trace_macro_diagnostics,
+        );
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.lowering,
+            trace_macro_diagnostics,
+        );
 
         // Drop database snapshot before we wait for the client responding to our notification.
         drop(db);
@@ -654,11 +670,12 @@ impl Backend {
 
     /// Reload the [`Config`] and all its dependencies.
     async fn reload_config(&self) {
-        let mut config = self.config.write().await;
         {
+            let mut config = self.config.write().await;
             let client_capabilities = self.client_capabilities.read().await;
             config.reload(&self.client, &client_capabilities).await;
         }
+        self.refresh_diagnostics().await.ok();
     }
 }
 

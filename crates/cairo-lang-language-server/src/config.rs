@@ -28,6 +28,12 @@ pub struct Config {
     ///
     /// The property is set by the user under the `cairo1.corelibPath` key in client configuration.
     pub unmanaged_core_path: Option<PathBuf>,
+    /// Whether to include the trace of the generation location of diagnostic location mapped by
+    /// macros.
+    ///
+    /// The property is set by the user under the `cairo1.traceMacroDiagnostics` key in client
+    /// configuration.
+    pub trace_macro_diagnostics: bool,
 }
 
 impl Config {
@@ -42,10 +48,13 @@ impl Config {
             return;
         }
 
-        let items = vec![ConfigurationItem {
-            scope_uri: None,
-            section: Some("cairo1.corelibPath".to_owned()),
-        }];
+        let items = vec![
+            ConfigurationItem { scope_uri: None, section: Some("cairo1.corelibPath".to_owned()) },
+            ConfigurationItem {
+                scope_uri: None,
+                section: Some("cairo1.traceMacroDiagnostics".to_owned()),
+            },
+        ];
         let expected_len = items.len();
         if let Ok(response) = client
             .configuration(items)
@@ -71,6 +80,8 @@ impl Config {
                 .and_then(Value::as_str)
                 .filter(|s| !s.is_empty())
                 .map(Into::into);
+            self.trace_macro_diagnostics =
+                response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default();
 
             debug!("reloaded configuration: {self:#?}");
         }

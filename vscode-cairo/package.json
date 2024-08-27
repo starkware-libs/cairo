@@ -117,6 +117,11 @@
             "description": "Absolute path to the Cairo core library, used in non-Scarb projects.",
             "scope": "window"
           },
+          "cairo1.traceMacroDiagnostics": {
+            "type": "boolean",
+            "description": "Attach additional information to diagnostics coming from macros, providing diagnostic source in macro generated code.",
+            "scope": "window"
+          },
           "cairo1.languageServerExtraEnv": {
             "type": [
               "null",
