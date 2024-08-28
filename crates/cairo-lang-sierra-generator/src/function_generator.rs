@@ -11,9 +11,8 @@ use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Intern;
-use lowering::BlockId;
 
-use crate::block_generator::generate_block_code;
+use crate::block_generator::generate_root_statements;
 use crate::db::SierraGenGroup;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::{find_variable_lifetime, SierraGenVar};
@@ -114,9 +113,7 @@ fn get_function_code(
     }
 
     // Generate the function's code.
-    generate_block_code(&mut context, BlockId::root())?;
-    let db = context.get_db();
-    let statements = context.statements();
+    let statements = generate_root_statements(context)?;
 
     let statements = add_store_statements(
         db,

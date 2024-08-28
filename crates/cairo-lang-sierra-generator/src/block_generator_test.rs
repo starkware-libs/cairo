@@ -6,7 +6,6 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::BlockId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -15,7 +14,7 @@ use cairo_lang_utils::UpcastMut;
 use lowering::fmt::LoweredFormatter;
 use lowering::ids::ConcreteFunctionWithBodyId;
 
-use super::generate_block_code;
+use super::generate_root_statements;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::find_variable_lifetime;
 use crate::replace_ids::replace_sierra_ids;
@@ -77,7 +76,7 @@ fn block_generator_test(
     // Generate (pre-)Sierra statements.
     let lifetime = find_variable_lifetime(&lowered, &OrderedHashSet::default())
         .expect("Failed to retrieve lifetime information.");
-    let mut expr_generator_context = ExprGeneratorContext::new(
+    let expr_generator_context = ExprGeneratorContext::new(
         db,
         &lowered,
         function_id,
@@ -87,8 +86,7 @@ fn block_generator_test(
 
     let mut expected_sierra_code = String::default();
 
-    generate_block_code(&mut expr_generator_context, BlockId::root()).unwrap();
-    for statement in expr_generator_context.statements() {
+    for statement in generate_root_statements(expr_generator_context).unwrap() {
         expected_sierra_code.push_str(&replace_sierra_ids(db, &statement).statement.to_string(db));
         expected_sierra_code.push('\n');
     }
