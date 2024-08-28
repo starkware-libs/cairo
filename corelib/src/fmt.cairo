@@ -289,15 +289,44 @@ impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
     }
 }
 
-/// Impls for `Debug` for types that can be converted into `felt252` using the `Into` trait.
+/// Impls for `Debug` and `LowerHex` for types that can be converted into `felt252` using the `Into`
+/// trait.
 /// Usage example:
 /// ```ignore
 /// impl MyTypeDebug = crate::fmt::into_felt252_based::DebugImpl<MyType>;`
+/// impl MyTypeLowerHex = crate::fmt::into_felt252_based::LowerHexImpl<MyType>;
 /// ```
 pub mod into_felt252_based {
     pub impl DebugImpl<T, +Into<T, felt252>, +Copy<T>> of crate::fmt::Debug<T> {
         fn fmt(self: @T, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
             crate::fmt::DebugInteger::<felt252>::fmt(@(*self).into(), ref f)
         }
+    }
+    pub impl LowerHexImpl<T, +Into<T, felt252>, +Copy<T>> of core::fmt::LowerHex<T> {
+        fn fmt(self: @T, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+            core::fmt::LowerHexInteger::<felt252>::fmt(@(*self).into(), ref f)
+        }
+    }
+}
+
+/// A trait for hex formatting in lower case, using the empty format ("{:x}").
+pub trait LowerHex<T> {
+    fn fmt(self: @T, ref f: Formatter) -> Result<(), Error>;
+}
+
+impl LowerHexInteger<
+    T, +to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
+> of LowerHex<T> {
+    fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
+        let base: T = 16_u8.into();
+        self.append_formatted_to_byte_array(ref f.buffer, base.try_into().unwrap());
+        Result::Ok(())
+    }
+}
+
+impl LowerHexNonZero<T, +LowerHex<T>, +Copy<T>, +Drop<T>> of LowerHex<NonZero<T>> {
+    fn fmt(self: @NonZero<T>, ref f: Formatter) -> Result<(), Error> {
+        let value: T = (*self).into();
+        write!(f, "{value:x}")
     }
 }
