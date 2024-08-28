@@ -33,8 +33,9 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let arr = array![A { x: Option::Some(1) }, A { x: Option::None }, A { x: Option::Some(2) }]
-        .span();
+    let arr = array![
+        A { x: Option::Some(1) }, A { x: Option::None }, A { x: Option::Some(2) }
+    ].span();
     for A(x) in arr {
         x;
     }
@@ -50,11 +51,11 @@ struct A {
 
 //! > expected_diagnostics
 error: Not a variant. Use the full name Enum::Variant.
- --> lib.cairo:7:9
+ --> lib.cairo:8:9
     for A(x) in arr {
         ^
 
 error: Identifier not found.
- --> lib.cairo:8:9
+ --> lib.cairo:9:9
         x;
         ^

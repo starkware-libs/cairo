@@ -33,74 +33,74 @@ const e: felt252 = consteval_int![4 + 5];
       ^
 
 warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
- --> lib.cairo:1:20
+ --> lib.cairo:1:1
 const a: felt252 = consteval_int!(func_call(24));
-                   ^***************************^
+^***************************^
 
 error: Plugin diagnostic: Unsupported expression in consteval_int macro
- --> lib.cairo:1:35
+ --> lib.cairo:1:16
 const a: felt252 = consteval_int!(func_call(24));
-                                  ^***********^
+               ^***********^
 
 warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
- --> lib.cairo:3:20
-const b: felt252 = consteval_int!('some string');
-                   ^***************************^
+ --> lib.cairo:1:1
+const a: felt252 = consteval_int!(func_call(24));
+^***************************^
 
 error: Plugin diagnostic: Unsupported expression in consteval_int macro
- --> lib.cairo:3:35
-const b: felt252 = consteval_int!('some string');
-                                  ^***********^
+ --> lib.cairo:1:16
+const a: felt252 = consteval_int!(func_call(24));
+               ^***********^
 
 warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
- --> lib.cairo:5:20
-const c: felt252 = consteval_int!(*24);
-                   ^*****************^
+ --> lib.cairo:1:1
+const a: felt252 = consteval_int!(func_call(24));
+^*****************^
 
 error: Plugin diagnostic: Unsupported unary operator in consteval_int macro
- --> lib.cairo:5:35
-const c: felt252 = consteval_int!(*24);
-                                  ^*^
+ --> lib.cairo:1:16
+const a: felt252 = consteval_int!(func_call(24));
+               ^*^
 
 warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
- --> lib.cairo:7:20
-const d: felt252 = consteval_int!(~24);
-                   ^*****************^
+ --> lib.cairo:1:1
+const a: felt252 = consteval_int!(func_call(24));
+^*****************^
 
 error: Plugin diagnostic: Unsupported unary operator in consteval_int macro
- --> lib.cairo:7:35
-const d: felt252 = consteval_int!(~24);
-                                  ^*^
+ --> lib.cairo:1:16
+const a: felt252 = consteval_int!(func_call(24));
+               ^*^
 
 warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
- --> lib.cairo:9:20
-const e: felt252 = consteval_int!(234 < 5);
-                   ^*********************^
+ --> lib.cairo:1:1
+const a: felt252 = consteval_int!(func_call(24));
+^*********************^
 
 error: Plugin diagnostic: Unsupported binary operator in consteval_int macro
- --> lib.cairo:9:35
-const e: felt252 = consteval_int!(234 < 5);
-                                  ^*****^
+ --> lib.cairo:1:16
+const a: felt252 = consteval_int!(func_call(24));
+               ^*****^
 
 error: Plugin diagnostic: Macro `consteval_int` does not support this bracket type.
- --> lib.cairo:11:34
-const e: felt252 = consteval_int![4 + 5];
-                                 ^
+ --> lib.cairo:1:15
+const a: felt252 = consteval_int!(func_call(24));
+              ^
 
 error: Plugin diagnostic: Macro `consteval_int` does not support this bracket type.
- --> lib.cairo:13:34
-const f: felt252 = consteval_int!{4 + 5};
-                                 ^
+ --> lib.cairo:1:15
+const a: felt252 = consteval_int!(func_call(24));
+              ^
 
 warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
- --> lib.cairo:15:26
-const out_of_range: u8 = consteval_int!(120 + 160);
-                         ^***********************^
+ --> lib.cairo:1:1
+const a: felt252 = consteval_int!(func_call(24));
+^***********************^
 
 error: The value does not fit within the range of type core::integer::u8.
- --> lib.cairo:15:26
-const out_of_range: u8 = consteval_int!(120 + 160);
-                         ^***********************^
+ --> lib.cairo:1:1
+const a: felt252 = consteval_int!(func_call(24));
+^***********************^
 
 //! > ==========================================================================
 
@@ -122,14 +122,14 @@ foo
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `array` does not support this bracket type.
- --> lib.cairo:2:20
-    let _x = array!(0);
-                   ^
+ --> lib.cairo:1:7
+fn foo() {
+      ^
 
 error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
- --> lib.cairo:3:32
-    let _x = array![0_felt252, 1_u8];
-                               ^**^
+ --> lib.cairo:2:8
+    let _x = array!(0);
+       ^**^
 
 //! > ==========================================================================
 
@@ -203,119 +203,119 @@ foo
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `write` does not support this bracket type.
- --> lib.cairo:6:11
-    write![f, "{}", ba];
-          ^
+ --> lib.cairo:2:22
+    let mut f: core::fmt::Formatter = Default::default();
+                     ^
 
 error: Plugin diagnostic: Macro expected formatter argument.
- --> lib.cairo:9:11
-    write!();
-          ^
+ --> lib.cairo:2:19
+    let mut f: core::fmt::Formatter = Default::default();
+                  ^
 
 error: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:12:11
-    write!(f);
-          ^
+ --> lib.cairo:2:19
+    let mut f: core::fmt::Formatter = Default::default();
+                  ^
 
 error: Plugin diagnostic: Formatter argument must not be a string literal.
- --> lib.cairo:15:12
-    write!("{}", ba);
-           ^**^
+ --> lib.cairo:2:23
+    let mut f: core::fmt::Formatter = Default::default();
+                      ^**^
 
 error: Plugin diagnostic: Format string argument must be a string literal.
- --> lib.cairo:18:15
-    write!(f, ba);
-              ^^
+ --> lib.cairo:2:30
+    let mut f: core::fmt::Formatter = Default::default();
+                             ^^
 
 error: Identifier not found.
- --> lib.cairo:21:17
-    write!(f, "{non_existing}").unwrap();
-                ^**********^
+ --> lib.cairo:2:44
+    let mut f: core::fmt::Formatter = Default::default();
+                                           ^**********^
 
 error: Identifier not found.
- --> lib.cairo:24:21
-    write!(f, "{}", non_existing).unwrap();
-                    ^**********^
+ --> lib.cairo:2:49
+    let mut f: core::fmt::Formatter = Default::default();
+                                                ^*******^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:27:25
-    write!(f, "{}", ba, 1);
-                        ^
+ --> lib.cairo:2:42
+    let mut f: core::fmt::Formatter = Default::default();
+                                         ^
 
 error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
- --> lib.cairo:30:15
-    write!(f, "{}{}", ba);
-              ^****^
+ --> lib.cairo:2:31
+    let mut f: core::fmt::Formatter = Default::default();
+                              ^****^
 
 error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
- --> lib.cairo:33:15
-    write!(f, "{2}{1}{0}", ba, 1);
-              ^*********^
+ --> lib.cairo:2:46
+    let mut f: core::fmt::Formatter = Default::default();
+                                             ^*********^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:36:29
-    write!(f, "{2}{0}", ba, 2, 1, 4);
-                            ^
+ --> lib.cairo:2:44
+    let mut f: core::fmt::Formatter = Default::default();
+                                           ^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:36:35
-    write!(f, "{2}{0}", ba, 2, 1, 4);
-                                  ^
+ --> lib.cairo:2:50
+    let mut f: core::fmt::Formatter = Default::default();
+                                                 ^
 
 error: Plugin diagnostic: Invalid format string: Invalid parameter name.
- --> lib.cairo:41:15
-    write!(f, "{3a}");
-              ^****^
+ --> lib.cairo:3:14
+    let ba: ByteArray = "hello";
+             ^****^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
- --> lib.cairo:42:15
-    write!(f, "{a-b}");
-              ^*****^
+ --> lib.cairo:2:4
+    let mut f: core::fmt::Formatter = Default::default();
+   ^*****^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
- --> lib.cairo:43:15
-    write!(f, "{a b}");
-              ^*****^
+ --> lib.cairo:2:4
+    let mut f: core::fmt::Formatter = Default::default();
+   ^*****^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
- --> lib.cairo:44:15
-    write!(f, "{?}");
-              ^***^
+ --> lib.cairo:2:4
+    let mut f: core::fmt::Formatter = Default::default();
+   ^***^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
- --> lib.cairo:45:15
-    write!(f, "{x|}");
-              ^****^
+ --> lib.cairo:2:4
+    let mut f: core::fmt::Formatter = Default::default();
+   ^****^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
- --> lib.cairo:48:15
-    write!(f, "{::x}");
-              ^*****^
+ --> lib.cairo:2:43
+    let mut f: core::fmt::Formatter = Default::default();
+                                          ^*****^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
- --> lib.cairo:49:15
-    write!(f, "{:x:y}");
-              ^******^
+ --> lib.cairo:2:4
+    let mut f: core::fmt::Formatter = Default::default();
+   ^******^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can only contain graphic characters.
- --> lib.cairo:50:15
-    write!(f, "{:x ?}");
-              ^******^
+ --> lib.cairo:2:4
+    let mut f: core::fmt::Formatter = Default::default();
+   ^******^
 
 error: Plugin diagnostic: Invalid format string: Unsupported formatting trait: only `Display`, `Debug` and `LowerHex` are supported.
- --> lib.cairo:51:15
-    write!(f, "{:??}");
-              ^*****^
+ --> lib.cairo:2:4
+    let mut f: core::fmt::Formatter = Default::default();
+   ^*****^
 
 error: Plugin diagnostic: Invalid format string: Unterminated placeholder: no matching '}' for '{'.
- --> lib.cairo:54:15
-    write!(f, "{");
-              ^*^
+ --> lib.cairo:2:32
+    let mut f: core::fmt::Formatter = Default::default();
+                               ^*^
 
 error: Plugin diagnostic: Invalid format string: Unterminated placeholder: no matching '}' for '{'.
- --> lib.cairo:55:15
-    write!(f, "{x");
-              ^**^
+ --> lib.cairo:2:4
+    let mut f: core::fmt::Formatter = Default::default();
+   ^**^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:9
@@ -394,119 +394,119 @@ foo
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
- --> lib.cairo:6:13
-    writeln![f, "{}", ba];
-            ^
+ --> lib.cairo:2:24
+    let mut f: core::fmt::Formatter = Default::default();
+                       ^
 
 error: Plugin diagnostic: Macro expected formatter argument.
- --> lib.cairo:9:13
-    writeln!();
-            ^
+ --> lib.cairo:2:21
+    let mut f: core::fmt::Formatter = Default::default();
+                    ^
 
 error: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:12:13
-    writeln!(f);
-            ^
+ --> lib.cairo:2:21
+    let mut f: core::fmt::Formatter = Default::default();
+                    ^
 
 error: Plugin diagnostic: Formatter argument must not be a string literal.
- --> lib.cairo:15:14
-    writeln!("{}", ba);
-             ^**^
+ --> lib.cairo:2:25
+    let mut f: core::fmt::Formatter = Default::default();
+                        ^**^
 
 error: Plugin diagnostic: Format string argument must be a string literal.
- --> lib.cairo:18:17
-    writeln!(f, ba);
-                ^^
+ --> lib.cairo:2:32
+    let mut f: core::fmt::Formatter = Default::default();
+                               ^^
 
 error: Identifier not found.
- --> lib.cairo:21:19
-    writeln!(f, "{non_existing}").unwrap();
-                  ^**********^
+ --> lib.cairo:2:46
+    let mut f: core::fmt::Formatter = Default::default();
+                                             ^**********^
 
 error: Identifier not found.
- --> lib.cairo:24:23
-    writeln!(f, "{}", non_existing).unwrap();
-                      ^**********^
+ --> lib.cairo:2:51
+    let mut f: core::fmt::Formatter = Default::default();
+                                                  ^*****^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:27:27
-    writeln!(f, "{}", ba, 1);
-                          ^
+ --> lib.cairo:2:44
+    let mut f: core::fmt::Formatter = Default::default();
+                                           ^
 
 error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
- --> lib.cairo:30:17
-    writeln!(f, "{}{}", ba);
-                ^****^
+ --> lib.cairo:2:33
+    let mut f: core::fmt::Formatter = Default::default();
+                                ^****^
 
 error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
- --> lib.cairo:33:17
-    writeln!(f, "{2}{1}{0}", ba, 1);
-                ^*********^
+ --> lib.cairo:2:48
+    let mut f: core::fmt::Formatter = Default::default();
+                                               ^********^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:36:31
-    writeln!(f, "{2}{0}", ba, 2, 1, 4);
-                              ^
+ --> lib.cairo:2:46
+    let mut f: core::fmt::Formatter = Default::default();
+                                             ^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:36:37
-    writeln!(f, "{2}{0}", ba, 2, 1, 4);
-                                    ^
+ --> lib.cairo:2:52
+    let mut f: core::fmt::Formatter = Default::default();
+                                                   ^
 
 error: Plugin diagnostic: Invalid format string: Invalid parameter name.
- --> lib.cairo:41:17
-    writeln!(f, "{3a}");
-                ^****^
+ --> lib.cairo:3:16
+    let ba: ByteArray = "hello";
+               ^****^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
- --> lib.cairo:42:17
-    writeln!(f, "{a-b}");
-                ^*****^
+ --> lib.cairo:2:6
+    let mut f: core::fmt::Formatter = Default::default();
+     ^*****^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
- --> lib.cairo:43:17
-    writeln!(f, "{a b}");
-                ^*****^
+ --> lib.cairo:2:6
+    let mut f: core::fmt::Formatter = Default::default();
+     ^*****^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
- --> lib.cairo:44:17
-    writeln!(f, "{?}");
-                ^***^
+ --> lib.cairo:2:6
+    let mut f: core::fmt::Formatter = Default::default();
+     ^***^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: parameter name can only contain alphanumeric characters and '_'. You may be missing a ':'.
- --> lib.cairo:45:17
-    writeln!(f, "{x|}");
-                ^****^
+ --> lib.cairo:2:6
+    let mut f: core::fmt::Formatter = Default::default();
+     ^****^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
- --> lib.cairo:48:17
-    writeln!(f, "{::x}");
-                ^*****^
+ --> lib.cairo:2:45
+    let mut f: core::fmt::Formatter = Default::default();
+                                            ^*****^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
- --> lib.cairo:49:17
-    writeln!(f, "{:x:y}");
-                ^******^
+ --> lib.cairo:2:6
+    let mut f: core::fmt::Formatter = Default::default();
+     ^******^
 
 error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can only contain graphic characters.
- --> lib.cairo:50:17
-    writeln!(f, "{:x ?}");
-                ^******^
+ --> lib.cairo:2:6
+    let mut f: core::fmt::Formatter = Default::default();
+     ^******^
 
 error: Plugin diagnostic: Invalid format string: Unsupported formatting trait: only `Display`, `Debug` and `LowerHex` are supported.
- --> lib.cairo:51:17
-    writeln!(f, "{:??}");
-                ^*****^
+ --> lib.cairo:2:6
+    let mut f: core::fmt::Formatter = Default::default();
+     ^*****^
 
 error: Plugin diagnostic: Invalid format string: Unterminated placeholder: no matching '}' for '{'.
- --> lib.cairo:54:17
-    writeln!(f, "{");
-                ^*^
+ --> lib.cairo:2:34
+    let mut f: core::fmt::Formatter = Default::default();
+                                 ^*^
 
 error: Plugin diagnostic: Invalid format string: Unterminated placeholder: no matching '}' for '{'.
- --> lib.cairo:55:17
-    writeln!(f, "{x");
-                ^**^
+ --> lib.cairo:2:6
+    let mut f: core::fmt::Formatter = Default::default();
+     ^**^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:9
@@ -567,56 +567,51 @@ error: Missing tokens. Expected an argument list wrapped in either parentheses, 
            ^
 
 error: Plugin diagnostic: Macro `write` does not support this bracket type.
- --> lib.cairo:5:12
-    format!["{}", ba];
-           ^
+ --> lib.cairo:4:38
+    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+                                     ^***************^
 
 error: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:12
-    format!();
-           ^
+ --> lib.cairo:2:13
+    let ba: ByteArray = "hello";
+            ^*******^
 
 error: Plugin diagnostic: Format string argument must be a string literal.
- --> lib.cairo:11:13
-    format!(ba);
-            ^^
+ --> lib.cairo:2:20
+    let ba: ByteArray = "hello";
+                   ^*********^
 
 error: Identifier not found.
- --> lib.cairo:14:15
-    format!("{non_existing}");
-              ^**********^
+ --> lib.cairo:2:32
+    let ba: ByteArray = "hello";
+                               ^
 
 error: Identifier not found.
- --> lib.cairo:17:19
-    format!("{}", non_existing);
-                  ^**********^
+ --> lib.cairo:2:33
+    let ba: ByteArray = "hello";
+                                ^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:20:23
-    format!("{}", ba, 1);
-                      ^
+ --> lib.cairo:2:22
+    let ba: ByteArray = "hello";
+                     ^*********^
 
 error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
- --> lib.cairo:23:13
-    format!("{}{}", ba);
-            ^****^
+ --> lib.cairo:2:21
+    let ba: ByteArray = "hello";
+                    ^**********^
 
 error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
- --> lib.cairo:26:13
-    format!("{2}{1}{0}", ba, 1);
-            ^*********^
+ --> lib.cairo:4:2
+    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+ ^*************************^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:29:27
-    format!("{2}{0}", ba, 2, 1);
-                          ^
+ --> lib.cairo:2:20
+    let ba: ByteArray = "hello";
+                   ^***********^
 
-error: Plugin diagnostic: Macro `write` does not support this bracket type.
- --> lib.cairo:32:12
-    format!;
-           ^
-
-error: Wrong number of arguments. Expected 1, found: 2
+error: Plugin diagnostic: Macro can not be parsed as legacy macro.
  --> lib.cairo:32:5
     format!;
     ^*****^
@@ -680,56 +675,51 @@ error: Missing tokens. Expected an argument list wrapped in either parentheses, 
           ^
 
 error: Plugin diagnostic: Macro `write` does not support this bracket type.
- --> lib.cairo:5:11
-    print!["{}", ba];
-          ^
+ --> lib.cairo:4:38
+    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+                                     ^**************^
 
 error: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:11
-    print!();
-          ^
+ --> lib.cairo:2:13
+    let ba: ByteArray = "hello";
+            ^******^
 
 error: Plugin diagnostic: Format string argument must be a string literal.
- --> lib.cairo:11:12
-    print!(ba);
-           ^^
+ --> lib.cairo:2:20
+    let ba: ByteArray = "hello";
+                   ^********^
 
 error: Identifier not found.
- --> lib.cairo:14:14
-    print!("{non_existing}");
-             ^**********^
+ --> lib.cairo:2:32
+    let ba: ByteArray = "hello";
+                               ^
 
 error: Identifier not found.
- --> lib.cairo:17:18
-    print!("{}", non_existing);
-                 ^**********^
+ --> lib.cairo:2:33
+    let ba: ByteArray = "hello";
+                                ^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:20:22
-    print!("{}", ba, 1);
-                     ^
+ --> lib.cairo:2:22
+    let ba: ByteArray = "hello";
+                     ^*********^
 
 error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
- --> lib.cairo:23:12
-    print!("{}{}", ba);
-           ^****^
+ --> lib.cairo:2:21
+    let ba: ByteArray = "hello";
+                    ^**********^
 
 error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
- --> lib.cairo:26:12
-    print!("{2}{1}{0}", ba, 1);
-           ^*********^
+ --> lib.cairo:4:2
+    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+ ^************************^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:29:26
-    print!("{2}{0}", ba, 2, 1);
-                         ^
+ --> lib.cairo:2:20
+    let ba: ByteArray = "hello";
+                   ^***********^
 
-error: Plugin diagnostic: Macro `write` does not support this bracket type.
- --> lib.cairo:32:11
-    print!;
-          ^
-
-error: Wrong number of arguments. Expected 1, found: 2
+error: Plugin diagnostic: Macro can not be parsed as legacy macro.
  --> lib.cairo:32:5
     print!;
     ^****^
@@ -793,56 +783,51 @@ error: Missing tokens. Expected an argument list wrapped in either parentheses, 
             ^
 
 error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
- --> lib.cairo:5:13
-    println!["{}", ba];
-            ^
+ --> lib.cairo:4:38
+    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+                                     ^****************^
 
 error: Plugin diagnostic: Macro expected format string argument.
- --> lib.cairo:8:13
-    println!();
-            ^
+ --> lib.cairo:2:13
+    let ba: ByteArray = "hello";
+            ^********^
 
 error: Plugin diagnostic: Format string argument must be a string literal.
- --> lib.cairo:11:14
-    println!(ba);
-             ^^
-
-error: Identifier not found.
- --> lib.cairo:14:16
-    println!("{non_existing}");
-               ^**********^
-
-error: Identifier not found.
- --> lib.cairo:17:20
-    println!("{}", non_existing);
+ --> lib.cairo:2:20
+    let ba: ByteArray = "hello";
                    ^**********^
 
+error: Identifier not found.
+ --> lib.cairo:2:32
+    let ba: ByteArray = "hello";
+                               ^
+
+error: Identifier not found.
+ --> lib.cairo:2:33
+    let ba: ByteArray = "hello";
+                                ^
+
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:20:24
-    println!("{}", ba, 1);
-                       ^
+ --> lib.cairo:2:22
+    let ba: ByteArray = "hello";
+                     ^*********^
 
 error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
- --> lib.cairo:23:14
-    println!("{}{}", ba);
-             ^****^
+ --> lib.cairo:2:21
+    let ba: ByteArray = "hello";
+                    ^**********^
 
 error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
- --> lib.cairo:26:14
-    println!("{2}{1}{0}", ba, 1);
-             ^*********^
+ --> lib.cairo:4:2
+    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+ ^**************************^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:29:28
-    println!("{2}{0}", ba, 2, 1);
-                           ^
+ --> lib.cairo:2:20
+    let ba: ByteArray = "hello";
+                   ^***********^
 
-error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
- --> lib.cairo:32:13
-    println!;
-            ^
-
-error: Wrong number of arguments. Expected 1, found: 2
+error: Plugin diagnostic: Macro can not be parsed as legacy macro.
  --> lib.cairo:32:5
     println!;
     ^******^
@@ -898,44 +883,44 @@ foo
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `panic` does not support this bracket type.
- --> lib.cairo:5:11
-    panic!["{}", ba];
-          ^
+ --> lib.cairo:4:44
+    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+                                           ^
 
 error: Plugin diagnostic: Format string argument must be a string literal.
- --> lib.cairo:11:12
-    panic!(ba);
-           ^^
+ --> lib.cairo:2:20
+    let ba: ByteArray = "hello";
+                   ^********^
 
 error: Identifier not found.
- --> lib.cairo:14:14
-    panic!("{non_existing}");
-             ^**********^
+ --> lib.cairo:2:32
+    let ba: ByteArray = "hello";
+                               ^
 
 error: Identifier not found.
- --> lib.cairo:17:18
-    panic!("{}", non_existing);
-                 ^**********^
+ --> lib.cairo:2:33
+    let ba: ByteArray = "hello";
+                                ^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:20:22
-    panic!("{}", ba, 1);
-                     ^
+ --> lib.cairo:2:22
+    let ba: ByteArray = "hello";
+                     ^*********^
 
 error: Plugin diagnostic: 2 positional arguments in format string, but only 1 arguments.
- --> lib.cairo:23:12
-    panic!("{}{}", ba);
-           ^****^
+ --> lib.cairo:2:21
+    let ba: ByteArray = "hello";
+                    ^**********^
 
 error: Plugin diagnostic: Invalid reference to positional argument 2 (there are 2 arguments).
- --> lib.cairo:26:12
-    panic!("{2}{1}{0}", ba, 1);
-           ^*********^
+ --> lib.cairo:4:2
+    // Bad brackets. TODO(orizi): Improve diagnostic to not include "write".
+ ^************************^
 
 error: Plugin diagnostic: Unused argument.
- --> lib.cairo:29:26
-    panic!("{2}{0}", ba, 2, 1);
-                         ^
+ --> lib.cairo:2:20
+    let ba: ByteArray = "hello";
+                   ^***********^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
