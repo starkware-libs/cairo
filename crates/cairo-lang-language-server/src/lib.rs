@@ -38,6 +38,7 @@
 //! }
 //! ```
 
+use std::collections::hash_set::Iter;
 use std::collections::{HashMap, HashSet};
 use std::io;
 use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
@@ -75,6 +76,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use itertools::Itertools;
 use salsa::ParallelDatabase;
 use serde_json::Value;
 use tokio::sync::Semaphore;
@@ -250,6 +252,12 @@ struct FileDiagnostics {
     semantic: Diagnostics<SemanticDiagnostic>,
     lowering: Diagnostics<LoweringDiagnostic>,
 }
+
+impl FileDiagnostics {
+    fn is_empty(&self) -> bool {
+        self.semantic.is_empty() && self.lowering.is_empty() && self.parser.is_empty()
+    }
+}
 impl std::panic::UnwindSafe for FileDiagnostics {}
 #[derive(Clone, Default)]
 struct State {
@@ -257,18 +265,6 @@ struct State {
     open_files: HashSet<Url>,
 }
 impl std::panic::UnwindSafe for State {}
-macro_rules! diags {
-    ($db:ident. $query:ident($file_id:expr), $f:expr) => {
-        trace_span!(stringify!($query)).in_scope(|| {
-            catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
-                .map($f)
-                .inspect_err(|_| {
-                    error!("caught panic when computing diagnostics");
-                })
-                .unwrap_or_default()
-        })
-    };
-}
 
 struct Backend {
     client: Client,
@@ -357,65 +353,67 @@ impl Backend {
         let Ok(waiter_permit) = self.refresh_waiters_semaphore.try_acquire() else { return Ok(()) };
         let refresh_lock = self.refresh_lock.lock().await;
 
-
-        // Get the compilation units mapping of file -> module
-        let file_to_modules: HashMap<FileId, Vec<ModuleId>> = async {
-            let mut file_to_modules: HashMap<FileId, Vec<ModuleId>> = HashMap::default();
-            let db = self.db_mut().await;
-            for crate_id in db.crates() {
-                for module_id in db.crate_modules(crate_id).iter() {
-                    if let Some(module_files) = db.module_files(*module_id).ok() {
-                        for file_id in module_files.into_iter() {
-                            file_to_modules.entry(*file_id).or_insert(vec![]);
-                            file_to_modules.entry(*file_id).and_modify(|v| v.push(*module_id));
-                        }
-                    }
-                }
-            }
-            file_to_modules
-        }
-        .instrument(trace_span!("get_file_to_module"))
-        .await;
-
-        // Get open file ids
-        let open_files_ids: HashSet<FileId> = async {
-            let db = self.db_mut().await;
-            let open_files = self.state_mut().await.open_files.clone();
-            open_files.iter().filter_map(|url| db.file_for_url(url)).collect()
-        }.instrument(trace_span!("get_open_files_ids")).await;
-
-
-        let (mut open_files_modules, mut rest_of_files_modules): (HashMap<FileId, Vec<ModuleId>>, HashMap<FileId, Vec<ModuleId>>) = (HashMap::default(), HashMap::default());
-
-        for (file_id, modules_ids) in file_to_modules.iter() {
-            if open_files_ids.contains(file_id) {
-                open_files_modules.insert(*file_id, modules_ids.clone());
-            } else {
-                rest_of_files_modules.insert(*file_id, modules_ids.clone());
-            }
-        }
-
         let mut files_set: HashSet<FileId> = HashSet::default();
         let mut processed_modules: HashSet<ModuleId> = HashSet::default();
 
         // Refresh open files modules
+        let open_files_ids: HashSet<FileId> = async {
+            let db = self.db_mut().await;
+            let open_files = self.state_mut().await.open_files.clone();
+            open_files.iter().filter_map(|url| db.file_for_url(url)).collect()
+        }
+        .instrument(trace_span!("get_open_files_ids"))
+        .await;
+
+        let open_files_modules = self.get_files_modules(open_files_ids.iter()).await;
+
         async {
             for (file, file_modules_ids) in open_files_modules {
-                self.refresh_file_diagnostics(&file, &file_modules_ids, &mut processed_modules, &mut files_set).await;
+                self.refresh_file_diagnostics(
+                    &file,
+                    &file_modules_ids,
+                    &mut processed_modules,
+                    &mut files_set,
+                )
+                .await;
             }
         }
         .instrument(trace_span!("refresh_open_files_modules"))
         .await;
 
-        // Refresh rest of files modules
+        // Refresh rest of files
+        let rest_of_files = async {
+            let mut rest_of_files: HashSet<FileId> = HashSet::default();
+            let db = self.db_mut().await;
+            for crate_id in db.crates() {
+                for module_id in db.crate_modules(crate_id).iter() {
+                    if let Ok(module_files) = db.module_files(*module_id) {
+                        let unprocessed_files =
+                            module_files.iter().filter(|file| !open_files_ids.contains(file));
+                        rest_of_files.extend(unprocessed_files);
+                    }
+                }
+            }
+            rest_of_files
+        }
+        .instrument(trace_span!("get_rest_of_files"))
+        .await;
+
+        let rest_of_files_modules = self.get_files_modules(rest_of_files.iter()).await;
+
         async {
             for (file, file_modules_ids) in rest_of_files_modules {
-                self.refresh_file_diagnostics(&file, &file_modules_ids, &mut processed_modules, &mut files_set).await;
+                self.refresh_file_diagnostics(
+                    &file,
+                    &file_modules_ids,
+                    &mut processed_modules,
+                    &mut files_set,
+                )
+                .await;
             }
         }
-        .instrument(trace_span!("refresh_open_files_modules"))
+        .instrument(trace_span!("refresh_other_files_modules"))
         .await;
-
 
         // Clear old diagnostics
         async {
@@ -423,7 +421,7 @@ impl Backend {
             self.state_mut().await.file_diagnostics.retain(|uri, _| {
                 let retain = files_set.contains(uri);
                 if !retain {
-                    removed_files.push(uri.clone());
+                    removed_files.push(*uri);
                 }
                 retain
             });
@@ -439,7 +437,6 @@ impl Backend {
         .instrument(trace_span!("clear_old_diagnostics"))
         .await;
 
-
         // Release locks prior to potentially swapping the database.
         drop(refresh_lock);
         drop(waiter_permit);
@@ -449,26 +446,46 @@ impl Backend {
     }
 
     /// Refresh diagnostics for a single file.
-    // #[tracing::instrument(level = "trace", skip_all, fields(%file))]
-    async fn refresh_file_diagnostics(&self, file: &FileId, modules_ids: &Vec<ModuleId>, processed_modules: &mut HashSet<ModuleId>, files_set: &mut HashSet<FileId>) {
-       let db = self.db_mut().await;
+    async fn refresh_file_diagnostics(
+        &self,
+        file: &FileId,
+        modules_ids: &Vec<ModuleId>,
+        processed_modules: &mut HashSet<ModuleId>,
+        files_set: &mut HashSet<FileId>,
+    ) {
+        let db = self.db_mut().await;
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
 
-        for module_id in modules_ids {
-            if !processed_modules.contains(&module_id) {
-                semantic_file_diagnostics.extend(diags!(db.module_semantic_diagnostics(module_id.clone()), Result::unwrap_or_default).get_all());
-                lowering_file_diagnostics.extend(diags!(db.module_lowering_diagnostics(module_id.clone()), Result::unwrap_or_default).get_all());
+        macro_rules! diags {
+            ($db:ident. $query:ident($file_id:expr), $f:expr) => {
+                trace_span!(stringify!($query)).in_scope(|| {
+                    catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
+                        .map($f)
+                        .inspect_err(|_| {
+                            error!("caught panic when computing diagnostics");
+                        })
+                        .unwrap_or_default()
+                })
+            };
+        }
 
-                processed_modules.insert(module_id.clone());
+        for module_id in modules_ids {
+            if !processed_modules.contains(module_id) {
+                semantic_file_diagnostics.extend(
+                    diags!(db.module_semantic_diagnostics(*module_id), Result::unwrap_or_default)
+                        .get_all(),
+                );
+                lowering_file_diagnostics.extend(
+                    diags!(db.module_lowering_diagnostics(*module_id), Result::unwrap_or_default)
+                        .get_all(),
+                );
+
+                processed_modules.insert(*module_id);
             }
         }
 
-        let parser_file_diagnostics =  diags!(db.file_syntax_diagnostics(file.clone()), |r| r);
-
-        if !semantic_file_diagnostics.is_empty() || !lowering_file_diagnostics.is_empty() || !parser_file_diagnostics.get_all().is_empty() {
-            files_set.insert(file.clone());
-        }
+        let parser_file_diagnostics = diags!(db.file_syntax_diagnostics(*file), |r| r);
 
         let new_file_diagnostics = FileDiagnostics {
             parser: parser_file_diagnostics,
@@ -476,13 +493,17 @@ impl Backend {
             lowering: Diagnostics::from_iter(lowering_file_diagnostics),
         };
 
+        if !new_file_diagnostics.is_empty() {
+            files_set.insert(*file);
+        }
+
         let mut state = self.state_mut().await;
-        if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file) {
+        if let Some(old_file_diagnostics) = state.file_diagnostics.get(file) {
             if old_file_diagnostics == &new_file_diagnostics {
                 return;
             }
         }
-        state.file_diagnostics.insert(file.clone(), new_file_diagnostics.clone());
+        state.file_diagnostics.insert(*file, new_file_diagnostics.clone());
 
         let mut diags = Vec::new();
         map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
@@ -490,9 +511,24 @@ impl Backend {
         map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
 
         self.client
-            .publish_diagnostics(db.url_for_file(file.clone()), diags, None)
+            .publish_diagnostics(db.url_for_file(*file), diags, None)
             .instrument(trace_span!("publish_diagnostics"))
             .await;
+    }
+
+    /// Gets the mapping of files to their respective modules
+    async fn get_files_modules(
+        &self,
+        files_ids: Iter<'_, FileId>,
+    ) -> HashMap<FileId, Vec<ModuleId>> {
+        let db = self.db_mut().await;
+        let mut result = HashMap::default();
+        for file_id in files_ids {
+            if let Ok(file_modules) = db.file_modules(*file_id) {
+                result.insert(*file_id, file_modules.iter().cloned().collect_vec());
+            }
+        }
+        result
     }
 
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
