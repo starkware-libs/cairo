@@ -51,7 +51,7 @@ pub fn build_felt252_op_with_var(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res_var]], None)],
-        CostValidationInfo { range_check_info: None, extra_costs: Some([extra_costs]) },
+        CostValidationInfo { builtin_infos: vec![], extra_costs: Some([extra_costs]) },
     ))
 }
 
@@ -69,7 +69,7 @@ fn build_felt252_op_with_const(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res_var]], None)],
-        CostValidationInfo { range_check_info: None, extra_costs: Some([extra_costs]) },
+        CostValidationInfo { builtin_infos: vec![], extra_costs: Some([extra_costs]) },
     ))
 }
 

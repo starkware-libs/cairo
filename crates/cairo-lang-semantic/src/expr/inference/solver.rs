@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::SemanticObject;
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
@@ -9,7 +10,9 @@ use super::{
     InferenceData, InferenceError, InferenceId, InferenceResult, InferenceVar, LocalImplVarId,
 };
 use crate::db::SemanticGroup;
-use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{
+    find_candidates_at_context, find_generated_candidate, ImplId, ImplLookupContext, UninferredImpl,
+};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, GenericArgumentId, TypeId, TypeLongId};
 
@@ -33,9 +36,7 @@ pub enum Ambiguity {
         #[dont_rewrite]
         var: InferenceVar,
     },
-    WillNotInfer {
-        concrete_trait_id: ConcreteTraitId,
-    },
+    WillNotInfer(ConcreteTraitId),
     NegativeImplWithUnresolvedGenericArgs {
         impl_id: ImplId,
         ty: TypeId,
@@ -55,7 +56,7 @@ impl Ambiguity {
             Ambiguity::FreeVariable { impl_id, var: _ } => {
                 format!("Candidate impl {:?} has an unused generic parameter.", impl_id.debug(db),)
             }
-            Ambiguity::WillNotInfer { concrete_trait_id } => {
+            Ambiguity::WillNotInfer(concrete_trait_id) => {
                 format!(
                     "Cannot infer trait {:?}. First generic argument must be known.",
                     concrete_trait_id.debug(db)
@@ -63,7 +64,7 @@ impl Ambiguity {
             }
             Ambiguity::NegativeImplWithUnresolvedGenericArgs { impl_id, ty } => format!(
                 "Cannot infer negative impl in `{}` as it contains the unresolved type `{}`",
-                { impl_id }.format(db),
+                impl_id.format(db),
                 ty.format(db)
             ),
         }
@@ -84,11 +85,11 @@ pub fn canonic_trait_solutions(
 /// Cycle handling for [canonic_trait_solutions].
 pub fn canonic_trait_solutions_cycle(
     _db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _canonical_trait: &CanonicalTrait,
     _lookup_context: &ImplLookupContext,
 ) -> Result<SolutionSet<CanonicalImpl>, InferenceError> {
-    Err(InferenceError::Cycle { var: InferenceVar::Impl(LocalImplVarId(0)) })
+    Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
 }
 
 /// Adds the defining module of the trait and the generic arguments to the lookup context.
@@ -102,7 +103,7 @@ pub fn enrich_lookup_context(
     // Add the defining module of the generic args to the lookup.
     for generic_arg in &generic_args {
         if let GenericArgumentId::Type(ty) = generic_arg {
-            match db.lookup_intern_type(*ty) {
+            match ty.lookup_intern(db) {
                 TypeLongId::Concrete(concrete) => {
                     lookup_context
                         .insert_module(concrete.generic_type(db).module_file_id(db.upcast()).0);
@@ -113,6 +114,9 @@ pub fn enrich_lookup_context(
                     {
                         lookup_context.insert_module(module_file_id.0);
                     }
+                }
+                TypeLongId::ImplType(impl_type_id) => {
+                    lookup_context.insert_impl(impl_type_id.impl_id());
                 }
                 _ => (),
             }
@@ -134,8 +138,10 @@ impl Solver {
         lookup_context: ImplLookupContext,
     ) -> Self {
         let filter = canonical_trait.0.filter(db);
-        let candidates =
-            find_candidates_at_context(db, &lookup_context, filter).unwrap_or_default();
+        let mut candidates =
+            find_candidates_at_context(db, &lookup_context, &filter).unwrap_or_default();
+        find_generated_candidate(db, canonical_trait.0, &filter)
+            .map(|candidate| candidates.insert(candidate));
         let candidate_solvers = candidates
             .into_iter()
             .filter_map(|candidate| {
@@ -196,7 +202,7 @@ impl CandidateSolver {
         let (concrete_trait_id, canonical_embedding) = canonical_trait.embed(&mut inference);
         // Add the defining module of the candidate to the lookup.
         let mut lookup_context = lookup_context.clone();
-        lookup_context.insert_module(candidate.module_id(db.upcast()));
+        lookup_context.insert_lookup_scope(db, &candidate);
         // Instantiate the candidate in the inference table.
         let candidate_impl =
             inference.infer_impl(candidate, concrete_trait_id, &lookup_context, None)?;

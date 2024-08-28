@@ -8,7 +8,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_sierra_ids;
-use crate::statements_locations::containing_function_identifier_for_tests;
+use crate::statements_locations::maybe_containing_function_identifier_for_tests;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 /// Compiles a single function to Sierra and checks the generated code, together with the
@@ -46,10 +46,12 @@ pub fn test_sierra_locations(
                     sierra_code.push_str("Inlined at:\n");
                 }
                 sierra_code.push_str(&get_location_marks(db, &location.diagnostic_location(db)));
-                sierra_code.push_str(&format!(
-                    "\nIn function: {}\n",
-                    containing_function_identifier_for_tests(db, *location)
-                ));
+                sierra_code.push('\n');
+                if let Some(function) =
+                    maybe_containing_function_identifier_for_tests(db, *location)
+                {
+                    sierra_code.push_str(&format!("In function: {function}\n",));
+                }
             }
         }
     }

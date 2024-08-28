@@ -6,6 +6,7 @@ use super::bounded_int::{BoundedIntLibfunc, BoundedIntType};
 use super::branch_align::BranchAlignLibfunc;
 use super::bytes31::{Bytes31Libfunc, Bytes31Type};
 use super::casts::CastLibfunc;
+use super::circuit::{CircuitLibFunc, CircuitType};
 use super::const_type::{ConstLibfunc, ConstType};
 use super::coupon::{CouponLibfunc, CouponType};
 use super::debug::DebugLibfunc;
@@ -40,7 +41,8 @@ use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::poseidon::{PoseidonLibfunc, PoseidonType};
-use super::range_check::RangeCheckType;
+use super::range::{IntRangeLibfunc, IntRangeType};
+use super::range_check::{RangeCheck96Type, RangeCheckType};
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::span::SpanType;
@@ -56,12 +58,14 @@ define_type_hierarchy! {
         Coupon(CouponType),
         Bitwise(BitwiseType),
         Box(BoxType),
+        Circuit(CircuitType),
         Const(ConstType),
         EcOp(EcOpType),
         EcPoint(EcPointType),
         EcState(EcStateType),
         Felt252(Felt252Type),
         GasBuiltin(GasBuiltinType),
+        IntRange(IntRangeType),
         BuiltinCosts(BuiltinCostsType),
         Uint8(Uint8Type),
         Uint16(Uint16Type),
@@ -77,6 +81,7 @@ define_type_hierarchy! {
         NonZero(NonZeroType),
         Nullable(NullableType),
         RangeCheck(RangeCheckType),
+        RangeCheck96(RangeCheck96Type),
         Uninitialized(UninitializedType),
         Enum(EnumType),
         Struct(StructType),
@@ -102,6 +107,7 @@ define_libfunc_hierarchy! {
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
         Cast(CastLibfunc),
+        Circuit(CircuitLibFunc),
         Coupon(CouponLibfunc),
         CouponCall(CouponCallLibfunc),
         Drop(DropLibfunc),
@@ -111,6 +117,7 @@ define_libfunc_hierarchy! {
         Const(ConstLibfunc),
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
+        IntRange(IntRangeLibfunc),
         Uint8(Uint8Libfunc),
         Uint16(Uint16Libfunc),
         Uint32(Uint32Libfunc),

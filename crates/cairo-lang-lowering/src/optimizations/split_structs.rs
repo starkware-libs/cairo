@@ -103,7 +103,7 @@ fn get_var_split(lowered: &mut FlatLowered) -> SplitMapping {
 
 /// Splits 'dst' according to the split of 'src'.
 ///
-/// For example if if we have
+/// For example if we have
 ///     split('dst') is None
 ///     split('src') = (v0, v1) and split(`v1`) = (v3, v4, v5).
 /// The function will create new variables and set:
@@ -125,7 +125,7 @@ fn split_remapping(
             let mut dst_vars = vec![];
             for split_src in src_vars {
                 let new_var = variables.alloc(variables[*split_src].clone());
-                // Queue inner remmapping for for possible splitting.
+                // Queue inner remmapping for possible splitting.
                 stack.push((new_var, *split_src));
                 dst_vars.push(new_var);
             }

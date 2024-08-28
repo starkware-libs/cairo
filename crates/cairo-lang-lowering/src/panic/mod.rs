@@ -4,7 +4,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty};
 use cairo_lang_semantic::GenericArgumentId;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, Upcast};
 use itertools::{chain, zip_eq, Itertools};
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 
@@ -112,7 +112,7 @@ impl PanicSignatureInfo {
         let original_return_ty = signature.return_type;
 
         let ok_ret_tys = chain!(extra_rets, [original_return_ty]).collect_vec();
-        let ok_ty = db.intern_type(semantic::TypeLongId::Tuple(ok_ret_tys.clone()));
+        let ok_ty = semantic::TypeLongId::Tuple(ok_ret_tys.clone()).intern(db);
         let ok_variant = get_core_enum_concrete_variant(
             db.upcast(),
             "PanicResult",

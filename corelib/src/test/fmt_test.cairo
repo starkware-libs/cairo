@@ -74,11 +74,16 @@ fn test_format_debug() {
         format!("{:?}", ((), (1,), (2, 3), (4, 5, 6))) == "((), (1,), (2, 3), (4, 5, 6))",
         'bad tuple fmt'
     );
-    assert(format!("{:?}", core::box::BoxTrait::new(1)) == "&1", 'bad box fmt');
+    let empty: [felt252; 0] = [];
     assert(
-        format!("{:?}", core::nullable::NullableTrait::new(1)) == "&1", 'bad nullable value fmt'
+        format!("{:?}", (empty, [1], [2, 3], [4, 5, 6])) == "([], [1], [2, 3], [4, 5, 6])",
+        'bad fixed sized array fmt'
     );
-    assert(format!("{:?}", core::nullable::null::<felt252>()) == "null", 'bad null fmt');
+    assert(format!("{:?}", crate::box::BoxTrait::new(1)) == "&1", 'bad box fmt');
+    assert(
+        format!("{:?}", crate::nullable::NullableTrait::new(1)) == "&1", 'bad nullable value fmt'
+    );
+    assert(format!("{:?}", crate::nullable::null::<felt252>()) == "null", 'bad null fmt');
 }
 
 #[test]

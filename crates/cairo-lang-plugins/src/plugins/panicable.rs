@@ -62,24 +62,25 @@ fn generate_panicable_code(
     if attrs.len() > 1 {
         let extra_attr = attrs.swap_remove(1);
         diagnostics.push(PluginDiagnostic::error(
-            extra_attr.stable_ptr().untyped(),
+            &extra_attr,
             "`#[panic_with]` cannot be applied multiple times to the same item.".into(),
         ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     }
-    let attr = attrs.swap_remove(0);
 
     let signature = declaration.signature(db);
     let Some((inner_ty, success_variant, failure_variant)) =
         extract_success_ty_and_variants(db, &signature)
     else {
         diagnostics.push(PluginDiagnostic::error(
-            signature.ret_ty(db).stable_ptr().untyped(),
+            &signature.ret_ty(db),
             "Currently only wrapping functions returning an Option<T> or Result<T, E>".into(),
         ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
 
+    let attr = attrs.swap_remove(0);
+    let mut builder = PatchBuilder::new(db, &attr);
     let attr = attr.structurize(db);
 
     let Some((err_value, panicable_name)) = parse_arguments(db, &attr) else {
@@ -89,7 +90,6 @@ fn generate_panicable_code(
         ));
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
-    let mut builder = PatchBuilder::new(db);
     builder.add_node(visibility.as_syntax_node());
     builder.add_node(declaration.function_kw(db).as_syntax_node());
     builder.add_modified(RewriteNode::new_trimmed(panicable_name.as_syntax_node()));
@@ -137,11 +137,12 @@ fn generate_panicable_code(
         .into(),
     ));
 
+    let (content, code_mappings) = builder.build();
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "panicable".into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: None,
         }),
         diagnostics,
@@ -188,13 +189,10 @@ fn parse_arguments(
 ) -> Option<(ast::TerminalShortString, ast::TerminalIdentifier)> {
     let [
         AttributeArg {
-            variant: AttributeArgVariant::Unnamed { value: ast::Expr::ShortString(err_value), .. },
+            variant: AttributeArgVariant::Unnamed(ast::Expr::ShortString(err_value)),
             ..
         },
-        AttributeArg {
-            variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(name), .. },
-            ..
-        },
+        AttributeArg { variant: AttributeArgVariant::Unnamed(ast::Expr::Path(name)), .. },
     ] = &attr.args[..]
     else {
         return None;

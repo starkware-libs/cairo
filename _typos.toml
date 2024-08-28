@@ -2,3 +2,9 @@
 # Don't correct the shorthand for ByteArray.
 ba = "ba"
 compilability = "compilability"
+
+[files]
+extend-exclude = [
+    "vscode-cairo/test/snapshots/*.txt",
+    "crates/cairo-lang-language-server/tests/test_data/**/*.txt",
+]

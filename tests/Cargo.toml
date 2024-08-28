@@ -8,7 +8,6 @@ description = ""
 
 [dev-dependencies]
 assert_matches.workspace = true
-cairo-felt.workspace = true
 cairo-lang-casm = { path = "../crates/cairo-lang-casm" }
 cairo-lang-compiler = { path = "../crates/cairo-lang-compiler" }
 cairo-lang-defs = { path = "../crates/cairo-lang-defs" }
@@ -30,10 +29,10 @@ env_logger.workspace = true
 itertools = { workspace = true, default-features = true }
 log.workspace = true
 num-bigint = { workspace = true, default-features = true }
-once_cell.workspace = true
 pretty_assertions.workspace = true
 rstest.workspace = true
 salsa.workspace = true
+starknet-types-core.workspace = true
 test-log.workspace = true
 
 [[test]]

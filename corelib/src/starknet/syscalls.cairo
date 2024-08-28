@@ -2,6 +2,7 @@ use starknet::{
     SyscallResult, storage_access::StorageAddress, class_hash::ClassHash,
     contract_address::ContractAddress
 };
+use core::gas::GasBuiltin;
 
 /// Calls a given contract.
 /// `address` - The address of the called contract.
@@ -103,5 +104,5 @@ pub extern fn keccak_syscall(
 /// The system call does not add any padding and the input needs to be a multiple of 512 bits
 /// (== 16 u32 word).
 pub extern fn sha256_process_block_syscall(
-    state: core::sha256::Sha256StateHandle, input: Span<u32>
+    state: core::sha256::Sha256StateHandle, input: Box<[u32; 16]>
 ) -> SyscallResult<core::sha256::Sha256StateHandle> implicits(GasBuiltin, System) nopanic;

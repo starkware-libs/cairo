@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 /// [`crate::statements_locations::StatementsLocations::extract_statements_functions`].
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct StatementsFunctions {
-    pub statements_to_functions_map: HashMap<StatementIdx, Option<String>>,
+    pub statements_to_functions_map: HashMap<StatementIdx, Vec<String>>,
 }
 
 impl From<StatementsFunctions> for Annotations {

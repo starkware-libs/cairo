@@ -7,22 +7,20 @@ license-file.workspace = true
 description = "Starknet definitions for contract classes."
 
 [dependencies]
-cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.6.3", default-features = true, features = ["serde"] }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.6.3" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "~2.6.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.6.3" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.8.0", default-features = true, features = ["serde"] }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.8.0" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "~2.8.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.0" }
 convert_case.workspace = true
 itertools = { workspace = true, default-features = true }
 num-bigint = { workspace = true, default-features = true }
 num-integer.workspace = true
 num-traits = { workspace = true, default-features = true }
-once_cell.workspace = true
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 sha3.workspace = true
 smol_str.workspace = true
-starknet-crypto.workspace = true
+starknet-types-core.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]

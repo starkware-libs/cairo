@@ -8,7 +8,8 @@ use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -36,6 +37,11 @@ impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
 /// Collects compilation diagnostics and presents them in preconfigured way.
 pub struct DiagnosticsReporter<'a> {
     callback: Option<Box<dyn DiagnosticCallback + 'a>>,
+    /// Ignore warnings in these crates. This should be subset of `crate_ids`.
+    /// Adding ids that are not in `crate_ids` have no effect.
+    ignore_warnings_crate_ids: Vec<CrateId>,
+    /// Check diagnostics for these crates only.
+    /// If empty, check all crates in the db.
     crate_ids: Vec<CrateId>,
     /// If true, compilation will not fail due to warnings.
     allow_warnings: bool,
@@ -44,7 +50,12 @@ pub struct DiagnosticsReporter<'a> {
 impl DiagnosticsReporter<'static> {
     /// Create a reporter which does not print or collect diagnostics at all.
     pub fn ignoring() -> Self {
-        Self { callback: None, crate_ids: vec![], allow_warnings: false }
+        Self {
+            callback: None,
+            crate_ids: vec![],
+            ignore_warnings_crate_ids: vec![],
+            allow_warnings: false,
+        }
     }
 
     /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
@@ -82,12 +93,26 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Create a reporter which calls [`DiagnosticCallback::on_diagnostic`].
     fn new(callback: impl DiagnosticCallback + 'a) -> Self {
-        Self { callback: Some(Box::new(callback)), crate_ids: vec![], allow_warnings: false }
+        Self {
+            callback: Some(Box::new(callback)),
+            crate_ids: vec![],
+            ignore_warnings_crate_ids: vec![],
+            allow_warnings: false,
+        }
     }
 
     /// Sets crates to be checked, instead of all crates in the db.
     pub fn with_crates(mut self, crate_ids: &[CrateId]) -> Self {
         self.crate_ids = crate_ids.to_vec();
+        self
+    }
+
+    /// Ignore warnings in these crates.
+    /// This does not modify the set of crates to be checked.
+    /// Adding crates that are not checked here has no effect.
+    /// To change the set of crates to be checked, use `with_crates`.
+    pub fn with_ignore_warnings_crates(mut self, crate_ids: &[CrateId]) -> Self {
+        self.ignore_warnings_crate_ids = crate_ids.to_vec();
         self
     }
 
@@ -97,13 +122,19 @@ impl<'a> DiagnosticsReporter<'a> {
         self
     }
 
+    /// Returns the crate ids for which the diagnostics will be checked.
+    fn crates_of_interest(&self, db: &RootDatabase) -> Vec<CrateId> {
+        if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
+    }
+
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `true` if diagnostics were found.
     pub fn check(&mut self, db: &RootDatabase) -> bool {
         let mut found_diagnostics = false;
-        let crates = if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() };
-        for crate_id in crates {
-            let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
+
+        let crates = self.crates_of_interest(db);
+        for crate_id in &crates {
+            let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(*crate_id)) else {
                 found_diagnostics = true;
                 self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
                     Severity::Error,
@@ -114,7 +145,7 @@ impl<'a> DiagnosticsReporter<'a> {
             };
 
             if db.file_content(module_file).is_none() {
-                match db.lookup_intern_file(module_file) {
+                match module_file.lookup_intern(db) {
                     FileLongId::OnDisk(path) => {
                         self.callback.on_diagnostic(FormattedDiagnosticEntry::new(
                             Severity::Error,
@@ -123,22 +154,35 @@ impl<'a> DiagnosticsReporter<'a> {
                         ))
                     }
                     FileLongId::Virtual(_) => panic!("Missing virtual file."),
+                    FileLongId::External(_) => panic!("Missing external file."),
                 }
                 found_diagnostics = true;
             }
 
-            for module_id in &*db.crate_modules(crate_id) {
-                for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
-                    found_diagnostics |=
-                        self.check_diag_group(db.upcast(), db.file_syntax_diagnostics(file_id));
+            let ignore_warnings_in_crate = self.ignore_warnings_crate_ids.contains(crate_id);
+            let modules = db.crate_modules(*crate_id);
+            let mut processed_file_ids = UnorderedHashSet::<_>::default();
+            for module_id in modules.iter() {
+                if let Ok(module_files) = db.module_files(*module_id) {
+                    for file_id in module_files.iter().copied() {
+                        if processed_file_ids.insert(file_id) {
+                            found_diagnostics |= self.check_diag_group(
+                                db.upcast(),
+                                db.file_syntax_diagnostics(file_id),
+                                ignore_warnings_in_crate,
+                            );
+                        }
+                    }
                 }
 
                 if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
-                    found_diagnostics |= self.check_diag_group(db.upcast(), group);
+                    found_diagnostics |=
+                        self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
                 }
 
                 if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
-                    found_diagnostics |= self.check_diag_group(db.upcast(), group);
+                    found_diagnostics |=
+                        self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
                 }
             }
         }
@@ -151,9 +195,13 @@ impl<'a> DiagnosticsReporter<'a> {
         &mut self,
         db: &TEntry::DbType,
         group: Diagnostics<TEntry>,
+        skip_warnings: bool,
     ) -> bool {
         let mut found: bool = false;
         for entry in group.format_with_severity(db) {
+            if skip_warnings && entry.severity() == Severity::Warning {
+                continue;
+            }
             if !entry.is_empty() {
                 self.callback.on_diagnostic(entry);
                 found |= !self.allow_warnings || group.check_error_free().is_err();
@@ -166,6 +214,35 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Returns `Err` if diagnostics were found.
     pub fn ensure(&mut self, db: &RootDatabase) -> Result<(), DiagnosticsError> {
         if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
+    }
+
+    /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
+    /// would be faster as the queries were already computed.
+    pub(crate) fn warm_up_diagnostics(&self, db: &RootDatabase) {
+        let crates = self.crates_of_interest(db);
+        for crate_id in crates {
+            let snapshot = salsa::ParallelDatabase::snapshot(db);
+            rayon::spawn(move || {
+                let db = &*snapshot;
+
+                let crate_modules = db.crate_modules(crate_id);
+                for module_id in crate_modules.iter().copied() {
+                    let snapshot = salsa::ParallelDatabase::snapshot(db);
+                    rayon::spawn(move || {
+                        let db = &*snapshot;
+                        for file_id in
+                            db.module_files(module_id).unwrap_or_default().iter().copied()
+                        {
+                            db.file_syntax_diagnostics(file_id);
+                        }
+
+                        let _ = db.module_semantic_diagnostics(module_id);
+
+                        let _ = db.module_lowering_diagnostics(module_id);
+                    });
+                }
+            });
+        }
     }
 }
 

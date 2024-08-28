@@ -48,6 +48,8 @@ pub struct NestedComponent {
     pub component_path: ast::ExprPath,
     pub storage_name: ast::ExprPath,
     pub event_name: ast::ExprPath,
+    /// The original ast node of the component usage declaration.
+    pub node: ast::ItemInlineMacro,
 }
 
 impl ComponentsGenerationData {
@@ -57,7 +59,9 @@ impl ComponentsGenerationData {
         diagnostics: &mut Vec<PluginDiagnostic>,
     ) -> RewriteNode {
         let mut has_component_impls = vec![];
-        for NestedComponent { component_path, storage_name, event_name } in self.components.iter() {
+        for NestedComponent { component_path, storage_name, event_name, node } in
+            self.components.iter()
+        {
             if !self.validate_component(db, diagnostics, storage_name, event_name) {
                 // Don't generate the code for the impl of HasComponent.
                 continue;
@@ -75,7 +79,7 @@ impl ComponentsGenerationData {
                      $component_path$::{HAS_COMPONENT_TRAIT}<{CONTRACT_STATE_NAME}> {{
            fn get_component(self: @{CONTRACT_STATE_NAME}) -> \
                      @$component_path$::{CONCRETE_COMPONENT_STATE_NAME} {{
-               self.$storage_name$
+                        @$component_path$::unsafe_new_component_state::<{CONTRACT_STATE_NAME}>()
            }}
            fn get_component_mut(ref self: {CONTRACT_STATE_NAME}) -> \
                      $component_path$::{CONCRETE_COMPONENT_STATE_NAME} {{
@@ -119,7 +123,8 @@ impl ComponentsGenerationData {
                     ),
                 ]
                 .into(),
-            );
+            )
+            .mapped(db, node);
 
             has_component_impls.push(has_component_impl);
         }
@@ -204,10 +209,13 @@ impl ContractSpecificGenerationData {
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             &formatdoc! {"
-                use starknet::storage::{{
-                    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-                    StorageMapMemberAccessTrait, StorageMemberAccessTrait
-                }};
+                // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+                #[deprecated(
+                    feature: \"deprecated_legacy_map\",
+                    note: \"Use `starknet::storage::Map` instead.\"
+                )]
+                #[allow(unused_imports)]
+                use starknet::storage::Map as LegacyMap;
                 $test_config$
                 $entry_points_code$
                 {EVENT_EMITTER_CODE}
@@ -260,6 +268,7 @@ fn handle_contract_item(
                 item_struct.clone(),
                 StarknetModuleKind::Contract,
                 &mut data.common,
+                metadata,
             );
             for member in item_struct.members(db).elements(db) {
                 // v0 is not validated here to not create multiple diagnostics. It's already
@@ -535,21 +544,24 @@ fn handle_embed_impl_alias(
         impl_module.iter().map(|segment| RewriteNode::new_trimmed(segment.as_syntax_node())),
         RewriteNode::text("::"),
     );
-    data.generated_wrapper_functions.push(RewriteNode::interpolate_patched(
-        &formatdoc! {"
-        impl ContractState$impl_name$ of
-            $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
-            fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
-                unsafe_new_contract_state()
+    data.generated_wrapper_functions.push(
+        RewriteNode::interpolate_patched(
+            &formatdoc! {"
+            impl ContractState$impl_name$ of
+                $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
+                fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
+                    unsafe_new_contract_state()
+                }}
             }}
-        }}
-    "},
-        &[
-            ("impl_name".to_string(), RewriteNode::new_trimmed(impl_name.as_syntax_node())),
-            ("impl_module".to_string(), impl_module),
-        ]
-        .into(),
-    ));
+        "},
+            &[
+                ("impl_name".to_string(), RewriteNode::new_trimmed(impl_name.as_syntax_node())),
+                ("impl_module".to_string(), impl_module),
+            ]
+            .into(),
+        )
+        .mapped(db, alias_ast),
+    );
 }
 
 /// Handles a `component!` inline macro. Assumes that the macro name is `COMPONENT_INLINE_MACRO`.
@@ -588,6 +600,7 @@ pub fn handle_component_inline_macro(
         component_path: component_path.clone(),
         storage_name: storage_name.clone(),
         event_name: event_name.clone(),
+        node: component_macro_ast.clone(),
     });
 }
 
@@ -608,7 +621,7 @@ pub fn remove_component_inline_macro(
     db: &dyn SyntaxGroup,
     component_macro_ast: &ast::ItemInlineMacro,
 ) -> PluginResult {
-    if let Some((_module_ast, module_kind)) =
+    if let Some((_module_ast, module_kind, _)) =
         grand_grand_parent_starknet_module(component_macro_ast.as_syntax_node(), db)
     {
         if module_kind == StarknetModuleKind::Contract {

@@ -50,11 +50,11 @@ fn unpack_proposal_fields(packed: felt252) -> (felt252, u64) {
 
 impl ProposalStore of Store<Proposal> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Proposal> {
-        ProposalStore::read_at_offset(address_domain, base, 0)
+        Self::read_at_offset(address_domain, base, 0)
     }
 
     fn write(address_domain: u32, base: StorageBaseAddress, value: Proposal) -> SyscallResult<()> {
-        ProposalStore::write_at_offset(address_domain, base, 0, value)
+        Self::write_at_offset(address_domain, base, 0, value)
     }
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
@@ -84,9 +84,10 @@ impl ProposalStore of Store<Proposal> {
 #[starknet::contract]
 mod test_contract {
     use super::Proposal;
+    use starknet::storage::Map;
     #[storage]
     struct Storage {
-        _proposals: LegacyMap<u32, Proposal>,
+        _proposals: Map<u32, Proposal>,
         _single_proposal: Proposal
     }
 

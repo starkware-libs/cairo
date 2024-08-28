@@ -185,10 +185,6 @@ impl TwoMemberStructPartialEq of core::traits::PartialEq::<TwoMemberStruct> {
     fn eq(lhs: @TwoMemberStruct, rhs: @TwoMemberStruct) -> bool {
         lhs.a == rhs.a && lhs.b == rhs.b
     }
-    #[inline(always)]
-    fn ne(lhs: @TwoMemberStruct, rhs: @TwoMemberStruct) -> bool {
-        !(lhs == rhs)
-    }
 }
 impl TwoMemberStructSerde of core::serde::Serde::<TwoMemberStruct> {
     fn serialize(self: @TwoMemberStruct, ref output: core::array::Array<felt252>) {
@@ -265,10 +261,6 @@ impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, +core::
 impl TwoMemberGenericStructPartialEq<T, U, impl USomeTrait: SomeTrait<U, T>, +core::traits::PartialEq<T>, +core::traits::PartialEq<U>> of core::traits::PartialEq::<TwoMemberGenericStruct<T, U, USomeTrait>> {
     fn eq(lhs: @TwoMemberGenericStruct<T, U, USomeTrait>, rhs: @TwoMemberGenericStruct<T, U, USomeTrait>) -> bool {
         lhs.a == rhs.a && lhs.b == rhs.b
-    }
-    #[inline(always)]
-    fn ne(lhs: @TwoMemberGenericStruct<T, U, USomeTrait>, rhs: @TwoMemberGenericStruct<T, U, USomeTrait>) -> bool {
-        !(lhs == rhs)
     }
 }
 impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, +core::serde::Serde<T>, +core::traits::Destruct<T>, +core::serde::Serde<U>, +core::traits::Destruct<U>> of core::serde::Serde::<TwoMemberGenericStruct<T, U, USomeTrait>> {
@@ -374,10 +366,6 @@ impl TwoVariantEnumPartialEq of core::traits::PartialEq::<TwoVariantEnum> {
                 TwoVariantEnum::Second(y) => x == y,
             },
         }
-    }
-    #[inline(always)]
-    fn ne(lhs: @TwoVariantEnum, rhs: @TwoVariantEnum) -> bool {
-        !(lhs == rhs)
     }
 }
 impl TwoVariantEnumSerde of core::serde::Serde::<TwoVariantEnum> {
@@ -485,6 +473,16 @@ error: Expected path.
  --> test_src/lib.cairo:4:10
 #[derive(1)]
          ^
+
+error: Unknown derive `Unsupported` - a plugin might be missing.
+ --> test_src/lib.cairo:7:10
+#[derive(Unsupported)]
+         ^*********^
+
+error: Unknown derive `long::path` - a plugin might be missing.
+ --> test_src/lib.cairo:10:10
+#[derive(long::path)]
+         ^********^
 
 error: Unsupported trait for derive for extern types.
  --> test_src/lib.cairo:13:10

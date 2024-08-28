@@ -32,9 +32,11 @@ cairo_lang_test_utils::test_file_test!(
         attributes: "attributes",
         constant: "constant",
         constructor: "constructor",
+        closure: "closure",
         coupon: "coupon",
         enum_: "enum",
         error_propagate: "error_propagate",
+        for_: "for",
         fixed_size_array: "fixed_size_array",
         function_call: "function_call",
         generics: "generics",
@@ -55,6 +57,7 @@ cairo_lang_test_utils::test_file_test!(
         statements: "statements",
         structure: "structure",
         while_: "while",
+        impl_: "impl",
     },
     test_function_diagnostics
 );
@@ -66,6 +69,7 @@ cairo_lang_test_utils::test_file_test!(
         assignment: "assignment",
         block: "block",
         call: "call",
+        closure: "closure",
         coupon: "coupon",
         inline_macros: "inline_macros",
         let_statement: "let_statement",
@@ -77,6 +81,8 @@ cairo_lang_test_utils::test_file_test!(
         structure: "structure",
         tuple: "tuple",
         while_: "while",
+        for_: "for",
+        range: "range",
     },
     test_expr_semantics
 );

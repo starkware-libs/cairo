@@ -1,0 +1,601 @@
+//! > Test closure wrong return type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    || -> i32 {
+        let d: u32 = 3;
+        d
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::i32", found: "core::integer::u32".
+ --> lib.cairo:2:15
+    || -> i32 {
+              ^
+
+//! > ==========================================================================
+
+//! > Test closure inferred param type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    |a| -> i32 {
+        let d: i32 = a;
+        d
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test closure typed param type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    |a: u32| -> i32 {
+        let d: i32 = a;
+        d
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::integer::i32", found: "core::integer::u32".
+ --> lib.cairo:3:22
+        let d: i32 = a;
+                     ^
+
+//! > ==========================================================================
+
+//! > Test assignment wrong type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _x: i32 =  || {
+        let d: u32 = 3;
+        d
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:20: 2:22}".
+ --> lib.cairo:2:20
+    let _x: i32 =  || {
+                   ^**^
+
+//! > ==========================================================================
+
+//! > Test closure in global context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const _x: i32 =  || {
+    let d: u32 = 3;
+    d
+};
+
+//! > expected_diagnostics
+error: Closures are not allowed in this context.
+ --> lib.cairo:1:18
+const _x: i32 =  || {
+                 ^**^
+
+error: Type mismatch: `{closure@lib.cairo:1:18: 1:20}` and `core::integer::i32`.
+ --> lib.cairo:1:1
+const _x: i32 =  || {
+^*******************^
+
+//! > ==========================================================================
+
+//! > Test closure in generic const context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    bar::<{  || -> u32 {
+        2
+    } }>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const N: u32>() {}
+
+//! > expected_diagnostics
+error: Closures are not allowed in this context.
+ --> lib.cairo:3:14
+    bar::<{  || -> u32 {
+             ^*********^
+
+error: Type mismatch: `{closure@lib.cairo:3:14: 3:16}` and `core::integer::u32`.
+ --> lib.cairo:3:11
+    bar::<{  || -> u32 {
+          ^************^
+
+//! > ==========================================================================
+
+//! > Test closure params need type annotations.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    |a| {
+        let d = a;
+        d
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Type annotations needed. Failed to infer ?0.
+ --> lib.cairo:2:7
+    |a| {
+      ^
+
+//! > ==========================================================================
+
+//! > Test closure infer type from impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let c = |a| {
+        let d = a;
+        d.into()
+    };
+    let _k: felt252 = bar(c);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    core::ops::FnOnce::call(c, (2,))
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test closure infer type from impl wrong param.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let c = |a| {
+        let d = a;
+        d.into()
+    };
+    let _f: felt252 = core::ops::FnOnce::call(c, (2_u64,));
+    let _k: felt252 = bar(c);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    core::ops::FnOnce::call(c, (2,))
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `core::integer::u32` and `core::integer::u64`.
+ --> lib.cairo:4:10
+fn foo() {
+         ^
+
+//! > ==========================================================================
+
+//! > Test closure infer type from impl wrong return type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let c = |a| {
+        let d = a;
+        d.into()
+    };
+    let _f: u128 = core::ops::FnOnce::call(c, (2,));
+    let _k: felt252 = bar(c);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    core::ops::FnOnce::call(c, (2,))
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `core::felt252` and `core::integer::u128`.
+ --> lib.cairo:4:10
+fn foo() {
+         ^
+
+//! > ==========================================================================
+
+//! > Test closure calling.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let c = |a, b, c| {
+        a.into() + b.into() + c.into()
+    };
+    let _f: u256 = c(2_felt252, 2_u256, 6_u64);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test closure calling with diagnostics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let c = |a, b, c| {
+        a.into() + b.into() + c.into()
+    };
+    let _f: u32 = c(2_felt252, 2_u256, 6_u64);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::traits::Into::<core::integer::u256, core::integer::u32>.
+ --> lib.cairo:3:22
+        a.into() + b.into() + c.into()
+                     ^**^
+
+//! > ==========================================================================
+
+//! > Test shadowing of a function with a variable.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() {
+    let bar: u8 = 3;
+    let _f: u32 = bar(2);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar() -> u32 {
+    2
+}
+
+//! > expected_diagnostics
+warning: Function `bar` is shadowed by a local variable.
+ --> lib.cairo:6:19
+    let _f: u32 = bar(2);
+                  ^*^
+
+//! > ==========================================================================
+
+//! > Test shadowing of a function with a variable when closure are in context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _y: u16 = baz(|a| {
+        a.into()
+    });
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar() -> u32 {
+    2
+}
+
+fn baz<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+    let bar = 3;
+    let _x: u32 = bar();
+    c(9)
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::ops::function::FnOnce::<core::felt252, ()>.
+ --> lib.cairo:7:19
+    let _x: u32 = bar();
+                  ^***^
+
+error: Trait has no implementation in context: core::traits::Into::<core::integer::u32, core::integer::u16>.
+ --> lib.cairo:12:11
+        a.into()
+          ^**^
+
+//! > ==========================================================================
+
+//! > Test shadowing of a function with a closure.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let bar = |_a, _b, _c| -> u32 {
+        3
+    };
+    let _f: u32 = bar(2);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(a: felt252) -> u32 {
+    2
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `(?6,)` and `(?0, ?1, ?2)`.
+ --> lib.cairo:4:10
+fn foo() {
+         ^
+
+//! > ==========================================================================
+
+//! > Closure ref argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let bar = |a| -> u32 {
+        a
+    };
+    let a = 5;
+    let _f: u32 = bar(ref a);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Arguments to closure functions cannot be references
+ --> lib.cairo:6:23
+    let _f: u32 = bar(ref a);
+                      ^***^
+
+//! > ==========================================================================
+
+//! > Closure with return statement argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let bar = |a| {
+        return a;
+    };
+    let a = 5;
+    let _f: u32 = bar(a);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Closure with option propagation.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let bar = |a: Option<u32>| -> Option<u32> {
+        Option::Some(a?)
+    };
+    let a = Option::Some(5);
+    let _f: u32 = bar(a).unwrap();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Closure with option propagation inference required.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+//TODO(Tomer): Add support for inference of Option type in closures.
+fn foo() {
+    let bar1 = |a| -> Option<u32> {
+        Option::Some(a?)
+    };
+    let bar2 = |b: Option<u32>| {
+        Option::Some(b?)
+    };
+    let a = Option::Some(5);
+    let _f: u32 = bar(a).unwrap();
+    let _f: u32 = bar2(a).unwrap();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Type "?0" can not error propagate
+ --> lib.cairo:4:22
+        Option::Some(a?)
+                     ^^
+
+error: `?` can only be used in a function with `Option` or `Result` return type.
+ --> lib.cairo:7:22
+        Option::Some(b?)
+                     ^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:6:17
+    let bar2 = |b: Option<u32>| {
+                ^************^
+
+error: Function not found.
+ --> lib.cairo:10:19
+    let _f: u32 = bar(a).unwrap();
+                  ^*^
+
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: OptionTrait::unwrap and ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:10:26
+    let _f: u32 = bar(a).unwrap();
+                         ^****^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:9
+    let bar1 = |a| -> Option<u32> {
+        ^**^
+
+//! > ==========================================================================
+
+//! > break inside a closure.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    loop {
+        let c =  || {
+            break;
+        };
+        c();
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `break` only allowed inside a `loop`.
+ --> lib.cairo:4:13
+            break;
+            ^****^
+
+//! > ==========================================================================
+
+//! > continue inside a closure.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    loop {
+        let c =  || {
+            continue;
+        };
+        c();
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `continue` only allowed inside a `loop`.
+ --> lib.cairo:4:13
+            continue;
+            ^*******^

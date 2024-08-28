@@ -45,7 +45,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unreachable code
+warning: Unreachable code
  --> lib.cairo:3:5
     5;
     ^^
@@ -374,11 +374,6 @@ foo
 //! > module_code
 
 //! > semantic_diagnostics
-error: Unexpected expression type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
- --> lib.cairo:1:43
-fn foo(mut data: Span::<felt252>) -> u128 {
-                                          ^
-
 error: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
  --> lib.cairo:1:43
 fn foo(mut data: Span::<felt252>) -> u128 {

@@ -1,20 +1,24 @@
-use core::array::{ArrayTrait, SpanTrait};
-use core::bytes_31::{
+use crate::array::{ArrayTrait, SpanTrait};
+#[allow(unused_imports)]
+use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, one_shift_left_bytes_felt252, one_shift_left_bytes_u128,
     POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31
 };
-use core::clone::Clone;
-use core::cmp::min;
-use core::integer::{u128_safe_divmod, U32TryIntoNonZero};
-use core::option::OptionTrait;
-use core::traits::{Into, TryInto};
-use core::serde::Serde;
-use core::zeroable::NonZeroIntoImpl;
+use crate::clone::Clone;
+use crate::cmp::min;
+#[allow(unused_imports)]
+use crate::integer::{u128_safe_divmod, U32TryIntoNonZero};
+use crate::option::OptionTrait;
+use crate::traits::{Into, TryInto};
+#[allow(unused_imports)]
+use crate::serde::Serde;
+#[allow(unused_imports)]
+use crate::zeroable::NonZeroIntoImpl;
 
 /// A magic constant for identifying serialization of ByteArrays. An array of felt252s with this
 /// magic as one of the felt252s indicates that right after it you should expect a serialized
 /// ByteArray. This is currently used mainly for prints and panics.
-pub(crate) const BYTE_ARRAY_MAGIC: felt252 =
+pub const BYTE_ARRAY_MAGIC: felt252 =
     0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
@@ -34,7 +38,7 @@ pub struct ByteArray {
     pub(crate) pending_word_len: usize,
 }
 
-pub(crate) impl ByteArrayStringLiteral of core::string::StringLiteral<ByteArray>;
+pub(crate) impl ByteArrayStringLiteral of crate::string::StringLiteral<ByteArray>;
 
 #[generate_trait]
 pub impl ByteArrayImpl of ByteArrayTrait {
@@ -348,14 +352,16 @@ impl ByteArrayAdd of Add<ByteArray> {
         ByteArrayTrait::concat(@lhs, @rhs)
     }
 }
-impl ByteArrayAddEq of AddEq<ByteArray> {
+#[feature("deprecated-op-assign-traits")]
+impl ByteArrayAddEq of crate::traits::AddEq<ByteArray> {
     #[inline]
     fn add_eq(ref self: ByteArray, other: ByteArray) {
         self.append(@other);
     }
 }
 
-pub(crate) impl ByteArrayIndexView of IndexView<ByteArray, usize, u8> {
+#[feature("deprecated-index-traits")]
+pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize, u8> {
     fn index(self: @ByteArray, index: usize) -> u8 {
         self.at(index).expect('Index out of bounds')
     }

@@ -8,7 +8,7 @@ use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStr
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -43,7 +43,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                trait_ast.stable_ptr().untyped(),
+                &trait_ast,
                 "Generated trait must have a single element path.".to_string(),
             )],
             remove_original_item: false,
@@ -51,7 +51,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     };
 
     let mut diagnostics = vec![];
-    let mut builder = PatchBuilder::new(db);
+    let mut builder = PatchBuilder::new(db, &impl_ast);
     let leading_trivia = impl_ast
         .attributes(db)
         .elements(db)
@@ -64,7 +64,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     let extra_ident = leading_trivia.split('\n').last().unwrap_or_default();
     for attr_arg in attr.structurize(db).args {
         match attr_arg.variant {
-            AttributeArgVariant::Unnamed { value: ast::Expr::FunctionCall(attr_arg), .. }
+            AttributeArgVariant::Unnamed(ast::Expr::FunctionCall(attr_arg))
                 if attr_arg.path(db).as_syntax_node().get_text_without_trivia(db)
                     == "trait_attrs" =>
             {
@@ -78,7 +78,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             }
             _ => {
                 diagnostics.push(PluginDiagnostic::error(
-                    attr_arg.arg_stable_ptr.untyped(),
+                    &attr_arg.arg,
                     "Expected an argument with the name `trait_attrs`.".to_string(),
                 ));
             }
@@ -134,7 +134,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
     };
     if !generic_params_match {
         diagnostics.push(PluginDiagnostic::error(
-            trait_ast.stable_ptr().untyped(),
+            &trait_ast,
             "Generated trait must have generic args matching the impl's generic params."
                 .to_string(),
         ));
@@ -148,70 +148,102 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
             builder.add_node(impl_generic_params.as_syntax_node());
             builder.add_node(body.lbrace(db).as_syntax_node());
             for item in body.items_vec(db) {
-                let ast::ImplItem::Function(item) = item else {
-                    // Only functions are supported as trait items for now.
-                    continue;
-                };
-                let decl = item.declaration(db);
-                let signature = decl.signature(db);
-                builder.add_node(item.attributes(db).as_syntax_node());
-                builder.add_node(decl.function_kw(db).as_syntax_node());
-                builder.add_node(decl.name(db).as_syntax_node());
-                builder.add_node(decl.generic_params(db).as_syntax_node());
-                builder.add_node(signature.lparen(db).as_syntax_node());
-                for node in db.get_children(signature.parameters(db).node.clone()).iter().cloned() {
-                    if node.kind(db) != SyntaxKind::Param {
-                        builder.add_node(node);
-                    } else {
-                        let param = ast::Param::from_syntax_node(db, node);
-                        for modifier in param.modifiers(db).elements(db) {
-                            // `mut` modifiers are only relevant for impls, not traits.
-                            if !matches!(modifier, ast::Modifier::Mut(_)) {
-                                builder.add_node(modifier.as_syntax_node());
+                match item {
+                    ast::ImplItem::Function(function_item) => {
+                        let decl = function_item.declaration(db);
+                        let signature = decl.signature(db);
+                        builder.add_node(function_item.attributes(db).as_syntax_node());
+                        builder.add_node(decl.function_kw(db).as_syntax_node());
+                        builder.add_node(decl.name(db).as_syntax_node());
+                        builder.add_node(decl.generic_params(db).as_syntax_node());
+                        builder.add_node(signature.lparen(db).as_syntax_node());
+                        for node in
+                            db.get_children(signature.parameters(db).node.clone()).iter().cloned()
+                        {
+                            if node.kind(db) != SyntaxKind::Param {
+                                builder.add_node(node);
+                            } else {
+                                let param = ast::Param::from_syntax_node(db, node);
+                                for modifier in param.modifiers(db).elements(db) {
+                                    // `mut` modifiers are only relevant for impls, not traits.
+                                    if !matches!(modifier, ast::Modifier::Mut(_)) {
+                                        builder.add_node(modifier.as_syntax_node());
+                                    }
+                                }
+                                builder.add_node(param.name(db).as_syntax_node());
+                                builder.add_node(param.type_clause(db).as_syntax_node());
                             }
                         }
-                        builder.add_node(param.name(db).as_syntax_node());
-                        builder.add_node(param.type_clause(db).as_syntax_node());
+                        let rparen = signature.rparen(db);
+                        let ret_ty = signature.ret_ty(db);
+                        let implicits_clause = signature.implicits_clause(db);
+                        let optional_no_panic = signature.optional_no_panic(db);
+                        let last_node = if matches!(
+                            optional_no_panic,
+                            ast::OptionTerminalNoPanic::TerminalNoPanic(_)
+                        ) {
+                            builder.add_node(rparen.as_syntax_node());
+                            builder.add_node(ret_ty.as_syntax_node());
+                            builder.add_node(implicits_clause.as_syntax_node());
+                            optional_no_panic.as_syntax_node()
+                        } else if matches!(
+                            implicits_clause,
+                            ast::OptionImplicitsClause::ImplicitsClause(_)
+                        ) {
+                            builder.add_node(rparen.as_syntax_node());
+                            builder.add_node(ret_ty.as_syntax_node());
+                            implicits_clause.as_syntax_node()
+                        } else if matches!(ret_ty, ast::OptionReturnTypeClause::ReturnTypeClause(_))
+                        {
+                            builder.add_node(rparen.as_syntax_node());
+                            ret_ty.as_syntax_node()
+                        } else {
+                            rparen.as_syntax_node()
+                        };
+                        builder.add_modified(RewriteNode::Trimmed {
+                            node: last_node,
+                            trim_left: false,
+                            trim_right: true,
+                        });
+                        builder.add_str(";\n");
                     }
+                    ast::ImplItem::Type(type_item) => {
+                        builder.add_node(type_item.attributes(db).as_syntax_node());
+                        builder.add_node(type_item.type_kw(db).as_syntax_node());
+                        builder.add_modified(RewriteNode::Trimmed {
+                            node: type_item.name(db).as_syntax_node(),
+                            trim_left: false,
+                            trim_right: true,
+                        });
+                        builder.add_str(";\n");
+                    }
+                    ast::ImplItem::Constant(const_item) => {
+                        builder.add_node(const_item.attributes(db).as_syntax_node());
+                        builder.add_node(const_item.const_kw(db).as_syntax_node());
+                        builder.add_node(const_item.name(db).as_syntax_node());
+                        builder.add_modified(RewriteNode::Trimmed {
+                            node: const_item.type_clause(db).as_syntax_node(),
+                            trim_left: false,
+                            trim_right: true,
+                        });
+                        builder.add_str(";\n");
+                    }
+                    _ => diagnostics.push(PluginDiagnostic::error(
+                        &item,
+                        "Only functions, types, and constants are supported in #[generate_trait]."
+                            .to_string(),
+                    )),
                 }
-                let rparen = signature.rparen(db);
-                let ret_ty = signature.ret_ty(db);
-                let implicits_clause = signature.implicits_clause(db);
-                let optional_no_panic = signature.optional_no_panic(db);
-                let last_node = if matches!(
-                    optional_no_panic,
-                    ast::OptionTerminalNoPanic::TerminalNoPanic(_)
-                ) {
-                    builder.add_node(rparen.as_syntax_node());
-                    builder.add_node(ret_ty.as_syntax_node());
-                    builder.add_node(implicits_clause.as_syntax_node());
-                    optional_no_panic.as_syntax_node()
-                } else if matches!(implicits_clause, ast::OptionImplicitsClause::ImplicitsClause(_))
-                {
-                    builder.add_node(rparen.as_syntax_node());
-                    builder.add_node(ret_ty.as_syntax_node());
-                    implicits_clause.as_syntax_node()
-                } else if matches!(ret_ty, ast::OptionReturnTypeClause::ReturnTypeClause(_)) {
-                    builder.add_node(rparen.as_syntax_node());
-                    ret_ty.as_syntax_node()
-                } else {
-                    rparen.as_syntax_node()
-                };
-                builder.add_modified(RewriteNode::Trimmed {
-                    node: last_node,
-                    trim_left: false,
-                    trim_right: true,
-                });
-                builder.add_str(";\n");
             }
             builder.add_node(body.rbrace(db).as_syntax_node());
         }
     }
+    let (content, code_mappings) = builder.build();
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "generate_trait".into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: None,
         }),
         diagnostics,

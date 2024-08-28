@@ -1,24 +1,38 @@
 {
   "name": "cairo1",
   "displayName": "Cairo 1.0",
-  "description": "Support Cairo syntax",
-  "version": "2.6.3",
+  "description": "Cairo language support for Visual Studio Code.",
+  "version": "2.8.0",
+  "publisher": "StarkWare",
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Snippets",
+    "Formatters"
   ],
+  "keywords": [
+    "cairo",
+    "starknet",
+    "scarb",
+    "starkware",
+    "blockchain"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/starkware-libs/cairo.git"
+  },
+  "license": "Apache-2.0",
+  "icon": "icons/marketplace.png",
+  "galleryBanner": {
+    "color": "#111011",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onLanguage:cairo",
     "workspaceContains:**/cairo_project.toml",
     "workspaceContains:**/Scarb.toml"
   ],
-  "main": "./out/extension",
+  "main": "./dist/extension",
   "contributes": {
-    "snippets": [
-      {
-        "language": "cairo",
-        "path": "./snippets/cairo.json"
-      }
-    ],
     "languages": [
       {
         "id": "cairo",
@@ -29,14 +43,41 @@
         "extensions": [
           ".cairo"
         ],
+        "icon": {
+          "light": "./icons/cairo-file.svg",
+          "dark": "./icons/cairo-file.svg"
+        },
         "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cairo",
+        "scopeName": "source.cairo",
+        "path": "./syntaxes/cairo.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "cairo",
+        "path": "./snippets/cairo.json"
       }
     ],
     "commands": [
       {
-        "command": "cairo1.reload",
+        "command": "cairo.reload",
         "title": "Reload workspace",
-        "category": "cairo1"
+        "category": "Cairo"
+      },
+      {
+        "command": "cairo.expandMacro",
+        "title": "Recursively expand macros for item at caret",
+        "category": "Cairo"
+      },
+      {
+        "command": "cairo.viewAnalyzedCrates",
+        "title": "View currently analyzed crates",
+        "category": "Cairo"
       }
     ],
     "configuration": [
@@ -60,14 +101,25 @@
             "description": "Enable the use of Scarb package manager.",
             "scope": "window"
           },
+          "cairo1.preferScarbLanguageServer": {
+            "type": "boolean",
+            "default": "true",
+            "markdownDescription": "If the workspace contains a Scarb.toml file, prefer using `scarb cairo-language-server` over standalone `cairo-language-server` (e.g. one specified by `cairo1.languageServerPath`).",
+            "scope": "window"
+          },
           "cairo1.scarbPath": {
             "type": "string",
-            "description": "Path to the Scarb package manager binary.",
+            "description": "Absolute path to the Scarb package manager binary.",
             "scope": "window"
           },
           "cairo1.corelibPath": {
             "type": "string",
-            "description": "Path to the Cairo core library, used as a fallback.",
+            "description": "Absolute path to the Cairo core library, used in non-Scarb projects.",
+            "scope": "window"
+          },
+          "cairo1.traceMacroDiagnostics": {
+            "type": "boolean",
+            "description": "Attach additional information to diagnostics coming from macros, providing diagnostic source in macro generated code.",
             "scope": "window"
           },
           "cairo1.languageServerExtraEnv": {
@@ -98,15 +150,17 @@
       }
     }
   },
-  "publisher": "StarkWare",
-  "repository": "https://github.com/starkware-libs/cairo/",
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "compile-watch": "npm run compile -- --watch",
+    "compile-test": "tsc -p ./",
     "fmt": "prettier --write .",
-    "fmt:check": "prettier --check .",
-    "lint": "eslint . src --ext .ts,.tsx"
+    "gen-cairo-snippets": "node ./bin/gen-cairo-snippets.mjs",
+    "lint": "npm run lint-fmt && npm run lint-eslint",
+    "lint-eslint": "eslint . src --ext .ts,.tsx",
+    "lint-fmt": "prettier --check .",
+    "test": "node --test"
   },
   "engines": {
     "vscode": "^1.84.0"
@@ -121,9 +175,12 @@
     "@types/vscode": "^1.84.0",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@vscode/test-electron": "^2.3.9",
+    "esbuild": "^0.21.4",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "3.2.4",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.0.0"
   }
 }

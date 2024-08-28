@@ -1,10 +1,10 @@
-use core::test::test_utils::assert_gt;
+use crate::test::test_utils::assert_gt;
 
 #[test]
 #[should_panic(expected: ('panic_with_felt252()',))]
 fn test_panic_with_felt252() {
-    // No semicolon here: Missing implementation for core::traits::Drop::<core::never>
-    core::panic_with_felt252('panic_with_felt252()')
+    // No semicolon here: Missing implementation for crate::traits::Drop::<crate::never>
+    crate::panic_with_felt252('panic_with_felt252()')
 }
 
 #[test]
@@ -116,11 +116,16 @@ fn test_assert_eq_no_description() {
 #[test]
 #[available_gas(static)]
 fn test_get_available_gas_no_gas_supply() {
-    assert_eq!(core::testing::get_available_gas(), 0)
+    assert_eq!(crate::testing::get_available_gas(), 0)
 }
 
 #[test]
 #[available_gas(10000)]
 fn test_get_available_gas_with_gas_supply() {
-    assert_gt(core::testing::get_available_gas(), 5000, 'high amount of gas used')
+    assert_gt(crate::testing::get_available_gas(), 5000, 'high amount of gas used')
+}
+
+#[test]
+fn test_assert_eq_path_requiring_inference() {
+    assert_eq!(Option::<u32>::None, Option::None);
 }

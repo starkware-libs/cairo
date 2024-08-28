@@ -8,7 +8,8 @@ trait IContract<T> {
 
 #[starknet::contract]
 mod contract_a {
-    use starknet::info::get_contract_address;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
     #[storage]
     struct Storage {
         value: u128,
@@ -91,7 +92,7 @@ fn test_flow_safe_dispatcher() {
 // If the test is failing do to gas usage changes, update the gas limit by taking `test_flow` test
 // gas usage and add about 110000.
 #[test]
-#[available_gas(890000)]
+#[available_gas(826400)]
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED',))]
 fn test_flow_out_of_gas() {
     // Calling the `test_flow` test but a low gas limit.

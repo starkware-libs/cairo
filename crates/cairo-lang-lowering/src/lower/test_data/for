@@ -1,0 +1,216 @@
+//! > Test for.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() -> felt252 {
+    let mut x = 1;
+    let y = x + 1;
+    let mut iter = array![10, 11, 12, 13_felt252].span();
+    for _x in iter {
+        x = x + y;
+    };
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: core::felt252) <- 1
+  (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v3: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
+  (v4: core::felt252) <- 10
+  (v6: core::array::Array::<core::felt252>, v5: ()) <- core::array::ArrayImpl::<core::felt252>::append(v3, v4)
+  (v7: core::felt252) <- 11
+  (v9: core::array::Array::<core::felt252>, v8: ()) <- core::array::ArrayImpl::<core::felt252>::append(v6, v7)
+  (v10: core::felt252) <- 12
+  (v12: core::array::Array::<core::felt252>, v11: ()) <- core::array::ArrayImpl::<core::felt252>::append(v9, v10)
+  (v13: core::felt252) <- 13
+  (v15: core::array::Array::<core::felt252>, v14: ()) <- core::array::ArrayImpl::<core::felt252>::append(v12, v13)
+  (v16: core::array::Array::<core::felt252>, v17: @core::array::Array::<core::felt252>) <- snapshot(v15)
+  (v18: core::array::Span::<core::felt252>) <- core::array::ArrayToSpan::<core::felt252>::span(v17)
+  (v19: core::array::SpanIter::<core::felt252>) <- core::array::SpanIntoIterator::<core::felt252>::into_iter(v18)
+  (v21: core::array::SpanIter::<core::felt252>, v22: core::felt252, v20: ()) <- test::foo[expr30](v19, v0, v2)
+End:
+  Return(v22)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::felt252) <- 10
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
+  (v5: core::felt252) <- 11
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
+  (v7: core::felt252) <- 12
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v7)
+  (v9: core::felt252) <- 13
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+  (v11: core::felt252) <- 1
+  (v12: core::felt252) <- 1
+  (v13: core::felt252) <- core::felt252_add(v11, v12)
+  (v14: core::array::Array::<core::felt252>, v15: @core::array::Array::<core::felt252>) <- snapshot(v10)
+  (v16: core::array::Span::<core::felt252>) <- struct_construct(v15)
+  (v17: core::array::SpanIter::<core::felt252>) <- struct_construct(v16)
+  (v18: core::RangeCheck, v19: core::gas::GasBuiltin, v20: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[expr30](v0, v1, v17, v11, v13)
+End:
+  Match(match_enum(v20) {
+    PanicResult::Ok(v21) => blk1,
+    PanicResult::Err(v22) => blk2,
+  })
+
+blk1:
+Statements:
+  (v23: core::array::SpanIter::<core::felt252>, v24: core::felt252, v25: ()) <- struct_destructure(v21)
+  (v26: (core::felt252,)) <- struct_construct(v24)
+  (v27: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v26)
+End:
+  Return(v18, v19, v27)
+
+blk2:
+Statements:
+  (v28: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v22)
+End:
+  Return(v18, v19, v28)
+
+
+Generated loop lowering for source location:
+    for _x in iter {
+    ^**************^
+
+Parameters: v0: core::array::SpanIter::<core::felt252>, v1: core::felt252, v2: core::felt252
+blk0 (root):
+Statements:
+  (v4: core::array::SpanIter::<core::felt252>, v3: core::option::Option::<@core::felt252>) <- core::array::SpanIterator::<core::felt252>::next(v0)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v5) => blk1,
+    Option::None(v10) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::felt252) <- core::Felt252Add::add(v1, v2)
+  (v8: core::array::SpanIter::<core::felt252>, v9: core::felt252, v7: ()) <- test::foo[expr30](v4, v6, v2)
+End:
+  Goto(blk3, {v9 -> v12, v8 -> v13, v7 -> v11})
+
+blk2:
+Statements:
+  (v14: ()) <- struct_construct()
+End:
+  Goto(blk3, {v1 -> v12, v4 -> v13, v14 -> v11})
+
+blk3:
+Statements:
+End:
+  Return(v13, v12, v11)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::SpanIter::<core::felt252>, v3: core::felt252, v4: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v5, v6) => blk1,
+    Option::None(v7, v8) => blk10,
+  })
+
+blk1:
+Statements:
+  (v9: core::array::Span::<core::felt252>) <- struct_destructure(v2)
+  (v10: @core::array::Array::<core::felt252>) <- struct_destructure(v9)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v10) {
+    Option::Some(v11, v12) => blk2,
+    Option::None(v13) => blk3,
+  })
+
+blk2:
+Statements:
+  (v14: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v12)
+End:
+  Goto(blk4, {v11 -> v15, v14 -> v16})
+
+blk3:
+Statements:
+  (v17: ()) <- struct_construct()
+  (v18: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v17)
+End:
+  Goto(blk4, {v13 -> v15, v18 -> v16})
+
+blk4:
+Statements:
+  (v19: core::array::Span::<core::felt252>) <- struct_construct(v15)
+End:
+  Match(match_enum(v16) {
+    Option::Some(v20) => blk5,
+    Option::None(v21) => blk6,
+  })
+
+blk5:
+Statements:
+  (v22: @core::felt252) <- core::box::unbox::<@core::felt252>(v20)
+  (v23: core::option::Option::<@core::felt252>) <- Option::Some(v22)
+End:
+  Goto(blk7, {v23 -> v24})
+
+blk6:
+Statements:
+  (v25: ()) <- struct_construct()
+  (v26: core::option::Option::<@core::felt252>) <- Option::None(v25)
+End:
+  Goto(blk7, {v26 -> v24})
+
+blk7:
+Statements:
+  (v27: core::array::SpanIter::<core::felt252>) <- struct_construct(v19)
+End:
+  Match(match_enum(v24) {
+    Option::Some(v28) => blk8,
+    Option::None(v29) => blk9,
+  })
+
+blk8:
+Statements:
+  (v30: core::felt252) <- core::felt252_add(v3, v4)
+  (v31: core::RangeCheck, v32: core::gas::GasBuiltin, v33: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[expr30](v5, v6, v27, v30, v4)
+End:
+  Return(v31, v32, v33)
+
+blk9:
+Statements:
+  (v34: ()) <- struct_construct()
+  (v35: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v27, v3, v34)
+  (v36: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v35)
+End:
+  Return(v5, v6, v36)
+
+blk10:
+Statements:
+  (v37: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v38: core::felt252) <- 375233589013918064796019
+  (v39: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v37, v38)
+  (v40: core::panics::Panic) <- struct_construct()
+  (v41: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v40, v39)
+  (v42: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v41)
+End:
+  Return(v7, v8, v42)

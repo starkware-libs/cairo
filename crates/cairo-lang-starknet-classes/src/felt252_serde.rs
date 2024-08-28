@@ -1,5 +1,10 @@
 use std::ops::{Shl, Shr};
+use std::sync::LazyLock;
 
+use cairo_lang_sierra::extensions::circuit::{
+    CircuitFailureGuaranteeVerifyLibFunc, U96LimbsLessThanGuaranteeVerifyLibfunc,
+    U96SingleLimbLessThanGuaranteeVerifyLibfunc,
+};
 use cairo_lang_sierra::extensions::starknet::interoperability::ContractAddressTryFromFelt252Libfunc;
 use cairo_lang_sierra::extensions::starknet::secp256::Secp256GetPointFromXLibfunc;
 use cairo_lang_sierra::extensions::starknet::secp256k1::Secp256k1;
@@ -25,7 +30,6 @@ use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::{Signed, ToPrimitive};
-use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 use thiserror::Error;
 
@@ -77,15 +81,28 @@ pub fn sierra_to_felt252s(
     Ok(serialized)
 }
 
-/// Deserializes a Sierra program from a slice of felt252s.
+/// Partially deserializes a Sierra program represented as a slice of felt252s.
+///
+/// Returns (sierra_version_id, compiler_version_id, remaining),
+/// where 'remaining' are all the felts other than the ones dedicated to the version, unprocessed.
+/// See [crate::compiler_version].
+pub fn version_id_from_felt252s(
+    sierra_program: &[BigUintAsHex],
+) -> Result<(VersionId, VersionId, &[BigUintAsHex]), Felt252SerdeError> {
+    let (sierra_version_id, remaining) = VersionId::deserialize(sierra_program)?;
+    let (compiler_version_id, remaining) = VersionId::deserialize(remaining)?;
+    Ok((sierra_version_id, compiler_version_id, remaining))
+}
+
+/// Deserializes a Sierra program represented as a slice of felt252s.
 ///
 /// Returns (sierra_version_id, compiler_version_id, program).
 /// See [crate::compiler_version].
 pub fn sierra_from_felt252s(
-    felts: &[BigUintAsHex],
+    sierra_program: &[BigUintAsHex],
 ) -> Result<(VersionId, VersionId, Program), Felt252SerdeError> {
-    let (sierra_version_id, remaining) = VersionId::deserialize(felts)?;
-    let (compiler_version_id, remaining) = VersionId::deserialize(remaining)?;
+    let (sierra_version_id, compiler_version_id, remaining) =
+        version_id_from_felt252s(sierra_program)?;
     let mut program_felts = vec![];
     decompress(remaining, &mut program_felts)
         .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
@@ -180,7 +197,7 @@ impl Felt252Serde for StatementIdx {
 // Impls for generic ids.
 const SHORT_STRING_BOUND: usize = 31;
 /// A set of all the supported long generic ids.
-static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(|| {
+static SERDE_SUPPORTED_LONG_IDS: LazyLock<OrderedHashSet<&'static str>> = LazyLock::new(|| {
     OrderedHashSet::from_iter([
         StorageAddressFromBaseAndOffsetLibfunc::STR_ID,
         ContractAddressTryFromFelt252Libfunc::STR_ID,
@@ -188,10 +205,13 @@ static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(
         StorageAddressTryFromFelt252Trait::STR_ID,
         Secp256GetPointFromXLibfunc::<Secp256k1>::STR_ID,
         Secp256GetPointFromXLibfunc::<Secp256r1>::STR_ID,
+        CircuitFailureGuaranteeVerifyLibFunc::STR_ID,
+        U96LimbsLessThanGuaranteeVerifyLibfunc::STR_ID,
+        U96SingleLimbLessThanGuaranteeVerifyLibfunc::STR_ID,
     ])
 });
 /// A mapping of all the long names when fixing them from the hashed keccak representation.
-static LONG_NAME_FIX: Lazy<UnorderedHashMap<BigUint, &'static str>> = Lazy::new(|| {
+static LONG_NAME_FIX: LazyLock<UnorderedHashMap<BigUint, &'static str>> = LazyLock::new(|| {
     UnorderedHashMap::from_iter(
         SERDE_SUPPORTED_LONG_IDS.iter().map(|name| (starknet_keccak(name.as_bytes()), *name)),
     )

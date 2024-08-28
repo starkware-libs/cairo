@@ -89,6 +89,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ExprWhile => {
             vec![]
         }
+        SyntaxKind::ExprFor => {
+            vec![/* pattern */ children[1], /* identifier */ children[2]]
+        }
         SyntaxKind::ElseClause => {
             vec![]
         }
@@ -111,6 +114,12 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::OptionFixedSizeArraySizeEmpty => {
+            vec![]
+        }
+        SyntaxKind::ExprClosure => {
+            vec![]
+        }
+        SyntaxKind::ClosureParamWrapperNAry => {
             vec![]
         }
         SyntaxKind::StructArgExpr => {
@@ -200,6 +209,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::StatementBreak => {
+            vec![]
+        }
+        SyntaxKind::StatementItem => {
             vec![]
         }
         SyntaxKind::Param => {
@@ -295,6 +307,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![/* name */ children[3]]
         }
         SyntaxKind::ItemInlineMacro => {
+            vec![]
+        }
+        SyntaxKind::ItemHeaderDoc => {
             vec![]
         }
         SyntaxKind::ImplBody => {
@@ -423,6 +438,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TokenWhile => vec![],
         SyntaxKind::TerminalWhile => {
+            vec![]
+        }
+        SyntaxKind::TokenFor => vec![],
+        SyntaxKind::TerminalFor => {
             vec![]
         }
         SyntaxKind::TokenLoop => vec![],
@@ -680,7 +699,13 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::SyntaxFile => {
             vec![]
         }
+        SyntaxKind::TokenEmpty => vec![],
+        SyntaxKind::TerminalEmpty => {
+            vec![]
+        }
         SyntaxKind::TokenSingleLineComment => vec![],
+        SyntaxKind::TokenSingleLineInnerComment => vec![],
+        SyntaxKind::TokenSingleLineDocComment => vec![],
         SyntaxKind::TokenWhitespace => vec![],
         SyntaxKind::TokenNewline => vec![],
         SyntaxKind::TokenMissing => vec![],

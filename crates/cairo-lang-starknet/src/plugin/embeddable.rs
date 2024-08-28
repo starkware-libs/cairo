@@ -192,13 +192,14 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         .into(),
     );
 
-    let mut builder = PatchBuilder::new(db);
+    let mut builder = PatchBuilder::new(db, &item_impl);
     builder.add_modified(code);
+    let (content, code_mappings) = builder.build();
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "embeddable".into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: None,
         }),
         diagnostics,

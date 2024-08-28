@@ -1,22 +1,25 @@
 use std::ops::Shl;
 
-use cairo_felt::Felt252;
+use cairo_lang_utils::casts::IntoOrPanic;
+use itertools::{chain, repeat_n};
 use num_bigint::BigInt;
 use num_traits::One;
+use starknet_types_core::felt::CAIRO_PRIME_BIGINT;
 
 use super::bounded_int::BoundedIntType;
 use super::bytes31::Bytes31Type;
-use super::felt252::Felt252Type;
 use super::int::signed::{Sint16Type, Sint32Type, Sint64Type, Sint8Type};
 use super::int::signed128::Sint128Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
+use super::structure::StructType;
+use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{NamedType, OutputVarReferenceInfo, SpecializationError};
-use crate::ids::ConcreteTypeId;
+use crate::ids::{ConcreteTypeId, UserTypeId};
 use crate::program::GenericArg;
 
 /// Returns a libfunc signature that casts from one type to another, without changing the internal
@@ -59,7 +62,7 @@ impl Range {
     pub fn from_type_info(ty_info: &TypeInfo) -> Result<Self, SpecializationError> {
         Ok(match (&ty_info.long_id.generic_id, &ty_info.long_id.generic_args[..]) {
             (id, []) if *id == Felt252Type::id() => {
-                let prime: BigInt = Felt252::prime().into();
+                let prime: BigInt = CAIRO_PRIME_BIGINT.clone();
                 Self::half_open(1 - &prime, prime)
             }
             (id, []) if *id == Uint8Type::id() => Self::closed(u8::MIN, u8::MAX),
@@ -94,7 +97,7 @@ impl Range {
     }
     /// Returns true if this range can contain all possible values of a CASM cell.
     pub fn is_full_felt252_range(&self) -> bool {
-        self.size() >= Felt252::prime().into()
+        self.size() >= *CAIRO_PRIME_BIGINT
     }
     /// Returns the size of the range.
     pub fn size(&self) -> BigInt {
@@ -108,4 +111,18 @@ impl Range {
         let upper = std::cmp::min(&self.upper, &other.upper).clone();
         if lower < upper { Some(Self::half_open(lower, upper)) } else { None }
     }
+}
+
+/// Returns a fixed type array of the given type and size.
+pub fn fixed_size_array_ty(
+    context: &dyn SignatureSpecializationContext,
+    ty: ConcreteTypeId,
+    size: i16,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let args: Vec<GenericArg> = chain!(
+        [GenericArg::UserType(UserTypeId::from_string("Tuple"))],
+        repeat_n(GenericArg::Type(ty), size.into_or_panic())
+    )
+    .collect();
+    context.get_concrete_type(StructType::id(), &args)
 }

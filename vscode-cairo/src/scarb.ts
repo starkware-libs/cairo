@@ -27,8 +27,7 @@ export class Scarb implements LanguageServerExecutableProvider {
     workspaceFolder: vscode.WorkspaceFolder | undefined,
     ctx: Context,
   ): Promise<Scarb> {
-    const path =
-      (await fromConfig()) || (await fromPath()) || (await fromAsdf());
+    const path = (await fromConfig()) || (await fromPath()) || (await fromAsdf());
     if (!path) {
       throw new Error("could not find Scarb executable on this machine");
     }
@@ -88,6 +87,10 @@ export class Scarb implements LanguageServerExecutableProvider {
     return this.hasCommand("cairo-language-server", ctx);
   }
 
+  public async cacheClean(ctx: Context): Promise<void> {
+    await this.execWithOutput(["cache", "clean"], ctx);
+  }
+
   private async hasCommand(command: string, ctx: Context): Promise<boolean> {
     const output = await this.execWithOutput(["--json", "commands"], ctx);
 
@@ -103,13 +106,10 @@ export class Scarb implements LanguageServerExecutableProvider {
       .some((commands: Record<string, unknown>) => !!commands[command]);
   }
 
-  private async execWithOutput(
-    args: readonly string[],
-    ctx: Context,
-  ): Promise<string> {
-    const execId = globalExecId++;
+  private async execWithOutput(args: readonly string[], ctx: Context): Promise<string> {
+    const log = ctx.log.span(`scarb[${globalExecId++}]`);
 
-    ctx.log.trace(`scarb[${execId}]: ${this.path} ${args.join(" ")}`.trimEnd());
+    log.trace(`${this.path} ${args.join(" ")}`.trimEnd());
 
     const child = spawn(this.path, args, {
       stdio: "pipe",
@@ -121,10 +121,10 @@ export class Scarb implements LanguageServerExecutableProvider {
       stdout += chunk;
     }
 
-    if (ctx.log.logLevel <= vscode.LogLevel.Trace) {
+    if (log.logLevel <= vscode.LogLevel.Trace) {
       if (stdout.length > 0) {
         for (const line of stdout.trimEnd().split("\n")) {
-          ctx.log.trace(`scarb[${execId}]:stdout: ${line}`);
+          log.trace(`stdout: ${line}`);
         }
       }
 
@@ -135,7 +135,7 @@ export class Scarb implements LanguageServerExecutableProvider {
 
       if (stderr.length > 0) {
         for (const line of stderr.trimEnd().split("\n")) {
-          ctx.log.trace(`scarb[${execId}]:stderr: ${line}`);
+          log.trace(`stderr: ${line}`);
         }
       }
     }

@@ -110,22 +110,17 @@ error: Type "test::bar::<core::integer::u8, core::integer::u16>::Coupon" has no 
     x.a;
       ^
 
-error: Type "@test::bar::<core::integer::u8, core::integer::u16>::Coupon" has no members.
+error: Type "test::bar::<core::integer::u8, core::integer::u16>::Coupon" has no members.
  --> lib.cairo:20:12
     x_snap.a;
            ^
 
-error: Unexpected expression type. Expected: "test::bar::<?10, ?11>::Coupon", found: "test::bar2::<?12, ?13>::Coupon".
- --> lib.cairo:23:5
-    y = get_coupon2();
-    ^
-
-error: Unexpected argument type. Expected: "test::bar::<?10, ?11>::Coupon", found: "test::bar2::<?12, ?13>::Coupon".
+error: Unexpected argument type. Expected: "test::bar::<?8, ?9>::Coupon", found: "test::bar2::<?10, ?11>::Coupon".
  --> lib.cairo:23:9
     y = get_coupon2();
         ^***********^
 
-error: Unexpected argument type. Expected: "test::bar::<?14, ?15>::Coupon", found: "test::MyStruct::<?16>".
+error: Unexpected argument type. Expected: "test::bar::<?12, ?13>::Coupon", found: "test::MyStruct::<?14>".
  --> lib.cairo:26:9
     z = get_struct();
         ^**********^

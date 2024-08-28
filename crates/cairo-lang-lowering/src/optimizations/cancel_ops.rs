@@ -67,11 +67,11 @@ pub struct CancelOpsContext<'a> {
     /// Keeps track of all the aliases created by the renaming.
     aliases: UnorderedHashMap<VariableId, Vec<VariableId>>,
 
-    /// Statements that can be be removed.
+    /// Statements that can be removed.
     stmts_to_remove: Vec<StatementLocation>,
 }
 
-/// Similar to `mapping.get(var).or_default()` but but works for types that don't implement Default.
+/// Similar to `mapping.get(var).or_default()` but works for types that don't implement Default.
 fn get_entry_as_slice<'a, T>(
     mapping: &'a UnorderedHashMap<VariableId, Vec<T>>,
     var: &VariableId,
@@ -179,7 +179,7 @@ impl<'a> CancelOpsContext<'a> {
                 if !(can_remove_struct_destructure
                     || self.lowered.variables[stmt.input.var_id].copyable.is_ok())
                 {
-                    // We can't remove any of of the construct statements.
+                    // We can't remove any of the construct statements.
                     self.stmts_to_remove.truncate(self.stmts_to_remove.len() - constructs.len());
                     return false;
                 }

@@ -56,6 +56,7 @@ fn test_serialization() {
 // Tests the serialization and deserialization of a contract.
 #[test_case("test_contract__test_contract")]
 #[test_case("hello_starknet__hello_starknet")]
+#[test_case("libfuncs_coverage__libfuncs_coverage")]
 #[test_case("erc20__erc_20")]
 #[test_case("with_erc20__erc20_contract")]
 #[test_case("with_ownable__ownable_balance")]

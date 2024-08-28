@@ -68,7 +68,7 @@ pub fn build(
         }
         StarkNetConcreteLibfunc::Keccak(_) => build_syscalls(builder, "Keccak", [2], [2]),
         StarkNetConcreteLibfunc::Sha256ProcessBlock(_) => {
-            build_syscalls(builder, "Sha256ProcessBlock", [1, 2], [1])
+            build_syscalls(builder, "Sha256ProcessBlock", [1, 1], [1])
         }
         StarkNetConcreteLibfunc::Sha256StateHandleInit(_) => build_identity(builder),
         StarkNetConcreteLibfunc::Sha256StateHandleDigest(_) => build_identity(builder),
@@ -181,7 +181,7 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
             ),
         ],
         CostValidationInfo {
-            range_check_info: None,
+            builtin_infos: vec![],
             extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
         },
     ))

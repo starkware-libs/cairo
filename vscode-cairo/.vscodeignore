@@ -1,2 +1,11 @@
-.vscode/**
-.vscode-test/**
+.gitignore
+.prettierignore
+.vscode
+.vscode-test
+bin/
+node_modules
+out/
+src/
+test/
+test-support/
+tsconfig.json

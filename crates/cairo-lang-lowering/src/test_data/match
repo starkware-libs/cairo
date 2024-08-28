@@ -1496,8 +1496,8 @@ Parameters:
 test_function_lowering
 
 //! > function
-fn foo() -> felt252 {
-    match 5_u32 {
+fn foo(v: u32) -> felt252 {
+    match v {
         0 => 1,
         1 => 2,
         2 => 3,
@@ -1519,12 +1519,11 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::RangeCheck
+Parameters: v0: core::RangeCheck, v1: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: core::integer::u32) <- 5
 End:
-  Match(match core::integer::downcast::<core::integer::u32, core::internal::BoundedInt::<0, 6>>(v0, v1) {
+  Match(match core::integer::downcast::<core::integer::u32, core::internal::bounded_int::BoundedInt::<0, 6>>(v0, v1) {
     Option::Some(v2, v3) => blk1,
     Option::None(v4) => blk9,
   })

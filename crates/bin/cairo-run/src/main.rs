@@ -64,12 +64,13 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("failed to compile: {}", args.path.display());
     }
 
-    let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
+    let SierraProgramWithDebug { program: mut sierra_program, debug_info } = Arc::unwrap_or_clone(
         db.get_sierra_program(main_crate_ids.clone())
             .to_option()
             .with_context(|| "Compilation failed without any diagnostics.")?,
     );
     let replacer = DebugReplacer { db };
+    replacer.enrich_function_names(&mut sierra_program);
     if args.available_gas.is_none() && sierra_program.requires_gas_counter() {
         anyhow::bail!("Program requires gas counter, please provide `--available-gas` argument.");
     }

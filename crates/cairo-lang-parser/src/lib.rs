@@ -14,5 +14,5 @@ pub mod recovery;
 pub mod utils;
 mod validation;
 
-#[cfg(any(feature = "testing", test))]
+#[cfg(test)]
 pub mod test_utils;

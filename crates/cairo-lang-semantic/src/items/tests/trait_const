@@ -1,0 +1,743 @@
+//! > Test const items in trait/impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyImpl::foo() + MyImpl::X;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+    fn foo() -> u32;
+}
+impl MyImpl of MyTrait {
+    const X: u32 = 3;
+    fn foo() -> u32 {
+        Self::X + 5
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > An impl, without generics, shouldn't be used in a path in its own body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+    fn foo() -> u32;
+}
+impl MyImpl of MyTrait {
+    const X: u32 = 3;
+    fn foo() -> u32 {
+        MyImpl::X
+    }
+}
+
+//! > expected_diagnostics
+warning: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:8:9
+        MyImpl::X
+        ^****^
+
+//! > ==========================================================================
+
+//! > An impl shouldn't be used in a path in its own body, with the same generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+    fn foo() -> u32;
+}
+impl MyImpl<T> of MyTrait {
+    const X: u32 = 3;
+    fn foo() -> u32 {
+        MyImpl::<T>::X
+    }
+}
+
+//! > expected_diagnostics
+warning: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+ --> lib.cairo:8:9
+        MyImpl::<T>::X
+        ^*********^
+
+//! > ==========================================================================
+
+//! > An impl can be used in a path in its own body, if the generics are different.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    const X: u32;
+    fn foo() -> u32;
+}
+impl MyImpl<T> of MyTrait<T> {
+    const X: u32 = 3;
+    fn foo() -> u32 {
+        MyImpl::<u32>::X
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > An impl in a path in its own body should be fully explicit.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: warnings_only)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait SomeTrait {}
+trait MyTrait {
+    const X: u32;
+    fn foo() -> u32;
+}
+impl MyImpl<T, +SomeTrait> of MyTrait {
+    const X: u32 = 3;
+    fn foo() -> u32 {
+        MyImpl::<T>::X
+    }
+}
+
+//! > expected_diagnostics
+warning: In an impl, paths of the same impl must be fully explicit. Either use `Self` if this is the intention, or explicitly specify all the generic arguments.
+ --> lib.cairo:9:9
+        MyImpl::<T>::X
+        ^*********^
+
+//! > ==========================================================================
+
+//! > Incompatible signatures with trait/impl constant items.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+}
+impl MyImpl of MyTrait {
+    const X: i32 = 9;
+}
+
+//! > expected_diagnostics
+error: Expected type "core::integer::u32", found: "core::integer::i32".
+ --> lib.cairo:5:12
+    const X: i32 = 9;
+           ^***^
+
+//! > ==========================================================================
+
+//! > Unary operator on impl constant that implements it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyImpl::foo();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: i32;
+    fn foo() -> i32;
+}
+impl MyImpl of MyTrait {
+    const X: i32 = 3;
+    fn foo() -> i32 {
+        -Self::X
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Unary operator on impl constant that does not implements it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    MyImpl::foo();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+    fn foo() -> u32;
+}
+impl MyImpl of MyTrait {
+    const X: u32 = 3;
+    fn foo() -> u32 {
+        -Self::X
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>.
+ --> lib.cairo:8:9
+        -Self::X
+        ^******^
+
+//! > ==========================================================================
+
+//! > Binary operator on impl constants that do not implement it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: felt252;
+    const Y: felt252;
+    fn foo() -> bool;
+}
+impl MyImpl of MyTrait {
+    const X: felt252 = 3;
+    const Y: felt252 = 4;
+    fn foo() -> bool {
+        Self::X < Self::Y
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::traits::PartialOrd::<core::felt252>.
+ --> lib.cairo:10:9
+        Self::X < Self::Y
+        ^***************^
+
+//! > ==========================================================================
+
+//! > Using traits' items is allowed in other traits, if well resolved.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    const X: u32;
+}
+impl AnotherImpl of AnotherTrait {
+    const X: u32 = 3;
+}
+trait MyTrait {
+    fn foo() -> u32;
+}
+impl MyImpl of MyTrait {
+    fn foo() -> u32 {
+        AnotherTrait::X
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Using traits' items in other traits, well resolved, but with type mismatch.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AnotherTrait {
+    const X: u32;
+}
+impl AnotherImpl of AnotherTrait {
+    const X: u32 = 3;
+}
+trait MyTrait {
+    fn foo() -> u16;
+}
+impl MyImpl of MyTrait {
+    fn foo() -> u16 {
+        AnotherTrait::X
+    }
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:11:21
+    fn foo() -> u16 {
+                    ^
+
+//! > ==========================================================================
+
+//! > Using traits' items in other traits, but they can't be resolved.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+// A trait with 0 impls in the context.
+trait AnotherTrait0 {
+    const X: u32;
+}
+// A trait with 2 impls in the context.
+trait AnotherTrait2 {
+    const X: u32;
+}
+impl AnotherImpl20 of AnotherTrait2 {
+    const X: u32 = 4;
+}
+impl AnotherImpl21 of AnotherTrait2 {
+    const X: u32 = 5;
+}
+trait MyTrait {
+    fn foo() -> u32;
+    fn bar() -> u32;
+}
+impl MyImpl of MyTrait {
+    fn foo() -> u32 {
+        AnotherTrait2::X
+    }
+    fn bar() -> u32 {
+        AnotherTrait0::X
+    }
+}
+
+//! > expected_diagnostics
+error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
+ --> lib.cairo:21:24
+        AnotherTrait2::X
+                       ^
+
+error: Trait has no implementation in context: test::AnotherTrait0.
+ --> lib.cairo:24:24
+        AnotherTrait0::X
+                       ^
+
+//! > ==========================================================================
+
+//! > traits' constants are resolved when there is a single impl in context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S<const N: u32> {}
+trait AnotherTrait {
+    const X: u32;
+}
+impl AnotherImpl of AnotherTrait {
+    const X: u32 = 32;
+}
+trait MyTrait {
+    const Y: u32;
+    fn foo1() -> S<32>;
+    fn foo2(x: S<32>);
+}
+impl MyImpl of MyTrait {
+    const Y: u32 = 32;
+    fn foo1() -> S<AnotherTrait::X> {
+        S {}
+    }
+    fn foo2(x: S::<Self::Y>) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Mismatch of resolved traits' items when there is a single impl in context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S<const N: u32> {}
+
+trait AnotherTrait {
+    const X: u32;
+}
+impl AnotherImpl of AnotherTrait {
+    const X: u32 = 16;
+}
+trait MyTrait {
+    const Y: u32;
+    fn foo1() -> S<32>;
+    fn foo2(x: S<32>);
+}
+impl MyImpl of MyTrait {
+    const Y: u32 = 16;
+    fn foo1() -> S<AnotherTrait::X> {
+        S {}
+    }
+    fn foo2(x: S<Self::Y>) {}
+}
+
+//! > expected_diagnostics
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `test::S::<32>`, actual: `test::S::<16>`.
+ --> lib.cairo:16:18
+    fn foo1() -> S<AnotherTrait::X> {
+                 ^****************^
+
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `test::S::<32>`, actual: `test::S::<16>`.
+ --> lib.cairo:19:16
+    fn foo2(x: S<Self::Y>) {}
+               ^********^
+
+//! > ==========================================================================
+
+//! > traits' constants as generic params in trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S<const N: u32> {}
+
+trait MyTrait {
+    const Y: u32;
+    fn foo1() -> S<Self::Y>;
+    fn foo2(x: S<Self::Y>);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > impl items are allowed in its own trait body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S<const N: u32> {}
+trait MyTrait {
+    const X: u32;
+    fn foo1() -> S<MyImpl::X>;
+    fn foo2(x: S<MyImpl::X>);
+}
+impl MyImpl of MyTrait {
+    const X: u32 = 3;
+    fn foo1() -> S<3> {
+        S {}
+    }
+    fn foo2(x: S<3>) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > impl items in its own trait body, with type mismatch.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S<const N: u32> {}
+
+trait MyTrait {
+    const X: u32;
+    fn foo1() -> S<MyImpl::X>;
+    fn foo2(x: S<MyImpl::X>);
+}
+impl MyImpl of MyTrait {
+    const X: u32 = 3;
+    fn foo1() -> S<4> {
+        S {}
+    }
+    fn foo2(x: S<4>) {}
+}
+
+//! > expected_diagnostics
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `test::S::<3>`, actual: `test::S::<4>`.
+ --> lib.cairo:10:18
+    fn foo1() -> S<4> {
+                 ^**^
+
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `test::S::<3>`, actual: `test::S::<4>`.
+ --> lib.cairo:13:16
+    fn foo2(x: S<4>) {}
+               ^**^
+
+//! > ==========================================================================
+
+//! > Diagnostics on using trait function as a const.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _: u32 = MyImpl::my_function;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+    fn my_function() -> u16;
+}
+impl MyImpl of MyTrait {
+    const X: u32 = 4;
+    fn my_function() -> u16 {
+        2_u16
+    }
+}
+
+//! > expected_diagnostics
+error: Expected variable or constant, found function.
+ --> lib.cairo:12:18
+    let _: u32 = MyImpl::my_function;
+                 ^*****************^
+
+//! > ==========================================================================
+
+//! > Impl constants chain resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+    const Y: u32;
+}
+impl MyImpl of MyTrait {
+    const X: u32 = Self::Y;
+    const Y: u32 = 4;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Impl constants chain resolution, with mismatch types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u16;
+    const Y: u32;
+}
+impl MyImpl of MyTrait {
+    const X: u16 = Self::Y;
+    const Y: u32 = 4;
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
+ --> lib.cairo:6:5
+    const X: u16 = Self::Y;
+    ^*********************^
+
+//! > ==========================================================================
+
+//! > Impl constants cycle of length 1.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+}
+impl MyImpl of MyTrait {
+    const X: u32 = Self::X;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'const' items.
+ --> lib.cairo:5:5
+    const X: u32 = Self::X;
+    ^*********************^
+
+//! > ==========================================================================
+
+//! > Impl constants cycle of length 2.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const X: u32;
+    const Y: u32;
+}
+impl MyImpl of MyTrait {
+    const X: u32 = Self::Y;
+    const Y: u32 = Self::X;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'const' items.
+ --> lib.cairo:6:5
+    const X: u32 = Self::Y;
+    ^*********************^
+
+error: Cycle detected while resolving 'const' items.
+ --> lib.cairo:7:5
+    const Y: u32 = Self::X;
+    ^*********************^
+
+//! > ==========================================================================
+
+//! > Use of missing Impl constants missing.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> i32 {
+    MyImpl::Y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const Y: u32;
+}
+impl MyImpl of MyTrait {}
+
+//! > expected_diagnostics
+error: Not all trait items are implemented. Missing: 'Y'.
+ --> lib.cairo:4:6
+impl MyImpl of MyTrait {}
+     ^****^
+
+error: Trait has no implementation in context: test::MyTrait.
+ --> lib.cairo:5:17
+fn foo() -> i32 {
+                ^

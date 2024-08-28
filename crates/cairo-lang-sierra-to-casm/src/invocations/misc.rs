@@ -1,17 +1,18 @@
-use cairo_felt::Felt252;
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::{casm, casm_build_extend};
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use cairo_lang_sierra_gas::objects::ConstCost;
 use itertools::Itertools;
 use num_bigint::{BigInt, ToBigInt};
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
     InvocationError,
 };
-use crate::invocations::{add_input_variables, CostValidationInfo};
+use crate::invocations::{add_input_variables, BuiltinInfo, CostValidationInfo};
 use crate::references::ReferenceExpression;
 use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntry};
 
@@ -309,7 +310,11 @@ pub fn build_unsigned_try_from_felt252(
             ("Failure", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))

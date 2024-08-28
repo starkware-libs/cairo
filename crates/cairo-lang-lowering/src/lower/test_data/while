@@ -62,7 +62,7 @@ End:
   Return(v4, v5, v13)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     while x != 0 {
     ^************^
 
@@ -205,7 +205,7 @@ End:
   Return(v0, v4)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     while let true = (x != 0) {
     ^*************************^
 
@@ -340,7 +340,7 @@ End:
   Return(v3, v4, v14)
 
 
-Generated lowering for source location:
+Generated loop lowering for source location:
     while let MyEnum::A(x) = a() {
     ^****************************^
 

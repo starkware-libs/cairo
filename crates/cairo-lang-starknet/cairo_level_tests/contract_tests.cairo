@@ -1,6 +1,4 @@
 use core::num::traits::Zero;
-use starknet::StorageAddress;
-use core::test::test_utils::{assert_eq, assert_ne};
 
 use super::utils::serialized;
 
@@ -10,12 +8,16 @@ trait ITestContract<T> {}
 #[starknet::contract]
 mod test_contract {
     use starknet::StorageAddress;
+    use starknet::storage::{
+        Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
+        StorageMapWriteAccess
+    };
 
     #[storage]
     struct Storage {
         value: felt252,
-        mapping: LegacyMap::<u128, bool>,
-        large_mapping: LegacyMap::<u256, u256>,
+        mapping: Map::<u128, bool>,
+        large_mapping: Map::<u256, u256>,
     }
 
     #[external(v0)]
@@ -92,9 +94,7 @@ fn test_wrapper_too_many_args() {
 
 #[test]
 fn test_wrapper_valid_args() {
-    assert_eq(
-        @test_contract::__external::get_plus_2(serialized(1)), @serialized(3), 'Wrong result'
-    );
+    assert_eq!(test_contract::__external::get_plus_2(serialized(1)), serialized(3));
 }
 
 #[test]
@@ -106,53 +106,47 @@ fn test_wrapper_valid_args_out_of_gas() {
 
 #[test]
 fn test_wrapper_array_arg_and_output() {
-    assert_eq(
-        @test_contract::__external::get_appended_array(serialized(array![2])),
-        @serialized(array![2, 1]),
-        'Wrong result'
+    assert_eq!(
+        test_contract::__external::get_appended_array(serialized(array![2])),
+        serialized(array![2, 1])
     );
 }
 
 #[test]
 fn read_first_value() {
-    assert_eq(
-        @test_contract::__external::get_value(serialized(())), @serialized(0), 'Wrong result'
-    );
+    assert_eq!(test_contract::__external::get_value(serialized(())), serialized(0));
 }
 
 #[test]
 fn write_read_value() {
     assert(test_contract::__external::set_value(serialized(4)).is_empty(), 'Not empty');
-    assert_eq(
-        @test_contract::__external::get_value(serialized(())), @serialized(4), 'Wrong result'
-    );
+    assert_eq!(test_contract::__external::get_value(serialized(())), serialized(4));
 }
 
 #[test]
 fn empty_start() {
-    assert_eq(@test_contract::__external::contains(serialized(4)), @serialized(0), 'Wrong result');
+    assert_eq!(test_contract::__external::contains(serialized(4)), serialized(0));
 }
 
 #[test]
 fn contains_added() {
     assert(test_contract::__external::insert(serialized(4)).is_empty(), 'Not empty');
-    assert_eq(@test_contract::__external::contains(serialized(4)), @serialized(1), 'Wrong result');
-    assert_eq(@test_contract::__external::contains(serialized(5)), @serialized(0), 'Wrong result');
+    assert_eq!(test_contract::__external::contains(serialized(4)), serialized(1));
+    assert_eq!(test_contract::__external::contains(serialized(5)), serialized(0));
 }
 
 #[test]
 fn not_contains_removed() {
     assert(test_contract::__external::insert(serialized(4)).is_empty(), 'Not empty');
     assert(test_contract::__external::remove(serialized(4)).is_empty(), 'Not empty');
-    assert_eq(@test_contract::__external::contains(serialized(4)), @serialized(0), 'Wrong result');
+    assert_eq!(test_contract::__external::contains(serialized(4)), serialized(0));
 }
 
 #[test]
 fn read_large_first_value() {
-    assert_eq(
-        @test_contract::__external::get_large(serialized(0x200000000000000000000000000000001_u256)),
-        @serialized(0_u256),
-        'Wrong result'
+    assert_eq!(
+        test_contract::__external::get_large(serialized(0x200000000000000000000000000000001_u256)),
+        serialized(0_u256)
     );
 }
 
@@ -167,10 +161,9 @@ fn write_read_large_value() {
             .is_empty(),
         'Array not empty'
     );
-    assert_eq(
-        @test_contract::__external::get_large(serialized(0x200000000000000000000000000000001_u256)),
-        @serialized(0x400000000000000000000000000000003_u256),
-        'Wrong result'
+    assert_eq!(
+        test_contract::__external::get_large(serialized(0x200000000000000000000000000000001_u256)),
+        serialized(0x400000000000000000000000000000003_u256)
     );
 }
 
@@ -214,9 +207,7 @@ fn test_get_version() {
 fn test_get_account_contract_address() {
     assert(starknet::get_tx_info().unbox().account_contract_address.is_zero(), 'non default value');
     starknet::testing::set_account_contract_address(starknet::contract_address_const::<1>());
-    assert_eq(
-        @starknet::get_tx_info().unbox().account_contract_address.into(), @1, 'not set value'
-    );
+    assert_eq!(starknet::get_tx_info().unbox().account_contract_address.into(), 1);
 }
 
 #[test]
@@ -253,8 +244,8 @@ fn test_get_signature() {
     starknet::testing::set_signature(array!['some', 'signature'].span());
     let read_signature = starknet::get_tx_info().unbox().signature;
     assert_eq!(read_signature.len(), 2);
-    assert_eq(read_signature.at(0), @'some', 'unexpected element 0');
-    assert_eq(read_signature.at(1), @'signature', 'unexpected element 1');
+    assert_eq!(read_signature.at(0), @'some');
+    assert_eq!(read_signature.at(1), @'signature');
 }
 
 #[test]
@@ -290,37 +281,41 @@ fn test_pop_l2_to_l1_message_empty_messages() {
 #[test]
 #[should_panic]
 fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress {
-    starknet::storage_address_try_from_felt252(-1).unwrap()
+    (-1).try_into().unwrap()
 }
 
 #[test]
 fn test_storage_address() {
     let mut args = array![0x17];
-    let _storage_address = starknet::storage_address_try_from_felt252(0x17).unwrap();
+    let _storage_address: starknet::StorageAddress = 0x17.try_into().unwrap();
     let ret_data = test_contract::__external::test_storage_address(args.span());
 
-    assert_eq(args[0_u32], ret_data[0_u32], 'Unexpected ret_data.');
+    assert_eq!(args[0_u32], ret_data[0_u32]);
 }
 
-#[derive(starknet::Event, PartialEq, Drop, Clone, Serde)]
+#[derive(starknet::Event, PartialEq, Drop, Clone, Serde, Debug)]
 struct A {
     x: felt252,
     #[key]
     data: usize,
 }
 
-#[derive(starknet::Event, PartialEq, Drop, Clone, Serde)]
+#[derive(starknet::Event, PartialEq, Drop, Clone, Serde, Debug)]
 struct B {
     x: felt252,
 }
 
-#[derive(starknet::Event, PartialEq, Drop, Clone)]
+#[derive(starknet::Event, PartialEq, Drop, Clone, Debug)]
 enum MyEventEnum {
     A: A,
     B: B,
 }
 
-fn event_serde_tester<T, +starknet::Event<T>, +Clone<T>, +PartialEq<T>, +Drop<T>>(event: T) {
+fn event_serde_tester<
+    T, +starknet::Event<T>, +Clone<T>, +PartialEq<T>, +Drop<T>, +core::fmt::Debug<T>
+>(
+    event: T
+) {
     let original_event = event.clone();
     let mut keys = Default::default();
     let mut data = Default::default();
@@ -328,7 +323,7 @@ fn event_serde_tester<T, +starknet::Event<T>, +Clone<T>, +PartialEq<T>, +Drop<T>
     let mut keys = keys.span();
     let mut data = data.span();
     let mut event = starknet::Event::deserialize(ref keys, ref data).unwrap();
-    assert_eq(@event, @original_event, 'Event deserialization failed');
+    assert_eq!(event, original_event);
 }
 
 #[test]

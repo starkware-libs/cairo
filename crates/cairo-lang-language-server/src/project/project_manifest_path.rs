@@ -3,12 +3,13 @@ use std::{fmt, fs};
 
 use cairo_lang_project::PROJECT_FILE_NAME;
 
+use crate::toolchain::scarb::SCARB_TOML;
+
 #[cfg(test)]
 #[path = "project_manifest_path_test.rs"]
 mod project_manifest_path_test;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
-const SCARB_TOML: &str = "Scarb.toml";
 
 /// An absolute path to a manifest file of a single Cairo project.
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd, Hash)]
@@ -23,7 +24,7 @@ pub enum ProjectManifestPath {
 }
 
 impl ProjectManifestPath {
-    /// Look for a project manifest that **can** include source files at the given path.
+    /// Looks for a project manifest that **can** include source files at the given path.
     ///
     /// Returns `None` if the file at `path` is detached from any Cairo project.
     ///
@@ -32,6 +33,10 @@ impl ProjectManifestPath {
     /// The following files are searched for in order:
     /// 1. `cairo_project.toml`
     /// 2. `Scarb.toml`
+    ///
+    /// This precedence rule also applies to manifest files themselves.
+    /// If there are all `cairo_project.toml`, `Scarb.toml` and `Scarb.lock`
+    /// files in the same directory, the `cairo_project.toml` file will be chosen for each.
     pub fn discover(path: &Path) -> Option<ProjectManifestPath> {
         return find_in_parent_dirs(path.to_path_buf(), PROJECT_FILE_NAME)
             .map(ProjectManifestPath::CairoProject)

@@ -2,6 +2,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::substitution::{
     GenericSubstitution, SemanticRewriter, SubstitutionRewriter,
 };
+use cairo_lang_utils::{Intern, LookupIntern};
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction};
@@ -13,16 +14,13 @@ fn concretize_function(
     rewriter: &mut SubstitutionRewriter<'_>,
     function: FunctionId,
 ) -> Maybe<FunctionId> {
-    let long_id = match db.lookup_intern_lowering_function(function) {
+    let long_id = match function.lookup_intern(db) {
         FunctionLongId::Semantic(id) => FunctionLongId::Semantic(rewriter.rewrite(id)?),
-        FunctionLongId::Generated(GeneratedFunction { parent, element }) => {
-            FunctionLongId::Generated(GeneratedFunction {
-                parent: rewriter.rewrite(parent)?,
-                element,
-            })
+        FunctionLongId::Generated(GeneratedFunction { parent, key }) => {
+            FunctionLongId::Generated(GeneratedFunction { parent: rewriter.rewrite(parent)?, key })
         }
     };
-    Ok(db.intern_lowering_function(long_id))
+    Ok(long_id.intern(db))
 }
 
 /// Concretizes a lowered generic function by applying a generic parameter substitution on its
@@ -36,8 +34,10 @@ pub fn concretize_lowered(
     // Substitute all types.
     for (_, var) in lowered.variables.iter_mut() {
         var.ty = rewriter.rewrite(var.ty)?;
-        if let Ok(impl_id) = &mut var.destruct_impl {
-            *impl_id = rewriter.rewrite(*impl_id)?;
+
+        for impl_id in [&mut var.destruct_impl, &mut var.panic_destruct_impl].into_iter().flatten()
+        {
+            rewriter.internal_rewrite(impl_id)?;
         }
     }
     // Substitute all statements.

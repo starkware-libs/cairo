@@ -1,0 +1,19 @@
+[package]
+name = "cairo-lang-doc"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "A collection of documentation processing utilities for the Cairo programming language."
+
+[dependencies]
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.8.0" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.8.0" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.8.0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.8.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.0" }
+salsa.workspace = true
+itertools.workspace = true
+
+[dev-dependencies]
+indoc.workspace = true

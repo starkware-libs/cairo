@@ -217,7 +217,7 @@ struct Query<T> {
 Parameters: v0: test::Query::<core::felt252>, v1: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0{`self`})
+  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0{`self.data`})
   (v4: core::array::Array::<core::felt252>, v3: ()) <- core::array::ArrayImpl::<core::felt252>::append(v2{`self.data`}, v1{`value`})
   (v5: test::Query::<core::felt252>) <- struct_construct(v4{`self`})
 End:
@@ -527,7 +527,7 @@ Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- 17
-  (v2: core::integer::u32, v3: test::NonCopy) <- struct_destructure(v0{`x`})
+  (v2: core::integer::u32, v3: test::NonCopy) <- struct_destructure(v0{`x.a`})
   () <- test::use_non_copy(v3{`x.b`})
   (v4: test::MyStruct) <- struct_construct(v1{`x`}, v3{`x`})
 End:
@@ -585,9 +585,9 @@ note: Trait has no implementation in context: core::traits::Copy::<core::array::
 Parameters: v0: test::MyStruct, v1: test::MyStruct
 blk0 (root):
 Statements:
-  (v2: core::array::Array::<core::felt252>, v3: core::integer::u8) <- struct_destructure(v0{`s1`})
+  (v2: core::array::Array::<core::felt252>, v3: core::integer::u8) <- struct_destructure(v0{`s1.a`})
   () <- test::invalidate(v2{`s1.a`})
-  (v4: core::array::Array::<core::felt252>, v5: core::integer::u8) <- struct_destructure(v1{`s2`})
+  (v4: core::array::Array::<core::felt252>, v5: core::integer::u8) <- struct_destructure(v1{`s2.a`})
   () <- test::invalidate(v4{`s2.a`})
   (v6: ()) <- struct_construct()
   (v7: test::MyStruct) <- struct_construct(v2{`s1`}, v3{`s1`})
@@ -639,7 +639,7 @@ note: Trait has no implementation in context: core::traits::Copy::<core::array::
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0{`self`})
+  (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0{`self.b`})
   (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2{`self.b`})
   (v5: core::integer::u8) <- 0
   (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
@@ -705,7 +705,7 @@ struct MyStruct {
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0{`v`})
+  (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0{`v.b`})
   (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2{`v.b`})
   (v5: core::integer::u8) <- 0
   (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
@@ -780,9 +780,9 @@ Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 17
-  (v2: core::felt252, v3: test::NonCopy) <- struct_destructure(v0{`x`})
+  (v2: core::felt252, v3: test::NonCopy) <- struct_destructure(v0{`x.a`})
   (v4: core::felt252) <- 1
-  (v6: core::felt252, v5: ()) <- core::Felt252AddEq::add_eq(v1{`x.a`}, v4{`1`})
+  (v6: core::felt252, v5: ()) <- core::ops::arith::DeprecatedAddAssign::<core::felt252, core::Felt252AddEq>::add_assign(v1{`x.a`}, v4{`1`})
   (v7: test::MyStruct) <- struct_construct(v6{`x`}, v3{`x`})
 End:
   Return(v7)
@@ -830,7 +830,7 @@ End:
 
 blk1:
 Statements:
-  (v4: core::integer::u32) <- struct_destructure(v0{`a`})
+  (v4: core::integer::u32) <- struct_destructure(v0{`a.x`})
   (v5: core::integer::u32, v6: @core::integer::u32) <- snapshot(v4{`a.x`})
   (v7: ()) <- test::bar(v6{`@a.x`})
   (v10: test::A) <- struct_construct(v5{`if true { bar(@a.x); }`})
@@ -860,6 +860,7 @@ fn foo(mut x: MyStruct) -> MyStruct {
     let _arr = array![{
         x.a = 17;
         x.a += 1;
+        5
     },];
     return x;
 }
@@ -894,13 +895,62 @@ note: Trait has no implementation in context: core::traits::PanicDestruct::<test
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::array::Array::<()>) <- core::array::ArrayImpl::<()>::new()
+  (v1: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
   (v2: core::felt252) <- 17
-  (v3: core::felt252, v4: test::NonCopy) <- struct_destructure(v0{`x`})
+  (v3: core::felt252, v4: test::NonCopy) <- struct_destructure(v0{`x.a`})
   (v5: core::felt252) <- 1
-  (v7: core::felt252, v6: ()) <- core::Felt252AddEq::add_eq(v2{`x.a`}, v5{`1`})
-  (v8: ()) <- struct_construct()
-  (v10: core::array::Array::<()>, v9: ()) <- core::array::ArrayImpl::<()>::append(v1{`__array_builder_macro_result__`}, v8{`{ x.a = 17; x.a += 1; }`})
+  (v7: core::felt252, v6: ()) <- core::ops::arith::DeprecatedAddAssign::<core::felt252, core::Felt252AddEq>::add_assign(v2{`x.a`}, v5{`1`})
+  (v8: core::felt252) <- 5
+  (v10: core::array::Array::<core::felt252>, v9: ()) <- core::array::ArrayImpl::<core::felt252>::append(v1{`__array_builder_macro_result__`}, v8{`5`})
   (v11: test::MyStruct) <- struct_construct(v7{`x`}, v4{`x`})
 End:
   Return(v11)
+
+//! > ==========================================================================
+
+//! > Test Usage after deconstruct
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(x: MyStruct) -> MyStruct {
+    let y = x;
+    consume(x.b);
+    y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type NonCopy;
+
+extern fn consume(x: NonCopy) nopanic;
+
+struct MyStruct {
+    a: felt252,
+    b: NonCopy,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:12:5
+    y
+    ^
+note: variable was previously used here:
+  --> lib.cairo:11:13
+    consume(x.b);
+            ^*^
+note: Trait has no implementation in context: core::traits::Copy::<test::MyStruct>.
+
+//! > lowering
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: test::NonCopy) <- struct_destructure(v0{`x.b`})
+  () <- test::consume(v2{`x.b`})
+End:
+  Return(v0)

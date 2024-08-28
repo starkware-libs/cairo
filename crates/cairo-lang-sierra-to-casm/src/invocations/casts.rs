@@ -3,6 +3,7 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::casts::{
     CastConcreteLibfunc, CastType, DowncastConcreteLibfunc,
 };
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
 
@@ -10,7 +11,7 @@ use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::range_reduction::build_felt252_range_reduction;
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CostValidationInfo,
 };
 use crate::references::ReferenceExpression;
 
@@ -77,7 +78,11 @@ pub fn build_downcast(
             ("Failure", &[&[range_check]], Some(target_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))

@@ -1,6 +1,4 @@
-use core::debug::PrintTrait;
-use core::test::test_utils::{assert_eq, assert_ne};
-use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
+use starknet::syscalls::deploy_syscall;
 use starknet::SyscallResultTrait;
 
 #[starknet::interface]
@@ -11,7 +9,8 @@ trait IContractWithEvent<T> {
 
 #[starknet::contract]
 mod contract_with_event {
-    use starknet::info::get_contract_address;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
     #[storage]
     struct Storage {
         value: u128,
@@ -126,8 +125,8 @@ fn test_pop_log() {
     let contract_address = starknet::contract_address_const::<0x1234>();
     starknet::testing::set_contract_address(contract_address);
     let (keys, data) = ([1234].span(), [2345].span());
-    starknet::emit_event_syscall(keys, data).unwrap_syscall();
-    starknet::emit_event_syscall(keys, data).unwrap_syscall();
+    starknet::syscalls::emit_event_syscall(keys, data).unwrap_syscall();
+    starknet::syscalls::emit_event_syscall(keys, data).unwrap_syscall();
 
     assert_eq!(starknet::testing::pop_log_raw(contract_address), Option::Some((keys, data)));
     assert_eq!(starknet::testing::pop_log_raw(contract_address), Option::Some((keys, data)));

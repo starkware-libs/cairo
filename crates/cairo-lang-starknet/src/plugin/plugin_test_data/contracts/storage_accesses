@@ -1,0 +1,2313 @@
+//! > Test expansion of a contract with several components.
+
+//! > test_runner_name
+ExpandContractFromCrateTestRunner(expect_diagnostics: false)
+
+//! > contract_file_name
+cairo_level_tests/contracts/storage_accesses.cairo
+
+//! > generated_cairo_code
+use starknet::ContractAddress;
+use starknet::storage::Map;
+
+#[starknet::interface]
+trait IERC20<TContractState> {
+    fn get_name(self: @TContractState) -> felt252;
+    fn get_symbol(self: @TContractState) -> felt252;
+    fn get_decimals(self: @TContractState) -> u8;
+    fn get_total_supply(self: @TContractState) -> u256;
+    fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
+    fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn increase_allowance(ref self: TContractState, spender: ContractAddress, added_value: u256);
+    fn decrease_allowance(
+        ref self: TContractState, spender: ContractAddress, subtracted_value: u256
+    );
+    fn write_info(ref self: TContractState, user_info: UserInfo);
+    fn get_info(self: @TContractState) -> UserInfo;
+}
+
+#[derive(starknet::Store, Serde, Drop, Copy)]
+struct UserInfo {
+    name: felt252,
+    symbol: felt252,
+    decimals: u8,
+    total_supply: u256,
+}
+
+#[starknet::storage_node]
+struct TransactionInfo {
+    balances: Map::<ContractAddress, u256>,
+    allowances: Map::<ContractAddress, Map<ContractAddress, u256>>,
+}
+
+#[starknet::contract]
+mod storage_accesses {
+    use core::num::traits::Zero;
+    use starknet::get_caller_address;
+    use starknet::ContractAddress;
+    use super::{UserInfo, TransactionInfo};
+    use starknet::storage::{
+        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
+        StorageMapWriteAccess
+    };
+
+    #[storage]
+    struct Storage {
+        user_info: UserInfo,
+        transaction_info: TransactionInfo,
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState,
+        name_: felt252,
+        symbol_: felt252,
+        decimals_: u8,
+        initial_supply: u256,
+        recipient: ContractAddress
+    ) {
+        self.user_info.name.write(name_);
+        self.user_info.symbol.write(symbol_);
+        self.user_info.decimals.write(decimals_);
+        assert(!recipient.is_zero(), 'ERC20: mint to the 0 address');
+        self.user_info.total_supply.write(initial_supply);
+        self.transaction_info.balances.write(recipient, initial_supply);
+    }
+
+    #[abi(embed_v0)]
+    impl IERC20Impl of super::IERC20<ContractState> {
+        fn get_name(self: @ContractState) -> felt252 {
+            self.user_info.name.read()
+        }
+
+        fn get_symbol(self: @ContractState) -> felt252 {
+            self.user_info.symbol.read()
+        }
+
+        fn get_decimals(self: @ContractState) -> u8 {
+            self.user_info.decimals.read()
+        }
+
+        fn get_total_supply(self: @ContractState) -> u256 {
+            self.user_info.total_supply.read()
+        }
+
+        fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
+            self.transaction_info.balances.read(account)
+        }
+
+        fn allowance(
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress
+        ) -> u256 {
+            self.transaction_info.allowances.entry(owner).read(spender)
+        }
+
+        fn increase_allowance(
+            ref self: ContractState, spender: ContractAddress, added_value: u256
+        ) {
+            let caller = get_caller_address();
+            self
+                .set_transaction_info(
+                    caller,
+                    spender,
+                    self.transaction_info.allowances.entry(caller).read(spender) + added_value
+                );
+        }
+
+        fn decrease_allowance(
+            ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+        ) {
+            let caller = get_caller_address();
+            self
+                .set_transaction_info(
+                    caller,
+                    spender,
+                    self.transaction_info.allowances.entry(caller).read(spender) - subtracted_value
+                );
+        }
+
+        fn write_info(ref self: ContractState, user_info: UserInfo) {
+            self.user_info.write(user_info);
+        }
+
+        fn get_info(self: @ContractState) -> UserInfo {
+            self.user_info.read()
+        }
+    }
+
+    #[generate_trait]
+    impl StorageImpl of StorageTrait {
+        fn transfer_helper(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) {
+            self
+                .transaction_info
+                .balances
+                .write(sender, self.transaction_info.balances.read(sender) - amount);
+            self
+                .transaction_info
+                .balances
+                .write(recipient, self.transaction_info.balances.read(recipient) + amount);
+        }
+
+        fn set_transaction_info(
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+        ) {
+            self.transaction_info.allowances.entry(owner).entry(spender).write(amount);
+        }
+    }
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+
+#[derive(Drop, Copy)]
+struct StorageStorageBase {
+    user_info: starknet::storage::StorageBase<UserInfo>,
+    transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let __user_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
+        let __transaction_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
+        StorageStorageBase {
+           user_info: __user_info_value__,
+           transaction_info: __transaction_info_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct StorageStorageBaseMut {
+    user_info: starknet::storage::StorageBase<starknet::storage::Mutable::<UserInfo>>,
+    transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable::<TransactionInfo>>,
+}
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let __user_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
+        let __transaction_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
+        StorageStorageBaseMut {
+           user_info: __user_info_value__,
+           transaction_info: __transaction_info_value__,
+        }
+    }
+}
+
+pub struct ContractState {
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+#[allow(unused_imports)]
+use starknet::storage::Map as LegacyMap;
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_name_ = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_symbol_ = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    let __arg_decimals_ = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u8>::deserialize(ref data),
+        'Failed to deserialize param #3'
+    );
+    let __arg_initial_supply = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u256>::deserialize(ref data),
+        'Failed to deserialize param #4'
+    );
+    let __arg_recipient = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #5'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    constructor(ref contract_state, __arg_name_, __arg_symbol_, __arg_decimals_, __arg_initial_supply, __arg_recipient);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::get_name(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<felt252>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::get_symbol(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<felt252>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::get_decimals(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u8>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::get_total_supply(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u256>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_account = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::balance_of(@contract_state, __arg_account);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u256>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_owner = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_spender = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::allowance(@contract_state, __arg_owner, __arg_spender);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u256>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_spender = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_added_value = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u256>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    IERC20Impl::increase_allowance(ref contract_state, __arg_spender, __arg_added_value);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_spender = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_subtracted_value = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u256>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    IERC20Impl::decrease_allowance(ref contract_state, __arg_spender, __arg_subtracted_value);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_user_info = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<UserInfo>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    IERC20Impl::write_info(ref contract_state, __arg_user_info);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::get_info(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<UserInfo>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+
+pub mod __external {
+    pub use super::__wrapper__IERC20Impl__get_name as get_name;
+    pub use super::__wrapper__IERC20Impl__get_symbol as get_symbol;
+    pub use super::__wrapper__IERC20Impl__get_decimals as get_decimals;
+    pub use super::__wrapper__IERC20Impl__get_total_supply as get_total_supply;
+    pub use super::__wrapper__IERC20Impl__balance_of as balance_of;
+    pub use super::__wrapper__IERC20Impl__allowance as allowance;
+    pub use super::__wrapper__IERC20Impl__increase_allowance as increase_allowance;
+    pub use super::__wrapper__IERC20Impl__decrease_allowance as decrease_allowance;
+    pub use super::__wrapper__IERC20Impl__write_info as write_info;
+    pub use super::__wrapper__IERC20Impl__get_info as get_info;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__constructor as constructor;
+}
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+    trait StorageTrait {
+        fn transfer_helper(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        );
+
+        fn set_transaction_info(
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+        );
+    }
+impl EventDrop of core::traits::Drop::<Event>;
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+}
+trait IERC20DispatcherTrait<T> {
+    fn get_name(self: T) -> felt252;
+    fn get_symbol(self: T) -> felt252;
+    fn get_decimals(self: T) -> u8;
+    fn get_total_supply(self: T) -> u256;
+    fn balance_of(self: T, account: ContractAddress) -> u256;
+    fn allowance(self: T, owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256);
+    fn decrease_allowance(
+self: T, spender: ContractAddress, subtracted_value: u256
+    );
+    fn write_info(self: T, user_info: UserInfo);
+    fn get_info(self: T) -> UserInfo;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IERC20Dispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+impl IERC20DispatcherImpl of IERC20DispatcherTrait<IERC20Dispatcher> {
+    fn get_name(self: IERC20Dispatcher) -> felt252 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_name"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn get_symbol(self: IERC20Dispatcher) -> felt252 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_symbol"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn get_decimals(self: IERC20Dispatcher) -> u8 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_decimals"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u8>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn get_total_supply(self: IERC20Dispatcher) -> u256 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_total_supply"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn balance_of(self: IERC20Dispatcher, account: ContractAddress) -> u256 {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@account, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("balance_of"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn allowance(self: IERC20Dispatcher, owner: ContractAddress, spender: ContractAddress) -> u256 {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@owner, ref __calldata__);
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn increase_allowance(self: IERC20Dispatcher, spender: ContractAddress, added_value: u256) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+        core::serde::Serde::<u256>::serialize(@added_value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("increase_allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn decrease_allowance(
+self: IERC20Dispatcher, spender: ContractAddress, subtracted_value: u256
+    ) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+        core::serde::Serde::<u256
+>::serialize(@subtracted_value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("decrease_allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn write_info(self: IERC20Dispatcher, user_info: UserInfo) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<UserInfo>::serialize(@user_info, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("write_info"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn get_info(self: IERC20Dispatcher) -> UserInfo {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_info"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<UserInfo>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IERC20LibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+impl IERC20LibraryDispatcherImpl of IERC20DispatcherTrait<IERC20LibraryDispatcher> {
+    fn get_name(self: IERC20LibraryDispatcher) -> felt252 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_name"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn get_symbol(self: IERC20LibraryDispatcher) -> felt252 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_symbol"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn get_decimals(self: IERC20LibraryDispatcher) -> u8 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_decimals"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u8>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn get_total_supply(self: IERC20LibraryDispatcher) -> u256 {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_total_supply"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn balance_of(self: IERC20LibraryDispatcher, account: ContractAddress) -> u256 {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@account, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("balance_of"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn allowance(self: IERC20LibraryDispatcher, owner: ContractAddress, spender: ContractAddress) -> u256 {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@owner, ref __calldata__);
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+    fn increase_allowance(self: IERC20LibraryDispatcher, spender: ContractAddress, added_value: u256) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+        core::serde::Serde::<u256>::serialize(@added_value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("increase_allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn decrease_allowance(
+self: IERC20LibraryDispatcher, spender: ContractAddress, subtracted_value: u256
+    ) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+        core::serde::Serde::<u256
+>::serialize(@subtracted_value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("decrease_allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn write_info(self: IERC20LibraryDispatcher, user_info: UserInfo) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<UserInfo>::serialize(@user_info, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("write_info"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn get_info(self: IERC20LibraryDispatcher) -> UserInfo {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_info"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        core::option::OptionTrait::expect(
+            core::serde::Serde::<UserInfo>::deserialize(ref __dispatcher_return_data__),
+            'Returned data too short',
+        )
+    }
+
+}
+
+trait IERC20SafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_name(self: T) -> starknet::SyscallResult<felt252>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_symbol(self: T) -> starknet::SyscallResult<felt252>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_decimals(self: T) -> starknet::SyscallResult<u8>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_total_supply(self: T) -> starknet::SyscallResult<u256>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn balance_of(self: T, account: ContractAddress) -> starknet::SyscallResult<u256>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn allowance(self: T, owner: ContractAddress, spender: ContractAddress) -> starknet::SyscallResult<u256>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn decrease_allowance(
+self: T, spender: ContractAddress, subtracted_value: u256
+    ) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn write_info(self: T, user_info: UserInfo) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_info(self: T) -> starknet::SyscallResult<UserInfo>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IERC20SafeLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+impl IERC20SafeLibraryDispatcherImpl of IERC20SafeDispatcherTrait<IERC20SafeLibraryDispatcher> {
+    fn get_name(self: IERC20SafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_name"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn get_symbol(self: IERC20SafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_symbol"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn get_decimals(self: IERC20SafeLibraryDispatcher) -> starknet::SyscallResult<u8> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_decimals"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u8>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn get_total_supply(self: IERC20SafeLibraryDispatcher) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_total_supply"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn balance_of(self: IERC20SafeLibraryDispatcher, account: ContractAddress) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@account, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("balance_of"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn allowance(self: IERC20SafeLibraryDispatcher, owner: ContractAddress, spender: ContractAddress) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@owner, ref __calldata__);
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn increase_allowance(self: IERC20SafeLibraryDispatcher, spender: ContractAddress, added_value: u256) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+        core::serde::Serde::<u256>::serialize(@added_value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("increase_allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn decrease_allowance(
+self: IERC20SafeLibraryDispatcher, spender: ContractAddress, subtracted_value: u256
+    ) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+        core::serde::Serde::<u256
+>::serialize(@subtracted_value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("decrease_allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn write_info(self: IERC20SafeLibraryDispatcher, user_info: UserInfo) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<UserInfo>::serialize(@user_info, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("write_info"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn get_info(self: IERC20SafeLibraryDispatcher) -> starknet::SyscallResult<UserInfo> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_info"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<UserInfo>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IERC20SafeDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+impl IERC20SafeDispatcherImpl of IERC20SafeDispatcherTrait<IERC20SafeDispatcher> {
+    fn get_name(self: IERC20SafeDispatcher) -> starknet::SyscallResult<felt252> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_name"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn get_symbol(self: IERC20SafeDispatcher) -> starknet::SyscallResult<felt252> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_symbol"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<felt252>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn get_decimals(self: IERC20SafeDispatcher) -> starknet::SyscallResult<u8> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_decimals"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u8>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn get_total_supply(self: IERC20SafeDispatcher) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_total_supply"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn balance_of(self: IERC20SafeDispatcher, account: ContractAddress) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@account, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("balance_of"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn allowance(self: IERC20SafeDispatcher, owner: ContractAddress, spender: ContractAddress) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@owner, ref __calldata__);
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<u256>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+    fn increase_allowance(self: IERC20SafeDispatcher, spender: ContractAddress, added_value: u256) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+        core::serde::Serde::<u256>::serialize(@added_value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("increase_allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn decrease_allowance(
+self: IERC20SafeDispatcher, spender: ContractAddress, subtracted_value: u256
+    ) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
+        core::serde::Serde::<u256
+>::serialize(@subtracted_value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("decrease_allowance"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn write_info(self: IERC20SafeDispatcher, user_info: UserInfo) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<UserInfo>::serialize(@user_info, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("write_info"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn get_info(self: IERC20SafeDispatcher) -> starknet::SyscallResult<UserInfo> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("get_info"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(
+            core::option::OptionTrait::expect(
+                core::serde::Serde::<UserInfo>::deserialize(ref __dispatcher_return_data__),
+                'Returned data too short',
+            )
+        )
+    }
+
+}
+impl UserInfoSerde of core::serde::Serde::<UserInfo> {
+    fn serialize(self: @UserInfo, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.name, ref output);
+        core::serde::Serde::serialize(self.symbol, ref output);
+        core::serde::Serde::serialize(self.decimals, ref output);
+        core::serde::Serde::serialize(self.total_supply, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<UserInfo> {
+        core::option::Option::Some(UserInfo {
+            name: core::serde::Serde::deserialize(ref serialized)?,
+            symbol: core::serde::Serde::deserialize(ref serialized)?,
+            decimals: core::serde::Serde::deserialize(ref serialized)?,
+            total_supply: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+impl UserInfoDrop of core::traits::Drop::<UserInfo>;
+impl UserInfoCopy of core::traits::Copy::<UserInfo>;
+impl StoreUserInfo of starknet::Store::<UserInfo> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<UserInfo> {
+        let name = starknet::Store::<felt252>::read(address_domain, base)?;
+        let mut current_offset = starknet::Store::<felt252>::size();
+        let symbol = starknet::Store::<felt252>::read_at_offset(address_domain, base, current_offset)?;
+        current_offset += starknet::Store::<felt252>::size();
+        let decimals = starknet::Store::<u8>::read_at_offset(address_domain, base, current_offset)?;
+        current_offset += starknet::Store::<u8>::size();
+        let total_supply = starknet::Store::<u256>::read_at_offset(address_domain, base, current_offset)?;
+        starknet::SyscallResult::Ok(
+            UserInfo {
+                name,
+                symbol,
+                decimals,
+                total_supply,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: UserInfo) -> starknet::SyscallResult<()> {
+        starknet::Store::<felt252>::write(address_domain, base, value.name)?;
+        let mut current_offset = starknet::Store::<felt252>::size();
+        starknet::Store::<felt252>::write_at_offset(address_domain, base, current_offset, value.symbol)?;
+        current_offset += starknet::Store::<felt252>::size();
+        starknet::Store::<u8>::write_at_offset(address_domain, base, current_offset, value.decimals)?;
+        current_offset += starknet::Store::<u8>::size();
+        starknet::Store::<u256>::write_at_offset(address_domain, base, current_offset, value.total_supply)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<UserInfo> {
+        let name = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        let mut current_offset = offset + starknet::Store::<felt252>::size();
+        let symbol = starknet::Store::<felt252>::read_at_offset(address_domain, base, current_offset)?;
+        current_offset += starknet::Store::<felt252>::size();
+        let decimals = starknet::Store::<u8>::read_at_offset(address_domain, base, current_offset)?;
+        current_offset += starknet::Store::<u8>::size();
+        let total_supply = starknet::Store::<u256>::read_at_offset(address_domain, base, current_offset)?;
+        starknet::SyscallResult::Ok(
+            UserInfo {
+                name,
+                symbol,
+                decimals,
+                total_supply,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: UserInfo) -> starknet::SyscallResult<()> {
+        starknet::Store::<felt252>::write_at_offset(address_domain, base, offset, value.name)?;
+        let mut current_offset = offset + starknet::Store::<felt252>::size();
+        starknet::Store::<felt252>::write_at_offset(address_domain, base, current_offset, value.symbol)?;
+        current_offset += starknet::Store::<felt252>::size();
+        starknet::Store::<u8>::write_at_offset(address_domain, base, current_offset, value.decimals)?;
+        current_offset += starknet::Store::<u8>::size();
+        starknet::Store::<u256>::write_at_offset(address_domain, base, current_offset, value.total_supply)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<felt252>::size() +
+        starknet::Store::<felt252>::size() +
+        starknet::Store::<u8>::size() +
+        starknet::Store::<u256>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct UserInfoSubPointers {
+    name: starknet::storage::StoragePointer<felt252>,
+    symbol: starknet::storage::StoragePointer<felt252>,
+    decimals: starknet::storage::StoragePointer<u8>,
+    total_supply: starknet::storage::StoragePointer<u256>,
+}
+impl UserInfoSubPointersImpl of starknet::storage::SubPointers<UserInfo> {
+    type SubPointersType = UserInfoSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<UserInfo>) -> UserInfoSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __name_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<felt252>::size();
+        let __symbol_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<felt252>::size();
+        let __decimals_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<u8>::size();
+        let __total_supply_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                UserInfoSubPointers {
+           name: __name_value__,
+           symbol: __symbol_value__,
+           decimals: __decimals_value__,
+           total_supply: __total_supply_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct UserInfoSubPointersMut {
+    name: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+    symbol: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+    decimals: starknet::storage::StoragePointer<starknet::storage::Mutable::<u8>>,
+    total_supply: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
+}
+impl UserInfoSubPointersMutImpl of starknet::storage::SubPointersMut<UserInfo> {
+    type SubPointersType = UserInfoSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<UserInfo>>) -> UserInfoSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __name_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<felt252>::size();
+        let __symbol_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<felt252>::size();
+        let __decimals_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<u8>::size();
+        let __total_supply_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                UserInfoSubPointersMut {
+           name: __name_value__,
+           symbol: __symbol_value__,
+           decimals: __decimals_value__,
+           total_supply: __total_supply_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct TransactionInfoStorageBase {
+    balances: starknet::storage::StorageBase<Map::<ContractAddress, u256>>,
+    allowances: starknet::storage::StorageBase<Map::<ContractAddress, Map<ContractAddress, u256>>>,
+}
+impl TransactionInfoStorageImpl of starknet::storage::StorageTrait<TransactionInfo> {
+    type BaseType = TransactionInfoStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<TransactionInfo>) -> TransactionInfoStorageBase {
+        let __balances_value__ = starknet::storage::StorageBase {__base_address__: selector!("balances")};
+        let __allowances_value__ = starknet::storage::StorageBase {__base_address__: selector!("allowances")};
+        TransactionInfoStorageBase {
+           balances: __balances_value__,
+           allowances: __allowances_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct TransactionInfoStorageBaseMut {
+    balances: starknet::storage::StorageBase<starknet::storage::Mutable::<Map::<ContractAddress, u256>>>,
+    allowances: starknet::storage::StorageBase<starknet::storage::Mutable::<Map::<ContractAddress, Map<ContractAddress, u256>>>>,
+}
+impl TransactionInfoStorageMutImpl of starknet::storage::StorageTraitMut<TransactionInfo> {
+    type BaseType = TransactionInfoStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<TransactionInfo>>) -> TransactionInfoStorageBaseMut {
+        let __balances_value__ = starknet::storage::StorageBase {__base_address__: selector!("balances")};
+        let __allowances_value__ = starknet::storage::StorageBase {__base_address__: selector!("allowances")};
+        TransactionInfoStorageBaseMut {
+           balances: __balances_value__,
+           allowances: __allowances_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct TransactionInfoStorageNode {
+    balances: starknet::storage::PendingStoragePath<Map::<ContractAddress, u256>>,
+    allowances: starknet::storage::PendingStoragePath<Map::<ContractAddress, Map<ContractAddress, u256>>>,
+}
+impl TransactionInfoStorageNodeImpl of starknet::storage::StorageNode<TransactionInfo> {
+    type NodeType = TransactionInfoStorageNode;
+    fn storage_node(self: starknet::storage::StoragePath<TransactionInfo>) -> TransactionInfoStorageNode {
+        let __balances_value__ = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("balances")
+                    );
+                            let __allowances_value__ = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("allowances")
+                    );
+                            TransactionInfoStorageNode {
+           balances: __balances_value__,
+           allowances: __allowances_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct TransactionInfoStorageNodeMut {
+    balances: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<Map::<ContractAddress, u256>>>,
+    allowances: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<Map::<ContractAddress, Map<ContractAddress, u256>>>>,
+}
+impl TransactionInfoStorageNodeMutImpl of starknet::storage::StorageNodeMut<TransactionInfo> {
+    type NodeType = TransactionInfoStorageNodeMut;
+    fn storage_node_mut(self: starknet::storage::StoragePath<starknet::storage::Mutable::<TransactionInfo>>) -> TransactionInfoStorageNodeMut {
+        let __balances_value__ = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("balances")
+                    );
+                            let __allowances_value__ = starknet::storage::PendingStoragePathTrait::new(
+                        @self,
+                        selector!("allowances")
+                    );
+                            TransactionInfoStorageNodeMut {
+           balances: __balances_value__,
+           allowances: __allowances_value__,
+        }
+    }
+}
+impl IERC20DispatcherCopy of core::traits::Copy::<IERC20Dispatcher>;
+impl IERC20DispatcherDrop of core::traits::Drop::<IERC20Dispatcher>;
+impl IERC20DispatcherSerde of core::serde::Serde::<IERC20Dispatcher> {
+    fn serialize(self: @IERC20Dispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20Dispatcher> {
+        core::option::Option::Some(IERC20Dispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+impl StoreIERC20Dispatcher of starknet::Store::<IERC20Dispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IERC20Dispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IERC20Dispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: IERC20Dispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IERC20Dispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IERC20Dispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: IERC20Dispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IERC20DispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl IERC20DispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20Dispatcher> {
+    type SubPointersType = IERC20DispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<IERC20Dispatcher>) -> IERC20DispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                IERC20DispatcherSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct IERC20DispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl IERC20DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20Dispatcher> {
+    type SubPointersType = IERC20DispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20Dispatcher>>) -> IERC20DispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                IERC20DispatcherSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+impl IERC20LibraryDispatcherCopy of core::traits::Copy::<IERC20LibraryDispatcher>;
+impl IERC20LibraryDispatcherDrop of core::traits::Drop::<IERC20LibraryDispatcher>;
+impl IERC20LibraryDispatcherSerde of core::serde::Serde::<IERC20LibraryDispatcher> {
+    fn serialize(self: @IERC20LibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20LibraryDispatcher> {
+        core::option::Option::Some(IERC20LibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+impl StoreIERC20LibraryDispatcher of starknet::Store::<IERC20LibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IERC20LibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IERC20LibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: IERC20LibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IERC20LibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IERC20LibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: IERC20LibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IERC20LibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl IERC20LibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20LibraryDispatcher> {
+    type SubPointersType = IERC20LibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<IERC20LibraryDispatcher>) -> IERC20LibraryDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                IERC20LibraryDispatcherSubPointers {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct IERC20LibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl IERC20LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20LibraryDispatcher> {
+    type SubPointersType = IERC20LibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20LibraryDispatcher>>) -> IERC20LibraryDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                IERC20LibraryDispatcherSubPointersMut {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+impl IERC20SafeLibraryDispatcherCopy of core::traits::Copy::<IERC20SafeLibraryDispatcher>;
+impl IERC20SafeLibraryDispatcherDrop of core::traits::Drop::<IERC20SafeLibraryDispatcher>;
+impl IERC20SafeLibraryDispatcherSerde of core::serde::Serde::<IERC20SafeLibraryDispatcher> {
+    fn serialize(self: @IERC20SafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20SafeLibraryDispatcher> {
+        core::option::Option::Some(IERC20SafeLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+impl StoreIERC20SafeLibraryDispatcher of starknet::Store::<IERC20SafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IERC20SafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IERC20SafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: IERC20SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IERC20SafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IERC20SafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: IERC20SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IERC20SafeLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl IERC20SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20SafeLibraryDispatcher> {
+    type SubPointersType = IERC20SafeLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<IERC20SafeLibraryDispatcher>) -> IERC20SafeLibraryDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                IERC20SafeLibraryDispatcherSubPointers {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct IERC20SafeLibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl IERC20SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20SafeLibraryDispatcher> {
+    type SubPointersType = IERC20SafeLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeLibraryDispatcher>>) -> IERC20SafeLibraryDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                IERC20SafeLibraryDispatcherSubPointersMut {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+impl IERC20SafeDispatcherCopy of core::traits::Copy::<IERC20SafeDispatcher>;
+impl IERC20SafeDispatcherDrop of core::traits::Drop::<IERC20SafeDispatcher>;
+impl IERC20SafeDispatcherSerde of core::serde::Serde::<IERC20SafeDispatcher> {
+    fn serialize(self: @IERC20SafeDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<IERC20SafeDispatcher> {
+        core::option::Option::Some(IERC20SafeDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+impl StoreIERC20SafeDispatcher of starknet::Store::<IERC20SafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<IERC20SafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IERC20SafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: IERC20SafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IERC20SafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IERC20SafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: IERC20SafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+struct IERC20SafeDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl IERC20SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20SafeDispatcher> {
+    type SubPointersType = IERC20SafeDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<IERC20SafeDispatcher>) -> IERC20SafeDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                IERC20SafeDispatcherSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct IERC20SafeDispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl IERC20SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20SafeDispatcher> {
+    type SubPointersType = IERC20SafeDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeDispatcher>>) -> IERC20SafeDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                IERC20SafeDispatcherSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+impl UserInfoSubPointersDrop of core::traits::Drop::<UserInfoSubPointers>;
+impl UserInfoSubPointersCopy of core::traits::Copy::<UserInfoSubPointers>;
+impl UserInfoSubPointersMutDrop of core::traits::Drop::<UserInfoSubPointersMut>;
+impl UserInfoSubPointersMutCopy of core::traits::Copy::<UserInfoSubPointersMut>;
+impl TransactionInfoStorageBaseDrop of core::traits::Drop::<TransactionInfoStorageBase>;
+impl TransactionInfoStorageBaseCopy of core::traits::Copy::<TransactionInfoStorageBase>;
+impl TransactionInfoStorageBaseMutDrop of core::traits::Drop::<TransactionInfoStorageBaseMut>;
+impl TransactionInfoStorageBaseMutCopy of core::traits::Copy::<TransactionInfoStorageBaseMut>;
+impl TransactionInfoStorageNodeDrop of core::traits::Drop::<TransactionInfoStorageNode>;
+impl TransactionInfoStorageNodeCopy of core::traits::Copy::<TransactionInfoStorageNode>;
+impl TransactionInfoStorageNodeMutDrop of core::traits::Drop::<TransactionInfoStorageNodeMut>;
+impl TransactionInfoStorageNodeMutCopy of core::traits::Copy::<TransactionInfoStorageNodeMut>;
+impl IERC20DispatcherSubPointersDrop of core::traits::Drop::<IERC20DispatcherSubPointers>;
+impl IERC20DispatcherSubPointersCopy of core::traits::Copy::<IERC20DispatcherSubPointers>;
+impl IERC20DispatcherSubPointersMutDrop of core::traits::Drop::<IERC20DispatcherSubPointersMut>;
+impl IERC20DispatcherSubPointersMutCopy of core::traits::Copy::<IERC20DispatcherSubPointersMut>;
+impl IERC20LibraryDispatcherSubPointersDrop of core::traits::Drop::<IERC20LibraryDispatcherSubPointers>;
+impl IERC20LibraryDispatcherSubPointersCopy of core::traits::Copy::<IERC20LibraryDispatcherSubPointers>;
+impl IERC20LibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20LibraryDispatcherSubPointersMut>;
+impl IERC20LibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20LibraryDispatcherSubPointersMut>;
+impl IERC20SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointers>;
+impl IERC20SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointers>;
+impl IERC20SafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20SafeLibraryDispatcherSubPointersMut>;
+impl IERC20SafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeLibraryDispatcherSubPointersMut>;
+impl IERC20SafeDispatcherSubPointersDrop of core::traits::Drop::<IERC20SafeDispatcherSubPointers>;
+impl IERC20SafeDispatcherSubPointersCopy of core::traits::Copy::<IERC20SafeDispatcherSubPointers>;
+impl IERC20SafeDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20SafeDispatcherSubPointersMut>;
+impl IERC20SafeDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
+
+    use core::num::traits::Zero;
+    use starknet::get_caller_address;
+    use starknet::ContractAddress;
+    use super::{UserInfo, TransactionInfo};
+    use starknet::storage::{
+        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
+        StorageMapWriteAccess
+    };
+
+    #[storage]
+    struct Storage {
+        user_info: UserInfo,
+        transaction_info: TransactionInfo,
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState,
+        name_: felt252,
+        symbol_: felt252,
+        decimals_: u8,
+        initial_supply: u256,
+        recipient: ContractAddress
+    ) {
+        self.user_info.name.write(name_);
+        self.user_info.symbol.write(symbol_);
+        self.user_info.decimals.write(decimals_);
+        assert(!recipient.is_zero(), 'ERC20: mint to the 0 address');
+        self.user_info.total_supply.write(initial_supply);
+        self.transaction_info.balances.write(recipient, initial_supply);
+    }
+
+    #[abi(embed_v0)]
+    impl IERC20Impl of super::IERC20<ContractState> {
+        fn get_name(self: @ContractState) -> felt252 {
+            self.user_info.name.read()
+        }
+
+        fn get_symbol(self: @ContractState) -> felt252 {
+            self.user_info.symbol.read()
+        }
+
+        fn get_decimals(self: @ContractState) -> u8 {
+            self.user_info.decimals.read()
+        }
+
+        fn get_total_supply(self: @ContractState) -> u256 {
+            self.user_info.total_supply.read()
+        }
+
+        fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
+            self.transaction_info.balances.read(account)
+        }
+
+        fn allowance(
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress
+        ) -> u256 {
+            self.transaction_info.allowances.entry(owner).read(spender)
+        }
+
+        fn increase_allowance(
+            ref self: ContractState, spender: ContractAddress, added_value: u256
+        ) {
+            let caller = get_caller_address();
+            self
+                .set_transaction_info(
+                    caller,
+                    spender,
+                    self.transaction_info.allowances.entry(caller).read(spender) + added_value
+                );
+        }
+
+        fn decrease_allowance(
+            ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+        ) {
+            let caller = get_caller_address();
+            self
+                .set_transaction_info(
+                    caller,
+                    spender,
+                    self.transaction_info.allowances.entry(caller).read(spender) - subtracted_value
+                );
+        }
+
+        fn write_info(ref self: ContractState, user_info: UserInfo) {
+            self.user_info.write(user_info);
+        }
+
+        fn get_info(self: @ContractState) -> UserInfo {
+            self.user_info.read()
+        }
+    }
+
+    #[generate_trait]
+    impl StorageImpl of StorageTrait {
+        fn transfer_helper(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) {
+            self
+                .transaction_info
+                .balances
+                .write(sender, self.transaction_info.balances.read(sender) - amount);
+            self
+                .transaction_info
+                .balances
+                .write(recipient, self.transaction_info.balances.read(recipient) + amount);
+        }
+
+        fn set_transaction_info(
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+        ) {
+            self.transaction_info.allowances.entry(owner).entry(spender).write(amount);
+        }
+    }
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+
+#[derive(Drop, Copy)]
+struct StorageStorageBase {
+    user_info: starknet::storage::StorageBase<UserInfo>,
+    transaction_info: starknet::storage::StorageBase<TransactionInfo>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let __user_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
+        let __transaction_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
+        StorageStorageBase {
+           user_info: __user_info_value__,
+           transaction_info: __transaction_info_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+struct StorageStorageBaseMut {
+    user_info: starknet::storage::StorageBase<starknet::storage::Mutable::<UserInfo>>,
+    transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable::<TransactionInfo>>,
+}
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let __user_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
+        let __transaction_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
+        StorageStorageBaseMut {
+           user_info: __user_info_value__,
+           transaction_info: __transaction_info_value__,
+        }
+    }
+}
+
+pub struct ContractState {
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+#[allow(unused_imports)]
+use starknet::storage::Map as LegacyMap;
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_name_ = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_symbol_ = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    let __arg_decimals_ = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u8>::deserialize(ref data),
+        'Failed to deserialize param #3'
+    );
+    let __arg_initial_supply = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u256>::deserialize(ref data),
+        'Failed to deserialize param #4'
+    );
+    let __arg_recipient = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #5'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    constructor(ref contract_state, __arg_name_, __arg_symbol_, __arg_decimals_, __arg_initial_supply, __arg_recipient);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::get_name(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<felt252>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::get_symbol(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<felt252>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::get_decimals(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u8>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::get_total_supply(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u256>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_account = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::balance_of(@contract_state, __arg_account);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u256>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_owner = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_spender = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::allowance(@contract_state, __arg_owner, __arg_spender);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<u256>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_spender = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_added_value = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u256>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    IERC20Impl::increase_allowance(ref contract_state, __arg_spender, __arg_added_value);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_spender = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_subtracted_value = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<u256>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    IERC20Impl::decrease_allowance(ref contract_state, __arg_spender, __arg_subtracted_value);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_user_info = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<UserInfo>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    IERC20Impl::write_info(ref contract_state, __arg_user_info);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = IERC20Impl::get_info(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::serde::Serde::<UserInfo>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+
+pub mod __external {
+    pub use super::__wrapper__IERC20Impl__get_name as get_name;
+    pub use super::__wrapper__IERC20Impl__get_symbol as get_symbol;
+    pub use super::__wrapper__IERC20Impl__get_decimals as get_decimals;
+    pub use super::__wrapper__IERC20Impl__get_total_supply as get_total_supply;
+    pub use super::__wrapper__IERC20Impl__balance_of as balance_of;
+    pub use super::__wrapper__IERC20Impl__allowance as allowance;
+    pub use super::__wrapper__IERC20Impl__increase_allowance as increase_allowance;
+    pub use super::__wrapper__IERC20Impl__decrease_allowance as decrease_allowance;
+    pub use super::__wrapper__IERC20Impl__write_info as write_info;
+    pub use super::__wrapper__IERC20Impl__get_info as get_info;
+}
+pub mod __l1_handler {
+}
+pub mod __constructor {
+    pub use super::__wrapper__constructor as constructor;
+}
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+    trait StorageTrait {
+        fn transfer_helper(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        );
+
+        fn set_transaction_info(
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+        );
+    }
+impl EventDrop of core::traits::Drop::<Event>;
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+
+//! > expected_diagnostics

@@ -1,124 +1,96 @@
-# Installation
+# Cairo for Visual Studio Code
 
-## Install the Visual Studio Code extension
+This extension provides support for the [Cairo programming language][cairo].
+Cairo is the first Turing-complete language for creating provable programs for general computation.
 
-Use [NVM](https://github.com/nvm-sh/nvm#installing-and-updating) to get the correct version of Node
-for this project. From the directory of this file, run:
+**Cairo Language Server is alpha-grade software.
+Things are moving rapidly.
+Expect bugs and crashes from time to time.**
 
-```
-nvm use
-```
+## Features
 
-or install Node.js 18 LTS manually:
-See troubleshooting section.
+- code completion with imports insertion
+- automatic, incremental analysis
+- diagnostic reporting of build warnings and errors
+- go to definition
+- semantic syntax highlighting
+- documentation lookup on hover
+- function signature provider
+- code formatter
+- supports [Scarb], the Cairo package manager
+- can be configured to use [Dojo Engine]-specific tooling
 
-Still in the directory of this file, run:
+## Quick start
 
-```
-sudo npm install --global @vscode/vsce
-npm install
-vsce package
-code --install-extension cairo1*.vsix
-```
+Gm! 👋
 
-## Using with Scarb bundled language server
+Whether you are new to Cairo or an experienced Cairo Pharaoh,
+we hope you will find this extension fitting your needs and making your Cairo development experience
+more enjoyable.
 
-The [Scarb] package manager comes with a bundled binary of the Cairo language server.
-To use it, you need to install Scarb first.
-Follow the installation instructions from [Scarb docs].
+1. Install latest [Scarb][scarb-dl], preferably via [asdf][scarb-asdf].
+2. Install the [VS Code Cairo extension][vscode-marketplace].
+3. Open a workspace containing Scarb.toml or just open any Cairo file to automatically activate the
+   extension.
+4. The extension depends on the Cairo Language Server, which comes bundled with Scarb.
+   The version of Scarb used in the workspace determines the version of Cairo and Cairo Language
+   Server used by the extension.
 
-To make sure Scarb is installed properly, just run `scarb --version` in your terminal.
-If Scarb is not in your system PATH variable, you can set it under `cairo1.scarbPath` in settings.
+Happy coding!
 
-The VSCode extension will start language server from Scarb automatically.
-You do not need to take any further steps.
+## Configuration
 
-## Install the Cairo language server
+This extension can be configured through VS Code's configuration settings.
+All settings all under the `cairo1.*` section.
+Consult the settings UI in VS Code for more documentation.
 
-Alternatively, you can use a standalone installation of the Cairo language server.
-Remember to build the language server:
+## Support
 
-```
-cargo build --bin cairo-language-server --release
-```
-
-Now open vscode, find the Cairo extension and fill in the path to the cairo language server:
-
-![image](./resources/img/extSettings.png)
-
-It should look like:
-`/path/cairo/target/release/cairo-language-server`
-Where _path_ is the path to the cairo folder you got when cloning this repository.
-
-### Having both types of language server installed
-
-If you have both Scarb and standalone language server, the extension will decide which one to use.
-The decision process is based on the type of project you run.
-
-If your project includes the Scarb manifest file (`scarb.toml`), the one from Scarb will be used.
-Otherwise, if you have set the path to language server in settings, a standalone server will be used.
-You can also manually disable usage of Scarb through an option in vscode settings.
-
-To check which language server has been started, examine logs from the extension.
-It should say `Cairo language server running from{ Scarb} at: {path}` (the `Scarb` part is optional).
+For questions or inquiries about Cairo, Cairo Language Server and this extension, reach out to us
+on [Telegram] or [Discord].
 
 ## Troubleshooting
 
-### Building the extension
+If you run into issues with the extension, try these debugging steps:
 
-If `sudo npm install -g vsce` fails try this:
-
-```
-sudo apt remove nodejs
-sudo apt update
-sudo apt install curl dirmngr apt-transport-https lsb-release ca-certificates vim
-curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install nodejs
-```
-
-If successful, go back to `sudo npm install -g vsce` and continue from there.
-
-### Corelib path resolution
-
-In projects with Scarb manifest, the language server will obtain corelib from Scarb automatically.
-
-In case your project is missing Scarb support, the language server will try to find corelib on disk.
-The parent directories of the file you are currently editing will be traversed.
-If you have corelib installed in a non-standard location, you can set the path in vscode settings.
-
-# Run the extension (for development)
-
-1. Open VSCode in the directory of this file.
-2. Run:
+1. Make sure you have the latest version of the extension installed.
+2. Make sure you have the latest version of Scarb installed.
+3. Make sure the problem is also not appearing while running `scarb build`.
+4. Try the latest nightly release of Scarb, to verify the bug is not fixed yet.
+   This is simple to do with asdf:
+   ```sh
+   asdf install scarb latest:nightly
+   asdf local scarb latest:nightly
    ```
-   npm install
-   npm run compile
-   ```
-3. Reload VSCode.
-4. Press F5.
+   And restart VS Code.
+5. Check out debug logs for hints on what could go wrong.
 
-# Debugging
+In normal operation mode, both this extension and Cairo Language Server are pretty silent in their
+logs.
+Logs are emitted to the _Output_ panel in VS Code.
 
-To make the "Debug"/"Run" CodeLens above your tests work - add this to your
-~/.config/Code/User/settings.json:
+You can enable debug logging to learn more about what's going on.
+By default, the extension is trying to start the language server with the same logging level as the
+extension is running itself.
+To change the logging level, do the following:
 
-```
-"rust-analyzer.runnableEnv": {
-   "CARGO_MANIFEST_DIR": "/path/to/workspace/repo_name/any_dir"
-},
-```
+1. Open the Command Palette (`F1` or `Ctrl+Shift+P`).
+2. Run the `>Developer: Set Log Level...` command
+3. Find the `Cairo` extension on the list.
+4. Choose the `Debug` level.
+5. Restart VS Code, by running the `>Developer: Reload Window` command.
 
-If you also want logs to be printed in your VSCode terminal when you click the "Debug"/"Run"
-CodeLens above your tests, also add the "RUST_LOG" field:
+When sending logs to developers to debug,
+please include full logs from both the extension and the language server.
+If you feel brave enough, you can try some of the more advanced debugging techniques described in
+[CairoLS contribution guidelines][debugging].
 
-```
-"rust-analyzer.runnableEnv": {
-   "CARGO_MANIFEST_DIR": "/path/to/workspace/repo_name/any_dir",
-   "RUST_LOG": "debug,salsa=off,minilp=off"
-},
-```
-
-Use `debug`/`trace` at your preference.
-
-[Scarb]: http://github.com/software-mansion/scarb
-[Scarb docs]: https://docs.swmansion.com/scarb
+[cairo]: https://www.cairo-lang.org/
+[debugging]: https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-language-server/CONTRIBUTING.md#debugging
+[discord]: https://discord.gg/QypNMzkHbc
+[dojo engine]: https://book.dojoengine.org/
+[scarb]: https://docs.swmansion.com/scarb
+[scarb-asdf]: https://docs.swmansion.com/scarb/download.html#install-via-asdf
+[scarb-dl]: https://docs.swmansion.com/scarb/download.html
+[telegram]: https://t.me/cairo_ls_support
+[vscode-marketplace]: https://marketplace.visualstudio.com/items?itemName=starkware.cairo1

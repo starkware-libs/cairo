@@ -71,3 +71,43 @@ Statements:
   (v0: test::MyStruct) <- { 1234: core::felt252, bool::True({}): core::bool, MyEnum::A(5678): test::MyEnum, MyEnum::B({}): test::MyEnum }
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > associated consts.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> u32 {
+    bar(S::<4> {})
+}
+fn bar<T, +MyTrait<T>, +Drop<T>>(x: T) -> u32 {
+    MyTrait::<S<MyTrait::<T>::C>>::C
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S<const N: u32> {}
+trait MyTrait<T> {
+    const C: u32;
+}
+impl MyImpl<const N: u32> of MyTrait<S<N>> {
+    const C: u32 = N;
+}
+impl SDrop<const N: u32> of Drop<S<N>> {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u32) <- 4
+End:
+  Return(v0)

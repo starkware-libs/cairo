@@ -2,10 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
   merge_group:
-    types: [checks_requested]
+    types: [ checks_requested ]
 
 jobs:
   ensure-no_std:
@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2024-03-09
+          toolchain: nightly-2024-08-22
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - run: |
@@ -31,6 +31,7 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-debug
           - test --profile=ci-dev -p cairo-lang-defs
           - test --profile=ci-dev -p cairo-lang-diagnostics
+          - test --profile=ci-dev -p cairo-lang-doc
           - test --profile=ci-dev -p cairo-lang-eq-solver
           - test --profile=ci-dev -p cairo-lang-filesystem
           - test --profile=ci-dev -p cairo-lang-formatter
@@ -62,7 +63,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
-          toolchain: nightly-2024-03-09
+          toolchain: nightly-2024-08-22
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install nextest
@@ -85,7 +86,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
-          toolchain: nightly-2024-03-09
+          toolchain: nightly-2024-08-22
       - uses: Swatinem/rust-cache@v2
       - run: scripts/rust_fmt.sh --check
 
@@ -115,16 +116,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Machete
-        uses: vsuryamurthy/cargo-machete-action@v1
+        uses: bnjbvr/cargo-machete@main
 
   clippy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
         with:
           components: clippy
-          toolchain: nightly-2024-03-09
+          toolchain: nightly-2024-08-22
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/clippy.sh
@@ -139,7 +140,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2024-08-22
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/docs.sh

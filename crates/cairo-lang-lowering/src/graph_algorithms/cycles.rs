@@ -35,16 +35,17 @@ pub fn function_with_body_direct_function_with_body_callees(
         .collect())
 }
 
-/// Query implementation of [LoweringGroup::contains_cycle].
-pub fn contains_cycle(
+/// Query implementation of [LoweringGroup::final_contains_call_cycle].
+pub fn final_contains_call_cycle(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-    dependency_type: DependencyType,
 ) -> Maybe<bool> {
-    let direct_callees =
-        db.concrete_function_with_body_direct_callees_with_body(function_id, dependency_type)?;
+    let direct_callees = db.final_concrete_function_with_body_lowered_direct_callees(
+        function_id,
+        DependencyType::Call,
+    )?;
     for callee in direct_callees {
-        if db.contains_cycle(callee, dependency_type)? {
+        if db.final_contains_call_cycle(callee)? {
             return Ok(true);
         }
     }
@@ -52,12 +53,11 @@ pub fn contains_cycle(
     Ok(false)
 }
 
-/// Cycle handling for [LoweringGroup::contains_cycle].
-pub fn contains_cycle_handle_cycle(
+/// Cycle handling for [LoweringGroup::final_contains_call_cycle].
+pub fn final_contains_call_cycle_handle_cycle(
     _db: &dyn LoweringGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _function_id: &ConcreteFunctionWithBodyId,
-    _dependency_type: &DependencyType,
 ) -> Maybe<bool> {
     Ok(true)
 }

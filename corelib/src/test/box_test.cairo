@@ -1,4 +1,4 @@
-use core::test::test_utils::{assert_eq, assert_ne};
+use crate::test::test_utils::assert_eq;
 
 #[test]
 fn test_box_unbox_felt252s() {

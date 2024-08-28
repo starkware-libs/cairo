@@ -1,5 +1,7 @@
 use core::serde::Serde;
+#[allow(unused_imports)]
 use core::hash::{Hash, HashStateTrait};
+use core::RangeCheck;
 
 /// Represents a Starknet contract class hash.
 /// The value range of this type is `[0, 2**251)`.
@@ -54,10 +56,6 @@ impl ClassHashPartialEq of PartialEq<ClassHash> {
     #[inline(always)]
     fn eq(lhs: @ClassHash, rhs: @ClassHash) -> bool {
         class_hash_to_felt252(*lhs) == class_hash_to_felt252(*rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @ClassHash, rhs: @ClassHash) -> bool {
-        !(lhs == rhs)
     }
 }
 

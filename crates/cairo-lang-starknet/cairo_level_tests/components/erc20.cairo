@@ -21,14 +21,18 @@ pub trait ERC20Trait<TCS> {
 pub mod erc20 {
     use starknet::{ContractAddress, get_caller_address, contract_address_const};
     use core::num::traits::Zero;
+    use starknet::storage::{
+        Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
+        StorageMapWriteAccess
+    };
     #[storage]
-    struct Storage {
-        name: felt252,
-        symbol: felt252,
-        decimals: u8,
-        total_supply: u256,
-        balances: LegacyMap::<ContractAddress, u256>,
-        allowances: LegacyMap::<(ContractAddress, ContractAddress), u256>,
+    pub struct Storage {
+        pub name: felt252,
+        pub symbol: felt252,
+        pub decimals: u8,
+        pub total_supply: u256,
+        pub balances: Map::<ContractAddress, u256>,
+        pub allowances: Map::<(ContractAddress, ContractAddress), u256>,
     }
 
     #[event]
@@ -151,7 +155,7 @@ pub mod erc20 {
             spender: ContractAddress,
             amount: u256
         ) {
-            let current_allowance: u256 = self.allowances.read((owner, spender));
+            let current_allowance = self.allowances.read((owner, spender));
             let ONES_MASK = 0xffffffffffffffffffffffffffffffff_u128;
             let is_unlimited_allowance = current_allowance.low == ONES_MASK
                 && current_allowance.high == ONES_MASK;

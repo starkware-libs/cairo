@@ -1,0 +1,274 @@
+//! > unused captures
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(a: u32, mut b: Array<u32>, mut c: Felt252Dict<felt252>,) {
+    |d: u32| {
+        let _ = a + d;
+    };
+    |d: u32| {
+        let _ = b.append(d);
+    };
+    |d: felt252| {
+        let _ = c.insert(d, d);
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:2:5
+    |d: u32| {
+    ^********^
+
+error: Unsupported feature.
+ --> lib.cairo:5:5
+    |d: u32| {
+    ^********^
+
+error: Unsupported feature.
+ --> lib.cairo:8:5
+    |d: felt252| {
+    ^************^
+
+//! > lowering
+Parameters: v0: core::integer::u32, v1: core::array::Array::<core::integer::u32>, v2: core::dict::Felt252Dict::<core::felt252>
+blk0 (root):
+Statements:
+  (v3: {closure@lib.cairo:2:5: 2:13}) <- struct_construct(v0{`a`})
+  (v4: {closure@lib.cairo:5:5: 5:13}) <- struct_construct(v1{`b`})
+  (v5: {closure@lib.cairo:8:5: 8:17}) <- struct_construct(v2{`c`})
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Panic destructable capture
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(a: PanicDestructable) {
+    || {
+        let PanicDestructable { } = a;
+    };
+    panic_with_felt252('Panic');
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct PanicDestructable {}
+
+impl MyPanicDesruct of PanicDestruct<PanicDestructable> {
+    fn panic_destruct(self: PanicDestructable, ref panic: Panic) nopanic {
+        let PanicDestructable { } = self;
+    }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:9:5
+    || {
+    ^**^
+
+//! > lowering
+Parameters: v0: test::PanicDestructable
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:9:5: 9:7}) <- struct_construct(v0{`a`})
+  (v2: core::felt252) <- 345232009571
+  (v3: core::never) <- core::panic_with_felt252(v2{`'Panic'`})
+End:
+  Match(match_enum(v3{`panic_with_felt252('Panic')`}) {
+  })
+
+//! > ==========================================================================
+
+//! > invalidated capture
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut a: Array<u32>) {
+    |b: u32| {
+        let _ = a.append(b);
+    };
+    a.append(0);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:2:5
+    |b: u32| {
+    ^********^
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:2:5: 2:13}) <- struct_construct(v0{`a`})
+  (v2: core::integer::u32) <- 0
+  (v3: core::array::Array::<core::integer::u32>) <- struct_destructure(v1{`a`})
+  (v5: core::array::Array::<core::integer::u32>, v4: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v3{`a`}, v2{`0`})
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > capture use after invalidatian.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut a: Array<u32>) {
+    let f = |b: u32| {
+        let _ = a.append(b);
+    };
+    a.append(0);
+    use_f(f)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_f<T>(f: T) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:7:11
+    use_f(f)
+          ^
+note: variable was previously used here:
+  --> lib.cairo:6:5
+    a.append(0);
+    ^
+note: Trait has no implementation in context: core::traits::Copy::<{closure@lib.cairo:3:13: 3:21}>.
+
+error: Unsupported feature.
+ --> lib.cairo:3:13
+    let f = |b: u32| {
+            ^********^
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:3:13: 3:21}) <- struct_construct(v0{`a`})
+  (v2: core::integer::u32) <- 0
+  (v3: core::array::Array::<core::integer::u32>) <- struct_destructure(v1{`a`})
+  (v5: core::array::Array::<core::integer::u32>, v4: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v3{`a`}, v2{`0`})
+  () <- test::use_f::<{closure@lib.cairo:3:13: 3:21}>(v1{`f`})
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Snapshot capture
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut a: Array<u32>) {
+    let f = |_b: u32| {
+        let _ = a.len();
+    };
+    a.append(0);
+    use_f(f)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_f<T>(f: T) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:3:13
+    let f = |_b: u32| {
+            ^*********^
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::integer::u32>, v2: @core::array::Array::<core::integer::u32>) <- snapshot(v0{`a`})
+  (v3: {closure@lib.cairo:3:13: 3:22}) <- struct_construct(v2{`|_b: u32| { let _ = a.len(); }`})
+  (v4: core::integer::u32) <- 0
+  (v6: core::array::Array::<core::integer::u32>, v5: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v1{`a`}, v4{`0`})
+  () <- test::use_f::<{closure@lib.cairo:3:13: 3:22}>(v3{`f`})
+  (v7: ()) <- struct_construct()
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Capture changed but unused variable.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut a: Array<u32>) {
+    |_b: u32| {
+        a = array![];
+    };
+    a.append(0);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_f<T>(f: T) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:3:5
+    |_b: u32| {
+    ^*********^
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:3:5: 3:14}) <- struct_construct(v0{`a`})
+  (v2: core::integer::u32) <- 0
+  (v3: core::array::Array::<core::integer::u32>) <- struct_destructure(v1{`a`})
+  (v5: core::array::Array::<core::integer::u32>, v4: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v3{`a`}, v2{`0`})
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)

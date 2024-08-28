@@ -17,6 +17,7 @@ fn test_serde() {
         crates_config: AllCratesConfig {
             global: CrateSettings {
                 edition: Default::default(),
+                version: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig::default(),
                 cfg_set: Default::default(),
             },
@@ -25,6 +26,7 @@ fn test_serde() {
                     "crate1".into(),
                     CrateSettings {
                         edition: Edition::V2023_10,
+                        version: Default::default(),
                         experimental_features: ExperimentalFeaturesConfig::default(),
                         cfg_set: Default::default(),
                     },
@@ -33,6 +35,7 @@ fn test_serde() {
                     "crate3".into(),
                     CrateSettings {
                         edition: Default::default(),
+                        version: Default::default(),
                         experimental_features: ExperimentalFeaturesConfig {
                             negative_impls: true,
                             coupons: false,

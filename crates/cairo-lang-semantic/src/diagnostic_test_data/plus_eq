@@ -82,10 +82,10 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
- --> lib.cairo:2:17
-    let mut x = 3;
-                ^
+error: Trait has no implementation in context: core::ops::arith::AddAssign::<core::felt252, core::bool>.
+ --> lib.cairo:3:5
+    x += true;
+    ^*******^
 
 //! > ==========================================================================
 
@@ -106,7 +106,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::DivEq::<core::bool>.
+error: Trait has no implementation in context: core::ops::arith::DivAssign::<core::bool, core::bool>.
  --> lib.cairo:3:5
     x /= false;
     ^********^

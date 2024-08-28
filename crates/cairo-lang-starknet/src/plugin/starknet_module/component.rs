@@ -2,10 +2,11 @@ use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
+use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{require, try_extract_matches};
+use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 use indoc::{formatdoc, indoc};
 use itertools::chain;
 
@@ -32,10 +33,13 @@ impl ComponentSpecificGenerationData {
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             indoc! {"
-            use starknet::storage::{
-                StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-                StorageMapMemberAccessTrait, StorageMemberAccessTrait,
-            };
+            // TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+            #[deprecated(
+                feature: \"deprecated_legacy_map\",
+                note: \"Use `starknet::storage::Map` instead.\"
+            )]
+            #[allow(unused_imports)]
+            use starknet::storage::Map as LegacyMap;
             $has_component_trait$
 
             $generated_impls$"},
@@ -85,6 +89,7 @@ fn handle_component_item(
                 item_struct.clone(),
                 StarknetModuleKind::Component,
                 &mut data.common,
+                metadata,
             );
         }
         _ => {}
@@ -101,7 +106,7 @@ fn get_embeddable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> 
     let [arg] = &attribute_args.arguments(db).elements(db)[..] else {
         return None;
     };
-    let AttributeArgVariant::Unnamed { value: attr_arg_value, .. } =
+    let AttributeArgVariant::Unnamed(attr_arg_value) =
         AttributeArg::from_ast(arg.clone(), db).variant
     else {
         return None;
@@ -226,9 +231,9 @@ fn handle_component_impl(
     let Some(attr) = item_impl.find_attr(db, EMBEDDABLE_AS_ATTR) else {
         return;
     };
-    let origin = attr.as_syntax_node().span_without_trivia(db);
 
-    let Some(params) = EmbeddableAsImplParams::from_impl(db, diagnostics, item_impl, attr) else {
+    let Some(params) = EmbeddableAsImplParams::from_impl(db, diagnostics, item_impl, attr.clone())
+    else {
         return;
     };
     for param in &params.generic_params_node.elements(db) {
@@ -300,9 +305,7 @@ fn handle_component_impl(
         .into(),
     );
 
-    data.specific
-        .generated_impls
-        .push(RewriteNode::Mapped { origin, node: generated_impl_node.into() });
+    data.specific.generated_impls.push(generated_impl_node.mapped(db, &attr));
 }
 
 /// Returns a RewriteNode of a path similar to the given path, but without generic params.
@@ -408,7 +411,8 @@ fn handle_component_embeddable_as_impl_item(
             ("args_node".to_string(), args_node),
         ]
         .into(),
-    );
+    )
+    .mapped(db, &item_function);
 
     Some(impl_function)
 }
@@ -422,11 +426,10 @@ fn handle_first_param_for_embeddable_as(
 ) -> Option<(String, String, String)> {
     require(param.name(db).text(db) == "self")?;
     if param.is_ref_param(db) {
-        return if param.type_clause(db).ty(db).is_name_with_arg(
-            db,
-            COMPONENT_STATE_NAME,
-            GENERIC_CONTRACT_STATE_NAME,
-        ) {
+        return if extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
+            .ty(db)
+            .is_name_with_arg(db, COMPONENT_STATE_NAME, GENERIC_CONTRACT_STATE_NAME)
+        {
             Some((
                 format!("ref self: {GENERIC_CONTRACT_STATE_NAME}"),
                 format!("let mut component = {HAS_COMPONENT_TRAIT}::get_component_mut(ref self);"),

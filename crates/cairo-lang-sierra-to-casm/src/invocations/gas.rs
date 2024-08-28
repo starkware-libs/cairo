@@ -11,7 +11,7 @@ use num_bigint::BigInt;
 use super::misc::get_pointer_after_program_code;
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CostValidationInfo,
 };
 use crate::references::ReferenceExpression;
 use crate::relocations::InstructionsWithRelocations;
@@ -86,7 +86,11 @@ fn build_withdraw_gas(
             ("Failure", &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: Some([-requested_count as i32, 0]),
         },
     ))
@@ -135,7 +139,7 @@ fn build_redeposit_gas(
     Ok(builder.build_from_casm_builder_ex(
         casm_builder,
         [("Fallthrough", &[&[updated_gas]], None)],
-        CostValidationInfo { range_check_info: None, extra_costs: Some([requested_count as i32]) },
+        CostValidationInfo { builtin_infos: vec![], extra_costs: Some([requested_count as i32]) },
         pre_instructions,
     ))
 }
@@ -200,7 +204,11 @@ fn build_withdraw_gas_given_cost_table(
             ("Failure", &[&[range_check], &[gas_counter]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: Some([-requested_count as i32, 0]),
         },
         pre_instructions,

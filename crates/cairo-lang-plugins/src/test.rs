@@ -1,23 +1,24 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
+use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase,
+    FilesGroup, FilesGroupEx,
 };
-use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
+use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, Upcast};
 
 use crate::get_base_plugins;
 use crate::test_utils::expand_module_text;
@@ -49,6 +50,11 @@ pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
 }
 impl salsa::Database for DatabaseForTesting {}
+impl ExternalFiles for DatabaseForTesting {
+    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
+        ext_as_virtual_impl(self.upcast(), external_id)
+    }
+}
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
@@ -113,14 +119,13 @@ pub fn test_expand_plugin_inner(
 
     let cairo_code = &inputs["cairo_code"];
 
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("test_src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
-    let file_id = db.intern_file(FileLongId::OnDisk("test_src/lib.cairo".into()));
-    db.as_files_group_mut()
-        .override_file_content(file_id, Some(Arc::new(format!("{cairo_code}\n"))));
+    let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db);
+    db.as_files_group_mut().override_file_content(file_id, Some(format!("{cairo_code}\n").into()));
 
     let mut diagnostic_items = vec![];
     let expanded_module =
@@ -171,7 +176,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                 } else {
                     PluginResult {
                         diagnostics: vec![PluginDiagnostic::error(
-                            struct_ast.stable_ptr().untyped(),
+                            &struct_ast,
                             "Double indirection diagnostic".to_string(),
                         )],
                         ..PluginResult::default()

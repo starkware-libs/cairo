@@ -1,23 +1,27 @@
+use std::default::Default;
 use std::sync::Arc;
 
-use anyhow::{Context, Result};
-use cairo_felt::Felt252;
+use anyhow::Result;
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+use cairo_lang_compiler::get_sierra_program_for_functions;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
-use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
+use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::ProgramArtifact;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
-use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
+use cairo_lang_sierra_generator::replace_ids::DebugReplacer;
+use cairo_lang_sierra_generator::statements_locations::StatementsLocations;
 use cairo_lang_starknet::contract::{
     find_contracts, get_contract_abi_functions, get_contracts_info, ContractInfo,
 };
@@ -26,10 +30,10 @@ use cairo_lang_starknet_classes::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_utils::ordered_hash_map::{
     deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
 };
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, Itertools};
 pub use plugin::TestPlugin;
 use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt as Felt252;
 pub use test_config::{try_extract_test_config, TestConfig};
 
 mod inline_macros;
@@ -42,31 +46,48 @@ const IGNORE_ATTR: &str = "ignore";
 const AVAILABLE_GAS_ATTR: &str = "available_gas";
 const STATIC_GAS_ARG: &str = "static";
 
+/// Configuration for test compilation.
+#[derive(Clone)]
+pub struct TestsCompilationConfig {
+    /// Adds the starknet contracts to the compiled tests.
+    pub starknet: bool,
+
+    /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
+    /// [Annotations] in [DebugInfo] in the compiled tests.
+    pub add_statements_functions: bool,
+
+    /// Adds mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
+    /// [Annotations] in [DebugInfo] in the compiled tests.
+    pub add_statements_code_locations: bool,
+}
+
 /// Runs Cairo compiler.
 ///
 /// # Arguments
 /// * `db` - Preloaded compilation database.
-/// * `starknet` - Add the starknet contracts to the compiled tests.
-/// * `main_crate_ids` - [`CrateId`]s to compile. Use `db.intern_crate(CrateLongId::Real(name))` in
-///   order to obtain [`CrateId`] from its name.
+/// * `tests_compilation_config` - The compiler configuration for tests compilation.
+/// * `main_crate_ids` - [`CrateId`]s to compile. Use `CrateLongId::Real(name).intern(db)` in order
+///   to obtain [`CrateId`] from its name.
 /// * `test_crate_ids` - [`CrateId`]s to find tests cases in. Must be a subset of `main_crate_ids`.
 /// # Returns
 /// * `Ok(TestCompilation)` - The compiled test cases with metadata.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_test_prepared_db(
     db: &RootDatabase,
-    starknet: bool,
+    tests_compilation_config: TestsCompilationConfig,
     main_crate_ids: Vec<CrateId>,
     test_crate_ids: Vec<CrateId>,
+    allow_warnings: bool,
 ) -> Result<TestCompilation> {
-    let all_entry_points = if starknet {
+    let all_entry_points = if tests_compilation_config.starknet {
         find_contracts(db, &main_crate_ids)
             .iter()
             .flat_map(|contract| {
                 chain!(
-                    get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap(),
-                    get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE).unwrap(),
-                    get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap(),
+                    get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap_or_default(),
+                    get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE)
+                        .unwrap_or_default(),
+                    get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap_or_default(),
                 )
             })
             .map(|func| ConcreteFunctionWithBodyId::from_semantic(db, func.value))
@@ -74,6 +95,28 @@ pub fn compile_test_prepared_db(
     } else {
         vec![]
     };
+
+    let executable_functions = find_executable_function_ids(db, main_crate_ids.clone());
+    let all_tests = find_all_tests(db, test_crate_ids.clone());
+
+    let func_ids = chain!(
+        executable_functions.clone().into_keys(),
+        all_entry_points.iter().cloned(),
+        // TODO(maciektr): Remove test entrypoints after migration to executable attr.
+        all_tests.iter().flat_map(|(func_id, _cfg)| {
+            ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
+        })
+    )
+    .collect();
+
+    let mut diag_reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
+    if allow_warnings {
+        diag_reporter = diag_reporter.allow_warnings();
+    }
+
+    let SierraProgramWithDebug { program: mut sierra_program, debug_info } =
+        Arc::unwrap_or_clone(get_sierra_program_for_functions(db, func_ids, diag_reporter)?);
+
     let function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
         all_entry_points
             .iter()
@@ -84,25 +127,23 @@ pub fn compile_test_prepared_db(
                 )
             })
             .collect();
-    let all_tests = find_all_tests(db, test_crate_ids.clone());
-    let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
-        db.get_sierra_program_for_functions(
-            chain!(
-                all_entry_points.into_iter(),
-                all_tests.iter().flat_map(|(func_id, _cfg)| {
-                    ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
-                })
-            )
-            .collect(),
-        )
-        .to_option()
-        .with_context(|| "Compilation failed without any diagnostics.")?,
-    );
-    let replacer = DebugReplacer { db };
-    let sierra_program = replacer.apply(&sierra_program);
-    let statements_functions =
-        debug_info.statements_locations.get_statements_functions_map_for_tests(db);
 
+    let replacer = DebugReplacer { db };
+    replacer.enrich_function_names(&mut sierra_program);
+
+    let mut annotations = Annotations::default();
+    if tests_compilation_config.add_statements_functions {
+        annotations.extend(Annotations::from(
+            debug_info.statements_locations.extract_statements_functions(db),
+        ))
+    }
+    if tests_compilation_config.add_statements_code_locations {
+        annotations.extend(Annotations::from(
+            debug_info.statements_locations.extract_statements_source_code_locations(db),
+        ))
+    }
+
+    let executables = collect_executables(db, executable_functions, &sierra_program);
     let named_tests = all_tests
         .into_iter()
         .map(|(func_id, test)| {
@@ -122,19 +163,39 @@ pub fn compile_test_prepared_db(
         })
         .collect_vec();
     let contracts_info = get_contracts_info(db, main_crate_ids.clone(), &replacer)?;
+    let sierra_program = ProgramArtifact::stripped(sierra_program).with_debug_info(DebugInfo {
+        executables,
+        annotations,
+        ..DebugInfo::default()
+    });
 
     Ok(TestCompilation {
-        named_tests,
         sierra_program,
-        function_set_costs,
-        contracts_info,
-        statements_functions,
+        metadata: TestCompilationMetadata {
+            named_tests,
+            function_set_costs,
+            contracts_info,
+            statements_locations: Some(debug_info.statements_locations),
+        },
     })
 }
 
-/// Compiled test cases.
-#[derive(Clone, Serialize, Deserialize)]
+/// Encapsulation of all data required to execute tests.
+/// This includes the source code compiled to a Sierra program and all cairo-test specific
+/// data extracted from it.
+/// This can be stored on the filesystem and shared externally.
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct TestCompilation {
+    pub sierra_program: ProgramArtifact,
+    #[serde(flatten)]
+    pub metadata: TestCompilationMetadata,
+}
+
+/// Encapsulation of all data required to execute tests, except for the Sierra program itself.
+/// This includes all cairo-test specific data extracted from the program.
+/// This can be stored on the filesystem and shared externally.
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub struct TestCompilationMetadata {
     #[serde(
         serialize_with = "serialize_ordered_hashmap_vec",
         deserialize_with = "deserialize_ordered_hashmap_vec"
@@ -146,14 +207,11 @@ pub struct TestCompilation {
     )]
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     pub named_tests: Vec<(String, TestConfig)>,
-    pub sierra_program: Program,
-    /// A map between sierra statement index and the string representation of the Cairo function
-    /// that generated it. The function representation is composed of the function name and the
-    /// path (modules and impls) to the function in the file. Used only if the tests are running
-    /// with profiling.
+    /// Optional `StatementsLocations` for the compiled tests.
+    /// See [StatementsLocations] for more information.
     // TODO(Gil): consider serializing this field once it is stable.
     #[serde(skip)]
-    pub statements_functions: UnorderedHashMap<StatementIdx, String>,
+    pub statements_locations: Option<StatementsLocations>,
 }
 
 /// Finds the tests in the requested crates.
@@ -182,16 +240,22 @@ fn find_all_tests(
     tests
 }
 
-/// The suite of plugins for compilation for testing.
-pub fn test_plugin_suite() -> PluginSuite {
+/// The suite of plugins that implements assert macros for tests.
+pub fn test_assert_suite() -> PluginSuite {
     let mut suite = PluginSuite::default();
     suite
-        .add_plugin::<TestPlugin>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertEqMacro>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertNeMacro>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertLtMacro>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertLeMacro>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertGtMacro>()
         .add_inline_macro_plugin::<inline_macros::assert::AssertGeMacro>();
+    suite
+}
+
+/// The suite of plugins for compilation for testing.
+pub fn test_plugin_suite() -> PluginSuite {
+    let mut suite = PluginSuite::default();
+    suite.add_plugin::<TestPlugin>().add(test_assert_suite());
     suite
 }

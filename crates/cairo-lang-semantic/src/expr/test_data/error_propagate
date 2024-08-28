@@ -127,11 +127,6 @@ error: Return type "core::result::Result::<core::felt252, core::integer::u128>" 
     with_other_err()?;
     ^***************^
 
-error: Unexpected argument type. Expected: "core::result::Result::<core::felt252, core::integer::u128>", found: "core::result::Result::<core::felt252, core::felt252>".
- --> lib.cairo:4:37
-fn foo() -> Result::<felt252, u128> {
-                                    ^
-
 error: Unexpected return type. Expected: "core::result::Result::<core::felt252, core::integer::u128>", found: "core::result::Result::<core::felt252, core::felt252>".
  --> lib.cairo:4:37
 fn foo() -> Result::<felt252, u128> {

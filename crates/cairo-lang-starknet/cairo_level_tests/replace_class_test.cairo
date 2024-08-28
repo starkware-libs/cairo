@@ -1,4 +1,4 @@
-use starknet::syscalls::{deploy_syscall, replace_class_syscall};
+use starknet::syscalls::{deploy_syscall};
 use starknet::class_hash::ClassHash;
 
 #[starknet::interface]
@@ -8,6 +8,7 @@ trait IWithReplace<TContractState> {
 
 #[starknet::contract]
 mod contract_a {
+    use starknet::storage::StoragePointerWriteAccess;
     use starknet::class_hash::ClassHash;
     use starknet::SyscallResultTrait;
 
@@ -24,7 +25,7 @@ mod contract_a {
     #[abi(embed_v0)]
     impl IWithReplaceImpl of super::IWithReplace<ContractState> {
         fn replace(ref self: ContractState, class_hash: ClassHash) {
-            starknet::replace_class_syscall(class_hash).unwrap_syscall();
+            starknet::syscalls::replace_class_syscall(class_hash).unwrap_syscall();
         }
     }
 }
@@ -36,6 +37,7 @@ trait IWithFoo<TContractState> {
 
 #[starknet::contract]
 mod contract_b {
+    use starknet::storage::StoragePointerReadAccess;
     #[storage]
     struct Storage {
         value: u128,

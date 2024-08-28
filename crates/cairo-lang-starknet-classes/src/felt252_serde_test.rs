@@ -13,6 +13,7 @@ use crate::felt252_serde::{sierra_from_felt252s, sierra_to_felt252s};
 use crate::test_utils::get_example_file_path;
 
 #[test_case("test_contract__test_contract")]
+#[test_case("circuit_contract__circuit_contract")]
 #[test_case("new_syntax_test_contract")]
 #[test_case("hello_starknet")]
 #[test_case("with_erc20")]

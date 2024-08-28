@@ -485,6 +485,7 @@ test::foo@0([0]: RangeCheck, [1]: i32, [2]: i32) -> (RangeCheck, core::result::R
 SmallE2ETestRunner
 
 //! > cairo
+#[feature("corelib-internal-use")]
 fn foo(a: i32, b: i32) -> i64 {
     integer::i32_wide_mul(a, b)
 }

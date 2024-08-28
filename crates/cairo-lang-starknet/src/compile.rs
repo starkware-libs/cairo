@@ -148,11 +148,17 @@ fn compile_contract_with_prepared_and_checked_db(
         constructor: get_entry_points(db, &constructor, &replacer)?,
     };
 
-    let annotations = if compiler_config.add_statements_functions {
+    let mut annotations = Annotations::default();
+
+    if compiler_config.add_statements_functions {
         let statements_functions = debug_info.statements_locations.extract_statements_functions(db);
-        Annotations::from(statements_functions)
-    } else {
-        Default::default()
+        annotations.extend(Annotations::from(statements_functions))
+    };
+
+    if compiler_config.add_statements_code_locations {
+        let statements_functions =
+            debug_info.statements_locations.extract_statements_source_code_locations(db);
+        annotations.extend(Annotations::from(statements_functions))
     };
 
     let contract_class = ContractClass::new(
@@ -228,17 +234,7 @@ pub fn starknet_compile(
     config: Option<CompilerConfig<'_>>,
     allowed_libfuncs_list: Option<ListSelector>,
 ) -> anyhow::Result<String> {
-    let contract = compile_path(
-        &crate_path,
-        contract_path.as_deref(),
-        if let Some(config) = config { config } else { CompilerConfig::default() },
-    )?;
-    contract.validate_version_compatible(
-        if let Some(allowed_libfuncs_list) = allowed_libfuncs_list {
-            allowed_libfuncs_list
-        } else {
-            ListSelector::default()
-        },
-    )?;
+    let contract = compile_path(&crate_path, contract_path.as_deref(), config.unwrap_or_default())?;
+    contract.validate_version_compatible(allowed_libfuncs_list.unwrap_or_default())?;
     serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")
 }

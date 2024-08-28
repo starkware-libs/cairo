@@ -5,6 +5,7 @@ use cairo_lang_semantic::corelib::{
 };
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeLongId};
+use cairo_lang_utils::Intern;
 use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
@@ -107,10 +108,8 @@ fn create_panic_block(
     let panic_data_var =
         variables.new_var(VarRequest { ty: core_array_felt252_ty(db.upcast()), location });
     let err_data_var = variables.new_var(VarRequest {
-        ty: db.intern_type(TypeLongId::Tuple(vec![
-            variables[panic_instance_var].ty,
-            variables[panic_data_var].ty,
-        ])),
+        ty: TypeLongId::Tuple(vec![variables[panic_instance_var].ty, variables[panic_data_var].ty])
+            .intern(db),
         location,
     });
     lowered.variables = variables.variables;
@@ -137,7 +136,10 @@ fn create_panic_block(
                 location,
             }),
             Statement::Const(StatementConst {
-                value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes())),
+                value: ConstValue::Int(
+                    BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),
+                    core_felt252_ty(db.upcast()),
+                ),
                 output: out_of_gas_err_var,
             }),
             Statement::Call(StatementCall {

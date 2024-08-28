@@ -3,27 +3,27 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{
-    init_files_group, AsFilesGroupMut, CrateConfiguration, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase,
+    FilesGroup, FilesGroupEx,
 };
-use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
+use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId, VirtualFile};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, try_extract_matches, Upcast};
+use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern, Upcast};
 use indoc::indoc;
 
-use crate::db::{DefsDatabase, DefsGroup};
+use crate::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
 use crate::ids::{
     FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, NamedLanguageElementId,
     SubmoduleLongId,
 };
 use crate::plugin::{
-    GeneratedFileAuxData, MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,
-    PluginResult,
+    MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -31,6 +31,11 @@ pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
 }
 impl salsa::Database for DatabaseForTesting {}
+impl ExternalFiles for DatabaseForTesting {
+    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
+        ext_as_virtual_impl(self.upcast(), external_id)
+    }
+}
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
@@ -93,20 +98,18 @@ fn test_generic_item_id(
     ) {
         match node.kind(db) {
             SyntaxKind::ItemModule => {
-                let submodule_id = db.intern_submodule(SubmoduleLongId(
-                    module_file_id,
-                    ast::ItemModulePtr(node.stable_ptr()),
-                ));
+                let submodule_id =
+                    SubmoduleLongId(module_file_id, ast::ItemModulePtr(node.stable_ptr()))
+                        .intern(db);
                 module_file_id = ModuleFileId(ModuleId::Submodule(submodule_id), FileIndex(0));
             }
             SyntaxKind::GenericParamType
             | SyntaxKind::GenericParamConst
             | SyntaxKind::GenericParamImplNamed
             | SyntaxKind::GenericParamImplAnonymous => {
-                let param_id = db.intern_generic_param(GenericParamLongId(
-                    module_file_id,
-                    ast::GenericParamPtr(node.stable_ptr()),
-                ));
+                let param_id =
+                    GenericParamLongId(module_file_id, ast::GenericParamPtr(node.stable_ptr()))
+                        .intern(db);
                 let generic_item = param_id.generic_item(db);
                 writeln!(output, "{:?} -> {:?}", param_id.debug(db), generic_item.debug(db))
                     .unwrap();
@@ -126,11 +129,11 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
     db: &mut T,
     content: &str,
 ) -> ModuleId {
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let directory = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(directory)));
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    db.as_files_group_mut().override_file_content(file, Some(Arc::new(content.to_string())));
+    db.as_files_group_mut().override_file_content(file, Some(content.into()));
     let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
     assert_eq!(syntax_diagnostics, "");
     ModuleId::CrateRoot(crate_id)
@@ -152,18 +155,18 @@ fn test_module_file() {
 
     let submodule_id = ModuleId::Submodule(item_id);
     assert_eq!(
-        db.lookup_intern_file(db.module_main_file(module_id).unwrap()),
+        db.module_main_file(module_id).unwrap().lookup_intern(db),
         FileLongId::OnDisk("src/lib.cairo".into())
     );
     assert_eq!(
-        db.lookup_intern_file(db.module_main_file(submodule_id).unwrap()),
+        db.module_main_file(submodule_id).unwrap().lookup_intern(db),
         FileLongId::OnDisk("src/mysubmodule.cairo".into())
     );
 }
 
 fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
-    let file_id = db.intern_file(FileLongId::OnDisk(path.into()));
-    db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.into())));
+    let file_id = FileLongId::OnDisk(path.into()).intern(db);
+    db.as_files_group_mut().override_file_content(file_id, Some(content.into()));
 }
 
 #[test]
@@ -171,7 +174,7 @@ fn test_submodules() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -208,18 +211,6 @@ fn test_submodules() {
 }
 
 #[derive(Debug)]
-struct DummyAuxData;
-impl GeneratedFileAuxData for DummyAuxData {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
-    fn eq(&self, _other: &dyn GeneratedFileAuxData) -> bool {
-        false
-    }
-}
-
-#[derive(Debug)]
 struct DummyPlugin;
 impl MacroPlugin for DummyPlugin {
     fn generate_code(
@@ -249,10 +240,7 @@ impl MacroPlugin for DummyPlugin {
                     code_mappings: Default::default(),
                     aux_data: None,
                 }),
-                diagnostics: vec![PluginDiagnostic::error(
-                    free_function_ast.stable_ptr().untyped(),
-                    "bla".into(),
-                )],
+                diagnostics: vec![PluginDiagnostic::error(&free_function_ast, "bla".into())],
                 remove_original_item: false,
             },
             _ => PluginResult::default(),
@@ -269,7 +257,7 @@ fn test_plugin() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -293,7 +281,7 @@ fn test_plugin_remove_original() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -381,7 +369,7 @@ impl MacroPlugin for FooToBarPlugin {
 fn test_foo_to_bar() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -407,7 +395,7 @@ fn test_foo_to_bar() {
 fn test_first_plugin_removes() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -431,7 +419,7 @@ fn test_first_plugin_removes() {
 fn test_first_plugin_generates() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -455,7 +443,7 @@ fn test_first_plugin_generates() {
 fn test_plugin_chain() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -481,7 +469,7 @@ fn test_plugin_chain() {
 fn test_unknown_item_macro() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 

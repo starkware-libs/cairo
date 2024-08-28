@@ -8,11 +8,21 @@ description = "Compiler executable for validating a Sierra upgrade is valid"
 
 [dependencies]
 anyhow.workspace = true
+async-channel = "2.3.0"
 clap.workspace = true
+indicatif = "0.17.7"
+reqwest = { version = "0.12", features = ["json"] }
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
-rayon.workspace = true
-indicatif = "0.17.7"
+tokio.workspace = true
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.8.0" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.8.0", features = [
+    "serde",
+] }
 
-cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.6.3" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.6.3", features = ["serde"] }
+# This is not a direct dependency of this package, but it is included here to make sure that the 
+# `vendored` feature is enabled (needed for the compilation to succeed on remote machines).
+openssl = { workspace = true, features = ["vendored"] }
+
+[package.metadata.cargo-machete]
+ignored = ["openssl"]

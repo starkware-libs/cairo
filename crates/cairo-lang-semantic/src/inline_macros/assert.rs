@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
+    PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{
     escape_node, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
@@ -21,6 +22,7 @@ impl InlineMacroExprPlugin for AssertMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         let WrappedArgList::ParenthesizedArgList(arguments_syntax) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);
@@ -46,7 +48,7 @@ impl InlineMacroExprPlugin for AssertMacro {
         };
         let f = "__formatter_for_assert_macro__";
         let value_escaped = escape_node(db, value.as_syntax_node());
-        let mut builder = PatchBuilder::new(db);
+        let mut builder = PatchBuilder::new(db, syntax);
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 r#"
@@ -98,11 +100,12 @@ impl InlineMacroExprPlugin for AssertMacro {
                 }}
             ",
         });
+        let (content, code_mappings) = builder.build();
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
-                content: builder.code,
-                code_mappings: builder.code_mappings,
+                content,
+                code_mappings,
                 aux_data: None,
             }),
             diagnostics: vec![],

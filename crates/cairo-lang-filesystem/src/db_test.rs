@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, Upcast};
 use test_log::test;
 
 use super::FilesGroup;
@@ -14,18 +14,18 @@ use crate::test_utils::FilesDatabaseForTesting;
 fn test_filesystem() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let crt = db.intern_crate(CrateLongId::Real("my_crate".into()));
-    let crt2 = db.intern_crate(CrateLongId::Real("my_crate2".into()));
+    let crt = CrateLongId::Real("my_crate".into()).intern(&db);
+    let crt2 = CrateLongId::Real("my_crate2".into()).intern(&db);
     let directory = Directory::Real("src".into());
     let file_id = directory.file(&db, "child.cairo".into());
     let config = CrateConfiguration::default_for_root(directory);
-    db.override_file_content(file_id, Some(Arc::new("content\n".into())));
+    db.override_file_content(file_id, Some("content\n".into()));
     db.set_crate_config(crt, Some(config.clone()));
 
     assert_eq!(db.crate_config(crt), Some(config));
     assert!(db.crate_config(crt2).is_none());
 
-    assert_eq!(*db.file_content(file_id).unwrap(), "content\n");
+    assert_eq!(db.file_content(file_id).unwrap().as_ref(), "content\n");
 }
 
 #[test]

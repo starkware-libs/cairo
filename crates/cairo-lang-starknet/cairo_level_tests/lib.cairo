@@ -13,6 +13,8 @@ mod erc20_test;
 #[cfg(test)]
 mod interoperability;
 #[cfg(test)]
+mod keccak;
+#[cfg(test)]
 mod l2_to_l1_messages;
 #[cfg(test)]
 mod multi_component_test;
@@ -23,3 +25,9 @@ mod storage_access;
 #[cfg(test)]
 mod contract_address_test;
 mod utils;
+#[cfg(test)]
+mod collections_test;
+#[cfg(test)]
+mod component_usage_test;
+#[cfg(test)]
+mod flat_storage_test;

@@ -280,11 +280,7 @@ fn generate_statement_const_code(
 ) -> Maybe<()> {
     let output_var = context.get_sierra_variable(statement.output);
     context.push_statement(simple_basic_statement(
-        const_libfunc_id_by_type(
-            context.get_db(),
-            context.get_var_type(statement.output),
-            &statement.value,
-        ),
+        const_libfunc_id_by_type(context.get_db(), &statement.value),
         &[],
         &[output_var],
     ));
@@ -459,8 +455,10 @@ fn generate_match_code(
 
     let ap_tracking_enabled = context.get_ap_tracking();
 
+    let match_block_location = std::mem::take(&mut context.curr_cairo_location);
     // Generate the blocks.
     for (i, MatchArm { arm_selector: _, block_id, var_ids: _ }) in enumerate(arms) {
+        context.curr_cairo_location.clone_from(&match_block_location);
         // Reset ap_tracking to the state before the match.
         context.set_ap_tracking(ap_tracking_enabled);
 

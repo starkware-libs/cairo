@@ -8,6 +8,7 @@ use cairo_lang_sierra::extensions::lib_func::{
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
@@ -26,7 +27,7 @@ use crate::test_utils::{
 /// All libfuncs inputs and outputs are felt252s, since [dummy_push_values] is currently with
 /// felt252s.
 fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
-    let libfunc_long_id = db.lookup_intern_concrete_lib_func(libfunc);
+    let libfunc_long_id = libfunc.lookup_intern(db);
     let felt252_ty =
         db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
     let array_ty = db

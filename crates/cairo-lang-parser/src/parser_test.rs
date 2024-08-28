@@ -13,12 +13,14 @@ use crate::test_utils::{create_virtual_file, get_diagnostics};
 use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 
 /// Tests a partial parser tree of a given Cairo code, according to the configuration.
+///
 /// Inputs:
 /// - cairo_code (either directly or from a path, if starting with ">>> file: ").
 /// - top_level_kind - the highest SyntaxKind that is interesting. All other kinds, if not under it,
 ///   are ignored. If empty, the whole tree is printed.
 /// - ignored_kinds: Syntax kinds to ignore when printing. In this context, "ignore" means printing
 ///   the nodes themselves, but not their children.
+///
 /// Outputs:
 /// - expected_tree - the printed syntax tree of the given cairo_code, with/without trivia, ignoring
 ///   the irrelevant kinds.
@@ -168,6 +170,7 @@ cairo_lang_test_utils::test_file_test!(
         item_free_function: "item_free_function",
         function_signature: "function_signature",
         function_call: "function_call",
+        closure: "closure",
         match_: "match",
         unary_only_operators: "unary_only_operators",
         item_trait: "item_trait",
@@ -186,6 +189,8 @@ cairo_lang_test_utils::test_file_test!(
         generics: "generics",
         generic_params: "generic_params",
         while_: "while",
+        for_: "for",
+        range: "range",
 },
     test_partial_parser_tree
 );
@@ -193,6 +198,7 @@ cairo_lang_test_utils::test_file_test!(
     partial_parser_tree_with_trivia,
     "src/parser_test_data/partial_trees_with_trivia",
     {
+        comments: "comments",
         path: "path",
         path_compat: "path_compat",
         attribute_errors: "attribute_errors",

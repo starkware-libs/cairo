@@ -1,13 +1,22 @@
+use std::collections::HashMap;
+use std::hash::Hash;
+
+use cairo_lang_defs::ids::{TraitConstantId, TraitImplId, TraitTypeId};
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
 
-use super::canonic::ResultNoErrEx;
-use super::{Inference, InferenceError, InferenceResult, InferenceVar};
+use super::canonic::{NoError, ResultNoErrEx};
+use super::{
+    ErrorSet, ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceResult,
+    InferenceVar,
+};
 use crate::corelib::never_ty;
-use crate::items::constant::{ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::ImplId;
+use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
 use crate::substitution::SemanticRewriter;
-use crate::types::peel_snapshots;
+use crate::types::{peel_snapshots, ImplTypeId};
 use crate::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
     FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
@@ -55,7 +64,7 @@ pub trait InferenceConform {
         generic_args: &[GenericArgumentId],
         var: InferenceVar,
     ) -> bool;
-    fn impl_contains_var(&mut self, impl_id: &ImplId, var: InferenceVar) -> bool;
+    fn impl_contains_var(&mut self, impl_id: ImplId, var: InferenceVar) -> bool;
     fn function_contains_var(&mut self, function_id: FunctionId, var: InferenceVar) -> bool;
 }
 
@@ -83,7 +92,7 @@ impl<'db> InferenceConform for Inference<'db> {
         if ty0 == ty1 {
             return Ok((ty0, 0));
         }
-        let long_ty1 = self.db.lookup_intern_type(ty1);
+        let long_ty1 = ty1.lookup_intern(self.db);
         match long_ty1 {
             TypeLongId::Var(var) => return Ok((self.assign_ty(var, ty0)?, 0)),
             TypeLongId::Missing(_) => return Ok((ty1, 0)),
@@ -92,17 +101,22 @@ impl<'db> InferenceConform for Inference<'db> {
                     if inner_ty == ty0 {
                         return Ok((ty1, 1));
                     }
-                    if !matches!(self.db.lookup_intern_type(ty0), TypeLongId::Snapshot(_)) {
-                        if let TypeLongId::Var(var) = self.db.lookup_intern_type(inner_ty) {
+                    if !matches!(ty0.lookup_intern(self.db), TypeLongId::Snapshot(_)) {
+                        if let TypeLongId::Var(var) = inner_ty.lookup_intern(self.db) {
                             return Ok((self.assign_ty(var, ty0)?, 1));
                         }
                     }
                 }
             }
+            TypeLongId::ImplType(impl_type) => {
+                if let Some(ty) = self.impl_type_bounds.get(&impl_type) {
+                    return self.conform_ty_ex(ty0, *ty, ty0_is_self);
+                }
+            }
             _ => {}
         }
         let n_snapshots = 0;
-        let long_ty0 = self.db.lookup_intern_type(ty0);
+        let long_ty0 = ty0.lookup_intern(self.db);
 
         match long_ty0 {
             TypeLongId::Concrete(concrete0) => {
@@ -121,7 +135,7 @@ impl<'db> InferenceConform for Inference<'db> {
                     concrete0.generic_type(self.db),
                     gargs,
                 ));
-                Ok((self.db.intern_type(long_ty), n_snapshots))
+                Ok((long_ty.intern(self.db), n_snapshots))
             }
             TypeLongId::Tuple(tys0) => {
                 let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
@@ -134,7 +148,18 @@ impl<'db> InferenceConform for Inference<'db> {
                 let tys = zip_eq(tys0, tys1)
                     .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
                     .collect::<Result<Vec<_>, _>>()?;
-                Ok((self.db.intern_type(TypeLongId::Tuple(tys)), n_snapshots))
+                Ok((TypeLongId::Tuple(tys).intern(self.db), n_snapshots))
+            }
+            TypeLongId::Closure(closure0) => {
+                let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
+                let TypeLongId::Closure(closure1) = long_ty1 else {
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
+                };
+                if closure0.wrapper_location != closure1.wrapper_location {
+                    return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
+                }
+
+                Ok((TypeLongId::Closure(closure0).intern(self.db), n_snapshots))
             }
             TypeLongId::FixedSizeArray { type_id, size } => {
                 let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
@@ -143,30 +168,38 @@ impl<'db> InferenceConform for Inference<'db> {
                 };
                 let size = self.conform_const(size, size1)?;
                 let ty = self.conform_ty(type_id, type_id1)?;
-                Ok((
-                    self.db.intern_type(TypeLongId::FixedSizeArray { type_id: ty, size }),
-                    n_snapshots,
-                ))
+                Ok((TypeLongId::FixedSizeArray { type_id: ty, size }.intern(self.db), n_snapshots))
             }
             TypeLongId::Snapshot(ty0) => {
                 let TypeLongId::Snapshot(ty1) = long_ty1 else {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
                 let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
-                Ok((self.db.intern_type(TypeLongId::Snapshot(ty)), n_snapshots))
+                Ok((TypeLongId::Snapshot(ty).intern(self.db), n_snapshots))
             }
-            TypeLongId::GenericParameter(_) | TypeLongId::ImplType(_) => {
+            TypeLongId::GenericParameter(_) => {
+                Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
+            }
+            TypeLongId::TraitType(_) => {
+                // This should never happen as the trait type should be implized when conformed, but
+                // don't panic in case of a bug.
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
             TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
+            TypeLongId::ImplType(impl_type) => {
+                if let Some(ty) = self.impl_type_bounds.get(&impl_type) {
+                    return self.conform_ty_ex(*ty, ty1, ty0_is_self);
+                }
+                Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
+            }
             TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
             TypeLongId::Coupon(function_id0) => {
                 let TypeLongId::Coupon(function_id1) = long_ty1 else {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
 
-                let func0 = self.db.lookup_intern_function(function_id0).function;
-                let func1 = self.db.lookup_intern_function(function_id1).function;
+                let func0 = function_id0.lookup_intern(self.db).function;
+                let func1 = function_id1.lookup_intern(self.db).function;
 
                 let generic_function =
                     self.conform_generic_function(func0.generic_function, func1.generic_function)?;
@@ -179,11 +212,13 @@ impl<'db> InferenceConform for Inference<'db> {
                     self.conform_generic_args(&func0.generic_args, &func1.generic_args)?;
 
                 Ok((
-                    self.db.intern_type(TypeLongId::Coupon(self.db.intern_function(
+                    TypeLongId::Coupon(
                         FunctionLongId {
                             function: ConcreteFunction { generic_function, generic_args },
-                        },
-                    ))),
+                        }
+                        .intern(self.db),
+                    )
+                    .intern(self.db),
                     n_snapshots,
                 ))
             }
@@ -199,20 +234,24 @@ impl<'db> InferenceConform for Inference<'db> {
     ) -> InferenceResult<ConstValueId> {
         let id0 = self.rewrite(id0).no_err();
         let id1 = self.rewrite(id1).no_err();
+        self.conform_ty(id0.ty(self.db).unwrap(), id1.ty(self.db).unwrap())?;
         if id0 == id1 {
             return Ok(id0);
         }
-        let const_value0 = self.db.lookup_intern_const_value(id0);
+        let const_value0 = id0.lookup_intern(self.db);
         if matches!(const_value0, ConstValue::Missing(_)) {
             return Ok(id1);
         }
-        match self.db.lookup_intern_const_value(id1) {
+        match id1.lookup_intern(self.db) {
             ConstValue::Missing(_) => return Ok(id1),
-            ConstValue::Var(var) => return self.assign_const(var, id0),
+            ConstValue::Var(var, _) => return self.assign_const(var, id0),
             _ => {}
         }
         match const_value0 {
-            ConstValue::Var(var) => Ok(self.assign_const(var, id1)?),
+            ConstValue::Var(var, _) => Ok(self.assign_const(var, id1)?),
+            ConstValue::ImplConstant(_) => {
+                Err(self.set_error(InferenceError::ConstKindMismatch { const0: id0, const1: id1 }))
+            }
             _ => {
                 Err(self.set_error(InferenceError::ConstKindMismatch { const0: id0, const1: id1 }))
             }
@@ -224,7 +263,7 @@ impl<'db> InferenceConform for Inference<'db> {
         let (n_snapshots, long_ty1) = if ty0_is_self {
             peel_snapshots(self.db, ty1)
         } else {
-            (0, self.db.lookup_intern_type(ty1))
+            (0, ty1.lookup_intern(self.db))
         };
         (n_snapshots, long_ty1)
     }
@@ -284,46 +323,54 @@ impl<'db> InferenceConform for Inference<'db> {
     fn conform_impl(&mut self, impl0: ImplId, impl1: ImplId) -> InferenceResult<ImplId> {
         let impl0 = self.rewrite(impl0).no_err();
         let impl1 = self.rewrite(impl1).no_err();
+        let long_impl1 = impl1.lookup_intern(self.db);
         if impl0 == impl1 {
             return Ok(impl0);
         }
-        if let ImplId::ImplVar(var) = impl1 {
+        if let ImplLongId::ImplVar(var) = long_impl1 {
             let impl_concrete_trait = self
                 .db
                 .impl_concrete_trait(impl0)
                 .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
-            self.conform_traits(var.get(self.db).concrete_trait_id, impl_concrete_trait)?;
+            self.conform_traits(var.lookup_intern(self.db).concrete_trait_id, impl_concrete_trait)?;
             let impl_id = self.rewrite(impl0).no_err();
             return self.assign_impl(var, impl_id);
         }
-        match impl0 {
-            ImplId::ImplVar(var) => {
+        match impl0.lookup_intern(self.db) {
+            ImplLongId::ImplVar(var) => {
                 let impl_concrete_trait = self
                     .db
                     .impl_concrete_trait(impl1)
                     .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
-                self.conform_traits(var.get(self.db).concrete_trait_id, impl_concrete_trait)?;
+                self.conform_traits(
+                    var.lookup_intern(self.db).concrete_trait_id,
+                    impl_concrete_trait,
+                )?;
                 let impl_id = self.rewrite(impl1).no_err();
                 self.assign_impl(var, impl_id)
             }
-            ImplId::Concrete(concrete0) => {
-                let ImplId::Concrete(concrete1) = impl1 else {
+            ImplLongId::Concrete(concrete0) => {
+                let ImplLongId::Concrete(concrete1) = long_impl1 else {
                     return Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }));
                 };
-                let concrete0 = self.db.lookup_intern_concrete_impl(concrete0);
-                let concrete1 = self.db.lookup_intern_concrete_impl(concrete1);
+                let concrete0 = concrete0.lookup_intern(self.db);
+                let concrete1 = concrete1.lookup_intern(self.db);
                 if concrete0.impl_def_id != concrete1.impl_def_id {
                     return Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }));
                 }
                 let gargs0 = concrete0.generic_args;
                 let gargs1 = concrete1.generic_args;
                 let generic_args = self.conform_generic_args(&gargs0, &gargs1)?;
-                Ok(ImplId::Concrete(self.db.intern_concrete_impl(ConcreteImplLongId {
-                    impl_def_id: concrete0.impl_def_id,
-                    generic_args,
-                })))
+                Ok(ImplLongId::Concrete(
+                    ConcreteImplLongId { impl_def_id: concrete0.impl_def_id, generic_args }
+                        .intern(self.db),
+                )
+                .intern(self.db))
             }
-            ImplId::GenericParameter(_) => {
+            ImplLongId::GenericParameter(_)
+            | ImplLongId::ImplImpl(_)
+            | ImplLongId::TraitImpl(_)
+            | ImplLongId::GeneratedImpl(_) => {
                 Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
             }
         }
@@ -335,8 +382,8 @@ impl<'db> InferenceConform for Inference<'db> {
         trt0: ConcreteTraitId,
         trt1: ConcreteTraitId,
     ) -> InferenceResult<ConcreteTraitId> {
-        let trt0 = self.db.lookup_intern_concrete_trait(trt0);
-        let trt1 = self.db.lookup_intern_concrete_trait(trt1);
+        let trt0 = trt0.lookup_intern(self.db);
+        let trt1 = trt1.lookup_intern(self.db);
         if trt0.trait_id != trt1.trait_id {
             return Err(self.set_error(InferenceError::TraitMismatch {
                 trt0: trt0.trait_id,
@@ -344,9 +391,7 @@ impl<'db> InferenceConform for Inference<'db> {
             }));
         }
         let generic_args = self.conform_generic_args(&trt0.generic_args, &trt1.generic_args)?;
-        Ok(self
-            .db
-            .intern_concrete_trait(ConcreteTraitLongId { trait_id: trt0.trait_id, generic_args }))
+        Ok(ConcreteTraitLongId { trait_id: trt0.trait_id, generic_args }.intern(self.db))
     }
 
     fn conform_generic_function(
@@ -386,8 +431,8 @@ impl<'db> InferenceConform for Inference<'db> {
         var: InferenceVar,
     ) -> bool {
         for garg in generic_args {
-            if match garg {
-                GenericArgumentId::Type(ty) => self.internal_ty_contains_var(*ty, var),
+            if match *garg {
+                GenericArgumentId::Type(ty) => self.internal_ty_contains_var(ty, var),
                 GenericArgumentId::Constant(_) => false,
                 GenericArgumentId::Impl(impl_id) => self.impl_contains_var(impl_id, var),
                 GenericArgumentId::NegImpl => false,
@@ -400,22 +445,32 @@ impl<'db> InferenceConform for Inference<'db> {
 
     /// Checks if an impl contains a certain [InferenceVar] somewhere. Used to avoid inference
     /// cycles.
-    fn impl_contains_var(&mut self, impl_id: &ImplId, var: InferenceVar) -> bool {
-        match impl_id {
-            ImplId::Concrete(concrete_impl_id) => self.generic_args_contain_var(
-                &self.db.lookup_intern_concrete_impl(*concrete_impl_id).generic_args,
+    fn impl_contains_var(&mut self, impl_id: ImplId, var: InferenceVar) -> bool {
+        match impl_id.lookup_intern(self.db) {
+            ImplLongId::Concrete(concrete_impl_id) => self.generic_args_contain_var(
+                &concrete_impl_id.lookup_intern(self.db).generic_args,
                 var,
             ),
-            ImplId::GenericParameter(_) => false,
-            ImplId::ImplVar(new_var) => {
-                if InferenceVar::Impl(new_var.get(self.db).id) == var {
+            ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => false,
+            ImplLongId::ImplVar(new_var) => {
+                let new_var_long_id = new_var.lookup_intern(self.db);
+                let new_var_local_id = new_var_long_id.id;
+                if InferenceVar::Impl(new_var_local_id) == var {
                     return true;
                 }
-                if let Some(impl_id) = self.impl_assignment(new_var.get(self.db).id) {
-                    return self.impl_contains_var(&impl_id, var);
+                if let Some(impl_id) = self.impl_assignment(new_var_local_id) {
+                    return self.impl_contains_var(impl_id, var);
                 }
-                false
+                self.generic_args_contain_var(
+                    &new_var_long_id.concrete_trait_id.generic_args(self.db),
+                    var,
+                )
             }
+            ImplLongId::ImplImpl(impl_impl) => self.impl_contains_var(impl_impl.impl_id(), var),
+            ImplLongId::GeneratedImpl(generated_impl) => self.generic_args_contain_var(
+                &generated_impl.concrete_trait(self.db).generic_args(self.db),
+                var,
+            ),
         }
     }
 
@@ -431,17 +486,173 @@ impl<'db> InferenceConform for Inference<'db> {
         self.generic_args_contain_var(&generic_args, var)
             || matches!(function.generic_function,
                 GenericFunctionId::Impl(impl_generic_function_id)
-                if self.impl_contains_var(&impl_generic_function_id.impl_id, var)
+                if self.impl_contains_var(impl_generic_function_id.impl_id, var)
             )
     }
 }
 
 impl Inference<'_> {
+    /// Reduces an impl type to a concrete type.
+    pub fn reduce_impl_ty(&mut self, impl_type_id: ImplTypeId) -> InferenceResult<TypeId> {
+        let impl_id = impl_type_id.impl_id();
+        let trait_ty = impl_type_id.ty();
+        if let ImplLongId::ImplVar(var) = impl_id.lookup_intern(self.db) {
+            Ok(self.rewritten_impl_type(var, trait_ty))
+        } else if let Ok(ty) =
+            self.db.impl_type_concrete_implized(ImplTypeId::new(impl_id, trait_ty, self.db))
+        {
+            Ok(ty)
+        } else {
+            Err(self.set_impl_reduction_error(impl_id))
+        }
+    }
+
+    /// Reduces an impl constant to a concrete const.
+    pub fn reduce_impl_constant(
+        &mut self,
+        impl_const_id: ImplConstantId,
+    ) -> InferenceResult<ConstValueId> {
+        let impl_id = impl_const_id.impl_id();
+        let trait_constant = impl_const_id.trait_constant_id();
+        if let ImplLongId::ImplVar(var) = impl_id.lookup_intern(self.db) {
+            Ok(self.rewritten_impl_constant(var, trait_constant))
+        } else if let Ok(constant) = self.db.impl_constant_concrete_implized_value(
+            ImplConstantId::new(impl_id, trait_constant, self.db),
+        ) {
+            Ok(constant)
+        } else {
+            Err(self.set_impl_reduction_error(impl_id))
+        }
+    }
+
+    /// Reduces an impl impl to a concrete impl.
+    pub fn reduce_impl_impl(&mut self, impl_impl_id: ImplImplId) -> InferenceResult<ImplId> {
+        let impl_id = impl_impl_id.impl_id();
+        let trait_impl = impl_impl_id.trait_impl_id();
+
+        if let ImplLongId::ImplVar(var) = impl_id.lookup_intern(self.db) {
+            Ok(self.rewritten_impl_impl(var, trait_impl))
+        } else if let Ok(imp) =
+            self.db.impl_impl_concrete_implized(ImplImplId::new(impl_id, trait_impl, self.db))
+        {
+            Ok(imp)
+        } else {
+            Err(self.set_impl_reduction_error(impl_id))
+        }
+    }
+
+    /// Returns the type of an impl var's type item.
+    /// The type may be a variable itself, but it may previously exist, so may be more specific due
+    /// to rewriting.
+    pub fn rewritten_impl_type(&mut self, id: ImplVarId, trait_type_id: TraitTypeId) -> TypeId {
+        self.rewritten_impl_item(
+            id,
+            trait_type_id,
+            |m| &mut m.types,
+            |inference, stable_ptr| inference.new_type_var(stable_ptr),
+        )
+    }
+
+    /// Returns the constant value of an impl var's constant item.
+    /// The constant may be a variable itself, but it may previously exist, so may be more specific
+    /// due to rewriting.
+    pub fn rewritten_impl_constant(
+        &mut self,
+        id: ImplVarId,
+        trait_constant: TraitConstantId,
+    ) -> ConstValueId {
+        self.rewritten_impl_item(
+            id,
+            trait_constant,
+            |m| &mut m.constants,
+            |inference, stable_ptr| {
+                inference.new_const_var(
+                    stable_ptr,
+                    inference.db.trait_constant_type(trait_constant).unwrap(),
+                )
+            },
+        )
+    }
+
+    /// Returns the inner_impl value of an impl var's impl item.
+    /// The inner_impl may be a variable itself, but it may previously exist, so may be more
+    /// specific due to rewriting.
+    pub fn rewritten_impl_impl(&mut self, id: ImplVarId, trait_impl: TraitImplId) -> ImplId {
+        self.rewritten_impl_item(
+            id,
+            trait_impl,
+            |m| &mut m.impls,
+            |inference, stable_ptr| {
+                inference.new_impl_var(
+                    inference.db.trait_impl_concrete_trait(trait_impl).unwrap(),
+                    stable_ptr,
+                    ImplLookupContext::default(),
+                )
+            },
+        )
+    }
+
+    /// Helper function for getting an impl vars item ids.
+    /// These ids are likely to be variables, but may have more specific information due to
+    /// rewriting.
+    fn rewritten_impl_item<K: Hash + PartialEq + Eq, V: Copy>(
+        &mut self,
+        id: ImplVarId,
+        key: K,
+        get_map: impl Fn(&mut ImplVarTraitItemMappings) -> &mut HashMap<K, V>,
+        new_var: impl FnOnce(&mut Self, Option<SyntaxStablePtrId>) -> V,
+    ) -> V
+    where
+        Self: SemanticRewriter<V, NoError>,
+    {
+        let var_id = id.id(self.db);
+        if let Some(value) = self
+            .data
+            .impl_vars_trait_item_mappings
+            .get_mut(&var_id)
+            .and_then(|mappings| get_map(mappings).get(&key))
+        {
+            // Copy the value to allow usage of `self`.
+            let value = *value;
+            // If the value already exists, rewrite it before returning.
+            self.rewrite(value).no_err()
+        } else {
+            let value =
+                new_var(self, self.data.stable_ptrs.get(&InferenceVar::Impl(var_id)).cloned());
+            get_map(self.data.impl_vars_trait_item_mappings.entry(var_id).or_default())
+                .insert(key, value);
+            value
+        }
+    }
+
+    /// Sets an error for an impl reduction failure.
+    fn set_impl_reduction_error(&mut self, impl_id: ImplId) -> ErrorSet {
+        self.set_error(
+            impl_id
+                .concrete_trait(self.db)
+                .map(InferenceError::NoImplsFound)
+                .unwrap_or_else(InferenceError::Reported),
+        )
+    }
+
+    /// Conforms a type to a type. Returning the reduced types on failure.
+    /// Useful for immediately reporting a diagnostic based on the compared types.
+    pub fn conform_ty_for_diag(
+        &mut self,
+        ty0: TypeId,
+        ty1: TypeId,
+    ) -> Result<(), (ErrorSet, TypeId, TypeId)> {
+        match self.conform_ty(ty0, ty1) {
+            Ok(_ty) => Ok(()),
+            Err(err) => Err((err, self.rewrite(ty0).no_err(), self.rewrite(ty1).no_err())),
+        }
+    }
+
     /// helper function for ty_contains_var
     /// Assumes ty was already rewritten.
     #[doc(hidden)]
     fn internal_ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> bool {
-        match self.db.lookup_intern_type(ty) {
+        match ty.lookup_intern(self.db) {
             TypeLongId::Concrete(concrete) => {
                 let generic_args = concrete.generic_args(self.db);
                 self.generic_args_contain_var(&generic_args, var)
@@ -459,12 +670,17 @@ impl Inference<'_> {
                 }
                 false
             }
-            TypeLongId::GenericParameter(_) | TypeLongId::ImplType(_) | TypeLongId::Missing(_) => {
+            TypeLongId::ImplType(id) => self.impl_contains_var(id.impl_id(), var),
+            TypeLongId::TraitType(_) | TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => {
                 false
             }
             TypeLongId::Coupon(function_id) => self.function_contains_var(function_id, var),
             TypeLongId::FixedSizeArray { type_id, .. } => {
                 self.internal_ty_contains_var(type_id, var)
+            }
+            TypeLongId::Closure(closure) => {
+                closure.param_tys.into_iter().any(|ty| self.internal_ty_contains_var(ty, var))
+                    || self.internal_ty_contains_var(closure.ret_ty, var)
             }
         }
     }

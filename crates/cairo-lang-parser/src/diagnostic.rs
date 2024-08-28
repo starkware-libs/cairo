@@ -22,6 +22,7 @@ pub enum ParserDiagnosticKind {
     MissingTypeExpression,
     MissingWrappedArgList,
     MissingPatteren,
+    ExpectedInToken,
     ItemInlineMacroWithoutBang { identifier: SmolStr, bracket_type: SyntaxKind },
     ReservedIdentifier { identifier: SmolStr },
     UnderscoreNotAllowedAsIdentifier,
@@ -68,6 +69,9 @@ impl DiagnosticEntry for ParserDiagnostic {
                 .to_string(),
             ParserDiagnosticKind::MissingPatteren => {
                 "Missing tokens. Expected a pattern.".to_string()
+            }
+            ParserDiagnosticKind::ExpectedInToken => {
+                "Missing identifier token, expected 'in'.".to_string()
             }
             ParserDiagnosticKind::ItemInlineMacroWithoutBang { identifier, bracket_type } => {
                 let (left, right) = match bracket_type {
@@ -125,5 +129,9 @@ Did you mean to write `{identifier}!{left}...{right}'?",
 
     fn location(&self, _db: &dyn FilesGroup) -> cairo_lang_diagnostics::DiagnosticLocation {
         cairo_lang_diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
+    }
+
+    fn is_same_kind(&self, other: &Self) -> bool {
+        other.kind == self.kind
     }
 }

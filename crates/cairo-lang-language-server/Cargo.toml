@@ -6,25 +6,34 @@ repository.workspace = true
 license-file.workspace = true
 description = "Cairo language server."
 
+[features]
+testing = []
+
 [dependencies]
 anyhow.workspace = true
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.6.3" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.6.3" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.6.3" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.6.3" }
-cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.6.3" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "~2.6.3" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.6.3" }
-cairo-lang-project = { path = "../cairo-lang-project", version = "~2.6.3" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.6.3" }
-cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.6.3" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.6.3" }
-cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.6.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.6.3" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.8.0" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.8.0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.8.0" }
+cairo-lang-doc = { path = "../cairo-lang-doc", version = "~2.8.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.8.0" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.8.0" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "~2.8.0" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.8.0" }
+cairo-lang-project = { path = "../cairo-lang-project", version = "~2.8.0" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.8.0" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.8.0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.8.0" }
+cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.8.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.0" }
+indent.workspace = true
+indoc.workspace = true
+itertools.workspace = true
 salsa.workspace = true
 scarb-metadata = "1.12"
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
+smol_str.workspace = true
+tempfile = "3"
 tokio.workspace = true
 tower-lsp = "0.20.0"
 tracing = "0.1"
@@ -32,4 +41,10 @@ tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
+cairo-lang-language-server = { path = ".", features = ["testing"] }
 assert_fs = "1.1"
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
+futures = "0.3"
+pathdiff = "0.2"
+test-log.workspace = true
+tower-service = "0.3"

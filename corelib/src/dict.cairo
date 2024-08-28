@@ -1,9 +1,12 @@
-use core::traits::{Index, Default, Felt252DictValue};
+#[feature("deprecated-index-traits")]
+use crate::traits::{Index, Default, Felt252DictValue};
 
 pub extern type Felt252Dict<T>;
 pub extern type SquashedFelt252Dict<T>;
 pub extern type Felt252DictEntry<T>;
 impl SquashedFelt252DictDrop<T, +Drop<T>> of Drop<SquashedFelt252Dict<T>>;
+use crate::{RangeCheck, SegmentArena};
+use crate::gas::GasBuiltin;
 
 pub(crate) extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
 

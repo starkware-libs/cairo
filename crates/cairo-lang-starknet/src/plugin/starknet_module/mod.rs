@@ -6,12 +6,13 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,
     PluginResult,
 };
+use cairo_lang_filesystem::db::Edition;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, require};
 
@@ -37,14 +38,19 @@ pub enum StarknetModuleKind {
 }
 impl StarknetModuleKind {
     /// Returns the starknet module kind according to the module's attributes, if any.
-    fn from_module(db: &dyn SyntaxGroup, module_ast: &ast::ItemModule) -> Option<Self> {
-        if module_ast.has_attr(db, CONTRACT_ATTR) {
-            Some(StarknetModuleKind::Contract)
-        } else if module_ast.has_attr(db, COMPONENT_ATTR) {
-            Some(StarknetModuleKind::Component)
-        } else {
-            None
+    fn from_module(
+        db: &dyn SyntaxGroup,
+        module_ast: &ast::ItemModule,
+    ) -> Option<(Self, ast::Attribute)> {
+        for (attr_str, kind) in [
+            (CONTRACT_ATTR, StarknetModuleKind::Contract),
+            (COMPONENT_ATTR, StarknetModuleKind::Component),
+        ] {
+            if let Some(attr) = module_ast.find_attr(db, attr_str) {
+                return Some((kind, attr));
+            }
         }
+        None
     }
     /// Returns the name of the kind, with a leading capital letter.
     pub fn to_str_capital(self) -> &'static str {
@@ -85,9 +91,13 @@ impl StarknetModuleKind {
     pub fn get_full_state_struct_name(self) -> String {
         format!("{}{}", self.get_state_struct_name(), self.get_generic_arg_str())
     }
-    /// Gets the member State struct name, according to the module kind.
-    pub fn get_member_state_name(self) -> String {
-        format!("{}MemberState", self.to_str_capital())
+    /// Gets the storage base struct name, according to the module kind.
+    pub fn get_storage_base_struct_name(self) -> String {
+        format!("{}StorageBase", self.to_str_capital())
+    }
+    /// Gets the mutable storage base struct name, according to the module kind.
+    pub fn get_storage_base_mut_struct_name(self) -> String {
+        format!("{}StorageBaseMut", self.to_str_capital())
     }
 }
 
@@ -97,7 +107,7 @@ pub(super) fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                module_ast.stable_ptr().untyped(),
+                &module_ast,
                 format!(
                     "The '{DEPRECATED_CONTRACT_ATTR}' attribute was deprecated, please use \
                      `{CONTRACT_ATTR}` instead.",
@@ -106,7 +116,7 @@ pub(super) fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -
             remove_original_item: false,
         };
     }
-    if let Some(kind) = StarknetModuleKind::from_module(db, &module_ast) {
+    if let Some((kind, _)) = StarknetModuleKind::from_module(db, &module_ast) {
         return validate_module(db, module_ast, kind.to_str_capital());
     }
 
@@ -123,7 +133,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                module_ast.stable_ptr().untyped(),
+                &module_ast,
                 format!("{module_kind_str}s without body are not supported."),
             )],
             remove_original_item: false,
@@ -135,7 +145,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                 module_ast.stable_ptr().untyped(),
+                 &module_ast,
                  format!("{module_kind_str}s must define a '{STORAGE_STRUCT_NAME}' struct."),
             )],
             remove_original_item: false,
@@ -146,7 +156,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                storage_struct_ast.stable_ptr().untyped(),
+                &storage_struct_ast,
                 format!("'{STORAGE_STRUCT_NAME}' struct must be annotated with #[{STORAGE_ATTR}]."),
             )],
             remove_original_item: false,
@@ -163,7 +173,7 @@ pub(super) fn handle_module_by_storage(
     struct_ast: ast::ItemStruct,
     metadata: &MacroPluginMetadata<'_>,
 ) -> Option<PluginResult> {
-    let (module_ast, module_kind) =
+    let (module_ast, module_kind, kind_attr) =
         grand_grand_parent_starknet_module(struct_ast.as_syntax_node(), db)?;
 
     let body = extract_matches!(module_ast.body(db), MaybeModuleBody::Some);
@@ -215,13 +225,14 @@ pub(super) fn handle_module_by_storage(
 
     let module_name = module_ast.name(db).text(db);
 
-    let mut builder = PatchBuilder::new(db);
+    let mut builder = PatchBuilder::new(db, &kind_attr);
     builder.add_modified(module_kind_specific_code);
+    let (content, code_mappings) = builder.build();
     Some(PluginResult {
         code: Some(PluginGeneratedFile {
             name: module_kind.to_str_lower().into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: match module_kind {
                 StarknetModuleKind::Contract => {
                     Some(DynGeneratedFileAuxData::new(StarkNetContractAuxData {
@@ -232,7 +243,7 @@ pub(super) fn handle_module_by_storage(
             },
         }),
         diagnostics,
-        remove_original_item: true,
+        remove_original_item: backwards_compatible_storage(metadata.edition),
     })
 }
 
@@ -267,7 +278,8 @@ fn maybe_add_extra_use(
         | ast::ModuleItem::FreeFunction(_)
         | ast::ModuleItem::ImplAlias(_)
         | ast::ModuleItem::Missing(_)
-        | ast::ModuleItem::InlineMacro(_) => None,
+        | ast::ModuleItem::InlineMacro(_)
+        | ast::ModuleItem::HeaderDoc(_) => None,
     } {
         extra_uses.entry(ident.text(db)).or_insert_with_key(|ident| format!("super::{}", ident));
     }
@@ -278,12 +290,22 @@ fn maybe_add_extra_use(
 fn grand_grand_parent_starknet_module(
     item_node: SyntaxNode,
     db: &dyn SyntaxGroup,
-) -> Option<(ast::ItemModule, StarknetModuleKind)> {
+) -> Option<(ast::ItemModule, StarknetModuleKind, ast::Attribute)> {
     // Get the containing module node. The parent is the item list, the grand parent is the module
     // body, and the grand grand parent is the module.
     let module_node = item_node.parent()?.parent()?.parent()?;
     require(module_node.kind(db) == SyntaxKind::ItemModule)?;
     let module_ast = ast::ItemModule::from_syntax_node(db, module_node);
-    let module_kind = StarknetModuleKind::from_module(db, &module_ast)?;
-    Some((module_ast, module_kind))
+    let (module_kind, attr) = StarknetModuleKind::from_module(db, &module_ast)?;
+    Some((module_ast, module_kind, attr))
+}
+
+/// Whether the generated code should be backwards compatible with the old storage generated code.
+/// This mostly affect the visibility of the generated storage structs, as everything was public in
+/// the old version regardless of the original visibility.
+pub fn backwards_compatible_storage(edition: Edition) -> bool {
+    match edition {
+        Edition::V2023_01 | Edition::V2023_10 | Edition::V2023_11 => true,
+        Edition::V2024_07 => false,
+    }
 }

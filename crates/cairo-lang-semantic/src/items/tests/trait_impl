@@ -1,0 +1,1171 @@
+//! > Test impl items in trait/impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyImpl::foo1(3_u32);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    impl MyImpl: TypeTrait;
+    fn foo1(x: Self::MyImpl::MyType) -> Self::MyImpl::MyType;
+}
+
+impl MyImpl of MyTrait {
+    impl MyImpl = myMod::TypeImpl;
+    fn foo1(x: u32) -> u32 {
+        x
+    }
+}
+
+trait TypeTrait {
+    type MyType;
+}
+mod myMod {
+    impl TypeImpl of super::TypeTrait {
+        type MyType = u32;
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Trait impl with no impl in context, no generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    impl impl1: OtherTrait;
+    impl impl2: OtherTrait;
+    fn foo(x: Self::impl1::InputType) -> Self::impl2::OutputType;
+}
+
+trait OtherTrait {
+    type InputType;
+    type OutputType;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type items in trait/impl with generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyImpl::<u32>::foo1(3_u32);
+    MyImpl::<u32>::foo2(3_u32);
+    MyImpl::<u32>::foo3(3_u32);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T, S> {
+    impl impl1: OtherTrait;
+    fn foo1(x: Self::impl1::InputType) -> Self::impl1::OutputType;
+    fn foo2(x: Self::impl1::InputType) -> Self::impl1::OutputType;
+    fn foo3(x: u32) -> u32;
+}
+impl MyImpl<T> of MyTrait<T, u32> {
+    impl impl1 = OtherImpl;
+    fn foo1(x: Self::impl1::InputType) -> Self::impl1::InputType {
+        x
+    }
+    fn foo2(x: u32) -> u32 {
+        x
+    }
+    fn foo3(x: Self::impl1::InputType) -> Self::impl1::OutputType {
+        x
+    }
+}
+
+trait OtherTrait {
+    type InputType;
+    type OutputType;
+}
+
+impl OtherImpl of OtherTrait {
+    type InputType = u32;
+    type OutputType = u32;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Member access of impl impl type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let x = MyStruct { value: 3_u32 };
+    let _: MyStruct<u32> = MyImpl::foo(x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct<T> {
+    value: T,
+}
+trait OtherTrait {
+    type InputType;
+}
+
+impl OtherImpl<T> of OtherTrait {
+    type InputType = MyStruct<T>;
+}
+
+trait MyTrait {
+    impl Impl: OtherTrait;
+    fn foo(x: Self::Impl::InputType) -> Self::Impl::InputType;
+}
+impl MyImpl of MyTrait {
+    impl Impl = OtherImpl<u32>;
+    fn foo(x: Self::Impl::InputType) -> Self::Impl::InputType {
+        MyStruct { value: x.value }
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Using traits' impl is allowed in other traits, if well resolved.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+}
+
+impl OtherImpl of OtherTrait {
+    type InputType = u32;
+}
+
+trait AnotherTrait {
+    impl Impl: OtherTrait;
+}
+impl AnotherImpl of AnotherTrait {
+    impl Impl = OtherImpl;
+}
+trait MyTrait {
+    fn bar1(x: AnotherTrait::Impl::InputType);
+    fn bar2() -> AnotherTrait::Impl::InputType;
+}
+impl MyImpl of MyTrait {
+    fn bar1(x: u32) {}
+    fn bar2() -> u32 {
+        3_u32
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Using traits' impl in other traits, well resolved, but with type mismatch.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+}
+
+impl OtherImpl of OtherTrait {
+    type InputType = u16;
+}
+
+trait AnotherTrait {
+    impl Impl: OtherTrait;
+}
+impl AnotherImpl of AnotherTrait {
+    impl Impl = OtherImpl;
+}
+trait MyTrait {
+    fn bar1(x: AnotherTrait::Impl::InputType);
+    fn bar2() -> AnotherTrait::Impl::InputType;
+}
+impl MyImpl of MyTrait {
+    fn bar1(x: u32) {}
+    fn bar2() -> u32 {
+        3_u32
+    }
+}
+
+//! > expected_diagnostics
+error: Parameter type of impl function `MyImpl::bar1` is incompatible with `MyTrait::bar1`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:20:16
+    fn bar1(x: u32) {}
+               ^*^
+
+error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait::bar2`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
+ --> lib.cairo:21:18
+    fn bar2() -> u32 {
+                 ^*^
+
+//! > ==========================================================================
+
+//! > Using traits' impls in other traits, but they can't be resolved.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+}
+impl OtherImpl1 of OtherTrait {
+    type InputType = u16;
+}
+impl OtherImpl2 of OtherTrait {
+    type InputType = u16;
+}
+// A trait with 0 impls in the context.
+trait AnotherTrait0 {
+    impl Impl: OtherTrait;
+}
+// A trait with 2 impls in the context.
+trait AnotherTrait2 {
+    impl Impl: OtherTrait;
+}
+impl AnotherImpl20 of AnotherTrait2 {
+    impl Impl = OtherImpl1;
+}
+impl AnotherImpl21 of AnotherTrait2 {
+    impl Impl = OtherImpl2;
+}
+trait MyTrait {
+    fn bar1(x: AnotherTrait0::Impl::InputType);
+    fn bar2() -> AnotherTrait0::Impl::InputType;
+    fn bar3(x: AnotherTrait2::Impl::InputType);
+    fn bar4() -> AnotherTrait2::Impl::InputType;
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: test::AnotherTrait0.
+ --> lib.cairo:25:31
+    fn bar1(x: AnotherTrait0::Impl::InputType);
+                              ^**^
+
+error: Trait has no implementation in context: test::AnotherTrait0.
+ --> lib.cairo:26:33
+    fn bar2() -> AnotherTrait0::Impl::InputType;
+                                ^**^
+
+error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
+ --> lib.cairo:27:31
+    fn bar3(x: AnotherTrait2::Impl::InputType);
+                              ^**^
+
+error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
+ --> lib.cairo:28:33
+    fn bar4() -> AnotherTrait2::Impl::InputType;
+                                ^**^
+
+//! > ==========================================================================
+
+//! > traits' impls are resolved when there is a single impl in context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+}
+impl OtherImpl of OtherTrait {
+    type InputType = u32;
+}
+trait AnotherTrait {
+    impl Impl: OtherTrait;
+}
+impl AnotherImpl of AnotherTrait {
+    impl Impl = OtherImpl;
+}
+trait MyTrait {
+    fn foo1() -> u32;
+    fn foo2(x: u32);
+}
+impl MyImpl of MyTrait {
+    fn foo1() -> AnotherTrait::Impl::InputType {
+        3_u32
+    }
+    fn foo2(x: AnotherTrait::Impl::InputType) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Mismatch of resolved traits' impl types when there is a single impl in context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+}
+impl OtherImpl of OtherTrait {
+    type InputType = u16;
+}
+trait AnotherTrait {
+    impl Impl: OtherTrait;
+}
+impl AnotherImpl of AnotherTrait {
+    impl Impl = OtherImpl;
+}
+trait MyTrait {
+    fn foo1() -> u32;
+    fn foo2(x: u32);
+}
+impl MyImpl of MyTrait {
+    fn foo1() -> AnotherTrait::Impl::InputType {
+        3_u32
+    }
+    fn foo2(x: AnotherTrait::Impl::InputType) {}
+}
+
+//! > expected_diagnostics
+error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+ --> lib.cairo:18:18
+    fn foo1() -> AnotherTrait::Impl::InputType {
+                 ^***************************^
+
+error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:18:48
+    fn foo1() -> AnotherTrait::Impl::InputType {
+                                               ^
+
+error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `core::integer::u32`, actual: `core::integer::u16`.
+ --> lib.cairo:21:16
+    fn foo2(x: AnotherTrait::Impl::InputType) {}
+               ^***************************^
+
+//! > ==========================================================================
+
+//! > impl impls are allowed, even in a trait body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+}
+impl OtherImpl of OtherTrait {
+    type InputType = u32;
+}
+trait AnotherTrait {
+    impl Impl: OtherTrait;
+}
+impl AnotherImpl of AnotherTrait {
+    impl Impl = OtherImpl;
+}
+trait MyTrait {
+    fn foo1() -> AnotherImpl::Impl::InputType;
+    fn foo2(x: AnotherImpl::Impl::InputType);
+}
+impl MyImpl of MyTrait {
+    fn foo1() -> AnotherImpl::Impl::InputType {
+        3_u32
+    }
+    fn foo2(x: AnotherImpl::Impl::InputType) {}
+}
+fn bar1() -> AnotherImpl::Impl::InputType {
+    3_u32
+}
+fn bar2(x: AnotherImpl::Impl::InputType) {}
+fn bar3() {
+    let _: AnotherImpl::Impl::InputType = 3_u32;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > impl items are allowed in its own trait body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+}
+impl OtherImpl of OtherTrait {
+    type InputType = u32;
+}
+trait MyTrait {
+    impl Impl: OtherTrait;
+    fn foo1() -> MyImpl::Impl::InputType;
+    fn foo2(x: MyImpl::Impl::InputType);
+}
+impl MyImpl of MyTrait {
+    impl Impl = OtherImpl;
+    fn foo1() -> Self::Impl::InputType {
+        3_u32
+    }
+    fn foo2(x: Self::Impl::InputType) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > impl items in its own trait body, with type mismatch.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+}
+impl OtherImpl of OtherTrait {
+    type InputType = u16;
+}
+trait MyTrait {
+    impl Impl: OtherTrait;
+    fn foo1() -> MyImpl::Impl::InputType;
+    fn foo2(x: MyImpl::Impl::InputType);
+}
+impl MyImpl of MyTrait {
+    impl Impl = OtherImpl;
+    fn foo1() -> Self::Impl::InputType {
+        3_u32
+    }
+    fn foo2(x: Self::Impl::InputType) {}
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
+ --> lib.cairo:14:40
+    fn foo1() -> Self::Impl::InputType {
+                                       ^
+
+//! > ==========================================================================
+
+//! > Recursive resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+    impl Impl: Self;
+}
+impl OtherImpl of OtherTrait {
+    type InputType = u32;
+    impl Impl = Self;
+}
+trait MyTrait {
+    impl Impl1: OtherTrait;
+    impl Impl2: OtherTrait;
+}
+impl MyImpl of MyTrait {
+    impl Impl1 = OtherImpl;
+    impl Impl2 = Self::Impl1::Impl;
+}
+fn generic_args(x: Option<MyTrait::Impl1::InputType>) -> Option<MyTrait::Impl2::InputType> {
+    Option::Some(x?)
+}
+fn tuple(
+    x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType
+) -> (MyTrait::Impl2::InputType, MyTrait::Impl1::InputType) {
+    (x, y)
+}
+fn fix_sized_array(x: [MyTrait::Impl1::InputType; 3]) -> [MyTrait::Impl2::InputType; 3] {
+    x
+}
+fn snapshot(x: @@MyTrait::Impl1::InputType) -> @@MyTrait::Impl2::InputType {
+    x
+}
+fn snapshot2(x: @MyTrait::Impl1::InputType) -> @@MyTrait::Impl2::InputType {
+    @x
+}
+fn complex(
+    x: @(
+        MyTrait::Impl1::InputType,
+        Option<
+            @Result<
+                [
+                    Option<MyTrait::Impl2::InputType>
+                ; 3], (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
+            >
+        >
+    )
+) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
+    x
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Diagnostics on mismatches with recursive resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+    impl Impl: Self;
+}
+impl OtherImpl of OtherTrait {
+    type InputType = u16;
+    impl Impl = Self;
+}
+trait MyTrait {
+    impl Impl1: OtherTrait;
+    impl Impl2: OtherTrait;
+}
+impl MyImpl of MyTrait {
+    impl Impl1 = OtherImpl;
+    impl Impl2 = Self::Impl1::Impl;
+}
+fn generic_args(x: Option<MyTrait::Impl1::InputType>) -> Option<MyTrait::Impl2::InputType> {
+    Option::Some(x?)
+}
+fn tuple(
+    x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType
+) -> (MyTrait::Impl2::InputType, MyTrait::Impl1::InputType) {
+    (x, y)
+}
+fn fix_sized_array(x: [MyTrait::Impl1::InputType; 3]) -> [MyTrait::Impl2::InputType; 3] {
+    x
+}
+fn snapshot(x: @@MyTrait::Impl1::InputType) -> @@MyTrait::Impl2::InputType {
+    x
+}
+fn snapshot2(x: @MyTrait::Impl1::InputType) -> @@MyTrait::Impl2::InputType {
+    @x
+}
+fn complex(
+    x: @(
+        MyTrait::Impl1::InputType,
+        Option<
+            @Result<
+                [
+                    Option<MyTrait::Impl2::InputType>
+                ; 3], (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
+            >
+        >
+    )
+) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
+    x
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u16>; 3], (@core::integer::u16, core::integer::u16)>>)".
+ --> lib.cairo:45:61
+) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
+                                                            ^
+
+//! > ==========================================================================
+
+//! > Impl impl chain resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+}
+impl OtherImpl of OtherTrait {
+    type InputType = u32;
+}
+trait MyTrait {
+    impl Impl1: OtherTrait;
+    impl Impl2: OtherTrait;
+    fn bar(x: Self::Impl1::InputType) -> u32;
+}
+impl MyImpl of MyTrait {
+    impl Impl1 = Self::Impl2;
+    impl Impl2 = OtherImpl;
+    fn bar(x: Self::Impl1::InputType) -> u32 {
+        x
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Impl impl chain resolution, with mismatch types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type InputType;
+}
+impl OtherImpl of OtherTrait {
+    type InputType = u16;
+}
+trait MyTrait {
+    impl Impl1: OtherTrait;
+    impl Impl2: OtherTrait;
+    fn bar(x: Self::Impl1::InputType) -> u32;
+}
+impl MyImpl of MyTrait {
+    impl Impl1 = Self::Impl2;
+    impl Impl2 = OtherImpl;
+    fn bar(x: Self::Impl1::InputType) -> u32 {
+        x
+    }
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
+ --> lib.cairo:15:46
+    fn bar(x: Self::Impl1::InputType) -> u32 {
+                                             ^
+
+//! > ==========================================================================
+
+//! > Impl impls cycle of length 1.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {}
+trait MyTrait {
+    impl MyImpl: OtherTrait;
+}
+impl MyImpl of MyTrait {
+    impl MyImpl = Self::MyImpl;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'impls alias' items.
+ --> lib.cairo:6:10
+    impl MyImpl = Self::MyImpl;
+         ^****^
+
+//! > ==========================================================================
+
+//! > Impl impls cycle of length 2.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {}
+trait MyTrait {
+    impl Impl1: OtherTrait;
+    impl Impl2: OtherTrait;
+}
+impl MyImpl of MyTrait {
+    impl Impl1 = Self::Impl2;
+    impl Impl2 = Self::Impl1;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'impls alias' items.
+ --> lib.cairo:7:10
+    impl Impl1 = Self::Impl2;
+         ^***^
+
+error: Cycle detected while resolving 'impls alias' items.
+ --> lib.cairo:8:10
+    impl Impl2 = Self::Impl1;
+         ^***^
+
+//! > ==========================================================================
+
+//! > using an impl impl's associated type in a concrete impl with generic args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> u32 {
+    let x: MyImpl::<u32>::Impl::ty = 4;
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type ty;
+}
+impl OtherImpl<K> of OtherTrait {
+    type ty = K;
+}
+
+trait MyTrait {
+    impl Impl: OtherTrait;
+}
+
+impl MyImpl<K> of MyTrait {
+    impl Impl = OtherImpl<K>;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using a generic impl with impl impl type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    bar::<MyImpl<felt252>>(2)
+}
+pub fn bar<impl O: MyTrait>(x: O::Impl::ty) -> O::Impl::ty {
+    O::foo(x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type ty;
+}
+
+impl OtherImpl1 = myMod::OtherImpl<felt252>;
+mod myMod {
+    impl OtherImpl<K> of super::OtherTrait {
+        type ty = K;
+    }
+}
+
+trait MyTrait {
+    impl Impl: OtherTrait;
+    fn foo(x: Self::Impl::ty) -> Self::Impl::ty;
+}
+
+impl MyImpl<K> of MyTrait {
+    impl Impl = myMod::OtherImpl<K>;
+    fn foo(x: Self::Impl::ty) -> Self::Impl::ty {
+        x
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using a generic impl with trait impl type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    bar::<myMod::MyImpl<felt252>>(2)
+}
+pub fn bar<+MyTrait>(x: MyTrait::Impl::ty) -> MyTrait::Impl::ty {
+    MyTrait::foo(x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type ty;
+}
+
+impl OtherImpl1 = myMod::OtherImpl<u32>;
+mod myMod {
+    impl OtherImpl<K> of super::OtherTrait {
+        type ty = K;
+    }
+    impl MyImpl<K> of super::MyTrait {
+        impl Impl = OtherImpl<K>;
+        fn foo(x: Self::Impl::ty) -> Self::Impl::ty {
+            x
+        }
+    }
+}
+
+trait MyTrait {
+    impl Impl: OtherTrait;
+    fn foo(x: Self::Impl::ty) -> Self::Impl::ty;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using a generic impl impl type with generic args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    bar::<_, DepAdd>(3_felt252, 4)
+}
+pub fn bar<T, impl O: OtherAdd<T, T>>(x: T, y: T) -> O::Impl::ty {
+    O::other_add(x, y)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type ty;
+}
+
+impl OtherImpl1 = myMod::OtherImpl<felt252>;
+mod myMod {
+    impl OtherImpl<K> of super::OtherTrait {
+        type ty = K;
+    }
+}
+
+trait OtherAdd<Lhs, Rhs> {
+    impl Impl: OtherTrait;
+    type ty;
+    fn other_add(lhs: Lhs, rhs: Rhs) -> Self::Impl::ty;
+}
+impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
+    impl Impl = myMod::OtherImpl<T>;
+    type ty = T;
+    fn other_add(lhs: T, rhs: T) -> T {
+        lhs
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using a generic trait impl type with generic args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    bar(3_felt252, 4)
+}
+pub fn bar<T, +OtherAdd<T, T>>(x: T, y: T) -> OtherAdd::<T, T>::Impl::ty {
+    OtherAdd::other_add(x, y)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    type ty;
+}
+
+impl OtherImpl1 = myMod::OtherImpl<felt252>;
+mod myMod {
+    impl OtherImpl<K> of super::OtherTrait {
+        type ty = K;
+    }
+}
+
+trait OtherAdd<Lhs, Rhs> {
+    impl Impl: OtherTrait;
+    type ty;
+    fn other_add(lhs: Lhs, rhs: Rhs) -> Self::Impl::ty;
+}
+impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
+    impl Impl = myMod::OtherImpl<T>;
+    type ty = T;
+    fn other_add(lhs: T, rhs: T) -> Self::ty {
+        lhs
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using trait type as generic argument for impl impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    21
+}
+fn bar<T, impl I: IntoIterator<T>>(a: T) {
+    let mut x = a.into_iter();
+    let mut y: felt252 = 0;
+    while let Option::Some(_) = I::Impl::next(ref x) {
+        y += 1;
+    };
+    y;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Iterator<T> {
+    type Item;
+    fn next(ref self: T) -> Option<Self::Item>;
+}
+trait IntoIterator<T> {
+    type IntoIter;
+    impl Impl: Iterator<Self::IntoIter>;
+    fn into_iter(self: T) -> Self::IntoIter;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > inferring an Impl from a generic arg.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    21
+}
+fn bar<T, +IntoIterator<T>>(a: T) {
+    let mut x = a.into_iter();
+    let mut y: felt252 = 0;
+    while let Option::Some(_) = x.next() {
+        y += 1;
+    };
+    y;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Iterator<T> {
+    type Item;
+    fn next(ref self: T) -> Option<Self::Item>;
+}
+trait IntoIterator<T> {
+    type IntoIter;
+    impl Impl: Iterator<Self::IntoIter>;
+    fn into_iter(self: T) -> Self::IntoIter;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Impl constants with impl trait type generic.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait<T> {
+    const X: u32;
+}
+impl OtherImpl of OtherTrait<u32> {
+    const X: u32 = 4;
+}
+
+trait MyTrait {
+    type ty;
+    impl Other: OtherTrait<Self::ty>;
+}
+impl MyImpl of MyTrait {
+    type ty = u32;
+    impl Other = OtherImpl;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Use of missing Impl Impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    MyImpl::I::f()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    fn f();
+}
+trait MyTrait {
+    impl I: OtherTrait;
+}
+impl MyImpl of MyTrait {}
+
+//! > expected_diagnostics
+error: Cannot infer implicit impl `I.`
+Could not find implementation of trait `test::OtherTrait`
+ --> lib.cairo:7:1
+impl MyImpl of MyTrait {}
+^***********************^
+
+error: Trait has no implementation in context: test::OtherTrait.
+ --> lib.cairo:7:1
+impl MyImpl of MyTrait {}
+^***********************^
+
+//! > ==========================================================================
+
+//! > Inferring missing Impl Impl from context.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: *)
+
+//! > function
+fn foo() {
+    MyImpl::I::f()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait {
+    fn f();
+}
+impl OtherImpl of OtherTrait {
+    fn f() {}
+}
+trait MyTrait {
+    impl I: OtherTrait;
+}
+
+impl MyImpl of MyTrait {}
+
+//! > expected_diagnostics

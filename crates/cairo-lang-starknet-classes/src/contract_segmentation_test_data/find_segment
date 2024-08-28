@@ -343,3 +343,53 @@ Err(JumpOutsideFunction(StatementIdx(3)))
 
 //! > bytecode_lengths
 Casm compilation failed.
+
+//! > ==========================================================================
+
+//! > One function with simple circuit.
+
+//! > test_runner_name
+BytecodeSegmentLengthTest
+
+//! > sierra
+type CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> = Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)> [storable: false, drop: false, dup: false, zero_sized: true];
+type core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> = AddModGate<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>> [storable: false, drop: false, dup: false, zero_sized: true];
+type core::circuit::CircuitInput::<2> = CircuitInput<2> [storable: false, drop: false, dup: false, zero_sized: true];
+type (core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>) = Struct<ut@Tuple, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>> [storable: false, drop: false, dup: false, zero_sized: true];
+type core::circuit::CircuitInput::<0> = CircuitInput<0> [storable: false, drop: false, dup: false, zero_sized: true];
+type core::circuit::CircuitInput::<1> = CircuitInput<1> [storable: false, drop: false, dup: false, zero_sized: true];
+
+libfunc get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>> = get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>;
+
+get_circuit_descriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>() -> ([0]); // 0
+return([0]); // 1
+
+test::foo@0() -> (CircuitDescriptor<Circuit<(core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::CircuitInput::<2>)>>);
+
+//! > cairo_program
+call rel 11;
+[ap + 0] = [ap + -1] + 10, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -2] + 3, ap++;
+[ap + 0] = 3, ap++;
+ret;
+ret;
+dw 16;
+dw 20;
+dw 28;
+dw 0;
+dw 4;
+dw 16;
+dw 0;
+dw 8;
+dw 20;
+dw 0;
+dw 12;
+dw 24;
+
+//! > function_segments
+Ok([0])
+
+//! > bytecode_lengths
+Ok(Node([Leaf(11), Leaf(13)]))

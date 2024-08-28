@@ -20,6 +20,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         major_test_cases: "major_test_cases",
         profiling: "profiling",
+        circuit: "circuit",
     },
     test_profiling
 );
@@ -42,7 +43,11 @@ pub fn test_profiling(
         .unwrap();
     let (_path, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
     let test_module = setup_test_module(&db, &cairo_code).unwrap();
-    DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]).ensure(&db).unwrap();
+    DiagnosticsReporter::stderr()
+        .with_crates(&[test_module.crate_id])
+        .allow_warnings()
+        .ensure(&db)
+        .unwrap();
 
     // Compile to Sierra.
     let SierraProgramWithDebug { program: sierra_program, debug_info } =

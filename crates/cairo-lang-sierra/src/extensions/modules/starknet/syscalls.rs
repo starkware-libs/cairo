@@ -1,7 +1,7 @@
 use itertools::chain;
 
 use super::interoperability::ClassHashType;
-use super::{u32_span_ty, u64_span_ty};
+use super::u64_span_ty;
 use crate::extensions::array::ArrayType;
 use crate::extensions::boxing::box_ty;
 use crate::extensions::felt252::Felt252Type;
@@ -12,14 +12,12 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::modules::get_u256_type;
-use crate::extensions::structure::StructType;
-use crate::extensions::utils::reinterpret_cast_signature;
+use crate::extensions::utils::fixed_size_array_ty;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
-use crate::program::GenericArg;
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 
 /// Type for Starknet system object.
 /// Used to make system calls.
@@ -188,7 +186,7 @@ impl SyscallGenericLibfunc for Sha256ProcessBlockLibfunc {
             // Previous state of the hash.
             context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
             // The current block to process.
-            u32_span_ty(context)?,
+            boxed_u32_fixed_array_ty(context, 16)?,
         ])
     }
 
@@ -209,9 +207,15 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleInitLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(reinterpret_cast_signature(
-            sha256_state_handle_unwrapped_type(context)?,
-            context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(sha256_state_handle_unwrapped_type(context)?).with_allow_all(),
+            ],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }
@@ -226,32 +230,32 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleDigestLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(reinterpret_cast_signature(
-            context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
-            sha256_state_handle_unwrapped_type(context)?,
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(context.get_concrete_type(Sha256StateHandleType::id(), &[])?)
+                    .with_allow_all(),
+            ],
+            vec![OutputVarInfo {
+                ty: sha256_state_handle_unwrapped_type(context)?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }
 
-/// The inner type of the Sha256StateHandle.
+/// The inner type of the Sha256StateHandle: `Box<[u32; 8]>`.
 pub fn sha256_state_handle_unwrapped_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    box_ty(
-        context,
-        context.get_concrete_type(
-            StructType::id(),
-            &[
-                GenericArg::UserType(UserTypeId::from_string("Tuple")),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-                GenericArg::Type(context.get_concrete_type(Uint32Type::id(), &[])?),
-            ],
-        )?,
-    )
+    boxed_u32_fixed_array_ty(context, 8)
+}
+
+/// Returns `Box<[u32; size]>` according to the given size.
+fn boxed_u32_fixed_array_ty(
+    context: &dyn SignatureSpecializationContext,
+    size: i16,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let ty = context.get_concrete_type(Uint32Type::id(), &[])?;
+    box_ty(context, fixed_size_array_ty(context, ty, size)?)
 }
