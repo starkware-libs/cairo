@@ -1,7 +1,7 @@
 #[feature("deprecated-bounded-int-trait")]
-use core::{integer, integer::{u512_safe_div_rem_by_u256, u512}};
-use core::test::test_utils::{assert_eq, assert_ne, assert_le, assert_lt, assert_gt, assert_ge};
-use core::num::traits::{Bounded, Sqrt, WideMul, WrappingSub};
+use crate::{integer, integer::{u512_safe_div_rem_by_u256, u512}};
+use crate::test::test_utils::{assert_eq, assert_ne, assert_le, assert_lt, assert_gt, assert_ge};
+use crate::num::traits::{Bounded, Sqrt, WideMul, WideSquare, WrappingSub};
 
 #[test]
 fn test_u8_operators() {
@@ -707,6 +707,29 @@ fn test_u256_wide_mul() {
 }
 
 #[test]
+fn test_u256_wide_square() {
+    assert!(0_u256.wide_square() == u512 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 });
+    assert!(
+        0x1001001001001001001001001001001001001001001001001001_u256
+            .wide_square() == u512 {
+                limb0: 0x0b00a009008007006005004003002001,
+                limb1: 0xe00f01001101201101000f00e00d00c0,
+                limb2: 0x00400500600700800900a00b00c00d00,
+                limb3: 0x1002003
+            }
+    );
+    assert!(
+        0x1000100010001000100010001000100010001000100010001000100010001_u256
+            .wide_square() == u512 {
+                limb0: 0x00080007000600050004000300020001,
+                limb1: 0x0010000f000e000d000c000b000a0009,
+                limb2: 0x00080009000a000b000c000d000e000f,
+                limb3: 0x1000200030004000500060007
+            }
+    );
+}
+
+#[test]
 fn test_u512_safe_div_rem_by_u256() {
     let zero = u512 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 };
     assert!(u512_safe_div_rem_by_u256(zero, 1) == (zero, 0));
@@ -846,7 +869,7 @@ fn test_u256_sqrt() {
     assert!(1_u256.sqrt() == 1);
     assert!(0_u256.sqrt() == 0);
     assert!(Bounded::<u256>::MAX.sqrt() == Bounded::<u128>::MAX);
-    assert!(Bounded::<u128>::MAX.wide_mul(Bounded::<u128>::MAX).sqrt() == Bounded::<u128>::MAX);
+    assert!(Bounded::<u128>::MAX.wide_square().sqrt() == Bounded::<u128>::MAX);
 }
 
 #[test]
@@ -1850,11 +1873,11 @@ fn test_signed_int_diff() {
 }
 
 mod bounded_int {
-    use core::internal::{
+    use crate::internal::{
         bounded_int,
         bounded_int::{BoundedInt, AddHelper, SubHelper, MulHelper, DivRemHelper, ConstrainHelper}
     };
-    use core::RangeCheck;
+    use crate::RangeCheck;
 
     extern fn downcast<T, S>(index: T) -> Option<S> implicits(RangeCheck) nopanic;
     extern fn upcast<T, S>(index: T) -> S nopanic;

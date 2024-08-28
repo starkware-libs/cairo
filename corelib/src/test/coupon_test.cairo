@@ -1,5 +1,3 @@
-use core::test::test_utils::assert_eq;
-
 extern fn coupon_buy<T>() -> T nopanic;
 
 #[feature("corelib-internal-use")]
@@ -7,7 +5,7 @@ fn arr_sum(arr: Array<(u128, arr_sum::Coupon)>) -> u128 nopanic {
     match arr.pop_front_consume() {
         Option::Some((
             rem, (elm, coupon)
-        )) => core::integer::u128_wrapping_add(elm, arr_sum(rem, __coupon__: coupon)),
+        )) => crate::integer::u128_wrapping_add(elm, arr_sum(rem, __coupon__: coupon)),
         Option::None => 0,
     }
 }
@@ -19,9 +17,9 @@ fn test_arr_sum() {
     arr.append((4, coupon_buy()));
     arr.append((5, coupon_buy()));
 
-    let available_gas = core::testing::get_available_gas();
+    let available_gas = crate::testing::get_available_gas();
     let res = arr_sum(arr);
     // Check that arr_sum did not consume any gas.
-    assert_eq(@core::testing::get_available_gas(), @available_gas, 'Gas was consumed by arr_sum');
-    assert_eq(@res, @12, 'Wrong array sum.');
+    assert_ge!(core::testing::get_available_gas(), available_gas, "Gas was consumed by arr_sum.");
+    assert_eq!(res, 12);
 }

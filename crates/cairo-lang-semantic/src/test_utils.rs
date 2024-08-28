@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 use std::sync::{LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
+use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
     init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, CrateSettings,
-    Edition, ExperimentalFeaturesConfig, FilesDatabase, FilesGroup,
+    Edition, ExperimentalFeaturesConfig, ExternalFiles, FilesDatabase, FilesGroup,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{
@@ -30,6 +30,11 @@ pub struct SemanticDatabaseForTesting {
     storage: salsa::Storage<SemanticDatabaseForTesting>,
 }
 impl salsa::Database for SemanticDatabaseForTesting {}
+impl ExternalFiles for SemanticDatabaseForTesting {
+    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
+        ext_as_virtual_impl(self.upcast(), external_id)
+    }
+}
 impl salsa::ParallelDatabase for SemanticDatabaseForTesting {
     fn snapshot(&self) -> salsa::Snapshot<SemanticDatabaseForTesting> {
         salsa::Snapshot::new(SemanticDatabaseForTesting { storage: self.storage.snapshot() })

@@ -6,7 +6,6 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::{self as semantic, corelib, ConcreteTypeId, TypeId, TypeLongId};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -143,6 +142,14 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         dependency_type: DependencyType,
     ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
 
+    /// Returns the set of direct callees which are functions with body of a concrete function with
+    /// a body (i.e. excluding libfunc callees), after all optimization phases.
+    fn final_concrete_function_with_body_lowered_direct_callees(
+        &self,
+        function_id: ids::ConcreteFunctionWithBodyId,
+        dependency_type: DependencyType,
+    ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
+
     /// Aggregates function level lowering diagnostics.
     fn function_with_body_lowering_diagnostics(
         &self,
@@ -210,15 +217,15 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         dependency_type: DependencyType,
     ) -> Maybe<OrderedHashSet<ids::FunctionWithBodyId>>;
 
-    /// Returns `true` if the function calls (possibly indirectly) itself, or if it calls (possibly
-    /// indirectly) such a function. For example, if f0 calls f1, f1 calls f2, f2 calls f3, and f3
-    /// calls f2, then [Self::contains_cycle] will return `true` for all of these functions.
-    #[salsa::invoke(crate::graph_algorithms::cycles::contains_cycle)]
-    #[salsa::cycle(crate::graph_algorithms::cycles::contains_cycle_handle_cycle)]
-    fn contains_cycle(
+    /// Returns `true` if the function (in its final lowering representation) calls (possibly
+    /// indirectly) itself, or if it calls (possibly indirectly) such a function. For example, if f0
+    /// calls f1, f1 calls f2, f2 calls f3, and f3 calls f2, then [Self::final_contains_call_cycle]
+    /// will return `true` for all of these functions.
+    #[salsa::invoke(crate::graph_algorithms::cycles::final_contains_call_cycle)]
+    #[salsa::cycle(crate::graph_algorithms::cycles::final_contains_call_cycle_handle_cycle)]
+    fn final_contains_call_cycle(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
-        dependency_type: DependencyType,
     ) -> Maybe<bool>;
 
     /// Returns `true` if the function calls (possibly indirectly) itself. For example, if f0 calls
@@ -641,6 +648,19 @@ fn concrete_function_with_body_postpanic_direct_callees_with_body(
     )
 }
 
+fn final_concrete_function_with_body_lowered_direct_callees(
+    db: &dyn LoweringGroup,
+    function_id: ids::ConcreteFunctionWithBodyId,
+    dependency_type: DependencyType,
+) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
+    let lowered_function = db.final_concrete_function_with_body_lowered(function_id)?;
+    functions_with_body_from_function_ids(
+        db,
+        get_direct_callees(db, &lowered_function, dependency_type, &Default::default()),
+        dependency_type,
+    )
+}
+
 fn function_with_body_lowering_diagnostics(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
@@ -745,7 +765,7 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
             ConcreteTypeId::Struct(struct_id) => db
                 .concrete_struct_members(struct_id)
                 .unwrap()
-                .into_iter()
+                .iter()
                 .map(|(_, member)| db.type_size(member.ty))
                 .sum::<usize>(),
             ConcreteTypeId::Enum(enum_id) => {

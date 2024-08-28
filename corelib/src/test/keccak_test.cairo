@@ -1,4 +1,4 @@
-use core::keccak;
+use crate::keccak;
 
 #[test]
 fn test_keccak_syscall() {

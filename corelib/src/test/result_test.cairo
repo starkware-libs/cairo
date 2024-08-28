@@ -1,4 +1,4 @@
-use core::result::{Result, ResultTraitImpl};
+use crate::result::{Result, ResultTraitImpl};
 
 #[test]
 fn test_result_ok_expect() {

@@ -11,7 +11,6 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
-use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
@@ -241,17 +240,15 @@ pub fn dot_completions(
     // Find members of the type.
     let (_, long_ty) = peel_snapshots(db, ty);
     if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
-        db.concrete_struct_members(concrete_struct_id).ok()?.into_iter().for_each(
-            |(name, member)| {
-                let completion = CompletionItem {
-                    label: name.to_string(),
-                    detail: Some(member.ty.format(db.upcast())),
-                    kind: Some(CompletionItemKind::FIELD),
-                    ..CompletionItem::default()
-                };
-                completions.push(completion);
-            },
-        );
+        db.concrete_struct_members(concrete_struct_id).ok()?.iter().for_each(|(name, member)| {
+            let completion = CompletionItem {
+                label: name.to_string(),
+                detail: Some(member.ty.format(db.upcast())),
+                kind: Some(CompletionItemKind::FIELD),
+                ..CompletionItem::default()
+            };
+            completions.push(completion);
+        });
     }
     Some(completions)
 }

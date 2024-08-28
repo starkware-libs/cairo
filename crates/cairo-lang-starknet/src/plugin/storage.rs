@@ -69,17 +69,13 @@ pub fn handle_storage_struct(
     } else {
         "".to_string()
     };
-    let storage_struct_visibility = if backwards_compatible_storage(metadata.edition) {
-        RewriteNode::text("pub")
-    } else {
-        RewriteNode::from_ast(&struct_ast.visibility(db))
-    };
-    let (storage_base_code, _) = handle_storage_interface_struct(db, &struct_ast, metadata);
+    let storage_base_code =
+        handle_storage_interface_struct(db, &struct_ast, metadata).into_rewrite_node();
     data.state_struct_code = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
             {storage_struct_code}
-            {storage_base_code}
+            $storage_base_code$
             pub struct {full_state_struct_name} {{$substorage_members_struct_code$
             }}
 
@@ -115,7 +111,7 @@ pub fn handle_storage_struct(
             ",
         ),
         &[
-            ("storage_struct_visibility".to_string(), storage_struct_visibility),
+            ("storage_base_code".to_string(), storage_base_code),
             (
                 "storage_struct_members".to_string(),
                 RewriteNode::new_modified(storage_struct_members),
@@ -136,7 +132,8 @@ pub fn handle_storage_struct(
             ("members_init_code".to_string(), RewriteNode::new_modified(members_init_code)),
         ]
         .into(),
-    );
+    )
+    .mapped(db, &struct_ast);
 }
 
 /// Returns the relevant code for a substorage storage member.
@@ -181,7 +178,7 @@ fn get_substorage_member_code(
                                 ("component_path".to_string(), component_path.clone()),
                             ]
                             .into(),
-                        ),
+                        ).mapped(db, member),
                         RewriteNode::interpolate_patched(
                             &format!("\n    $name$: \
                              $component_path$::unsafe_new_component_state::<{CONTRACT_STATE_NAME}>(),\
@@ -194,7 +191,7 @@ fn get_substorage_member_code(
                                 ("component_path".to_string(), component_path),
                             ]
                             .into(),
-                        ),
+                        ).mapped(db, member),
                     ))
                 }
                 _ => None,
@@ -243,7 +240,8 @@ fn get_simple_member_code(
                 ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
             ]
             .into(),
-        ),
+        )
+        .mapped(db, member),
         struct_code_mut: RewriteNode::interpolate_patched(
             "\n    $member_visibility$ $member_name$: \
              starknet::storage::$member_wrapper_type$<starknet::storage::Mutable<$member_type$>>,",
@@ -254,7 +252,8 @@ fn get_simple_member_code(
                 ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
             ]
             .into(),
-        ),
+        )
+        .mapped(db, member),
         init_code: if member.has_attr(db, SUBSTORAGE_ATTR) || member.has_attr(db, FLAT_ATTR) {
             RewriteNode::interpolate_patched(
                 "\n           $member_name$: starknet::storage::FlattenedStorage{},",
@@ -268,7 +267,8 @@ fn get_simple_member_code(
                 &[("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone()))]
                     .into(),
             )
-        },
+        }
+        .mapped(db, member),
         storage_member: RewriteNode::interpolate_patched(
             "\n$attributes$        $member_visibility$ $member_name$: $member_type$,",
             &[
@@ -278,6 +278,7 @@ fn get_simple_member_code(
                 ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
             ]
             .into(),
-        ),
+        )
+        .mapped(db, member),
     }
 }

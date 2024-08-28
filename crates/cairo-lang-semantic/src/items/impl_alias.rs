@@ -104,7 +104,7 @@ pub fn impl_alias_semantic_data_helper(
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_alias_semantic_data].
 pub fn priv_impl_alias_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_alias_id: &ImplAliasId,
     _in_cycle: &bool,
 ) -> Maybe<ImplAliasData> {
@@ -161,7 +161,7 @@ pub fn impl_alias_resolved_impl(
 /// Trivial cycle handling for [crate::db::SemanticGroup::impl_alias_resolved_impl].
 pub fn impl_alias_resolved_impl_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_alias_id: &ImplAliasId,
 ) -> Maybe<ImplId> {
     // Forwarding (not as a query) cycle handling to `priv_impl_alias_semantic_data` cycle handler.
@@ -237,7 +237,7 @@ pub fn impl_alias_resolver_data(
 /// Trivial cycle handling for [crate::db::SemanticGroup::impl_alias_resolver_data].
 pub fn impl_alias_resolver_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_alias_id: &ImplAliasId,
 ) -> Maybe<Arc<ResolverData>> {
     // Forwarding (not as a query) cycle handling to `priv_impl_alias_semantic_data` cycle handler.
@@ -280,7 +280,7 @@ pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -
 /// Cycle handling for [crate::db::SemanticGroup::impl_alias_impl_def].
 pub fn impl_alias_impl_def_cycle(
     _db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _impl_alias_id: &ImplAliasId,
 ) -> Maybe<ImplDefId> {
     // Skipping diagnostics since we will get these through when resolving in the

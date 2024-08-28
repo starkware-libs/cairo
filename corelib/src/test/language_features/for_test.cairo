@@ -1,3 +1,5 @@
+use crate::iter::IntoIterator;
+
 #[test]
 fn test_for_loop_array_sum() {
     let mut sum = 0;
@@ -30,12 +32,10 @@ fn test_for_loop_array_tuples() {
 
 #[test]
 fn test_for_loop_span_iter() {
-    let span_arr = array![1, 2, 3].span();
-    let span_iter = span_arr.into_iter();
     let mut i = 1;
     let mut sum = 0;
-    for x in span_iter {
-        assert_eq!(x, @i);
+    for x in array![1, 2, 3].span() {
+        assert_eq!(*x, i);
         i += 1;
         sum += *x;
     };
@@ -44,8 +44,7 @@ fn test_for_loop_span_iter() {
 
 #[test]
 fn test_for_loop_array_iter() {
-    let arr = array![1, 2, 3];
-    let arr_iter = arr.into_iter();
+    let arr_iter = array![1, 2, 3].into_iter();
     let mut i = 1;
     let mut sum = 0;
     for x in arr_iter {
@@ -54,4 +53,15 @@ fn test_for_loop_array_iter() {
         sum += x;
     };
     assert_eq!(sum, 6);
+}
+
+#[test]
+fn test_for_loop_range() {
+    let mut sum = 0_u8;
+    for i in 5_u8..11 {
+        for j in 7..i {
+            sum += j;
+        };
+    };
+    assert_eq!(sum, 46);
 }

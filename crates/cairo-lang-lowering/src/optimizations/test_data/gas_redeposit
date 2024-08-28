@@ -1,0 +1,191 @@
+//! > Test gas redeposit skip.
+
+//! > test_runner_name
+GetRedepositTestRunner
+
+//! > function
+fn foo(x: felt252) -> felt252 {
+    if x == 0 {
+        heavy_op1()
+    } else {
+        heavy_op2()
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn heavy_op1() -> felt252 {
+    0
+}
+
+#[inline(never)]
+fn heavy_op2() -> felt252 {
+    1
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::felt252) <- 0
+  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
+  (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
+End:
+  Match(match_enum(v6) {
+    bool::False(v9) => blk2,
+    bool::True(v7) => blk1,
+  })
+
+blk1:
+Statements:
+  (v8: core::felt252) <- test::heavy_op1()
+End:
+  Goto(blk3, {v8 -> v11})
+
+blk2:
+Statements:
+  (v10: core::felt252) <- test::heavy_op2()
+End:
+  Goto(blk3, {v10 -> v11})
+
+blk3:
+Statements:
+End:
+  Return(v11)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::felt252) <- 0
+  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
+  (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
+End:
+  Match(match_enum(v6) {
+    bool::False(v9) => blk2,
+    bool::True(v7) => blk1,
+  })
+
+blk1:
+Statements:
+  (v8: core::felt252) <- test::heavy_op1()
+End:
+  Goto(blk3, {v8 -> v11})
+
+blk2:
+Statements:
+  (v10: core::felt252) <- test::heavy_op2()
+End:
+  Goto(blk3, {v10 -> v11})
+
+blk3:
+Statements:
+End:
+  Return(v11)
+
+//! > ==========================================================================
+
+//! > Test gas redeposit.
+
+//! > test_runner_name
+GetRedepositTestRunner
+
+//! > function
+fn foo(x: felt252) -> felt252 {
+    if x == 0 {
+        heavy_op1()
+    } else {
+        heavy_op2()
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn heavy_op1() -> felt252 implicits(GasBuiltin) {
+    0
+}
+
+#[inline(never)]
+fn heavy_op2() -> felt252 {
+    1
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::felt252) <- 0
+  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
+  (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
+End:
+  Match(match_enum(v6) {
+    bool::False(v9) => blk2,
+    bool::True(v7) => blk1,
+  })
+
+blk1:
+Statements:
+  (v8: core::felt252) <- test::heavy_op1()
+End:
+  Goto(blk3, {v8 -> v11})
+
+blk2:
+Statements:
+  (v10: core::felt252) <- test::heavy_op2()
+End:
+  Goto(blk3, {v10 -> v11})
+
+blk3:
+Statements:
+End:
+  Return(v11)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::felt252) <- 0
+  (v4: core::felt252, v5: @core::felt252) <- snapshot(v3)
+  (v6: core::bool) <- core::Felt252PartialEq::eq(v2, v5)
+End:
+  Match(match_enum(v6) {
+    bool::False(v9) => blk2,
+    bool::True(v7) => blk1,
+  })
+
+blk1:
+Statements:
+  () <- core::gas::redeposit_gas()
+  (v8: core::felt252) <- test::heavy_op1()
+End:
+  Goto(blk3, {v8 -> v11})
+
+blk2:
+Statements:
+  () <- core::gas::redeposit_gas()
+  (v10: core::felt252) <- test::heavy_op2()
+End:
+  Goto(blk3, {v10 -> v11})
+
+blk3:
+Statements:
+End:
+  Return(v11)
+
+//! > lowering_diagnostics

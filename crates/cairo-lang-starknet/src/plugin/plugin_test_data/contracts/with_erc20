@@ -53,9 +53,9 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let erc20_token_value = starknet::storage::FlattenedStorage {};
+        let __erc20_token_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           erc20_token: erc20_token_value,
+           erc20_token: __erc20_token_value__,
         }
     }
 }
@@ -66,9 +66,9 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let erc20_token_value = starknet::storage::FlattenedStorage {};
+        let __erc20_token_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           erc20_token: erc20_token_value,
+           erc20_token: __erc20_token_value__,
         }
     }
 }
@@ -287,9 +287,9 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let erc20_token_value = starknet::storage::FlattenedStorage {};
+        let __erc20_token_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           erc20_token: erc20_token_value,
+           erc20_token: __erc20_token_value__,
         }
     }
 }
@@ -300,9 +300,9 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let erc20_token_value = starknet::storage::FlattenedStorage {};
+        let __erc20_token_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           erc20_token: erc20_token_value,
+           erc20_token: __erc20_token_value__,
         }
     }
 }

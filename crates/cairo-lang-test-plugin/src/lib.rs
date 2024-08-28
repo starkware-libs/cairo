@@ -55,6 +55,10 @@ pub struct TestsCompilationConfig {
     /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
     /// [Annotations] in [DebugInfo] in the compiled tests.
     pub add_statements_functions: bool,
+
+    /// Adds mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
+    /// [Annotations] in [DebugInfo] in the compiled tests.
+    pub add_statements_code_locations: bool,
 }
 
 /// Runs Cairo compiler.
@@ -127,11 +131,17 @@ pub fn compile_test_prepared_db(
     let replacer = DebugReplacer { db };
     replacer.enrich_function_names(&mut sierra_program);
 
-    let annotations = if tests_compilation_config.add_statements_functions {
-        Annotations::from(debug_info.statements_locations.extract_statements_functions(db))
-    } else {
-        Annotations::default()
-    };
+    let mut annotations = Annotations::default();
+    if tests_compilation_config.add_statements_functions {
+        annotations.extend(Annotations::from(
+            debug_info.statements_locations.extract_statements_functions(db),
+        ))
+    }
+    if tests_compilation_config.add_statements_code_locations {
+        annotations.extend(Annotations::from(
+            debug_info.statements_locations.extract_statements_source_code_locations(db),
+        ))
+    }
 
     let executables = collect_executables(db, executable_functions, &sierra_program);
     let named_tests = all_tests

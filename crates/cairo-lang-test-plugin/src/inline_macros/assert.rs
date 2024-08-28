@@ -67,7 +67,8 @@ trait CompareAssertionPlugin: NamedPlugin {
             (
                 RewriteNode::mapped_text(
                     &format!("__lhs_value_for_{}_macro__", Self::NAME),
-                    lhs.as_syntax_node().span_without_trivia(db),
+                    db,
+                    &lhs,
                 ),
                 "let $lhs_value$ = $lhs$;",
             )
@@ -78,7 +79,8 @@ trait CompareAssertionPlugin: NamedPlugin {
             (
                 RewriteNode::mapped_text(
                     &format!("__rhs_value_for_{}_macro__", Self::NAME),
-                    rhs.as_syntax_node().span_without_trivia(db),
+                    db,
+                    &rhs,
                 ),
                 "let $rhs_value$ = $rhs$;",
             )

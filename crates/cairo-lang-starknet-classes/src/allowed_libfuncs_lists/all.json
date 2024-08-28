@@ -136,6 +136,8 @@
         "init_circuit_data",
         "into_box",
         "into_u96_guarantee",
+        "int_range_pop_front",
+        "int_range_try_new",
         "jump",
         "keccak_syscall",
         "sha256_state_handle_init",

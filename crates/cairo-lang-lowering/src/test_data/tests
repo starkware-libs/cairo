@@ -45,7 +45,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unreachable code
+warning: Unreachable code
  --> lib.cairo:3:5
     5;
     ^^

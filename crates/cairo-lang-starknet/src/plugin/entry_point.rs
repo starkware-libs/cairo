@@ -362,7 +362,7 @@ fn generate_entry_point_wrapper(
             ("implicit_precedence".to_string(), implicit_precedence),
         ]
         .into(),
-    ))
+    ).mapped(db, function))
 }
 
 /// Validates the first parameter of an L1 handler is `from_address: felt252` or `_from_address:

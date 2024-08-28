@@ -91,9 +91,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -104,9 +104,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -186,18 +186,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -228,13 +228,13 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let test_component_storage_value = starknet::storage::FlattenedStorage {};
-        let normal_member1_value = starknet::storage::StorageBase {__base_address__: selector!("normal_member1")};
-        let normal_member2_value = starknet::storage::StorageBase {__base_address__: selector!("normal_member2")};
+        let __test_component_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __normal_member1_value__ = starknet::storage::StorageBase {__base_address__: selector!("normal_member1")};
+        let __normal_member2_value__ = starknet::storage::StorageBase {__base_address__: selector!("normal_member2")};
         StorageStorageBase {
-           test_component_storage: test_component_storage_value,
-           normal_member1: normal_member1_value,
-           normal_member2: normal_member2_value,
+           test_component_storage: __test_component_storage_value__,
+           normal_member1: __normal_member1_value__,
+           normal_member2: __normal_member2_value__,
         }
     }
 }
@@ -247,13 +247,13 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let test_component_storage_value = starknet::storage::FlattenedStorage {};
-        let normal_member1_value = starknet::storage::StorageBase {__base_address__: selector!("normal_member1")};
-        let normal_member2_value = starknet::storage::StorageBase {__base_address__: selector!("normal_member2")};
+        let __test_component_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __normal_member1_value__ = starknet::storage::StorageBase {__base_address__: selector!("normal_member1")};
+        let __normal_member2_value__ = starknet::storage::StorageBase {__base_address__: selector!("normal_member2")};
         StorageStorageBaseMut {
-           test_component_storage: test_component_storage_value,
-           normal_member1: normal_member1_value,
-           normal_member2: normal_member2_value,
+           test_component_storage: __test_component_storage_value__,
+           normal_member1: __normal_member1_value__,
+           normal_member2: __normal_member2_value__,
         }
     }
 }
@@ -411,18 +411,18 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:12:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:12:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -545,9 +545,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -558,9 +558,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -640,18 +640,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -680,9 +680,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -693,9 +693,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -775,18 +775,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
+lib.cairo:10:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
+lib.cairo:10:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -816,11 +816,11 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let component1_storage_value = starknet::storage::FlattenedStorage {};
-        let component2_storage_value = starknet::storage::FlattenedStorage {};
+        let __component1_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __component2_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           component1_storage: component1_storage_value,
-           component2_storage: component2_storage_value,
+           component1_storage: __component1_storage_value__,
+           component2_storage: __component2_storage_value__,
         }
     }
 }
@@ -832,11 +832,11 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let component1_storage_value = starknet::storage::FlattenedStorage {};
-        let component2_storage_value = starknet::storage::FlattenedStorage {};
+        let __component1_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __component2_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           component1_storage: component1_storage_value,
-           component2_storage: component2_storage_value,
+           component1_storage: __component1_storage_value__,
+           component2_storage: __component2_storage_value__,
         }
     }
 }
@@ -1032,18 +1032,18 @@ impl EventComp2EventIntoEvent of Into<super::component2::Event, Event> {
 
 
 
-lib.cairo:16:1
-#[starknet::contract]
-^*******************^
+lib.cairo:21:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:16:1
-#[starknet::contract]
-^*******************^
+lib.cairo:21:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1176,9 +1176,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -1189,9 +1189,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -1271,18 +1271,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1311,9 +1311,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -1324,9 +1324,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -1406,18 +1406,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
+lib.cairo:10:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
+lib.cairo:10:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1447,11 +1447,11 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let component1_storage_value = starknet::storage::FlattenedStorage {};
-        let component2_storage_value = starknet::storage::FlattenedStorage {};
+        let __component1_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __component2_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           component1_storage: component1_storage_value,
-           component2_storage: component2_storage_value,
+           component1_storage: __component1_storage_value__,
+           component2_storage: __component2_storage_value__,
         }
     }
 }
@@ -1463,11 +1463,11 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let component1_storage_value = starknet::storage::FlattenedStorage {};
-        let component2_storage_value = starknet::storage::FlattenedStorage {};
+        let __component1_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __component2_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           component1_storage: component1_storage_value,
-           component2_storage: component2_storage_value,
+           component1_storage: __component1_storage_value__,
+           component2_storage: __component2_storage_value__,
         }
     }
 }
@@ -1663,18 +1663,18 @@ impl EventComp2EventIntoEvent of Into<super::component2::Event, Event> {
 
 
 
-lib.cairo:16:1
-#[starknet::contract]
-^*******************^
+lib.cairo:21:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:16:1
-#[starknet::contract]
-^*******************^
+lib.cairo:21:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;

@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Result};
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
+use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
-    CORELIB_CRATE_NAME, CORELIB_VERSION,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup,
+    FilesGroupEx, CORELIB_CRATE_NAME, CORELIB_VERSION,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{CrateLongId, FlagId};
+use cairo_lang_filesystem::ids::{CrateLongId, FlagId, VirtualFile};
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_project::ProjectConfig;
@@ -38,6 +38,11 @@ pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }
 impl salsa::Database for RootDatabase {}
+impl ExternalFiles for RootDatabase {
+    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
+        ext_as_virtual_impl(self.upcast(), external_id)
+    }
+}
 impl salsa::ParallelDatabase for RootDatabase {
     fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
         salsa::Snapshot::new(RootDatabase { storage: self.storage.snapshot() })
@@ -177,7 +182,7 @@ impl RootDatabaseBuilder {
 }
 
 /// Validates that the corelib version matches the expected one.
-fn validate_corelib(db: &RootDatabase) -> Result<()> {
+pub fn validate_corelib(db: &dyn FilesGroup) -> Result<()> {
     let Some(config) = db.crate_config(CrateLongId::Real(CORELIB_CRATE_NAME.into()).intern(db))
     else {
         return Ok(());

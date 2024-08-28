@@ -47,12 +47,14 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use anyhow::{bail, Context};
+use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, MemberId, ModuleId, SubmoduleLongId,
+    TraitItemId,
 };
-use cairo_lang_diagnostics::Diagnostics;
+use cairo_lang_diagnostics::{Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
@@ -77,7 +79,7 @@ use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
-use salsa::ParallelDatabase;
+use salsa::{Cancelled, ParallelDatabase};
 use serde_json::Value;
 use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
@@ -93,6 +95,7 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
+use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
@@ -117,7 +120,7 @@ mod vfs;
 ///
 /// [lib]: crate#running-with-customizations
 #[non_exhaustive]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Tricks {
     /// A function that returns a list of additional compiler plugin suites to be loaded in the
     /// language server database.
@@ -134,6 +137,14 @@ pub fn start() {
     start_with_tricks(Tricks::default());
 }
 
+/// Number of LSP requests that can be processed concurrently.
+/// Higher number than default tower_lsp::DEFAULT_MAX_CONCURRENCY = 4.
+/// This is increased because we don't have to limit requests this way now.
+/// Cancellation will skip requests that are no longer relevant so only latest ones will be
+/// processed. Effectively there will be similar number of requests processed at once, but under
+/// heavy load these will be more actual ones.
+const REQUESTS_PROCESSED_CONCURRENTLY: usize = 100;
+
 /// Starts the language server with customizations.
 ///
 /// See [the top-level documentation][lib] documentation for usage examples.
@@ -149,7 +160,10 @@ pub async fn start_with_tricks(tricks: Tricks) {
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
     let (service, socket) = Backend::build_service(tricks);
-    Server::new(stdin, stdout, socket).serve(service).await;
+    Server::new(stdin, stdout, socket)
+        .concurrency_level(REQUESTS_PROCESSED_CONCURRENTLY)
+        .serve(service)
+        .await;
 
     info!("language server stopped");
 }
@@ -316,14 +330,28 @@ impl Backend {
     /// Catches panics and returns Err.
     async fn with_db<F, T>(&self, f: F) -> LSPResult<T>
     where
-        F: FnOnce(&AnalysisDatabase) -> T + std::panic::UnwindSafe,
+        F: FnOnce(&AnalysisDatabase) -> T + Send + 'static + std::panic::UnwindSafe,
+        T: Send + 'static,
     {
         let db_mut = self.db_mut().await;
         let db = db_mut.snapshot();
         drop(db_mut);
-        catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
-            error!("caught panic in LSP worker thread");
-            LSPError::internal_error()
+
+        spawn_blocking(move || {
+            catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|err| {
+                if err.is::<Cancelled>() {
+                    debug!("LSP worker thread was cancelled");
+                    LSPError::request_cancelled()
+                } else {
+                    error!("caught panic in LSP worker thread");
+                    LSPError::internal_error()
+                }
+            })
+        })
+        .await
+        .unwrap_or_else(|_| {
+            error!("failed to join LSP worker thread");
+            Err(LSPError::internal_error())
         })
     }
 
@@ -506,9 +534,28 @@ impl Backend {
         state.file_diagnostics.insert(*file, new_file_diagnostics.clone());
 
         let mut diags = Vec::new();
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
+        let trace_macro_diagnostics = self.config.read().await.trace_macro_diagnostics;
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.parser,
+            trace_macro_diagnostics,
+        );
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.semantic,
+            trace_macro_diagnostics,
+        );
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.lowering,
+            trace_macro_diagnostics,
+        );
+
+        // Drop database snapshot before we wait for the client responding to our notification.
+        drop(db);
 
         self.client
             .publish_diagnostics(db.url_for_file(*file), diags, None)
@@ -554,10 +601,12 @@ impl Backend {
         debug!("scheduled");
         let mut new_db = self
             .with_db({
-                let tricks = &self.tricks;
-                |db| {
-                    let mut new_db = AnalysisDatabase::new(tricks);
-                    ensure_exists_in_db(&mut new_db, db, open_files.iter().cloned());
+                let open_files = open_files.clone();
+                let tricks = self.tricks.clone();
+
+                move |db| {
+                    let mut new_db = AnalysisDatabase::new(&tricks);
+                    ensure_exists_in_db(&mut new_db, db, open_files.into_iter());
                     new_db
                 }
             })
@@ -613,7 +662,7 @@ impl Backend {
 
     #[tracing::instrument(level = "trace", skip_all)]
     async fn expand_macro(&self, params: TextDocumentPositionParams) -> LSPResult<Option<String>> {
-        self.with_db(|db| ide::macros::expand::expand_macro(db, &params)).await
+        self.with_db(move |db| ide::macros::expand::expand_macro(db, &params)).await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
@@ -621,7 +670,7 @@ impl Backend {
         &self,
         params: ProvideVirtualFileRequest,
     ) -> LSPResult<ProvideVirtualFileResponse> {
-        self.with_db(|db| {
+        self.with_db(move |db| {
             let content = db
                 .file_for_url(&params.uri)
                 .and_then(|file_id| db.file_content(file_id))
@@ -637,21 +686,23 @@ impl Backend {
     async fn detect_crate_for(&self, db: &mut AnalysisDatabase, file_path: PathBuf) {
         match ProjectManifestPath::discover(&file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                let scarb = self.scarb_toolchain.clone();
-                let Ok(metadata) = spawn_blocking(move || {
-                    scarb
-                        .metadata(&manifest_path)
-                        .with_context(|| {
-                            format!(
-                                "failed to refresh scarb workspace: {}",
-                                manifest_path.display()
-                            )
-                        })
-                        .inspect_err(|e| {
-                            // TODO(mkaput): Send a notification to the language client.
-                            warn!("{e:?}");
-                        })
-                        .ok()
+                let Ok(metadata) = spawn_blocking({
+                    let scarb = self.scarb_toolchain.clone();
+                    move || {
+                        scarb
+                            .metadata(&manifest_path)
+                            .with_context(|| {
+                                format!(
+                                    "failed to refresh scarb workspace: {}",
+                                    manifest_path.display()
+                                )
+                            })
+                            .inspect_err(|e| {
+                                // TODO(mkaput): Send a notification to the language client.
+                                warn!("{e:?}");
+                            })
+                            .ok()
+                    }
                 })
                 .await
                 else {
@@ -663,7 +714,17 @@ impl Backend {
                     update_crate_roots(&metadata, db);
                 } else {
                     // Try to set up a corelib at least.
-                    try_to_init_unmanaged_core(&*self.config.read().await, db);
+                    try_to_init_unmanaged_core(
+                        db,
+                        &*self.config.read().await,
+                        &self.scarb_toolchain,
+                    );
+                }
+
+                if let Err(result) = validate_corelib(db) {
+                    self.client
+                        .send_notification::<CorelibVersionMismatch>(result.to_string())
+                        .await;
                 }
             }
 
@@ -672,7 +733,7 @@ impl Backend {
                 // DB will also be absolute.
                 assert!(config_path.is_absolute());
 
-                try_to_init_unmanaged_core(&*self.config.read().await, db);
+                try_to_init_unmanaged_core(db, &*self.config.read().await, &self.scarb_toolchain);
 
                 if let Ok(config) = ProjectConfig::from_file(&config_path) {
                     update_crate_roots_from_project_config(db, &config);
@@ -680,7 +741,7 @@ impl Backend {
             }
 
             None => {
-                try_to_init_unmanaged_core(&*self.config.read().await, db);
+                try_to_init_unmanaged_core(db, &*self.config.read().await, &self.scarb_toolchain);
 
                 if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
                     let file_path_s = file_path.to_string_lossy();
@@ -708,11 +769,12 @@ impl Backend {
 
     /// Reload the [`Config`] and all its dependencies.
     async fn reload_config(&self) {
-        let mut config = self.config.write().await;
         {
+            let mut config = self.config.write().await;
             let client_capabilities = self.client_capabilities.read().await;
             config.reload(&self.client, &client_capabilities).await;
         }
+        self.refresh_diagnostics().await.ok();
     }
 }
 
@@ -1055,7 +1117,29 @@ fn find_definition(
             return Some((ResolvedItem::Concrete(item), stable_ptr));
         }
     }
-    None
+
+    // Skip variable definition, otherwise we would get parent ModuleItem for variable.
+    if db.first_ancestor_of_kind(identifier.as_syntax_node(), SyntaxKind::StatementLet).is_none() {
+        let item = match lookup_items.first().copied()? {
+            LookupItemId::ModuleItem(item) => {
+                ResolvedGenericItem::from_module_item(db, item).to_option()?
+            }
+            LookupItemId::TraitItem(trait_item) => {
+                if let TraitItemId::Function(trait_fn) = trait_item {
+                    ResolvedGenericItem::TraitFunction(trait_fn)
+                } else {
+                    ResolvedGenericItem::Trait(trait_item.trait_id(db))
+                }
+            }
+            LookupItemId::ImplItem(impl_item) => {
+                ResolvedGenericItem::Impl(impl_item.impl_def_id(db))
+            }
+        };
+
+        Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?))
+    } else {
+        None
+    }
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
