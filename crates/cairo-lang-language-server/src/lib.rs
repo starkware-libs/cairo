@@ -482,6 +482,7 @@ impl Backend {
         files_set: &mut HashSet<FileId>,
     ) {
         let db = self.db_mut().await;
+        let file_url = db.url_for_file(*file);
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
 
@@ -491,7 +492,7 @@ impl Backend {
                     catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
                         .map($f)
                         .inspect_err(|_| {
-                            error!("caught panic when computing diagnostics");
+                            error!("caught panic when computing diagnostics for file {file_url}");
                         })
                         .unwrap_or_default()
                 })
@@ -558,7 +559,7 @@ impl Backend {
         drop(db);
 
         self.client
-            .publish_diagnostics(db.url_for_file(*file), diags, None)
+            .publish_diagnostics(file_url, diags, None)
             .instrument(trace_span!("publish_diagnostics"))
             .await;
     }
