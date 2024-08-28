@@ -454,12 +454,15 @@ enum FormattingTrait {
     Display,
     /// Got `{:?}` and we should use the `Debug` trait.
     Debug,
+    /// Got `{:x}` and we should use the `LowerHex` trait.
+    LowerHex,
 }
 impl fmt::Display for FormattingTrait {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             FormattingTrait::Display => write!(f, "Display"),
             FormattingTrait::Debug => write!(f, "Debug"),
+            FormattingTrait::LowerHex => write!(f, "LowerHex"),
         }
     }
 }
@@ -509,13 +512,17 @@ fn extract_placeholder_argument(
     if !placeholder_terminated {
         return Err("Unterminated placeholder: no matching '}' for '{'");
     }
-    let fmt_type = if formatting_spec.is_empty() {
-        FormattingTrait::Display
-    } else if formatting_spec == "?" {
-        FormattingTrait::Debug
-    } else {
-        return Err("Unsupported formatting trait: only `Display` and `Debug` are supported");
+
+    let fmt_type = match formatting_spec.as_str() {
+        "" => FormattingTrait::Display,
+        "?" => FormattingTrait::Debug,
+        "x" => FormattingTrait::LowerHex,
+        _ => {
+            return Err("Unsupported formatting trait: only `Display`, `Debug` and `LowerHex` are \
+                        supported");
+        }
     };
+
     let source = if parameter_name.is_empty() {
         PlaceholderArgumentSource::Next
     } else if let Ok(position) = parameter_name.parse::<usize>() {
