@@ -78,3 +78,4 @@ pub(crate) impl EthAddressPrintImpl of PrintTrait<EthAddress> {
 }
 
 impl DebugEthAddress = core::fmt::into_felt252_based::DebugImpl<EthAddress>;
+impl LowerHexEthAddress = core::fmt::into_felt252_based::LowerHexImpl<EthAddress>;
