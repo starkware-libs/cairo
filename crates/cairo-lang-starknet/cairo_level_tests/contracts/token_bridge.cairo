@@ -126,7 +126,8 @@ mod token_bridge {
                 .permissioned_burn(account: caller_address, :amount);
 
             // Send the message.
-            let mut message_payload: Array<felt252> = array![
+            let mut message_payload: Array<felt252> =
+                array![
                 WITHDRAW_MESSAGE, l1_recipient.into(), amount.low.into(), amount.high.into()
             ];
             send_message_to_l1_syscall(

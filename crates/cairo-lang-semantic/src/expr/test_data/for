@@ -33,7 +33,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let arr = array![A { x: Option::Some(1) }, A { x: Option::None }, A { x: Option::Some(2) }]
+    let arr = array![A {x: Option::Some (1) }, A {x: Option::None }, A {x: Option::Some (2) }]
         .span();
     for A(x) in arr {
         x;

@@ -3,8 +3,10 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
     PluginGeneratedFile,
 };
+use cairo_lang_defs::plugin_utils::{not_legacy_macro_diagnostic, PluginResultTrait};
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use num_bigint::BigInt;
@@ -21,9 +23,14 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         syntax: &ast::ExprInlineMacro,
         metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
+        let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
+            return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                syntax.as_syntax_node().stable_ptr(),
+            ));
+        };
         let constant_expression = extract_macro_single_unnamed_arg!(
             db,
-            syntax,
+            &syntax,
             ast::WrappedArgList::ParenthesizedArgList(_)
         );
 

@@ -266,7 +266,11 @@ impl From<tokio::time::error::Elapsed> for RecvError {
 impl MockClient {
     /// Receives a message from the server.
     async fn recv(&mut self) -> Result<Option<Message>, RecvError> {
+<<<<<<< HEAD
         const TIMEOUT: Duration = Duration::from_secs(3 * 60);
+=======
+        const TIMEOUT: Duration = Duration::from_secs(4 * 60);
+>>>>>>> 8ceeb7726 (Change macro syntax to be token tree based and fix legacy macros.)
         let message = timeout(TIMEOUT, self.output_rx.next()).await?;
 
         if let Some(message) = &message {

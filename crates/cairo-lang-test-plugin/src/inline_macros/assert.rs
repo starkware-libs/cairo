@@ -4,9 +4,11 @@ use cairo_lang_defs::plugin::{
     PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{
-    escape_node, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
+    escape_node, not_legacy_macro_diagnostic, try_extract_unnamed_arg,
+    unsupported_bracket_diagnostic, PluginResultTrait,
 };
 use cairo_lang_filesystem::cfg::Cfg;
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -22,8 +24,13 @@ trait CompareAssertionPlugin: NamedPlugin {
         syntax: &ast::ExprInlineMacro,
         metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
+        let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
+            return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                syntax.as_syntax_node().stable_ptr(),
+            ));
+        };
         let WrappedArgList::ParenthesizedArgList(arguments_syntax) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, syntax);
+            return unsupported_bracket_diagnostic(db, &syntax);
         };
         let arguments = arguments_syntax.arguments(db).elements(db);
         if arguments.len() < 2 {
@@ -58,7 +65,7 @@ trait CompareAssertionPlugin: NamedPlugin {
         let f = format!("__formatter_for_{}_macro_", Self::NAME);
         let lhs_escaped = escape_node(db, lhs.as_syntax_node());
         let rhs_escaped = escape_node(db, rhs.as_syntax_node());
-        let mut builder = PatchBuilder::new(db, syntax);
+        let mut builder = PatchBuilder::new(db, &syntax);
         // Checks if the expression is a variable, to not create an extra variable.
         let is_var = |expr: &ast::Expr| matches!(expr, ast::Expr::Path(path) if path.elements(db).len() == 1);
         let (lhs_value, maybe_assign_lhs) = if is_var(&lhs) {
@@ -170,7 +177,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             && !metadata.cfg_set.contains(&Cfg::name("test"))
         {
             diagnostics.push(PluginDiagnostic::error(
-                syntax,
+                &syntax,
                 format!("`{}` macro is only available in test mode.", Self::NAME),
             ));
         }

@@ -19,7 +19,8 @@ fn test_prints() {
     print_byte_array_as_string(@x);
 
     // Valid string as an array.
-    let x = array![
+    let x =
+        array![
         BYTE_ARRAY_MAGIC,
         1, // A single full word.
         'This is a long string with more',
@@ -45,7 +46,8 @@ fn test_prints() {
     x.print();
 
     // Too much data in full word.
-    let x = array![
+    let x =
+        array![
         BYTE_ARRAY_MAGIC,
         1, // A single full word.
         0x161616161616161616161616161616161616161616161616161616161616161, // The invalid full word.
@@ -59,7 +61,8 @@ fn test_prints() {
     x.print();
 
     // "Not enough" data in pending_word (nulls in the beginning).
-    let x = array![
+    let x =
+        array![
         BYTE_ARRAY_MAGIC,
         0, // No full words.
         'a',
@@ -68,7 +71,8 @@ fn test_prints() {
     x.print();
 
     // Too much data in pending_word.
-    let x = array![
+    let x =
+        array![
         BYTE_ARRAY_MAGIC,
         0, // No full words.
         'aa',

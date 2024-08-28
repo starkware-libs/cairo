@@ -1,5 +1,7 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic, PluginResult};
+use cairo_lang_defs::plugin_utils::not_legacy_macro_diagnostic;
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -575,7 +577,12 @@ pub fn handle_component_inline_macro(
     component_macro_ast: &ast::ItemInlineMacro,
     data: &mut ContractSpecificGenerationData,
 ) {
-    let macro_args = match component_macro_ast.arguments(db) {
+    let Some(legacy_component_macro_ast) = component_macro_ast.as_legacy_inline_macro(db) else {
+        diagnostics
+            .push(not_legacy_macro_diagnostic(component_macro_ast.as_syntax_node().stable_ptr()));
+        return;
+    };
+    let macro_args = match legacy_component_macro_ast.arguments(db) {
         ast::WrappedArgList::ParenthesizedArgList(args) => args.arguments(db),
         _ => {
             diagnostics.push(invalid_macro_diagnostic(component_macro_ast));

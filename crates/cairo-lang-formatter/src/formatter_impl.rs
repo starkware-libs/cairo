@@ -802,12 +802,25 @@ impl<'a> FormatterImpl<'a> {
         if syntax_node.force_no_space_before(self.db) {
             self.line_state.prevent_next_space = true;
         }
-        if self.should_ignore_node_format(syntax_node) {
-            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
-        } else if syntax_node.kind(self.db).is_terminal() {
-            self.format_terminal(syntax_node);
-        } else {
-            self.format_internal(syntax_node);
+
+        // TODO(Gil): Consider existing newlines in the text when later breaking the line if not
+        // trimming.
+        match self.should_ignore_node_format(syntax_node) {
+            IgnoreFormat::Yes => {
+                self.line_state
+                    .line_buffer
+                    .push_str(syntax_node.get_text(self.db).trim_matches(['\n', '\r'].as_ref()));
+            }
+            IgnoreFormat::JustTrim => {
+                self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim())
+            }
+            IgnoreFormat::No => {
+                if syntax_node.kind(self.db).is_terminal() {
+                    self.format_terminal(syntax_node);
+                } else {
+                    self.format_internal(syntax_node);
+                }
+            }
         }
         if syntax_node.force_no_space_after(self.db) {
             self.line_state.prevent_next_space = true;
@@ -917,9 +930,21 @@ impl<'a> FormatterImpl<'a> {
     }
 
     /// Gets a syntax node and returns if the node has an cairofmt::skip attribute.
-    pub fn should_ignore_node_format(&self, syntax_node: &SyntaxNode) -> bool {
-        syntax_node.has_attr(self.db, FMT_SKIP_ATTR)
+    fn should_ignore_node_format(&self, syntax_node: &SyntaxNode) -> IgnoreFormat {
+        if syntax_node.has_attr(self.db, FMT_SKIP_ATTR) {
+            IgnoreFormat::JustTrim
+        } else if syntax_node.kind(self.db) == SyntaxKind::TokenTreeNode {
+            IgnoreFormat::Yes
+        } else {
+            IgnoreFormat::No
+        }
     }
+}
+
+enum IgnoreFormat {
+    Yes,
+    JustTrim,
+    No,
 }
 
 /// Represents a sortable SyntaxNode.

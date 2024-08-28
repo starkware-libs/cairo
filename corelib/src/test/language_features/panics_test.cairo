@@ -96,7 +96,8 @@ fn test_panic_with_stacked_errors() {
 )]
 fn test_panic_with_byte_array_invalid_full_word() {
     // This is a serialized ByteArray, but the full word is an invalid short string (> 2^248).
-    let mut error = array![
+    let mut error =
+        array![
         BYTE_ARRAY_MAGIC,
         1, // A single full word.
         0x161616161616161616161616161616161616161616161616161616161616161, // The invalid full word.
@@ -118,7 +119,8 @@ fn test_panic_with_byte_array_invalid_full_word() {
 fn test_panic_with_byte_array_invalid_pending_word() {
     // This is a serialized ByteArray, but the pending word length < the actual data in the pending
     // word.
-    let mut error = array![
+    let mut error =
+        array![
         BYTE_ARRAY_MAGIC,
         0, // No full words.
         'aa',

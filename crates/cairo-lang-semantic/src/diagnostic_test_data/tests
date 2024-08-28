@@ -831,9 +831,9 @@ test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expected_diagnostics
 error: Cannot have array of type "()" that is zero sized.
- --> lib.cairo:3:15
-  let _fail = array![()];
-              ^********^
+ --> lib.cairo:1:1
+fn test_func() {  {
+^********^
 
 //! > ==========================================================================
 
