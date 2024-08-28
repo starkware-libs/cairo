@@ -33,7 +33,8 @@ fn test_keccak_hash() {
 // Same input as in `test_keccak_hash` but as a u64 array.
 #[test]
 fn test_keccak_u64() {
-    let mut input = array![
+    let mut input =
+        array![
         0x0000000000000001, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000
     ];
     assert_eq!(
@@ -44,7 +45,8 @@ fn test_keccak_u64() {
 
 #[test]
 fn test_keccak_u64_full_block() {
-    let mut input = array![
+    let mut input =
+        array![
         0x0000000000000001,
         0x0000000000000002,
         0x0000000000000003,
@@ -71,7 +73,8 @@ fn test_keccak_u64_full_block() {
 
 #[test]
 fn test_keccak_u64_full_block_minus_byte() {
-    let mut input = array![
+    let mut input =
+        array![
         0x0000000000000001,
         0x0000000000000002,
         0x0000000000000003,
@@ -107,7 +110,8 @@ fn test_keccak_u64_full_block_minus_byte() {
 
 #[test]
 fn test_keccak_u64_full_block_minus_word() {
-    let mut input = array![
+    let mut input =
+        array![
         0x0000000000000001,
         0x0000000000000002,
         0x0000000000000003,
@@ -133,7 +137,8 @@ fn test_keccak_u64_full_block_minus_word() {
 
 #[test]
 fn test_keccak_u64_full_block_minus_word_minus_byte() {
-    let mut input = array![
+    let mut input =
+        array![
         0x0000000000000001,
         0x0000000000000002,
         0x0000000000000003,
@@ -168,7 +173,8 @@ fn test_keccak_u64_full_block_minus_word_minus_byte() {
 
 #[test]
 fn test_keccak_u64_full_block_minus_3_words_minus_4_bytes() {
-    let mut input = array![
+    let mut input =
+        array![
         0x0000000000000001,
         0x0000000000000002,
         0x0000000000000003,

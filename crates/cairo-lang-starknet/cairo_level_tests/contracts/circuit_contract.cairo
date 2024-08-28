@@ -35,7 +35,7 @@ mod circuit_contract {
         let _outputs =
             match (inv,).new_inputs().next([3, 0, 0, 0]).next([6, 0, 0, 0]).done().eval(modulus) {
             Result::Ok(outputs) => { outputs },
-            Result::Err(_) => { panic!("Expected success") }
+            Result::Err(_) => { panic!("Expected success")      }
         };
     }
 }

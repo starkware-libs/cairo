@@ -124,7 +124,8 @@ mod test_contract {
 }
 
 fn validate_call() {
-    let serialized_args = array![
+    let serialized_args =
+        array![
         0x2, // Array with 2 `Call`s.
         // Call 1.
         0xb, // to.
@@ -434,7 +435,8 @@ mod test_contract {
 }
 
 fn validate_call() {
-    let serialized_args = array![
+    let serialized_args =
+        array![
         0x1, // Array with a single `Call`.
         // Call 1.
         0xb, // to.

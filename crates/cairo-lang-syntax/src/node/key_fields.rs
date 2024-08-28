@@ -104,9 +104,6 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ExprIndexed => {
             vec![]
         }
-        SyntaxKind::ExprInlineMacro => {
-            vec![]
-        }
         SyntaxKind::ExprFixedSizeArray => {
             vec![]
         }
@@ -306,12 +303,15 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ItemImpl => {
             vec![/* name */ children[3]]
         }
+<<<<<<< HEAD
         SyntaxKind::ItemInlineMacro => {
             vec![]
         }
         SyntaxKind::ItemHeaderDoc => {
             vec![]
         }
+=======
+>>>>>>> 8ceeb7726 (Change macro syntax to be token tree based and fix legacy macros.)
         SyntaxKind::ImplBody => {
             vec![]
         }
@@ -383,6 +383,40 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::GenericParamNegativeImpl => {
+            vec![]
+        }
+        SyntaxKind::TokenList => vec![],
+        SyntaxKind::TokenTreeLeaf => {
+            vec![]
+        }
+        SyntaxKind::TokenTreeNode => {
+            vec![]
+        }
+        SyntaxKind::TokenTreeMissing => {
+            vec![]
+        }
+        SyntaxKind::WrappedTokenTreeMissing => {
+            vec![]
+        }
+        SyntaxKind::ParenthesizedTokenTree => {
+            vec![]
+        }
+        SyntaxKind::BracedTokenTree => {
+            vec![]
+        }
+        SyntaxKind::BracketedTokenTree => {
+            vec![]
+        }
+        SyntaxKind::ExprInlineMacro => {
+            vec![]
+        }
+        SyntaxKind::ItemInlineMacro => {
+            vec![]
+        }
+        SyntaxKind::LegacyExprInlineMacro => {
+            vec![]
+        }
+        SyntaxKind::LegacyItemInlineMacro => {
             vec![]
         }
         SyntaxKind::TriviumSkippedNode => {
