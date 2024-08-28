@@ -3,7 +3,11 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
-use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
+use cairo_lang_defs::plugin_utils::{
+    not_legacy_macro_diagnostic, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
+    PluginResultTrait,
+};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::{Arg, WrappedArgList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -84,11 +88,16 @@ impl InlineMacroExprPlugin for PanicMacro {
         syntax: &ast::ExprInlineMacro,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
+        let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
+            return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                syntax.as_syntax_node().stable_ptr(),
+            ));
+        };
         let WrappedArgList::ParenthesizedArgList(arguments_syntax) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, syntax);
+            return unsupported_bracket_diagnostic(db, &syntax);
         };
 
-        let mut builder = PatchBuilder::new(db, syntax);
+        let mut builder = PatchBuilder::new(db, &syntax);
         let arguments = arguments_syntax.arguments(db).elements(db);
         if !try_handle_simple_panic(db, &mut builder, &arguments) {
             builder.add_modified(RewriteNode::interpolate_patched(

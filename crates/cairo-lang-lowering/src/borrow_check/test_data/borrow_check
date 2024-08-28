@@ -884,9 +884,9 @@ error: Variable not dropped.
 fn foo(mut x: MyStruct) -> MyStruct {
            ^
 note: the variable needs to be dropped due to the potential panic here:
-  --> lib.cairo:10:9
-        x.a += 1;
-        ^******^
+  --> lib.cairo:3:14
+struct MyStruct {
+             ^**^
 note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>.
 note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonCopy>.
