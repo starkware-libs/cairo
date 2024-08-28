@@ -74,6 +74,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         i8: "i8",
         nullable: "nullable",
         poseidon: "poseidon",
+        range: "range",
         snapshot: "snapshot",
         u128: "u128",
         u16: "u16",
