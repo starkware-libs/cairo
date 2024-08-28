@@ -3,7 +3,7 @@
 
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::chain;
 use semantic::items::constant::ConstValue;
 
@@ -32,6 +32,7 @@ impl StatementsBuilder {
 pub struct Const {
     pub value: ConstValue,
     pub location: LocationId,
+    // TODO(TomerStarkware): Remove this field and use the type from value.
     pub ty: semantic::TypeId,
 }
 impl Const {
@@ -116,9 +117,10 @@ impl EnumConstruct {
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
     ) -> VarUsage {
-        let ty = ctx.db.intern_type(semantic::TypeLongId::Concrete(
-            semantic::ConcreteTypeId::Enum(self.variant.concrete_enum_id),
-        ));
+        let ty = semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
+            self.variant.concrete_enum_id,
+        ))
+        .intern(ctx.db);
         let output = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::EnumConstruct(StatementEnumConstruct {
             variant: self.variant,
@@ -142,7 +144,7 @@ impl Snapshot {
     ) -> (VariableId, VariableId) {
         let input_var = &ctx.variables[self.input.var_id];
         let input_ty = input_var.ty;
-        let ty = ctx.db.intern_type(semantic::TypeLongId::Snapshot(input_ty));
+        let ty = semantic::TypeLongId::Snapshot(input_ty).intern(ctx.db);
 
         // The location of the original input var is likely to be more relevant to the user.
         let output_original =
@@ -169,7 +171,7 @@ impl Desnap {
         builder: &mut StatementsBuilder,
     ) -> VarUsage {
         let ty = extract_matches!(
-            ctx.db.lookup_intern_type(ctx.variables[self.input.var_id].ty),
+            ctx.variables[self.input.var_id].ty.lookup_intern(ctx.db),
             semantic::TypeLongId::Snapshot
         );
         let output = ctx.new_var(VarRequest { ty, location: self.location });
@@ -180,11 +182,11 @@ impl Desnap {
 
 /// Generator for [StatementStructDestructure].
 ///
-/// Note that we return `Vec<VariableId>` rather then `Vec<VarUsage>` as the the caller typically
+/// Note that we return `Vec<VariableId>` rather then `Vec<VarUsage>` as the caller typically
 /// has a more accurate location then the one we have in the var requests.
 pub struct StructDestructure {
     /// Variable that holds the struct value.
-    pub input: VariableId,
+    pub input: VarUsage,
     /// Variable requests for the newly generated member values.
     pub var_reqs: Vec<VarRequest>,
 }
@@ -196,8 +198,7 @@ impl StructDestructure {
     ) -> Vec<VariableId> {
         let outputs: Vec<_> = self.var_reqs.into_iter().map(|req| ctx.new_var(req)).collect();
         builder.push_statement(Statement::StructDestructure(StatementStructDestructure {
-            // TODO(ilya): Fix to usage location.
-            input: VarUsage { var_id: self.input, location: ctx.variables[self.input].location },
+            input: self.input,
             outputs: outputs.clone(),
         }));
         outputs
@@ -219,7 +220,7 @@ impl StructMemberAccess {
     ) -> VarUsage {
         VarUsage {
             var_id: StructDestructure {
-                input: self.input.var_id,
+                input: self.input,
                 var_reqs: self
                     .member_tys
                     .into_iter()

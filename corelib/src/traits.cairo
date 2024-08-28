@@ -1,4 +1,4 @@
-use core::panics::Panic;
+use crate::panics::Panic;
 
 pub trait Copy<T>;
 pub trait Drop<T>;
@@ -10,6 +10,9 @@ impl SnapshotDrop<T> of Drop<@T>;
 pub trait Add<T> {
     fn add(lhs: T, rhs: T) -> T;
 }
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0"
+)]
 pub trait AddEq<T> {
     fn add_eq(ref self: T, other: T);
 }
@@ -18,6 +21,9 @@ pub trait AddEq<T> {
 pub trait Sub<T> {
     fn sub(lhs: T, rhs: T) -> T;
 }
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::SubAssign`.", since: "2.7.0"
+)]
 pub trait SubEq<T> {
     fn sub_eq(ref self: T, other: T);
 }
@@ -26,6 +32,9 @@ pub trait SubEq<T> {
 pub trait Mul<T> {
     fn mul(lhs: T, rhs: T) -> T;
 }
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::MulAssign`.", since: "2.7.0"
+)]
 pub trait MulEq<T> {
     fn mul_eq(ref self: T, other: T);
 }
@@ -34,6 +43,9 @@ pub trait MulEq<T> {
 pub trait Div<T> {
     fn div(lhs: T, rhs: T) -> T;
 }
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::DivAssign`.", since: "2.7.0"
+)]
 pub trait DivEq<T> {
     fn div_eq(ref self: T, other: T);
 }
@@ -42,6 +54,9 @@ pub trait DivEq<T> {
 pub trait Rem<T> {
     fn rem(lhs: T, rhs: T) -> T;
 }
+#[deprecated(
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::RemAssign`.", since: "2.7.0"
+)]
 pub trait RemEq<T> {
     fn rem_eq(ref self: T, other: T);
 }
@@ -54,14 +69,13 @@ pub trait DivRem<T> {
 
 pub trait PartialEq<T> {
     fn eq(lhs: @T, rhs: @T) -> bool;
-    fn ne(lhs: @T, rhs: @T) -> bool;
+    fn ne(lhs: @T, rhs: @T) -> bool {
+        !Self::eq(lhs, rhs)
+    }
 }
 impl PartialEqSnap<T, +PartialEq<T>> of PartialEq<@T> {
     fn eq(lhs: @@T, rhs: @@T) -> bool {
         PartialEq::<T>::eq(*lhs, *rhs)
-    }
-    fn ne(lhs: @@T, rhs: @@T) -> bool {
-        PartialEq::<T>::ne(*lhs, *rhs)
     }
 }
 
@@ -85,10 +99,31 @@ pub trait BitNot<T> {
 }
 
 pub trait PartialOrd<T> {
-    fn le(lhs: T, rhs: T) -> bool;
-    fn ge(lhs: T, rhs: T) -> bool;
     fn lt(lhs: T, rhs: T) -> bool;
-    fn gt(lhs: T, rhs: T) -> bool;
+    fn ge(lhs: T, rhs: T) -> bool {
+        !Self::lt(lhs, rhs)
+    }
+    fn gt(lhs: T, rhs: T) -> bool {
+        Self::lt(rhs, lhs)
+    }
+    fn le(lhs: T, rhs: T) -> bool {
+        Self::ge(rhs, lhs)
+    }
+}
+
+impl PartialOrdSnap<T, +PartialOrd<T>, +Copy<T>> of PartialOrd<@T> {
+    fn le(lhs: @T, rhs: @T) -> bool {
+        PartialOrd::<T>::le(*lhs, *rhs)
+    }
+    fn ge(lhs: @T, rhs: @T) -> bool {
+        PartialOrd::<T>::ge(*lhs, *rhs)
+    }
+    fn lt(lhs: @T, rhs: @T) -> bool {
+        PartialOrd::<T>::lt(*lhs, *rhs)
+    }
+    fn gt(lhs: @T, rhs: @T) -> bool {
+        PartialOrd::<T>::gt(*lhs, *rhs)
+    }
 }
 
 /// Trait for conversion between types.
@@ -125,10 +160,16 @@ pub trait Not<T> {
 /// The following two traits are for implementing the [] operator. Only one should be implemented
 /// for each type. Both are not consuming of self, the first gets a snapshot of the object and
 /// the second gets ref.
+#[deprecated(
+    feature: "deprecated-index-traits", note: "Use `core::ops::index::IndexView`.", since: "2.7.0"
+)]
 pub trait IndexView<C, I, V> {
     fn index(self: @C, index: I) -> V;
 }
 
+#[deprecated(
+    feature: "deprecated-index-traits", note: "Use `core::ops::index::Index`.", since: "2.7.0"
+)]
 pub trait Index<C, I, V> {
     fn index(ref self: C, index: I) -> V;
 }
@@ -145,7 +186,7 @@ impl DestructFromDrop<T, +Drop<T>> of Destruct<T> {
 pub trait PanicDestruct<T> {
     fn panic_destruct(self: T, ref panic: Panic) nopanic;
 }
-impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
+pub(crate) impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
     #[inline(always)]
     fn panic_destruct(self: T, ref panic: Panic) nopanic {
         Destruct::destruct(self);
@@ -172,144 +213,137 @@ pub trait Felt252DictValue<T> {
     fn zero_default() -> T nopanic;
 }
 
-// Tuple Copy impls.
+// Tuple Copy and Drop impls.
 pub(crate) impl TupleSize0Copy of Copy<()>;
-
-impl TupleSize1Copy<E0, +Copy<E0>> of Copy<(E0,)>;
-
-impl TupleSize2Copy<E0, E1, +Copy<E0>, +Copy<E1>> of Copy<(E0, E1)>;
-
-impl TupleSize3Copy<E0, E1, E2, +Copy<E0>, +Copy<E1>, +Copy<E2>> of Copy<(E0, E1, E2)>;
-
-impl TupleSize4Copy<
-    E0, E1, E2, E3, +Copy<E0>, +Copy<E1>, +Copy<E2>, +Copy<E3>
-> of Copy<(E0, E1, E2, E3)>;
-
-// Tuple Drop impls.
 pub(crate) impl TupleSize0Drop of Drop<()>;
+impl TupleNextDrop<
+    T,
+    impl TH: crate::metaprogramming::TupleSplit<T>,
+    +crate::metaprogramming::IsTuple<T>,
+    +Drop<TH::Head>,
+    +Drop<TH::Rest>
+> of Drop<T>;
+impl TupleNextCopy<
+    T,
+    impl TH: crate::metaprogramming::TupleSplit<T>,
+    +crate::metaprogramming::IsTuple<T>,
+    +Copy<TH::Head>,
+    +Copy<TH::Rest>
+> of Copy<T>;
 
-impl TupleSize1Drop<E0, +Drop<E0>> of Drop<(E0,)>;
+/// Tuple `PartialEq` implementation.
+impl TuplePartialEq<
+    T,
+    impl TSF: crate::metaprogramming::TupleSnapForward<T>,
+    +TuplePartialEqHelper<TSF::SnapForward>,
+> of PartialEq<T> {
+    fn eq(lhs: @T, rhs: @T) -> bool {
+        TuplePartialEqHelper::eq(TSF::snap_forward(lhs), TSF::snap_forward(rhs))
+    }
+    fn ne(lhs: @T, rhs: @T) -> bool {
+        TuplePartialEqHelper::ne(TSF::snap_forward(lhs), TSF::snap_forward(rhs))
+    }
+}
 
-impl TupleSize2Drop<E0, E1, +Drop<E0>, +Drop<E1>> of Drop<(E0, E1)>;
+/// Trait helper for implementing `PartialEq` for tuples.
+/// Provides an `eq` and `ne` function for comparing tuples of snapshots, and basic snapshots.
+trait TuplePartialEqHelper<T> {
+    fn eq(lhs: T, rhs: T) -> bool;
+    fn ne(lhs: T, rhs: T) -> bool;
+}
 
-impl TupleSize3Drop<E0, E1, E2, +Drop<E0>, +Drop<E1>, +Drop<E2>> of Drop<(E0, E1, E2)>;
+/// An implementation of `TuplePartialEqHelper` for a snapshot of any type with `PartialEq`
+/// implementation.
+impl TuplePartialEqHelperByPartialEq<T, +PartialEq<T>> of TuplePartialEqHelper<@T> {
+    fn eq(lhs: @T, rhs: @T) -> bool {
+        lhs == rhs
+    }
+    fn ne(lhs: @T, rhs: @T) -> bool {
+        lhs != rhs
+    }
+}
 
-impl TupleSize4Drop<
-    E0, E1, E2, E3, +Drop<E0>, +Drop<E1>, +Drop<E2>, +Drop<E3>
-> of Drop<(E0, E1, E2, E3)>;
-
-// Tuple PartialEq impls.
-impl TupleSize0PartialEq of PartialEq<()> {
-    #[inline(always)]
-    fn eq(lhs: @(), rhs: @()) -> bool {
+/// Base implementation of `TuplePartialEqHelper` for tuples.
+impl TuplePartialEqHelperBaseTuple of TuplePartialEqHelper<()> {
+    fn eq(lhs: (), rhs: ()) -> bool {
         true
     }
-    #[inline(always)]
-    fn ne(lhs: @(), rhs: @()) -> bool {
+    fn ne(lhs: (), rhs: ()) -> bool {
         false
     }
 }
 
-impl TupleSize1PartialEq<E0, +PartialEq<E0>> of PartialEq<(E0,)> {
-    #[inline(always)]
-    fn eq(lhs: @(E0,), rhs: @(E0,)) -> bool {
-        let (lhs,) = lhs;
-        let (rhs,) = rhs;
-        lhs == rhs
+/// Base implementation of `TuplePartialEqHelper` for fixed-sized arrays.
+impl TuplePartialEqHelperBaseFixedSizedArray<T> of TuplePartialEqHelper<[@T; 0]> {
+    fn eq(lhs: [@T; 0], rhs: [@T; 0]) -> bool {
+        true
     }
-    #[inline(always)]
-    fn ne(lhs: @(E0,), rhs: @(E0,)) -> bool {
-        !(rhs == lhs)
+    fn ne(lhs: [@T; 0], rhs: [@T; 0]) -> bool {
+        false
     }
 }
 
-impl TupleSize2PartialEq<E0, E1, +PartialEq<E0>, +PartialEq<E1>> of PartialEq<(E0, E1)> {
-    #[inline(always)]
-    fn eq(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
-        let (lhs0, lhs1) = lhs;
-        let (rhs0, rhs1) = rhs;
-        lhs0 == rhs0 && lhs1 == rhs1
+/// The recursive implementation of `TuplePartialEqHelper` for tuple style structs.
+impl TuplePartialEqHelperNext<
+    T,
+    impl TS: crate::metaprogramming::TupleSplit<T>,
+    +TuplePartialEqHelper<TS::Head>,
+    +TuplePartialEqHelper<TS::Rest>,
+    +Drop<TS::Rest>,
+> of TuplePartialEqHelper<T> {
+    fn eq(lhs: T, rhs: T) -> bool {
+        let (lhs_head, lhs_rest) = TS::split_head(lhs);
+        let (rhs_head, rhs_rest) = TS::split_head(rhs);
+        TuplePartialEqHelper::<TS::Head>::eq(lhs_head, rhs_head)
+            && TuplePartialEqHelper::<TS::Rest>::eq(lhs_rest, rhs_rest)
     }
-    #[inline(always)]
-    fn ne(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
-        !(rhs == lhs)
-    }
-}
-
-impl TupleSize3PartialEq<
-    E0, E1, E2, +PartialEq<E0>, +PartialEq<E1>, +PartialEq<E2>
-> of PartialEq<(E0, E1, E2)> {
-    #[inline(always)]
-    fn eq(lhs: @(E0, E1, E2), rhs: @(E0, E1, E2)) -> bool {
-        let (lhs0, lhs1, lhs2) = lhs;
-        let (rhs0, rhs1, rhs2) = rhs;
-        lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2
-    }
-    #[inline(always)]
-    fn ne(lhs: @(E0, E1, E2), rhs: @(E0, E1, E2)) -> bool {
-        !(rhs == lhs)
+    fn ne(lhs: T, rhs: T) -> bool {
+        let (lhs_head, lhs_rest) = TS::split_head(lhs);
+        let (rhs_head, rhs_rest) = TS::split_head(rhs);
+        TuplePartialEqHelper::<TS::Head>::ne(lhs_head, rhs_head)
+            || TuplePartialEqHelper::<TS::Rest>::ne(lhs_rest, rhs_rest)
     }
 }
 
-impl TupleSize4PartialEq<
-    E0, E1, E2, E3, +PartialEq<E0>, +PartialEq<E1>, +PartialEq<E2>, +PartialEq<E3>
-> of PartialEq<(E0, E1, E2, E3)> {
-    #[inline(always)]
-    fn eq(lhs: @(E0, E1, E2, E3), rhs: @(E0, E1, E2, E3)) -> bool {
-        let (lhs0, lhs1, lhs2, lhs3) = lhs;
-        let (rhs0, rhs1, rhs2, rhs3) = rhs;
-        lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2 && lhs3 == rhs3
-    }
-    #[inline(always)]
-    fn ne(lhs: @(E0, E1, E2, E3), rhs: @(E0, E1, E2, E3)) -> bool {
-        !(rhs == lhs)
-    }
-}
-
-// Tuple Default impls.
-impl TupleSize0Default of Default<()> {
+/// Base implementation for `Default` for tuples.
+impl DefaultTupleBase of Default<()> {
     fn default() -> () {
         ()
     }
 }
 
-impl TupleSize1Default<E0, +Default<E0>> of Default<(E0,)> {
-    fn default() -> (E0,) {
-        (Default::default(),)
+/// Base implementation for `Default` for fixed-sized arrays.
+impl DefaultFixedSizedArray<T> of Default<[T; 0]> {
+    fn default() -> [T; 0] {
+        []
     }
 }
 
-impl TupleSize2Default<E0, E1, +Default<E0>, +Drop<E0>, +Default<E1>> of Default<(E0, E1)> {
-    fn default() -> (E0, E1) {
-        (Default::default(), Default::default())
-    }
-}
-
-impl TupleSize3Default<
-    E0, E1, E2, +Default<E0>, +Drop<E0>, +Default<E1>, +Drop<E1>, +Default<E2>
-> of Default<(E0, E1, E2)> {
-    fn default() -> (E0, E1, E2) {
-        (Default::default(), Default::default(), Default::default())
-    }
-}
-
-impl TupleSize4Default<
-    E0,
-    E1,
-    E2,
-    E3,
-    +Default<E0>,
-    +Drop<E0>,
-    +Default<E1>,
-    +Drop<E1>,
-    +Default<E2>,
-    +Drop<E2>,
-    +Default<E3>
-> of Default<(E0, E1, E2, E3)> {
-    fn default() -> (E0, E1, E2, E3) {
-        (Default::default(), Default::default(), Default::default(), Default::default())
+/// Recursive implementation for `Default` for tuple style structs.
+impl DefaultNext<
+    T,
+    impl TS: crate::metaprogramming::TupleSplit<T>,
+    +Default<TS::Head>,
+    +Default<TS::Rest>,
+    +Drop<TS::Head>,
+> of Default<T> {
+    fn default() -> T {
+        TS::reconstruct(Default::default(), Default::default())
     }
 }
 
 impl FixedSizedArrayDrop<T, +Drop<T>, const N: u32> of Drop<[T; N]>;
 impl FixedSizedArrayCopy<T, +Copy<T>, const N: u32> of Copy<[T; N]>;
+
+/// Recursive implementation of `Destruct` for tuple style structs.
+impl TupleNextDestruct<
+    T,
+    impl TH: crate::metaprogramming::TupleSplit<T>,
+    +Destruct<TH::Head>,
+    +Destruct<TH::Rest>,
+    -Drop<T>,
+> of Destruct<T> {
+    fn destruct(self: T) nopanic {
+        let (_head, _rest) = TH::split_head(self);
+    }
+}

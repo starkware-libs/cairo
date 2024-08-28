@@ -295,7 +295,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > Test unhandled Option.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -317,7 +317,7 @@ warning: Unhandled `#[must_use]` type `core::option::Option::<core::felt252>`
 //! > Test unhandled Result.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -339,7 +339,7 @@ warning: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, cor
 //! > Test unhandled must use function.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -394,7 +394,7 @@ impl imp of trt {
 //! > Test unhandled must use trait function.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -425,7 +425,7 @@ warning: Unhandled `#[must_use]` function.
 //! > Test unhandled must use method.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -479,13 +479,16 @@ fn must_use_function() -> felt252 {
 //! > Test usage of unstable.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
   let _fail = unstable_function();
   #[feature("testing")]
   let _work = unstable_function();
+  let _fail = unstable_function_with_note();
+  #[feature("testing")]
+  let _work = unstable_function_with_note();
 }
 
 //! > module_code
@@ -494,20 +497,30 @@ fn unstable_function() -> felt252 {
     0
 }
 
+#[unstable(feature: "testing", note: "Some reason", since: "1.0.0")]
+fn unstable_function_with_note() -> felt252 {
+    0
+}
+
 //! > function_body
 
 //! > expected_diagnostics
-error: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
- --> lib.cairo:7:15
+warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
+ --> lib.cairo:12:15
   let _fail = unstable_function();
               ^***************^
+
+warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute. Note: "Some reason"
+ --> lib.cairo:15:15
+  let _fail = unstable_function_with_note();
+              ^*************************^
 
 //! > ==========================================================================
 
 //! > Test usage of deprecated.
 
 //! > test_runner_name
-test_expr_diagnostics(expect_diagnostics: true)
+test_expr_diagnostics(expect_diagnostics: warnings_only)
 
 //! > expr_code
 {
@@ -516,6 +529,8 @@ test_expr_diagnostics(expect_diagnostics: true)
   let _work = deprecated_function_with_note();
   let _fail = deprecated_function_no_note();
   #[feature("deprecated")]
+  let _work = deprecated_function_no_note();
+  #[allow(deprecated)]
   let _work = deprecated_function_no_note();
 }
 
@@ -530,18 +545,159 @@ fn deprecated_function_no_note() -> felt252 {
     0
 }
 
+#[unstable(feature: "unstable-trait")]
+trait UnstableTrait;
+
+impl BadUnstableImpl of UnstableTrait;
+
+#[feature("unstable-trait")]
+impl AllowedUnstableImpl of UnstableTrait;
+
+#[unstable(feature: "unstable-member")]
+struct DisallowedType {}
+
+struct BadStructMember {
+    member: DisallowedType,
+}
+
+#[feature("unstable-member")]
+struct AllowedStructMember {
+    member: DisallowedType,
+}
+
+enum BadEnumVariant {
+    variant: DisallowedType,
+}
+
+#[feature("unstable-member")]
+enum AllowedEnumMember {
+    variant: DisallowedType,
+}
+
+trait ATrait {}
+
+impl BadATraitImpl<+UnstableTrait> of ATrait;
+
+#[feature("unstable-trait")]
+impl ATraitImpl<+UnstableTrait> of ATrait;
+
 //! > function_body
 
 //! > expected_diagnostics
-error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
- --> lib.cairo:12:15
+warning: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
+ --> lib.cairo:14:25
+impl BadUnstableImpl of UnstableTrait;
+                        ^***********^
+
+warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+ --> lib.cairo:23:13
+    member: DisallowedType,
+            ^************^
+
+warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+ --> lib.cairo:32:14
+    variant: DisallowedType,
+             ^************^
+
+warning: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
+ --> lib.cairo:42:21
+impl BadATraitImpl<+UnstableTrait> of ATrait;
+                    ^***********^
+
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
+ --> lib.cairo:48:15
   let _fail = deprecated_function_with_note();
               ^***************************^
 
-error: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
- --> lib.cairo:15:15
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
+ --> lib.cairo:51:15
   let _fail = deprecated_function_no_note();
               ^*************************^
+
+//! > ==========================================================================
+
+//! > Test usage of internal.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _fail = internal_function_with_note();
+  #[feature("internal")]
+  let _work = internal_function_with_note();
+  let _fail = internal_function_no_note();
+  #[feature("internal")]
+  let _work = internal_function_no_note();
+}
+
+//! > module_code
+#[internal(feature: "internal", note: "Some reason", since: "1.0.0")]
+fn internal_function_with_note() -> felt252 {
+    0
+}
+
+#[internal(feature: "internal")]
+fn internal_function_no_note() -> felt252 {
+    0
+}
+
+#[internal(feature: "internal-trait")]
+trait InternalTrait;
+
+impl BadInternalImpl of InternalTrait;
+
+#[feature("internal-trait")]
+impl AllowedInternalImpl of InternalTrait;
+
+#[internal(feature: "internal-member")]
+struct DisallowedType {}
+
+struct BadStructMember {
+    member: DisallowedType,
+}
+
+#[feature("internal-member")]
+struct AllowedStructMember {
+    member: DisallowedType,
+}
+
+enum BadEnumVariant {
+    variant: DisallowedType,
+}
+
+#[feature("internal-member")]
+enum AllowedEnumMember {
+    variant: DisallowedType,
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Usage of internal feature `"internal-trait"` with no `#[feature("internal-trait")]` attribute.
+ --> lib.cairo:14:25
+impl BadInternalImpl of InternalTrait;
+                        ^***********^
+
+error: Usage of internal feature `"internal-member"` with no `#[feature("internal-member")]` attribute.
+ --> lib.cairo:23:13
+    member: DisallowedType,
+            ^************^
+
+error: Usage of internal feature `"internal-member"` with no `#[feature("internal-member")]` attribute.
+ --> lib.cairo:32:14
+    variant: DisallowedType,
+             ^************^
+
+error: Usage of internal feature `"internal"` with no `#[feature("internal")]` attribute. Note: "Some reason"
+ --> lib.cairo:41:15
+  let _fail = internal_function_with_note();
+              ^*************************^
+
+error: Usage of internal feature `"internal"` with no `#[feature("internal")]` attribute.
+ --> lib.cairo:44:15
+  let _fail = internal_function_no_note();
+              ^***********************^
 
 //! > ==========================================================================
 
@@ -589,6 +745,11 @@ fn multiple_unstable_feature_markers() {}
 #[unstable(feature: "testing2")]
 fn multiple_mixed_feature_markers() {}
 
+
+#[deprecated(feature: "testing1")]
+#[internal(feature: "testing2")]
+fn multiple_mixed_feature_markers2() {}
+
 //! > function_body
 
 //! > expected_diagnostics
@@ -606,11 +767,6 @@ error: Unsupported argument for feature marker attribute.
  --> lib.cairo:4:32
 #[unstable(feature: "testing", extra)]
                                ^***^
-
-error: Unsupported argument for feature marker attribute.
- --> lib.cairo:7:32
-#[unstable(feature: "testing", note: "extra")]
-                               ^**^
 
 error: Duplicated argument for feature marker attribute.
  --> lib.cairo:10:32
@@ -651,3 +807,58 @@ error: Multiple feature marker attributes.
  --> lib.cairo:32:1
 #[deprecated(feature: "testing1")]
 ^********************************^
+
+error: Multiple feature marker attributes.
+ --> lib.cairo:37:1
+#[deprecated(feature: "testing1")]
+^********************************^
+
+//! > ==========================================================================
+
+//! > Test bad type usage.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _fail = array![()];
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Cannot have array of type "()" that is zero sized.
+ --> lib.cairo:3:15
+  let _fail = array![()];
+              ^********^
+
+//! > ==========================================================================
+
+//! > Test missing '::' in path.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _fail = bar<felt252>(1);
+}
+
+//! > module_code
+fn bar<T>(_a: T) {}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Expected variable or constant, found function.
+ --> lib.cairo:4:15
+  let _fail = bar<felt252>(1);
+              ^*^
+
+error: Are you missing a `::`?.
+ --> lib.cairo:4:18
+  let _fail = bar<felt252>(1);
+                 ^

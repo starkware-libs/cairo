@@ -32,25 +32,50 @@ error: The name `e` is defined multiple times.
 const e: felt252 = consteval_int![4 + 5];
       ^
 
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:1:20
+const a: felt252 = consteval_int!(func_call(24));
+                   ^***************************^
+
 error: Plugin diagnostic: Unsupported expression in consteval_int macro
  --> lib.cairo:1:35
 const a: felt252 = consteval_int!(func_call(24));
                                   ^***********^
+
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:3:20
+const b: felt252 = consteval_int!('some string');
+                   ^***************************^
 
 error: Plugin diagnostic: Unsupported expression in consteval_int macro
  --> lib.cairo:3:35
 const b: felt252 = consteval_int!('some string');
                                   ^***********^
 
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:5:20
+const c: felt252 = consteval_int!(*24);
+                   ^*****************^
+
 error: Plugin diagnostic: Unsupported unary operator in consteval_int macro
  --> lib.cairo:5:35
 const c: felt252 = consteval_int!(*24);
                                   ^*^
 
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:7:20
+const d: felt252 = consteval_int!(~24);
+                   ^*****************^
+
 error: Plugin diagnostic: Unsupported unary operator in consteval_int macro
  --> lib.cairo:7:35
 const d: felt252 = consteval_int!(~24);
                                   ^*^
+
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:9:20
+const e: felt252 = consteval_int!(234 < 5);
+                   ^*********************^
 
 error: Plugin diagnostic: Unsupported binary operator in consteval_int macro
  --> lib.cairo:9:35
@@ -66,6 +91,11 @@ error: Plugin diagnostic: Macro `consteval_int` does not support this bracket ty
  --> lib.cairo:13:34
 const f: felt252 = consteval_int!{4 + 5};
                                  ^
+
+warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
+ --> lib.cairo:15:26
+const out_of_range: u8 = consteval_int!(120 + 160);
+                         ^***********************^
 
 error: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:15:26
@@ -95,11 +125,6 @@ error: Plugin diagnostic: Macro `array` does not support this bracket type.
  --> lib.cairo:2:20
     let _x = array!(0);
                    ^
-
-error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u8".
- --> lib.cairo:3:32
-    let _x = array![0_felt252, 1_u8];
-                               ^**^
 
 error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
  --> lib.cairo:3:32
@@ -297,11 +322,6 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?3.
- --> lib.cairo:21:17
-    write!(f, "{non_existing}").unwrap();
-                ^**********^
-
 //! > ==========================================================================
 
 //! > Test bad writeln! macros
@@ -493,11 +513,6 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
-error: Type annotations needed. Failed to infer ?3.
- --> lib.cairo:21:19
-    writeln!(f, "{non_existing}").unwrap();
-                  ^**********^
-
 //! > ==========================================================================
 
 //! > Test bad format! macros
@@ -535,6 +550,9 @@ fn foo() {
 
     // Unused arguments.
     format!("{2}{0}", ba, 2, 1);
+
+    // No parens.
+    format!;
 }
 
 //! > function_name
@@ -543,6 +561,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:32:12
+    format!;
+           ^
+
 error: Plugin diagnostic: Macro `write` does not support this bracket type.
  --> lib.cairo:5:12
     format!["{}", ba];
@@ -588,15 +611,20 @@ error: Plugin diagnostic: Unused argument.
     format!("{2}{0}", ba, 2, 1);
                           ^
 
+error: Plugin diagnostic: Macro `write` does not support this bracket type.
+ --> lib.cairo:32:12
+    format!;
+           ^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo:32:5
+    format!;
+    ^*****^
+
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
         ^^
-
-error: Type annotations needed. Failed to infer ?6.
- --> lib.cairo:14:15
-    format!("{non_existing}");
-              ^**********^
 
 //! > ==========================================================================
 
@@ -635,6 +663,9 @@ fn foo() {
 
     // Unused arguments.
     print!("{2}{0}", ba, 2, 1);
+
+    // Missing parens.
+    print!;
 }
 
 //! > function_name
@@ -643,6 +674,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:32:11
+    print!;
+          ^
+
 error: Plugin diagnostic: Macro `write` does not support this bracket type.
  --> lib.cairo:5:11
     print!["{}", ba];
@@ -688,15 +724,20 @@ error: Plugin diagnostic: Unused argument.
     print!("{2}{0}", ba, 2, 1);
                          ^
 
+error: Plugin diagnostic: Macro `write` does not support this bracket type.
+ --> lib.cairo:32:11
+    print!;
+          ^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo:32:5
+    print!;
+    ^****^
+
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
         ^^
-
-error: Type annotations needed. Failed to infer ?9.
- --> lib.cairo:14:14
-    print!("{non_existing}");
-             ^**********^
 
 //! > ==========================================================================
 
@@ -735,6 +776,9 @@ fn foo() {
 
     // Unused arguments.
     println!("{2}{0}", ba, 2, 1);
+    
+    // Missing parens.
+    println!;
 }
 
 //! > function_name
@@ -743,6 +787,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:32:13
+    println!;
+            ^
+
 error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
  --> lib.cairo:5:13
     println!["{}", ba];
@@ -788,15 +837,20 @@ error: Plugin diagnostic: Unused argument.
     println!("{2}{0}", ba, 2, 1);
                            ^
 
+error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
+ --> lib.cairo:32:13
+    println!;
+            ^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo:32:5
+    println!;
+    ^******^
+
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
         ^^
-
-error: Type annotations needed. Failed to infer ?9.
- --> lib.cairo:14:16
-    println!("{non_existing}");
-               ^**********^
 
 //! > ==========================================================================
 
@@ -887,11 +941,6 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
         ^^
-
-error: Type annotations needed. Failed to infer ?7.
- --> lib.cairo:14:14
-    panic!("{non_existing}");
-             ^**********^
 
 //! > ==========================================================================
 

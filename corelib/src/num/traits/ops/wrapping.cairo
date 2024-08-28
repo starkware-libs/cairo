@@ -21,8 +21,8 @@ pub trait WrappingMul<T> {
 
 pub(crate) mod overflow_based {
     pub(crate) impl TWrappingAdd<
-        T, +core::num::traits::OverflowingAdd<T>
-    > of core::num::traits::WrappingAdd<T> {
+        T, +crate::num::traits::OverflowingAdd<T>
+    > of crate::num::traits::WrappingAdd<T> {
         fn wrapping_add(self: T, v: T) -> T {
             let (result, _) = self.overflowing_add(v);
             result
@@ -30,8 +30,8 @@ pub(crate) mod overflow_based {
     }
 
     pub(crate) impl TWrappingSub<
-        T, +core::num::traits::OverflowingSub<T>
-    > of core::num::traits::WrappingSub<T> {
+        T, +crate::num::traits::OverflowingSub<T>
+    > of crate::num::traits::WrappingSub<T> {
         fn wrapping_sub(self: T, v: T) -> T {
             let (result, _) = self.overflowing_sub(v);
             result
@@ -39,8 +39,8 @@ pub(crate) mod overflow_based {
     }
 
     pub(crate) impl TWrappingMul<
-        T, +core::num::traits::OverflowingMul<T>
-    > of core::num::traits::WrappingMul<T> {
+        T, +crate::num::traits::OverflowingMul<T>
+    > of crate::num::traits::WrappingMul<T> {
         fn wrapping_mul(self: T, v: T) -> T {
             let (result, _) = self.overflowing_mul(v);
             result

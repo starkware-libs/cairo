@@ -2,11 +2,12 @@
 #[path = "test.rs"]
 mod test;
 
-use cairo_lang_defs::ids::{ModuleFileId, TraitFunctionId};
+use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
-use cairo_lang_semantic::corelib::get_core_trait;
+use cairo_lang_semantic::corelib::{destruct_trait_fn, panic_destruct_trait_fn};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::{zip_eq, Itertools};
 
 use self::analysis::{Analyzer, StatementLocation};
@@ -16,7 +17,7 @@ use crate::blocks::Blocks;
 use crate::borrow_check::analysis::BackAnalysis;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
-use crate::diagnostic::LoweringDiagnostics;
+use crate::diagnostic::{LoweringDiagnostics, LoweringDiagnosticsBuilder};
 use crate::ids::{FunctionId, LocationId, SemanticFunctionIdEx};
 use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
@@ -32,6 +33,7 @@ pub struct BorrowChecker<'a> {
     potential_destruct_calls: PotentialDestructCalls,
     destruct_fn: TraitFunctionId,
     panic_destruct_fn: TraitFunctionId,
+    is_panic_destruct_fn: bool,
 }
 
 /// A state saved for each position in the back analysis.
@@ -75,7 +77,7 @@ impl DropPosition {
         };
         DiagnosticNote::with_location(
             text.into(),
-            location.get(db).stable_location.diagnostic_location(db.upcast()),
+            location.lookup_intern(db).stable_location.diagnostic_location(db.upcast()),
         )
     }
 }
@@ -98,17 +100,17 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         };
         let mut add_called_fn = |impl_id, function| {
             self.potential_destruct_calls.entry(block_id).or_default().push(
-                self.db
-                    .intern_function(cairo_lang_semantic::FunctionLongId {
-                        function: cairo_lang_semantic::ConcreteFunction {
-                            generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
-                                impl_id,
-                                function,
-                            }),
-                            generic_args: vec![],
-                        },
-                    })
-                    .lowered(self.db),
+                cairo_lang_semantic::FunctionLongId {
+                    function: cairo_lang_semantic::ConcreteFunction {
+                        generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
+                            impl_id,
+                            function,
+                        }),
+                        generic_args: vec![],
+                    },
+                }
+                .intern(self.db)
+                .lowered(self.db),
             );
         };
         let destruct_err = match var.destruct_impl.clone() {
@@ -130,7 +132,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
             None
         };
 
-        let mut location = var.location.get(self.db);
+        let mut location = var.location.lookup_intern(self.db);
         if let Some(drop_position) = opt_drop_position {
             location = location.with_note(drop_position.as_note(self.db));
         }
@@ -152,7 +154,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         if let Err(inference_error) = var.copyable.clone() {
             self.success = Err(self.diagnostics.report_by_location(
                 next_usage_position
-                    .get(self.db)
+                    .lookup_intern(self.db)
                     .add_note_with_location(self.db, "variable was previously used here", position)
                     .with_note(DiagnosticNote::text_only(inference_error.format(self.db.upcast()))),
                 VariableMoved { inference_error },
@@ -192,7 +194,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 let var = &self.lowered.variables[stmt.output];
                 if let Err(inference_error) = var.copyable.clone() {
                     self.success = Err(self.diagnostics.report_by_location(
-                        var.location.get(self.db).with_note(DiagnosticNote::text_only(
+                        var.location.lookup_intern(self.db).with_note(DiagnosticNote::text_only(
                             inference_error.format(self.db.upcast()),
                         )),
                         DesnappingANonCopyableType { inference_error },
@@ -249,7 +251,12 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         vars: &[VarUsage],
     ) -> Self::Info {
-        let mut info = BorrowCheckerDemand::default();
+        let mut info = if self.is_panic_destruct_fn {
+            BorrowCheckerDemand { aux: PanicState::EndsWithPanic, ..Default::default() }
+        } else {
+            BorrowCheckerDemand::default()
+        };
+
         info.variables_used(
             self,
             vars.iter().map(|VarUsage { var_id, location }| (var_id, *location)),
@@ -275,22 +282,17 @@ pub type PotentialDestructCalls = UnorderedHashMap<BlockId, Vec<FunctionId>>;
 /// Returns the potential destruct function calls per block.
 pub fn borrow_check(
     db: &dyn LoweringGroup,
-    module_file_id: ModuleFileId,
+    is_panic_destruct_fn: bool,
     lowered: &mut FlatLowered,
 ) -> PotentialDestructCalls {
     if lowered.blocks.has_root().is_err() {
         return Default::default();
     }
-    let mut diagnostics = LoweringDiagnostics::new(module_file_id.file_id(db.upcast()).unwrap());
-    diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
-    let destruct_trait_id = get_core_trait(db.upcast(), "Destruct".into());
-    let destruct_fn =
-        db.trait_function_by_name(destruct_trait_id, "destruct".into()).unwrap().unwrap();
-    let panic_destruct_trait_id = get_core_trait(db.upcast(), "PanicDestruct".into());
-    let panic_destruct_fn = db
-        .trait_function_by_name(panic_destruct_trait_id, "panic_destruct".into())
-        .unwrap()
-        .unwrap();
+    let mut diagnostics = LoweringDiagnostics::default();
+    diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
+    let destruct_fn = destruct_trait_fn(db.upcast());
+    let panic_destruct_fn = panic_destruct_trait_fn(db.upcast());
+
     let checker = BorrowChecker {
         db,
         diagnostics: &mut diagnostics,
@@ -299,6 +301,7 @@ pub fn borrow_check(
         potential_destruct_calls: Default::default(),
         destruct_fn,
         panic_destruct_fn,
+        is_panic_destruct_fn,
     };
     let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();

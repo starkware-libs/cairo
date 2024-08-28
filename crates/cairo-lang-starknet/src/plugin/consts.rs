@@ -6,7 +6,6 @@ pub const CONSTRUCTOR_MODULE: &str = "__constructor";
 pub const WRAPPER_PREFIX: &str = "__wrapper__";
 pub const STORAGE_STRUCT_NAME: &str = "Storage";
 pub const EVENT_TYPE_NAME: &str = "Event";
-pub const LEGACY_STORAGE_MAPPING: &str = "LegacyMap";
 pub const STORAGE_MAPPING: &str = "Map";
 pub const CONTRACT_STATE_NAME: &str = "ContractState";
 pub const GENERIC_CONTRACT_STATE_NAME: &str = "TContractState";
@@ -21,11 +20,16 @@ pub const DEPRECATED_ABI_ATTR: &str = "abi";
 pub const EVENT_ATTR: &str = "event";
 pub const EVENT_TRAIT: &str = "starknet::Event";
 pub const STORE_TRAIT: &str = "starknet::Store";
+pub const DERIVE_STORAGE_TRAIT: &str = "starknet::storage_access::DeriveStorage";
+pub const STORAGE_AS_POINTER_TRAIT: &str = "starknet::storage::StorageAsPointer";
+pub const STORAGE_AS_PATH_TRAIT: &str = "starknet::storage::StorageAsPath";
+pub const STORAGE_NODE_ATTR: &str = "starknet::storage_node";
+pub const STORAGE_SUB_POINTERS_ATTR: &str = "starknet::sub_pointers";
 pub const INTERFACE_ATTR: &str = "starknet::interface";
 pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
 pub const CONTRACT_ATTR: &str = "starknet::contract";
 pub const CONTRACT_ATTR_ACCOUNT_ARG: &str = "account";
-pub(super) const COMPONENT_ATTR: &str = "starknet::component";
+pub const COMPONENT_ATTR: &str = "starknet::component";
 pub const STORAGE_ATTR: &str = "storage";
 pub const EXTERNAL_ATTR: &str = "external";
 pub const EMBEDDABLE_ATTR: &str = "starknet::embeddable";
@@ -58,12 +62,15 @@ pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";
 
 /// Starknet OS required implicit precedence.
 pub(super) const IMPLICIT_PRECEDENCE: &[&str] = &[
-    "Pedersen",
-    "RangeCheck",
-    "Bitwise",
-    "EcOp",
-    "Poseidon",
-    "SegmentArena",
-    "GasBuiltin",
+    "core::pedersen::Pedersen",
+    "core::RangeCheck",
+    "core::integer::Bitwise",
+    "core::ec::EcOp",
+    "core::poseidon::Poseidon",
+    "core::SegmentArena",
+    "core::circuit::RangeCheck96",
+    "core::circuit::AddMod",
+    "core::circuit::MulMod",
+    "core::gas::GasBuiltin",
     "System",
 ];

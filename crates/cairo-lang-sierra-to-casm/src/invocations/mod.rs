@@ -4,6 +4,7 @@ use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
+use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -23,6 +24,7 @@ use itertools::{chain, zip_eq, Itertools};
 use num_bigint::BigInt;
 use thiserror::Error;
 
+use crate::circuit::CircuitsInfo;
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
@@ -38,6 +40,7 @@ mod boolean;
 mod boxing;
 mod bytes31;
 mod casts;
+mod circuit;
 mod const_type;
 mod debug;
 mod ec;
@@ -52,6 +55,7 @@ mod misc;
 mod nullable;
 mod pedersen;
 mod poseidon;
+mod range;
 mod range_reduction;
 mod starknet;
 mod structure;
@@ -86,6 +90,8 @@ pub enum InvocationError {
     // TODO(lior): Remove this error once not used.
     #[error("This libfunc does not support pre-cost metadata yet.")]
     PreCostMetadataNotSupported,
+    #[error("{output_ty} is not a contained in the circuit {circuit_ty}.")]
+    InvalidCircuitOutput { output_ty: ConcreteTypeId, circuit_ty: ConcreteTypeId },
 }
 
 /// Describes a simple change in the ap tracking itself.
@@ -337,14 +343,27 @@ impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
     fn token_usages(&self, token_type: CostTokenType) -> usize {
         InvocationApChangeInfoProvider::token_usages(self, token_type)
     }
+
+    fn circuit_info(&self, ty: &ConcreteTypeId) -> &CircuitInfo {
+        self.program_info.circuits_info.circuits.get(ty).unwrap()
+    }
+}
+
+/// Cost validation info for a builtin.
+struct BuiltinInfo {
+    /// The cost token type associated with the builtin.
+    cost_token_ty: CostTokenType,
+    /// The builtin pointer at the start of the libfunc.
+    start: Var,
+    /// The builtin pointer at the end of all the libfunc branches.
+    end: Var,
 }
 
 /// Information required for validating libfunc cost.
 #[derive(Default)]
 struct CostValidationInfo<const BRANCH_COUNT: usize> {
-    /// Range check variables at start and end of the libfunc.
-    /// Assumes only directly used as buffer.
-    pub range_check_info: Option<(Var, Var)>,
+    /// infos about builtin usage.
+    pub builtin_infos: Vec<BuiltinInfo>,
     /// Possible extra cost per branch.
     /// Useful for amortized costs, as well as gas withdrawal libfuncs.
     pub extra_costs: Option<[i32; BRANCH_COUNT]>,
@@ -513,16 +532,27 @@ impl CompiledInvocationBuilder<'_> {
         for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
             cost.steps += state.steps as i32;
         }
-        if let Some((start, end)) = cost_validation.range_check_info {
+
+        for BuiltinInfo { cost_token_ty, start, end } in cost_validation.builtin_infos {
             for (cost, (state, _)) in final_costs.iter_mut().zip(branches.iter()) {
                 let (start_base, start_offset) =
                     state.get_adjusted(start).to_deref_with_offset().unwrap();
                 let (end_base, end_offset) =
                     state.get_adjusted(end).to_deref_with_offset().unwrap();
                 assert_eq!(start_base, end_base);
-                cost.range_checks += (end_offset - start_offset) as i32;
+                let diff = (end_offset - start_offset) as i32;
+                match cost_token_ty {
+                    CostTokenType::RangeCheck => {
+                        cost.range_checks += diff;
+                    }
+                    CostTokenType::RangeCheck96 => {
+                        cost.range_checks96 += diff;
+                    }
+                    _ => panic!("Cost token type not supported."),
+                }
             }
         }
+
         let extra_costs =
             cost_validation.extra_costs.unwrap_or(std::array::from_fn(|_| Default::default()));
         let final_costs_with_extra =
@@ -611,6 +641,8 @@ impl CompiledInvocationBuilder<'_> {
 pub struct ProgramInfo<'a> {
     pub metadata: &'a Metadata,
     pub type_sizes: &'a TypeSizeMap,
+    /// Information about the circuits in the program.
+    pub circuits_info: &'a CircuitsInfo,
     /// Returns the given a const type returns a vector of cells value representing it.
     pub const_data_values: &'a dyn Fn(&ConcreteTypeId) -> Vec<BigInt>,
 }
@@ -689,6 +721,8 @@ pub fn compile_invocation(
             }
         },
         BoundedInt(libfunc) => int::bounded::build(libfunc, builder),
+        Circuit(libfunc) => circuit::build(libfunc, builder),
+        IntRange(libfunc) => range::build(libfunc, builder),
     }
 }
 

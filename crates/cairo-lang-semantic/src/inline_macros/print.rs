@@ -1,11 +1,12 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
+    PluginGeneratedFile,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use indoc::formatdoc;
+use indoc::{formatdoc, indoc};
 
 use super::write::{WriteMacro, WritelnMacro};
 
@@ -20,8 +21,31 @@ impl InlineMacroExprPlugin for PrintMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, false)
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Prints to the standard output.
+            Equivalent to the `println!` macro except that a newline is not printed at the end of \
+            the message.
+
+            # Panics
+            Panics if any of the formatting of arguments fails.
+
+            # Examples
+            ```cairo
+            println!(\"hello\"); // Prints "hello".
+            let world: ByteArray = "world"; 
+            println!("hello {}", world_ba); // Prints "hello world".
+            println!("hello {world_ba}"); // Prints "hello world".
+            ```
+        "#}
+            .to_string(),
+        )
     }
 }
 
@@ -36,8 +60,31 @@ impl InlineMacroExprPlugin for PrintlnMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         generate_code_inner(syntax, db, true)
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Prints to the standard output, with a newline.
+            This macro uses the same syntax as `format!`, but writes to the standard output instead.
+
+            # Panics
+            Panics if any of the formatting of arguments fails.
+
+            # Examples
+            ```cairo
+            println!(); // Prints an empty line.
+            println!(\"hello\"); // Prints "hello".
+            let world: ByteArray = "world"; 
+            println!("hello {}", world_ba); // Prints "hello world".
+            println!("hello {world_ba}"); // Prints "hello world".
+            ```
+        "#}
+            .to_string(),
+        )
     }
 }
 
@@ -47,7 +94,7 @@ fn generate_code_inner(
     with_newline: bool,
 ) -> InlinePluginResult {
     let arguments = syntax.arguments(db);
-    let mut builder = PatchBuilder::new(db);
+    let mut builder = PatchBuilder::new(db, syntax);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc! {
             "
@@ -73,16 +120,19 @@ fn generate_code_inner(
             ),
             (
                 "args".to_string(),
-                RewriteNode::new_trimmed(arguments.arg_list(db).unwrap().as_syntax_node()),
+                arguments.arg_list(db).map_or_else(RewriteNode::empty, |n| {
+                    RewriteNode::new_trimmed(n.as_syntax_node())
+                }),
             ),
         ]
         .into(),
     ));
+    let (content, code_mappings) = builder.build();
     InlinePluginResult {
         code: Some(PluginGeneratedFile {
             name: format!("{}_macro", get_macro_name(with_newline)).into(),
-            content: builder.code,
-            code_mappings: builder.code_mappings,
+            content,
+            code_mappings,
             aux_data: None,
         }),
         diagnostics: vec![],

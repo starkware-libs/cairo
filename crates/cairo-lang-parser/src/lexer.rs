@@ -5,7 +5,8 @@ mod test;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
-    TokenNewline, TokenSingleLineComment, TokenWhitespace, TriviumGreen,
+    TokenNewline, TokenSingleLineComment, TokenSingleLineDocComment, TokenSingleLineInnerComment,
+    TokenWhitespace, TriviumGreen,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -105,8 +106,23 @@ impl<'a> Lexer<'a> {
 
     /// Assumes the next 2 characters are "//".
     fn match_trivium_single_line_comment(&mut self) -> TriviumGreen {
-        self.take_while(|c| c != '\n');
-        TokenSingleLineComment::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        match self.peek_nth(2) {
+            Some('/') => {
+                self.take_while(|c| c != '\n');
+                TokenSingleLineDocComment::new_green(self.db, SmolStr::from(self.consume_span()))
+                    .into()
+            }
+            Some('!') => {
+                self.take_while(|c| c != '\n');
+                TokenSingleLineInnerComment::new_green(self.db, SmolStr::from(self.consume_span()))
+                    .into()
+            }
+            _ => {
+                self.take_while(|c| c != '\n');
+                TokenSingleLineComment::new_green(self.db, SmolStr::from(self.consume_span()))
+                    .into()
+            }
+        }
     }
 
     /// Token matchers.
@@ -208,6 +224,7 @@ impl<'a> Lexer<'a> {
             "implicits" => TokenKind::Implicits,
             "ref" => TokenKind::Ref,
             "mut" => TokenKind::Mut,
+            "for" => TokenKind::For,
             "nopanic" => TokenKind::NoPanic,
             "pub" => TokenKind::Pub,
             "_" => TokenKind::Underscore,
@@ -361,6 +378,7 @@ enum TokenKind {
     Match,
     If,
     While,
+    For,
     Loop,
     Continue,
     Break,
@@ -448,6 +466,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Match => SyntaxKind::TerminalMatch,
         TokenKind::If => SyntaxKind::TerminalIf,
         TokenKind::While => SyntaxKind::TerminalWhile,
+        TokenKind::For => SyntaxKind::TerminalFor,
         TokenKind::Loop => SyntaxKind::TerminalLoop,
         TokenKind::Continue => SyntaxKind::TerminalContinue,
         TokenKind::Break => SyntaxKind::TerminalBreak,

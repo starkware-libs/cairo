@@ -1,17 +1,18 @@
 use std::ops::Shl;
 
-use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::{
     get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
     InvocationError,
 };
 use crate::invocations::misc::validate_under_limit;
-use crate::invocations::{add_input_variables, CostValidationInfo};
+use crate::invocations::{add_input_variables, BuiltinInfo, CostValidationInfo};
 
 /// Builds a libfunc that tries to convert a numeric value in the felt252 range to `out_range`.
 ///
@@ -108,7 +109,11 @@ pub fn build_felt252_range_reduction(
             ("Done", &[&[range_check]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))

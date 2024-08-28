@@ -17,6 +17,7 @@ mod entry_point;
 pub mod events;
 mod starknet_module;
 mod storage;
+pub(crate) mod storage_interfaces;
 mod utils;
 
 use dispatcher::handle_trait;
@@ -48,7 +49,7 @@ impl MacroPlugin for StarkNetPlugin {
             ast::ModuleItem::Struct(_) | ast::ModuleItem::Enum(_)
                 if derive_needed(&item_ast, db) =>
             {
-                handle_derive(db, item_ast)
+                handle_derive(db, item_ast, metadata)
             }
             ast::ModuleItem::InlineMacro(inline_macro_ast)
                 if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
@@ -81,5 +82,13 @@ impl MacroPlugin for StarkNetPlugin {
             STORAGE_ATTR.to_string(),
             SUBSTORAGE_ATTR.to_string(),
         ]
+    }
+
+    fn declared_derives(&self) -> Vec<String> {
+        vec!["starknet::Event".to_string(), "starknet::Store".to_string()]
+    }
+
+    fn phantom_type_attributes(&self) -> Vec<String> {
+        vec![STORAGE_ATTR.to_string()]
     }
 }

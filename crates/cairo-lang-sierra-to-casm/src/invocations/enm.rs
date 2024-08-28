@@ -1,4 +1,3 @@
-use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::CellRef;
@@ -10,6 +9,7 @@ use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use cairo_lang_utils::try_extract_matches;
 use itertools::{chain, repeat_n};
 use num_bigint::BigInt;
+use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 
 use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
@@ -135,7 +135,7 @@ fn build_enum_from_bounded_int(
     // Define `(2*n - 1) / 2` as `m` - which is known in compilation time.
     // Hence the variant selector is `2 * (m - k)` or  alternatively `-2 * (k - m)`
 
-    let m = (Felt252::from(n_variants * 2 - 1) / Felt252::from(2)).to_bigint();
+    let m = (Felt252::from(n_variants * 2 - 1).field_div(&NonZeroFelt::TWO)).to_bigint();
     casm_build_extend! {casm_builder,
         const m = m;
         const negative_two = -2;

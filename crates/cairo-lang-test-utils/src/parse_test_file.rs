@@ -9,7 +9,6 @@ use std::path::Path;
 
 use cairo_lang_formatter::CairoFormatter;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::ResultHelper;
 use colored::Colorize;
 
 const TAG_PREFIX: &str = "//! > ";
@@ -71,7 +70,8 @@ struct TestBuilder {
 }
 
 pub fn parse_test_file(filename: &Path) -> io::Result<OrderedHashMap<String, Test>> {
-    let file = fs::File::open(filename).on_err(|_| log::error!("File not found: {filename:?}"))?;
+    let file =
+        fs::File::open(filename).inspect_err(|_| log::error!("File not found: {filename:?}"))?;
     let mut lines = io::BufReader::new(file).lines();
     let mut builder = TestBuilder::default();
     let mut line_num: usize = 0;

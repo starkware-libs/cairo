@@ -17,9 +17,7 @@ export async function checkTool(fullPath: string): Promise<string | undefined> {
  * Returns the full path to the tool if it is executable, trying to add known
  * program file extensions; otherwise, returns `undefined`.
  */
-export async function findToolAtWithExtension(
-  name: string,
-): Promise<string | undefined> {
+export async function findToolAtWithExtension(name: string): Promise<string | undefined> {
   const envExt = process.env["PATHEXT"] || "";
   const extensions = envExt.split(";");
 
@@ -33,14 +31,9 @@ export async function findToolAtWithExtension(
   return undefined;
 }
 
-export async function findToolInPath(
-  name: string,
-): Promise<string | undefined> {
+export async function findToolInPath(name: string): Promise<string | undefined> {
   const envPath = process.env["PATH"] || "";
-  const pathDirs = envPath
-    .replace(/"+/g, "")
-    .split(path.delimiter)
-    .filter(Boolean);
+  const pathDirs = envPath.replace(/"+/g, "").split(path.delimiter).filter(Boolean);
 
   for (const d of pathDirs) {
     const tool = await findToolAtWithExtension(path.join(d, name));
@@ -52,15 +45,12 @@ export async function findToolInPath(
   return undefined;
 }
 
-export async function findToolInAsdf(
-  name: string,
-): Promise<string | undefined> {
+export async function findToolInAsdf(name: string): Promise<string | undefined> {
   if (os.platform() === "win32") {
     return undefined;
   }
 
-  const asdfDataDir =
-    process.env["ASDF_DATA_DIR"] || path.join(os.homedir(), ".asdf");
+  const asdfDataDir = process.env["ASDF_DATA_DIR"] || path.join(os.homedir(), ".asdf");
 
   const shim = path.join(asdfDataDir, "shims", name);
 

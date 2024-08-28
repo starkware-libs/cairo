@@ -11,7 +11,7 @@ use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, Upcast};
+use cairo_lang_utils::{extract_matches, LookupIntern, Upcast};
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module_ex;
@@ -54,6 +54,7 @@ cairo_lang_test_utils::test_file_test!(
         tuple :"tuple",
         strings :"strings",
         while_ :"while",
+        for_ :"for",
     },
     test_function_lowering
 );
@@ -107,9 +108,12 @@ fn test_location_and_diagnostics() {
     let function_body = db.function_body(test_expr.function_id).unwrap();
 
     let expr_location = StableLocation::new(
-        extract_matches!(&function_body.exprs[test_expr.expr_id], semantic::Expr::Assignment)
-            .stable_ptr
-            .untyped(),
+        extract_matches!(
+            &function_body.arenas.exprs[test_expr.expr_id],
+            semantic::Expr::Assignment
+        )
+        .stable_ptr
+        .untyped(),
     )
     .diagnostic_location(db);
 
@@ -119,7 +123,7 @@ fn test_location_and_diagnostics() {
             db,
             DiagnosticNote::with_location("Adding destructor for".to_string(), expr_location),
         )
-        .get(db);
+        .lookup_intern(db);
 
     assert_eq!(
         format!("{:?}", location.debug(db)),

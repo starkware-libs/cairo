@@ -1,11 +1,12 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::unsigned512::Uint512Concrete;
 use num_bigint::BigInt;
 
 use crate::invocations::{
-    add_input_variables, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
-    InvocationError,
+    add_input_variables, BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder,
+    CostValidationInfo, InvocationError,
 };
 
 /// Builds instructions for Sierra u512 operations.
@@ -209,7 +210,11 @@ fn build_u512_safe_divmod_by_u256(
             None,
         )],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))

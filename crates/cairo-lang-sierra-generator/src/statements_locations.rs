@@ -7,8 +7,12 @@ use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
+use crate::statements_code_locations::{
+    SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, StatementsSourceCodeLocations,
+};
 use crate::statements_functions::StatementsFunctions;
 
 #[cfg(test)]
@@ -19,7 +23,7 @@ mod test;
 /// It is a fully qualified path to the function which contains:
 /// - fully qualified path to the file module,
 /// - relative path to the function in the file module.
-pub fn containing_function_identifier(
+pub fn maybe_containing_function_identifier(
     db: &dyn DefsGroup,
     location: StableLocation,
 ) -> Option<String> {
@@ -27,7 +31,14 @@ pub fn containing_function_identifier(
     let absolute_semantic_path_to_file_module = file_module_absolute_identifier(db, file_id)?;
 
     let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
-    Some(absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path))
+    if relative_semantic_path.is_empty() {
+        // In some cases the stable location maps to a code that is a statement like a function call
+        // directly in a file module, e.g. `Self::eq(lhs, rhs)` in `core::traits`. This brings no
+        // information about the function it was called from.
+        None
+    } else {
+        Some(absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path))
+    }
 }
 
 /// Returns an identifier of the function that contains the given [StableLocation].
@@ -37,16 +48,24 @@ pub fn containing_function_identifier(
 ///
 /// In case the fully qualified path to the file module cannot be found
 /// it is replaced in the fully qualified function path by the file name.
-pub fn containing_function_identifier_for_tests(
+pub fn maybe_containing_function_identifier_for_tests(
     db: &dyn DefsGroup,
     location: StableLocation,
-) -> String {
+) -> Option<String> {
     let file_id = location.file_id(db.upcast());
     let absolute_semantic_path_to_file_module = file_module_absolute_identifier(db, file_id)
         .unwrap_or_else(|| file_id.file_name(db.upcast()));
 
     let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
-    absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path)
+    if relative_semantic_path.is_empty() {
+        // In some cases the stable location maps to a code that is a statement like a function call
+        // directly in a file module, e.g. `Self::eq(lhs, rhs)` in `core::traits`. This brings no
+        // information about the function it was called from. It is especially relevant for corelib
+        // tests where the first stable location may map to this kind of code.
+        None
+    } else {
+        Some(absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path))
+    }
 }
 
 /// Returns the path (modules and impls) to the function in the file.
@@ -111,7 +130,7 @@ pub fn function_identifier_relative_to_file_module(
     let file_id = location.file_id(db.upcast());
     if !statement_located_in_function
         && matches!(
-            db.lookup_intern_file(file_id),
+            file_id.lookup_intern(db),
             FileLongId::Virtual(VirtualFile { parent: Some(_), .. })
         )
     {
@@ -119,6 +138,23 @@ pub fn function_identifier_relative_to_file_module(
     }
 
     relative_semantic_path_segments.into_iter().rev().join("::")
+}
+
+/// Returns a location in the user file corresponding to the given [StableLocation].
+/// It consists of a full path to the file and a text span in the file.
+pub fn maybe_code_location(
+    db: &dyn DefsGroup,
+    location: StableLocation,
+) -> Option<(SourceFileFullPath, SourceCodeSpan)> {
+    let file_full_path = location.file_id(db.upcast()).full_path(db.upcast());
+    let location = location.diagnostic_location(db.upcast()).user_location(db.upcast());
+    let position = location.span.position_in_file(db.upcast(), location.file_id)?;
+    let source_location = SourceCodeSpan {
+        start: SourceCodeLocation { col: position.start.col, line: position.start.line },
+        end: SourceCodeLocation { col: position.start.col, line: position.start.line },
+    };
+
+    Some((SourceFileFullPath(file_full_path), source_location))
 }
 
 /// This function returns a fully qualified path to the file module.
@@ -129,7 +165,7 @@ pub fn file_module_absolute_identifier(db: &dyn DefsGroup, mut file_id: FileId) 
     // that won't have a matching file module in the db. Instead, we find its non generated parent
     // which is in the same module and have a matching file module in the db.
     while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) =
-        db.lookup_intern_file(file_id)
+        file_id.lookup_intern(db)
     {
         file_id = parent;
     }
@@ -140,7 +176,7 @@ pub fn file_module_absolute_identifier(db: &dyn DefsGroup, mut file_id: FileId) 
     Some(full_path)
 }
 
-/// The location of the Cairo source code which caused a statement to be generated.
+/// The locations in the Cairo source code which caused a statement to be generated.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct StatementsLocations {
     pub locations: UnorderedHashMap<StatementIdx, Vec<StableLocation>>,
@@ -165,7 +201,16 @@ impl StatementsLocations {
         &self,
         db: &dyn DefsGroup,
     ) -> UnorderedHashMap<StatementIdx, String> {
-        self.locations.map(|s| containing_function_identifier_for_tests(db, *s.first().unwrap()))
+        self.locations
+            .iter_sorted()
+            .filter_map(|(statement_idx, stable_locations)| {
+                maybe_containing_function_identifier_for_tests(
+                    db,
+                    *stable_locations.first().unwrap(),
+                )
+                .map(|function_identifier| (*statement_idx, function_identifier))
+            })
+            .collect()
     }
 
     /// Creates a new [StatementsFunctions] struct using [StatementsLocations] and [DefsGroup].
@@ -174,10 +219,36 @@ impl StatementsLocations {
             statements_to_functions_map: self
                 .locations
                 .iter_sorted()
-                .map(|(statement_idx, stable_location)| {
+                .map(|(statement_idx, stable_locations)| {
                     (
                         *statement_idx,
-                        containing_function_identifier(db, *stable_location.first().unwrap()),
+                        stable_locations
+                            .iter()
+                            .filter_map(|s| maybe_containing_function_identifier(db, *s))
+                            .collect(),
+                    )
+                })
+                .collect(),
+        }
+    }
+
+    /// Creates a new [StatementsSourceCodeLocations] struct using [StatementsLocations] and
+    /// [DefsGroup].
+    pub fn extract_statements_source_code_locations(
+        &self,
+        db: &dyn DefsGroup,
+    ) -> StatementsSourceCodeLocations {
+        StatementsSourceCodeLocations {
+            statements_to_code_location_map: self
+                .locations
+                .iter_sorted()
+                .map(|(statement_idx, stable_locations)| {
+                    (
+                        *statement_idx,
+                        stable_locations
+                            .iter()
+                            .filter_map(|s| maybe_code_location(db, *s))
+                            .collect(),
                     )
                 })
                 .collect(),

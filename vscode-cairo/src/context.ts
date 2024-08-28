@@ -1,11 +1,14 @@
 import * as vscode from "vscode";
 import { Config } from "./config";
+import { RootLogOutputChannel } from "./logging";
 
 export class Context {
   public static create(extensionContext: vscode.ExtensionContext): Context {
-    const log = vscode.window.createOutputChannel("Cairo Extension", {
-      log: true,
-    });
+    const log = new RootLogOutputChannel(
+      vscode.window.createOutputChannel("Cairo", {
+        log: true,
+      }),
+    );
     extensionContext.subscriptions.push(log);
 
     return new Context(extensionContext, log);
@@ -15,6 +18,6 @@ export class Context {
 
   private constructor(
     public readonly extension: vscode.ExtensionContext,
-    public readonly log: vscode.LogOutputChannel,
+    public readonly log: RootLogOutputChannel,
   ) {}
 }

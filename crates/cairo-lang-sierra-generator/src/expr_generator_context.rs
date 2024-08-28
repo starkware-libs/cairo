@@ -1,14 +1,14 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
-use cairo_lang_semantic::TypeId;
 use cairo_lang_sierra::extensions::uninitialized::UninitializedType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::Intern;
 use lowering::ids::ConcreteFunctionWithBodyId;
-use lowering::{BlockId, FlatLowered, VariableId};
+use lowering::{BlockId, FlatLowered};
 
 use crate::ap_tracking::ApTrackingConfiguration;
 use crate::db::SierraGenGroup;
@@ -34,7 +34,7 @@ pub struct ExprGeneratorContext<'a> {
     ap_tracking_configuration: ApTrackingConfiguration,
 
     /// The current location for adding statements.
-    curr_cairo_location: Vec<StableLocation>,
+    pub curr_cairo_location: Vec<StableLocation>,
     /// The accumulated statements for the expression.
     statements: Vec<pre_sierra::StatementWithLocation>,
 }
@@ -129,13 +129,14 @@ impl<'a> ExprGeneratorContext<'a> {
             SierraGenVar::UninitializedLocal(lowering_var) => {
                 let inner_type =
                     self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?;
-                self.db.intern_concrete_type(crate::db::SierraGeneratorTypeLongId::Regular(
+                crate::db::SierraGeneratorTypeLongId::Regular(
                     ConcreteTypeLongId {
                         generic_id: UninitializedType::ID,
                         generic_args: vec![GenericArg::Type(inner_type)],
                     }
                     .into(),
-                ))
+                )
+                .intern(self.db)
             }
         })
     }
@@ -156,11 +157,6 @@ impl<'a> ExprGeneratorContext<'a> {
     /// it will not be used after the current statement).
     pub fn is_last_use(&self, use_location: &UseLocation) -> bool {
         self.lifetime.last_use.contains(use_location)
-    }
-
-    /// Returns the type of the variable given by `var_id`.
-    pub fn get_var_type(&self, var_id: VariableId) -> TypeId {
-        self.lowered.variables[var_id].ty
     }
 
     /// Gets the current ap tracking state.
@@ -213,8 +209,5 @@ pub fn alloc_label_id(
     function_id: ConcreteFunctionWithBodyId,
     label_id_allocator: &mut IdAllocator,
 ) -> pre_sierra::LabelId {
-    db.intern_label_id(pre_sierra::LabelLongId {
-        parent: function_id,
-        id: label_id_allocator.allocate(),
-    })
+    pre_sierra::LabelLongId { parent: function_id, id: label_id_allocator.allocate() }.intern(db)
 }

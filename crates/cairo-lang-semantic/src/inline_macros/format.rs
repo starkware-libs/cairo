@@ -1,11 +1,12 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
+    PluginGeneratedFile,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use indoc::formatdoc;
+use indoc::{formatdoc, indoc};
 
 /// Macro for formatting.
 #[derive(Default, Debug)]
@@ -18,9 +19,10 @@ impl InlineMacroExprPlugin for FormatMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         let arguments = syntax.arguments(db);
-        let mut builder = PatchBuilder::new(db);
+        let mut builder = PatchBuilder::new(db, syntax);
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
                 "
@@ -45,19 +47,52 @@ impl InlineMacroExprPlugin for FormatMacro {
                 ),
                 (
                     "args".to_string(),
-                    RewriteNode::new_trimmed(arguments.arg_list(db).unwrap().as_syntax_node()),
+                    arguments.arg_list(db).map_or_else(RewriteNode::empty, |n| {
+                        RewriteNode::new_trimmed(n.as_syntax_node())
+                    }),
                 ),
             ]
             .into(),
         ));
+        let (content, code_mappings) = builder.build();
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
-                content: builder.code,
-                code_mappings: builder.code_mappings,
+                content,
+                code_mappings,
                 aux_data: None,
             }),
             diagnostics: vec![],
         }
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Creates a ByteArray using interpolation of runtime expressions.
+
+            The first argument `format!` receives is a format string. \
+            This must be a string literal. \
+            The power of the formatting string is in the `{}`s contained. Additional parameters \
+            passed to `format!` replace the `{}`s within the formatting string in the order given \
+            unless named or positional parameters are used.
+
+            A common use for `format!` is concatenation and interpolation of strings. The same convention is used with `print!` and `write!` macros, depending on the intended destination of the ByteArray.
+
+            # Panics
+            Panics if any of the formatting of arguments fails.
+
+            # Examples
+            ```cairo
+            format!("hello"); // => "hello".
+            let world: ByteArray = "world"; 
+            format!("hello {}", world_ba); // => "hello world".
+            format!("hello {world_ba}"); // => "hello world".
+            let (x, y) = (1, 2);
+            format!("{x} + {y} = 3"); // => "1 + 2 = 3"
+            ```
+        "#}
+            .to_string(),
+        )
     }
 }

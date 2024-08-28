@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::PatchBuilder;
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
+    PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::unsupported_bracket_diagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -16,11 +17,12 @@ impl InlineMacroExprPlugin for ArrayMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        _metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         let ast::WrappedArgList::BracketedArgList(args) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);
         };
-        let mut builder = PatchBuilder::new(db);
+        let mut builder = PatchBuilder::new(db, syntax);
         builder.add_str(
             "{
             let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();",
@@ -36,11 +38,12 @@ impl InlineMacroExprPlugin for ArrayMacro {
             "\n            __array_builder_macro_result__
         }",
         );
+        let (content, code_mappings) = builder.build();
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: "array_inline_macro".into(),
-                content: builder.code,
-                code_mappings: builder.code_mappings,
+                content,
+                code_mappings,
                 aux_data: None,
             }),
             diagnostics: vec![],

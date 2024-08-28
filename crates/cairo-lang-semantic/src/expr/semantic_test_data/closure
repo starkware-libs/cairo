@@ -1,0 +1,155 @@
+//! > Test call
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+
+//! > expr_code
+|a| {
+    a + 3
+}
+
+//! > expected_semantics
+ExprClosure(
+    ExprClosure {
+        body: Block(
+            ExprBlock {
+                statements: [],
+                tail: Some(
+                    FunctionCall(
+                        ExprFunctionCall {
+                            function: core::Felt252Add::add,
+                            args: [
+                                Value(
+                                    Var(
+                                        ParamId(test::a),
+                                    ),
+                                ),
+                                Value(
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::felt252,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            coupon_arg: None,
+                            ty: core::felt252,
+                        },
+                    ),
+                ),
+                ty: core::felt252,
+            },
+        ),
+        param_ids: [
+            ParamId(test::a),
+        ],
+        ty: {closure@lib.cairo:2:1: 2:4},
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test closure inferring param type and output type.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+fn bar<T, +core::ops::FnOnce<T, (u8,)>>(c: T) -> core::ops::FnOnce::<T, (u8,)>::Output {
+    core::ops::FnOnce::call(c, (2,))
+}
+
+//! > expr_code
+{
+    let c = |a| {
+        let d = a;
+        d.into()
+    };
+    let _k: u128 = bar(c);
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        c,
+                    ),
+                    expr: ExprClosure(
+                        ExprClosure {
+                            body: Block(
+                                ExprBlock {
+                                    statements: [
+                                        Let(
+                                            StatementLet {
+                                                pattern: Variable(
+                                                    d,
+                                                ),
+                                                expr: Var(
+                                                    ParamId(test::a),
+                                                ),
+                                            },
+                                        ),
+                                    ],
+                                    tail: Some(
+                                        FunctionCall(
+                                            ExprFunctionCall {
+                                                function: core::integer::UpcastableInto::<core::integer::u8, core::integer::u128, core::integer::UpcastableU8U128>::into,
+                                                args: [
+                                                    Value(
+                                                        Var(
+                                                            LocalVarId(test::d),
+                                                        ),
+                                                    ),
+                                                ],
+                                                coupon_arg: None,
+                                                ty: core::integer::u128,
+                                            },
+                                        ),
+                                    ),
+                                    ty: core::integer::u128,
+                                },
+                            ),
+                            param_ids: [
+                                ParamId(test::a),
+                            ],
+                            ty: {closure@lib.cairo:6:13: 6:16},
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _k,
+                    ),
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: test::bar::<{closure@lib.cairo:6:13: 6:16}, Generated core::ops::function::FnOnce::<{closure@lib.cairo:6:13: 6:16}, (core::integer::u8,)>>,
+                            args: [
+                                Value(
+                                    Var(
+                                        LocalVarId(test::c),
+                                    ),
+                                ),
+                            ],
+                            coupon_arg: None,
+                            ty: core::integer::u128,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics

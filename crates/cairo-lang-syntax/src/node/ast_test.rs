@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
+use cairo_lang_utils::Intern;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
@@ -182,6 +182,6 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     // SyntaxNode::new_root only accepts ast::SyntaxFileGreen, but we only have an expression.
     // This is a hack to crate a green id of "SyntaxFile" from "Expr".
     let root = SyntaxFileGreen(expr.0);
-    let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::default()));
+    let file_id = FileLongId::OnDisk(PathBuf::default()).intern(db);
     SyntaxNode::new_root(db, file_id, root.0)
 }

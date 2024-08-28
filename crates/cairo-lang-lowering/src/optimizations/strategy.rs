@@ -1,6 +1,7 @@
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_utils::define_short_id;
+use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
 
+use super::gas_redeposit::gas_redeposit;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
@@ -29,6 +30,7 @@ pub enum OptimizationPhase {
     ReorganizeBlocks,
     ReturnOptimization,
     SplitStructs,
+    GasRedeposit,
     /// The following is not really an optimization but we want to apply optimizations before and
     /// after it, so it is convenient to treat it as an optimization.
     LowerImplicits,
@@ -37,7 +39,7 @@ pub enum OptimizationPhase {
 impl OptimizationPhase {
     /// Applies the optimization phase to the lowering.
     ///
-    /// Assumes `lowered` is a a lowering of `function`.
+    /// Assumes `lowered` is a lowering of `function`.
     pub fn apply(
         self,
         db: &dyn LoweringGroup,
@@ -56,6 +58,7 @@ impl OptimizationPhase {
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
             OptimizationPhase::SplitStructs => split_structs(lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
+            OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
         }
         Ok(())
     }
@@ -65,7 +68,8 @@ define_short_id!(
     OptimizationStrategyId,
     OptimizationStrategy,
     LoweringGroup,
-    lookup_intern_strategy
+    lookup_intern_strategy,
+    intern_strategy
 );
 
 /// A strategy is a sequence of optimization phases.
@@ -75,14 +79,14 @@ pub struct OptimizationStrategy(pub Vec<OptimizationPhase>);
 impl OptimizationStrategyId {
     /// Applies the optimization strategy phase to the lowering.
     ///
-    /// Assumes `lowered` is a a lowering of `function`.
+    /// Assumes `lowered` is a lowering of `function`.
     pub fn apply_strategy(
         self,
         db: &dyn LoweringGroup,
         function: ConcreteFunctionWithBodyId,
         lowered: &mut FlatLowered,
     ) -> Maybe<()> {
-        for phase in db.lookup_intern_strategy(self).0 {
+        for phase in self.lookup_intern(db).0 {
             phase.apply(db, function, lowered)?;
         }
 
@@ -92,7 +96,7 @@ impl OptimizationStrategyId {
 
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
 pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
-    db.intern_strategy(OptimizationStrategy(vec![
+    OptimizationStrategy(vec![
         OptimizationPhase::ApplyInlining,
         OptimizationPhase::ReturnOptimization,
         OptimizationPhase::ReorganizeBlocks,
@@ -112,16 +116,19 @@ pub fn baseline_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStr
         OptimizationPhase::CancelOps,
         OptimizationPhase::ReorderStatements,
         OptimizationPhase::ReorganizeBlocks,
-    ]))
+    ])
+    .intern(db)
 }
 
 /// Query implementation of [crate::db::LoweringGroup::final_optimization_strategy].
 pub fn final_optimization_strategy(db: &dyn LoweringGroup) -> OptimizationStrategyId {
-    db.intern_strategy(OptimizationStrategy(vec![
+    OptimizationStrategy(vec![
+        OptimizationPhase::GasRedeposit,
         OptimizationPhase::LowerImplicits,
         OptimizationPhase::ReorganizeBlocks,
         OptimizationPhase::CancelOps,
         OptimizationPhase::ReorderStatements,
         OptimizationPhase::ReorganizeBlocks,
-    ]))
+    ])
+    .intern(db)
 }

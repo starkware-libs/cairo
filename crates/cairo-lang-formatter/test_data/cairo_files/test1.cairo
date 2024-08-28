@@ -49,6 +49,7 @@ fn fib(a: Box::<felt252>, b: Box::<felt252>, n: Box::<felt252>) -> Box::<felt252
             )
         },
     }
+// A trailing comment.
 }
 
 fn if_let_test() {

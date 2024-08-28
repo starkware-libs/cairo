@@ -11,10 +11,7 @@ export async function isScarbProject(): Promise<boolean> {
   )
     return true;
   const editor = vscode.window.activeTextEditor;
-  return (
-    !!editor &&
-    (await isScarbProjectAt(path.dirname(editor.document.uri.path), depth))
-  );
+  return !!editor && (await isScarbProjectAt(path.dirname(editor.document.uri.path), depth));
 }
 
 async function isScarbProjectAt(path: string, depth: number): Promise<boolean> {

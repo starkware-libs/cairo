@@ -104,3 +104,13 @@ impl Variable {
         }
     }
 }
+impl From<LocalVariable> for Variable {
+    fn from(var: LocalVariable) -> Self {
+        Self::Local(var)
+    }
+}
+impl From<Parameter> for Variable {
+    fn from(param: Parameter) -> Self {
+        Self::Param(param)
+    }
+}

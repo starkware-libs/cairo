@@ -4,13 +4,13 @@
 
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::corelib::{get_core_trait, unit_ty};
+use cairo_lang_semantic::corelib::{core_module, get_ty_by_name, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::ConcreteFunction;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
-use semantic::corelib::{core_module, get_ty_by_name};
+use semantic::corelib::{destruct_trait_fn, panic_destruct_trait_fn};
 use semantic::{TypeId, TypeLongId};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
@@ -31,7 +31,7 @@ pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
 enum AddDestructFlowType {
     /// Plain destruct
     Plain,
-    /// Panic destruct following the creation of a panic variable.
+    /// Panic destruct following the creation of a panic variable (or return of a panic variable)
     PanicVar,
     /// Panic destruct following a match of PanicResult.
     PanicPostMatch,
@@ -43,6 +43,7 @@ pub struct DestructAdder<'a> {
     lowered: &'a FlatLowered,
     destructions: Vec<DestructionEntry>,
     panic_ty: TypeId,
+    is_panic_destruct_fn: bool,
 }
 
 /// A destructor call that needs to be added.
@@ -100,7 +101,7 @@ impl<'a> DestructAdder<'a> {
         if let [err_var] = introduced_vars[..] {
             let var = &self.lowered.variables[err_var];
 
-            let long_ty = self.db.lookup_intern_type(var.ty);
+            let long_ty = var.ty.lookup_intern(self.db);
             let TypeLongId::Tuple(tys) = long_ty else {
                 return;
             };
@@ -253,10 +254,16 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
 
     fn info_from_return(
         &mut self,
-        _statement_location: StatementLocation,
+        statement_location: StatementLocation,
         vars: &[VarUsage],
     ) -> Self::Info {
         let mut info = DestructAdderDemand::default();
+        // Allow panic destructors to be called inside panic destruct functions.
+        if self.is_panic_destruct_fn {
+            info.aux =
+                PanicState::EndsWithPanic(vec![PanicLocation::PanicVar { statement_location }]);
+        }
+
         info.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
         info
     }
@@ -275,7 +282,18 @@ pub fn add_destructs(
     if lowered.blocks.is_empty() {
         return;
     }
-    let checker = DestructAdder { db, lowered, destructions: vec![], panic_ty: panic_ty(db) };
+
+    let Ok(is_panic_destruct_fn) = function_id.is_panic_destruct_fn(db) else {
+        return;
+    };
+
+    let checker = DestructAdder {
+        db,
+        lowered,
+        destructions: vec![],
+        panic_ty: panic_ty(db.upcast()),
+        is_panic_destruct_fn,
+    };
     let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();
     root_demand.variables_introduced(
@@ -292,14 +310,8 @@ pub fn add_destructs(
     )
     .unwrap();
 
-    let destruct_trait_id = get_core_trait(db.upcast(), "Destruct".into());
-    let plain_trait_function =
-        db.trait_function_by_name(destruct_trait_id, "destruct".into()).unwrap().unwrap();
-    let panic_destruct_trait_id = get_core_trait(db.upcast(), "PanicDestruct".into());
-    let panic_trait_function = db
-        .trait_function_by_name(panic_destruct_trait_id, "panic_destruct".into())
-        .unwrap()
-        .unwrap();
+    let plain_trait_function = destruct_trait_fn(db.upcast());
+    let panic_trait_function = panic_destruct_trait_fn(db.upcast());
 
     // Add destructions.
     let stable_ptr = function_id
@@ -309,7 +321,8 @@ pub fn add_destructs(
 
     let location = variables.get_location(stable_ptr);
 
-    let DestructAdder { db: _, lowered: _, destructions, panic_ty } = analysis.analyzer;
+    let DestructAdder { db: _, lowered: _, destructions, panic_ty, is_panic_destruct_fn: _ } =
+        analysis.analyzer;
 
     // We need to add the destructions in reverse order, so that they won't interfere with each
     // other.
@@ -344,7 +357,7 @@ pub fn add_destructs(
 
             match destruction {
                 DestructionEntry::Plain(plain_destruct) => {
-                    let semantic_function = db.intern_function(semantic::FunctionLongId {
+                    let semantic_function = semantic::FunctionLongId {
                         function: ConcreteFunction {
                             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
                                 impl_id: plain_destruct.impl_id,
@@ -352,7 +365,8 @@ pub fn add_destructs(
                             }),
                             generic_args: vec![],
                         },
-                    });
+                    }
+                    .intern(db);
 
                     stmts.push(StatementCall {
                         function: semantic_function.lowered(db),
@@ -364,7 +378,7 @@ pub fn add_destructs(
                 }
 
                 DestructionEntry::Panic(panic_destruct) => {
-                    let semantic_function = db.intern_function(semantic::FunctionLongId {
+                    let semantic_function = semantic::FunctionLongId {
                         function: ConcreteFunction {
                             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId {
                                 impl_id: panic_destruct.impl_id,
@@ -372,15 +386,16 @@ pub fn add_destructs(
                             }),
                             generic_args: vec![],
                         },
-                    });
+                    }
+                    .intern(db);
 
                     let new_panic_var = variables.new_var(VarRequest { ty: panic_ty, location });
 
                     stmts.push(StatementCall {
                         function: semantic_function.lowered(db),
                         inputs: vec![
-                            VarUsage { var_id: last_panic_var, location },
                             VarUsage { var_id: panic_destruct.var_id, location },
+                            VarUsage { var_id: last_panic_var, location },
                         ],
                         with_coupon: false,
                         outputs: vec![new_panic_var, output_var],
@@ -410,7 +425,7 @@ pub fn add_destructs(
                 let new_tuple_var = variables.new_var(VarRequest { ty: tuple_ty, location });
                 let orig_tuple_var = *tuple_var;
                 *tuple_var = new_tuple_var;
-                let long_ty = db.lookup_intern_type(tuple_ty);
+                let long_ty = tuple_ty.lookup_intern(db);
                 let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
 
                 let vars = tys
@@ -446,19 +461,30 @@ pub fn add_destructs(
             }
             AddDestructFlowType::PanicVar => {
                 let block = &mut lowered.blocks[BlockId(block_id)];
-                let panic_var = &mut extract_matches!(
-                    &mut block.statements[statement_idx],
-                    Statement::StructConstruct
-                )
-                .output;
-                *stmts.last_mut().unwrap().outputs.get_mut(0).unwrap() = *panic_var;
-                *panic_var = first_panic_var;
 
-                let next_statement_idx = statement_idx + 1;
-                block.statements.splice(
-                    next_statement_idx..next_statement_idx,
-                    stmts.into_iter().map(Statement::Call),
-                );
+                let idx = match block.statements.get_mut(statement_idx) {
+                    Some(stmt) => {
+                        let panic_var =
+                            &mut extract_matches!(stmt, Statement::StructConstruct).output;
+                        *stmts.last_mut().unwrap().outputs.get_mut(0).unwrap() = *panic_var;
+                        *panic_var = first_panic_var;
+
+                        statement_idx + 1
+                    }
+                    None => {
+                        assert_eq!(statement_idx, block.statements.len());
+                        let panic_var = match &mut block.end {
+                            FlatBlockEnd::Return(vars, _) => &mut vars[0].var_id,
+                            _ => unreachable!("Expected a return statement."),
+                        };
+
+                        stmts.first_mut().unwrap().inputs.get_mut(1).unwrap().var_id = *panic_var;
+                        *panic_var = last_panic_var;
+                        statement_idx
+                    }
+                };
+
+                block.statements.splice(idx..idx, stmts.into_iter().map(Statement::Call));
             }
         };
     }

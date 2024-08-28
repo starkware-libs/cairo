@@ -2,6 +2,8 @@
 //! secp256k1 curve.
 
 use core::option::OptionTrait;
+use core::gas::GasBuiltin;
+#[allow(unused_imports)]
 use starknet::{
     secp256_trait::{
         Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature
@@ -9,6 +11,7 @@ use starknet::{
     SyscallResult, SyscallResultTrait
 };
 
+/// A point on the Secp256k1 curve.
 #[derive(Copy, Drop)]
 pub extern type Secp256k1Point;
 

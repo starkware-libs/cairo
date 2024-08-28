@@ -124,6 +124,9 @@ pub enum CoreHint {
     TestLessThan { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
     TestLessThanOrEqual { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
+    /// Variant of TestLessThanOrEqual that compares addresses.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 28))]
+    TestLessThanOrEqualAddress { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
     /// Multiplies two 128-bit integers and returns two 128-bit integers: the high and low parts of
     /// the product.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 3))]
@@ -281,6 +284,14 @@ pub enum CoreHint {
         t_or_k0: CellRef,
         t_or_k1: CellRef,
     },
+
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 29))]
+    EvalCircuit {
+        n_add_mods: ResOperand,
+        add_mod_builtin: ResOperand,
+        n_mul_mods: ResOperand,
+        mul_mod_builtin: ResOperand,
+    },
 }
 
 /// Represents a deprecated hint which is kept for backward compatibility of previously deployed
@@ -387,58 +398,52 @@ impl PythonicHint for CoreHint {
             CoreHint::AllocSegment { dst } => format!("memory{dst} = segments.add()"),
             CoreHint::AllocFelt252Dict { segment_arena_ptr } => {
                 let segment_arena_ptr = ResOperandAsAddressFormatter(segment_arena_ptr);
-                formatdoc!(
-                    "
+                formatdoc! {"
 
-                        if '__dict_manager' not in globals():
-                            from starkware.cairo.common.dict import DictManager
-                            __dict_manager = DictManager()
+                    if '__dict_manager' not in globals():
+                        from starkware.cairo.common.dict import DictManager
+                        __dict_manager = DictManager()
 
-                        if '__segment_index_to_arena_index' not in globals():
-                            # A map from the relocatable value segment index to the index in the
-                            # arena.
-                            __segment_index_to_arena_index = {{}}
+                    if '__segment_index_to_arena_index' not in globals():
+                        # A map from the relocatable value segment index to the index in the
+                        # arena.
+                        __segment_index_to_arena_index = {{}}
 
-                        # {segment_arena_ptr} is the address of the next SegmentArenaBuiltin.
-                        # memory[{segment_arena_ptr} - 2] is the number of allocated segments.
-                        index = memory[{segment_arena_ptr} - 2]
+                    # {segment_arena_ptr} is the address of the next SegmentArenaBuiltin.
+                    # memory[{segment_arena_ptr} - 2] is the number of allocated segments.
+                    index = memory[{segment_arena_ptr} - 2]
 
-                        segment_start = __dict_manager.new_default_dict(
-                            segments, 0, temp_segment=index > 0
-                        )
+                    segment_start = __dict_manager.new_default_dict(
+                        segments, 0, temp_segment=index > 0
+                    )
 
-                        # Update '__segment_index_to_arena_index'.
-                        __segment_index_to_arena_index[segment_start.segment_index] = index
+                    # Update '__segment_index_to_arena_index'.
+                    __segment_index_to_arena_index[segment_start.segment_index] = index
 
-                        # Update 'SegmentInfo::start'.
-                        # memory[{segment_arena_ptr} - 3] is the address of the segment arena infos
-                        # segment. index * 3 is added to get the address of the new SegmentInfo.
-                        memory[memory[{segment_arena_ptr} - 3] + index * 3] = segment_start
-                "
-                )
+                    # Update 'SegmentInfo::start'.
+                    # memory[{segment_arena_ptr} - 3] is the address of the segment arena infos
+                    # segment. index * 3 is added to get the address of the new SegmentInfo.
+                    memory[memory[{segment_arena_ptr} - 3] + index * 3] = segment_start
+                "}
             }
             CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
                 let (dict_ptr, key) =
                     (ResOperandAsAddressFormatter(dict_ptr), ResOperandAsIntegerFormatter(key));
-                formatdoc!(
-                    "
+                formatdoc! {"
 
                     dict_tracker = __dict_manager.get_tracker({dict_ptr})
                     dict_tracker.current_ptr += 3
                     memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
-                    "
-                )
+                "}
             }
             CoreHint::Felt252DictEntryUpdate { dict_ptr, value } => {
                 let (dict_ptr, value) =
                     (ResOperandAsAddressFormatter(dict_ptr), ResOperandAsIntegerFormatter(value));
-                formatdoc!(
-                    "
+                formatdoc! {"
 
                     dict_tracker = __dict_manager.get_tracker({dict_ptr})
                     dict_tracker.data[memory[{dict_ptr} - 3]] = {value}
-                    "
-                )
+                "}
             }
             CoreHint::TestLessThan { lhs, rhs, dst } => {
                 format!(
@@ -451,6 +456,11 @@ impl PythonicHint for CoreHint {
                 "memory{dst} = {} <= {}",
                 ResOperandAsIntegerFormatter(lhs),
                 ResOperandAsIntegerFormatter(rhs)
+            ),
+            CoreHint::TestLessThanOrEqualAddress { lhs, rhs, dst } => format!(
+                "memory{dst} = {} <= {}",
+                ResOperandAsAddressFormatter(lhs),
+                ResOperandAsAddressFormatter(rhs)
             ),
             CoreHint::WideMul128 { lhs, rhs, high, low } => format!(
                 "(memory{high}, memory{low}) = divmod({} * {}, 2**128)",
@@ -478,18 +488,16 @@ impl PythonicHint for CoreHint {
                     ResOperandAsIntegerFormatter(divisor0),
                     ResOperandAsIntegerFormatter(divisor1),
                 );
-                formatdoc!(
-                    "
+                formatdoc! {"
 
-                        dividend = {dividend0} + {dividend1} * 2**128
-                        divisor = {divisor0} + {divisor1} * 2**128
-                        quotient, remainder = divmod(dividend, divisor)
-                        memory{quotient0} = quotient & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-                        memory{quotient1} = quotient >> 128
-                        memory{remainder0} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-                        memory{remainder1} = remainder >> 128
-                    "
-                )
+                    dividend = {dividend0} + {dividend1} * 2**128
+                    divisor = {divisor0} + {divisor1} * 2**128
+                    quotient, remainder = divmod(dividend, divisor)
+                    memory{quotient0} = quotient & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                    memory{quotient1} = quotient >> 128
+                    memory{remainder0} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                    memory{remainder1} = remainder >> 128
+                "}
             }
             CoreHint::Uint512DivModByUint256 {
                 dividend0,
@@ -508,8 +516,7 @@ impl PythonicHint for CoreHint {
                 let [dividend0, dividend1, dividend2, dividend3, divisor0, divisor1] =
                     [dividend0, dividend1, dividend2, dividend3, divisor0, divisor1]
                         .map(ResOperandAsIntegerFormatter);
-                formatdoc!(
-                    "
+                formatdoc! {"
 
                     dividend = {dividend0} + {dividend1} * 2**128 + {dividend2} * 2**256 + \
                      {dividend3} * 2**384
@@ -521,18 +528,15 @@ impl PythonicHint for CoreHint {
                     memory{quotient3} = quotient >> 384
                     memory{remainder0} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
                     memory{remainder1} = remainder >> 128
-                "
-                )
+                "}
             }
             CoreHint::SquareRoot { value, dst } => {
-                formatdoc!(
-                    "
+                let value = ResOperandAsIntegerFormatter(value);
+                formatdoc! {"
 
-                        import math
-                        memory{dst} = math.isqrt({})
-                    ",
-                    ResOperandAsIntegerFormatter(value)
-                )
+                    import math
+                    memory{dst} = math.isqrt({value})
+                "}
             }
             CoreHint::Uint256SquareRoot {
                 value_low,
@@ -547,20 +551,18 @@ impl PythonicHint for CoreHint {
                     ResOperandAsIntegerFormatter(value_low),
                     ResOperandAsIntegerFormatter(value_high),
                 );
-                formatdoc!(
-                    "
+                formatdoc! {"
 
-                        import math;
-                        value = {value_low} + {value_high} * 2**128
-                        root = math.isqrt(value)
-                        remainder = value - root ** 2
-                        memory{sqrt0} = root & 0xFFFFFFFFFFFFFFFF
-                        memory{sqrt1} = root >> 64
-                        memory{remainder_low} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-                        memory{remainder_high} = remainder >> 128
-                        memory{sqrt_mul_2_minus_remainder_ge_u128} = root * 2 - remainder >= 2**128
-                    "
-                )
+                    import math;
+                    value = {value_low} + {value_high} * 2**128
+                    root = math.isqrt(value)
+                    remainder = value - root ** 2
+                    memory{sqrt0} = root & 0xFFFFFFFFFFFFFFFF
+                    memory{sqrt1} = root >> 64
+                    memory{remainder_low} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                    memory{remainder_high} = remainder >> 128
+                    memory{sqrt_mul_2_minus_remainder_ge_u128} = root * 2 - remainder >= 2**128
+                "}
             }
             CoreHint::LinearSplit { value, scalar, max_x, x, y } => {
                 let (value, scalar, max_x) = (
@@ -568,82 +570,70 @@ impl PythonicHint for CoreHint {
                     ResOperandAsIntegerFormatter(scalar),
                     ResOperandAsIntegerFormatter(max_x),
                 );
-                formatdoc!(
-                    "
+                formatdoc! {"
 
-                        (value, scalar) = ({value}, {scalar})
-                        x = min(value // scalar, {max_x})
-                        y = value - x * scalar
-                        memory{x} = x
-                        memory{y} = y
-                    "
-                )
+                    (value, scalar) = ({value}, {scalar})
+                    x = min(value // scalar, {max_x})
+                    y = value - x * scalar
+                    memory{x} = x
+                    memory{y} = y
+                "}
             }
             CoreHint::RandomEcPoint { x, y } => {
-                formatdoc!(
-                    "
+                formatdoc! {"
 
-                        from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
-                        from starkware.python.math_utils import random_ec_point
-                        (memory{x}, memory{y}) = random_ec_point(FIELD_PRIME, ALPHA, BETA)
-                    "
-                )
+                    from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
+                    from starkware.python.math_utils import random_ec_point
+                    (memory{x}, memory{y}) = random_ec_point(FIELD_PRIME, ALPHA, BETA)
+                "}
             }
             CoreHint::FieldSqrt { val, sqrt } => {
-                formatdoc!(
-                    "
+                let val = ResOperandAsIntegerFormatter(val);
+                formatdoc! {"
 
-                        from starkware.crypto.signature.signature import FIELD_PRIME
-                        from starkware.python.math_utils import is_quad_residue, sqrt
+                    from starkware.crypto.signature.signature import FIELD_PRIME
+                    from starkware.python.math_utils import is_quad_residue, sqrt
 
-                        val = {}
-                        if is_quad_residue(val, FIELD_PRIME):
-                            memory{sqrt} = sqrt(val, FIELD_PRIME)
-                        else:
-                            memory{sqrt} = sqrt(val * 3, FIELD_PRIME)
-                        ",
-                    ResOperandAsIntegerFormatter(val)
-                )
+                    val = {val}
+                    if is_quad_residue(val, FIELD_PRIME):
+                        memory{sqrt} = sqrt(val, FIELD_PRIME)
+                    else:
+                        memory{sqrt} = sqrt(val * 3, FIELD_PRIME)
+                "}
             }
-            CoreHint::GetCurrentAccessIndex { range_check_ptr } => formatdoc!(
-                "
+            CoreHint::GetCurrentAccessIndex { range_check_ptr } => {
+                let rc = ResOperandAsAddressFormatter(range_check_ptr);
+                formatdoc! {"
 
                     current_access_indices = sorted(access_indices[key])[::-1]
                     current_access_index = current_access_indices.pop()
-                    memory[{}] = current_access_index
-                ",
-                ResOperandAsAddressFormatter(range_check_ptr)
-            ),
+                    memory[{rc}] = current_access_index
+                "}
+            }
             CoreHint::ShouldSkipSquashLoop { should_skip_loop } => {
                 format!("memory{should_skip_loop} = 0 if current_access_indices else 1")
             }
-            CoreHint::GetCurrentAccessDelta { index_delta_minus1 } => formatdoc!(
-                "
+            CoreHint::GetCurrentAccessDelta { index_delta_minus1 } => formatdoc! {"
 
-                    new_access_index = current_access_indices.pop()
-                    memory{index_delta_minus1} = new_access_index - current_access_index - 1
-                    current_access_index = new_access_index
-                "
-            ),
+                new_access_index = current_access_indices.pop()
+                memory{index_delta_minus1} = new_access_index - current_access_index - 1
+                current_access_index = new_access_index
+            "},
             CoreHint::ShouldContinueSquashLoop { should_continue } => {
                 format!("memory{should_continue} = 1 if current_access_indices else 0")
             }
-            CoreHint::GetNextDictKey { next_key } => formatdoc!(
-                "
-                    assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
-                    memory{next_key} = key = keys.pop()
-                "
-            ),
+            CoreHint::GetNextDictKey { next_key } => formatdoc! {"
+                assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
+                memory{next_key} = key = keys.pop()
+            "},
             CoreHint::GetSegmentArenaIndex { dict_end_ptr, dict_index } => {
                 let dict_end_ptr = ResOperandAsAddressFormatter(dict_end_ptr);
-                formatdoc!(
-                    "
+                formatdoc! {"
 
                     memory{dict_index} = __segment_index_to_arena_index[
                         {dict_end_ptr}.segment_index
                     ]
-                "
-                )
+                "}
             }
             CoreHint::InitSquashData {
                 dict_accesses,
@@ -657,8 +647,7 @@ impl PythonicHint for CoreHint {
                     ResOperandAsIntegerFormatter(ptr_diff),
                     ResOperandAsIntegerFormatter(n_accesses),
                 );
-                formatdoc!(
-                    "
+                formatdoc! {"
 
                     dict_access_size = 3
                     address = {dict_accesses}
@@ -679,8 +668,7 @@ impl PythonicHint for CoreHint {
                     # Are the keys used bigger than range_check bound.
                     memory{big_keys} = 1 if keys[0] >= range_check_builtin.bound else 0
                     memory{first_key} = key = keys.pop()
-                "
-                )
+                "}
             }
             CoreHint::AssertLeFindSmallArcs { range_check_ptr, a, b } => {
                 let (range_check_ptr, a, b) = (
@@ -688,8 +676,7 @@ impl PythonicHint for CoreHint {
                     ResOperandAsIntegerFormatter(a),
                     ResOperandAsIntegerFormatter(b),
                 );
-                formatdoc!(
-                    "
+                formatdoc! {"
 
                     import itertools
 
@@ -711,8 +698,7 @@ impl PythonicHint for CoreHint {
                         divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))
                     memory[{range_check_ptr} + 3], memory[{range_check_ptr} + 2] = (
                         divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))
-                "
-                )
+                "}
             }
             CoreHint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
                 format!("memory{skip_exclude_a_flag} = 1 if excluded != 0 else 0",)
@@ -720,29 +706,26 @@ impl PythonicHint for CoreHint {
             CoreHint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
                 format!("memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0",)
             }
-            CoreHint::DebugPrint { start, end } => formatdoc!(
-                "
+            CoreHint::DebugPrint { start, end } => {
+                let [start, end] = [start, end].map(ResOperandAsAddressFormatter);
+                formatdoc! {"
 
-                    curr = {}
-                    end = {}
+                    curr = {start}
+                    end = {end}
                     while curr != end:
                         print(hex(memory[curr]))
                         curr += 1
-                ",
-                ResOperandAsAddressFormatter(start),
-                ResOperandAsAddressFormatter(end),
-            ),
+                "}
+            }
             CoreHint::AllocConstantSize { size, dst } => {
-                formatdoc!(
-                    "
+                let size = ResOperandAsIntegerFormatter(size);
+                formatdoc! {"
 
-                        if '__boxed_segment' not in globals():
-                            __boxed_segment = segments.add()
-                        memory{dst} = __boxed_segment
-                        __boxed_segment += {}
-                    ",
-                    ResOperandAsIntegerFormatter(size)
-                )
+                    if '__boxed_segment' not in globals():
+                        __boxed_segment = segments.add()
+                    memory{dst} = __boxed_segment
+                    __boxed_segment += {size}
+                "}
             }
             CoreHint::U256InvModN {
                 b0,
@@ -757,43 +740,57 @@ impl PythonicHint for CoreHint {
                 t_or_k1,
             } => {
                 let [b0, b1, n0, n1] = [b0, b1, n0, n1].map(ResOperandAsIntegerFormatter);
-                formatdoc!(
-                    "
+                formatdoc! {"
 
-                        from starkware.python.math_utils import igcdex
+                    from starkware.python.math_utils import igcdex
 
-                        b = {b0} + ({b1} << 128)
-                        n = {n0} + ({n1} << 128)
+                    b = {b0} + ({b1} << 128)
+                    n = {n0} + ({n1} << 128)
 
-                        (_, r, g) = igcdex(n, b)
-                        if n == 1:
-                            memory{g0_or_no_inv} = 1
-                            memory{g1_option} = 0
-                            memory{s_or_r0} = {b0}
-                            memory{s_or_r1} = {b1}
-                            memory{t_or_k0} = 1
-                            memory{t_or_k1} = 0
-                        elif g != 1:
-                            if g % 2 == 0:
-                                g = 2
-                            s = b // g
-                            t = n // g
-                            memory{g0_or_no_inv} = g & 0xffffffffffffffffffffffffffffffff
-                            memory{g1_option} = g >> 128
-                            memory{s_or_r0} = s & 0xffffffffffffffffffffffffffffffff
-                            memory{s_or_r1} = s >> 128
-                            memory{t_or_k0} = t & 0xffffffffffffffffffffffffffffffff
-                            memory{t_or_k1} = t >> 128
-                        else:
-                            r %= n
-                            k = (r * b - 1) // n
-                            memory{g0_or_no_inv} = 0
-                            memory{s_or_r0} = r & 0xffffffffffffffffffffffffffffffff
-                            memory{s_or_r1} = r >> 128
-                            memory{t_or_k0} = k & 0xffffffffffffffffffffffffffffffff
-                            memory{t_or_k1} = k >> 128
-                    "
+                    (_, r, g) = igcdex(n, b)
+                    if n == 1:
+                        memory{g0_or_no_inv} = 1
+                        memory{g1_option} = 0
+                        memory{s_or_r0} = {b0}
+                        memory{s_or_r1} = {b1}
+                        memory{t_or_k0} = 1
+                        memory{t_or_k1} = 0
+                    elif g != 1:
+                        if g % 2 == 0:
+                            g = 2
+                        s = b // g
+                        t = n // g
+                        memory{g0_or_no_inv} = g & 0xffffffffffffffffffffffffffffffff
+                        memory{g1_option} = g >> 128
+                        memory{s_or_r0} = s & 0xffffffffffffffffffffffffffffffff
+                        memory{s_or_r1} = s >> 128
+                        memory{t_or_k0} = t & 0xffffffffffffffffffffffffffffffff
+                        memory{t_or_k1} = t >> 128
+                    else:
+                        r %= n
+                        k = (r * b - 1) // n
+                        memory{g0_or_no_inv} = 0
+                        memory{s_or_r0} = r & 0xffffffffffffffffffffffffffffffff
+                        memory{s_or_r1} = r >> 128
+                        memory{t_or_k0} = k & 0xffffffffffffffffffffffffffffffff
+                        memory{t_or_k1} = k >> 128
+                "}
+            }
+            CoreHint::EvalCircuit { n_add_mods, add_mod_builtin, n_mul_mods, mul_mod_builtin } => {
+                let n_add_mods = ResOperandAsIntegerFormatter(n_add_mods);
+                let add_mod_builtin = ResOperandAsAddressFormatter(add_mod_builtin);
+                let n_mul_mods = ResOperandAsIntegerFormatter(n_mul_mods);
+                let mul_mod_builtin = ResOperandAsAddressFormatter(mul_mod_builtin);
+                formatdoc! {"
+
+                from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner
+
+                ModBuiltinRunner.fill_memory(
+                        memory=memory,
+                        add_mod=({add_mod_builtin}, builtin_runners[\"add_mod_builtin\"], {n_add_mods}),
+                        mul_mod=({mul_mod_builtin}, builtin_runners[\"mul_mod_builtin\"], {n_mul_mods}),
                 )
+                "}
             }
         }
     }

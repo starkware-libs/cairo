@@ -123,7 +123,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test inlining a function where the the last block does not return.
+//! > Test inlining a function where the last block does not return.
 
 //! > test_runner_name
 test_function_inlining

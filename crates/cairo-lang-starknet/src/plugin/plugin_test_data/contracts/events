@@ -65,15 +65,14 @@ enum MyEventEnum {
     D: NestedEventEnum,
 }
 
+lib.cairo:1:1
+#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
+^*****************************************************************^
 impls:
 
 impl APartialEq of core::traits::PartialEq::<A> {
     fn eq(lhs: @A, rhs: @A) -> bool {
         lhs.x == rhs.x && lhs.data == rhs.data
-    }
-    #[inline(always)]
-    fn ne(lhs: @A, rhs: @A) -> bool {
-        !(lhs == rhs)
     }
 }
 impl ADrop of core::traits::Drop::<A>;
@@ -91,6 +90,9 @@ impl ASerde of core::serde::Serde::<A> {
 }
 
 
+lib.cairo:1:1
+#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
+^*****************************************************************^
 starknet_derive:
 
 impl AIsEvent of starknet::Event<A> {
@@ -155,16 +157,66 @@ impl StoreA of starknet::Store::<A> {
     }
 }
 
+#[derive(Drop, Copy)]
+pub struct ASubPointers {
+    pub x: starknet::storage::StoragePointer<felt252>,
+    pub data: starknet::storage::StoragePointer<usize>,
+}
+impl ASubPointersImpl of starknet::storage::SubPointers<A> {
+    type SubPointersType = ASubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<A>) -> ASubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __x_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<felt252>::size();
+        let __data_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                ASubPointers {
+           x: __x_value__,
+           data: __data_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+pub struct ASubPointersMut {
+    pub x: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+    pub data: starknet::storage::StoragePointer<starknet::storage::Mutable::<usize>>,
+}
+impl ASubPointersMutImpl of starknet::storage::SubPointersMut<A> {
+    type SubPointersType = ASubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<A>>) -> ASubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __x_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+        current_offset = current_offset + starknet::Store::<felt252>::size();
+        let __data_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                ASubPointersMut {
+           x: __x_value__,
+           data: __data_value__,
+        }
+    }
+}
 
+
+lib.cairo:7:1
+
+^
 impls:
 
 impl BPartialEq of core::traits::PartialEq::<B> {
     fn eq(lhs: @B, rhs: @B) -> bool {
         lhs.x == rhs.x
-    }
-    #[inline(always)]
-    fn ne(lhs: @B, rhs: @B) -> bool {
-        !(lhs == rhs)
     }
 }
 impl BDrop of core::traits::Drop::<B>;
@@ -180,6 +232,9 @@ impl BSerde of core::serde::Serde::<B> {
 }
 
 
+lib.cairo:8:10
+#[derive(starknet::Event, PartialEq, Drop, Serde)]
+         ^*************^
 starknet_derive:
 
 impl BIsEvent of starknet::Event<B> {
@@ -199,6 +254,9 @@ impl BIsEvent of starknet::Event<B> {
 }
 
 
+lib.cairo:12:1
+
+^
 impls:
 
 impl NestedEventEnumPartialEq of core::traits::PartialEq::<NestedEventEnum> {
@@ -209,14 +267,13 @@ impl NestedEventEnumPartialEq of core::traits::PartialEq::<NestedEventEnum> {
             },
         }
     }
-    #[inline(always)]
-    fn ne(lhs: @NestedEventEnum, rhs: @NestedEventEnum) -> bool {
-        !(lhs == rhs)
-    }
 }
 impl NestedEventEnumDrop of core::traits::Drop::<NestedEventEnum>;
 
 
+lib.cairo:14:10
+#[derive(starknet::Event, PartialEq, Drop)]
+         ^*************^
 starknet_derive:
 
 impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
@@ -253,6 +310,9 @@ impl NestedEventEnumBIntoEvent of Into<B, NestedEventEnum> {
 
 
 
+lib.cairo:18:1
+
+^
 impls:
 
 impl MyEventEnumPartialEq of core::traits::PartialEq::<MyEventEnum> {
@@ -284,14 +344,13 @@ impl MyEventEnumPartialEq of core::traits::PartialEq::<MyEventEnum> {
             },
         }
     }
-    #[inline(always)]
-    fn ne(lhs: @MyEventEnum, rhs: @MyEventEnum) -> bool {
-        !(lhs == rhs)
-    }
 }
 impl MyEventEnumDrop of core::traits::Drop::<MyEventEnum>;
 
 
+lib.cairo:20:10
+#[derive(starknet::Event, PartialEq, Drop)]
+         ^*************^
 starknet_derive:
 
 impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
@@ -382,5 +441,24 @@ impl MyEventEnumDIntoEvent of Into<NestedEventEnum, MyEventEnum> {
         MyEventEnum::D(self)
     }
 }
+
+
+
+lib.cairo:1:27
+#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
+                          ^*************^
+impls:
+
+impl ASubPointersDrop of core::traits::Drop::<ASubPointers>;
+impl ASubPointersCopy of core::traits::Copy::<ASubPointers>;
+
+
+lib.cairo:1:1
+#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
+^*****************************************************************^
+impls:
+
+impl ASubPointersMutDrop of core::traits::Drop::<ASubPointersMut>;
+impl ASubPointersMutCopy of core::traits::Copy::<ASubPointersMut>;
 
 //! > expected_diagnostics

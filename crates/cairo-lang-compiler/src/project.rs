@@ -1,12 +1,12 @@
 use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::path::Path;
 
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroupEx};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 pub use cairo_lang_project::*;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_utils::Intern;
 use smol_str::SmolStr;
 
 #[derive(thiserror::Error, Debug)]
@@ -42,7 +42,7 @@ pub fn setup_single_file_project(
     let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
     if file_stem == "lib" {
         let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
-        let crate_id = db.intern_crate(CrateLongId::Real(crate_name.into()));
+        let crate_id = CrateLongId::Real(crate_name.into()).intern(db);
         db.set_crate_config(
             crate_id,
             Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf()))),
@@ -50,7 +50,7 @@ pub fn setup_single_file_project(
         Ok(crate_id)
     } else {
         // If file_stem is not lib, create a fake lib file.
-        let crate_id = db.intern_crate(CrateLongId::Real(file_stem.into()));
+        let crate_id = CrateLongId::Real(file_stem.into()).intern(db);
         db.set_crate_config(
             crate_id,
             Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf()))),
@@ -59,7 +59,7 @@ pub fn setup_single_file_project(
         let module_id = ModuleId::CrateRoot(crate_id);
         let file_id = db.module_main_file(module_id).unwrap();
         db.as_files_group_mut()
-            .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
+            .override_file_content(file_id, Some(format!("mod {file_stem};").into()));
         Ok(crate_id)
     }
 }
@@ -67,11 +67,7 @@ pub fn setup_single_file_project(
 /// Updates the crate roots from a ProjectConfig object.
 pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: &ProjectConfig) {
     for (crate_name, directory_path) in config.content.crate_roots.iter() {
-        let mut path = PathBuf::from(&directory_path);
-        if path.is_relative() {
-            path = config.base_path.clone().join(path);
-        }
-        let root = Directory::Real(path);
+        let root = Directory::Real(config.absolute_crate_root(directory_path));
         update_crate_root(db, config, crate_name.clone(), root);
     }
 }
@@ -86,7 +82,7 @@ pub fn update_crate_root(
     root: Directory,
 ) {
     let crate_settings = config.content.crates_config.get(&crate_name);
-    let crate_id = db.intern_crate(CrateLongId::Real(crate_name));
+    let crate_id = CrateLongId::Real(crate_name).intern(db);
     db.set_crate_config(
         crate_id,
         Some(CrateConfiguration { root, settings: crate_settings.clone() }),
@@ -138,6 +134,6 @@ pub fn get_main_crate_ids_from_project(
         .content
         .crate_roots
         .keys()
-        .map(|crate_id| db.intern_crate(CrateLongId::Real(crate_id.clone())))
+        .map(|crate_id| CrateLongId::Real(crate_id.clone()).intern(db))
         .collect()
 }

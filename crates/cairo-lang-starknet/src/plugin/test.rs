@@ -1,15 +1,19 @@
 use std::path::PathBuf;
 
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
+use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_plugins::test_utils::expand_module_text;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{Intern, Upcast};
 
 use crate::test_utils::{SHARED_DB, SHARED_DB_WITH_CONTRACTS};
 
@@ -28,27 +32,32 @@ impl TestFileRunner for ExpandContractTestRunner {
         let (test_module, _semantic_diagnostics) = setup_test_module(&db, &cairo_code).split();
 
         let mut module_ids = vec![test_module.module_id];
-        module_ids.extend(
-            db.module_submodules_ids(test_module.module_id)
-                .unwrap_or_default()
-                .iter()
-                .copied()
-                .map(ModuleId::Submodule),
-        );
+        if let Ok(submodules_ids) = db.module_submodules_ids(test_module.module_id) {
+            module_ids.extend(submodules_ids.iter().copied().map(ModuleId::Submodule));
+        }
         let mut files = vec![];
-        for module_id in module_ids {
-            for file in db.module_files(module_id).unwrap_or_default().iter().copied() {
-                if files.contains(&file) {
-                    continue;
+        for module_files in
+            module_ids.into_iter().filter_map(|module_id| db.module_files(module_id).ok())
+        {
+            for file in module_files.iter().copied() {
+                if !files.contains(&file) {
+                    files.push(file);
                 }
-                files.push(file);
             }
         }
         let mut file_contents = vec![];
 
-        for file in files {
-            file_contents.push(format!("{}:", file.file_name(&db)));
-            file_contents.push(db.file_content(file).unwrap().as_ref().clone());
+        for file_id in files {
+            let content = db.file_content(file_id).unwrap();
+            let start = TextOffset::default();
+            let end = start.add_width(TextWidth::from_str(&content));
+            let content_location = DiagnosticLocation { file_id, span: TextSpan { start, end } };
+            let original_location = content_location.user_location(db.upcast());
+            let origin = (content_location != original_location)
+                .then(|| format!("{:?}\n", original_location.debug(db.upcast())))
+                .unwrap_or_default();
+            let file_name = file_id.file_name(&db);
+            file_contents.push(format!("{origin}{file_name}:\n\n{content}"));
         }
 
         let diagnostics = get_diagnostics_as_string(&db, &[test_module.crate_id]);
@@ -74,6 +83,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         embedded_impl: "embedded_impl",
         raw_output: "raw_output",
         storage: "storage",
+        new_storage_interface: "new_storage_interface",
         dispatcher: "dispatcher",
         user_defined_types: "user_defined_types",
         l1_handler: "l1_handler",
@@ -111,7 +121,7 @@ impl TestFileRunner for ExpandContractFromCrateTestRunner {
     ) -> TestRunnerResult {
         let db = SHARED_DB_WITH_CONTRACTS.lock().unwrap().snapshot();
         let contract_file_id =
-            db.intern_file(FileLongId::OnDisk(PathBuf::from(inputs["contract_file_name"].clone())));
+            FileLongId::OnDisk(PathBuf::from(inputs["contract_file_name"].clone())).intern(&db);
         let contract_module_ids = db.file_modules(contract_file_id).unwrap();
         let mut diagnostic_items = vec![];
         let result = contract_module_ids
@@ -138,11 +148,14 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     {
         hello_starknet: "hello_starknet",
         with_ownable: "with_ownable",
+        with_ownable_mini: "with_ownable_mini",
+        with_erc20_mini: "with_erc20_mini",
         with_erc20: "with_erc20",
         upgradable_counter: "upgradable_counter",
         ownable_erc20: "ownable_erc20",
         mintable: "mintable",
         multi_component: "multi_component",
+        storage_accesses: "storage_accesses",
     },
     ExpandContractFromCrateTestRunner
 );

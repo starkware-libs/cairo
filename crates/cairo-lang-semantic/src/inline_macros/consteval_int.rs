@@ -1,6 +1,7 @@
 use cairo_lang_defs::extract_macro_single_unnamed_arg;
 use cairo_lang_defs::plugin::{
-    InlineMacroExprPlugin, InlinePluginResult, NamedPlugin, PluginDiagnostic, PluginGeneratedFile,
+    InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
+    PluginGeneratedFile,
 };
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
@@ -18,6 +19,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         &self,
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
+        metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult {
         let constant_expression = extract_macro_single_unnamed_arg!(
             db,
@@ -26,6 +28,18 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         );
 
         let mut diagnostics = vec![];
+        const DEPRECATION_FEATURE: &str = r#""deprecated-consteval-int-macro""#;
+        if !metadata.allowed_features.contains(DEPRECATION_FEATURE) {
+            diagnostics.push(PluginDiagnostic::warning(
+                syntax.stable_ptr().untyped(),
+                format!(
+                    "Usage of deprecated macro `{}` with no `#[feature({DEPRECATION_FEATURE})]` \
+                     attribute. Note: Use simple calculations instead, as these are supported in \
+                     const context.",
+                    Self::NAME
+                ),
+            ));
+        }
         let code = compute_constant_expr(db, &constant_expression, &mut diagnostics);
         InlinePluginResult {
             code: code.map(|x| {

@@ -2,11 +2,12 @@ use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
-    self, FunctionWithBody, OptionReturnTypeClause, OptionWrappedGenericParamList,
+    self, FunctionWithBody, OptionReturnTypeClause, OptionTypeClause, OptionWrappedGenericParamList,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::extract_matches;
 use indoc::{formatdoc, indoc};
 use itertools::Itertools;
 
@@ -240,13 +241,17 @@ fn generate_entry_point_wrapper(
             "The first parameter of an entry point must be `self`.".into(),
         )]);
     };
-    let is_snapshot = matches!(first_param.type_clause(db).ty(db), ast::Expr::Unary(_));
+    let is_snapshot = matches!(
+        extract_matches!(first_param.type_clause(db), OptionTypeClause::TypeClause).ty(db),
+        ast::Expr::Unary(_)
+    );
     // TODO(spapini): Check modifiers and type.
 
     let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
     for (param_idx, param) in params {
         let arg_name = format!("__arg_{}", param.name(db).text(db));
-        let arg_type_ast = param.type_clause(db).ty(db);
+        let arg_type_ast =
+            extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause).ty(db);
         let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db);
 
         let is_ref = param.is_ref_param(db);
@@ -357,7 +362,7 @@ fn generate_entry_point_wrapper(
             ("implicit_precedence".to_string(), implicit_precedence),
         ]
         .into(),
-    ))
+    ).mapped(db, function))
 }
 
 /// Validates the first parameter of an L1 handler is `from_address: felt252` or `_from_address:
@@ -369,7 +374,11 @@ fn validate_l1_handler_first_parameter(
 ) {
     if let Some(first_param) = params.elements(db).get(1) {
         // Validate type
-        if !first_param.type_clause(db).ty(db).is_felt252(db) {
+
+        if !extract_matches!(first_param.type_clause(db), OptionTypeClause::TypeClause)
+            .ty(db)
+            .is_felt252(db)
+        {
             diagnostics.push(PluginDiagnostic::error(
                 first_param.stable_ptr().untyped(),
                 "The second parameter of an L1 handler must be of type `felt252`.".to_string(),

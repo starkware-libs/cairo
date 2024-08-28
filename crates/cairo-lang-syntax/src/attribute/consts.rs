@@ -19,6 +19,13 @@ pub const UNSTABLE_ATTR: &str = "unstable";
 /// unless the using crate is marked with their feature active.
 pub const DEPRECATED_ATTR: &str = "deprecated";
 
+/// An attribute to define an item as internal. Usage of these items will result in an error, unless
+/// the usage is marked with their feature active.
+pub const INTERNAL_ATTR: &str = "internal";
+
+/// An attribute to allow code that would normally result in a warning.
+pub const ALLOW_ATTR: &str = "allow";
+
 /// An attribute to allow usage of a feature under a statement.
 pub const FEATURE_ATTR: &str = "feature";
 

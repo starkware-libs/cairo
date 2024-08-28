@@ -139,7 +139,8 @@ impl NoGenericArgsGenericLibfunc for GetAvailableGasLibfunc {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CostTokenType {
     /// A compile time known cost unit. This is a linear combination of the runtime tokens
-    /// ([CostTokenType::Step], [CostTokenType::Hole], [CostTokenType::RangeCheck]).
+    /// ([CostTokenType::Step], [CostTokenType::Hole], [CostTokenType::RangeCheck],
+    /// [CostTokenType::RangeCheck96]).
     Const,
 
     // Runtime post-cost token types:
@@ -147,8 +148,10 @@ pub enum CostTokenType {
     Step,
     /// The number of memory holes (untouched memory addresses).
     Hole,
-    /// The number of range check builtins.
+    /// The number of 128-bit range check builtins.
     RangeCheck,
+    /// The number of 96-bit range check builtins.
+    RangeCheck96,
 
     // Pre-cost token types (builtins):
     /// One invocation of the pedersen hash function.
@@ -159,6 +162,10 @@ pub enum CostTokenType {
     Bitwise,
     /// One invocation of the EC op builtin.
     EcOp,
+    // Add mod builtin.
+    AddMod,
+    // mul mod builtin.
+    MulMod,
 }
 impl CostTokenType {
     /// Iterates over the pre-cost token types.
@@ -168,6 +175,8 @@ impl CostTokenType {
             CostTokenType::Poseidon,
             CostTokenType::Bitwise,
             CostTokenType::EcOp,
+            CostTokenType::AddMod,
+            CostTokenType::MulMod,
         ]
         .iter()
     }
@@ -186,10 +195,13 @@ impl CostTokenType {
             CostTokenType::Step => "step",
             CostTokenType::Hole => "hole",
             CostTokenType::RangeCheck => "range_check",
+            CostTokenType::RangeCheck96 => "range_check96",
             CostTokenType::Pedersen => "pedersen",
             CostTokenType::Bitwise => "bitwise",
             CostTokenType::EcOp => "ec_op",
             CostTokenType::Poseidon => "poseidon",
+            CostTokenType::AddMod => "add_mod",
+            CostTokenType::MulMod => "mul_mod",
         }
         .into()
     }
@@ -203,13 +215,18 @@ impl CostTokenType {
             CostTokenType::Const
             | CostTokenType::Step
             | CostTokenType::Hole
-            | CostTokenType::RangeCheck => {
+            | CostTokenType::RangeCheck
+            | CostTokenType::RangeCheck96 => {
                 panic!("offset_in_builtin_costs is not supported for '{}'.", self.camel_case_name())
             }
+
             CostTokenType::Pedersen => 0,
             CostTokenType::Bitwise => 1,
             CostTokenType::EcOp => 2,
             CostTokenType::Poseidon => 3,
+            // TODO(ilya): Update the actual table.
+            CostTokenType::AddMod => 4,
+            CostTokenType::MulMod => 5,
         }
     }
 }

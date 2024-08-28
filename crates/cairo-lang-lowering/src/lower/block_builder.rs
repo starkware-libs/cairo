@@ -1,22 +1,23 @@
 use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
+use cairo_lang_semantic::usage::{MemberPath, Usage};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::require;
+use cairo_lang_utils::{require, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
-use semantic::items::structure::SemanticStructEx;
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
-use super::usage::MemberPath;
 use crate::db::LoweringGroup;
-use crate::diagnostic::LoweringDiagnosticKind;
+use crate::diagnostic::{LoweringDiagnosticKind, LoweringDiagnosticsBuilder};
 use crate::ids::LocationId;
+use crate::lower::refs::ClosureInfo;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
 };
@@ -26,6 +27,8 @@ use crate::{
 pub struct BlockBuilder {
     /// A store for semantic variables, owning their OwnedVariable instances.
     pub semantics: SemanticLoweringMapping,
+    /// The semantic variables that are captured as snapshots in this block.
+    pub snapped_semantics: OrderedHashMap<MemberPath, VariableId>,
     /// The semantic variables that are added/changed in this block.
     changed_member_paths: OrderedHashSet<MemberPath>,
     /// Current sequence of lowered statements emitted.
@@ -38,6 +41,7 @@ impl BlockBuilder {
     pub fn root(_ctx: &mut LoweringContext<'_, '_>, block_id: BlockId) -> Self {
         BlockBuilder {
             semantics: Default::default(),
+            snapped_semantics: Default::default(),
             changed_member_paths: Default::default(),
             statements: Default::default(),
             block_id,
@@ -48,6 +52,7 @@ impl BlockBuilder {
     pub fn child_block_builder(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
             semantics: self.semantics.clone(),
+            snapped_semantics: self.snapped_semantics.clone(),
             changed_member_paths: Default::default(),
             statements: Default::default(),
             block_id,
@@ -59,6 +64,7 @@ impl BlockBuilder {
     pub fn sibling_block_builder(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
             semantics: self.semantics.clone(),
+            snapped_semantics: self.snapped_semantics.clone(),
             changed_member_paths: self.changed_member_paths.clone(),
             statements: Default::default(),
             block_id,
@@ -89,7 +95,7 @@ impl BlockBuilder {
         location: LocationId,
     ) {
         self.semantics.update(
-            BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+            &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             &member_path,
             var,
         );
@@ -117,6 +123,49 @@ impl BlockBuilder {
                 member_path,
             )
             .map(|var_id| VarUsage { var_id, location })
+    }
+
+    /// Updates the reference of a semantic variable to a snapshot of its lowered variable.
+    pub fn update_snap_ref(&mut self, member_path: &ExprVarMemberPath, var: VariableId) {
+        self.snapped_semantics.insert(member_path.into(), var);
+    }
+
+    /// Gets the reference of a snapshot of semantic variable, possibly by deconstructing a
+    /// its parents.
+    pub fn get_snap_ref(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        member_path: &ExprVarMemberPath,
+    ) -> Option<VarUsage> {
+        let location = ctx.get_location(member_path.stable_ptr().untyped());
+        if let Some(var_id) = self.snapped_semantics.get::<MemberPath>(&member_path.into()) {
+            return Some(VarUsage { var_id: *var_id, location });
+        }
+        let ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } = member_path
+        else {
+            return None;
+        };
+        // TODO(TomerStarkware): Consider adding the result to snap_semantics to avoid
+        // recomputation.
+        let parent_var = self.get_snap_ref(ctx, parent)?;
+        let members = ctx.db.concrete_struct_members(*concrete_struct_id).ok()?;
+        let (parent_number_of_snapshots, _) =
+            peel_snapshots(ctx.db.upcast(), ctx.variables[parent_var.var_id].ty);
+        let member_idx = members.iter().position(|(_, member)| member.id == *member_id)?;
+        Some(
+            generators::StructMemberAccess {
+                input: parent_var,
+                member_tys: members
+                    .iter()
+                    .map(|(_, member)| {
+                        wrap_in_snapshots(ctx.db.upcast(), member.ty, parent_number_of_snapshots)
+                    })
+                    .collect(),
+                member_idx,
+                location,
+            }
+            .add(ctx, &mut self.statements),
+        )
     }
 
     /// Gets the type of a semantic variable.
@@ -172,7 +221,7 @@ impl BlockBuilder {
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| {
                 ctx.diagnostics.report_by_location(
-                    location.get(ctx.db),
+                    location.lookup_intern(ctx.db),
                     LoweringDiagnosticKind::UnexpectedError,
                 )
             })?;
@@ -200,11 +249,54 @@ impl BlockBuilder {
         else {
             return Err(LoweringFlowError::Match(match_info));
         };
-
         let new_scope = self.sibling_block_builder(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
         prev_scope.finalize(ctx, FlatBlockEnd::Match { info: match_info });
         Ok(merged_expr)
+    }
+
+    /// Captures the variable in a usage associated with a closure.
+    ///
+    /// Returns the variable usage of the closure.
+    pub fn capture(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        usage: Usage,
+        expr: &semantic::ExprClosure,
+    ) -> VarUsage {
+        let location = ctx.get_location(expr.stable_ptr.untyped());
+
+        let inputs = chain!(
+            usage.usage.values().map(|expr| { LoweredExpr::Member(expr.clone(), location) }),
+            usage.snap_usage.values().map(|expr| {
+                LoweredExpr::Snapshot {
+                    expr: Box::new(LoweredExpr::Member(expr.clone(), location)),
+                    location,
+                }
+            })
+        )
+        .map(|expr| expr.as_var_usage(ctx, self).unwrap())
+        .collect_vec();
+
+        let members: OrderedHashMap<MemberPath, semantic::TypeId> =
+            chain!(usage.usage.values(), usage.changes.values())
+                .map(|expr| (expr.into(), expr.ty()))
+                .collect();
+
+        let snapshot_types = inputs
+            .iter()
+            .skip(members.len())
+            .map(|var_usage| ctx.variables.variables[var_usage.var_id].ty)
+            .collect();
+
+        let var_usage = generators::StructConstruct { inputs, ty: expr.ty, location }
+            .add(ctx, &mut self.statements);
+
+        self.semantics.closures.insert(var_usage.var_id, ClosureInfo { members, snapshot_types });
+        for member in usage.usage.keys() {
+            self.semantics.captured.insert(member.clone(), var_usage.var_id);
+        }
+        var_usage
     }
 
     /// Merges sibling sealed blocks.
@@ -297,6 +389,22 @@ impl BlockBuilder {
         };
         Some((expr, following_block))
     }
+
+    /// Destructures a closure.
+    /// Invalidates the closure variable and returns the captured variables.
+    pub fn destructure_closure(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        location: LocationId,
+        closure_var: VariableId,
+        closure_info: &ClosureInfo,
+    ) -> Vec<VariableId> {
+        self.semantics.destructure_closure(
+            &mut BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+            closure_var,
+            closure_info,
+        )
+    }
 }
 
 /// Remapping of lowered variables with more semantic information regarding what is the semantic
@@ -370,12 +478,26 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
         let members = members.values().collect_vec();
         let member_ids = members.iter().map(|m| m.id);
 
-        let location = self.ctx.variables[value].location;
-        let var_reqs =
-            members.iter().map(|member| VarRequest { ty: member.ty, location }).collect();
         let member_values =
-            generators::StructDestructure { input: value, var_reqs }.add(self.ctx, self.statements);
+            self.deconstruct_by_types(value, members.iter().map(|member| member.ty));
         OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
+    }
+
+    fn deconstruct_by_types(
+        &mut self,
+        value: VariableId,
+        types: impl Iterator<Item = semantic::TypeId>,
+    ) -> Vec<VariableId> {
+        // We use the location of the variable being deconstructed for the members
+        // to get a better location for variable not dropped errors.
+        let location = self.ctx.variables[value].location;
+        let var_reqs = types.map(|ty| VarRequest { ty, location }).collect_vec();
+
+        generators::StructDestructure {
+            input: VarUsage { var_id: value, location: self.location },
+            var_reqs,
+        }
+        .add(self.ctx, self.statements)
     }
 
     fn reconstruct(
@@ -383,10 +505,8 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
         concrete_struct_id: semantic::ConcreteStructId,
         members: Vec<VariableId>,
     ) -> VariableId {
-        let ty = self
-            .ctx
-            .db
-            .intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)));
+        let ty =
+            TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)).intern(self.ctx.db);
         // TODO(ilya): Is using the `self.location` correct here?
         generators::StructConstruct {
             inputs: members

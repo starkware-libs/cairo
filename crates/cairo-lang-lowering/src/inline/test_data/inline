@@ -1780,3 +1780,105 @@ End:
   Goto(blk5, {v4 -> v3})
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > test panic destruct impl
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+fn foo(n: felt252) {
+    bar(n);
+}
+
+//! > module_code
+#[inline]
+fn bar<T, +PanicDestruct<T>>(n: T) {
+    panic_with_felt252('panic')
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v3: core::panics::PanicResult::<((),)>) <- test::bar::<core::felt252, core::traits::PanicDestructForDestruct::<core::felt252, core::traits::DestructFromDrop::<core::felt252, core::felt252Drop>>>(v0)
+End:
+  Match(match_enum(v3) {
+    PanicResult::Ok(v4) => blk2,
+    PanicResult::Err(v6) => blk3,
+  })
+
+blk1:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v7: ((),)) <- struct_construct(v2)
+  (v8: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v7)
+End:
+  Return(v8)
+
+blk2:
+Statements:
+  (v5: ()) <- struct_destructure(v4)
+End:
+  Goto(blk1, {v5 -> v1})
+
+blk3:
+Statements:
+  (v9: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+End:
+  Return(v9)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Goto(blk5, {})
+
+blk1:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v7: ((),)) <- struct_construct(v2)
+  (v8: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v7)
+End:
+  Return(v8)
+
+blk2:
+Statements:
+  (v5: ()) <- struct_destructure(v4)
+End:
+  Goto(blk1, {v5 -> v1})
+
+blk3:
+Statements:
+  (v9: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v6)
+End:
+  Return(v9)
+
+blk4:
+Statements:
+End:
+  Match(match_enum(v3) {
+    PanicResult::Ok(v4) => blk2,
+    PanicResult::Err(v6) => blk3,
+  })
+
+blk5:
+Statements:
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v11: core::felt252) <- 482670963043
+  (v12: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v10, v11)
+  (v13: core::panics::Panic) <- struct_construct()
+  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v13, v12)
+  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v14)
+End:
+  Goto(blk4, {v15 -> v3})
+
+//! > lowering_diagnostics

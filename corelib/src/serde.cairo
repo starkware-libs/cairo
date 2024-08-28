@@ -1,89 +1,94 @@
-use core::array::ArrayTrait;
-use core::array::SpanTrait;
+#[allow(unused_imports)]
+use crate::array::{ArrayTrait, SpanTrait};
 
 pub trait Serde<T> {
     fn serialize(self: @T, ref output: Array<felt252>);
     fn deserialize(ref serialized: Span<felt252>) -> Option<T>;
 }
 
-impl TupleSize0Serde of Serde<()> {
-    fn serialize(self: @(), ref output: Array<felt252>) {}
+/// Tuple style structs `Serde` implementation.
+impl SerdeTuple<
+    T,
+    impl TSF: crate::metaprogramming::TupleSnapForward<T>,
+    impl Serialize: SerializeTuple<TSF::SnapForward>,
+    impl Deserialize: DeserializeTuple<T>,
+> of Serde<T> {
+    fn serialize(self: @T, ref output: Array<felt252>) {
+        Serialize::serialize(TSF::snap_forward(self), ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<T> {
+        Deserialize::deserialize(ref serialized)
+    }
+}
+
+/// Helper trait for serializing tuple style structs.
+trait SerializeTuple<T> {
+    fn serialize(value: T, ref output: Array<felt252>);
+}
+
+/// Implementation of `SerializeTuple` for snapshots of types with `Serde` implementation.
+impl SerdeBasedSerializeTuple<T, +Serde<T>> of SerializeTuple<@T> {
+    fn serialize(value: @T, ref output: Array<felt252>) {
+        Serde::<T>::serialize(value, ref output);
+    }
+}
+
+/// Helper trait for deserializing tuple style structs.
+trait DeserializeTuple<T> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<T>;
+}
+
+/// Base implementation of `SerializeTuple` for tuples.
+impl SerializeTupleBaseTuple of SerializeTuple<()> {
+    fn serialize(value: (), ref output: Array<felt252>) {}
+}
+
+/// Base implementation of `DeserializeTuple` for tuples.
+impl DeserializeTupleBaseTuple of DeserializeTuple<()> {
     fn deserialize(ref serialized: Span<felt252>) -> Option<()> {
         Option::Some(())
     }
 }
 
-impl TupleSize1Serde<E0, +Serde<E0>> of Serde<(E0,)> {
-    fn serialize(self: @(E0,), ref output: Array<felt252>) {
-        let (e0,) = self;
-        e0.serialize(ref output)
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<(E0,)> {
-        Option::Some((Serde::deserialize(ref serialized)?,))
+/// Base implementation of `SerializeTuple` for fixed sized arrays.
+impl SerializeTupleBaseFixedSizedArray<T> of SerializeTuple<[@T; 0]> {
+    fn serialize(value: [@T; 0], ref output: Array<felt252>) {}
+}
+
+/// Base implementation of `DeserializeTuple` for fixed sized arrays.
+impl DeserializeTupleBaseFixedSizedArray<T> of DeserializeTuple<[T; 0]> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<[T; 0]> {
+        Option::Some([])
     }
 }
 
-impl TupleSize2Serde<E0, E1, +Serde<E0>, +Drop<E0>, +Serde<E1>, +Drop<E1>> of Serde<(E0, E1)> {
-    fn serialize(self: @(E0, E1), ref output: Array<felt252>) {
-        let (e0, e1) = self;
-        e0.serialize(ref output);
-        e1.serialize(ref output)
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<(E0, E1)> {
-        Option::Some((Serde::deserialize(ref serialized)?, Serde::deserialize(ref serialized)?))
-    }
-}
-
-impl TupleSize3Serde<
-    E0, E1, E2, +Serde<E0>, +Drop<E0>, +Serde<E1>, +Drop<E1>, +Serde<E2>, +Drop<E2>
-> of Serde<(E0, E1, E2)> {
-    fn serialize(self: @(E0, E1, E2), ref output: Array<felt252>) {
-        let (e0, e1, e2) = self;
-        e0.serialize(ref output);
-        e1.serialize(ref output);
-        e2.serialize(ref output)
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<(E0, E1, E2)> {
-        Option::Some(
-            (
-                Serde::deserialize(ref serialized)?,
-                Serde::deserialize(ref serialized)?,
-                Serde::deserialize(ref serialized)?
-            )
-        )
+/// Recursive implementation of `SerializeTuple` for tuple style structs.
+impl SerializeTupleNext<
+    T,
+    impl TS: crate::metaprogramming::TupleSplit<T>,
+    +SerializeTuple<TS::Head>,
+    +SerializeTuple<TS::Rest>,
+    +Drop<TS::Rest>,
+> of SerializeTuple<T> {
+    fn serialize(value: T, ref output: Array<felt252>) {
+        let (head, rest) = TS::split_head(value);
+        SerializeTuple::<TS::Head>::serialize(head, ref output);
+        SerializeTuple::<TS::Rest>::serialize(rest, ref output);
     }
 }
 
-impl TupleSize4Serde<
-    E0,
-    E1,
-    E2,
-    E3,
-    +Serde<E0>,
-    +Drop<E0>,
-    +Serde<E1>,
-    +Drop<E1>,
-    +Serde<E2>,
-    +Drop<E2>,
-    +Serde<E3>,
-    +Drop<E3>
-> of Serde<(E0, E1, E2, E3)> {
-    fn serialize(self: @(E0, E1, E2, E3), ref output: Array<felt252>) {
-        let (e0, e1, e2, e3) = self;
-        e0.serialize(ref output);
-        e1.serialize(ref output);
-        e2.serialize(ref output);
-        e3.serialize(ref output)
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<(E0, E1, E2, E3)> {
-        Option::Some(
-            (
-                Serde::deserialize(ref serialized)?,
-                Serde::deserialize(ref serialized)?,
-                Serde::deserialize(ref serialized)?,
-                Serde::deserialize(ref serialized)?
-            )
-        )
+/// Recursive implementation of `DeserializeTuple` for tuple style structs.
+impl DeserializeTupleNext<
+    T,
+    impl TS: crate::metaprogramming::TupleSplit<T>,
+    +Serde<TS::Head>,
+    +DeserializeTuple<TS::Rest>,
+    +Drop<TS::Head>,
+> of DeserializeTuple<T> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<T> {
+        let head = Serde::<TS::Head>::deserialize(ref serialized)?;
+        let rest = DeserializeTuple::<TS::Rest>::deserialize(ref serialized)?;
+        Option::Some(TS::reconstruct(head, rest))
     }
 }
 
@@ -94,8 +99,8 @@ impl TupleSize4Serde<
 /// impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`
 /// ```
 pub mod into_felt252_based {
-    use core::traits::{Into, TryInto};
-    use core::array::ArrayTrait;
+    use crate::traits::{Into, TryInto};
+    use crate::array::ArrayTrait;
     pub impl SerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::Serde<T> {
         #[inline(always)]
         fn serialize(self: @T, ref output: Array<felt252>) {

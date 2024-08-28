@@ -1,4 +1,5 @@
-use core::traits::Into;
+#[allow(unused_imports)]
+use crate::traits::Into;
 
 /// A trait for hash state accumulators.
 pub trait HashStateTrait<S> {
@@ -24,10 +25,10 @@ pub trait LegacyHash<T> {
 }
 
 /// Implementation of `LegacyHash` for types that have `Hash` for backwards compatibility.
-impl LegacyHashForHash<T, +Hash<T, core::pedersen::HashState>> of LegacyHash<T> {
+impl LegacyHashForHash<T, +Hash<T, crate::pedersen::HashState>> of LegacyHash<T> {
     #[inline(always)]
     fn hash(state: felt252, value: T) -> felt252 {
-        core::pedersen::HashState { state }.update_with(value).state
+        crate::pedersen::HashState { state }.update_with(value).state
     }
 }
 
@@ -88,63 +89,25 @@ impl TupleSize0Hash<S, +HashStateTrait<S>> of Hash<(), S> {
     }
 }
 
-impl TupleSize1Hash<E0, S, +Hash<E0, S>, +HashStateTrait<S>> of Hash<(E0,), S> {
+impl FixedSizedArray0Hash<T, S, +HashStateTrait<S>, +Drop<T>> of Hash<[T; 0], S> {
     #[inline(always)]
-    fn update_state(state: S, value: (E0,)) -> S {
-        let (e0,) = value;
-        state.update_with(e0)
+    fn update_state(state: S, value: [T; 0]) -> S {
+        state
     }
 }
 
-impl TupleSize2Hash<
-    E0, E1, S, +HashStateTrait<S>, +Hash<E0, S>, +Hash<E1, S>, +Drop<E0>, +Drop<E1>,
-> of Hash<(E0, E1), S> {
-    #[inline(always)]
-    fn update_state(state: S, value: (E0, E1,)) -> S {
-        let (e0, e1) = value;
-        state.update_with(e0).update_with(e1)
-    }
-}
-
-impl TupleSize3Hash<
-    E0,
-    E1,
-    E2,
+impl TupleNextHash<
+    T,
     S,
     +HashStateTrait<S>,
-    +Hash<E0, S>,
-    +Hash<E1, S>,
-    +Hash<E2, S>,
-    +Drop<E0>,
-    +Drop<E1>,
-    +Drop<E2>,
-> of Hash<(E0, E1, E2), S> {
+    impl TH: crate::metaprogramming::TupleSplit<T>,
+    +Hash<TH::Head, S>,
+    +Hash<TH::Rest, S>,
+    +Drop<TH::Rest>,
+> of Hash<T, S> {
     #[inline(always)]
-    fn update_state(state: S, value: (E0, E1, E2)) -> S {
-        let (e0, e1, e2) = value;
-        state.update_with(e0).update_with(e1).update_with(e2)
-    }
-}
-
-impl TupleSize4Hash<
-    E0,
-    E1,
-    E2,
-    E3,
-    S,
-    +HashStateTrait<S>,
-    +Hash<E0, S>,
-    +Hash<E1, S>,
-    +Hash<E2, S>,
-    +Hash<E3, S>,
-    +Drop<E0>,
-    +Drop<E1>,
-    +Drop<E2>,
-    +Drop<E3>,
-> of Hash<(E0, E1, E2, E3), S> {
-    #[inline(always)]
-    fn update_state(state: S, value: (E0, E1, E2, E3)) -> S {
-        let (e0, e1, e2, e3) = value;
-        state.update_with(e0).update_with(e1).update_with(e2).update_with(e3)
+    fn update_state(state: S, value: T) -> S {
+        let (head, rest) = TH::split_head(value);
+        state.update_with(head).update_with(rest)
     }
 }

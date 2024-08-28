@@ -15,6 +15,7 @@ pub mod plugin;
 pub mod resolve;
 pub mod substitution;
 pub mod types;
+pub mod usage;
 
 mod semantic;
 

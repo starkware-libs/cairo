@@ -1,0 +1,6 @@
+//! > cairo_code
+pub macro
+
+//! > syntax
+pub                  source.cairo keyword.other.cairo
+macro                source.cairo keyword.other.cairo storage.type.cairo

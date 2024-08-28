@@ -1,11 +1,9 @@
-use std::sync::Arc;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::db::{AsFilesGroupMut, CrateConfiguration, FilesGroup, FilesGroupEx};
+use cairo_lang_filesystem::db::{AsFilesGroupMut, CrateConfiguration, FilesGroupEx};
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{extract_matches, Intern};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -51,8 +49,8 @@ fn test_resolve_path() {
 }
 
 fn set_file_content(db: &mut SemanticDatabaseForTesting, path: &str, content: &str) {
-    let file_id = db.intern_file(FileLongId::OnDisk(path.into()));
-    db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.into())));
+    let file_id = FileLongId::OnDisk(path.into()).intern(db);
+    db.as_files_group_mut().override_file_content(file_id, Some(content.into()));
 }
 
 #[test]
@@ -60,7 +58,7 @@ fn test_resolve_path_super() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let crate_id = CrateLongId::Real("test".into()).intern(db);
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 

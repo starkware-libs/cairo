@@ -1,0 +1,242 @@
+//! > Test simple missing trait quick fix.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+trait ATrait<T> {
+    fn some_method(self: @T);
+}
+impl Felt252ATraitImpl of ATrait<felt252> {
+    fn some_method(self: @felt252) {}
+}
+
+mod inner_mod {
+    fn main() {
+        let x = 5_felt252;
+        x.some_me<caret>thod(<caret>);
+    }
+}
+
+//! > Code action #0
+        x.some_me<caret>thod();
+Title: Import super::ATrait
+Add new text: "use super::ATrait;
+"
+At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
+
+//! > Code action #1
+        x.some_method(<caret>);
+No code actions.
+
+//! > ==========================================================================
+
+//! > Test missing trait quick fix with no suitable impl.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+trait ATrait<T> {
+    fn some_method(self: @T);
+}
+
+mod inner_mod {
+    fn main() {
+        let x = 5_felt252;
+        x.some_me<caret>thod(<caret>);
+    }
+}
+
+//! > Code action #0
+        x.some_me<caret>thod();
+No code actions.
+
+//! > Code action #1
+        x.some_method(<caret>);
+No code actions.
+
+//! > ==========================================================================
+
+//! > Test missing trait quick fix with two options.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+trait ATrait1<T> {
+    fn some_method(self: @T);
+}
+impl Felt252ATraitImpl of ATrait1<felt252> {
+    fn some_method(self: @felt252) {}
+}
+trait ATrait2<T> {
+    fn some_method(self: @T);
+}
+impl Felt252ATraitImpl of ATrait2<felt252> {
+    fn some_method(self: @felt252) {}
+}
+
+mod inner_mod {
+    fn main() {
+        let x = 5_felt252;
+        x.some_me<caret>thod(<caret>);
+    }
+}
+
+//! > Code action #0
+        x.some_me<caret>thod();
+Title: Import super::ATrait1
+Add new text: "use super::ATrait1;
+"
+At: Range { start: Position { line: 14, character: 4 }, end: Position { line: 14, character: 4 } }
+Title: Import super::ATrait2
+Add new text: "use super::ATrait2;
+"
+At: Range { start: Position { line: 14, character: 4 }, end: Position { line: 14, character: 4 } }
+
+//! > Code action #1
+        x.some_method(<caret>);
+No code actions.
+
+//! > ==========================================================================
+
+//! > Test adding non-directly visible trait.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+mod hidden_trait {
+
+    pub trait ATrait1<T> {
+        fn some_method(self: @T);
+    }
+    impl Felt252ATraitImpl of ATrait1<felt252> {
+        fn some_method(self: @felt252) {}
+    }
+}
+use hidden_trait::ATrait1;
+mod inner_mod {
+    fn main() {
+        let x = 5_felt252;
+        x.some_me<caret>thod(<caret>);
+    }
+}
+
+//! > Code action #0
+        x.some_me<caret>thod();
+Title: Import super::ATrait1
+Add new text: "use super::ATrait1;
+"
+At: Range { start: Position { line: 11, character: 4 }, end: Position { line: 11, character: 4 } }
+
+//! > Code action #1
+        x.some_method(<caret>);
+No code actions.
+
+//! > ==========================================================================
+
+//! > Test traits from corelib.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+fn main() {
+    let x = core::pedersen::PedersenTrait::new(5_felt252);
+    let _y = x.upda<caret>te(3_felt252<caret>);
+}
+
+//! > Code action #0
+    let _y = x.upda<caret>te(3_felt252);
+Title: Import core::hash::HashStateTrait
+Add new text: "use core::hash::HashStateTrait;
+"
+At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
+
+//! > Code action #1
+    let _y = x.update(3_felt252<caret>);
+No code actions.
+
+//! > ==========================================================================
+
+//! > Test traits from Starknet module.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+#[starknet::interface]
+trait HelloStarknetTrait<TContractState> {
+    // Returns the current balance.
+    fn get_balance(self: @TContractState) -> usize;
+}
+
+#[starknet::contract]
+mod hello_starknet {
+    #[storage]
+    struct Storage {
+        balance: usize,
+    }
+
+    #[abi(embed_v0)]
+    impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
+        fn get_balance(self: @ContractState) -> usize {
+            self.balance.rea<caret>d(<caret>)
+        }
+    }
+}
+
+//! > Code action #0
+            self.balance.rea<caret>d()
+Title: Import starknet::storage::StoragePointerReadAccess
+Add new text: "use starknet::storage::StoragePointerReadAccess;
+"
+At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
+
+//! > Code action #1
+            self.balance.read(<caret>)
+No code actions.

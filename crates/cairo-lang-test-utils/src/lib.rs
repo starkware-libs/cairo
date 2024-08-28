@@ -40,8 +40,7 @@ pub fn test_lock<'a, T: ?Sized + 'a>(m: &'a Mutex<T>) -> MutexGuard<'a, T> {
     }
 }
 
-/// Returns an error string if there are diagnostics when args.expect_diagnostics is false.
-/// Returns an error string if there are no diagnostics when args.expect_diagnostics is true.
+/// Returns an error string according to the extracted `ExpectDiagnostics`.
 /// Returns None on success.
 pub fn verify_diagnostics_expectation(
     args: &OrderedHashMap<String, String>,
@@ -50,17 +49,62 @@ pub fn verify_diagnostics_expectation(
     let expect_diagnostics = args.get("expect_diagnostics")?;
     require(expect_diagnostics != "*")?;
 
-    let expect_diagnostics = bool_input(expect_diagnostics);
+    let expect_diagnostics = expect_diagnostics_input_input(expect_diagnostics);
     let has_diagnostics = !diagnostics.is_empty();
-    if !expect_diagnostics && has_diagnostics {
-        Some(format!(
-            "`expect_diagnostics` is false, but diagnostics were generated:\n{}",
-            diagnostics
-        ))
-    } else if expect_diagnostics && !has_diagnostics {
-        Some("`expect_diagnostics` is true, but no diagnostics were generated.\n".to_string())
-    } else {
-        None
+    // TODO(Gil): This is a bit of a hack, try and get the original diagnostics from the test.
+    let has_errors = diagnostics.lines().any(|line| line.starts_with("error: "));
+    match expect_diagnostics {
+        ExpectDiagnostics::Any => {
+            if !has_diagnostics {
+                return Some(
+                    "`expect_diagnostics` is true, but no diagnostics were generated.\n"
+                        .to_string(),
+                );
+            }
+        }
+        ExpectDiagnostics::Warnings => {
+            if !has_diagnostics {
+                return Some(
+                    "`expect_diagnostics` is 'warnings_only', but no diagnostics were generated.\n"
+                        .to_string(),
+                );
+            } else if has_errors {
+                return Some(
+                    "`expect_diagnostics` is 'warnings_only', but errors were generated.\n"
+                        .to_string(),
+                );
+            }
+        }
+        ExpectDiagnostics::None => {
+            if has_diagnostics {
+                return Some(
+                    "`expect_diagnostics` is false, but diagnostics were generated:\n".to_string(),
+                );
+            }
+        }
+    };
+    None
+}
+
+/// The expected diagnostics for a test.
+enum ExpectDiagnostics {
+    /// Any diagnostics (warnings or errors) are expected.
+    Any,
+    /// Only warnings are expected.
+    Warnings,
+    /// No diagnostics are expected.
+    None,
+}
+
+/// Translates a string test input to bool ("false" -> false, "true" -> true). Panics if invalid.
+/// Ignores case.
+fn expect_diagnostics_input_input(input: &str) -> ExpectDiagnostics {
+    let input = input.to_lowercase();
+    match input.as_str() {
+        "false" => ExpectDiagnostics::None,
+        "true" => ExpectDiagnostics::Any,
+        "warnings_only" => ExpectDiagnostics::Warnings,
+        _ => panic!("Expected 'true', 'false' or 'warnings', actual: {input}"),
     }
 }
 

@@ -1,8 +1,7 @@
-use starknet::ContractAddress;
 #[starknet::contract]
 mod ownable_balance {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
-    use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
     #[storage]
     struct Storage {

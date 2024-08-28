@@ -6,27 +6,28 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
+use cairo_lang_semantic::usage::Usages;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::Intern;
 use defs::diagnostic_utils::StableLocation;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
-use semantic::corelib::{core_module, get_ty_by_name, get_usize_ty};
+use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::expr::inference::InferenceError;
-use semantic::items::constant::value_as_const_value;
 use semantic::types::wrap_in_snapshots;
 use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::generators;
-use super::usage::BlockUsages;
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::ids::{
-    ConcreteFunctionWithBodyId, FunctionWithBodyId, LocationId, SemanticFunctionIdEx, Signature,
+    ConcreteFunctionWithBodyId, FunctionWithBodyId, GeneratedFunctionKey, LocationId,
+    SemanticFunctionIdEx, Signature,
 };
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
@@ -112,9 +113,9 @@ pub struct EncapsulatingLoweringContext<'db> {
     /// Expression formatter of the free function.
     pub expr_formatter: ExprFormatter<'db>,
     /// Block usages for the entire encapsulating function.
-    pub block_usages: BlockUsages,
+    pub usages: Usages,
     /// Lowerings of generated functions.
-    pub lowerings: OrderedHashMap<semantic::ExprId, FlatLowered>,
+    pub lowerings: OrderedHashMap<GeneratedFunctionKey, FlatLowered>,
 }
 impl<'db> EncapsulatingLoweringContext<'db> {
     pub fn new(
@@ -122,14 +123,14 @@ impl<'db> EncapsulatingLoweringContext<'db> {
         semantic_function_id: defs::ids::FunctionWithBodyId,
     ) -> Maybe<Self> {
         let function_body = db.function_body(semantic_function_id)?;
-        let block_usages = BlockUsages::from_function_body(&function_body);
+        let usages = Usages::from_function_body(&function_body);
         Ok(Self {
             db,
             semantic_function_id,
             function_body,
             semantic_defs: Default::default(),
             expr_formatter: ExprFormatter { db: db.upcast(), function_id: semantic_function_id },
-            block_usages,
+            usages,
             lowerings: Default::default(),
         })
     }
@@ -165,7 +166,6 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         let db = global_ctx.db;
         let concrete_function_id = function_id.to_concrete(db)?;
         let semantic_function = function_id.base_semantic_function(db);
-        let module_file_id = semantic_function.module_file_id(db.upcast());
         Ok(Self {
             encapsulating_ctx: Some(global_ctx),
             variables: VariableAllocator::new(db, semantic_function, Default::default())?,
@@ -173,7 +173,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             function_id,
             concrete_function_id,
             current_loop_expr_id: Option::None,
-            diagnostics: LoweringDiagnostics::new(module_file_id.file_id(db.upcast())?),
+            diagnostics: LoweringDiagnostics::default(),
             blocks: Default::default(),
         })
     }
@@ -256,7 +256,7 @@ impl LoweredExpr {
                     .collect::<Result<Vec<_>, _>>()?;
                 let tys =
                     inputs.iter().map(|var_usage| ctx.variables[var_usage.var_id].ty).collect();
-                let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
+                let ty = semantic::TypeLongId::Tuple(tys).intern(ctx.db);
                 Ok(generators::StructConstruct { inputs, ty, location }
                     .add(ctx, &mut builder.statements))
             }
@@ -288,31 +288,19 @@ impl LoweredExpr {
     pub fn ty(&self, ctx: &mut LoweringContext<'_, '_>) -> semantic::TypeId {
         match self {
             LoweredExpr::AtVariable(var_usage) => ctx.variables[var_usage.var_id].ty,
-            LoweredExpr::Tuple { exprs, .. } => ctx.db.intern_type(semantic::TypeLongId::Tuple(
-                exprs.iter().map(|expr| expr.ty(ctx)).collect(),
-            )),
-            LoweredExpr::ExternEnum(extern_enum) => {
-                ctx.db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
-                    extern_enum.concrete_enum_id,
-                )))
+            LoweredExpr::Tuple { exprs, .. } => {
+                semantic::TypeLongId::Tuple(exprs.iter().map(|expr| expr.ty(ctx)).collect())
+                    .intern(ctx.db)
             }
+            LoweredExpr::ExternEnum(extern_enum) => semantic::TypeLongId::Concrete(
+                semantic::ConcreteTypeId::Enum(extern_enum.concrete_enum_id),
+            )
+            .intern(ctx.db),
             LoweredExpr::Member(member_path, _) => member_path.ty(),
             LoweredExpr::Snapshot { expr, .. } => {
                 wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
             }
-            LoweredExpr::FixedSizeArray { exprs, .. } => {
-                ctx.db.intern_type(semantic::TypeLongId::FixedSizeArray {
-                    type_id: exprs[0].ty(ctx),
-                    size: ctx.db.intern_const_value(
-                        value_as_const_value(
-                            ctx.db.upcast(),
-                            get_usize_ty(ctx.db.upcast()),
-                            &exprs.len().into(),
-                        )
-                        .unwrap(),
-                    ),
-                })
-            }
+            LoweredExpr::FixedSizeArray { ty, .. } => *ty,
         }
     }
     pub fn location(&self) -> LocationId {
@@ -463,10 +451,11 @@ pub fn lowering_flow_error_to_sealed_block(
             .add(ctx, &mut builder.statements);
             let err_instance = generators::StructConstruct {
                 inputs: vec![panic_instance, data_var],
-                ty: ctx.db.intern_type(TypeLongId::Tuple(vec![
+                ty: TypeLongId::Tuple(vec![
                     ctx.variables[panic_instance.var_id].ty,
                     ctx.variables[data_var.var_id].ty,
-                ])),
+                ])
+                .intern(ctx.db),
                 location,
             }
             .add(ctx, &mut builder.statements);

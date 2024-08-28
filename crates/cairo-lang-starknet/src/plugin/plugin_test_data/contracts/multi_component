@@ -19,6 +19,17 @@ pub mod contract_with_4_components {
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::mintable::mintable as mintable_comp;
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        erc20_storage: erc20_comp::Storage,
+        #[substorage(v0)]
+        ownable_storage: ownable_comp::Storage,
+        #[substorage(v0)]
+        mintable_storage: mintable_comp::Storage,
+        #[substorage(v0)]
+        upgradable_storage: upgradable_comp::Storage,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -71,27 +82,89 @@ pub mod contract_with_4_components {
     }
 
 
-    pub struct ContractState {
-        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
-        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
-        pub mintable_storage: mintable_comp::ComponentState<ContractState>,
-        pub upgradable_storage: upgradable_comp::ComponentState<ContractState>,
+
+#[derive(Drop, Copy)]
+struct StorageStorageBase {
+    erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+    ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+    mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
+    upgradable_storage: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __mintable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __upgradable_storage_value__ = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           erc20_storage: __erc20_storage_value__,
+           ownable_storage: __ownable_storage_value__,
+           mintable_storage: __mintable_storage_value__,
+           upgradable_storage: __upgradable_storage_value__,
+        }
     }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
+}
+#[derive(Drop, Copy)]
+struct StorageStorageBaseMut {
+    erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
+    ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+    mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<mintable_comp::Storage>>,
+    upgradable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
+}
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __mintable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __upgradable_storage_value__ = starknet::storage::FlattenedStorage {};
+        StorageStorageBaseMut {
+           erc20_storage: __erc20_storage_value__,
+           ownable_storage: __ownable_storage_value__,
+           mintable_storage: __mintable_storage_value__,
+           upgradable_storage: __upgradable_storage_value__,
+        }
+    }
+}
+
+pub struct ContractState {
+         erc20_storage: erc20_comp::ComponentState<ContractState>,
+         ownable_storage: ownable_comp::ComponentState<ContractState>,
+         mintable_storage: mintable_comp::ComponentState<ContractState>,
+         upgradable_storage: upgradable_comp::ComponentState<ContractState>,
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
             mintable_storage: mintable_comp::unsafe_new_component_state::<ContractState>(),
             upgradable_storage: upgradable_comp::unsafe_new_component_state::<ContractState>(),
-        }
     }
-    
-use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
-};
+}
+
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+#[allow(unused_imports)]
+use starknet::storage::Map as LegacyMap;
 
 impl ContractStateIERC20 of
     erc20_comp::UnsafeNewContractStateTraitForIERC20<ContractState> {
@@ -117,7 +190,7 @@ impl ContractStateUpgradableImpl of
         unsafe_new_contract_state()
     }
 }
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -158,7 +231,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -207,7 +280,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @erc20_comp::ComponentState<ContractState> {
-        self.erc20_storage
+                 @erc20_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> erc20_comp::ComponentState<ContractState> {
         erc20_comp::unsafe_new_component_state::<ContractState>()
@@ -226,7 +299,7 @@ impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
 }
 impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
-        self.ownable_storage
+                 @ownable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
         ownable_comp::unsafe_new_component_state::<ContractState>()
@@ -245,7 +318,7 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
 }
 impl HasComponentImpl_mintable_comp of mintable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @mintable_comp::ComponentState<ContractState> {
-        self.mintable_storage
+                 @mintable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> mintable_comp::ComponentState<ContractState> {
         mintable_comp::unsafe_new_component_state::<ContractState>()
@@ -264,7 +337,7 @@ impl HasComponentImpl_mintable_comp of mintable_comp::HasComponent<ContractState
 }
 impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @upgradable_comp::ComponentState<ContractState> {
-        self.upgradable_storage
+                 @upgradable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> upgradable_comp::ComponentState<ContractState> {
         upgradable_comp::unsafe_new_component_state::<ContractState>()
@@ -376,6 +449,10 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 pub trait GetSupplyDispatcherTrait<T> {
     fn get_total_supply_plus_1(self: T) -> u256;
@@ -525,6 +602,43 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+
+#[derive(Drop, Copy)]
+pub struct GetSupplyDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl GetSupplyDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplyDispatcher> {
+    type SubPointersType = GetSupplyDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyDispatcher>) -> GetSupplyDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GetSupplyDispatcherSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+pub struct GetSupplyDispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl GetSupplyDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplyDispatcher> {
+    type SubPointersType = GetSupplyDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyDispatcher>>) -> GetSupplyDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GetSupplyDispatcherSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
 impl GetSupplyLibraryDispatcherCopy of core::traits::Copy::<GetSupplyLibraryDispatcher>;
 impl GetSupplyLibraryDispatcherDrop of core::traits::Drop::<GetSupplyLibraryDispatcher>;
 impl GetSupplyLibraryDispatcherSerde of core::serde::Serde::<GetSupplyLibraryDispatcher> {
@@ -568,6 +682,43 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
+#[derive(Drop, Copy)]
+pub struct GetSupplyLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl GetSupplyLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplyLibraryDispatcher> {
+    type SubPointersType = GetSupplyLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyLibraryDispatcher>) -> GetSupplyLibraryDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GetSupplyLibraryDispatcherSubPointers {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+pub struct GetSupplyLibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl GetSupplyLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplyLibraryDispatcher> {
+    type SubPointersType = GetSupplyLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyLibraryDispatcher>>) -> GetSupplyLibraryDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GetSupplyLibraryDispatcherSubPointersMut {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
 impl GetSupplySafeLibraryDispatcherCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcher>;
 impl GetSupplySafeLibraryDispatcherDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcher>;
 impl GetSupplySafeLibraryDispatcherSerde of core::serde::Serde::<GetSupplySafeLibraryDispatcher> {
@@ -609,6 +760,43 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
     #[inline(always)]
     fn size() -> u8 {
         starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+pub struct GetSupplySafeLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+impl GetSupplySafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplySafeLibraryDispatcher> {
+    type SubPointersType = GetSupplySafeLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplySafeLibraryDispatcher>) -> GetSupplySafeLibraryDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GetSupplySafeLibraryDispatcherSubPointers {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+pub struct GetSupplySafeLibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+impl GetSupplySafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplySafeLibraryDispatcher> {
+    type SubPointersType = GetSupplySafeLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplySafeLibraryDispatcher>>) -> GetSupplySafeLibraryDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GetSupplySafeLibraryDispatcherSubPointersMut {
+           class_hash: __class_hash_value__,
+        }
     }
 }
 impl GetSupplySafeDispatcherCopy of core::traits::Copy::<GetSupplySafeDispatcher>;
@@ -655,11 +843,75 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
     }
 }
 
+#[derive(Drop, Copy)]
+pub struct GetSupplySafeDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+impl GetSupplySafeDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplySafeDispatcher> {
+    type SubPointersType = GetSupplySafeDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplySafeDispatcher>) -> GetSupplySafeDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GetSupplySafeDispatcherSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+pub struct GetSupplySafeDispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+impl GetSupplySafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplySafeDispatcher> {
+    type SubPointersType = GetSupplySafeDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplySafeDispatcher>>) -> GetSupplySafeDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                GetSupplySafeDispatcherSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+impl GetSupplyDispatcherSubPointersDrop of core::traits::Drop::<GetSupplyDispatcherSubPointers>;
+impl GetSupplyDispatcherSubPointersCopy of core::traits::Copy::<GetSupplyDispatcherSubPointers>;
+impl GetSupplyDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplyDispatcherSubPointersMut>;
+impl GetSupplyDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplyDispatcherSubPointersMut>;
+impl GetSupplyLibraryDispatcherSubPointersDrop of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointers>;
+impl GetSupplyLibraryDispatcherSubPointersCopy of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointers>;
+impl GetSupplyLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplyLibraryDispatcherSubPointersMut>;
+impl GetSupplyLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplyLibraryDispatcherSubPointersMut>;
+impl GetSupplySafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointers>;
+impl GetSupplySafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointers>;
+impl GetSupplySafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplySafeLibraryDispatcherSubPointersMut>;
+impl GetSupplySafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplySafeLibraryDispatcherSubPointersMut>;
+impl GetSupplySafeDispatcherSubPointersDrop of core::traits::Drop::<GetSupplySafeDispatcherSubPointers>;
+impl GetSupplySafeDispatcherSubPointersCopy of core::traits::Copy::<GetSupplySafeDispatcherSubPointers>;
+impl GetSupplySafeDispatcherSubPointersMutDrop of core::traits::Drop::<GetSupplySafeDispatcherSubPointersMut>;
+impl GetSupplySafeDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupplySafeDispatcherSubPointersMut>;
+
     use starknet::ContractAddress;
     use cairo_level_tests::components::erc20::erc20 as erc20_comp;
     use cairo_level_tests::components::ownable::ownable as ownable_comp;
     use cairo_level_tests::components::mintable::mintable as mintable_comp;
     use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        erc20_storage: erc20_comp::Storage,
+        #[substorage(v0)]
+        ownable_storage: ownable_comp::Storage,
+        #[substorage(v0)]
+        mintable_storage: mintable_comp::Storage,
+        #[substorage(v0)]
+        upgradable_storage: upgradable_comp::Storage,
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -712,27 +964,89 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
     }
 
 
-    pub struct ContractState {
-        pub erc20_storage: erc20_comp::ComponentState<ContractState>,
-        pub ownable_storage: ownable_comp::ComponentState<ContractState>,
-        pub mintable_storage: mintable_comp::ComponentState<ContractState>,
-        pub upgradable_storage: upgradable_comp::ComponentState<ContractState>,
+
+#[derive(Drop, Copy)]
+struct StorageStorageBase {
+    erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+    ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+    mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
+    upgradable_storage: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+}
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __mintable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __upgradable_storage_value__ = starknet::storage::FlattenedStorage {};
+        StorageStorageBase {
+           erc20_storage: __erc20_storage_value__,
+           ownable_storage: __ownable_storage_value__,
+           mintable_storage: __mintable_storage_value__,
+           upgradable_storage: __upgradable_storage_value__,
+        }
     }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    pub fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
+}
+#[derive(Drop, Copy)]
+struct StorageStorageBaseMut {
+    erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
+    ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+    mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<mintable_comp::Storage>>,
+    upgradable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
+}
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __mintable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __upgradable_storage_value__ = starknet::storage::FlattenedStorage {};
+        StorageStorageBaseMut {
+           erc20_storage: __erc20_storage_value__,
+           ownable_storage: __ownable_storage_value__,
+           mintable_storage: __mintable_storage_value__,
+           upgradable_storage: __upgradable_storage_value__,
+        }
+    }
+}
+
+pub struct ContractState {
+         erc20_storage: erc20_comp::ComponentState<ContractState>,
+         ownable_storage: ownable_comp::ComponentState<ContractState>,
+         mintable_storage: mintable_comp::ComponentState<ContractState>,
+         upgradable_storage: upgradable_comp::ComponentState<ContractState>,
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
             erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
             ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
             mintable_storage: mintable_comp::unsafe_new_component_state::<ContractState>(),
             upgradable_storage: upgradable_comp::unsafe_new_component_state::<ContractState>(),
-        }
     }
-    
-use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait
-};
+}
+
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+#[allow(unused_imports)]
+use starknet::storage::Map as LegacyMap;
 
 impl ContractStateIERC20 of
     erc20_comp::UnsafeNewContractStateTraitForIERC20<ContractState> {
@@ -758,7 +1072,7 @@ impl ContractStateUpgradableImpl of
         unsafe_new_contract_state()
     }
 }
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -799,7 +1113,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     core::array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
@@ -848,7 +1162,7 @@ pub mod __constructor {
 
 impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @erc20_comp::ComponentState<ContractState> {
-        self.erc20_storage
+                 @erc20_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> erc20_comp::ComponentState<ContractState> {
         erc20_comp::unsafe_new_component_state::<ContractState>()
@@ -867,7 +1181,7 @@ impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
 }
 impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
-        self.ownable_storage
+                 @ownable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
         ownable_comp::unsafe_new_component_state::<ContractState>()
@@ -886,7 +1200,7 @@ impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> 
 }
 impl HasComponentImpl_mintable_comp of mintable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @mintable_comp::ComponentState<ContractState> {
-        self.mintable_storage
+                 @mintable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> mintable_comp::ComponentState<ContractState> {
         mintable_comp::unsafe_new_component_state::<ContractState>()
@@ -905,7 +1219,7 @@ impl HasComponentImpl_mintable_comp of mintable_comp::HasComponent<ContractState
 }
 impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @upgradable_comp::ComponentState<ContractState> {
-        self.upgradable_storage
+                 @upgradable_comp::unsafe_new_component_state::<ContractState>()
     }
     fn get_component_mut(ref self: ContractState) -> upgradable_comp::ComponentState<ContractState> {
         upgradable_comp::unsafe_new_component_state::<ContractState>()
@@ -1017,5 +1331,9 @@ impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
             owner: ContractAddress,
         );
     }
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics

@@ -1,4 +1,4 @@
-use core::result::{Result, ResultTraitImpl};
+use crate::result::{Result, ResultTraitImpl};
 
 #[test]
 fn test_result_ok_expect() {
@@ -122,4 +122,28 @@ fn test_result_ok_into_is_ok() {
 fn test_result_err_into_is_ok() {
     let result: Result<u32, felt252> = Result::Err('no');
     assert(!result.into_is_ok(), 'result_err_into_is_ok');
+}
+
+#[test]
+fn test_result_ok_ok_should_return_ok_value() {
+    let x: Result<u32, ByteArray> = Result::Ok(2);
+    assert_eq!(x.ok(), Option::Some(2));
+}
+
+#[test]
+fn test_result_err_ok_should_return_none() {
+    let x: Result<u32, ByteArray> = Result::Err("Nothing here");
+    assert!(x.ok().is_none());
+}
+
+#[test]
+fn test_result_err_err_should_return_error_value() {
+    let x: Result<u32, ByteArray> = Result::Err("Nothing here");
+    assert_eq!(x.err(), Option::Some("Nothing here"));
+}
+
+#[test]
+fn test_result_ok_err_should_return_none() {
+    let x: Result<u32, ByteArray> = Result::Ok(2);
+    assert!(x.err().is_none());
 }

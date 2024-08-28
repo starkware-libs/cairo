@@ -1,14 +1,25 @@
 use core::debug::PrintTrait;
+#[allow(unused_imports)]
 use core::integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
 use core::option::{Option, OptionTrait};
 use core::serde::Serde;
 use core::traits::{Into, TryInto};
 
 // An Ethereum address (160 bits).
-#[derive(Copy, Drop, Hash, PartialEq, starknet::Store)]
+#[derive(Copy, Drop, Hash, PartialEq)]
 pub struct EthAddress {
     address: felt252,
 }
+
+impl EthAddressStorePacking of starknet::StorePacking<EthAddress, felt252> {
+    fn pack(value: EthAddress) -> felt252 {
+        value.address
+    }
+    fn unpack(value: felt252) -> EthAddress {
+        EthAddress { address: value }
+    }
+}
+
 pub(crate) impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
     fn try_into(self: felt252) -> Option<EthAddress> {
         let ETH_ADDRESS_BOUND = 0x10000000000000000000000000000000000000000_u256; // 2 ** 160

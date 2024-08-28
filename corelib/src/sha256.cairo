@@ -1,4 +1,4 @@
-use core::starknet::SyscallResultTrait;
+use crate::starknet::SyscallResultTrait;
 
 /// A handle to the state of a SHA-256 hash.
 #[derive(Copy, Drop)]
@@ -28,14 +28,11 @@ pub fn compute_sha256_u32_array(
 ; 8] {
     add_sha256_padding(ref input, last_input_word, last_input_num_bytes);
 
-    let arr = input.span();
+    let mut input = input.span();
     let mut state = sha256_state_handle_init(BoxTrait::new(SHA256_INITIAL_STATE));
-    let mut ind = 0;
 
-    while ind != arr.len() {
-        let input: Span<u32> = arr.slice(ind, 16);
-        state = starknet::syscalls::sha256_process_block_syscall(state, input).unwrap_syscall();
-        ind = ind + 16;
+    while let Option::Some(chunk) = input.multi_pop_front() {
+        state = starknet::syscalls::sha256_process_block_syscall(state, *chunk).unwrap_syscall();
     };
 
     sha256_state_handle_digest(state).unbox()
@@ -84,7 +81,7 @@ fn add_sha256_padding(ref arr: Array<u32>, last_input_word: u32, last_input_num_
         } else {
             (0x1000000, 0x100, 0x80)
         };
-        let (_, r) = core::integer::u32_safe_divmod(last_input_word, q);
+        let (_, r) = crate::integer::u32_safe_divmod(last_input_word, q);
         arr.append(r * m + pad);
     }
 
@@ -154,6 +151,10 @@ fn append_zeros(ref arr: Array<u32>, count: felt252) {
     }
     arr.append(0);
     if count == 14 {
+        return;
+    }
+    arr.append(0);
+    if count == 15 {
         return;
     }
     arr.append(0);

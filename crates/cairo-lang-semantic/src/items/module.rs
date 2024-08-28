@@ -1,15 +1,13 @@
-use std::ops::Deref;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementId, TraitId,
+    LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
@@ -17,8 +15,8 @@ use smol_str::SmolStr;
 use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
 use super::visibility::Visibility;
-use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind;
+use crate::db::{get_resolver_data_options, SemanticGroup};
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::resolve::ResolvedGenericItem;
 use crate::SemanticDiagnostic;
 
@@ -32,7 +30,7 @@ pub struct ModuleItemInfo {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleSemanticData {
-    // The items in the module without duplicates.
+    /// The items in the module without duplicates.
     pub items: OrderedHashMap<SmolStr, ModuleItemInfo>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
@@ -58,19 +56,7 @@ pub fn priv_module_semantic_data(
             }
             ModuleItemId::Use(item_id) => {
                 let use_ast = &def_db.module_uses(module_id)?[item_id];
-                let use_path = ast::UsePath::Leaf(use_ast.clone());
-                let mut node = use_path.as_syntax_node();
-                let item = loop {
-                    let Some(parent) = node.parent() else {
-                        unreachable!("UsePath is not under an ItemUse.");
-                    };
-                    match parent.kind(syntax_db) {
-                        SyntaxKind::ItemUse => {
-                            break ast::ItemUse::from_syntax_node(syntax_db, parent);
-                        }
-                        _ => node = parent,
-                    }
-                };
+                let item = ast::UsePath::Leaf(use_ast.clone()).get_item(syntax_db);
                 (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
             }
             ModuleItemId::FreeFunction(item_id) => {
@@ -118,10 +104,10 @@ pub fn priv_module_semantic_data(
         {
             // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
             // guaranteed to succeed.
-            let stable_location =
-                StableLocation::new(db.module_item_name_stable_ptr(module_id, item_id).unwrap());
-            let kind = SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.clone() };
-            diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
+            diagnostics.report(
+                db.module_item_name_stable_ptr(module_id, item_id).unwrap(),
+                SemanticDiagnosticKind::NameDefinedMultipleTimes(name.clone()),
+            );
         }
     }
     Ok(Arc::new(ModuleSemanticData { items, diagnostics: diagnostics.build() }))
@@ -145,6 +131,32 @@ pub fn module_item_info_by_name(
     Ok(module_data.items.get(&name).cloned())
 }
 
+/// Query implementation of [SemanticGroup::module_all_used_items].
+pub fn module_all_used_items(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+) -> Maybe<Arc<OrderedHashSet<LookupItemId>>> {
+    let mut all_used_items = OrderedHashSet::default();
+    let module_items = db.module_items(module_id)?;
+    for item in module_items.iter() {
+        if let Some(items) = match *item {
+            ModuleItemId::Submodule(submodule_id) => {
+                Some(db.module_all_used_items(ModuleId::Submodule(submodule_id))?)
+            }
+            ModuleItemId::Trait(trait_id) => Some(db.trait_all_used_items(trait_id)?),
+            ModuleItemId::Impl(impl_id) => Some(db.impl_all_used_items(impl_id)?),
+            _ => None,
+        } {
+            all_used_items.extend(items.iter().cloned());
+        } else {
+            for resolver_data in get_resolver_data_options(LookupItemId::ModuleItem(*item), db) {
+                all_used_items.extend(resolver_data.used_items.iter().cloned());
+            }
+        }
+    }
+    Ok(all_used_items.into())
+}
+
 /// Query implementation of [SemanticGroup::module_attributes].
 pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<Vec<Attribute>> {
     Ok(match &module_id {
@@ -163,15 +175,18 @@ pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<V
 pub fn module_usable_trait_ids(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-) -> Maybe<Arc<OrderedHashSet<TraitId>>> {
-    let mut module_traits =
-        OrderedHashSet::from_iter(db.module_traits_ids(module_id)?.deref().clone());
+) -> Maybe<Arc<OrderedHashMap<TraitId, LookupItemId>>> {
+    let mut module_traits = OrderedHashMap::from_iter(
+        db.module_traits_ids(module_id)?
+            .iter()
+            .map(|traid_id| (*traid_id, LookupItemId::ModuleItem(ModuleItemId::Trait(*traid_id)))),
+    );
     // Add traits from impls in the module.
     for imp in db.module_impls_ids(module_id)?.iter().copied() {
         let Ok(trait_id) = db.impl_def_trait(imp) else {
             continue;
         };
-        module_traits.insert(trait_id);
+        module_traits.entry(trait_id).or_insert(LookupItemId::ModuleItem(ModuleItemId::Impl(imp)));
     }
     // Add traits from impl aliases in the module.
     for alias in db.module_impl_aliases_ids(module_id)?.iter().copied() {
@@ -181,7 +196,9 @@ pub fn module_usable_trait_ids(
         let Ok(trait_id) = db.impl_def_trait(impl_id) else {
             continue;
         };
-        module_traits.insert(trait_id);
+        module_traits
+            .entry(trait_id)
+            .or_insert(LookupItemId::ModuleItem(ModuleItemId::ImplAlias(alias)));
     }
     // Add traits from uses in the module.
     for use_id in db.module_uses_ids(module_id)?.iter().copied() {
@@ -191,17 +208,18 @@ pub fn module_usable_trait_ids(
         match resolved_item {
             // use of a trait.
             ResolvedGenericItem::Trait(trait_id) => {
-                module_traits.insert(trait_id);
+                module_traits.insert(trait_id, LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
             }
             // use of an impl from which we get the trait.
             ResolvedGenericItem::Impl(impl_def_id) => {
-                let Ok(trait_id) = db.impl_def_trait(impl_def_id) else {
-                    continue;
+                if let Ok(trait_id) = db.impl_def_trait(impl_def_id) {
+                    module_traits
+                        .entry(trait_id)
+                        .or_insert(LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
                 };
-                module_traits.insert(trait_id);
             }
             _ => {}
-        };
+        }
     }
     Ok(module_traits.into())
 }

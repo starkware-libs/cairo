@@ -1,19 +1,16 @@
-use starknet::{
-    ClassHash, ContractAddress, EthAddress, StorageAddress, SyscallResult,
-    storage_address_to_felt252, storage_address_try_from_felt252
-};
-use core::test::test_utils::assert_eq;
+use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 use super::utils::{deserialized, serialized};
+
+#[feature("deprecated-bounded-int-trait")]
 use core::integer::BoundedInt;
-use core::zeroable::Zeroable;
-use core::byte_array::ByteArrayTrait;
+use core::num::traits::Zero;
+use starknet::storage::Vec;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
-        storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs)
-    }
-    fn ne(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
-        !(storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs))
+        let lhs: felt252 = (*lhs).into();
+        let rhs: felt252 = (*rhs).into();
+        lhs == rhs
     }
 }
 
@@ -29,7 +26,9 @@ struct TupleStructure {
     v1: u256,
     v2: u256,
 }
-impl TupleStructureStorePacking of starknet::StorePacking<TupleStructure, (felt252, felt252)> {
+impl TupleStructureStorePacking of starknet::storage_access::StorePacking<
+    TupleStructure, (felt252, felt252)
+> {
     fn pack(value: TupleStructure) -> (felt252, felt252) {
         (value.v1.try_into().unwrap(), value.v2.try_into().unwrap())
     }
@@ -80,15 +79,38 @@ struct NonZeros {
     value_felt252: NonZero<felt252>,
 }
 
+#[starknet::storage_node]
+struct Vecs {
+    vec: Vec<u32>,
+    vec_of_vecs: Vec<Vec<u32>>,
+}
+
+#[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
+#[starknet::sub_pointers(QueryableEnumVariants)]
+enum QueryableEnum {
+    A: (),
+    B: u128,
+    C: u256,
+}
+
 #[starknet::contract]
 mod test_contract {
-    use super::{AbcEtc, ByteArrays, NonZeros};
+    use core::starknet::storage::{SubPointersForward, SubPointersMutForward};
+    use super::{
+        AbcEtc, ByteArrays, NonZeros, Vecs, QueryableEnum, QueryableEnumVariants,
+        QueryableEnumVariantsMut
+    };
+    use starknet::storage::{
+        VecTrait, MutableVecTrait, StoragePointerWriteAccess, StoragePointerReadAccess
+    };
 
     #[storage]
     struct Storage {
         data: AbcEtc,
         byte_arrays: ByteArrays,
         non_zeros: NonZeros,
+        vecs: Vecs,
+        queryable_enum: QueryableEnum,
     }
 
     #[external(v0)]
@@ -99,6 +121,16 @@ mod test_contract {
     #[external(v0)]
     pub fn get_data(self: @ContractState) -> AbcEtc {
         self.data.read()
+    }
+
+    #[external(v0)]
+    pub fn get_data_f_high(self: @ContractState) -> u128 {
+        self.data.f.high.read()
+    }
+
+    #[external(v0)]
+    pub fn get_data_f_low(self: @ContractState) -> u128 {
+        self.data.f.low.read()
     }
 
     #[external(v0)]
@@ -120,6 +152,77 @@ mod test_contract {
     pub fn get_non_zeros(self: @ContractState) -> NonZeros {
         self.non_zeros.read()
     }
+
+    #[external(v0)]
+    pub fn append_to_vec(ref self: ContractState, value: u32) {
+        self.vecs.vec.append().write(value);
+    }
+
+    #[external(v0)]
+    pub fn get_vec_length(self: @ContractState) -> u64 {
+        self.vecs.vec.len()
+    }
+
+    #[external(v0)]
+    pub fn get_vec_element(self: @ContractState, index: u64) -> u32 {
+        self.vecs.vec[index].read()
+    }
+
+    #[external(v0)]
+    pub fn append_an_vec(ref self: ContractState) {
+        self.vecs.vec_of_vecs.append();
+    }
+
+    #[external(v0)]
+    pub fn append_to_nested_vec(ref self: ContractState, index: u64, value: u32) {
+        self.vecs.vec_of_vecs[index].append().write(value);
+    }
+
+    #[external(v0)]
+    pub fn get_vec_of_vecs_length(self: @ContractState) -> u64 {
+        self.vecs.vec_of_vecs.len()
+    }
+
+    #[external(v0)]
+    pub fn get_nested_vec_length(self: @ContractState, index: u64) -> u64 {
+        self.vecs.vec_of_vecs[index].len()
+    }
+
+    #[external(v0)]
+    pub fn get_nested_vec_element(self: @ContractState, index: u64, nested_index: u64) -> u32 {
+        self.vecs.vec_of_vecs[index][nested_index].read()
+    }
+
+    #[external(v0)]
+    pub fn set_queryable_enum(ref self: ContractState, value: QueryableEnum) {
+        self.queryable_enum.write(value);
+    }
+
+    #[external(v0)]
+    pub fn is_queryable_enum_a(self: @ContractState) -> bool {
+        if let QueryableEnumVariants::A(_) = self.queryable_enum.sub_pointers() {
+            true
+        } else {
+            false
+        }
+    }
+    #[external(v0)]
+    pub fn get_queryable_enum_low(self: @ContractState) -> u128 {
+        match self.queryable_enum.sub_pointers() {
+            QueryableEnumVariants::B(ptr) => ptr.read(),
+            QueryableEnumVariants::C(ptr) => ptr.low.read(),
+            _ => 0
+        }
+    }
+
+    #[external(v0)]
+    pub fn set_queryable_enum_low(ref self: ContractState, value: u128) {
+        match self.queryable_enum.sub_pointers_mut() {
+            QueryableEnumVariantsMut::B(ptr) => ptr.write(value),
+            QueryableEnumVariantsMut::C(ptr) => ptr.low.write(value),
+            _ => {}
+        }
+    }
 }
 
 #[test]
@@ -130,10 +233,10 @@ fn write_read_struct() {
         c: 3_u32,
         d: 4_u64,
         e: 5_u128,
-        f: BoundedInt::max(),
-        g: Zeroable::zero(),
-        h: Zeroable::zero(),
-        i: storage_address_try_from_felt252(123_felt252).unwrap(),
+        f: BoundedInt::max() - 1,
+        g: Zero::zero(),
+        h: Zero::zero(),
+        i: 123.try_into().unwrap(),
         j: true,
         k: 123_felt252.try_into().unwrap(),
         abc: Abc { a: 1_u8, b: 2_u16, c: 3_u32, },
@@ -144,6 +247,14 @@ fn write_read_struct() {
 
     assert!(test_contract::__external::set_data(serialized(x)).is_empty());
     assert_eq!(deserialized(test_contract::__external::get_data(serialized(()))), x);
+    assert_eq!(
+        deserialized(test_contract::__external::get_data_f_low(serialized(()))),
+        BoundedInt::max() - 1_u128
+    );
+    assert_eq!(
+        deserialized(test_contract::__external::get_data_f_high(serialized(()))),
+        BoundedInt::<u128>::max()
+    );
 }
 
 #[test]
@@ -169,18 +280,20 @@ fn write_read_byte_arrays() {
     assert!(test_contract::__external::set_byte_arrays(serialized(x.clone())).is_empty());
     assert_eq!(deserialized(test_contract::__external::get_byte_arrays(serialized(()))), x);
     // Make sure the lengths were saved correctly.
-    let base_address = starknet::storage_base_address_from_felt252(selector!("byte_arrays"));
+    let base_address = starknet::storage_access::storage_base_address_from_felt252(
+        selector!("byte_arrays")
+    );
     assert!(starknet::Store::read_at_offset(0, base_address, 0).unwrap() == 0_usize);
     assert!(starknet::Store::read_at_offset(0, base_address, 1).unwrap() == 15_usize);
     assert!(starknet::Store::read_at_offset(0, base_address, 2).unwrap() == 36_usize);
     assert!(starknet::Store::read_at_offset(0, base_address, 3).unwrap() == 16384_usize);
     // Make sure the internal data was saved correctly.
     let (r, _, _) = core::poseidon::hades_permutation(
-        starknet::storage_address_from_base_and_offset(base_address, 3).into(),
+        starknet::storage_access::storage_address_from_base_and_offset(base_address, 3).into(),
         2,
         'ByteArray'_felt252
     );
-    let internal_data_address = starknet::storage_base_address_from_felt252(r);
+    let internal_data_address = starknet::storage_access::storage_base_address_from_felt252(r);
     assert_eq!(
         starknet::Store::read_at_offset(0, internal_data_address, 0).unwrap(),
         '0123456789abcdef0123456789abcde'_felt252
@@ -205,4 +318,86 @@ fn test_read_write_non_zero() {
 
     assert!(test_contract::__external::set_non_zeros(serialized(x.clone())).is_empty());
     assert_eq!(deserialized(test_contract::__external::get_non_zeros(serialized(()))), x);
+}
+
+#[test]
+fn test_storage_array() {
+    assert!(test_contract::__external::append_to_vec(serialized(1_u32)).is_empty());
+    assert!(test_contract::__external::append_to_vec(serialized(2_u32)).is_empty());
+    assert!(test_contract::__external::append_to_vec(serialized(3_u32)).is_empty());
+    assert_eq!(deserialized(test_contract::__external::get_vec_length(serialized(()))), 3);
+    assert_eq!(deserialized(test_contract::__external::get_vec_element(serialized(0_u64))), 1);
+    assert_eq!(deserialized(test_contract::__external::get_vec_element(serialized(1_u64))), 2);
+    assert_eq!(deserialized(test_contract::__external::get_vec_element(serialized(2_u64))), 3);
+}
+
+#[test]
+fn test_storage_vec_of_vecs() {
+    assert!(test_contract::__external::append_an_vec(serialized(())).is_empty());
+    assert!(test_contract::__external::append_to_nested_vec(serialized((0_u64, 1_u32))).is_empty());
+    assert!(test_contract::__external::append_to_nested_vec(serialized((0_u64, 2_u32))).is_empty());
+    assert!(test_contract::__external::append_to_nested_vec(serialized((0_u64, 3_u32))).is_empty());
+    assert!(test_contract::__external::append_an_vec(serialized(())).is_empty());
+    assert!(test_contract::__external::append_to_nested_vec(serialized((1_u64, 4_u32))).is_empty());
+    assert!(test_contract::__external::append_to_nested_vec(serialized((1_u64, 5_u32))).is_empty());
+    assert_eq!(deserialized(test_contract::__external::get_vec_of_vecs_length(serialized(()))), 2);
+    assert_eq!(
+        deserialized(test_contract::__external::get_nested_vec_length(serialized(0_u64))), 3
+    );
+    assert_eq!(
+        deserialized(test_contract::__external::get_nested_vec_element(serialized((0_u64, 0_u64)))),
+        1
+    );
+    assert_eq!(
+        deserialized(test_contract::__external::get_nested_vec_element(serialized((0_u64, 1_u64)))),
+        2
+    );
+    assert_eq!(
+        deserialized(test_contract::__external::get_nested_vec_element(serialized((0_u64, 2_u64)))),
+        3
+    );
+    assert_eq!(
+        deserialized(test_contract::__external::get_nested_vec_length(serialized(1_u64))), 2
+    );
+    assert_eq!(
+        deserialized(test_contract::__external::get_nested_vec_element(serialized((1_u64, 0_u64)))),
+        4
+    );
+    assert_eq!(
+        deserialized(test_contract::__external::get_nested_vec_element(serialized((1_u64, 1_u64)))),
+        5
+    );
+}
+
+#[test]
+fn test_enum_sub_pointers() {
+    assert!(
+        test_contract::__external::set_queryable_enum(serialized(QueryableEnum::A(()))).is_empty()
+    );
+    assert!(deserialized(test_contract::__external::is_queryable_enum_a(serialized(()))));
+    assert_eq!(deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 0);
+    assert!(
+        test_contract::__external::set_queryable_enum(serialized(QueryableEnum::B(123_u128)))
+            .is_empty()
+    );
+    assert!(!deserialized(test_contract::__external::is_queryable_enum_a(serialized(()))));
+    assert_eq!(
+        deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 123
+    );
+    assert!(
+        test_contract::__external::set_queryable_enum(serialized(QueryableEnum::C(456_u256)))
+            .is_empty()
+    );
+    assert!(!deserialized(test_contract::__external::is_queryable_enum_a(serialized(()))));
+    assert_eq!(
+        deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 456
+    );
+    assert!(
+        test_contract::__external::set_queryable_enum(serialized(QueryableEnum::C(789_u256)))
+            .is_empty()
+    );
+    assert!(!deserialized(test_contract::__external::is_queryable_enum_a(serialized(()))));
+    assert_eq!(
+        deserialized(test_contract::__external::get_queryable_enum_low(serialized(()))), 789
+    );
 }

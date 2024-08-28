@@ -4,7 +4,7 @@
 test_expand_plugin(expect_diagnostics: false)
 
 //! > cairo_code
-// Some doc.
+/// Some doc.
 #[generate_trait]
 impl SomeImpl<T> of SomeTrait<T> {
     fn by_val(self: T) -> T {
@@ -32,7 +32,7 @@ impl SomeImpl<T> of SomeTrait<T> {
 }
 
 //! > expanded_cairo_code
-// Some doc.
+/// Some doc.
 #[generate_trait]
 impl SomeImpl<T> of SomeTrait<T> {
     fn by_val(self: T) -> T {
@@ -185,3 +185,60 @@ impl MyImpl<impl I: T> of MyTrait<I>;
 trait MyTrait<impl I: T>;
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of generate_trait trait type and const.
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+#[generate_trait]
+impl MyImpl of MyTrait {
+    type MyType = usize;
+    const MY_CONST: usize = 42;
+    fn foo() {}
+}
+
+//! > expanded_cairo_code
+#[generate_trait]
+impl MyImpl of MyTrait {
+    type MyType = usize;
+    const MY_CONST: usize = 42;
+    fn foo() {}
+}
+trait MyTrait {
+    type MyType;
+    const MY_CONST: usize;
+    fn foo();
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of generate_trait with an associated impl.
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+#[generate_trait]
+impl MyImpl of MyTrait {
+    impl AnImpl = SomeImpl;
+}
+
+//! > expanded_cairo_code
+#[generate_trait]
+impl MyImpl of MyTrait {
+    impl AnImpl = SomeImpl;
+}
+trait MyTrait {
+}
+
+//! > expected_diagnostics
+error: Only functions, types, and constants are supported in #[generate_trait].
+ --> test_src/lib.cairo:3:5
+    impl AnImpl = SomeImpl;
+    ^*********************^

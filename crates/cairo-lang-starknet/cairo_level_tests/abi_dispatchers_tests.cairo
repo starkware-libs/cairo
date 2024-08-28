@@ -1,5 +1,4 @@
-use starknet::{account::Call, ContractAddress};
-use core::test::test_utils::{assert_eq, assert_ne};
+use starknet::account::Call;
 
 use super::utils::serialized;
 
@@ -9,10 +8,8 @@ trait IAnotherContract<T> {}
 #[starknet::contract(account)]
 mod test_contract {
     use starknet::{account::Call, ContractAddress, ClassHash};
-    use super::{
-        IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
-        IAnotherContractDispatcherTrait
-    };
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use super::{IAnotherContractDispatcher, IAnotherContractLibraryDispatcher};
 
 
     #[storage]
@@ -53,22 +50,14 @@ mod test_contract {
 fn test_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     test_contract::__external::set_another_address(serialized(a));
-    assert_eq(
-        @test_contract::__external::get_another_address(serialized(())),
-        @serialized(a),
-        'Wrong result'
-    );
+    assert_eq!(test_contract::__external::get_another_address(serialized(())), serialized(a),);
 }
 
 #[test]
 fn test_library_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     test_contract::__external::set_another_class_hash(serialized(a));
-    assert_eq(
-        @test_contract::__external::get_another_class_hash(serialized(())),
-        @serialized(a),
-        'Wrong result'
-    );
+    assert_eq!(test_contract::__external::get_another_class_hash(serialized(())), serialized(a),);
 }
 
 
@@ -116,16 +105,16 @@ fn test_validate_gas_cost() {
     let serialized_args = serialized(calls);
     let post_serialization_gas = withdraw_and_get_available_gas();
 
-    test_contract::__wrapper____validate__(serialized_args);
+    test_contract::__external::__validate__(serialized_args);
     let post_call_gas = withdraw_and_get_available_gas();
 
     let call_building_gas_usage = base_gas - post_call_building_gas;
     let serialization_gas_usage = post_call_building_gas - post_serialization_gas;
     let entry_point_gas_usage = post_serialization_gas - post_call_gas;
     assert!(
-        call_building_gas_usage == 3150
-            && serialization_gas_usage == 50950
-            && entry_point_gas_usage == 141400,
+        call_building_gas_usage == 3250
+            && serialization_gas_usage == 54450
+            && entry_point_gas_usage == 144700,
         "Unexpected gas_usage:
      call_building: `{call_building_gas_usage}`.
      serialization: `{serialization_gas_usage}`.

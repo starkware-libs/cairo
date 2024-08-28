@@ -3,13 +3,15 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use semver::Version;
 use serde::{Deserialize, Serialize};
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
-    CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId, VirtualFile,
+    CodeMapping, CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId,
+    VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -18,6 +20,7 @@ use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 mod test;
 
 pub const CORELIB_CRATE_NAME: &str = "core";
+pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// A configuration per crate.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -38,6 +41,8 @@ impl CrateConfiguration {
 pub struct CrateSettings {
     /// The crate's Cairo edition.
     pub edition: Edition,
+    /// The crate's version.
+    pub version: Option<Version>,
 
     pub cfg_set: Option<CfgSet>,
 
@@ -61,6 +66,8 @@ pub enum Edition {
     V2023_10,
     #[serde(rename = "2023_11")]
     V2023_11,
+    #[serde(rename = "2024_07")]
+    V2024_07,
 }
 impl Edition {
     /// Returns the latest stable edition.
@@ -68,7 +75,7 @@ impl Edition {
     /// This Cairo edition is recommended for use in new projects and, in case of existing projects,
     /// to migrate to when possible.
     pub const fn latest() -> Self {
-        Self::V2023_11
+        Self::V2024_07
     }
 
     /// The name of the prelude submodule of `core::prelude` for this compatibility version.
@@ -76,6 +83,7 @@ impl Edition {
         match self {
             Self::V2023_01 => "v2023_01",
             Self::V2023_10 | Self::V2023_11 => "v2023_10",
+            Self::V2024_07 => "v2024_07",
         }
     }
 
@@ -83,7 +91,7 @@ impl Edition {
     pub fn ignore_visibility(&self) -> bool {
         match self {
             Self::V2023_01 | Self::V2023_10 => true,
-            Self::V2023_11 => false,
+            Self::V2023_11 | Self::V2024_07 => false,
         }
     }
 }
@@ -100,9 +108,17 @@ pub struct ExperimentalFeaturesConfig {
     pub coupons: bool,
 }
 
+/// A trait for defining files external to the `filesystem` crate.
+pub trait ExternalFiles {
+    /// Returns the virtual file matching the external id.
+    fn ext_as_virtual(&self, _external_id: salsa::InternId) -> VirtualFile {
+        panic!("Should not be called, unless specifically implemented!");
+    }
+}
+
 // Salsa database interface.
 #[salsa::query_group(FilesDatabase)]
-pub trait FilesGroup {
+pub trait FilesGroup: ExternalFiles {
     #[salsa::interned]
     fn intern_crate(&self, crt: CrateLongId) -> CrateId;
     #[salsa::interned]
@@ -120,7 +136,7 @@ pub trait FilesGroup {
     /// Change this mechanism to hold file_overrides on the db struct outside salsa mechanism,
     /// and invalidate manually.
     #[salsa::input]
-    fn file_overrides(&self) -> Arc<OrderedHashMap<FileId, Arc<String>>>;
+    fn file_overrides(&self) -> Arc<OrderedHashMap<FileId, Arc<str>>>;
 
     // TODO(yuval): consider moving this to a separate crate, or rename this crate.
     /// The compilation flags.
@@ -136,9 +152,9 @@ pub trait FilesGroup {
     fn crate_config(&self, crate_id: CrateId) -> Option<CrateConfiguration>;
 
     /// Query for raw file contents. Private.
-    fn priv_raw_file_content(&self, file_id: FileId) -> Option<Arc<String>>;
+    fn priv_raw_file_content(&self, file_id: FileId) -> Option<Arc<str>>;
     /// Query for the file contents. This takes overrides into consideration.
-    fn file_content(&self, file_id: FileId) -> Option<Arc<String>>;
+    fn file_content(&self, file_id: FileId) -> Option<Arc<str>>;
     fn file_summary(&self, file_id: FileId) -> Option<Arc<FileSummary>>;
 
     /// Query to get a compilation flag by its ID.
@@ -154,13 +170,14 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
 }
 
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
-    let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
+    let core_crate = CrateLongId::Real(CORELIB_CRATE_NAME.into()).intern(db);
     db.set_crate_config(
         core_crate,
         Some(CrateConfiguration {
             root: Directory::Real(core_lib_dir),
             settings: CrateSettings {
-                edition: Edition::V2023_11,
+                edition: Edition::V2024_07,
+                version: Version::parse(CORELIB_VERSION).ok(),
                 cfg_set: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig {
                     negative_impls: true,
@@ -179,7 +196,7 @@ impl AsFilesGroupMut for dyn FilesGroup {
 
 pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
     /// Overrides file content. None value removes the override.
-    fn override_file_content(&mut self, file: FileId, content: Option<Arc<String>>) {
+    fn override_file_content(&mut self, file: FileId, content: Option<Arc<str>>) {
         let mut overrides = Upcast::upcast(self).file_overrides().as_ref().clone();
         match content {
             Some(content) => overrides.insert(file, content),
@@ -223,22 +240,23 @@ fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
     db.crate_configs().keys().copied().collect()
 }
 fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration> {
-    match db.lookup_intern_crate(crt) {
+    match crt.lookup_intern(db) {
         CrateLongId::Real(_) => db.crate_configs().get(&crt).cloned(),
         CrateLongId::Virtual { name: _, config } => Some(config),
     }
 }
 
-fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
-    match db.lookup_intern_file(file) {
+fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
+    match file.lookup_intern(db) {
         FileLongId::OnDisk(path) => match fs::read_to_string(path) {
-            Ok(content) => Some(Arc::new(content)),
+            Ok(content) => Some(content.into()),
             Err(_) => None,
         },
         FileLongId::Virtual(virt) => Some(virt.content),
+        FileLongId::External(external_id) => Some(db.ext_as_virtual(external_id).content),
     }
 }
-fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
+fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
     let overrides = db.file_overrides();
     overrides.get(&file).cloned().or_else(|| db.priv_raw_file_content(file))
 }
@@ -264,9 +282,7 @@ pub fn get_originating_location(
     mut file_id: FileId,
     mut span: TextSpan,
 ) -> (FileId, TextSpan) {
-    while let FileLongId::Virtual(VirtualFile { parent: Some(parent), code_mappings, .. }) =
-        db.lookup_intern_file(file_id)
-    {
+    while let Some((parent, code_mappings)) = get_parent_and_mapping(db, file_id) {
         if let Some(origin) = code_mappings.iter().find_map(|mapping| mapping.translate(span)) {
             span = origin;
             file_id = parent;
@@ -275,4 +291,17 @@ pub fn get_originating_location(
         }
     }
     (file_id, span)
+}
+
+/// Returns the parent file and the code mappings of the file.
+fn get_parent_and_mapping(
+    db: &dyn FilesGroup,
+    file_id: FileId,
+) -> Option<(FileId, Arc<[CodeMapping]>)> {
+    let vf = match file_id.lookup_intern(db) {
+        FileLongId::OnDisk(_) => return None,
+        FileLongId::Virtual(vf) => vf,
+        FileLongId::External(id) => db.ext_as_virtual(id),
+    };
+    Some((vf.parent?, vf.code_mappings))
 }

@@ -33,6 +33,7 @@ pub enum SyntaxKind {
     ConditionExpr,
     ExprLoop,
     ExprWhile,
+    ExprFor,
     ElseClause,
     OptionElseClauseEmpty,
     ExprErrorPropagate,
@@ -41,6 +42,8 @@ pub enum SyntaxKind {
     ExprFixedSizeArray,
     FixedSizeArraySize,
     OptionFixedSizeArraySizeEmpty,
+    ExprClosure,
+    ClosureParamWrapperNAry,
     StructArgExpr,
     OptionStructArgExprEmpty,
     StructArgSingle,
@@ -74,6 +77,7 @@ pub enum SyntaxKind {
     OptionExprClauseEmpty,
     StatementReturn,
     StatementBreak,
+    StatementItem,
     Param,
     ModifierList,
     ParamList,
@@ -111,6 +115,7 @@ pub enum SyntaxKind {
     TraitItemImpl,
     ItemImpl,
     ItemInlineMacro,
+    ItemHeaderDoc,
     ImplBody,
     ImplItemList,
     ImplItemMissing,
@@ -165,6 +170,8 @@ pub enum SyntaxKind {
     TerminalIf,
     TokenWhile,
     TerminalWhile,
+    TokenFor,
+    TerminalFor,
     TokenLoop,
     TerminalLoop,
     TokenImpl,
@@ -292,7 +299,11 @@ pub enum SyntaxKind {
     TokenXor,
     TerminalXor,
     SyntaxFile,
+    TokenEmpty,
+    TerminalEmpty,
     TokenSingleLineComment,
+    TokenSingleLineInnerComment,
+    TokenSingleLineDocComment,
     TokenWhitespace,
     TokenNewline,
     TokenMissing,
@@ -315,6 +326,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenFunction
                 | SyntaxKind::TokenIf
                 | SyntaxKind::TokenWhile
+                | SyntaxKind::TokenFor
                 | SyntaxKind::TokenLoop
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
@@ -378,7 +390,10 @@ impl SyntaxKind {
                 | SyntaxKind::TokenSemicolon
                 | SyntaxKind::TokenUnderscore
                 | SyntaxKind::TokenXor
+                | SyntaxKind::TokenEmpty
                 | SyntaxKind::TokenSingleLineComment
+                | SyntaxKind::TokenSingleLineInnerComment
+                | SyntaxKind::TokenSingleLineDocComment
                 | SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenMissing
@@ -401,6 +416,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalFunction
                 | SyntaxKind::TerminalIf
                 | SyntaxKind::TerminalWhile
+                | SyntaxKind::TerminalFor
                 | SyntaxKind::TerminalLoop
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
@@ -464,6 +480,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalSemicolon
                 | SyntaxKind::TerminalUnderscore
                 | SyntaxKind::TerminalXor
+                | SyntaxKind::TerminalEmpty
         )
     }
     pub fn is_keyword_token(&self) -> bool {
@@ -478,6 +495,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenFunction
                 | SyntaxKind::TokenIf
                 | SyntaxKind::TokenWhile
+                | SyntaxKind::TokenFor
                 | SyntaxKind::TokenLoop
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
@@ -511,6 +529,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalFunction
                 | SyntaxKind::TerminalIf
                 | SyntaxKind::TerminalWhile
+                | SyntaxKind::TerminalFor
                 | SyntaxKind::TerminalLoop
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits

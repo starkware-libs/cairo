@@ -46,6 +46,9 @@ pub trait DiagnosticEntry: Clone + fmt::Debug + Eq + Hash {
     fn error_code(&self) -> Option<ErrorCode> {
         None
     }
+    /// Returns true if the two should be regarded as the same kind when filtering duplicate
+    /// diagnostics.
+    fn is_same_kind(&self, other: &Self) -> bool;
 
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
@@ -66,6 +69,22 @@ impl DiagnosticLocation {
     pub fn user_location(&self, db: &dyn FilesGroup) -> Self {
         let (file_id, span) = get_originating_location(db, self.file_id, self.span);
         Self { file_id, span }
+    }
+
+    /// Helper function to format the location of a diagnostic.
+    pub fn fmt_location(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
+        let user_location = self.user_location(db);
+        let file_path = user_location.file_id.full_path(db);
+        let start = match user_location.span.start.position_in_file(db, user_location.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        };
+
+        let end = match user_location.span.end.position_in_file(db, user_location.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        };
+        write!(f, "{file_path}:{start}: {end}")
     }
 }
 
@@ -256,8 +275,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         let mut res: Vec<FormattedDiagnosticEntry> = Vec::new();
 
         let files_db = db.upcast();
-        // Format leaves.
-        for entry in &self.0.leaves {
+        for entry in &self.get_diagnostics_without_duplicates(db) {
             let mut msg = String::new();
             msg += &format_diagnostics(files_db, &entry.format(db), entry.location(db));
             for note in entry.notes(db) {
@@ -269,8 +287,6 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
                 FormattedDiagnosticEntry::new(entry.severity(), entry.error_code(), msg);
             res.push(formatted);
         }
-        // Format subtrees.
-        res.extend(self.0.subtrees.iter().flat_map(|subtree| subtree.format_with_severity(db)));
         res
     }
 
@@ -296,12 +312,44 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     }
 
     // TODO(spapini): This is temporary. Remove once the logic in language server doesn't use this.
+    /// Get all diagnostics.
     pub fn get_all(&self) -> Vec<TEntry> {
         let mut res = self.0.leaves.clone();
         for subtree in &self.0.subtrees {
             res.extend(subtree.get_all())
         }
         res
+    }
+
+    /// Get diagnostics without duplication.
+    ///
+    /// Two diagnostics are considered duplicated if both point to
+    /// the same location in the user code, and are of the same kind.
+    pub fn get_diagnostics_without_duplicates(&self, db: &TEntry::DbType) -> Vec<TEntry> {
+        let diagnostic_with_dup = self.get_all();
+        if diagnostic_with_dup.is_empty() {
+            return diagnostic_with_dup;
+        }
+        let files_db = db.upcast();
+        let mut indexed_dup_diagnostic = diagnostic_with_dup
+            .iter()
+            .enumerate()
+            .sorted_by_key(|(idx, diag)| (diag.location(db).user_location(files_db).span, *idx));
+        let mut prev_diagnostic_indexed = indexed_dup_diagnostic.next().unwrap();
+        let mut diagnostic_without_dup = vec![prev_diagnostic_indexed];
+
+        for diag in indexed_dup_diagnostic {
+            if prev_diagnostic_indexed.1.is_same_kind(diag.1)
+                && prev_diagnostic_indexed.1.location(db).user_location(files_db).span
+                    == diag.1.location(db).user_location(files_db).span
+            {
+                continue;
+            }
+            diagnostic_without_dup.push(diag);
+            prev_diagnostic_indexed = diag;
+        }
+        diagnostic_without_dup.sort_by_key(|(idx, _)| *idx);
+        diagnostic_without_dup.into_iter().map(|(_, diag)| diag.clone()).collect()
     }
 }
 impl<TEntry: DiagnosticEntry> Default for Diagnostics<TEntry> {

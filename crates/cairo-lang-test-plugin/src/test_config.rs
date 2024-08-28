@@ -1,4 +1,3 @@
-use cairo_felt::{felt_str, Felt252};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -9,6 +8,7 @@ use itertools::chain;
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt as Felt252;
 
 use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, STATIC_GAS_ARG, TEST_ATTR};
 
@@ -134,7 +134,7 @@ fn extract_available_gas(
         return Some(u32::MAX as usize);
     };
     match &attr.args[..] {
-        [AttributeArg { variant: AttributeArgVariant::Unnamed { value, .. }, .. }] => match value {
+        [AttributeArg { variant: AttributeArgVariant::Unnamed(value), .. }] => match value {
             ast::Expr::Path(path)
                 if path.as_syntax_node().get_text_without_trivia(db) == STATIC_GAS_ARG =>
             {
@@ -166,7 +166,7 @@ fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fel
     else {
         return None;
     };
-    require(name == "expected")?;
+    require(name.text == "expected")?;
 
     match value {
         ast::Expr::Tuple(panic_exprs) => {
@@ -212,7 +212,7 @@ fn extract_string_panic_bytes(
     let pending_word = BigInt::from_bytes_be(Sign::Plus, remainder).into();
 
     chain!(
-        [felt_str!(BYTE_ARRAY_MAGIC, 16), num_full_words],
+        [Felt252::from_hex(BYTE_ARRAY_MAGIC).unwrap(), num_full_words],
         full_words.into_iter(),
         [pending_word, pending_word_len]
     )

@@ -7,7 +7,7 @@ use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use lowering::ids::ConcreteFunctionWithBodyId;
 use semantic::items::imp::ImplLookupContext;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -87,7 +87,7 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     /// A type depends on another type if it contains or may contain it, as a field or by holding a
     /// reference to it.
     #[salsa::invoke(crate::types::type_dependencies)]
-    fn type_dependencies(&self, type_id: semantic::TypeId) -> Maybe<Arc<Vec<semantic::TypeId>>>;
+    fn type_dependencies(&self, type_id: semantic::TypeId) -> Maybe<Arc<[semantic::TypeId]>>;
 
     /// Returns the [cairo_lang_sierra::program::FunctionSignature] object for the given function
     /// id.
@@ -120,14 +120,14 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::invoke(ap_change::get_ap_change)]
     fn get_ap_change(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<SierraApChange>;
 
-    /// Returns the [cairo_lang_sierra::program::Program] object of the requested functions.
+    /// Returns the [SierraProgramWithDebug] object of the requested functions.
     #[salsa::invoke(program_generator::get_sierra_program_for_functions)]
     fn get_sierra_program_for_functions(
         &self,
         requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
     ) -> Maybe<Arc<SierraProgramWithDebug>>;
 
-    /// Returns the [cairo_lang_sierra::program::Program] object of the requested crates.
+    /// Returns the [SierraProgramWithDebug] object of the requested crates.
     #[salsa::invoke(program_generator::get_sierra_program)]
     fn get_sierra_program(
         &self,
@@ -144,7 +144,7 @@ fn get_function_signature(
     // of only the explicit ret_type. Also use it for params instead of the current logic. Then use
     // it in the end of program_generator::get_sierra_program instead of calling this function from
     // there.
-    let lowered_function_id = db.lookup_intern_sierra_function(function_id);
+    let lowered_function_id = function_id.lookup_intern(db);
     let signature = lowered_function_id.signature(db.upcast())?;
     let may_panic = db.function_may_panic(lowered_function_id)?;
 
@@ -188,7 +188,7 @@ fn get_type_info(
     db: &dyn SierraGenGroup,
     concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> Maybe<Arc<cairo_lang_sierra::extensions::types::TypeInfo>> {
-    let long_id = match db.lookup_intern_concrete_type(concrete_type_id) {
+    let long_id = match concrete_type_id.lookup_intern(db) {
         SierraGeneratorTypeLongId::Regular(long_id) => long_id,
         SierraGeneratorTypeLongId::CycleBreaker(ty) => {
             let long_id = db.get_concrete_long_type_id(ty)?.as_ref().clone();
@@ -208,7 +208,7 @@ fn get_type_info(
                 storable: false,
                 droppable: false,
                 duplicatable: false,
-                zero_sized: false,
+                zero_sized: true,
             }));
         }
     };
@@ -230,7 +230,7 @@ pub fn sierra_concrete_long_id(
     db: &dyn SierraGenGroup,
     concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>> {
-    match db.lookup_intern_concrete_type(concrete_type_id) {
+    match concrete_type_id.lookup_intern(db) {
         SierraGeneratorTypeLongId::Regular(long_id) => Ok(long_id),
         SierraGeneratorTypeLongId::Phantom(type_id)
         | SierraGeneratorTypeLongId::CycleBreaker(type_id) => db.get_concrete_long_type_id(type_id),

@@ -14,12 +14,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "core::felt252", found: "(?0, ?1)".
- --> lib.cairo:2:22
-    let _: felt252 = (3, 3);
-                     ^****^
-
-error: Unexpected argument type. Expected: "core::felt252", found: "(?2, ?3)".
+error: Unexpected argument type. Expected: "core::felt252", found: "(?0, ?1)".
  --> lib.cairo:2:22
     let _: felt252 = (3, 3);
                      ^****^
@@ -43,11 +38,6 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "core::felt252", found: "@?0".
- --> lib.cairo:2:22
-    let _: felt252 = @3_felt252;
-                     ^********^
-
 error: Unexpected argument type. Expected: "core::felt252", found: "@core::felt252".
  --> lib.cairo:2:22
     let _: felt252 = @3_felt252;
@@ -76,10 +66,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "@core::felt252", found: "core::integer::u32".
- --> lib.cairo:2:23
+error: Desnap operator can only be applied on snapshots
+ --> lib.cairo:2:22
     let _: felt252 = *3_u32;
-                      ^***^
+                     ^
 
 //! > ==========================================================================
 
@@ -99,11 +89,6 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u16".
- --> lib.cairo:2:28
-    let _: [felt252; 2] = [3_u16; 2];
-                           ^***^
-
 error: Unexpected argument type. Expected: "[core::felt252; 2]", found: "[core::integer::u16; 2]".
  --> lib.cairo:2:27
     let _: [felt252; 2] = [3_u16; 2];
@@ -127,11 +112,6 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u16".
- --> lib.cairo:2:28
-    let _: [felt252; 2] = [3_u16, 3_u32];
-                           ^***^
-
 error: Unexpected argument type. Expected: "core::integer::u16", found: "core::integer::u32".
  --> lib.cairo:2:35
     let _: [felt252; 2] = [3_u16, 3_u32];
@@ -158,15 +138,10 @@ struct MyGenericType<T> {
 }
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u32".
- --> lib.cairo:5:56
+error: Unexpected argument type. Expected: "test::MyGenericType::<core::felt252>", found: "test::MyGenericType::<core::integer::u32>".
+ --> lib.cairo:5:37
     let _: MyGenericType<felt252> = MyGenericType { x: 3_u32 };
-                                                       ^***^
-
-error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u32".
- --> lib.cairo:5:53
-    let _: MyGenericType<felt252> = MyGenericType { x: 3_u32 };
-                                                    ^
+                                    ^************************^
 
 //! > ==========================================================================
 
@@ -189,11 +164,6 @@ struct MyGenericType<T> {
 }
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "test::MyGenericType::<core::felt252>", found: "test::MyGenericType::<core::integer::u32>".
- --> lib.cairo:5:37
-    let _: MyGenericType<felt252> = MyGenericType { x: 3_felt252, ..other };
-                                    ^*************************************^
-
 error: Unexpected argument type. Expected: "test::MyGenericType::<core::felt252>", found: "test::MyGenericType::<core::integer::u32>".
  --> lib.cairo:5:69
     let _: MyGenericType<felt252> = MyGenericType { x: 3_felt252, ..other };
@@ -217,12 +187,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected expression type. Expected: "core::felt252", found: "core::integer::u16".
- --> lib.cairo:2:43
+error: Unexpected argument type. Expected: "core::option::Option::<core::felt252>", found: "core::option::Option::<core::integer::u16>".
+ --> lib.cairo:2:30
     let _: Option<felt252> = Option::Some(3_u16);
-                                          ^***^
-
-error: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u16".
- --> lib.cairo:2:43
-    let _: Option<felt252> = Option::Some(3_u16);
-                                          ^***^
+                             ^*****************^

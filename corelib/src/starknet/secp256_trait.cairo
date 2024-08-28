@@ -1,12 +1,15 @@
+#[allow(unused_imports)]
 use core::array::ArrayTrait;
 use core::math::{u256_mul_mod_n, u256_inv_mod};
 use core::option::OptionTrait;
+#[allow(unused_imports)]
 use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, SyscallResultTrait};
 use core::traits::{Into, TryInto};
+#[allow(unused_imports)]
 use core::integer::U256TryIntoNonZero;
 
 /// Secp256{k/r}1 ECDSA signature.
-#[derive(Copy, Drop, Debug, PartialEq, Serde, starknet::Store, Hash)]
+#[derive(Copy, Drop, Debug, PartialEq, Serde, Hash)]
 pub struct Signature {
     pub r: u256,
     pub s: u256,
@@ -17,6 +20,15 @@ pub struct Signature {
     pub y_parity: bool,
 }
 
+impl SignatureStorePacking of starknet::StorePacking<Signature, (u256, u256, bool)> {
+    fn pack(value: Signature) -> (u256, u256, bool) {
+        (value.r, value.s, value.y_parity)
+    }
+    fn unpack(value: (u256, u256, bool)) -> Signature {
+        let (r, s, y_parity) = value;
+        Signature { r, s, y_parity }
+    }
+}
 
 /// Creates an ECDSA signature from the `v`, `r` and `s` values.
 /// `v` is the sum of an odd number and the parity of the y coordinate of the ec point whose x

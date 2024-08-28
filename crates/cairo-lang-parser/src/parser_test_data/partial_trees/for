@@ -1,0 +1,83 @@
+//! > Test loops
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let array = [1, 2, 3];
+    for index in array {
+        1;
+    }
+}
+
+//! > top_level_kind
+ExprFor
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprFor
+    ├── for_kw (kind: TokenFor): 'for'
+    ├── pattern (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'index'
+    ├── identifier (kind: TokenIdentifier): 'in'
+    ├── expr (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'array'
+    └── body (kind: ExprBlock)
+        ├── lbrace (kind: TokenLBrace): '{'
+        ├── statements (kind: StatementList)
+        │   └── child #0 (kind: StatementExpr)
+        │       ├── attributes (kind: AttributeList) []
+        │       ├── expr (kind: TokenLiteralNumber): '1'
+        │       └── semicolon (kind: TokenSemicolon): ';'
+        └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test bad identifier for loop
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn f() {
+    let array = [1, 2, 3];
+    for index at array {
+        1;
+    }
+}
+
+//! > top_level_kind
+ExprFor
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: 'in'.
+ --> dummy_file.cairo:3:15
+    for index at array {
+              ^^
+
+//! > expected_tree
+└── Top level kind: ExprFor
+    ├── for_kw (kind: TokenFor): 'for'
+    ├── pattern (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'index'
+    ├── identifier: Missing
+    ├── expr (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'array'
+    └── body (kind: ExprBlock)
+        ├── lbrace (kind: TokenLBrace): '{'
+        ├── statements (kind: StatementList)
+        │   └── child #0 (kind: StatementExpr)
+        │       ├── attributes (kind: AttributeList) []
+        │       ├── expr (kind: TokenLiteralNumber): '1'
+        │       └── semicolon (kind: TokenSemicolon): ';'
+        └── rbrace (kind: TokenRBrace): '}'

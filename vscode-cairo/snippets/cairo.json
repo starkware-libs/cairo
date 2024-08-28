@@ -16,12 +16,7 @@
   },
   "Creates a constructor": {
     "prefix": ["const", "constructor"],
-    "body": [
-      "#[constructor]",
-      "fn constructor(ref self: ContractState) {",
-      "\t$1",
-      "}"
-    ],
+    "body": ["#[constructor]", "fn constructor(ref self: ContractState) {", "\t$1", "}"],
     "description": "Creates an empty constructor"
   },
   "Creates an empty array variable": {
@@ -46,23 +41,12 @@
   },
   "Creates the contract's event set": {
     "prefix": "event",
-    "body": [
-      "#[event]",
-      "#[derive(Drop, starknet::Event)]",
-      "enum Event {",
-      "\t$2: $2,",
-      "}"
-    ],
+    "body": ["#[event]", "#[derive(Drop, starknet::Event)]", "enum Event {", "\t$2: $2,", "}"],
     "description": "Creates the contract's event set"
   },
   "Creates an event": {
     "prefix": "event",
-    "body": [
-      "#[derive(Drop, starknet::Event)]",
-      "struct $1 {",
-      "\t$2: ${3},",
-      "}"
-    ],
+    "body": ["#[derive(Drop, starknet::Event)]", "struct $1 {", "\t$2: ${3},", "}"],
     "description": "Creates an event"
   },
   "Creates a function": {
@@ -77,12 +61,7 @@
   },
   "Creates an interface": {
     "prefix": ["interface, abi"],
-    "body": [
-      "#[starknet::interface]",
-      "trait $1<TContractState> {",
-      "\t$2",
-      "}"
-    ],
+    "body": ["#[starknet::interface]", "trait $1<TContractState> {", "\t$2", "}"],
     "description": "Creates a starknet interface"
   },
   "Creates a view function": {
@@ -92,16 +71,7 @@
   },
   "Match": {
     "prefix": ["match"],
-    "body": [
-      "match $1 {",
-      "\t$2 => {",
-      "\t\t$4",
-      "\t},",
-      "\t$3 => {",
-      "\t\t$5",
-      "\t},",
-      "}"
-    ],
+    "body": ["match $1 {", "\t$2 => {", "\t\t$4", "\t},", "\t$3 => {", "\t\t$5", "\t},", "}"],
     "description": "Match statement"
   },
   "Match pop_front": {
@@ -136,13 +106,7 @@
   },
   "Impl a trait": {
     "prefix": "impl",
-    "body": [
-      "impl $1<T> {",
-      "\tfn $2($3: ${4}) -> ${5} {",
-      "\t\t$6",
-      "\t}",
-      "}"
-    ],
+    "body": ["impl $1<T> {", "\tfn $2($3: ${4}) -> ${5} {", "\t\t$6", "\t}", "}"],
     "description": "Creates a trait"
   },
   "Impl a starknet interface trait": {
@@ -152,12 +116,7 @@
   },
   "Generate Trait": {
     "prefix": "generate_trait",
-    "body": [
-      "#[generate_trait]",
-      "impl Private of PrivateTrait {",
-      "\t$1",
-      "}"
-    ],
+    "body": ["#[generate_trait]", "impl Private of PrivateTrait {", "\t$1", "}"],
     "description": "Create a generate trait impl"
   },
   "Creates an Enum object": {

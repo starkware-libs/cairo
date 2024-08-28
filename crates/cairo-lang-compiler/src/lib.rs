@@ -3,16 +3,22 @@
 //! This crate is responsible for compiling a Cairo project into a Sierra program.
 //! It is the main entry point for the compiler.
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
-use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
+use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
+use cairo_lang_sierra_generator::program_generator::{
+    try_get_function_with_body_id, SierraProgramWithDebug,
+};
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 use crate::db::RootDatabase;
 use crate::diagnostics::DiagnosticsReporter;
@@ -22,6 +28,9 @@ pub mod db;
 pub mod diagnostics;
 pub mod project;
 
+#[cfg(test)]
+mod test;
+
 /// Configuration for the compiler.
 #[derive(Default)]
 pub struct CompilerConfig<'c> {
@@ -30,6 +39,9 @@ pub struct CompilerConfig<'c> {
     /// Replaces sierra ids with human-readable ones.
     pub replace_ids: bool,
 
+    /// Disables inlining functions.
+    pub inlining_strategy: InliningStrategy,
+
     /// The name of the allowed libfuncs list to use in compilation.
     /// If None the default list of audited libfuncs will be used.
     pub allowed_libfuncs_list_name: Option<String>,
@@ -37,6 +49,10 @@ pub struct CompilerConfig<'c> {
     /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
     /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
     pub add_statements_functions: bool,
+
+    /// Adds mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
+    /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
+    pub add_statements_code_locations: bool,
 }
 
 /// Compiles a Cairo project at the given path.
@@ -53,7 +69,10 @@ pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
-    let mut db = RootDatabase::builder().detect_corelib().build()?;
+    let mut db = RootDatabase::builder()
+        .with_inlining_strategy(compiler_config.inlining_strategy)
+        .detect_corelib()
+        .build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
     compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }
@@ -82,8 +101,8 @@ pub fn compile(
 /// # Arguments
 /// * `db` - Preloaded compilation database.
 /// * `main_crate_ids` - [`CrateId`]s to compile. Do not include dependencies here, only pass
-///   top-level crates in order to eliminate unused code. Use
-///   `db.intern_crate(CrateLongId::Real(name))` in order to obtain [`CrateId`] from its name.
+///   top-level crates in order to eliminate unused code. Use `CrateLongId::Real(name).intern(db)`
+///   in order to obtain [`CrateId`] from its name.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
 /// * `Ok(Program)` - The compiled program.
@@ -104,14 +123,14 @@ pub fn compile_prepared_db_program(
 /// # Arguments
 /// * `db` - Preloaded compilation database.
 /// * `main_crate_ids` - [`CrateId`]s to compile. Do not include dependencies here, only pass
-///   top-level crates in order to eliminate unused code. Use
-///   `db.intern_crate(CrateLongId::Real(name))` in order to obtain [`CrateId`] from its name.
+///   top-level crates in order to eliminate unused code. Use `CrateLongId::Real(name).intern(db)`
+///   in order to obtain [`CrateId`] from its name.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
 /// * `Ok(SierraProgramWithDebug)` - The compiled program with debug info.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db(
-    db: &mut RootDatabase,
+    db: &RootDatabase,
     main_crate_ids: Vec<CrateId>,
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<SierraProgramWithDebug> {
@@ -131,6 +150,83 @@ pub fn compile_prepared_db(
     Ok(sierra_program_with_debug)
 }
 
+/// Spawns threads to compute the `function_with_body_sierra` query and all dependent queries for
+/// the requested functions and their dependencies.
+///
+/// Note that typically spawn_warmup_db should be used as this function is blocking.
+fn warmup_db_blocking(
+    snapshot: salsa::Snapshot<RootDatabase>,
+    requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
+) {
+    let processed_function_ids =
+        &Mutex::new(UnorderedHashSet::<ConcreteFunctionWithBodyId>::default());
+    rayon::scope(move |s| {
+        for func_id in requested_function_ids {
+            let snapshot = salsa::ParallelDatabase::snapshot(&*snapshot);
+
+            s.spawn(move |_| {
+                fn handle_func_inner(
+                    processed_function_ids: &Mutex<UnorderedHashSet<ConcreteFunctionWithBodyId>>,
+                    snapshot: salsa::Snapshot<RootDatabase>,
+                    func_id: ConcreteFunctionWithBodyId,
+                ) {
+                    if processed_function_ids.lock().unwrap().insert(func_id) {
+                        rayon::scope(move |s| {
+                            let db = &*snapshot;
+                            let Ok(function) = db.function_with_body_sierra(func_id) else {
+                                return;
+                            };
+                            for statement in &function.body {
+                                let Some(related_function_id) =
+                                    try_get_function_with_body_id(db, statement)
+                                else {
+                                    continue;
+                                };
+
+                                let snapshot = salsa::ParallelDatabase::snapshot(&*snapshot);
+                                s.spawn(move |_| {
+                                    handle_func_inner(
+                                        processed_function_ids,
+                                        snapshot,
+                                        related_function_id,
+                                    )
+                                })
+                            }
+                        });
+                    }
+                }
+
+                handle_func_inner(processed_function_ids, snapshot, func_id)
+            });
+        }
+    });
+}
+
+/// Spawns a task to warm up the db.
+fn spawn_warmup_db(db: &RootDatabase, requested_function_ids: Vec<ConcreteFunctionWithBodyId>) {
+    let snapshot = salsa::ParallelDatabase::snapshot(db);
+    rayon::spawn(move || warmup_db_blocking(snapshot, requested_function_ids));
+}
+
+///  Checks if there are diagnostics in the database and if there are None, returns
+///  the [SierraProgramWithDebug] object of the requested functions
+pub fn get_sierra_program_for_functions(
+    db: &RootDatabase,
+    requested_function_ids: Vec<ConcreteFunctionWithBodyId>,
+    mut diagnostic_reporter: DiagnosticsReporter<'_>,
+) -> Result<Arc<SierraProgramWithDebug>> {
+    if rayon::current_num_threads() > 1 {
+        // If we have more than one thread, we can use the other threads to warm up the db.
+        diagnostic_reporter.warm_up_diagnostics(db);
+        spawn_warmup_db(db, requested_function_ids.clone());
+    }
+
+    diagnostic_reporter.ensure(db)?;
+    db.get_sierra_program_for_functions(requested_function_ids)
+        .to_option()
+        .with_context(|| "Compilation failed without any diagnostics.")
+}
+
 /// Runs Cairo compiler.
 ///
 /// Wrapper over [`compile_prepared_db`], but this function returns [`ProgramArtifact`]
@@ -139,8 +235,8 @@ pub fn compile_prepared_db(
 /// # Arguments
 /// * `db` - Preloaded compilation database.
 /// * `main_crate_ids` - [`CrateId`]s to compile. Do not include dependencies here, only pass
-///   top-level crates in order to eliminate unused code. Use
-///   `db.intern_crate(CrateLongId::Real(name))` in order to obtain [`CrateId`] from its name.
+///   top-level crates in order to eliminate unused code. Use `CrateLongId::Real(name).intern(db)`
+///   in order to obtain [`CrateId`] from its name.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
 /// * `Ok(ProgramArtifact)` - The compiled program artifact with requested debug info.
@@ -148,27 +244,69 @@ pub fn compile_prepared_db(
 pub fn compile_prepared_db_program_artifact(
     db: &mut RootDatabase,
     main_crate_ids: Vec<CrateId>,
-    compiler_config: CompilerConfig<'_>,
+    mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ProgramArtifact> {
     let add_statements_functions = compiler_config.add_statements_functions;
+    let add_statements_code_locations = compiler_config.add_statements_code_locations;
 
-    let sierra_program_with_debug = compile_prepared_db(db, main_crate_ids, compiler_config)?;
-    let mut program_artifact = ProgramArtifact::stripped(sierra_program_with_debug.program);
+    compiler_config.diagnostics_reporter.ensure(db)?;
 
-    if add_statements_functions {
-        let statements_functions = sierra_program_with_debug
-            .debug_info
-            .statements_locations
-            .extract_statements_functions(db);
+    let executable_functions = find_executable_function_ids(db, main_crate_ids.clone());
 
-        let debug_info = DebugInfo {
-            type_names: Default::default(),
-            libfunc_names: Default::default(),
-            user_func_names: Default::default(),
-            annotations: Annotations::from(statements_functions),
-        };
-        program_artifact = program_artifact.with_debug_info(debug_info);
+    let mut sierra_program_with_debug = if executable_functions.is_empty() {
+        // No executables found - compile for all main crates.
+        // TODO(maciektr): Deprecate in future. This compilation is useless, without `replace_ids`.
+        Arc::unwrap_or_clone(
+            db.get_sierra_program(main_crate_ids)
+                .to_option()
+                .context("Compilation failed without any diagnostics")?,
+        )
+    } else {
+        // Compile for executable functions only.
+        Arc::unwrap_or_clone(
+            db.get_sierra_program_for_functions(executable_functions.clone().into_keys().collect())
+                .to_option()
+                .context("Compilation failed without any diagnostics")?,
+        )
+    };
+
+    if compiler_config.replace_ids {
+        sierra_program_with_debug.program =
+            replace_sierra_ids_in_program(db, &sierra_program_with_debug.program);
     }
 
-    Ok(program_artifact)
+    let mut annotations = Annotations::default();
+
+    if add_statements_functions {
+        annotations.extend(Annotations::from(
+            sierra_program_with_debug
+                .debug_info
+                .statements_locations
+                .extract_statements_functions(db),
+        ))
+    };
+
+    if add_statements_code_locations {
+        annotations.extend(Annotations::from(
+            sierra_program_with_debug
+                .debug_info
+                .statements_locations
+                .extract_statements_source_code_locations(db),
+        ))
+    };
+
+    let debug_info = DebugInfo {
+        type_names: Default::default(),
+        libfunc_names: Default::default(),
+        user_func_names: Default::default(),
+        annotations,
+        executables: Default::default(),
+    };
+
+    // Calculate executable function Sierra ids.
+    let executables =
+        collect_executables(db, executable_functions, &sierra_program_with_debug.program);
+
+    Ok(ProgramArtifact::stripped(sierra_program_with_debug.program)
+        .with_debug_info(DebugInfo { executables, ..debug_info }))
 }
