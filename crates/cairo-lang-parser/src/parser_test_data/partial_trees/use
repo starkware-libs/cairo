@@ -1,0 +1,35 @@
+//! > Test use
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+mod X {
+    fn in_X() {}
+}
+
+fn foo() {
+    use X::in_X;
+}
+
+//! > top_level_kind
+ItemUse
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemUse
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── use_kw (kind: TokenUse): 'use'
+    ├── use_path (kind: UsePathSingle)
+    │   ├── ident (kind: PathSegmentSimple)
+    │   │   └── ident (kind: TokenIdentifier): 'X'
+    │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   └── use_path (kind: UsePathLeaf)
+    │       ├── ident (kind: PathSegmentSimple)
+    │       │   └── ident (kind: TokenIdentifier): 'in_X'
+    │       └── alias_clause (kind: OptionAliasClauseEmpty) []
+    └── semicolon (kind: TokenSemicolon): ';'

@@ -1996,6 +1996,12 @@ impl<'a> Parser<'a> {
                     .into(),
             )
             .into()),
+            SyntaxKind::TerminalUse => Ok(StatementItem::new_green(
+                self.db,
+                self.expect_item_use(attributes, VisibilityDefault::new_green(self.db).into())
+                    .into(),
+            )
+            .into()),
             _ => match self.try_parse_expr() {
                 Ok(expr) => {
                     let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
