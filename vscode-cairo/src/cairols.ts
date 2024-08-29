@@ -33,18 +33,11 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
 
   const serverOptions = await getServerOptions(workspaceFolder, scarb, ctx);
 
-  const clientOptions: lc.LanguageClientOptions = {
-    documentSelector: [
-      { scheme: "file", language: "cairo" },
-      { scheme: "vfs", language: "cairo" },
-    ],
-  };
-
   const client = new lc.LanguageClient(
     "cairoLanguageServer",
     "Cairo Language Server",
     serverOptions,
-    clientOptions,
+    {},
   );
 
   // Notify the server when the client configuration changes.

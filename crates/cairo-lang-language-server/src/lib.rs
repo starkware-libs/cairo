@@ -40,6 +40,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::io;
+use std::iter::zip;
 use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -78,6 +79,7 @@ use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use salsa::{Cancelled, ParallelDatabase};
+use serde::Serialize;
 use serde_json::Value;
 use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
@@ -734,9 +736,24 @@ impl LanguageServer for Backend {
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
-                text_document_sync: Some(TextDocumentSyncCapability::Kind(
-                    TextDocumentSyncKind::FULL,
-                )),
+                text_document_sync: if self
+                    .client_capabilities
+                    .read()
+                    .await
+                    .text_document_synchronization_dynamic_registration()
+                {
+                    None
+                } else {
+                    Some(TextDocumentSyncCapability::Options(TextDocumentSyncOptions {
+                        open_close: Some(true),
+                        change: Some(TextDocumentSyncKind::FULL),
+                        will_save: Some(false),
+                        will_save_wait_until: Some(false),
+                        save: Some(TextDocumentSyncSaveOptions::SaveOptions(SaveOptions {
+                            include_text: Some(false),
+                        })),
+                    }))
+                },
                 completion_provider: Some(CompletionOptions {
                     resolve_provider: Some(false),
                     trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
@@ -747,13 +764,6 @@ impl LanguageServer for Backend {
                 execute_command_provider: Some(ExecuteCommandOptions {
                     commands: vec!["cairo.reload".to_string()],
                     work_done_progress_options: Default::default(),
-                }),
-                workspace: Some(WorkspaceServerCapabilities {
-                    workspace_folders: Some(WorkspaceFoldersServerCapabilities {
-                        supported: Some(true),
-                        change_notifications: Some(OneOf::Left(true)),
-                    }),
-                    file_operations: None,
                 }),
                 semantic_tokens_provider: Some(
                     SemanticTokensOptions {
@@ -796,14 +806,60 @@ impl LanguageServer for Backend {
                 })
                 .into(),
             };
-            let registration = Registration {
-                id: "workspace/didChangeWatchedFiles".to_string(),
-                method: "workspace/didChangeWatchedFiles".to_string(),
-                register_options: Some(serde_json::to_value(registration_options).unwrap()),
-            };
-            let result = self.client.register_capability(vec![registration]).await;
-            if let Err(err) = result {
-                warn!("Failed to register workspace/didChangeWatchedFiles event: {:#?}", err);
+
+            register_dynamically(
+                "workspace/didChangeWatchedFiles",
+                Some(registration_options),
+                &self.client,
+            )
+            .await;
+        }
+
+        if self
+            .client_capabilities
+            .read()
+            .await
+            .text_document_synchronization_dynamic_registration()
+        {
+            let document_selector = Some(vec![
+                DocumentFilter {
+                    language: Some("cairo".to_string()),
+                    scheme: Some("file".to_string()),
+                    pattern: None,
+                },
+                DocumentFilter {
+                    language: Some("cairo".to_string()),
+                    scheme: Some("vfs".to_string()),
+                    pattern: None,
+                },
+            ]);
+
+            let text_document_registration_options =
+                TextDocumentRegistrationOptions { document_selector: document_selector.clone() };
+
+            let methods = [
+                "textDocument/didOpen",
+                "textDocument/didChange",
+                "textDocument/didSave",
+                "textDocument/didClose",
+            ];
+            let register_options = [
+                serde_json::to_value(&text_document_registration_options).unwrap(),
+                serde_json::to_value(TextDocumentChangeRegistrationOptions {
+                    document_selector,
+                    sync_kind: 2, // TextDocumentSyncKind::FULL
+                })
+                .unwrap(),
+                serde_json::to_value(TextDocumentSaveRegistrationOptions {
+                    include_text: Some(false),
+                    text_document_registration_options: text_document_registration_options.clone(),
+                })
+                .unwrap(),
+                serde_json::to_value(text_document_registration_options).unwrap(),
+            ];
+
+            for (method, options) in zip(methods, register_options) {
+                register_dynamically(method, Some(options), &self.client).await;
             }
         }
     }
@@ -811,9 +867,6 @@ impl LanguageServer for Backend {
     async fn shutdown(&self) -> LSPResult<()> {
         Ok(())
     }
-
-    #[tracing::instrument(level = "debug", skip_all)]
-    async fn did_change_workspace_folders(&self, _: DidChangeWorkspaceFoldersParams) {}
 
     #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {
@@ -885,6 +938,8 @@ impl LanguageServer for Backend {
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
+        warn!("change: {}", params.text_document.uri);
+
         let text = if let Ok([TextDocumentContentChangeEvent { text, .. }]) =
             TryInto::<[_; 1]>::try_into(params.content_changes)
         {
@@ -956,6 +1011,22 @@ impl LanguageServer for Backend {
     #[tracing::instrument(level = "trace", skip_all)]
     async fn code_action(&self, params: CodeActionParams) -> LSPResult<Option<CodeActionResponse>> {
         self.with_db(|db| ide::code_actions::code_actions(params, db)).await
+    }
+}
+
+async fn register_dynamically(
+    method: &str,
+    register_options: Option<impl Serialize>,
+    client: &Client,
+) {
+    let registration = Registration {
+        id: method.to_string(),
+        method: method.to_string(),
+        register_options: register_options.map(|ro| serde_json::to_value(ro).unwrap()),
+    };
+    let result = client.register_capability(vec![registration]).await;
+    if let Err(err) = result {
+        warn!("Failed to register {method} event: {err:#?}");
     }
 }
 
