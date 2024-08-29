@@ -967,8 +967,6 @@ impl LanguageServer for Backend {
 
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        warn!("change: {}", params.text_document.uri);
-
         let text = if let Ok([TextDocumentContentChangeEvent { text, .. }]) =
             TryInto::<[_; 1]>::try_into(params.content_changes)
         {
