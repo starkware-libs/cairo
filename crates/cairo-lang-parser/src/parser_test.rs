@@ -191,6 +191,7 @@ cairo_lang_test_utils::test_file_test!(
         while_: "while",
         for_: "for",
         range: "range",
+        use_: "use",
 },
     test_partial_parser_tree
 );

@@ -1,0 +1,74 @@
+//! > Test use simple
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    use X::Y;
+}
+
+//! > top_level_kind
+ItemUse
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemUse
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── use_kw (kind: TokenUse): 'use'
+    ├── use_path (kind: UsePathSingle)
+    │   ├── ident (kind: PathSegmentSimple)
+    │   │   └── ident (kind: TokenIdentifier): 'X'
+    │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   └── use_path (kind: UsePathLeaf)
+    │       ├── ident (kind: PathSegmentSimple)
+    │       │   └── ident (kind: TokenIdentifier): 'Y'
+    │       └── alias_clause (kind: OptionAliasClauseEmpty) []
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test use attributes.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    #[attribute]
+    use X::Y;
+}
+
+//! > top_level_kind
+ItemUse
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemUse
+    ├── attributes (kind: AttributeList)
+    │   └── child #0 (kind: Attribute)
+    │       ├── hash (kind: TokenHash): '#'
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── attr (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'attribute'
+    │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       └── rbrack (kind: TokenRBrack): ']'
+    ├── visibility (kind: VisibilityDefault) []
+    ├── use_kw (kind: TokenUse): 'use'
+    ├── use_path (kind: UsePathSingle)
+    │   ├── ident (kind: PathSegmentSimple)
+    │   │   └── ident (kind: TokenIdentifier): 'X'
+    │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   └── use_path (kind: UsePathLeaf)
+    │       ├── ident (kind: PathSegmentSimple)
+    │       │   └── ident (kind: TokenIdentifier): 'Y'
+    │       └── alias_clause (kind: OptionAliasClauseEmpty) []
+    └── semicolon (kind: TokenSemicolon): ';'
