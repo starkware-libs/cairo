@@ -803,13 +803,17 @@ impl LanguageServer for Backend {
             // Register patterns for client file watcher.
             // This is used to detect changes to Scarb.toml and invalidate .cairo files.
             let registration_options = DidChangeWatchedFilesRegistrationOptions {
-                watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
-                    .into_iter()
-                    .map(|glob_pattern| FileSystemWatcher {
-                        glob_pattern: GlobPattern::String(glob_pattern.to_string()),
-                        kind: None,
-                    })
-                    .collect(),
+                watchers: [
+                    "/**/*.cairo",
+                    "/**/Scarb.toml",
+                    "/**/Scarb.lock",
+                    "/**/cairo_project.toml",
+                ]
+                .map(|glob_pattern| FileSystemWatcher {
+                    glob_pattern: GlobPattern::String(glob_pattern.to_string()),
+                    kind: None,
+                })
+                .into(),
             };
             let registration = Registration {
                 id: "workspace/didChangeWatchedFiles".to_string(),
@@ -850,11 +854,14 @@ impl LanguageServer for Backend {
         })
         .await;
 
-        // Reload workspace if Scarb.toml changed.
+        // Reload workspace if a config file has changed.
         for change in params.changes {
             let changed_file_path = change.uri.to_file_path().unwrap_or_default();
             let changed_file_name = changed_file_path.file_name().unwrap_or_default();
-            if changed_file_name == "Scarb.toml" {
+            // TODO(pmagiera): react to Scarb.lock. Keep in mind Scarb does save Scarb.lock on each
+            //  metadata call, so it is easy to fall in a loop here.
+            if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
+            {
                 self.reload().await.ok();
             }
         }
