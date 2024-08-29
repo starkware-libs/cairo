@@ -1,38 +1,59 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MemberId, VariantId};
+use cairo_lang_filesystem::ids::CrateId;
+
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub enum DocumentableItemId {
+    Crate(CrateId),
+    Item(DocumentableModuleItemId),
+}
+
+impl From<CrateId> for DocumentableItemId {
+    fn from(value: CrateId) -> Self {
+        DocumentableItemId::Crate(value)
+    }
+}
+
+impl From<DocumentableModuleItemId> for DocumentableItemId {
+    fn from(value: DocumentableModuleItemId) -> Self {
+        DocumentableItemId::Item(value)
+    }
+}
 
 /// Item which documentation can be fetched from source code.
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-pub enum DocumentableItemId {
+pub enum DocumentableModuleItemId {
     LookupItem(LookupItemId),
     Member(MemberId),
     Variant(VariantId),
 }
 
-impl DocumentableItemId {
+impl DocumentableModuleItemId {
     pub fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
         match self {
-            DocumentableItemId::LookupItem(lookup_item_id) => lookup_item_id.stable_location(db),
-            DocumentableItemId::Member(member_id) => member_id.stable_location(db),
-            DocumentableItemId::Variant(variant_id) => variant_id.stable_location(db),
+            DocumentableModuleItemId::LookupItem(lookup_item_id) => {
+                lookup_item_id.stable_location(db)
+            }
+            DocumentableModuleItemId::Member(member_id) => member_id.stable_location(db),
+            DocumentableModuleItemId::Variant(variant_id) => variant_id.stable_location(db),
         }
     }
 }
 
-impl From<LookupItemId> for DocumentableItemId {
+impl From<LookupItemId> for DocumentableModuleItemId {
     fn from(value: LookupItemId) -> Self {
-        DocumentableItemId::LookupItem(value)
+        DocumentableModuleItemId::LookupItem(value)
     }
 }
 
-impl From<MemberId> for DocumentableItemId {
+impl From<MemberId> for DocumentableModuleItemId {
     fn from(value: MemberId) -> Self {
-        DocumentableItemId::Member(value)
+        DocumentableModuleItemId::Member(value)
     }
 }
-impl From<VariantId> for DocumentableItemId {
+impl From<VariantId> for DocumentableModuleItemId {
     fn from(value: VariantId) -> Self {
-        DocumentableItemId::Variant(value)
+        DocumentableModuleItemId::Variant(value)
     }
 }

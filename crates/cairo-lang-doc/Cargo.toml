@@ -19,3 +19,5 @@ itertools.workspace = true
 
 [dev-dependencies]
 indoc.workspace = true
+anyhow.workspace = true
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.7.1" }

@@ -580,10 +580,12 @@ dependencies = [
 name = "cairo-lang-doc"
 version = "2.7.1"
 dependencies = [
+ "anyhow",
  "cairo-lang-defs",
  "cairo-lang-filesystem",
  "cairo-lang-formatter",
  "cairo-lang-parser",
+ "cairo-lang-semantic",
  "cairo-lang-syntax",
  "cairo-lang-utils",
  "indoc",

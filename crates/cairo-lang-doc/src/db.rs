@@ -9,7 +9,7 @@ use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 use serde::Serialize;
 
-use crate::documentable_item::DocumentableItemId;
+use crate::documentable_item::{DocumentableItemId, DocumentableModuleItemId};
 use crate::markdown::cleanup_doc_markdown;
 
 #[derive(PartialEq, Eq, Debug, Clone, Serialize)]
@@ -35,29 +35,25 @@ pub trait DocGroup:
     /// Gets the documentation above an item definition.
     fn get_item_documentation(&self, item_id: DocumentableItemId) -> Documentation;
 
-    fn get_crate_documentation(&self, crate_id: CrateId) -> Option<String>;
-
     // TODO(mkaput): Add tests.
     /// Gets the signature of an item (i.e., item without its body).
-    fn get_item_signature(&self, item_id: DocumentableItemId) -> String;
+    fn get_item_signature(&self, item_id: DocumentableModuleItemId) -> String;
 }
 
 fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Documentation {
-    // Get the text of the item (trivia + definition)
-    let doc = item_id.stable_location(db.upcast()).syntax_node(db.upcast()).get_text(db.upcast());
-    println!("doc string: {}", doc);
-    let prefix_comments = extract_prefixed_comments_from_raw_text(doc, &["///", "//!"]);
-    let inner_comments = get_item_inner_documentation(db, item_id);
-    let module_level_comments = extract_module_level_comments(db.upcast(), item_id);
-    // match (prefix_comments, inner_comments) {
-    //     (Some(prefix_comments), Some(inner_comments)) => {
-    //         Some(format!("{}\n{}", inner_comments, prefix_comments))
-    //     }
-    //     (Some(prefix_comments), None) => Some(prefix_comments),
-    //     (None, Some(inner_comments)) => Some(inner_comments),
-    //     _ => None,
-    // }
-    Documentation { prefix_comments, inner_comments, module_level_comments }
+    match item_id {
+        DocumentableItemId::Item(item_id) => {
+            let prefix_comments = extract_prefixed_comments_from_raw_text(db, item_id);
+            let inner_comments = get_item_inner_documentation(db, item_id);
+            let module_level_comments = extract_module_level_comments(db.upcast(), item_id);
+            Documentation { prefix_comments, inner_comments, module_level_comments }
+        }
+        DocumentableItemId::Crate(crate_id) => Documentation {
+            prefix_comments: None,
+            inner_comments: None,
+            module_level_comments: get_crate_documentation(db, crate_id),
+        },
+    }
 }
 
 // Gets the crate level comments
@@ -70,9 +66,12 @@ fn get_crate_documentation(db: &dyn DocGroup, crate_id: CrateId) -> Option<Strin
 }
 
 // Gets the "//!" inner comment of the item (if only item supports inner comments).
-fn get_item_inner_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
+fn get_item_inner_documentation(
+    db: &dyn DocGroup,
+    item_id: DocumentableModuleItemId,
+) -> Option<String> {
     match item_id {
-        DocumentableItemId::LookupItem(lookup_item_id) => match lookup_item_id {
+        DocumentableModuleItemId::LookupItem(lookup_item_id) => match lookup_item_id {
             LookupItemId::ModuleItem(ModuleItemId::FreeFunction(_))
             | LookupItemId::ModuleItem(ModuleItemId::Submodule(_))
             | LookupItemId::ImplItem(ImplItemId::Function(_))
@@ -89,7 +88,7 @@ fn get_item_inner_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) 
     }
 }
 
-fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
+fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableModuleItemId) -> String {
     let syntax_node = item_id.stable_location(db.upcast()).syntax_node(db.upcast());
     let definition = match syntax_node.green_node(db.upcast()).kind {
         SyntaxKind::ItemConstant
@@ -179,15 +178,18 @@ fn fmt(code: String) -> String {
 
 // Only gets the doc comments above the item.
 fn extract_prefixed_comments_from_raw_text(
-    raw_text: String,
-    prefixes: &[&'static str],
+    db: &dyn DocGroup,
+    item_id: DocumentableModuleItemId,
 ) -> Option<String> {
+    // Get the text of the item (trivia + definition)
+    let raw_text =
+        item_id.stable_location(db.upcast()).syntax_node(db.upcast()).get_text(db.upcast());
     let doc = raw_text
         .lines()
         .take_while_ref(|line| {
             !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
         })
-        .filter_map(|line| map_raw_text_line_to_comment(line, prefixes))
+        .filter_map(|line| map_raw_text_line_to_comment(line, &["///", "//!"]))
         .join("\n");
 
     // Cleanup the markdown.
@@ -219,29 +221,34 @@ fn extract_inner_comments_from_raw_text(
 fn extract_module_level_commets_from_file(db: &dyn DocGroup, file_id: FileId) -> Option<String> {
     let file_content = db.file_content(file_id)?.to_string();
 
-    Some(
-        file_content
-            .lines()
-            .take_while_ref(|line| {
-                !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
-                    || line.trim().is_empty()
-            })
-            .filter_map(|line| {
-                if line.is_empty() {
-                    return None;
-                }
-                map_raw_text_line_to_comment(line, &["//!"])
-            })
-            .join("\n"),
-    )
+    let doc = file_content
+        .lines()
+        .take_while_ref(|line| {
+            !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
+                || line.trim().is_empty()
+        })
+        .filter_map(|line| {
+            if line.is_empty() {
+                return None;
+            }
+            map_raw_text_line_to_comment(line, &["//!"])
+        })
+        .join("\n");
+
+    let doc = cleanup_doc_markdown(doc);
+
+    Some(doc)
 }
 
 // Gets the module level comments of the item.
-fn extract_module_level_comments(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
+fn extract_module_level_comments(
+    db: &dyn DocGroup,
+    item_id: DocumentableModuleItemId,
+) -> Option<String> {
     match item_id {
-        DocumentableItemId::LookupItem(LookupItemId::ModuleItem(ModuleItemId::Submodule(
-            submodule_id,
-        ))) => {
+        DocumentableModuleItemId::LookupItem(LookupItemId::ModuleItem(
+            ModuleItemId::Submodule(submodule_id),
+        )) => {
             if db.is_submodule_inline(submodule_id).is_ok_and(|is_inline| is_inline) {
                 return None;
             }
