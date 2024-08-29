@@ -21,7 +21,7 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     /// let x = 42;
     /// let boxed_x = BoxTrait::new(x);
     /// ```
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn new(value: T) -> Box<T> nopanic {
         into_box(value)
@@ -33,7 +33,7 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     /// let boxed = BoxTrait::new(42);
     /// assert_eq!(boxed.unbox(), 42);
     /// ```
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn unbox(self: Box<T>) -> T nopanic {
         unbox(self)

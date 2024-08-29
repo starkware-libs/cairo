@@ -102,11 +102,11 @@ pub mod into_felt252_based {
     use crate::traits::{Into, TryInto};
     use crate::array::ArrayTrait;
     pub impl SerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::Serde<T> {
-        #[inline(always)]
+        #[inline]
         fn serialize(self: @T, ref output: Array<felt252>) {
             output.append((*self).into());
         }
-        #[inline(always)]
+        #[inline]
         fn deserialize(ref serialized: Span<felt252>) -> Option<T> {
             Option::Some((*serialized.pop_front()?).try_into()?)
         }

@@ -12,7 +12,7 @@ impl OptionDefault<T> of Default<Option<T>> {
 }
 
 pub impl DestructOption<T, +Destruct<T>, -Drop<Option<T>>> of Destruct<Option<T>> {
-    #[inline(always)]
+    #[inline]
     fn destruct(self: Option<T>) nopanic {
         match self {
             Option::Some(x) => x.destruct(),
@@ -63,7 +63,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_some(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => true,
@@ -71,7 +71,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_none(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => false,

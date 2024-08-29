@@ -104,48 +104,48 @@ pub trait StorePacking<T, PackedT> {
 impl StoreUsingPacking<
     T, PackedT, impl TPacking: StorePacking<T, PackedT>, impl PackedTStore: Store<PackedT>
 > of Store<T> {
-    #[inline(always)]
+    #[inline]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T> {
         Result::Ok(TPacking::unpack(PackedTStore::read(address_domain, base)?))
     }
-    #[inline(always)]
+    #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: T) -> SyscallResult<()> {
         PackedTStore::write(address_domain, base, TPacking::pack(value))
     }
-    #[inline(always)]
+    #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<T> {
         Result::Ok(TPacking::unpack(PackedTStore::read_at_offset(address_domain, base, offset)?))
     }
-    #[inline(always)]
+    #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: T
     ) -> SyscallResult<()> {
         PackedTStore::write_at_offset(address_domain, base, offset, TPacking::pack(value))
     }
-    #[inline(always)]
+    #[inline]
     fn size() -> u8 {
         PackedTStore::size()
     }
 }
 
 impl StoreFelt252 of Store<felt252> {
-    #[inline(always)]
+    #[inline]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<felt252> {
         storage_read_syscall(address_domain, storage_address_from_base(base))
     }
-    #[inline(always)]
+    #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: felt252) -> SyscallResult<()> {
         storage_write_syscall(address_domain, storage_address_from_base(base), value)
     }
-    #[inline(always)]
+    #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<felt252> {
         storage_read_syscall(address_domain, storage_address_from_base_and_offset(base, offset))
     }
-    #[inline(always)]
+    #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: felt252
     ) -> SyscallResult<()> {
@@ -153,7 +153,7 @@ impl StoreFelt252 of Store<felt252> {
             address_domain, storage_address_from_base_and_offset(base, offset), value
         )
     }
-    #[inline(always)]
+    #[inline]
     fn size() -> u8 {
         1_u8
     }
@@ -332,27 +332,27 @@ impl StorePackingClassHash of StorePacking<ClassHash, felt252> {
 
 /// Store implementation for a tuple of size 0.
 impl TupleSize0Store of Store<()> {
-    #[inline(always)]
+    #[inline]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<()> {
         Result::Ok(())
     }
-    #[inline(always)]
+    #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: ()) -> SyscallResult<()> {
         Result::Ok(())
     }
-    #[inline(always)]
+    #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<()> {
         Result::Ok(())
     }
-    #[inline(always)]
+    #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: ()
     ) -> SyscallResult<()> {
         Result::Ok(())
     }
-    #[inline(always)]
+    #[inline]
     fn size() -> u8 {
         0
     }
@@ -403,19 +403,19 @@ impl TupleNextStore<
     // The following bound is to allow the recursion to be more efficient at size 1.
     +core::metaprogramming::TupleSplit<TH::Rest>,
 > of Store<T> {
-    #[inline(always)]
+    #[inline]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T> {
         let head = HeadStore::read(address_domain, base)?;
         let rest = RestStore::read_at_offset(address_domain, base, HeadStore::size())?;
         Result::Ok(TH::reconstruct(head, rest))
     }
-    #[inline(always)]
+    #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: T) -> SyscallResult<()> {
         let (head, rest) = TH::split_head(value);
         HeadStore::write(address_domain, base, head)?;
         RestStore::write_at_offset(address_domain, base, HeadStore::size(), rest)
     }
-    #[inline(always)]
+    #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<T> {
@@ -423,7 +423,7 @@ impl TupleNextStore<
         let rest = RestStore::read_at_offset(address_domain, base, offset + HeadStore::size())?;
         Result::Ok(TH::reconstruct(head, rest))
     }
-    #[inline(always)]
+    #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: T
     ) -> SyscallResult<()> {
@@ -431,14 +431,14 @@ impl TupleNextStore<
         HeadStore::write_at_offset(address_domain, base, offset, head)?;
         RestStore::write_at_offset(address_domain, base, offset + HeadStore::size(), rest)
     }
-    #[inline(always)]
+    #[inline]
     fn size() -> u8 {
         HeadStore::size() + RestStore::size()
     }
 }
 
 impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result<T, E>> {
-    #[inline(always)]
+    #[inline]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Result<T, E>> {
         let idx = Store::<felt252>::read(address_domain, base)?;
         if idx == 0 {
@@ -453,7 +453,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
     }
-    #[inline(always)]
+    #[inline]
     fn write(
         address_domain: u32, base: StorageBaseAddress, value: Result<T, E>
     ) -> SyscallResult<()> {
@@ -469,7 +469,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
         };
         starknet::SyscallResult::Ok(())
     }
-    #[inline(always)]
+    #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<Result<T, E>> {
@@ -486,7 +486,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
     }
-    #[inline(always)]
+    #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: Result<T, E>
     ) -> SyscallResult<()> {
@@ -502,14 +502,14 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
         };
         starknet::SyscallResult::Ok(())
     }
-    #[inline(always)]
+    #[inline]
     fn size() -> u8 {
         1 + core::cmp::max(Store::<T>::size(), Store::<E>::size())
     }
 }
 
 impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
-    #[inline(always)]
+    #[inline]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Option<T>> {
         let idx = Store::<felt252>::read(address_domain, base)?;
         if idx == 1 {
@@ -522,7 +522,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
     }
-    #[inline(always)]
+    #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: Option<T>) -> SyscallResult<()> {
         match value {
             Option::Some(x) => {
@@ -533,7 +533,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
         };
         starknet::SyscallResult::Ok(())
     }
-    #[inline(always)]
+    #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<Option<T>> {
@@ -548,7 +548,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
     }
-    #[inline(always)]
+    #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: Option<T>
     ) -> SyscallResult<()> {
@@ -561,7 +561,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
         };
         starknet::SyscallResult::Ok(())
     }
-    #[inline(always)]
+    #[inline]
     fn size() -> u8 {
         1 + Store::<T>::size()
     }
@@ -578,21 +578,21 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
 ///   - The chunk index.
 ///   - The short string `ByteArray`.
 impl ByteArrayStore of Store<ByteArray> {
-    #[inline(always)]
+    #[inline]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<ByteArray> {
         inner_read_byte_array(address_domain, storage_address_from_base(base))
     }
-    #[inline(always)]
+    #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: ByteArray) -> SyscallResult<()> {
         inner_write_byte_array(address_domain, storage_address_from_base(base), value)
     }
-    #[inline(always)]
+    #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<ByteArray> {
         inner_read_byte_array(address_domain, storage_address_from_base_and_offset(base, offset))
     }
-    #[inline(always)]
+    #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: ByteArray
     ) -> SyscallResult<()> {
@@ -600,7 +600,7 @@ impl ByteArrayStore of Store<ByteArray> {
             address_domain, storage_address_from_base_and_offset(base, offset), value
         )
     }
-    #[inline(always)]
+    #[inline]
     fn size() -> u8 {
         1
     }

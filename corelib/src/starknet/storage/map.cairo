@@ -91,7 +91,7 @@ impl StorageAsPathReadForward<
 > of StorageMapReadAccess<T> {
     type Key = AccessImpl::Key;
     type Value = AccessImpl::Value;
-    #[inline(always)]
+    #[inline]
     fn read(self: T, key: AccessImpl::Key) -> AccessImpl::Value {
         self.as_path().read(key)
     }
@@ -108,7 +108,7 @@ impl MutableStorableEntryReadAccess<
 > of StorageMapReadAccess<StoragePath<T>> {
     type Key = EntryInfo::<MutableTrait::<T>::InnerType>::Key;
     type Value = EntryInfo::<MutableTrait::<T>::InnerType>::Value;
-    #[inline(always)]
+    #[inline]
     fn read(
         self: StoragePath<T>, key: EntryInfo::<MutableTrait::<T>::InnerType>::Key
     ) -> EntryInfo::<MutableTrait::<T>::InnerType>::Value {

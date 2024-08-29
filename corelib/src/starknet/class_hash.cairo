@@ -30,11 +30,11 @@ impl ClassHashZero of core::num::traits::Zero<ClassHash> {
     fn zero() -> ClassHash {
         class_hash_const::<0>()
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @ClassHash) -> bool {
         core::num::traits::Zero::<felt252>::is_zero(@class_hash_to_felt252(*self))
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @ClassHash) -> bool {
         !self.is_zero()
     }
@@ -53,7 +53,7 @@ impl ClassHashSerde of Serde<ClassHash> {
 }
 
 impl ClassHashPartialEq of PartialEq<ClassHash> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @ClassHash, rhs: @ClassHash) -> bool {
         class_hash_to_felt252(*lhs) == class_hash_to_felt252(*rhs)
     }

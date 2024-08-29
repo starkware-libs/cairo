@@ -179,7 +179,7 @@ pub trait Destruct<T> {
 }
 // TODO(spapini): Remove this, it can lead to multiple impls and unwanted Destruct implementation.
 impl DestructFromDrop<T, +Drop<T>> of Destruct<T> {
-    #[inline(always)]
+    #[inline]
     fn destruct(self: T) nopanic {}
 }
 
@@ -187,7 +187,7 @@ pub trait PanicDestruct<T> {
     fn panic_destruct(self: T, ref panic: Panic) nopanic;
 }
 pub(crate) impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
-    #[inline(always)]
+    #[inline]
     fn panic_destruct(self: T, ref panic: Panic) nopanic {
         Destruct::destruct(self);
     }
@@ -199,7 +199,7 @@ pub trait Default<T> {
 }
 
 impl SnapshotDefault<T, +Default<T>, +Drop<T>> of Default<@T> {
-    #[inline(always)]
+    #[inline]
     fn default() -> @T {
         @Default::default()
     }
