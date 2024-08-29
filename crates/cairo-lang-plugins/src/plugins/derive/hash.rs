@@ -1,13 +1,18 @@
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::node::ast;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{unsupported_for_extern_diagnostic, DeriveInfo, DeriveResult};
+use super::{unsupported_for_extern_diagnostic, DeriveInfo};
 use crate::plugins::derive::TypeVariantInfo;
 
 /// Adds derive result for the `Hash` trait.
-pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mut DeriveResult) {
+pub fn handle_hash(
+    info: &DeriveInfo,
+    derived: &ast::ExprPath,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Option<String> {
     let full_typename = info.full_typename();
     let ty = &info.name;
     let body = indent_by(
@@ -42,7 +47,8 @@ pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mu
                     .join("\n")
             ),
             TypeVariantInfo::Extern => {
-                return result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
+                diagnostics.push(unsupported_for_extern_diagnostic(derived));
+                return None;
             }
         },
     );
@@ -50,7 +56,7 @@ pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mu
         vec![format!("+core::hash::Hash<{t}, __State, __SHashState>"), format!("+Drop<{t}>")]
     });
     let extra_comma = if impl_additional_generics.is_empty() { "" } else { ",\n    " };
-    result.impls.push(formatdoc! {"
+    Some(formatdoc! {"
         impl {ty}Hash<
             __State,
             impl __SHashState: core::hash::HashStateTrait<__State>,
@@ -61,5 +67,5 @@ pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mu
                 {body}
             }}
         }}
-    "});
+    "})
 }

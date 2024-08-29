@@ -1,17 +1,18 @@
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::node::ast;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{unsupported_for_extern_diagnostic, DeriveInfo, DeriveResult};
+use super::{unsupported_for_extern_diagnostic, DeriveInfo};
 use crate::plugins::derive::TypeVariantInfo;
 
 /// Adds derive result for the `Destruct` trait.
 pub fn handle_destruct(
     info: &DeriveInfo,
-    stable_ptr: SyntaxStablePtrId,
-    result: &mut DeriveResult,
-) {
+    derived: &ast::ExprPath,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Option<String> {
     let full_typename = info.full_typename();
     let ty = &info.name;
     let header = info.format_impl_header("core::traits", "Destruct", &["core::traits::Destruct"]);
@@ -45,16 +46,17 @@ pub fn handle_destruct(
                 )
             }
             TypeVariantInfo::Extern => {
-                result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
-                return;
+                diagnostics.push(unsupported_for_extern_diagnostic(derived));
+                return None;
             }
         },
     );
-    result.impls.push(formatdoc! {"
+
+    Some(formatdoc! {"
         {header} {{
             fn destruct(self: {full_typename}) nopanic {{
                 {body}
             }}
         }}
-    "});
+    "})
 }

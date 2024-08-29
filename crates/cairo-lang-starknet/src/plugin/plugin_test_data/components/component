@@ -99,9 +99,9 @@ trait MyTrait<T> {
     fn set(ref self: T, addr: ContractAddress, value: u32);
 }
 
-lib.cairo:1:1
+lib.cairo:1:10
 #[derive(Drop, starknet::Store)]
-^******************************^
+         ^**^
 impls:
 
 impl MyTypeDrop of core::traits::Drop::<MyType>;
@@ -362,9 +362,9 @@ impl MyTypeSubPointersDrop of core::traits::Drop::<MyTypeSubPointers>;
 impl MyTypeSubPointersCopy of core::traits::Copy::<MyTypeSubPointers>;
 
 
-lib.cairo:1:1
+lib.cairo:1:16
 #[derive(Drop, starknet::Store)]
-^******************************^
+               ^*************^
 impls:
 
 impl MyTypeSubPointersMutDrop of core::traits::Drop::<MyTypeSubPointersMut>;
@@ -932,9 +932,9 @@ pub impl MyImpl<
     }
 }
 
-lib.cairo:17:1
-
-^
+lib.cairo:19:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -979,9 +979,9 @@ impl EventLogIntoEvent of Into<Log, Event> {
 
 
 
-lib.cairo:23:1
+lib.cairo:23:14
     #[derive(Drop, starknet::Event)]
-^**********************************^
+             ^**^
 impls:
 
 impl LogDrop of core::traits::Drop::<Log>;

@@ -287,9 +287,9 @@ pub mod __constructor {
 
 
 
-lib.cairo:13:1
-
-^
+lib.cairo:15:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -669,9 +669,9 @@ pub mod __constructor {
 
 
 
-lib.cairo:13:1
-
-^
+lib.cairo:15:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1039,9 +1039,9 @@ pub mod __constructor {
 
 
 
-lib.cairo:13:1
-
-^
+lib.cairo:15:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1422,9 +1422,9 @@ pub mod __constructor {
 
 
 
-lib.cairo:13:1
-
-^
+lib.cairo:15:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1854,9 +1854,9 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
 }
 
 
-lib.cairo:22:1
-
-^
+lib.cairo:24:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2225,9 +2225,9 @@ pub mod __constructor {
 
 
 
-lib.cairo:14:1
-
-^
+lib.cairo:16:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -2596,9 +2596,9 @@ pub mod __constructor {
 
 
 
-lib.cairo:16:1
-
-^
+lib.cairo:18:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3124,9 +3124,9 @@ mod test_contract {
     }
 }
 
-lib.cairo:8:1
-
-^
+lib.cairo:9:10
+#[derive(Drop, starknet::Event)]
+         ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -3987,9 +3987,9 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
 }
 
 
-lib.cairo:29:1
-
-^
+lib.cairo:31:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;

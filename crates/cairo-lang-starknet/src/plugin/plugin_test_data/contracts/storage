@@ -178,9 +178,9 @@ impl OuterTypeSubPointersDrop of core::traits::Drop::<OuterTypeSubPointers>;
 impl OuterTypeSubPointersCopy of core::traits::Copy::<OuterTypeSubPointers>;
 
 
-lib.cairo:1:1
+lib.cairo:1:16
 #[derive(Drop, starknet::Store, Hash)]
-^************************************^
+               ^*************^
 impls:
 
 impl OuterTypeSubPointersMutDrop of core::traits::Drop::<OuterTypeSubPointersMut>;
