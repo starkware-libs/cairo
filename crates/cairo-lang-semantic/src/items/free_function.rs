@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Intern;
 
-use super::function_with_body::{get_inline_config, Arenas, FunctionBody, FunctionBodyData};
+use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, GenericFunctionId,
     InlineConfiguration,
@@ -24,7 +24,7 @@ use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, FunctionLongId, SemanticDiagnostic, TypeId};
+use crate::{semantic, Arenas, FunctionLongId, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]
@@ -92,7 +92,7 @@ pub fn free_function_generic_params_data(
         ModuleItemId::FreeFunction(free_function_id),
     ));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    resolver.set_allowed_features(&free_function_id, &free_function_syntax, &mut diagnostics);
+    resolver.set_feature_config(&free_function_id, &free_function_syntax, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -248,7 +248,7 @@ pub fn priv_free_function_body_data(
     let function_body = free_function_syntax.body(db.upcast());
     let return_type = declaration.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { exprs, patterns, statements, resolver, .. } = ctx;
+    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();

@@ -2,7 +2,7 @@
   "name": "cairo1",
   "displayName": "Cairo 1.0",
   "description": "Cairo language support for Visual Studio Code.",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "publisher": "StarkWare",
   "categories": [
     "Programming Languages",
@@ -68,6 +68,16 @@
         "command": "cairo.reload",
         "title": "Reload workspace",
         "category": "Cairo"
+      },
+      {
+        "command": "cairo.expandMacro",
+        "title": "Recursively expand macros for item at caret",
+        "category": "Cairo"
+      },
+      {
+        "command": "cairo.viewAnalyzedCrates",
+        "title": "View currently analyzed crates",
+        "category": "Cairo"
       }
     ],
     "configuration": [
@@ -99,12 +109,17 @@
           },
           "cairo1.scarbPath": {
             "type": "string",
-            "description": "Path to the Scarb package manager binary.",
+            "description": "Absolute path to the Scarb package manager binary.",
             "scope": "window"
           },
           "cairo1.corelibPath": {
             "type": "string",
-            "description": "Path to the Cairo core library, used in non-Scarb projects.",
+            "description": "Absolute path to the Cairo core library, used in non-Scarb projects.",
+            "scope": "window"
+          },
+          "cairo1.traceMacroDiagnostics": {
+            "type": "boolean",
+            "description": "Attach additional information to diagnostics coming from macros, providing diagnostic source in macro generated code.",
             "scope": "window"
           },
           "cairo1.languageServerExtraEnv": {

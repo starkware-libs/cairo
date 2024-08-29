@@ -1,5 +1,5 @@
-use core::byte_array::BYTE_ARRAY_MAGIC;
-use core::{panics, panic_with_felt252};
+use crate::byte_array::BYTE_ARRAY_MAGIC;
+use crate::{panics, panic_with_felt252};
 
 #[test]
 #[should_panic(expected: 'short_string')]

@@ -1,4 +1,5 @@
-use core::traits::Into;
+#[allow(unused_imports)]
+use crate::traits::Into;
 
 /// A trait for hash state accumulators.
 pub trait HashStateTrait<S> {
@@ -24,10 +25,10 @@ pub trait LegacyHash<T> {
 }
 
 /// Implementation of `LegacyHash` for types that have `Hash` for backwards compatibility.
-impl LegacyHashForHash<T, +Hash<T, core::pedersen::HashState>> of LegacyHash<T> {
+impl LegacyHashForHash<T, +Hash<T, crate::pedersen::HashState>> of LegacyHash<T> {
     #[inline]
     fn hash(state: felt252, value: T) -> felt252 {
-        core::pedersen::HashState { state }.update_with(value).state
+        crate::pedersen::HashState { state }.update_with(value).state
     }
 }
 
@@ -99,7 +100,7 @@ impl TupleNextHash<
     T,
     S,
     +HashStateTrait<S>,
-    impl TH: core::metaprogramming::TupleSplit<T>,
+    impl TH: crate::metaprogramming::TupleSplit<T>,
     +Hash<TH::Head, S>,
     +Hash<TH::Rest, S>,
     +Drop<TH::Rest>,

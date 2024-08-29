@@ -46,12 +46,14 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use anyhow::{bail, Context};
+use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, LanguageElementId, LookupItemId, ModuleId, SubmoduleLongId,
+    FunctionTitleId, LanguageElementId, LookupItemId, MemberId, ModuleId, SubmoduleLongId,
+    TraitItemId,
 };
-use cairo_lang_diagnostics::Diagnostics;
+use cairo_lang_diagnostics::{Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
@@ -63,18 +65,21 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
+use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
+use cairo_lang_semantic::{Expr, SemanticDiagnostic, TypeLongId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use salsa::ParallelDatabase;
+use salsa::{Cancelled, ParallelDatabase};
 use serde_json::Value;
+use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::request::Request;
@@ -88,6 +93,7 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::client_capabilities::ClientCapabilitiesExt;
+use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
@@ -112,7 +118,7 @@ mod vfs;
 ///
 /// [lib]: crate#running-with-customizations
 #[non_exhaustive]
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Tricks {
     /// A function that returns a list of additional compiler plugin suites to be loaded in the
     /// language server database.
@@ -129,6 +135,14 @@ pub fn start() {
     start_with_tricks(Tricks::default());
 }
 
+/// Number of LSP requests that can be processed concurrently.
+/// Higher number than default tower_lsp::DEFAULT_MAX_CONCURRENCY = 4.
+/// This is increased because we don't have to limit requests this way now.
+/// Cancellation will skip requests that are no longer relevant so only latest ones will be
+/// processed. Effectively there will be similar number of requests processed at once, but under
+/// heavy load these will be more actual ones.
+const REQUESTS_PROCESSED_CONCURRENTLY: usize = 100;
+
 /// Starts the language server with customizations.
 ///
 /// See [the top-level documentation][lib] documentation for usage examples.
@@ -144,7 +158,10 @@ pub async fn start_with_tricks(tricks: Tricks) {
     let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
 
     let (service, socket) = Backend::build_service(tricks);
-    Server::new(stdin, stdout, socket).serve(service).await;
+    Server::new(stdin, stdout, socket)
+        .concurrency_level(REQUESTS_PROCESSED_CONCURRENTLY)
+        .serve(service)
+        .await;
 
     info!("language server stopped");
 }
@@ -262,6 +279,10 @@ struct Backend {
     // TODO(spapini): Remove this once we support ParallelDatabase.
     // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
     db_mutex: tokio::sync::Mutex<AnalysisDatabase>,
+    // Lock making sure there is at most a single "diagnostic refresh" thread.
+    refresh_lock: tokio::sync::Mutex<()>,
+    // Semaphore making sure there are at most one worker and one waiter for refresh.
+    refresh_waiters_semaphore: tokio::sync::Semaphore,
     state_mutex: tokio::sync::Mutex<State>,
     config: tokio::sync::RwLock<Config>,
     scarb_toolchain: ScarbToolchain,
@@ -274,6 +295,7 @@ impl Backend {
         LspService::build(|client| Self::new(client, tricks))
             .custom_method("vfs/provide", Self::vfs_provide)
             .custom_method(lsp::ext::ViewAnalyzedCrates::METHOD, Self::view_analyzed_crates)
+            .custom_method(lsp::ext::ExpandMacro::METHOD, Self::expand_macro)
             .finish()
     }
 
@@ -286,6 +308,8 @@ impl Backend {
             client_capabilities: Default::default(),
             tricks,
             db_mutex: db.into(),
+            refresh_lock: Default::default(),
+            refresh_waiters_semaphore: Semaphore::new(2),
             state_mutex: State::default().into(),
             config: Config::default().into(),
             scarb_toolchain,
@@ -298,14 +322,28 @@ impl Backend {
     /// Catches panics and returns Err.
     async fn with_db<F, T>(&self, f: F) -> LSPResult<T>
     where
-        F: FnOnce(&AnalysisDatabase) -> T + std::panic::UnwindSafe,
+        F: FnOnce(&AnalysisDatabase) -> T + Send + 'static + std::panic::UnwindSafe,
+        T: Send + 'static,
     {
         let db_mut = self.db_mut().await;
         let db = db_mut.snapshot();
         drop(db_mut);
-        catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
-            error!("caught panic in LSP worker thread");
-            LSPError::internal_error()
+
+        spawn_blocking(move || {
+            catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|err| {
+                if err.is::<Cancelled>() {
+                    debug!("LSP worker thread was cancelled");
+                    LSPError::request_cancelled()
+                } else {
+                    error!("caught panic in LSP worker thread");
+                    LSPError::internal_error()
+                }
+            })
+        })
+        .await
+        .unwrap_or_else(|_| {
+            error!("failed to join LSP worker thread");
+            Err(LSPError::internal_error())
         })
     }
 
@@ -327,6 +365,13 @@ impl Backend {
     /// Refresh diagnostics and send diffs to client.
     #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
+        // Making sure only a single thread is refreshing diagnostics at a time, and that at most
+        // one thread is waiting to start refreshing. This allows changed to be grouped
+        // together before querying the database, as well as releasing extra threads waiting to
+        // start diagnostics updates.
+        // TODO(orizi): Consider removing when request cancellation is supported.
+        let Ok(waiter_permit) = self.refresh_waiters_semaphore.try_acquire() else { return Ok(()) };
+        let refresh_lock = self.refresh_lock.lock().await;
         let open_files = self.state_mut().await.open_files.clone();
 
         // First, refresh diagnostics for each open file.
@@ -386,6 +431,9 @@ impl Backend {
         .instrument(trace_span!("clear_old_diagnostics"))
         .await;
 
+        // Release locks prior to potentially swapping the database.
+        drop(refresh_lock);
+        drop(waiter_permit);
         // After handling of all diagnostics attempting to swap the database to reduce memory
         // consumption.
         self.maybe_swap_database().await
@@ -430,9 +478,25 @@ impl Backend {
         drop(state);
 
         let mut diags = Vec::new();
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
-        map_cairo_diagnostics_to_lsp((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
+        let trace_macro_diagnostics = self.config.read().await.trace_macro_diagnostics;
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.parser,
+            trace_macro_diagnostics,
+        );
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.semantic,
+            trace_macro_diagnostics,
+        );
+        map_cairo_diagnostics_to_lsp(
+            (*db).upcast(),
+            &mut diags,
+            &new_file_diagnostics.lowering,
+            trace_macro_diagnostics,
+        );
 
         // Drop database snapshot before we wait for the client responding to our notification.
         drop(db);
@@ -466,10 +530,12 @@ impl Backend {
         debug!("scheduled");
         let mut new_db = self
             .with_db({
-                let tricks = &self.tricks;
-                |db| {
-                    let mut new_db = AnalysisDatabase::new(tricks);
-                    ensure_exists_in_db(&mut new_db, db, open_files.iter().cloned());
+                let open_files = open_files.clone();
+                let tricks = self.tricks.clone();
+
+                move |db| {
+                    let mut new_db = AnalysisDatabase::new(&tricks);
+                    ensure_exists_in_db(&mut new_db, db, open_files.into_iter());
                     new_db
                 }
             })
@@ -524,11 +590,16 @@ impl Backend {
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
+    async fn expand_macro(&self, params: TextDocumentPositionParams) -> LSPResult<Option<String>> {
+        self.with_db(move |db| ide::macros::expand::expand_macro(db, &params)).await
+    }
+
+    #[tracing::instrument(level = "trace", skip_all)]
     async fn vfs_provide(
         &self,
         params: ProvideVirtualFileRequest,
     ) -> LSPResult<ProvideVirtualFileResponse> {
-        self.with_db(|db| {
+        self.with_db(move |db| {
             let content = db
                 .file_for_url(&params.uri)
                 .and_then(|file_id| db.file_content(file_id))
@@ -544,21 +615,23 @@ impl Backend {
     async fn detect_crate_for(&self, db: &mut AnalysisDatabase, file_path: PathBuf) {
         match ProjectManifestPath::discover(&file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                let scarb = self.scarb_toolchain.clone();
-                let Ok(metadata) = spawn_blocking(move || {
-                    scarb
-                        .metadata(&manifest_path)
-                        .with_context(|| {
-                            format!(
-                                "failed to refresh scarb workspace: {}",
-                                manifest_path.display()
-                            )
-                        })
-                        .inspect_err(|e| {
-                            // TODO(mkaput): Send a notification to the language client.
-                            warn!("{e:?}");
-                        })
-                        .ok()
+                let Ok(metadata) = spawn_blocking({
+                    let scarb = self.scarb_toolchain.clone();
+                    move || {
+                        scarb
+                            .metadata(&manifest_path)
+                            .with_context(|| {
+                                format!(
+                                    "failed to refresh scarb workspace: {}",
+                                    manifest_path.display()
+                                )
+                            })
+                            .inspect_err(|e| {
+                                // TODO(mkaput): Send a notification to the language client.
+                                warn!("{e:?}");
+                            })
+                            .ok()
+                    }
                 })
                 .await
                 else {
@@ -570,7 +643,17 @@ impl Backend {
                     update_crate_roots(&metadata, db);
                 } else {
                     // Try to set up a corelib at least.
-                    try_to_init_unmanaged_core(&*self.config.read().await, db);
+                    try_to_init_unmanaged_core(
+                        db,
+                        &*self.config.read().await,
+                        &self.scarb_toolchain,
+                    );
+                }
+
+                if let Err(result) = validate_corelib(db) {
+                    self.client
+                        .send_notification::<CorelibVersionMismatch>(result.to_string())
+                        .await;
                 }
             }
 
@@ -579,7 +662,7 @@ impl Backend {
                 // DB will also be absolute.
                 assert!(config_path.is_absolute());
 
-                try_to_init_unmanaged_core(&*self.config.read().await, db);
+                try_to_init_unmanaged_core(db, &*self.config.read().await, &self.scarb_toolchain);
 
                 if let Ok(config) = ProjectConfig::from_file(&config_path) {
                     update_crate_roots_from_project_config(db, &config);
@@ -587,7 +670,7 @@ impl Backend {
             }
 
             None => {
-                try_to_init_unmanaged_core(&*self.config.read().await, db);
+                try_to_init_unmanaged_core(db, &*self.config.read().await, &self.scarb_toolchain);
 
                 if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
                     let file_path_s = file_path.to_string_lossy();
@@ -615,11 +698,12 @@ impl Backend {
 
     /// Reload the [`Config`] and all its dependencies.
     async fn reload_config(&self) {
-        let mut config = self.config.write().await;
         {
+            let mut config = self.config.write().await;
             let client_capabilities = self.client_capabilities.read().await;
             config.reload(&self.client, &client_capabilities).await;
         }
+        self.refresh_diagnostics().await.ok();
     }
 }
 
@@ -868,10 +952,49 @@ impl LanguageServer for Backend {
     }
 }
 
-/// Either [`ResolvedGenericItem`] or [`ResolvedConcreteItem`].
+/// Extracts [`MemberId`] if the [`ast::TerminalIdentifier`] points to
+/// right-hand side of access member expression e.g., to `xyz` in `self.xyz`.
+fn try_extract_member(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<MemberId> {
+    let syntax_node = identifier.as_syntax_node();
+    let binary_expr_syntax_node =
+        db.first_ancestor_of_kind(syntax_node.clone(), SyntaxKind::ExprBinary)?;
+    let binary_expr = ast::ExprBinary::from_syntax_node(db, binary_expr_syntax_node);
+
+    let function_with_body = lookup_items.first()?.function_with_body()?;
+
+    let expr_id =
+        db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr().into()).ok()?;
+    let semantic_expr = db.expr_semantic(function_with_body, expr_id);
+
+    if let Expr::MemberAccess(expr_member_access) = semantic_expr {
+        let pointer_to_rhs = binary_expr.rhs(db).stable_ptr().untyped();
+
+        let mut current_node = syntax_node;
+        // Check if the terminal identifier points to a member, not a struct variable.
+        while pointer_to_rhs != current_node.stable_ptr() {
+            // If we found the node with the binary expression, then we are sure we won't find the
+            // node with the member.
+            if current_node.stable_ptr() == binary_expr.stable_ptr().untyped() {
+                return None;
+            }
+            current_node = current_node.parent().unwrap();
+        }
+
+        Some(expr_member_access.member)
+    } else {
+        None
+    }
+}
+
+/// Either [`ResolvedGenericItem`], [`ResolvedConcreteItem`] or [`MemberId`].
 enum ResolvedItem {
     Generic(ResolvedGenericItem),
     Concrete(ResolvedConcreteItem),
+    Member(MemberId),
 }
 
 // TODO(mkaput): Move this to crate::lang::inspect::defs and make private.
@@ -897,17 +1020,22 @@ fn find_definition(
             let item = ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id));
             return Some((
                 ResolvedItem::Generic(item.clone()),
-                resolved_generic_item_def(db, item),
+                resolved_generic_item_def(db, item)?,
             ));
         }
     }
+
+    if let Some(member_id) = try_extract_member(db, identifier, lookup_items) {
+        return Some((ResolvedItem::Member(member_id), member_id.untyped_stable_ptr(db)));
+    }
+
     for lookup_item_id in lookup_items.iter().copied() {
         if let Some(item) =
             db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
         {
             return Some((
                 ResolvedItem::Generic(item.clone()),
-                resolved_generic_item_def(db, item),
+                resolved_generic_item_def(db, item)?,
             ));
         }
 
@@ -918,7 +1046,29 @@ fn find_definition(
             return Some((ResolvedItem::Concrete(item), stable_ptr));
         }
     }
-    None
+
+    // Skip variable definition, otherwise we would get parent ModuleItem for variable.
+    if db.first_ancestor_of_kind(identifier.as_syntax_node(), SyntaxKind::StatementLet).is_none() {
+        let item = match lookup_items.first().copied()? {
+            LookupItemId::ModuleItem(item) => {
+                ResolvedGenericItem::from_module_item(db, item).to_option()?
+            }
+            LookupItemId::TraitItem(trait_item) => {
+                if let TraitItemId::Function(trait_fn) = trait_item {
+                    ResolvedGenericItem::TraitFunction(trait_fn)
+                } else {
+                    ResolvedGenericItem::Trait(trait_item.trait_id(db))
+                }
+            }
+            LookupItemId::ImplItem(impl_item) => {
+                ResolvedGenericItem::Impl(impl_item.impl_def_id(db))
+            }
+        };
+
+        Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?))
+    } else {
+        None
+    }
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
@@ -949,9 +1099,9 @@ fn resolved_concrete_item_def(
 fn resolved_generic_item_def(
     db: &AnalysisDatabase,
     item: ResolvedGenericItem,
-) -> SyntaxStablePtrId {
+) -> Option<SyntaxStablePtrId> {
     let defs_db = db.upcast();
-    match item {
+    Some(match item {
         ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(defs_db),
         ResolvedGenericItem::Module(module_id) => {
             // Check if the module is an inline submodule.
@@ -960,11 +1110,11 @@ fn resolved_generic_item_def(
                     submodule_id.stable_ptr(defs_db).lookup(db.upcast()).body(db.upcast())
                 {
                     // Inline module.
-                    return submodule_id.stable_ptr().untyped();
+                    return Some(submodule_id.stable_ptr().untyped());
                 }
             }
-            let module_file = db.module_main_file(module_id).unwrap();
-            let file_syntax = db.file_module_syntax(module_file).unwrap();
+            let module_file = db.module_main_file(module_id).ok()?;
+            let file_syntax = db.file_module_syntax(module_file).ok()?;
             file_syntax.as_syntax_node().stable_ptr()
         }
         ResolvedGenericItem::GenericFunction(item) => {
@@ -989,7 +1139,7 @@ fn resolved_generic_item_def(
             trait_function.stable_ptr(defs_db).untyped()
         }
         ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(defs_db),
-    }
+    })
 }
 
 fn is_cairo_file_path(file_path: &Url) -> bool {

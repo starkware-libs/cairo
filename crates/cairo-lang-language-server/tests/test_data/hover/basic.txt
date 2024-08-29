@@ -43,7 +43,7 @@ trait RectangleTrait {
 /// Implementing the `RectangleTrait` for the `Rectangle` struct.
 impl RectangleImpl of RectangleTrait {
     fn area(se<caret>lf: @Rec<caret>tangle) -> u64 {
-        (*self.wi<caret>dth) * (*self.height)
+        (*self<caret>.<caret>wi<caret>dth) * (*sel<caret>f.he<caret>ight)
     }
 }
 
@@ -264,15 +264,32 @@ Calculate the area of the rectangle.
 // = source context
 fn add_t<caret>wo(x: u32) -> u32 { x + 2 }
 // = highlight
-No highlight information.
+fn <sel>add_two</sel>(x: u32) -> u32 { x + 2 }
 // = popover
+```cairo
+hello
+```
+```cairo
+fn add_two(x: u32) -> u32
+```
+---
+`add_two` documentation.
 
 //! > hover #15
 // = source context
     fn area(sel<caret>f: @Rectangle) -> u64;
 // = highlight
-No highlight information.
+    fn area(<sel>self</sel>: @Rectangle) -> u64;
 // = popover
+```cairo
+hello::RectangleTrait
+```
+```cairo
+trait RectangleTrait
+fn area(self: @Rectangle) -> u64
+```
+---
+Calculate the area of the rectangle.
 
 //! > hover #16
 // = source context
@@ -298,8 +315,16 @@ Rectangle struct.
 // = source context
     fn area(se<caret>lf: @Rectangle) -> u64 {
 // = highlight
-No highlight information.
+    fn area(<sel>self</sel>: @Rectangle) -> u64 {
 // = popover
+```cairo
+hello
+```
+```cairo
+impl RectangleImpl of RectangleTrait
+```
+---
+Implementing the `RectangleTrait` for the `Rectangle` struct.
 
 //! > hover #18
 // = source context
@@ -323,15 +348,85 @@ Rectangle struct.
 
 //! > hover #19
 // = source context
-        (*self.wi<caret>dth) * (*self.height)
+        (*self<caret>.width) * (*self.height)
 // = highlight
-No highlight information.
+        (*<sel>self</sel>.width) * (*self.height)
 // = popover
 ```cairo
-@core::integer::u64
+self: @hello::Rectangle
 ```
 
 //! > hover #20
+// = source context
+        (*self.<caret>width) * (*self.height)
+// = highlight
+        (*self.<sel>width</sel>) * (*self.height)
+// = popover
+```cairo
+hello
+```
+```cairo
+struct Rectangle {
+    /// Width of the rectangle.
+    width: u64,
+    /// Height of the rectangle.
+    height: u64,
+}
+```
+---
+Width of the rectangle.
+
+//! > hover #21
+// = source context
+        (*self.wi<caret>dth) * (*self.height)
+// = highlight
+        (*self.<sel>width</sel>) * (*self.height)
+// = popover
+```cairo
+hello
+```
+```cairo
+struct Rectangle {
+    /// Width of the rectangle.
+    width: u64,
+    /// Height of the rectangle.
+    height: u64,
+}
+```
+---
+Width of the rectangle.
+
+//! > hover #22
+// = source context
+        (*self.width) * (*sel<caret>f.height)
+// = highlight
+        (*self.width) * (*<sel>self</sel>.height)
+// = popover
+```cairo
+self: @hello::Rectangle
+```
+
+//! > hover #23
+// = source context
+        (*self.width) * (*self.he<caret>ight)
+// = highlight
+        (*self.width) * (*self.<sel>height</sel>)
+// = popover
+```cairo
+hello
+```
+```cairo
+struct Rectangle {
+    /// Width of the rectangle.
+    width: u64,
+    /// Height of the rectangle.
+    height: u64,
+}
+```
+---
+Height of the rectangle.
+
+//! > hover #24
 // = source context
     fn area2(self: @Rec<caret>tangle) -> u64 {
 // = highlight
@@ -351,47 +446,83 @@ struct Rectangle {
 ---
 Rectangle struct.
 
-//! > hover #21
+//! > hover #25
 // = source context
         (*self.wi<caret>dth) * (*self.height)
 // = highlight
-No highlight information.
+        (*self.<sel>width</sel>) * (*self.height)
 // = popover
 ```cairo
-@core::integer::u64
+hello
 ```
+```cairo
+struct Rectangle {
+    /// Width of the rectangle.
+    width: u64,
+    /// Height of the rectangle.
+    height: u64,
+}
+```
+---
+Width of the rectangle.
 
-//! > hover #22
+//! > hover #26
 // = source context
 enum Co<caret>in {
 // = highlight
-No highlight information.
+enum <sel>Coin</sel> {
 // = popover
-No hover information.
+```cairo
+hello
+```
+```cairo
+enum Coin {
+    Penny,
+}
+```
 
-//! > hover #23
+//! > hover #27
 // = source context
     Pen<caret>ny,
 // = highlight
-No highlight information.
+    <sel>Penny</sel>,
 // = popover
-No hover information.
+```cairo
+hello
+```
+```cairo
+enum Coin {
+    Penny,
+}
+```
 
-//! > hover #24
+//! > hover #28
 // = source context
 fn value_i<caret>n_cents(coin: Coin) -> felt252 {
 // = highlight
-No highlight information.
+fn <sel>value_in_cents</sel>(coin: Coin) -> felt252 {
 // = popover
+```cairo
+hello
+```
+```cairo
+fn value_in_cents(coin: Coin) -> felt252
+```
 
-//! > hover #25
+//! > hover #29
 // = source context
 fn value_in_cents(co<caret>in: Coin) -> felt252 {
 // = highlight
-No highlight information.
+fn value_in_cents(<sel>coin</sel>: Coin) -> felt252 {
 // = popover
+```cairo
+hello
+```
+```cairo
+fn value_in_cents(coin: Coin) -> felt252
+```
 
-//! > hover #26
+//! > hover #30
 // = source context
 fn value_in_cents(coin: C<caret>oin) -> felt252 {
 // = highlight
@@ -406,7 +537,7 @@ enum Coin {
 }
 ```
 
-//! > hover #27
+//! > hover #31
 // = source context
     match co<caret>in {
 // = highlight
@@ -416,7 +547,7 @@ enum Coin {
 coin: hello::Coin
 ```
 
-//! > hover #28
+//! > hover #32
 // = source context
         Coin::P<caret>enny => 1,
 // = highlight

@@ -1,5 +1,5 @@
-use core::test::test_utils::{assert_eq, assert_ne};
-use core::iter::{IntoIterator, Iterator};
+use crate::test::test_utils::assert_eq;
+use crate::iter::{IntoIterator, Iterator};
 
 #[test]
 fn test_array() {

@@ -46,7 +46,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
-            Option::None => core::panic_with_felt252(err),
+            Option::None => crate::panic_with_felt252(err),
         }
     }
 

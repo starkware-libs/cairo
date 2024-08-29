@@ -41,6 +41,7 @@ use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::poseidon::{PoseidonLibfunc, PoseidonType};
+use super::range::{IntRangeLibfunc, IntRangeType};
 use super::range_check::{RangeCheck96Type, RangeCheckType};
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
@@ -64,6 +65,7 @@ define_type_hierarchy! {
         EcState(EcStateType),
         Felt252(Felt252Type),
         GasBuiltin(GasBuiltinType),
+        IntRange(IntRangeType),
         BuiltinCosts(BuiltinCostsType),
         Uint8(Uint8Type),
         Uint16(Uint16Type),
@@ -115,6 +117,7 @@ define_libfunc_hierarchy! {
         Const(ConstLibfunc),
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
+        IntRange(IntRangeLibfunc),
         Uint8(Uint8Libfunc),
         Uint16(Uint16Libfunc),
         Uint32(Uint32Libfunc),

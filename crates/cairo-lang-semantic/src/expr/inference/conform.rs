@@ -367,10 +367,10 @@ impl<'db> InferenceConform for Inference<'db> {
                 )
                 .intern(self.db))
             }
-            ImplLongId::GenericParameter(_) => {
-                Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
-            }
-            ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => {
+            ImplLongId::GenericParameter(_)
+            | ImplLongId::ImplImpl(_)
+            | ImplLongId::TraitImpl(_)
+            | ImplLongId::GeneratedImpl(_) => {
                 Err(self.set_error(InferenceError::ImplKindMismatch { impl0, impl1 }))
             }
         }
@@ -467,6 +467,10 @@ impl<'db> InferenceConform for Inference<'db> {
                 )
             }
             ImplLongId::ImplImpl(impl_impl) => self.impl_contains_var(impl_impl.impl_id(), var),
+            ImplLongId::GeneratedImpl(generated_impl) => self.generic_args_contain_var(
+                &generated_impl.concrete_trait(self.db).generic_args(self.db),
+                var,
+            ),
         }
     }
 

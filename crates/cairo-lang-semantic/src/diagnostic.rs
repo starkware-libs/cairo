@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleItemId, NamedLanguageElementId,
-    StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitImplId,
+    StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitImplId, UseId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
@@ -530,6 +530,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ItemNotVisible(item_id) => {
                 format!("Item `{}` is not visible in this context.", item_id.full_path(db.upcast()))
             }
+            SemanticDiagnosticKind::UnusedImport(use_id) => {
+                format!("Unused import: `{}`", use_id.full_path(db.upcast()))
+            }
             SemanticDiagnosticKind::UnexpectedEnumPattern(ty) => {
                 format!(r#"Unexpected type for enum pattern. "{}" is not an enum."#, ty.format(db),)
             }
@@ -736,6 +739,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedFeatureAttrArguments => {
                 "`feature` attribute argument should be a single string.".into()
             }
+            SemanticDiagnosticKind::UnsupportedAllowAttrArguments => {
+                // TODO(orizi): Add information about the allowed arguments.
+                "`allow` attribute argument not supported.".into()
+            }
             SemanticDiagnosticKind::UnsupportedPubArgument => "Unsupported `pub` argument.".into(),
             SemanticDiagnosticKind::UnknownStatementAttribute => {
                 "Unknown statement attribute.".into()
@@ -841,6 +848,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Closures are not allowed in this context.".into()
             }
             SemanticDiagnosticKind::MaybeMissingColonColon => "Are you missing a `::`?.".into(),
+            SemanticDiagnosticKind::CallingShadowedFunction { shadowed_function_name } => {
+                format!("Function `{}` is shadowed by a local variable.", shadowed_function_name)
+            }
+            SemanticDiagnosticKind::RefClosureArgument => {
+                "Arguments to closure functions cannot be references".into()
+            }
         }
     }
 
@@ -863,7 +876,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::TraitItemForbiddenInItsImpl
             | SemanticDiagnosticKind::ImplItemForbiddenInTheImpl
             | SemanticDiagnosticKind::UnstableFeature { .. }
-            | SemanticDiagnosticKind::DeprecatedFeature { .. } => Severity::Warning,
+            | SemanticDiagnosticKind::DeprecatedFeature { .. }
+            | SemanticDiagnosticKind::UnusedImport { .. }
+            | SemanticDiagnosticKind::CallingShadowedFunction { .. } => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1083,6 +1098,7 @@ pub enum SemanticDiagnosticKind {
     ImplItemForbiddenInTheImpl,
     SuperUsedInRootModule,
     ItemNotVisible(ModuleItemId),
+    UnusedImport(UseId),
     RedundantModifier {
         current_modifier: SmolStr,
         previous_modifier: SmolStr,
@@ -1158,6 +1174,7 @@ pub enum SemanticDiagnosticKind {
     RedundantImplicitPrecedenceAttribute,
     UnsupportedImplicitPrecedenceArguments,
     UnsupportedFeatureAttrArguments,
+    UnsupportedAllowAttrArguments,
     UnsupportedPubArgument,
     UnknownStatementAttribute,
     InlineMacroNotFound(SmolStr),
@@ -1187,6 +1204,10 @@ pub enum SemanticDiagnosticKind {
     TypeEqualTraitReImplementation,
     ClosureInGlobalScope,
     MaybeMissingColonColon,
+    CallingShadowedFunction {
+        shadowed_function_name: SmolStr,
+    },
+    RefClosureArgument,
 }
 
 /// The kind of an expression with multiple possible return types.

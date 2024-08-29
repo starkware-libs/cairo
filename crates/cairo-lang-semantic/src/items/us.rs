@@ -36,7 +36,7 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     // the item instead of all the module data.
     let use_ast = ast::UsePath::Leaf(db.module_use_by_id(use_id)?.to_maybe()?);
     let item = use_ast.get_item(db.upcast());
-    resolver.set_allowed_features(&use_id, &item, &mut diagnostics);
+    resolver.set_feature_config(&use_id, &item, &mut diagnostics);
     let mut segments = vec![];
     get_use_segments(db.upcast(), &use_ast, &mut segments)?;
     let resolved_item =
@@ -98,7 +98,7 @@ fn get_parent_use_path(db: &dyn SyntaxGroup, use_path: &ast::UsePath) -> Option<
 /// Cycle handling for [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    cycle: &[String],
+    cycle: &salsa::Cycle,
     use_id: &UseId,
 ) -> Maybe<UseData> {
     let module_file_id = use_id.module_file_id(db.upcast());
@@ -106,7 +106,7 @@ pub fn priv_use_semantic_data_cycle(
     let use_ast = db.module_use_by_id(*use_id)?.to_maybe()?;
     let err = Err(diagnostics.report(
         &use_ast,
-        if cycle.len() == 1 {
+        if cycle.participant_keys().count() == 1 {
             // `use bad_name`, finds itself but we don't want to report a cycle in that case.
             PathNotFound(NotFoundItemType::Identifier)
         } else {
@@ -138,7 +138,7 @@ pub fn use_resolver_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Arc<Res
 /// Trivial cycle handler for [crate::db::SemanticGroup::use_resolver_data].
 pub fn use_resolver_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     use_id: &UseId,
 ) -> Maybe<Arc<ResolverData>> {
     // Forwarding (not as a query) cycle handling to `priv_use_semantic_data` cycle handler.

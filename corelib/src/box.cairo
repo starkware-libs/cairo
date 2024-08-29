@@ -53,15 +53,15 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     }
 }
 
-impl BoxDeref<T> of core::ops::Deref<Box<T>> {
+impl BoxDeref<T> of crate::ops::Deref<Box<T>> {
     type Target = T;
     fn deref(self: Box<T>) -> T {
         self.unbox()
     }
 }
 
-impl BoxDebug<T, impl TDebug: core::fmt::Debug<T>> of core::fmt::Debug<Box<T>> {
-    fn fmt(self: @Box<T>, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+impl BoxDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Box<T>> {
+    fn fmt(self: @Box<T>, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
         write!(f, "&")?;
         TDebug::fmt(self.as_snapshot().unbox(), ref f)
     }

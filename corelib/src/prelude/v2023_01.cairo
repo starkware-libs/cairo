@@ -1,4 +1,4 @@
-use core::{
+use crate::{
     BoolBitAnd, BoolBitOr, BoolBitXor, BoolFelt252DictValue, BoolIntoFelt252, BoolNot,
     BoolPartialEq, BoolSerde, Felt252Add, Felt252AddEq, Felt252Default, Felt252Felt252DictValue,
     Felt252Mul, Felt252MulEq, Felt252Neg, Felt252PartialEq, Felt252Serde, Felt252Sub, Felt252SubEq,
@@ -7,32 +7,32 @@ use core::{
     felt252_div, felt252_is_zero, felt252_mul, felt252_sub, never, panic_with_felt252, usize
 };
 
-use core::{array, array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait}};
-use core::{box, box::{Box, BoxTrait}};
-use core::{
+use crate::{array, array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait}};
+use crate::{box, box::{Box, BoxTrait}};
+use crate::{
     bytes_31,
     bytes_31::{
         Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait, Felt252TryIntoBytes31, bytes31,
         bytes31_const
     }
 };
-use core::{
+use crate::{
     byte_array, byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait}
 };
-use core::{clone, clone::Clone};
-use core::cmp;
-use core::debug;
-use core::{
+use crate::{clone, clone::Clone};
+use crate::cmp;
+use crate::debug;
+use crate::{
     dict,
     dict::{
         Felt252Dict, Felt252DictTrait, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash
     }
 };
-use core::{ec, ec::{EcOp, EcPoint, EcState}};
-use core::ecdsa;
-use core::{gas, gas::{BuiltinCosts, GasBuiltin, get_builtin_costs}};
-use core::hash;
-use core::{
+use crate::{ec, ec::{EcOp, EcPoint, EcState}};
+use crate::ecdsa;
+use crate::{gas, gas::{BuiltinCosts, GasBuiltin, get_builtin_costs}};
+use crate::hash;
+use crate::{
     integer,
     integer::{
         Bitwise, Felt252IntoU256, Felt252TryIntoU128, Felt252TryIntoU16, Felt252TryIntoU32,
@@ -44,22 +44,22 @@ use core::{
 };
 #[feature("corelib-internal-use")]
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
-use core::integer::{u128_sqrt, u256_sqrt};
-use core::internal;
-use core::keccak;
-use core::math;
-use core::{nullable, nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box}};
-use core::{option, option::{Option, OptionTrait}};
-use core::{panics, panics::{Panic, PanicResult, panic}};
-use core::{pedersen, pedersen::Pedersen};
-use core::{poseidon, poseidon::Poseidon};
-use core::{result, result::{Result, ResultTrait}};
-use core::{serde, serde::Serde};
-use core::{starknet, starknet::System};
-use core::{string, string::StringLiteral};
-use core::testing;
-use core::to_byte_array;
-use core::{
+use crate::integer::{u128_sqrt, u256_sqrt};
+use crate::internal;
+use crate::keccak;
+use crate::math;
+use crate::{nullable, nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box}};
+use crate::{option, option::{Option, OptionTrait}};
+use crate::{panics, panics::{Panic, PanicResult, panic}};
+use crate::{pedersen, pedersen::Pedersen};
+use crate::{poseidon, poseidon::Poseidon};
+use crate::{result, result::{Result, ResultTrait}};
+use crate::{serde, serde::Serde};
+use crate::{starknet, starknet::System};
+use crate::{string, string::StringLiteral};
+use crate::testing;
+use crate::to_byte_array;
+use crate::{
     traits,
     traits::{
         Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
@@ -72,37 +72,37 @@ use core::{
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0"
 )]
 #[feature("deprecated-op-assign-traits")]
-pub use core::traits::AddEq;
+pub use crate::traits::AddEq;
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::SubAssign`.", since: "2.7.0"
 )]
 #[feature("deprecated-op-assign-traits")]
-pub use core::traits::SubEq;
+pub use crate::traits::SubEq;
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::MulAssign`.", since: "2.7.0"
 )]
 #[feature("deprecated-op-assign-traits")]
-pub use core::traits::MulEq;
+pub use crate::traits::MulEq;
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::DivAssign`.", since: "2.7.0"
 )]
 #[feature("deprecated-op-assign-traits")]
-pub use core::traits::DivEq;
+pub use crate::traits::DivEq;
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::RemAssign`.", since: "2.7.0"
 )]
 #[feature("deprecated-op-assign-traits")]
-pub use core::traits::RemEq;
+pub use crate::traits::RemEq;
 
 #[feature("deprecated-index-traits")]
-use core::traits::Index;
+use crate::traits::Index;
 #[feature("deprecated-index-traits")]
-use core::traits::IndexView;
-use core::{zeroable, zeroable::{NonZero, Zeroable}};
+use crate::traits::IndexView;
+use crate::{zeroable, zeroable::{NonZero, Zeroable}};
 
 #[cfg(test)]
-use core::test;
-pub use core::ops::Deref;
+use crate::test;
+pub use crate::ops::Deref;
 
 
 pub use starknet::storage::{

@@ -66,8 +66,14 @@ pub fn contract_state_for_testing() -> ContractState
 // = source context
     fn constructor(ref se<caret>lf: ContractState, value_: u128) {
 // = highlight
-No highlight information.
+    fn constructor(ref <sel>self</sel>: ContractState, value_: u128) {
 // = popover
+```cairo
+hello::Balance
+```
+```cairo
+fn constructor(ref self: ContractState, value_: u128)
+```
 
 //! > hover #2
 // = source context
@@ -86,10 +92,15 @@ pub struct ContractState {}
 // = source context
         self.va<caret>lue.write(value_);
 // = highlight
-No highlight information.
+        self.<sel>value</sel>.write(value_);
 // = popover
 ```cairo
-core::starknet::storage::storage_base::StorageBase::<core::starknet::storage::Mutable::<core::integer::u128>>
+hello
+```
+```cairo
+pub struct StorageStorageBaseMut {
+    pub value: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
+}
 ```
 
 //! > hover #4

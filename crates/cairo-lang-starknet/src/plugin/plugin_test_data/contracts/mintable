@@ -85,13 +85,13 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let erc20_storage_value = starknet::storage::FlattenedStorage {};
-        let ownable_storage_value = starknet::storage::FlattenedStorage {};
-        let mintable_storage_value = starknet::storage::FlattenedStorage {};
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __mintable_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           erc20_storage: erc20_storage_value,
-           ownable_storage: ownable_storage_value,
-           mintable_storage: mintable_storage_value,
+           erc20_storage: __erc20_storage_value__,
+           ownable_storage: __ownable_storage_value__,
+           mintable_storage: __mintable_storage_value__,
         }
     }
 }
@@ -104,13 +104,13 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let erc20_storage_value = starknet::storage::FlattenedStorage {};
-        let ownable_storage_value = starknet::storage::FlattenedStorage {};
-        let mintable_storage_value = starknet::storage::FlattenedStorage {};
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __mintable_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           erc20_storage: erc20_storage_value,
-           ownable_storage: ownable_storage_value,
-           mintable_storage: mintable_storage_value,
+           erc20_storage: __erc20_storage_value__,
+           ownable_storage: __ownable_storage_value__,
+           mintable_storage: __mintable_storage_value__,
         }
     }
 }
@@ -148,6 +148,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 impl ContractStateIERC20 of
@@ -554,12 +555,12 @@ impl GetSupplyDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSup
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyDispatcher>) -> GetSupplyDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let contract_address_value = starknet::storage::StoragePointer {
+        let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 GetSupplyDispatcherSubPointers {
-           contract_address: contract_address_value,
+           contract_address: __contract_address_value__,
         }
     }
 }
@@ -572,12 +573,12 @@ impl GetSupplyDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyDispatcher>>) -> GetSupplyDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let contract_address_value = starknet::storage::StoragePointer {
+        let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 GetSupplyDispatcherSubPointersMut {
-           contract_address: contract_address_value,
+           contract_address: __contract_address_value__,
         }
     }
 }
@@ -634,12 +635,12 @@ impl GetSupplyLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyLibraryDispatcher>) -> GetSupplyLibraryDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let class_hash_value = starknet::storage::StoragePointer {
+        let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 GetSupplyLibraryDispatcherSubPointers {
-           class_hash: class_hash_value,
+           class_hash: __class_hash_value__,
         }
     }
 }
@@ -652,12 +653,12 @@ impl GetSupplyLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoint
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyLibraryDispatcher>>) -> GetSupplyLibraryDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let class_hash_value = starknet::storage::StoragePointer {
+        let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 GetSupplyLibraryDispatcherSubPointersMut {
-           class_hash: class_hash_value,
+           class_hash: __class_hash_value__,
         }
     }
 }
@@ -714,12 +715,12 @@ impl GetSupplySafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPoin
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplySafeLibraryDispatcher>) -> GetSupplySafeLibraryDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let class_hash_value = starknet::storage::StoragePointer {
+        let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 GetSupplySafeLibraryDispatcherSubPointers {
-           class_hash: class_hash_value,
+           class_hash: __class_hash_value__,
         }
     }
 }
@@ -732,12 +733,12 @@ impl GetSupplySafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubP
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplySafeLibraryDispatcher>>) -> GetSupplySafeLibraryDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let class_hash_value = starknet::storage::StoragePointer {
+        let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 GetSupplySafeLibraryDispatcherSubPointersMut {
-           class_hash: class_hash_value,
+           class_hash: __class_hash_value__,
         }
     }
 }
@@ -794,12 +795,12 @@ impl GetSupplySafeDispatcherSubPointersImpl of starknet::storage::SubPointers<Ge
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplySafeDispatcher>) -> GetSupplySafeDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let contract_address_value = starknet::storage::StoragePointer {
+        let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 GetSupplySafeDispatcherSubPointers {
-           contract_address: contract_address_value,
+           contract_address: __contract_address_value__,
         }
     }
 }
@@ -812,12 +813,12 @@ impl GetSupplySafeDispatcherSubPointersMutImpl of starknet::storage::SubPointers
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplySafeDispatcher>>) -> GetSupplySafeDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let contract_address_value = starknet::storage::StoragePointer {
+        let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 GetSupplySafeDispatcherSubPointersMut {
-           contract_address: contract_address_value,
+           contract_address: __contract_address_value__,
         }
     }
 }
@@ -909,13 +910,13 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let erc20_storage_value = starknet::storage::FlattenedStorage {};
-        let ownable_storage_value = starknet::storage::FlattenedStorage {};
-        let mintable_storage_value = starknet::storage::FlattenedStorage {};
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __mintable_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           erc20_storage: erc20_storage_value,
-           ownable_storage: ownable_storage_value,
-           mintable_storage: mintable_storage_value,
+           erc20_storage: __erc20_storage_value__,
+           ownable_storage: __ownable_storage_value__,
+           mintable_storage: __mintable_storage_value__,
         }
     }
 }
@@ -928,13 +929,13 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let erc20_storage_value = starknet::storage::FlattenedStorage {};
-        let ownable_storage_value = starknet::storage::FlattenedStorage {};
-        let mintable_storage_value = starknet::storage::FlattenedStorage {};
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __mintable_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           erc20_storage: erc20_storage_value,
-           ownable_storage: ownable_storage_value,
-           mintable_storage: mintable_storage_value,
+           erc20_storage: __erc20_storage_value__,
+           ownable_storage: __ownable_storage_value__,
+           mintable_storage: __mintable_storage_value__,
         }
     }
 }
@@ -972,6 +973,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 impl ContractStateIERC20 of

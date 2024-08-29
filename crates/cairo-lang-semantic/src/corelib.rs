@@ -73,12 +73,14 @@ pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
 /// Returns the concrete type of a bounded int type with a given min and max.
 pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeId {
     let internal = core_submodule(db, "internal");
+    let bounded_int = get_submodule(db, internal, "bounded_int")
+        .expect("Could not find bounded_int submodule in corelib.");
     let size_ty = core_felt252_ty(db);
     let lower_id = ConstValue::Int(min, size_ty).intern(db);
     let upper_id = ConstValue::Int(max, size_ty).intern(db);
     try_get_ty_by_name(
         db,
-        internal,
+        bounded_int,
         "BoundedInt".into(),
         vec![GenericArgumentId::Constant(lower_id), GenericArgumentId::Constant(upper_id)],
     )
@@ -415,7 +417,7 @@ pub fn unwrap_error_propagation_type(
 /// builds a semantic unit expression. This is not necessarily located in the AST, so it is received
 /// as a param.
 pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> ExprId {
-    ctx.exprs.alloc(Expr::Tuple(ExprTuple {
+    ctx.arenas.exprs.alloc(Expr::Tuple(ExprTuple {
         items: Vec::new(),
         ty: TypeLongId::Tuple(Vec::new()).intern(ctx.db),
         stable_ptr,
@@ -471,6 +473,7 @@ pub fn core_binary_operator(
         BinaryOperator::And(_) => ("BitAnd", "bitand", false, CoreTraitContext::TopLevel),
         BinaryOperator::Or(_) => ("BitOr", "bitor", false, CoreTraitContext::TopLevel),
         BinaryOperator::Xor(_) => ("BitXor", "bitxor", false, CoreTraitContext::TopLevel),
+        BinaryOperator::DotDot(_) => ("RangeOp", "range", false, CoreTraitContext::Ops),
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
     Ok(Ok((
@@ -630,6 +633,10 @@ pub fn concrete_iterator_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTr
         .intern(db)
 }
 
+pub fn fn_once_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, CoreTraitContext::Ops, "FnOnce".into())
+}
+
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::TopLevel, "Copy".into())
 }
@@ -747,14 +754,17 @@ fn get_core_trait_function_infer(
     function_name: SmolStr,
     stable_ptr: SyntaxStablePtrId,
 ) -> ConcreteTraitGenericFunctionId {
-    let trait_id = get_core_trait(db, context, trait_name);
+    let trait_id = get_core_trait(db, context, trait_name.clone());
     let generic_params = db.trait_generic_params(trait_id).unwrap();
     let generic_args = generic_params
         .iter()
         .map(|_| GenericArgumentId::Type(inference.new_type_var(Some(stable_ptr))))
         .collect();
     let concrete_trait_id = semantic::ConcreteTraitLongId { trait_id, generic_args }.intern(db);
-    let trait_function = db.trait_function_by_name(trait_id, function_name).unwrap().unwrap();
+    let trait_function = db
+        .trait_function_by_name(trait_id, function_name.clone())
+        .unwrap()
+        .unwrap_or_else(move || panic!("Missing function '{function_name}' in '{trait_name}'."));
     ConcreteTraitGenericFunctionLongId::new(db, concrete_trait_id, trait_function).intern(db)
 }
 

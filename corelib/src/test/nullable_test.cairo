@@ -1,5 +1,5 @@
-use core::test::test_utils::{assert_eq, assert_ne};
-use core::nullable::null;
+use crate::test::test_utils::assert_eq;
+use crate::nullable::null;
 
 #[test]
 fn test_nullable_felt252s() {

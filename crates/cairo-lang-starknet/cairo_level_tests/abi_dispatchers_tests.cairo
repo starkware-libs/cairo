@@ -1,4 +1,4 @@
-use starknet::{account::Call, ContractAddress};
+use starknet::account::Call;
 
 use super::utils::serialized;
 
@@ -9,10 +9,7 @@ trait IAnotherContract<T> {}
 mod test_contract {
     use starknet::{account::Call, ContractAddress, ClassHash};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use super::{
-        IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
-        IAnotherContractDispatcherTrait
-    };
+    use super::{IAnotherContractDispatcher, IAnotherContractLibraryDispatcher};
 
 
     #[storage]
@@ -115,9 +112,9 @@ fn test_validate_gas_cost() {
     let serialization_gas_usage = post_call_building_gas - post_serialization_gas;
     let entry_point_gas_usage = post_serialization_gas - post_call_gas;
     assert!(
-        call_building_gas_usage == 3150
-            && serialization_gas_usage == 50950
-            && entry_point_gas_usage == 141400,
+        call_building_gas_usage == 3250
+            && serialization_gas_usage == 54450
+            && entry_point_gas_usage == 144700,
         "Unexpected gas_usage:
      call_building: `{call_building_gas_usage}`.
      serialization: `{serialization_gas_usage}`.

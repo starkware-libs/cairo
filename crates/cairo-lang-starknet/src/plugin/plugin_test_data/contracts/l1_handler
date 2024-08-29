@@ -98,6 +98,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76;
@@ -212,18 +213,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::contract]
-^*******************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;

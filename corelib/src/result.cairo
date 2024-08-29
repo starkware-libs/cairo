@@ -1,6 +1,9 @@
-use core::array::ArrayTrait;
-use core::serde::Serde;
-use core::array::SpanTrait;
+#[allow(unused_imports)]
+use crate::array::ArrayTrait;
+#[allow(unused_imports)]
+use crate::serde::Serde;
+#[allow(unused_imports)]
+use crate::array::SpanTrait;
 
 #[must_use]
 #[derive(Copy, Drop, Debug, Serde, PartialEq)]
@@ -15,7 +18,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
         match self {
             Result::Ok(x) => x,
-            Result::Err(_) => core::panic_with_felt252(err),
+            Result::Err(_) => crate::panic_with_felt252(err),
         }
     }
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics.
@@ -41,7 +44,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// If `val` is `Result::Err(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect_err<+PanicDestruct<T>>(self: Result<T, E>, err: felt252) -> E {
         match self {
-            Result::Ok(_) => core::panic_with_felt252(err),
+            Result::Ok(_) => crate::panic_with_felt252(err),
             Result::Err(x) => x,
         }
     }

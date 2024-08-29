@@ -6,6 +6,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
+use cairo_lang_semantic::usage::Usages;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -21,12 +22,12 @@ use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::generators;
-use super::usage::Usages;
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::ids::{
-    ConcreteFunctionWithBodyId, FunctionWithBodyId, LocationId, SemanticFunctionIdEx, Signature,
+    ConcreteFunctionWithBodyId, FunctionWithBodyId, GeneratedFunctionKey, LocationId,
+    SemanticFunctionIdEx, Signature,
 };
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
@@ -114,7 +115,7 @@ pub struct EncapsulatingLoweringContext<'db> {
     /// Block usages for the entire encapsulating function.
     pub usages: Usages,
     /// Lowerings of generated functions.
-    pub lowerings: OrderedHashMap<semantic::ExprId, FlatLowered>,
+    pub lowerings: OrderedHashMap<GeneratedFunctionKey, FlatLowered>,
 }
 impl<'db> EncapsulatingLoweringContext<'db> {
     pub fn new(

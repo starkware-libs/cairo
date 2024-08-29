@@ -7,7 +7,6 @@ ExpandContractFromCrateTestRunner(expect_diagnostics: false)
 cairo_level_tests/contracts/with_ownable_mini.cairo
 
 //! > generated_cairo_code
-use starknet::ContractAddress;
 #[starknet::contract]
 mod ownable_mini_contract {
     use cairo_level_tests::components::ownable_mini;
@@ -73,11 +72,11 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let ownable_value = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
-        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        let __ownable_value__ = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
+        let __balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance")};
         StorageStorageBase {
-           ownable: ownable_value,
-           balance: balance_value,
+           ownable: __ownable_value__,
+           balance: __balance_value__,
         }
     }
 }
@@ -89,11 +88,11 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let ownable_value = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
-        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        let __ownable_value__ = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
+        let __balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance")};
         StorageStorageBaseMut {
-           ownable: ownable_value,
-           balance: balance_value,
+           ownable: __ownable_value__,
+           balance: __balance_value__,
         }
     }
 }
@@ -125,6 +124,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 impl ContractStateTransferImpl of
@@ -318,11 +318,11 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let ownable_value = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
-        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        let __ownable_value__ = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
+        let __balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance")};
         StorageStorageBase {
-           ownable: ownable_value,
-           balance: balance_value,
+           ownable: __ownable_value__,
+           balance: __balance_value__,
         }
     }
 }
@@ -334,11 +334,11 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let ownable_value = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
-        let balance_value = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        let __ownable_value__ = starknet::storage::StorageBase {__base_address__: selector!("ownable")};
+        let __balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance")};
         StorageStorageBaseMut {
-           ownable: ownable_value,
-           balance: balance_value,
+           ownable: __ownable_value__,
+           balance: __balance_value__,
         }
     }
 }
@@ -370,6 +370,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 impl ContractStateTransferImpl of

@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
-    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
-    ModuleId, TraitId, TraitItemId,
+    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
+    ModuleFileId, ModuleId, TraitId, TraitItemId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::Edition;
@@ -38,7 +38,7 @@ use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ImplConstantId};
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::{extract_allowed_features, FeatureKind};
+use crate::items::feature_kind::{extract_feature_config, FeatureConfig, FeatureKind};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
@@ -61,6 +61,11 @@ use crate::{
 mod test;
 
 mod item;
+
+// Remove when these are added as actual keywords.
+pub const SELF_TYPE_KW: &str = "Self";
+pub const SUPER_KW: &str = "super";
+pub const CRATE_KW: &str = "crate";
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
@@ -116,7 +121,10 @@ pub struct ResolverData {
     pub inference_data: InferenceData,
     /// The trait/impl context the resolver is currently in. Used to resolve "Self::" paths.
     pub trait_or_impl_ctx: TraitOrImplContext,
-    pub allowed_features: OrderedHashSet<SmolStr>,
+    /// The configuration of allowed features.
+    pub feature_config: FeatureConfig,
+    /// The set of used items in the current context.
+    pub used_items: OrderedHashSet<LookupItemId>,
 }
 impl ResolverData {
     pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
@@ -127,7 +135,8 @@ impl ResolverData {
             resolved_items: Default::default(),
             inference_data: InferenceData::new(inference_id),
             trait_or_impl_ctx: TraitOrImplContext::None,
-            allowed_features: Default::default(),
+            feature_config: Default::default(),
+            used_items: Default::default(),
         }
     }
     pub fn clone_with_inference_id(
@@ -142,7 +151,8 @@ impl ResolverData {
             resolved_items: self.resolved_items.clone(),
             inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
             trait_or_impl_ctx: self.trait_or_impl_ctx,
-            allowed_features: self.allowed_features.clone(),
+            feature_config: self.feature_config.clone(),
+            used_items: self.used_items.clone(),
         }
     }
 }
@@ -169,14 +179,14 @@ impl DerefMut for Resolver<'_> {
 impl Resolver<'_> {
     /// Extracts the allowed node from the syntax, and sets it as the allowed features of the
     /// resolver.
-    pub fn set_allowed_features(
+    pub fn set_feature_config(
         &mut self,
         element_id: &impl LanguageElementId,
         syntax: &impl QueryAttrs,
         diagnostics: &mut SemanticDiagnostics,
     ) {
-        self.allowed_features =
-            extract_allowed_features(self.db.upcast(), element_id, syntax, diagnostics);
+        self.feature_config =
+            extract_feature_config(self.db.upcast(), element_id, syntax, diagnostics);
     }
 }
 
@@ -348,7 +358,7 @@ impl<'db> Resolver<'db> {
                 if let Some(resolved_item) =
                     resolve_self_segment(db, diagnostics, &identifier, &self.data.trait_or_impl_ctx)
                 {
-                    // The first segment is "Self". Consume it and return.
+                    // The first segment is `Self`. Consume it and return.
                     segments.next().unwrap();
                     return resolved_item;
                 }
@@ -360,12 +370,16 @@ impl<'db> Resolver<'db> {
                     ResolvedConcreteItem::Module(module_id)
                 } else {
                     // This identifier is a crate.
+                    let crate_ident = identifier.text(syntax_db);
+                    let crate_id = if crate_ident == CRATE_KW {
+                        self.owning_crate_id
+                    } else {
+                        CrateLongId::Real(crate_ident).intern(db)
+                    };
                     self.resolved_items.mark_concrete(
                         db,
                         segments.next().unwrap(),
-                        ResolvedConcreteItem::Module(ModuleId::CrateRoot(
-                            CrateLongId::Real(identifier.text(syntax_db)).intern(db),
-                        )),
+                        ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id)),
                     )
                 }
             }
@@ -477,12 +491,16 @@ impl<'db> Resolver<'db> {
                     ResolvedGenericItem::Module(module_id)
                 } else {
                     // This identifier is a crate.
+                    let crate_ident = identifier.text(syntax_db);
+                    let crate_id = if crate_ident == CRATE_KW {
+                        self.owning_crate_id
+                    } else {
+                        CrateLongId::Real(crate_ident).intern(db)
+                    };
                     self.resolved_items.mark_generic(
                         db,
                         segments.next().unwrap(),
-                        ResolvedGenericItem::Module(ModuleId::CrateRoot(
-                            CrateLongId::Real(identifier.text(syntax_db)).intern(db),
-                        )),
+                        ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)),
                     )
                 }
             }
@@ -501,7 +519,7 @@ impl<'db> Resolver<'db> {
         let mut module_id = self.module_file_id.0;
         for segment in segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) => false,
-            ast::PathSegment::Simple(simple) => simple.ident(syntax_db).text(syntax_db) == "super",
+            ast::PathSegment::Simple(simple) => simple.ident(syntax_db).text(syntax_db) == SUPER_KW,
         }) {
             module_id = match module_id {
                 ModuleId::CrateRoot(_) => {
@@ -527,15 +545,15 @@ impl<'db> Resolver<'db> {
 
         let ident = identifier.text(syntax_db);
 
-        if identifier.text(syntax_db) == "Self" {
+        if identifier.text(syntax_db) == SELF_TYPE_KW {
             return Err(diagnostics.report(identifier, SelfMustBeFirst));
         }
 
         match containing_item {
             ResolvedConcreteItem::Module(module_id) => {
-                // Prefix "super" segments should be removed earlier. Middle "super" segments are
+                // Prefix `super` segments should be removed earlier. Middle `super` segments are
                 // not allowed.
-                if ident == "super" {
+                if ident == SUPER_KW {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
                 let inner_item_info = self
@@ -544,8 +562,8 @@ impl<'db> Resolver<'db> {
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
 
                 let segment_stable_ptr = segment.stable_ptr().untyped();
-
                 self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
+                self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
                 let inner_generic_item =
                     ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
                 let specialized_item = self.specialize_generic_module_item(
@@ -591,6 +609,7 @@ impl<'db> Resolver<'db> {
                 let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident)? else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
+                self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
 
                 match trait_item_id {
                     TraitItemId::Function(trait_function_id) => {
@@ -719,6 +738,7 @@ impl<'db> Resolver<'db> {
                 let Some(trait_item_id) = self.db.trait_item_by_name(trait_id, ident)? else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
+                self.data.used_items.insert(LookupItemId::TraitItem(trait_item_id));
 
                 match trait_item_id {
                     TraitItemId::Function(trait_function_id) => {
@@ -883,6 +903,7 @@ impl<'db> Resolver<'db> {
                     .module_item_info_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
                 self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
+                self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
                 ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
@@ -942,6 +963,8 @@ impl<'db> Resolver<'db> {
             return Some(self.module_file_id.0);
         }
 
+        // If the first element is `crate`, use the crate's root module as the base module.
+        require(ident != CRATE_KW)?;
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
         let crate_id = CrateLongId::Real(ident).intern(self.db);
@@ -1274,7 +1297,7 @@ impl<'db> Resolver<'db> {
         }
         match &item_info.feature_kind {
             FeatureKind::Unstable { feature, note }
-                if !self.data.allowed_features.contains(feature) =>
+                if !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
                     identifier,
@@ -1282,7 +1305,8 @@ impl<'db> Resolver<'db> {
                 );
             }
             FeatureKind::Deprecated { feature, note }
-                if !self.data.allowed_features.contains(feature) =>
+                if !self.data.feature_config.allow_deprecated
+                    && !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
                     identifier,
@@ -1290,7 +1314,7 @@ impl<'db> Resolver<'db> {
                 );
             }
             FeatureKind::Internal { feature, note }
-                if !self.data.allowed_features.contains(feature) =>
+                if !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
                     identifier,
@@ -1473,19 +1497,19 @@ impl<'db> Resolver<'db> {
     }
 }
 
-/// Resolves the segment if it's "Self". Returns the Some(ResolvedConcreteItem) or Some(Err) if
-/// segment == "Self" or None otherwise.
+/// Resolves the segment if it's `Self`. Returns the Some(ResolvedConcreteItem) or Some(Err) if
+/// segment == `Self` or None otherwise.
 fn resolve_self_segment(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     identifier: &ast::TerminalIdentifier,
     trait_or_impl_ctx: &TraitOrImplContext,
 ) -> Option<Maybe<ResolvedConcreteItem>> {
-    require(identifier.text(db.upcast()) == "Self")?;
+    require(identifier.text(db.upcast()) == SELF_TYPE_KW)?;
     Some(resolve_actual_self_segment(db, diagnostics, identifier, trait_or_impl_ctx))
 }
 
-/// Resolves the "Self" segment given that it's actually "Self".
+/// Resolves the `Self` segment given that it's actually `Self`.
 fn resolve_actual_self_segment(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,

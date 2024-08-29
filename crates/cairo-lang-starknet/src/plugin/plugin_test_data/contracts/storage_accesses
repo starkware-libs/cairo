@@ -8,7 +8,7 @@ cairo_level_tests/contracts/storage_accesses.cairo
 
 //! > generated_cairo_code
 use starknet::ContractAddress;
-use starknet::storage::{StoragePathEntry, Map};
+use starknet::storage::Map;
 
 #[starknet::interface]
 trait IERC20<TContractState> {
@@ -173,11 +173,11 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let user_info_value = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
-        let transaction_info_value = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
+        let __user_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
+        let __transaction_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
         StorageStorageBase {
-           user_info: user_info_value,
-           transaction_info: transaction_info_value,
+           user_info: __user_info_value__,
+           transaction_info: __transaction_info_value__,
         }
     }
 }
@@ -189,11 +189,11 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let user_info_value = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
-        let transaction_info_value = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
+        let __user_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
+        let __transaction_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
         StorageStorageBaseMut {
-           user_info: user_info_value,
-           transaction_info: transaction_info_value,
+           user_info: __user_info_value__,
+           transaction_info: __transaction_info_value__,
         }
     }
 }
@@ -225,6 +225,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -1313,30 +1314,30 @@ impl UserInfoSubPointersImpl of starknet::storage::SubPointers<UserInfo> {
     fn sub_pointers(self: starknet::storage::StoragePointer<UserInfo>) -> UserInfoSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let name_value = starknet::storage::StoragePointer {
+        let __name_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<felt252>::size();
-        let symbol_value = starknet::storage::StoragePointer {
+        let __symbol_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<felt252>::size();
-        let decimals_value = starknet::storage::StoragePointer {
+        let __decimals_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<u8>::size();
-        let total_supply_value = starknet::storage::StoragePointer {
+        let __total_supply_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 UserInfoSubPointers {
-           name: name_value,
-           symbol: symbol_value,
-           decimals: decimals_value,
-           total_supply: total_supply_value,
+           name: __name_value__,
+           symbol: __symbol_value__,
+           decimals: __decimals_value__,
+           total_supply: __total_supply_value__,
         }
     }
 }
@@ -1352,30 +1353,30 @@ impl UserInfoSubPointersMutImpl of starknet::storage::SubPointersMut<UserInfo> {
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<UserInfo>>) -> UserInfoSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let name_value = starknet::storage::StoragePointer {
+        let __name_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<felt252>::size();
-        let symbol_value = starknet::storage::StoragePointer {
+        let __symbol_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<felt252>::size();
-        let decimals_value = starknet::storage::StoragePointer {
+        let __decimals_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
         current_offset = current_offset + starknet::Store::<u8>::size();
-        let total_supply_value = starknet::storage::StoragePointer {
+        let __total_supply_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 UserInfoSubPointersMut {
-           name: name_value,
-           symbol: symbol_value,
-           decimals: decimals_value,
-           total_supply: total_supply_value,
+           name: __name_value__,
+           symbol: __symbol_value__,
+           decimals: __decimals_value__,
+           total_supply: __total_supply_value__,
         }
     }
 }
@@ -1387,11 +1388,11 @@ struct TransactionInfoStorageBase {
 impl TransactionInfoStorageImpl of starknet::storage::StorageTrait<TransactionInfo> {
     type BaseType = TransactionInfoStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<TransactionInfo>) -> TransactionInfoStorageBase {
-        let balances_value = starknet::storage::StorageBase {__base_address__: selector!("balances")};
-        let allowances_value = starknet::storage::StorageBase {__base_address__: selector!("allowances")};
+        let __balances_value__ = starknet::storage::StorageBase {__base_address__: selector!("balances")};
+        let __allowances_value__ = starknet::storage::StorageBase {__base_address__: selector!("allowances")};
         TransactionInfoStorageBase {
-           balances: balances_value,
-           allowances: allowances_value,
+           balances: __balances_value__,
+           allowances: __allowances_value__,
         }
     }
 }
@@ -1403,11 +1404,11 @@ struct TransactionInfoStorageBaseMut {
 impl TransactionInfoStorageMutImpl of starknet::storage::StorageTraitMut<TransactionInfo> {
     type BaseType = TransactionInfoStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<TransactionInfo>>) -> TransactionInfoStorageBaseMut {
-        let balances_value = starknet::storage::StorageBase {__base_address__: selector!("balances")};
-        let allowances_value = starknet::storage::StorageBase {__base_address__: selector!("allowances")};
+        let __balances_value__ = starknet::storage::StorageBase {__base_address__: selector!("balances")};
+        let __allowances_value__ = starknet::storage::StorageBase {__base_address__: selector!("allowances")};
         TransactionInfoStorageBaseMut {
-           balances: balances_value,
-           allowances: allowances_value,
+           balances: __balances_value__,
+           allowances: __allowances_value__,
         }
     }
 }
@@ -1419,17 +1420,17 @@ struct TransactionInfoStorageNode {
 impl TransactionInfoStorageNodeImpl of starknet::storage::StorageNode<TransactionInfo> {
     type NodeType = TransactionInfoStorageNode;
     fn storage_node(self: starknet::storage::StoragePath<TransactionInfo>) -> TransactionInfoStorageNode {
-        let balances_value = starknet::storage::PendingStoragePathTrait::new(
+        let __balances_value__ = starknet::storage::PendingStoragePathTrait::new(
                         @self,
                         selector!("balances")
                     );
-                            let allowances_value = starknet::storage::PendingStoragePathTrait::new(
+                            let __allowances_value__ = starknet::storage::PendingStoragePathTrait::new(
                         @self,
                         selector!("allowances")
                     );
                             TransactionInfoStorageNode {
-           balances: balances_value,
-           allowances: allowances_value,
+           balances: __balances_value__,
+           allowances: __allowances_value__,
         }
     }
 }
@@ -1441,17 +1442,17 @@ struct TransactionInfoStorageNodeMut {
 impl TransactionInfoStorageNodeMutImpl of starknet::storage::StorageNodeMut<TransactionInfo> {
     type NodeType = TransactionInfoStorageNodeMut;
     fn storage_node_mut(self: starknet::storage::StoragePath<starknet::storage::Mutable::<TransactionInfo>>) -> TransactionInfoStorageNodeMut {
-        let balances_value = starknet::storage::PendingStoragePathTrait::new(
+        let __balances_value__ = starknet::storage::PendingStoragePathTrait::new(
                         @self,
                         selector!("balances")
                     );
-                            let allowances_value = starknet::storage::PendingStoragePathTrait::new(
+                            let __allowances_value__ = starknet::storage::PendingStoragePathTrait::new(
                         @self,
                         selector!("allowances")
                     );
                             TransactionInfoStorageNodeMut {
-           balances: balances_value,
-           allowances: allowances_value,
+           balances: __balances_value__,
+           allowances: __allowances_value__,
         }
     }
 }
@@ -1508,12 +1509,12 @@ impl IERC20DispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20Dis
     fn sub_pointers(self: starknet::storage::StoragePointer<IERC20Dispatcher>) -> IERC20DispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let contract_address_value = starknet::storage::StoragePointer {
+        let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 IERC20DispatcherSubPointers {
-           contract_address: contract_address_value,
+           contract_address: __contract_address_value__,
         }
     }
 }
@@ -1526,12 +1527,12 @@ impl IERC20DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IER
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20Dispatcher>>) -> IERC20DispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let contract_address_value = starknet::storage::StoragePointer {
+        let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 IERC20DispatcherSubPointersMut {
-           contract_address: contract_address_value,
+           contract_address: __contract_address_value__,
         }
     }
 }
@@ -1588,12 +1589,12 @@ impl IERC20LibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IE
     fn sub_pointers(self: starknet::storage::StoragePointer<IERC20LibraryDispatcher>) -> IERC20LibraryDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let class_hash_value = starknet::storage::StoragePointer {
+        let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 IERC20LibraryDispatcherSubPointers {
-           class_hash: class_hash_value,
+           class_hash: __class_hash_value__,
         }
     }
 }
@@ -1606,12 +1607,12 @@ impl IERC20LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointers
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20LibraryDispatcher>>) -> IERC20LibraryDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let class_hash_value = starknet::storage::StoragePointer {
+        let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 IERC20LibraryDispatcherSubPointersMut {
-           class_hash: class_hash_value,
+           class_hash: __class_hash_value__,
         }
     }
 }
@@ -1668,12 +1669,12 @@ impl IERC20SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointer
     fn sub_pointers(self: starknet::storage::StoragePointer<IERC20SafeLibraryDispatcher>) -> IERC20SafeLibraryDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let class_hash_value = starknet::storage::StoragePointer {
+        let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 IERC20SafeLibraryDispatcherSubPointers {
-           class_hash: class_hash_value,
+           class_hash: __class_hash_value__,
         }
     }
 }
@@ -1686,12 +1687,12 @@ impl IERC20SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoin
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeLibraryDispatcher>>) -> IERC20SafeLibraryDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let class_hash_value = starknet::storage::StoragePointer {
+        let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 IERC20SafeLibraryDispatcherSubPointersMut {
-           class_hash: class_hash_value,
+           class_hash: __class_hash_value__,
         }
     }
 }
@@ -1748,12 +1749,12 @@ impl IERC20SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC2
     fn sub_pointers(self: starknet::storage::StoragePointer<IERC20SafeDispatcher>) -> IERC20SafeDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let contract_address_value = starknet::storage::StoragePointer {
+        let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 IERC20SafeDispatcherSubPointers {
-           contract_address: contract_address_value,
+           contract_address: __contract_address_value__,
         }
     }
 }
@@ -1766,12 +1767,12 @@ impl IERC20SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeDispatcher>>) -> IERC20SafeDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let contract_address_value = starknet::storage::StoragePointer {
+        let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 IERC20SafeDispatcherSubPointersMut {
-           contract_address: contract_address_value,
+           contract_address: __contract_address_value__,
         }
     }
 }
@@ -1935,11 +1936,11 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let user_info_value = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
-        let transaction_info_value = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
+        let __user_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
+        let __transaction_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
         StorageStorageBase {
-           user_info: user_info_value,
-           transaction_info: transaction_info_value,
+           user_info: __user_info_value__,
+           transaction_info: __transaction_info_value__,
         }
     }
 }
@@ -1951,11 +1952,11 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let user_info_value = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
-        let transaction_info_value = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
+        let __user_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_info")};
+        let __transaction_info_value__ = starknet::storage::StorageBase {__base_address__: selector!("transaction_info")};
         StorageStorageBaseMut {
-           user_info: user_info_value,
-           transaction_info: transaction_info_value,
+           user_info: __user_info_value__,
+           transaction_info: __transaction_info_value__,
         }
     }
 }
@@ -1987,6 +1988,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]

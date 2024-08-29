@@ -1,6 +1,7 @@
 use std::fmt::Write;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::get_location_marks;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -16,6 +17,7 @@ cairo_lang_test_utils::test_file_test!(
     generated,
     "src/lower/test_data",
     {
+        closure :"closure",
         loop_ :"loop",
         while_ :"while",
         for_ :"for",
@@ -61,16 +63,24 @@ fn test_generated_function(
         )
         .unwrap();
 
-        for (expr_id, lowering) in multi_lowering.generated_lowerings.iter() {
+        for (key, lowering) in multi_lowering.generated_lowerings.iter() {
             let generated_id = ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                 parent: test_function.concrete_function_id,
-                element: *expr_id,
+                key: *key,
             })
             .intern(db);
 
+            let func_description = match key {
+                crate::ids::GeneratedFunctionKey::Loop(_) => "loop".into(),
+                crate::ids::GeneratedFunctionKey::TraitFunc(func, _) => {
+                    func.trait_function(db).full_path(db)
+                }
+            };
+
             writeln!(
                 &mut writer,
-                "Generated lowering for source location:\n{}\n",
+                "Generated {} lowering for source location:\n{}\n",
+                func_description,
                 get_location_marks(
                     db,
                     &generated_id.stable_location(db).unwrap().diagnostic_location(db)

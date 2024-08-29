@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
+use std::hash::Hash;
 use std::sync::Arc;
-use std::{mem, panic, vec};
+use std::{iter, mem, panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -37,19 +38,19 @@ use super::constant::{
     ConstantData, ImplConstantId,
 };
 use super::enm::SemanticEnumEx;
-use super::function_with_body::{get_inline_config, Arenas, FunctionBody, FunctionBodyData};
+use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, GenericFunctionId,
     ImplGenericFunctionId, InlineConfiguration,
 };
 use super::generics::{
-    generic_params_to_args, semantic_generic_params, GenericArgumentHead, GenericParamsData,
+    generic_params_to_args, semantic_generic_params, GenericArgumentHead, GenericParamImpl,
+    GenericParamsData,
 };
 use super::impl_alias::{
     impl_alias_generic_params_data_helper, impl_alias_semantic_data_cycle_helper,
     impl_alias_semantic_data_helper, ImplAliasData,
 };
-use super::structure::SemanticStructEx;
 use super::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId,
 };
@@ -59,9 +60,10 @@ use super::type_aliases::{
 };
 use super::{resolve_trait_path, TraitOrImplContext};
 use crate::corelib::{
-    copy_trait, core_submodule, deref_trait, drop_trait, get_core_trait, CoreTraitContext,
+    concrete_destruct_trait, concrete_drop_trait, concrete_panic_destruct_trait, copy_trait,
+    core_submodule, deref_trait, drop_trait, get_core_trait, CoreTraitContext,
 };
-use crate::db::SemanticGroup;
+use crate::db::{get_resolver_data_options, SemanticGroup};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
@@ -75,11 +77,13 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{add_type_based_diagnostics, get_impl_at_context, resolve_type, ImplTypeId};
+use crate::types::{
+    add_type_based_diagnostics, get_impl_at_context, resolve_type, ClosureTypeLongId, ImplTypeId,
+};
 use crate::{
-    semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
-    FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
-    TypeId, TypeLongId,
+    semantic, semantic_object_for_id, Arenas, ConcreteFunction, ConcreteTraitId,
+    ConcreteTraitLongId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability,
+    SemanticDiagnostic, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -171,6 +175,7 @@ pub enum ImplLongId {
     ImplVar(ImplVarId),
     ImplImpl(ImplImplId),
     TraitImpl(TraitImplId),
+    GeneratedImpl(GeneratedImplId),
 }
 impl ImplLongId {
     /// Returns the [ImplHead] of an impl if available.
@@ -180,7 +185,8 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_)
             | ImplLongId::ImplVar(_)
             | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_) => {
+            | ImplLongId::TraitImpl(_)
+            | ImplLongId::GeneratedImpl(_) => {
                 return None;
             }
         })
@@ -203,6 +209,9 @@ impl ImplLongId {
             )
             .into(),
             ImplLongId::TraitImpl(trait_impl) => trait_impl.name(db.upcast()),
+            ImplLongId::GeneratedImpl(generated_impl) => {
+                format!("{:?}", generated_impl.debug(db.elongate())).into()
+            }
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -216,6 +225,9 @@ impl ImplLongId {
             ImplLongId::ImplVar(var) => format!("{var:?}"),
             ImplLongId::ImplImpl(impl_impl) => format!("{:?}", impl_impl.debug(db.elongate())),
             ImplLongId::TraitImpl(trait_impl) => format!("{:?}", trait_impl.debug(db.elongate())),
+            ImplLongId::GeneratedImpl(generated_impl) => {
+                format!("{:?}", generated_impl.debug(db.elongate()))
+            }
         }
     }
 
@@ -226,6 +238,15 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) => true,
             ImplLongId::ImplVar(_) => false,
             ImplLongId::ImplImpl(impl_impl) => impl_impl.impl_id().is_var_free(db),
+            ImplLongId::GeneratedImpl(generated_impl) => {
+                generated_impl.concrete_trait(db).is_var_free(db)
+                    && generated_impl
+                        .lookup_intern(db)
+                        .impl_items
+                        .0
+                        .values()
+                        .all(|type_id| type_id.is_var_free(db))
+            }
         }
     }
 
@@ -236,6 +257,15 @@ impl ImplLongId {
             ImplLongId::GenericParameter(_) => false,
             ImplLongId::ImplVar(_) => false,
             ImplLongId::ImplImpl(_) | ImplLongId::TraitImpl(_) => false,
+            ImplLongId::GeneratedImpl(generated_impl) => {
+                generated_impl.concrete_trait(db).is_fully_concrete(db)
+                    && generated_impl
+                        .lookup_intern(db)
+                        .impl_items
+                        .0
+                        .values()
+                        .all(|type_id| type_id.is_fully_concrete(db))
+            }
         }
     }
 }
@@ -251,6 +281,9 @@ impl DebugWithDb<dyn SemanticGroup> for ImplLongId {
             ImplLongId::ImplVar(var) => write!(f, "?{}", var.lookup_intern(db).id.0),
             ImplLongId::ImplImpl(impl_impl) => write!(f, "{:?}", impl_impl.debug(db)),
             ImplLongId::TraitImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
+            ImplLongId::GeneratedImpl(generated_impl) => {
+                write!(f, "{:?}", generated_impl.debug(db))
+            }
         }
     }
 }
@@ -284,6 +317,67 @@ impl ImplId {
 
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         self.lookup_intern(db).format(db)
+    }
+}
+
+define_short_id!(
+    GeneratedImplId,
+    GeneratedImplLongId,
+    SemanticGroup,
+    lookup_intern_generated_impl,
+    intern_generated_impl
+);
+semantic_object_for_id!(
+    GeneratedImplId,
+    lookup_intern_generated_impl,
+    intern_generated_impl,
+    GeneratedImplLongId
+);
+
+impl GeneratedImplId {
+    pub fn concrete_trait(self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+        db.lookup_intern_generated_impl(self).concrete_trait
+    }
+
+    pub fn trait_id(&self, db: &dyn SemanticGroup) -> TraitId {
+        self.concrete_trait(db).trait_id(db)
+    }
+}
+
+/// An impl that is generated by the compiler for a specific trait.
+/// There can be only one such impl per concrete trait as otherwise there would be a
+/// MultipleImplsFound ambiguity.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct GeneratedImplLongId {
+    pub concrete_trait: ConcreteTraitId,
+    /// The generic arguments used by the generated impl, typically impls and negative impls.
+    pub generic_args: Vec<GenericArgumentId>,
+    pub impl_items: GeneratedImplItems,
+}
+#[derive(Clone, Debug, Default, PartialEq, Eq, SemanticObject)]
+pub struct GeneratedImplItems(pub OrderedHashMap<TraitTypeId, TypeId>);
+impl Hash for GeneratedImplItems {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.iter().for_each(|(trait_type_id, type_id)| {
+            trait_type_id.hash(state);
+            type_id.hash(state);
+        });
+    }
+}
+pub enum GeneratedImplAssociatedTypes {
+    /// The associated types are not yet resolved.
+    Unresolved,
+    /// The associated types are resolved.
+    Resolved(OrderedHashMap<TraitTypeId, TypeId>),
+}
+
+impl DebugWithDb<dyn SemanticGroup> for GeneratedImplLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "Generated {:?}", self.concrete_trait.debug(db))
     }
 }
 
@@ -379,7 +473,7 @@ pub fn impl_def_generic_params_data(
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id)));
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    resolver.set_allowed_features(&impl_def_id, &impl_ast, &mut diagnostics);
+    resolver.set_feature_config(&impl_def_id, &impl_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -414,7 +508,7 @@ pub fn impl_def_resolver_data(
 /// Trivial cycle handler for [crate::db::SemanticGroup::impl_def_resolver_data].
 pub fn impl_def_resolver_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_def_id: &ImplDefId,
 ) -> Maybe<Arc<ResolverData>> {
     // Forwarding (not as a query) cycle handling to `priv_impl_declaration_data` cycle handler.
@@ -432,7 +526,7 @@ pub fn impl_def_concrete_trait(
 /// Trivial cycle handler for [crate::db::SemanticGroup::impl_def_concrete_trait].
 pub fn impl_def_concrete_trait_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_def_id: &ImplDefId,
 ) -> Maybe<ConcreteTraitId> {
     // Forwarding (not as a query) cycle handling to `priv_impl_declaration_data` cycle handler.
@@ -466,7 +560,7 @@ pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<T
     let inference_id = InferenceId::ImplDefTrait(impl_def_id);
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    resolver.set_allowed_features(&impl_def_id, &impl_ast, &mut diagnostics);
+    resolver.set_feature_config(&impl_def_id, &impl_ast, &mut diagnostics);
 
     let trait_path_syntax = impl_ast.trait_path(db.upcast());
 
@@ -494,6 +588,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
         ImplLongId::ImplVar(var) => Ok(var.lookup_intern(db).concrete_trait_id),
         ImplLongId::ImplImpl(impl_impl) => impl_impl_concrete_trait(db, impl_impl),
         ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl),
+        ImplLongId::GeneratedImpl(generated_impl) => Ok(generated_impl.concrete_trait(db)),
     }
 }
 
@@ -502,7 +597,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_declaration_data].
 pub fn priv_impl_declaration_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_def_id: &ImplDefId,
 ) -> Maybe<ImplDeclarationData> {
     priv_impl_declaration_data_inner(db, *impl_def_id, false)
@@ -541,7 +636,7 @@ pub fn priv_impl_declaration_data_inner(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    resolver.set_allowed_features(&impl_def_id, &impl_ast, &mut diagnostics);
+    resolver.set_feature_config(&impl_def_id, &impl_ast, &mut diagnostics);
     diagnostics.extend(generic_params_data.diagnostics);
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
@@ -786,6 +881,21 @@ pub fn impl_implicit_impl_by_name(
     name: SmolStr,
 ) -> Maybe<Option<TraitImplId>> {
     Ok(db.priv_impl_definition_data(impl_def_id)?.implicit_impls_id_by_name.get(&name).cloned())
+}
+
+/// Query implementation of [SemanticGroup::impl_all_used_items].
+pub fn impl_all_used_items(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<Arc<OrderedHashSet<LookupItemId>>> {
+    let mut all_used_items = db.impl_def_resolver_data(impl_def_id)?.used_items.clone();
+    let data = db.priv_impl_definition_data(impl_def_id)?;
+    for item in data.item_id_by_name.values() {
+        for resolver_data in get_resolver_data_options(LookupItemId::ImplItem(*item), db) {
+            all_used_items.extend(resolver_data.used_items.iter().cloned());
+        }
+    }
+    Ok(all_used_items.into())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_types].
@@ -1268,7 +1378,7 @@ pub fn module_impl_ids_for_trait_filter(
 /// Cycle handling for [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
 pub fn module_impl_ids_for_trait_filter_cycle(
     _db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _module_id: &ModuleId,
     _trait_filter: &TraitFilter,
 ) -> Maybe<Vec<UninferredImpl>> {
@@ -1310,7 +1420,7 @@ pub fn impl_impl_ids_for_trait_filter(
 /// Cycle handling for [crate::db::SemanticGroup::impl_impl_ids_for_trait_filter].
 pub fn impl_impl_ids_for_trait_filter_cycle(
     _db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     _imp: &ImplId,
     _trait_filter: &TraitFilter,
 ) -> Maybe<Vec<UninferredImpl>> {
@@ -1400,15 +1510,21 @@ impl ImplLookupContext {
     pub fn new(module_id: ModuleId, generic_params: Vec<GenericParamId>) -> ImplLookupContext {
         Self { modules_and_impls: [ImplOrModuleById::Module(module_id)].into(), generic_params }
     }
-    pub fn insert_lookup_scope(&mut self, item: ImplOrModuleById) {
-        match item {
-            ImplOrModuleById::Impl(impl_id) => {
-                self.modules_and_impls.insert(ImplOrModuleById::Impl(impl_id));
+    pub fn insert_lookup_scope(&mut self, db: &dyn SemanticGroup, imp: &UninferredImpl) {
+        let defs_db = db.upcast();
+        let item = match imp {
+            UninferredImpl::Def(impl_def_id) => impl_def_id.module_file_id(defs_db).0.into(),
+            UninferredImpl::ImplAlias(impl_alias_id) => {
+                impl_alias_id.module_file_id(defs_db).0.into()
             }
-            ImplOrModuleById::Module(module_id) => {
-                self.modules_and_impls.insert(ImplOrModuleById::Module(module_id));
+            UninferredImpl::GenericParam(param) => param.module_file_id(defs_db).0.into(),
+            UninferredImpl::ImplImpl(impl_impl_id) => impl_impl_id.impl_id.into(),
+            UninferredImpl::GeneratedImpl(_) => {
+                // GeneratedImpls do not extend the lookup context.
+                return;
             }
-        }
+        };
+        self.modules_and_impls.insert(item);
     }
     pub fn insert_module(&mut self, module_id: ModuleId) -> bool {
         self.modules_and_impls.insert(ImplOrModuleById::Module(module_id))
@@ -1426,6 +1542,7 @@ pub enum UninferredImpl {
     ImplAlias(ImplAliasId),
     GenericParam(GenericParamId),
     ImplImpl(ImplImplId),
+    GeneratedImpl(UninferredGeneratedImplId),
 }
 impl UninferredImpl {
     pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
@@ -1441,6 +1558,7 @@ impl UninferredImpl {
                 param.concrete_trait
             }
             UninferredImpl::ImplImpl(impl_impl_id) => db.impl_impl_concrete_trait(*impl_impl_id),
+            UninferredImpl::GeneratedImpl(generated_impl) => Ok(generated_impl.concrete_trait(db)),
         }
     }
 
@@ -1459,6 +1577,7 @@ impl UninferredImpl {
             UninferredImpl::ImplImpl(impl_impl_id) => db
                 .impl_impl_concrete_trait(*impl_impl_id)
                 .map(|concrete_trait| concrete_trait.trait_id(db)),
+            UninferredImpl::GeneratedImpl(generated_impl) => Ok(generated_impl.trait_id(db)),
         }
     }
 
@@ -1471,6 +1590,9 @@ impl UninferredImpl {
             }
             UninferredImpl::GenericParam(param) => param.module_file_id(defs_db).0.into(),
             UninferredImpl::ImplImpl(impl_impl_id) => impl_impl_id.impl_id.into(),
+            UninferredImpl::GeneratedImpl(generated_impl) => {
+                generated_impl.concrete_trait(db).trait_id(db).module_file_id(defs_db).0.into()
+            }
         }
     }
 }
@@ -1485,15 +1607,57 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
                 write!(f, "generic param {}", param.name(db.upcast()).unwrap_or_else(|| "_".into()))
             }
             UninferredImpl::ImplImpl(impl_impl) => impl_impl.fmt(f, db.elongate()),
+            UninferredImpl::GeneratedImpl(generated_impl) => generated_impl.fmt(f, db.elongate()),
         }
     }
 }
 
+define_short_id!(
+    UninferredGeneratedImplId,
+    UninferredGeneratedImplLongId,
+    SemanticGroup,
+    lookup_intern_uninferred_generated_impl,
+    intern_uninferred_generated_impl
+);
+semantic_object_for_id!(
+    UninferredGeneratedImplId,
+    lookup_intern_uninferred_generated_impl,
+    intern_uninferred_generated_impl,
+    UninferredGeneratedImplLongId
+);
+
+impl UninferredGeneratedImplId {
+    pub fn concrete_trait(self, db: &dyn SemanticGroup) -> ConcreteTraitId {
+        db.lookup_intern_uninferred_generated_impl(self).concrete_trait
+    }
+
+    pub fn trait_id(&self, db: &dyn SemanticGroup) -> TraitId {
+        self.concrete_trait(db).trait_id(db)
+    }
+}
+
+/// Generated impls before inference, see GeneratedImplLongId for more details.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub struct UninferredGeneratedImplLongId {
+    pub concrete_trait: ConcreteTraitId,
+    pub generic_params: Vec<GenericParam>,
+    pub impl_items: GeneratedImplItems,
+}
+
+impl DebugWithDb<dyn SemanticGroup> for UninferredGeneratedImplLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "Generated {:?}", self.concrete_trait.debug(db))
+    }
+}
 /// Finds all the implementations of a concrete trait, in a specific lookup context.
 pub fn find_candidates_at_context(
     db: &dyn SemanticGroup,
     lookup_context: &ImplLookupContext,
-    filter: TraitFilter,
+    filter: &TraitFilter,
 ) -> Maybe<OrderedHashSet<UninferredImpl>> {
     let mut res = OrderedHashSet::default();
     for generic_param_id in &lookup_context.generic_params {
@@ -1512,7 +1676,7 @@ pub fn find_candidates_at_context(
         let param = extract_matches!(generic_param_semantic, GenericParam::Impl);
         let Ok(imp_concrete_trait_id) = param.concrete_trait else { continue };
         let Ok(trait_fits_filter) =
-            concrete_trait_fits_trait_filter(db, imp_concrete_trait_id, &filter)
+            concrete_trait_fits_trait_filter(db, imp_concrete_trait_id, filter)
         else {
             continue;
         };
@@ -1537,6 +1701,107 @@ pub fn find_candidates_at_context(
         }
     }
     Ok(res)
+}
+pub fn find_generated_candidate(
+    db: &dyn SemanticGroup,
+    concrete_trait_id: ConcreteTraitId,
+    filter: &TraitFilter,
+) -> Option<UninferredImpl> {
+    let fn_once_trait = crate::corelib::fn_once_trait(db);
+    let GenericArgumentId::Type(closure_type) = *concrete_trait_id.generic_args(db).first()? else {
+        return None;
+    };
+    let TypeLongId::Closure(closure_type_long) = closure_type.lookup_intern(db) else {
+        return None;
+    };
+    if concrete_trait_id.trait_id(db) == fn_once_trait {
+        let concrete_trait = ConcreteTraitLongId {
+            trait_id: fn_once_trait,
+            generic_args: vec![
+                GenericArgumentId::Type(closure_type),
+                GenericArgumentId::Type(
+                    TypeLongId::Tuple(closure_type_long.param_tys.clone()).intern(db),
+                ),
+            ],
+        }
+        .intern(db);
+        if !concrete_trait_fits_trait_filter(db, concrete_trait_id, filter).ok()? {
+            return None;
+        };
+        let ret_ty = db.trait_type_by_name(fn_once_trait, "Output".into()).unwrap().unwrap();
+        return Some(UninferredImpl::GeneratedImpl(
+            UninferredGeneratedImplLongId {
+                concrete_trait,
+                generic_params: vec![],
+                impl_items: GeneratedImplItems(
+                    iter::once((ret_ty, closure_type_long.ret_ty)).collect(),
+                ),
+            }
+            .intern(db),
+        ));
+    }
+
+    add_destruct_like_impls(db, concrete_trait_id)
+}
+
+/// Adds the Drop, Destruct or PanicDestruct candidate impl.
+fn add_destruct_like_impls(
+    db: &dyn SemanticGroup,
+    concrete_trait: ConcreteTraitId,
+) -> Option<UninferredImpl> {
+    let gargs = concrete_trait.generic_args(db);
+    let Some(GenericArgumentId::Type(ty)) = gargs.first() else {
+        return None;
+    };
+    let TypeLongId::Closure(ClosureTypeLongId { captured_types, .. }) = db.lookup_intern_type(*ty)
+    else {
+        // Currently only closure types have generated impls.
+        return None;
+    };
+    let drop_trait = concrete_drop_trait(db, *ty);
+    let destruct_trait = concrete_destruct_trait(db, *ty);
+    let panic_destruct_trait = concrete_panic_destruct_trait(db, *ty);
+
+    let opt_neg_impl_trait = if concrete_trait == drop_trait {
+        None
+    } else if concrete_trait == destruct_trait {
+        Some(drop_trait)
+    } else if concrete_trait == panic_destruct_trait {
+        Some(destruct_trait)
+    } else {
+        return None;
+    };
+
+    let trait_id = concrete_trait.trait_id(db);
+    let generic_param_id = db.trait_generic_params(trait_id).unwrap().first().unwrap().id();
+
+    let mut generic_params = captured_types
+        .iter()
+        .map(|ty| {
+            GenericParam::Impl(GenericParamImpl {
+                id: generic_param_id,
+                concrete_trait: Maybe::Ok(db.intern_concrete_trait(ConcreteTraitLongId {
+                    trait_id,
+                    generic_args: vec![GenericArgumentId::Type(*ty)],
+                })),
+            })
+        })
+        .collect_vec();
+
+    if let Some(neg_impl_trait) = opt_neg_impl_trait {
+        generic_params.push(GenericParam::NegImpl(GenericParamImpl {
+            id: generic_param_id,
+            concrete_trait: Maybe::Ok(neg_impl_trait),
+        }));
+    }
+
+    Some(UninferredImpl::GeneratedImpl(db.intern_uninferred_generated_impl(
+        UninferredGeneratedImplLongId {
+            concrete_trait,
+            generic_params,
+            impl_items: Default::default(),
+        },
+    )))
 }
 
 /// Checks if an impl of a trait function with a given self_ty exists.
@@ -1596,30 +1861,31 @@ pub fn infer_impl_by_self(
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,
     generic_args_syntax: Option<Vec<GenericArg>>,
-) -> Option<(FunctionId, usize)> {
+) -> Maybe<(FunctionId, usize)> {
     let lookup_context = ctx.resolver.impl_lookup_context();
-    let (concrete_trait_id, n_snapshots) = ctx.resolver.inference().infer_concrete_trait_by_self(
-        trait_function_id,
-        self_ty,
-        &lookup_context,
-        Some(stable_ptr),
-        |_| {},
-    )?;
+    let (concrete_trait_id, n_snapshots) = ctx
+        .resolver
+        .inference()
+        .infer_concrete_trait_by_self(
+            trait_function_id,
+            self_ty,
+            &lookup_context,
+            Some(stable_ptr),
+            |_| {},
+        )
+        .ok_or_else(skip_diagnostic)?;
 
     let concrete_trait_function_id =
         ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id)
             .intern(ctx.db);
     let trait_func_generic_params =
         ctx.db.concrete_trait_function_generic_params(concrete_trait_function_id).unwrap();
-    let generic_args = ctx
-        .resolver
-        .resolve_generic_args(
-            ctx.diagnostics,
-            &trait_func_generic_params,
-            &generic_args_syntax.unwrap_or_default(),
-            stable_ptr,
-        )
-        .unwrap();
+    let generic_args = ctx.resolver.resolve_generic_args(
+        ctx.diagnostics,
+        &trait_func_generic_params,
+        &generic_args_syntax.unwrap_or_default(),
+        stable_ptr,
+    )?;
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let inference = &mut ctx.resolver.inference();
@@ -1629,7 +1895,7 @@ pub fn infer_impl_by_self(
         Some(stable_ptr),
     );
 
-    Some((
+    Ok((
         FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
             .intern(ctx.db),
         n_snapshots,
@@ -1689,7 +1955,7 @@ pub fn impl_type_def_semantic_diagnostics(
     db: &dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_type_semantic_data(impl_type_def_id)
+    db.priv_impl_type_semantic_data(impl_type_def_id, false)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
@@ -1699,17 +1965,16 @@ pub fn impl_type_def_resolved_type(
     db: &dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<TypeId> {
-    db.priv_impl_type_semantic_data(impl_type_def_id)?.type_alias_data.resolved_type
+    db.priv_impl_type_semantic_data(impl_type_def_id, false)?.type_alias_data.resolved_type
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_def_resolved_type].
 pub fn impl_type_def_resolved_type_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_type_def_id: &ImplTypeDefId,
 ) -> Maybe<TypeId> {
-    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
-    impl_type_def_resolved_type(db, *impl_type_def_id)
+    db.priv_impl_type_semantic_data(*impl_type_def_id, true)?.type_alias_data.resolved_type
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_type_def_generic_params].
@@ -1725,7 +1990,7 @@ pub fn impl_type_def_attributes(
     db: &dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<Vec<Attribute>> {
-    Ok(db.priv_impl_type_semantic_data(impl_type_def_id)?.type_alias_data.attributes)
+    Ok(db.priv_impl_type_semantic_data(impl_type_def_id, false)?.type_alias_data.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_type_def_resolver_data].
@@ -1733,7 +1998,7 @@ pub fn impl_type_def_resolver_data(
     db: &dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_impl_type_semantic_data(impl_type_def_id)?.type_alias_data.resolver_data)
+    Ok(db.priv_impl_type_semantic_data(impl_type_def_id, false)?.type_alias_data.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_type_def_trait_type].
@@ -1741,7 +2006,7 @@ pub fn impl_type_def_trait_type(
     db: &dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId,
 ) -> Maybe<TraitTypeId> {
-    db.priv_impl_type_semantic_data(impl_type_def_id)?.trait_type_id
+    db.priv_impl_type_semantic_data(impl_type_def_id, false)?.trait_type_id
 }
 
 // --- Computation ---
@@ -1750,6 +2015,7 @@ pub fn impl_type_def_trait_type(
 pub fn priv_impl_type_semantic_data(
     db: &dyn SemanticGroup,
     impl_type_def_id: ImplTypeDefId,
+    in_cycle: bool,
 ) -> Maybe<ImplItemTypeData> {
     let mut diagnostics = SemanticDiagnostics::default();
     let impl_type_defs = db.impl_types(impl_type_def_id.impl_def_id(db.upcast()))?;
@@ -1760,47 +2026,44 @@ pub fn priv_impl_type_semantic_data(
     let trait_type_id =
         validate_impl_item_type(db, &mut diagnostics, impl_type_def_id, impl_type_def_ast);
 
-    // TODO(yuval): resolve type aliases later, like in module type aliases, to avoid cycles in
-    // non-cyclic chains.
-    Ok(ImplItemTypeData {
-        type_alias_data: type_alias_semantic_data_helper(
-            db,
-            &mut diagnostics,
-            impl_type_def_ast,
-            lookup_item_id,
-            generic_params_data,
-        )?,
-        trait_type_id,
-        diagnostics: diagnostics.build(),
-    })
+    if in_cycle {
+        Ok(ImplItemTypeData {
+            type_alias_data: type_alias_semantic_data_cycle_helper(
+                db,
+                &mut diagnostics,
+                impl_type_def_ast,
+                lookup_item_id,
+                generic_params_data,
+            )?,
+            trait_type_id,
+            diagnostics: diagnostics.build(),
+        })
+    } else {
+        // TODO(yuval): resolve type aliases later, like in module type aliases, to avoid cycles in
+        // non-cyclic chains.
+        Ok(ImplItemTypeData {
+            type_alias_data: type_alias_semantic_data_helper(
+                db,
+                &mut diagnostics,
+                impl_type_def_ast,
+                lookup_item_id,
+                generic_params_data,
+            )?,
+            trait_type_id,
+            diagnostics: diagnostics.build(),
+        })
+    }
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_type_semantic_data].
 pub fn priv_impl_type_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_type_def_id: &ImplTypeDefId,
+    _in_cycle: &bool,
 ) -> Maybe<ImplItemTypeData> {
-    let mut diagnostics = SemanticDiagnostics::default();
-    let impl_type_defs = db.impl_types(impl_type_def_id.impl_def_id(db.upcast()))?;
-    let impl_type_def_ast = impl_type_defs.get(impl_type_def_id).to_maybe()?;
-    let generic_params_data = db.priv_impl_type_def_generic_params_data(*impl_type_def_id)?;
-    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(*impl_type_def_id));
-
-    let trait_type_id =
-        validate_impl_item_type(db, &mut diagnostics, *impl_type_def_id, impl_type_def_ast);
-
-    Ok(ImplItemTypeData {
-        type_alias_data: type_alias_semantic_data_cycle_helper(
-            db,
-            &mut diagnostics,
-            impl_type_def_ast,
-            lookup_item_id,
-            generic_params_data,
-        )?,
-        trait_type_id,
-        diagnostics: diagnostics.build(),
-    })
+    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
+    priv_impl_type_semantic_data(db, *impl_type_def_id, true)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_type_def_generic_params_data].
@@ -1881,6 +2144,9 @@ pub fn impl_type_concrete_implized(
         ImplLongId::GenericParameter(_) | ImplLongId::TraitImpl(_) | ImplLongId::ImplVar(_) => {
             return Ok(TypeLongId::ImplType(impl_type_id).intern(db));
         }
+        ImplLongId::GeneratedImpl(generated) => {
+            return Ok(*generated.lookup_intern(db).impl_items.0.get(&impl_type_id.ty()).unwrap());
+        }
     };
 
     let impl_def_id = concrete_impl.impl_def_id(db);
@@ -1896,7 +2162,7 @@ pub fn impl_type_concrete_implized(
 /// Cycle handling for [crate::db::SemanticGroup::impl_type_concrete_implized].
 pub fn impl_type_concrete_implized_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_type_id: &ImplTypeId,
 ) -> Maybe<TypeId> {
     // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
@@ -1921,7 +2187,7 @@ pub fn impl_constant_def_semantic_diagnostics(
     db: &dyn SemanticGroup,
     impl_constant_def_id: ImplConstantDefId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_constant_semantic_data(impl_constant_def_id)
+    db.priv_impl_constant_semantic_data(impl_constant_def_id, false)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
@@ -1932,7 +2198,7 @@ pub fn impl_constant_def_value(
     impl_constant_def_id: ImplConstantDefId,
 ) -> Maybe<ConstValueId> {
     Ok(db
-        .priv_impl_constant_semantic_data(impl_constant_def_id)?
+        .priv_impl_constant_semantic_data(impl_constant_def_id, false)?
         .constant_data
         .const_value
         .intern(db))
@@ -1941,11 +2207,14 @@ pub fn impl_constant_def_value(
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_def_value].
 pub fn impl_constant_def_value_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_constant_def_id: &ImplConstantDefId,
 ) -> Maybe<ConstValueId> {
-    // Forwarding cycle handling to `priv_impl_constant_semantic_data` handler.
-    impl_constant_def_value(db, *impl_constant_def_id)
+    Ok(db
+        .priv_impl_constant_semantic_data(*impl_constant_def_id, true)?
+        .constant_data
+        .const_value
+        .intern(db))
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_constant_def_resolver_data].
@@ -1953,7 +2222,10 @@ pub fn impl_constant_def_resolver_data(
     db: &dyn SemanticGroup,
     impl_constant_def_id: ImplConstantDefId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_impl_constant_semantic_data(impl_constant_def_id)?.constant_data.resolver_data)
+    Ok(db
+        .priv_impl_constant_semantic_data(impl_constant_def_id, false)?
+        .constant_data
+        .resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_constant_def_trait_constant].
@@ -1961,7 +2233,7 @@ pub fn impl_constant_def_trait_constant(
     db: &dyn SemanticGroup,
     impl_constant_def_id: ImplConstantDefId,
 ) -> Maybe<TraitConstantId> {
-    db.priv_impl_constant_semantic_data(impl_constant_def_id)?.trait_constant_id
+    db.priv_impl_constant_semantic_data(impl_constant_def_id, false)?.trait_constant_id
 }
 
 // --- Computation ---
@@ -1970,6 +2242,7 @@ pub fn impl_constant_def_trait_constant(
 pub fn priv_impl_constant_semantic_data(
     db: &dyn SemanticGroup,
     impl_constant_def_id: ImplConstantDefId,
+    in_cycle: bool,
 ) -> Maybe<ImplItemConstantData> {
     let mut diagnostics = SemanticDiagnostics::default();
     let impl_def_id = impl_constant_def_id.impl_def_id(db.upcast());
@@ -1991,13 +2264,23 @@ pub fn priv_impl_constant_semantic_data(
         impl_constant_def_ast,
         &mut resolver,
     );
-    let mut constant_data = constant_semantic_data_helper(
-        db,
-        impl_constant_def_ast,
-        lookup_item_id,
-        Some(Arc::new(resolver.data)),
-        &impl_def_id,
-    )?;
+    let mut constant_data = if in_cycle {
+        constant_semantic_data_cycle_helper(
+            db,
+            impl_constant_def_ast,
+            lookup_item_id,
+            Some(Arc::new(resolver.data)),
+            &impl_def_id,
+        )?
+    } else {
+        constant_semantic_data_helper(
+            db,
+            impl_constant_def_ast,
+            lookup_item_id,
+            Some(Arc::new(resolver.data)),
+            &impl_def_id,
+        )?
+    };
     diagnostics.extend(mem::take(&mut constant_data.diagnostics));
     Ok(ImplItemConstantData { constant_data, trait_constant_id, diagnostics: diagnostics.build() })
 }
@@ -2005,38 +2288,12 @@ pub fn priv_impl_constant_semantic_data(
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_constant_semantic_data].
 pub fn priv_impl_constant_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_constant_def_id: &ImplConstantDefId,
+    _in_cycle: &bool,
 ) -> Maybe<ImplItemConstantData> {
-    let mut diagnostics = SemanticDiagnostics::default();
-    let impl_def_id = impl_constant_def_id.impl_def_id(db.upcast());
-    let impl_constant_defs = db.impl_constants(impl_def_id)?;
-    let impl_constant_def_ast = impl_constant_defs.get(impl_constant_def_id).to_maybe()?;
-    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Constant(*impl_constant_def_id));
-
-    let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ImplItem(
-        ImplItemId::Constant(*impl_constant_def_id),
-    ));
-    let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
-    let mut resolver =
-        Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
-
-    let trait_constant_id = validate_impl_item_constant(
-        db,
-        &mut diagnostics,
-        *impl_constant_def_id,
-        impl_constant_def_ast,
-        &mut resolver,
-    );
-    let mut constant_data = constant_semantic_data_cycle_helper(
-        db,
-        impl_constant_def_ast,
-        lookup_item_id,
-        Some(Arc::new(resolver.data)),
-        &impl_def_id,
-    )?;
-    diagnostics.extend(mem::take(&mut constant_data.diagnostics));
-    Ok(ImplItemConstantData { constant_data, trait_constant_id, diagnostics: diagnostics.build() })
+    // Forwarding cycle handling to `priv_impl_constant_semantic_data` handler.
+    priv_impl_constant_semantic_data(db, *impl_constant_def_id, true)
 }
 
 /// Validates the impl item constant, and returns the matching trait constant id.
@@ -2093,7 +2350,7 @@ pub fn impl_constant_implized_by_context(
     impl_constant_id: ImplConstantId,
     impl_def_id: ImplDefId,
 ) -> Maybe<ConstValueId> {
-    let impl_constant_def_id =
+    let impl_constant_def_id: ImplConstantDefId =
         db.impl_constant_by_trait_constant(impl_def_id, impl_constant_id.trait_constant_id())?;
 
     db.impl_constant_def_value(impl_constant_def_id)
@@ -2102,7 +2359,7 @@ pub fn impl_constant_implized_by_context(
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_implized_by_context].
 pub fn impl_constant_implized_by_context_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_constant_id: &ImplConstantId,
     impl_def_id: &ImplDefId,
 ) -> Maybe<ConstValueId> {
@@ -2132,7 +2389,7 @@ pub fn impl_constant_concrete_implized_value(
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_concrete_implized_value].
 pub fn impl_constant_concrete_implized_value_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_constant_id: &ImplConstantId,
 ) -> Maybe<ConstValueId> {
     // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
@@ -2159,6 +2416,7 @@ pub fn impl_constant_concrete_implized_type(
         ImplLongId::ImplVar(var) => var.lookup_intern(db).concrete_trait_id,
         ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(impl_impl)?,
         ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl)?,
+        ImplLongId::GeneratedImpl(generated_impl) => generated_impl.concrete_trait(db),
     };
 
     let ty = db.concrete_trait_constant_type(ConcreteTraitConstantId::new(
@@ -2173,7 +2431,7 @@ pub fn impl_constant_concrete_implized_type(
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_concrete_implized_type].
 pub fn impl_constant_concrete_implized_type_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_constant_id: &ImplConstantId,
 ) -> Maybe<TypeId> {
     // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
@@ -2198,7 +2456,7 @@ pub fn impl_impl_def_semantic_diagnostics(
     db: &dyn SemanticGroup,
     impl_impl_def_id: ImplImplDefId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_impl_semantic_data(impl_impl_def_id)
+    db.priv_impl_impl_semantic_data(impl_impl_def_id, false)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
@@ -2208,7 +2466,7 @@ pub fn impl_impl_def_resolver_data(
     db: &dyn SemanticGroup,
     impl_impl_def_id: ImplImplDefId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_impl_impl_semantic_data(impl_impl_def_id)?.impl_data.resolver_data)
+    Ok(db.priv_impl_impl_semantic_data(impl_impl_def_id, false)?.impl_data.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_def_trait_impl].
@@ -2216,23 +2474,25 @@ pub fn impl_impl_def_trait_impl(
     db: &dyn SemanticGroup,
     impl_impl_def_id: ImplImplDefId,
 ) -> Maybe<TraitImplId> {
-    db.priv_impl_impl_semantic_data(impl_impl_def_id)?.trait_impl_id
+    db.priv_impl_impl_semantic_data(impl_impl_def_id, false)?.trait_impl_id
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_def_impl].
 pub fn impl_impl_def_impl(
     db: &dyn SemanticGroup,
     impl_impl_def_id: ImplImplDefId,
+    in_cycle: bool,
 ) -> Maybe<ImplId> {
-    db.priv_impl_impl_semantic_data(impl_impl_def_id)?.impl_data.resolved_impl
+    db.priv_impl_impl_semantic_data(impl_impl_def_id, in_cycle)?.impl_data.resolved_impl
 }
 /// Cycle handling for [crate::db::SemanticGroup::impl_impl_def_impl].
 pub fn impl_impl_def_impl_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_impl_def_id: &ImplImplDefId,
+    _in_cycle: &bool,
 ) -> Maybe<ImplId> {
-    db.priv_impl_impl_semantic_data(*impl_impl_def_id)?.impl_data.resolved_impl
+    db.priv_impl_impl_semantic_data(*impl_impl_def_id, true)?.impl_data.resolved_impl
 }
 
 // --- Computation ---
@@ -2241,6 +2501,7 @@ pub fn impl_impl_def_impl_cycle(
 pub fn priv_impl_impl_semantic_data(
     db: &dyn SemanticGroup,
     impl_impl_def_id: ImplImplDefId,
+    in_cycle: bool,
 ) -> Maybe<ImplItemImplData> {
     let mut diagnostics = SemanticDiagnostics::default();
     let impl_def_id = impl_impl_def_id.impl_def_id(db.upcast());
@@ -2256,12 +2517,17 @@ pub fn priv_impl_impl_semantic_data(
 
     let trait_impl_id =
         validate_impl_item_impl(db, &mut diagnostics, impl_impl_def_id, impl_impl_def_ast);
-    let mut impl_data = impl_alias_semantic_data_helper(
-        db,
-        impl_impl_def_ast,
-        lookup_item_id,
-        generic_params_data,
-    )?;
+    let mut impl_data = if in_cycle {
+        impl_alias_semantic_data_cycle_helper(
+            db,
+            impl_impl_def_ast,
+            lookup_item_id,
+            generic_params_data,
+        )?
+    } else {
+        impl_alias_semantic_data_helper(db, impl_impl_def_ast, lookup_item_id, generic_params_data)?
+    };
+
     diagnostics.extend(mem::take(&mut impl_data.diagnostics));
 
     let trait_impl_concrete_trait = trait_impl_id
@@ -2297,54 +2563,12 @@ pub fn priv_impl_impl_semantic_data(
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_impl_semantic_data].
 pub fn priv_impl_impl_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_impl_def_id: &ImplImplDefId,
+    _in_cycle: &bool,
 ) -> Maybe<ImplItemImplData> {
-    let mut diagnostics = SemanticDiagnostics::default();
-    let impl_def_id = impl_impl_def_id.impl_def_id(db.upcast());
-    let impl_impl_defs = db.impl_impls(impl_def_id)?;
-    let impl_impl_def_ast = impl_impl_defs.get(impl_impl_def_id).to_maybe()?;
-    let generic_params_data = db.priv_impl_impl_def_generic_params_data(*impl_impl_def_id)?;
-    let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Impl(*impl_impl_def_id));
-
-    let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
-    let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
-    let mut resolver =
-        Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
-
-    let trait_impl_id =
-        validate_impl_item_impl(db, &mut diagnostics, *impl_impl_def_id, impl_impl_def_ast);
-    let mut impl_data = impl_alias_semantic_data_cycle_helper(
-        db,
-        impl_impl_def_ast,
-        lookup_item_id,
-        generic_params_data,
-    )?;
-
-    diagnostics.extend(mem::take(&mut impl_data.diagnostics));
-
-    let trait_impl_concrete_trait = trait_impl_id.and_then(|id| db.trait_impl_concrete_trait(id));
-    let resolved_impl_concrete_trait =
-        impl_data.resolved_impl.and_then(|imp| imp.concrete_trait(db));
-    // used an IIFE to allow the use of the `?` operator.
-    let _ = (|| -> Result<(), DiagnosticAdded> {
-        if resolver
-            .inference()
-            .conform_traits(resolved_impl_concrete_trait?, trait_impl_concrete_trait?)
-            .is_err()
-        {
-            diagnostics.report(
-                &impl_impl_def_ast.clone(),
-                TraitMismatch {
-                    expected_trt: trait_impl_concrete_trait?,
-                    actual_trt: resolved_impl_concrete_trait?,
-                },
-            );
-        }
-        Ok(())
-    })();
-
-    Ok(ImplItemImplData { impl_data, trait_impl_id, diagnostics: diagnostics.build() })
+    // Forwarding cycle handling to `priv_impl_impl_semantic_data` handler.
+    priv_impl_impl_semantic_data(db, *impl_impl_def_id, true)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_impl_def_generic_params_data].
@@ -2418,7 +2642,7 @@ pub fn implicit_impl_impl_semantic_diagnostics(
     impl_def_id: ImplDefId,
     trait_impl_id: TraitImplId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_implicit_impl_impl_semantic_data(impl_def_id, trait_impl_id)
+    db.priv_implicit_impl_impl_semantic_data(impl_def_id, trait_impl_id, false)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
@@ -2427,17 +2651,19 @@ pub fn implicit_impl_impl_impl(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
     trait_impl_id: TraitImplId,
+    in_cycle: bool,
 ) -> Maybe<ImplId> {
-    db.priv_implicit_impl_impl_semantic_data(impl_def_id, trait_impl_id)?.resolved_impl
+    db.priv_implicit_impl_impl_semantic_data(impl_def_id, trait_impl_id, in_cycle)?.resolved_impl
 }
 /// Query implementation of [crate::db::SemanticGroup::implicit_impl_impl_impl].
 pub fn implicit_impl_impl_impl_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_def_id: &ImplDefId,
     trait_impl_id: &TraitImplId,
+    _in_cycle: &bool,
 ) -> Maybe<ImplId> {
-    db.priv_implicit_impl_impl_semantic_data(*impl_def_id, *trait_impl_id)?.resolved_impl
+    db.priv_implicit_impl_impl_semantic_data(*impl_def_id, *trait_impl_id, true)?.resolved_impl
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_implicit_impl_impl_semantic_data].
@@ -2445,8 +2671,18 @@ pub fn priv_implicit_impl_impl_semantic_data(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
     trait_impl_id: TraitImplId,
+    in_cycle: bool,
 ) -> Maybe<ImplicitImplImplData> {
     let mut diagnostics = SemanticDiagnostics::default();
+    if in_cycle {
+        let err =
+            Err(diagnostics.report(impl_def_id.stable_ptr(db.upcast()).untyped(), ImplAliasCycle));
+        return Ok(ImplicitImplImplData {
+            resolved_impl: err,
+            trait_impl_id,
+            diagnostics: diagnostics.build(),
+        });
+    }
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id));
 
     let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
@@ -2484,19 +2720,13 @@ pub fn priv_implicit_impl_impl_semantic_data(
 /// Cycle handling for [crate::db::SemanticGroup::priv_implicit_impl_impl_semantic_data].
 pub fn priv_implicit_impl_impl_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_def_id: &ImplDefId,
     trait_impl_id: &TraitImplId,
+    _in_cycle: &bool,
 ) -> Maybe<ImplicitImplImplData> {
-    // TODO(TomerStarkware): Add test case for implicit impl cycle if possible.
-    let mut diagnostics = SemanticDiagnostics::default();
-    let err =
-        Err(diagnostics.report(impl_def_id.stable_ptr(db.upcast()).untyped(), ImplAliasCycle));
-    Ok(ImplicitImplImplData {
-        resolved_impl: err,
-        trait_impl_id: *trait_impl_id,
-        diagnostics: diagnostics.build(),
-    })
+    // Forwarding cycle handling to `priv_implicit_impl_impl_semantic_data` handler.
+    priv_implicit_impl_impl_semantic_data(db, *impl_def_id, *trait_impl_id, true)
 }
 
 // === Impl Impl ===
@@ -2506,25 +2736,27 @@ pub fn impl_impl_implized_by_context(
     db: &dyn SemanticGroup,
     impl_impl_id: ImplImplId,
     impl_def_id: ImplDefId,
+    in_cycle: bool,
 ) -> Maybe<ImplId> {
     if db.is_implicit_impl_impl(impl_def_id, impl_impl_id.trait_impl_id())? {
-        return db.implicit_impl_impl_impl(impl_def_id, impl_impl_id.trait_impl_id());
+        return db.implicit_impl_impl_impl(impl_def_id, impl_impl_id.trait_impl_id(), in_cycle);
     }
 
     let impl_impl_def_id = db.impl_impl_by_trait_impl(impl_def_id, impl_impl_id.trait_impl_id())?;
 
-    db.impl_impl_def_impl(impl_impl_def_id)
+    db.impl_impl_def_impl(impl_impl_def_id, in_cycle)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_impl_implized_by_context].
 pub fn impl_impl_implized_by_context_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     impl_impl_id: &ImplImplId,
     impl_def_id: &ImplDefId,
+    _in_cycle: &bool,
 ) -> Maybe<ImplId> {
     // Forwarding cycle handling to `priv_impl_impl_semantic_data` handler.
-    impl_impl_implized_by_context(db, *impl_impl_id, *impl_def_id)
+    impl_impl_implized_by_context(db, *impl_impl_id, *impl_def_id, true)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_concrete_implized].
@@ -2532,9 +2764,26 @@ pub fn impl_impl_concrete_implized(
     db: &dyn SemanticGroup,
     impl_impl_id: ImplImplId,
 ) -> Maybe<ImplId> {
+    impl_impl_concrete_implized_ex(db, impl_impl_id, false)
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::impl_impl_concrete_implized].
+pub fn impl_impl_concrete_implized_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &salsa::Cycle,
+    impl_impl_id: &ImplImplId,
+) -> Maybe<ImplId> {
+    impl_impl_concrete_implized_ex(db, *impl_impl_id, true)
+}
+
+fn impl_impl_concrete_implized_ex(
+    db: &dyn SemanticGroup,
+    impl_impl_id: ImplImplId,
+    in_cycle: bool,
+) -> Maybe<ImplId> {
     if let ImplLongId::Concrete(concrete_impl) = impl_impl_id.impl_id().lookup_intern(db) {
         let impl_def_id = concrete_impl.impl_def_id(db);
-        let imp = db.impl_impl_implized_by_context(impl_impl_id, impl_def_id)?;
+        let imp = db.impl_impl_implized_by_context(impl_impl_id, impl_def_id, in_cycle)?;
         let substitution: &GenericSubstitution = &concrete_impl.substitution(db)?;
         return SubstitutionRewriter { db, substitution }.rewrite(imp);
     }
@@ -2543,6 +2792,7 @@ pub fn impl_impl_concrete_implized(
     Ok(ImplLongId::ImplImpl(SubstitutionRewriter { db, substitution }.rewrite(impl_impl_id)?)
         .intern(db))
 }
+
 /// Query implementation of [crate::db::SemanticGroup::impl_impl_concrete_trait].
 pub fn impl_impl_concrete_trait(
     db: &dyn SemanticGroup,
@@ -2551,16 +2801,6 @@ pub fn impl_impl_concrete_trait(
     let substitution = GenericSubstitution::from_impl(impl_impl_id.impl_id());
     let impl_concrete_trait_id = db.trait_impl_concrete_trait(impl_impl_id.trait_impl_id())?;
     SubstitutionRewriter { db, substitution: &substitution }.rewrite(impl_concrete_trait_id)
-}
-
-/// Cycle handling for [crate::db::SemanticGroup::impl_impl_concrete_implized].
-pub fn impl_impl_concrete_implized_cycle(
-    db: &dyn SemanticGroup,
-    _cycle: &[String],
-    impl_impl_id: &ImplImplId,
-) -> Maybe<ImplId> {
-    // Forwarding cycle handling to `priv_impl_const_semantic_data` handler.
-    impl_impl_concrete_implized(db, *impl_impl_id)
 }
 
 // === Impl Function Declaration ===
@@ -2723,7 +2963,7 @@ pub fn priv_impl_function_declaration_data(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.extend(generic_params_data.diagnostics);
-    resolver.set_allowed_features(&impl_function_id, function_syntax, &mut diagnostics);
+    resolver.set_feature_config(&impl_function_id, function_syntax, &mut diagnostics);
 
     let signature_syntax = declaration.signature(syntax_db);
 
@@ -2870,7 +3110,7 @@ fn validate_impl_function_signature(
         let expected_ty = inference.rewrite(trait_param.ty).no_err();
         let actual_ty = inference.rewrite(param.ty).no_err();
 
-        if expected_ty != actual_ty {
+        if expected_ty != actual_ty && !expected_ty.is_missing(db) && !actual_ty.is_missing(db) {
             diagnostics.report(
                 &extract_matches!(
                     signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
@@ -2926,7 +3166,7 @@ fn validate_impl_function_signature(
     let expected_ty = inference.rewrite(concrete_trait_signature.return_type).no_err();
     let actual_ty = inference.rewrite(signature.return_type).no_err();
 
-    if expected_ty != actual_ty {
+    if expected_ty != actual_ty && !expected_ty.is_missing(db) && !actual_ty.is_missing(db) {
         let location_ptr = match signature_syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ret_ty) => {
                 ret_ty.ty(syntax_db).as_syntax_node()
@@ -3032,7 +3272,7 @@ pub fn priv_impl_function_body_data(
     let function_body = function_syntax.body(db.upcast());
     let return_type = declaration.function_declaration_data.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { exprs, patterns, statements, resolver, .. } = ctx;
+    let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();

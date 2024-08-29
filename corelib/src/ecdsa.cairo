@@ -1,8 +1,11 @@
-use core::{ec, ec::{EcPoint, EcPointTrait, EcStateTrait}};
-use core::option::OptionTrait;
-use core::math;
-use core::traits::{Into, TryInto};
-use core::zeroable::IsZeroResult;
+use crate::{ec, ec::{EcPoint, EcPointTrait, EcStateTrait}};
+#[allow(unused_imports)]
+use crate::option::OptionTrait;
+use crate::math;
+#[allow(unused_imports)]
+use crate::traits::{Into, TryInto};
+#[allow(unused_imports)]
+use crate::zeroable::IsZeroResult;
 
 /// Checks if (`signature_r`, `signature_s`) is a valid ECDSA signature for the given `public_key`
 /// on the given `message`.

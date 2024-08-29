@@ -23,6 +23,7 @@ pub enum RewriteNode {
         node: Box<RewriteNode>,
     },
     Text(String),
+    TextAndMapping(String, Vec<CodeMapping>),
 }
 impl RewriteNode {
     pub fn new_trimmed(syntax_node: SyntaxNode) -> Self {
@@ -37,8 +38,8 @@ impl RewriteNode {
         Self::Text(text.to_string())
     }
 
-    pub fn mapped_text(text: &str, origin: TextSpan) -> Self {
-        Self::Mapped { origin, node: Box::new(RewriteNode::Text(text.to_string())) }
+    pub fn mapped_text(text: &str, db: &dyn SyntaxGroup, origin: &impl TypedSyntaxNode) -> Self {
+        RewriteNode::Text(text.to_string()).mapped(db, origin)
     }
 
     pub fn empty() -> Self {
@@ -123,7 +124,9 @@ impl RewriteNode {
                 extract_matches!(self, RewriteNode::Modified)
             }
             RewriteNode::Modified(modified) => modified,
-            RewriteNode::Text(_) => panic!("A text node can't be modified"),
+            RewriteNode::Text(_) | RewriteNode::TextAndMapping(_, _) => {
+                panic!("A text node can't be modified")
+            }
             RewriteNode::Mapped { .. } => panic!("A mapped node can't be modified"),
         }
     }
@@ -201,6 +204,14 @@ impl RewriteNode {
     ) -> RewriteNode {
         RewriteNode::new_modified(itertools::intersperse(children, separator).collect_vec())
     }
+
+    /// Creates a new rewrite node wrapped in a mapping to the original code.
+    pub fn mapped(self, db: &dyn SyntaxGroup, origin: &impl TypedSyntaxNode) -> Self {
+        RewriteNode::Mapped {
+            origin: origin.as_syntax_node().span_without_trivia(db),
+            node: Box::new(self),
+        }
+    }
 }
 impl Default for RewriteNode {
     fn default() -> Self {
@@ -253,6 +264,12 @@ impl<'a> PatchBuilder<'a> {
         (self.code, self.code_mappings)
     }
 
+    /// Builds the patcher into a rewrite node enabling adding it to other patchers.
+    pub fn into_rewrite_node(self) -> RewriteNode {
+        let (code, mappings) = self.build();
+        RewriteNode::TextAndMapping(code, mappings)
+    }
+
     pub fn add_char(&mut self, c: char) {
         self.code.push(c);
     }
@@ -276,6 +293,15 @@ impl<'a> PatchBuilder<'a> {
                 }
             }
             RewriteNode::Text(s) => self.add_str(s.as_str()),
+            RewriteNode::TextAndMapping(s, mappings) => {
+                let mapping_fix = TextWidth::from_str(&self.code);
+                self.add_str(&s);
+                self.code_mappings.extend(mappings.into_iter().map(|mut mapping| {
+                    mapping.span.start = mapping.span.start.add_width(mapping_fix);
+                    mapping.span.end = mapping.span.end.add_width(mapping_fix);
+                    mapping
+                }));
+            }
         }
     }
 

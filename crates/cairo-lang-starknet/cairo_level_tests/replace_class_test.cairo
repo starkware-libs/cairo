@@ -1,4 +1,4 @@
-use starknet::syscalls::{deploy_syscall, replace_class_syscall};
+use starknet::syscalls::{deploy_syscall};
 use starknet::class_hash::ClassHash;
 
 #[starknet::interface]

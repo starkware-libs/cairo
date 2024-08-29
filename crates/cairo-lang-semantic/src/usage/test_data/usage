@@ -125,7 +125,7 @@ test_function_usage
 //! > function
 fn foo(a: u32) {
     |b: u32| {
-        a + b
+         || a + b;
     };
 }
 
@@ -137,7 +137,76 @@ foo
 //! > semantic_diagnostics
 
 //! > usage
+Closure 2:9:
+  Usage: ParamId(test::a), ParamId(test::b),
+  Changes:
+  Snapshot_Usage:
 Closure 1:4:
   Usage: ParamId(test::a),
   Changes:
   Snapshot_Usage:
+
+//! > ==========================================================================
+
+//! > Test for usage
+
+//! > test_runner_name
+test_function_usage
+
+//! > function
+fn foo(a: u32) {
+    let arr = array![1, 2, 3];
+    for b in arr {
+        a + b;
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > usage
+For 2:4:
+  Usage: LocalVarId(test::in), ParamId(test::a),
+  Changes: LocalVarId(test::in),
+  Snapshot_Usage:
+
+//! > ==========================================================================
+
+//! > Test inner for usage
+
+//! > test_runner_name
+test_function_usage
+
+//! > function
+fn foo() -> u32 {
+    let mut counter = 0;
+    let outer = array![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let inner = array![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    for _i in outer.span() {
+        for _j in inner.span() {
+            counter = counter + 1;
+        };
+    };
+    counter
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > usage
+For 5:8:
+  Usage: LocalVarId(test::in), LocalVarId(test::counter),
+  Changes: LocalVarId(test::in), LocalVarId(test::counter),
+  Snapshot_Usage:
+For 4:4:
+  Usage: LocalVarId(test::in), LocalVarId(test::counter),
+  Changes: LocalVarId(test::in), LocalVarId(test::counter),
+  Snapshot_Usage: LocalVarId(test::inner),

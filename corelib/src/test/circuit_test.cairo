@@ -1,11 +1,10 @@
-use core::circuit::{
+use crate::circuit::{
     RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, circuit_add, circuit_sub,
     circuit_mul, circuit_inverse, EvalCircuitTrait, u384, CircuitOutputsTrait, CircuitModulus,
     AddInputResultTrait, CircuitInputs,
 };
 
-use core::test::test_utils::assert_eq;
-use core::traits::TryInto;
+use crate::traits::TryInto;
 
 #[test]
 fn test_u96() {
@@ -14,10 +13,16 @@ fn test_u96() {
 }
 
 #[test]
+fn test_try_into_u96() {
+    assert_eq!(0x123_felt252.try_into(), Option::<u96>::Some(0x123));
+    assert_eq!(0x1000000000000000000000000_felt252.try_into(), Option::<u96>::None);
+}
+
+#[test]
 fn test_builtins() {
-    core::internal::require_implicit::<RangeCheck96>();
-    core::internal::require_implicit::<AddMod>();
-    core::internal::require_implicit::<MulMod>();
+    crate::internal::require_implicit::<RangeCheck96>();
+    crate::internal::require_implicit::<AddMod>();
+    crate::internal::require_implicit::<MulMod>();
 }
 
 #[test]
@@ -51,6 +56,7 @@ fn test_circuit_failure() {
     let out0 = circuit_inverse(in0);
 
     let modulus = TryInto::<_, CircuitModulus>::try_into([55, 0, 0, 0]).unwrap();
+    (out0,).new_inputs().next([11, 0, 0, 0]).done().eval(modulus).unwrap_err();
     (out0,).new_inputs().next([11, 0, 0, 0]).done().eval(modulus).unwrap_err();
 }
 

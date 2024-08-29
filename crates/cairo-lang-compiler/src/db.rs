@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-use anyhow::{anyhow, Result};
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
+use anyhow::{anyhow, bail, Result};
+use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
-    CORELIB_CRATE_NAME,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup,
+    FilesGroupEx, CORELIB_CRATE_NAME, CORELIB_VERSION,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::FlagId;
+use cairo_lang_filesystem::ids::{CrateLongId, FlagId, VirtualFile};
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_project::ProjectConfig;
@@ -20,7 +20,7 @@ use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Intern, Upcast};
 
 use crate::project::{update_crate_root, update_crate_roots_from_project_config};
 use crate::InliningStrategy;
@@ -38,6 +38,11 @@ pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }
 impl salsa::Database for RootDatabase {}
+impl ExternalFiles for RootDatabase {
+    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
+        ext_as_virtual_impl(self.upcast(), external_id)
+    }
+}
 impl salsa::ParallelDatabase for RootDatabase {
     fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
         salsa::Snapshot::new(RootDatabase { storage: self.storage.snapshot() })
@@ -170,9 +175,34 @@ impl RootDatabaseBuilder {
                 update_crate_root(&mut db, config, CORELIB_CRATE_NAME.into(), corelib.clone());
             }
         }
+        validate_corelib(&db)?;
 
         Ok(db)
     }
+}
+
+/// Validates that the corelib version matches the expected one.
+pub fn validate_corelib(db: &dyn FilesGroup) -> Result<()> {
+    let Some(config) = db.crate_config(CrateLongId::Real(CORELIB_CRATE_NAME.into()).intern(db))
+    else {
+        return Ok(());
+    };
+    let Some(found) = config.settings.version else {
+        return Ok(());
+    };
+    let Ok(expected) = semver::Version::parse(CORELIB_VERSION) else {
+        return Ok(());
+    };
+    if found == expected {
+        return Ok(());
+    }
+    let path_part = match config.root {
+        cairo_lang_filesystem::ids::Directory::Real(path) => {
+            format!(" for `{}`", path.to_string_lossy())
+        }
+        cairo_lang_filesystem::ids::Directory::Virtual { .. } => "".to_string(),
+    };
+    bail!("Corelib version mismatch: expected `{expected}`, found `{found}`{path_part}.");
 }
 
 impl AsFilesGroupMut for RootDatabase {

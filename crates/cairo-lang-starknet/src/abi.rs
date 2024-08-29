@@ -10,7 +10,6 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::{ImplLongId, ImplLookupContext};
-use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::types::{get_impl_at_context, ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
     ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, Signature,
@@ -837,8 +836,8 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
 
     // Attempt to extract the event data from the aux data from the impl generation.
     let module_file = impl_def_id.module_file_id(db.upcast());
-    let file_infos = db.module_generated_file_infos(module_file.0).ok()?;
-    let aux_data = file_infos.get(module_file.1.0)?.as_ref()?.aux_data.as_ref()?;
+    let all_aux_data = db.module_generated_file_aux_data(module_file.0).ok()?;
+    let aux_data = all_aux_data.get(module_file.1.0)?.as_ref()?;
     Some(aux_data.0.as_any().downcast_ref::<StarkNetEventAuxData>()?.event_data.clone())
 }
 

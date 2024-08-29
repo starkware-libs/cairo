@@ -21,7 +21,6 @@ use smol_str::SmolStr;
 
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::ImplId;
-use super::structure::SemanticStructEx;
 use crate::corelib::{
     core_box_ty, core_felt252_ty, core_nonzero_ty, get_core_trait, get_core_ty_by_name,
     try_extract_nz_wrapped_type, validate_literal, CoreTraitContext, LiteralError,
@@ -233,31 +232,36 @@ impl DebugWithDb<dyn SemanticGroup> for ImplConstantId {
 pub fn priv_constant_semantic_data(
     db: &dyn SemanticGroup,
     const_id: ConstantId,
+    in_cycle: bool,
 ) -> Maybe<ConstantData> {
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
-    constant_semantic_data_helper(
-        db,
-        &db.module_constant_by_id(const_id)?.to_maybe()?,
-        lookup_item_id,
-        None,
-        &const_id,
-    )
+    if in_cycle {
+        constant_semantic_data_cycle_helper(
+            db,
+            &db.module_constant_by_id(const_id)?.to_maybe()?,
+            lookup_item_id,
+            None,
+            &const_id,
+        )
+    } else {
+        constant_semantic_data_helper(
+            db,
+            &db.module_constant_by_id(const_id)?.to_maybe()?,
+            lookup_item_id,
+            None,
+            &const_id,
+        )
+    }
 }
 
 /// Cycle handling for [SemanticGroup::priv_constant_semantic_data].
 pub fn priv_constant_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     const_id: &ConstantId,
+    _in_cycle: &bool,
 ) -> Maybe<ConstantData> {
-    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(*const_id));
-    constant_semantic_data_cycle_helper(
-        db,
-        &db.module_constant_by_id(*const_id)?.to_maybe()?,
-        lookup_item_id,
-        None,
-        const_id,
-    )
+    priv_constant_semantic_data(db, *const_id, true)
 }
 
 /// Returns constant semantic data for the given ItemConstant.
@@ -282,7 +286,7 @@ pub fn constant_semantic_data_helper(
         }
         None => Resolver::new(db, element_id.module_file_id(db.upcast()), inference_id),
     };
-    resolver.set_allowed_features(element_id, constant_ast, &mut diagnostics);
+    resolver.set_feature_config(element_id, constant_ast, &mut diagnostics);
 
     let constant_type = resolve_type(
         db,
@@ -315,7 +319,7 @@ pub fn constant_semantic_data_helper(
     ctx.apply_inference_rewriter_to_exprs();
 
     let resolver_data = Arc::new(ctx.resolver.data);
-    let constant = Constant { value: value.id, exprs: Arc::new(ctx.exprs) };
+    let constant = Constant { value: value.id, exprs: Arc::new(ctx.arenas.exprs) };
     Ok(ConstantData {
         diagnostics: diagnostics.build(),
         const_value,
@@ -376,7 +380,7 @@ pub fn resolve_const_expr_and_evaluate(
     match &value.expr {
         Expr::Constant(ExprConstant { const_value_id, .. }) => const_value_id.lookup_intern(db),
         // Check that the expression is a valid constant.
-        _ => evaluate_constant_expr(db, &ctx.exprs, value.id, ctx.diagnostics),
+        _ => evaluate_constant_expr(db, &ctx.arenas.exprs, value.id, ctx.diagnostics),
     }
 }
 
@@ -627,22 +631,22 @@ pub fn constant_semantic_diagnostics(
     db: &dyn SemanticGroup,
     const_id: ConstantId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_constant_semantic_data(const_id).map(|data| data.diagnostics).unwrap_or_default()
+    db.priv_constant_semantic_data(const_id, false).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [SemanticGroup::constant_semantic_data].
 pub fn constant_semantic_data(db: &dyn SemanticGroup, const_id: ConstantId) -> Maybe<Constant> {
-    db.priv_constant_semantic_data(const_id)?.constant
+    db.priv_constant_semantic_data(const_id, false)?.constant
 }
 
 /// Cycle handling for [SemanticGroup::constant_semantic_data].
 pub fn constant_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     const_id: &ConstantId,
 ) -> Maybe<Constant> {
     // Forwarding cycle handling to `priv_constant_semantic_data` handler.
-    constant_semantic_data(db, *const_id)
+    db.priv_constant_semantic_data(*const_id, true)?.constant
 }
 
 /// Query implementation of [crate::db::SemanticGroup::constant_resolver_data].
@@ -650,44 +654,44 @@ pub fn constant_resolver_data(
     db: &dyn SemanticGroup,
     const_id: ConstantId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_constant_semantic_data(const_id)?.resolver_data)
+    Ok(db.priv_constant_semantic_data(const_id, false)?.resolver_data)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::constant_resolver_data].
 pub fn constant_resolver_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     const_id: &ConstantId,
 ) -> Maybe<Arc<ResolverData>> {
-    constant_resolver_data(db, *const_id)
+    Ok(db.priv_constant_semantic_data(*const_id, true)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::constant_const_value].
 pub fn constant_const_value(db: &dyn SemanticGroup, const_id: ConstantId) -> Maybe<ConstValue> {
-    Ok(db.priv_constant_semantic_data(const_id)?.const_value)
+    Ok(db.priv_constant_semantic_data(const_id, false)?.const_value)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::constant_const_value].
 pub fn constant_const_value_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     const_id: &ConstantId,
 ) -> Maybe<ConstValue> {
     // Forwarding cycle handling to `priv_constant_semantic_data` handler.
-    Ok(db.priv_constant_semantic_data(*const_id)?.const_value)
+    Ok(db.priv_constant_semantic_data(*const_id, true)?.const_value)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::constant_const_type].
 pub fn constant_const_type(db: &dyn SemanticGroup, const_id: ConstantId) -> Maybe<TypeId> {
-    db.priv_constant_semantic_data(const_id)?.const_value.ty(db)
+    db.priv_constant_semantic_data(const_id, false)?.const_value.ty(db)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::constant_const_type].
 pub fn constant_const_type_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    _cycle: &salsa::Cycle,
     const_id: &ConstantId,
 ) -> Maybe<TypeId> {
     // Forwarding cycle handling to `priv_constant_semantic_data` handler.
-    db.priv_constant_semantic_data(*const_id)?.const_value.ty(db)
+    db.priv_constant_semantic_data(*const_id, true)?.const_value.ty(db)
 }

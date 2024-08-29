@@ -1,5 +1,5 @@
-use core::cmp::{max, min, minmax};
-use core::test::test_utils::{assert_eq, assert_ne};
+use crate::cmp::{max, min, minmax};
+use crate::test::test_utils::assert_eq;
 
 // Integer tests
 

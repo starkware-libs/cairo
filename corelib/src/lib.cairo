@@ -1,6 +1,7 @@
 pub mod traits;
 #[feature("deprecated-index-traits")]
 #[feature("deprecated-op-assign-traits")]
+#[allow(unused_imports)]
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not, Neg, Into,
@@ -109,6 +110,7 @@ pub extern type SegmentArena;
 
 /// felt252.
 mod felt_252;
+#[allow(unused_imports)]
 use felt_252::{Felt252One, Felt252Zero};
 
 #[derive(Copy, Drop)]
@@ -121,7 +123,7 @@ impl Felt252Serde of Serde<felt252> {
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<felt252> {
         let mut snapshot = serialized.snapshot;
-        match core::array::array_snapshot_pop_front(ref snapshot) {
+        match crate::array::array_snapshot_pop_front(ref snapshot) {
             Option::Some(x) => {
                 serialized = Span { snapshot };
                 Option::Some(*x.unbox())
@@ -227,39 +229,48 @@ extern fn drop<T>(obj: T) nopanic;
 
 /// Boxes.
 pub mod box;
+#[allow(unused_imports)]
 use box::{Box, BoxTrait};
 
 /// Nullable
 pub mod nullable;
+#[allow(unused_imports)]
 use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
 
 /// Module for `Array` and other continuous same type collections.
 pub mod array;
+#[allow(unused_imports)]
 use array::{Array, ArrayTrait};
 
 /// Span.
+#[allow(unused_imports)]
 use array::{Span, SpanTrait};
 
 /// Dictionary.
 pub mod dict;
+#[allow(unused_imports)]
 use dict::{
     Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait
 };
 
 /// Result.
 pub mod result;
+#[allow(unused_imports)]
 use result::{Result, ResultTrait};
 
 /// Option.
 pub mod option;
+#[allow(unused_imports)]
 use option::{Option, OptionTrait};
 
 /// Clone.
 pub mod clone;
+#[allow(unused_imports)]
 use clone::Clone;
 
 /// EC.
 pub mod ec;
+#[allow(unused_imports)]
 use ec::{EcOp, EcPoint, EcState};
 
 pub mod ecdsa;
@@ -267,6 +278,7 @@ pub mod ecdsa;
 /// Integer.
 #[feature("corelib-internal-use")]
 pub mod integer;
+#[allow(unused_imports)]
 use integer::{
     i8, I8IntoFelt252, i16, I16IntoFelt252, i32, I32IntoFelt252, i64, I64IntoFelt252, i128,
     I128IntoFelt252, NumericLiteral, u128, u128_is_zero, u8, u16, u32, u64, u256, Felt252TryIntoU8,
@@ -275,6 +287,7 @@ use integer::{
 };
 #[feature("corelib-internal-use")]
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
+#[allow(unused_imports)]
 use integer::{u128_sqrt, u256_sqrt};
 
 /// Math.
@@ -292,11 +305,13 @@ pub mod cmp;
 
 /// Module for handling gas operations.
 pub mod gas;
+#[allow(unused_imports)]
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
 
 /// Panics.
 pub mod panics;
+#[allow(unused_imports)]
 use panics::{panic, Panic, PanicResult};
 
 pub enum never {}
@@ -325,10 +340,12 @@ pub mod sha256;
 
 /// Pedersen
 pub mod pedersen;
+#[allow(unused_imports)]
 use pedersen::Pedersen;
 
 /// Poseidon
 pub mod poseidon;
+#[allow(unused_imports)]
 use poseidon::Poseidon;
 
 /// Debug.
@@ -339,6 +356,7 @@ pub mod fmt;
 /// Starknet
 #[feature("corelib-internal-use")]
 pub mod starknet;
+#[allow(unused_imports)]
 use starknet::System;
 
 /// Internals.
@@ -346,10 +364,12 @@ pub mod internal;
 
 /// Zeroable.
 pub mod zeroable;
+#[allow(unused_imports)]
 use zeroable::{Zeroable, NonZero};
 
 /// bytes31.
 pub mod bytes_31;
+#[allow(unused_imports)]
 use bytes_31::{
     bytes31, bytes31_const, Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait,
     Felt252TryIntoBytes31
@@ -357,10 +377,12 @@ use bytes_31::{
 
 /// BytesArray.
 pub mod byte_array;
+#[allow(unused_imports)]
 use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
 
 /// String.
 pub mod string;
+#[allow(unused_imports)]
 use string::StringLiteral;
 
 /// to_byte_array.
@@ -376,6 +398,7 @@ pub mod testing;
 pub mod metaprogramming;
 
 /// Preludes.
+#[allow(unused_imports)]
 mod prelude;
 
 /// Iterators.

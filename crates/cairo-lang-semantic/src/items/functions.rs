@@ -27,7 +27,7 @@ use super::generics::generic_params_to_args;
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
-use crate::corelib::unit_ty;
+use crate::corelib::{panic_destruct_trait_fn, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
@@ -58,7 +58,8 @@ impl ImplGenericFunctionId {
             ImplLongId::GenericParameter(_)
             | ImplLongId::ImplVar(_)
             | ImplLongId::ImplImpl(_)
-            | ImplLongId::TraitImpl(_) => Ok(None),
+            | ImplLongId::TraitImpl(_)
+            | ImplLongId::GeneratedImpl(_) => Ok(None),
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
@@ -353,6 +354,13 @@ impl ImplFunctionBodyId {
         match self {
             Self::Impl(body_id) => body_id.stable_location(db.upcast()),
             Self::Trait(body_id) => body_id.stable_location(db.upcast()),
+        }
+    }
+
+    pub fn trait_function(&self, db: &dyn SemanticGroup) -> Maybe<TraitFunctionId> {
+        match self {
+            Self::Impl(impl_function) => db.impl_function_trait_function(*impl_function),
+            Self::Trait(trait_function) => Ok(*trait_function),
         }
     }
 }
@@ -658,6 +666,17 @@ impl ConcreteFunctionWithBodyId {
 
     pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
         self.lookup_intern(db).generic_function.stable_location(db)
+    }
+
+    pub fn is_panic_destruct_fn(&self, db: &dyn SemanticGroup) -> Maybe<bool> {
+        let trait_function = match self.generic_function(db) {
+            GenericFunctionWithBodyId::Free(_) => return Ok(false),
+            GenericFunctionWithBodyId::Impl(impl_func) => {
+                impl_func.function_body.trait_function(db)?
+            }
+            GenericFunctionWithBodyId::Trait(trait_func) => trait_func.trait_function(db),
+        };
+        Ok(trait_function == panic_destruct_trait_fn(db.upcast()))
     }
 }
 

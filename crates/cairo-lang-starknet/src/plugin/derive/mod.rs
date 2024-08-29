@@ -1,10 +1,10 @@
-use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
+use cairo_lang_defs::patcher::PatchBuilder;
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPluginMetadata, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 
 use super::consts::{EVENT_TRAIT, STORE_TRAIT};
 use super::utils::has_derive;
@@ -31,19 +31,13 @@ pub fn handle_derive(
         if let Some((node, starknet_aux_data)) =
             event::handle_event_derive(db, &item_ast, &mut diagnostics)
         {
-            builder.add_modified(RewriteNode::Mapped {
-                node: node.into(),
-                origin: derive_arg.as_syntax_node().span_without_trivia(db),
-            });
+            builder.add_modified(node.mapped(db, &derive_arg));
             aux_data = Some(DynGeneratedFileAuxData::new(starknet_aux_data));
         }
     }
     if let Some(derive_arg) = has_derive(&item_ast, db, STORE_TRAIT) {
         if let Some(node) = store::handle_store_derive(db, &item_ast, &mut diagnostics, metadata) {
-            builder.add_modified(RewriteNode::Mapped {
-                node: node.into(),
-                origin: derive_arg.as_syntax_node().span_without_trivia(db),
-            });
+            builder.add_modified(node.mapped(db, &derive_arg));
         }
     }
 

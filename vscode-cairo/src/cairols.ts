@@ -6,6 +6,11 @@ import { Context } from "./context";
 import { Scarb } from "./scarb";
 import { isScarbProject } from "./scarbProject";
 import { StandaloneLS } from "./standalonels";
+import {
+  registerMacroExpandProvider,
+  registerVfsProvider,
+  registerViewAnalyzedCratesProvider,
+} from "./textDocumentProviders";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
@@ -21,7 +26,12 @@ function notifyScarbMissing(ctx: Context) {
 }
 
 export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
-  const serverOptions = await getServerOptions(ctx);
+  // TODO(mkaput): Support multi-root workspaces.
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+
+  const scarb = await findScarbForWorkspaceFolder(workspaceFolder, ctx);
+
+  const serverOptions = await getServerOptions(workspaceFolder, scarb, ctx);
 
   const clientOptions: lc.LanguageClientOptions = {
     documentSelector: [
@@ -37,45 +47,31 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
     clientOptions,
   );
 
-  // Notify the server when client configuration changes.
+  // Notify the server when the client configuration changes.
   // CairoLS pulls configuration properties it is interested in by itself, so it
-  // is not needed to attach any details in the notification payload.
+  // is unnecessary to attach any details in the notification payload.
   const weakClient = new WeakRef(client);
-  vscode.workspace.onDidChangeConfiguration(
-    async () => {
-      const client = weakClient.deref();
-      if (client != undefined) {
-        await client.sendNotification(lc.DidChangeConfigurationNotification.type, {
-          settings: "",
-        });
-      }
-    },
-    null,
-    ctx.extension.subscriptions,
+
+  ctx.extension.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(
+      async () => {
+        const client = weakClient.deref();
+        if (client != undefined) {
+          await client.sendNotification(lc.DidChangeConfigurationNotification.type, {
+            settings: "",
+          });
+        }
+      },
+      null,
+      ctx.extension.subscriptions,
+    ),
   );
 
   client.registerFeature(new SemanticTokensFeature(client));
 
-  const myProvider = new (class implements vscode.TextDocumentContentProvider {
-    async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-      interface ProvideVirtualFileResponse {
-        content?: string;
-      }
-
-      const res = await client.sendRequest<ProvideVirtualFileResponse>("vfs/provide", {
-        uri: uri.toString(),
-      });
-
-      return res.content ?? "";
-    }
-
-    onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
-    onDidChange = this.onDidChangeEmitter.event;
-  })();
-  client.onNotification("vfs/update", (param) => {
-    myProvider.onDidChangeEmitter.fire(param.uri);
-  });
-  vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
+  registerVfsProvider(client, ctx);
+  registerMacroExpandProvider(client, ctx);
+  registerViewAnalyzedCratesProvider(client, ctx);
 
   client.onNotification("scarb/could-not-find-scarb-executable", () => notifyScarbMissing(ctx));
 
@@ -96,29 +92,60 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
     );
   });
 
+  client.onNotification(
+    new lc.NotificationType<string>("cairo/corelib-version-mismatch"),
+    async (errorMessage) => {
+      const reloadWindow = "Reload window";
+      const cleanScarbCache = "Clean Scarb cache and reload";
+
+      const selectedValue = await vscode.window.showErrorMessage(
+        errorMessage,
+        reloadWindow,
+        cleanScarbCache,
+      );
+
+      switch (selectedValue) {
+        case reloadWindow:
+          await vscode.commands.executeCommand("workbench.action.reloadWindow");
+          break;
+        case cleanScarbCache:
+          await scarb?.cacheClean(ctx);
+          await vscode.commands.executeCommand("workbench.action.reloadWindow");
+          break;
+      }
+    },
+  );
+
   await client.start();
 
   return client;
 }
 
-async function getServerOptions(ctx: Context): Promise<lc.ServerOptions> {
-  // TODO(mkaput): Support multi-root workspaces.
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-
+async function findScarbForWorkspaceFolder(
+  workspaceFolder: vscode.WorkspaceFolder | undefined,
+  ctx: Context,
+): Promise<Scarb | undefined> {
   const isScarbEnabled = ctx.config.get("enableScarb", false);
-  let scarb: Scarb | undefined;
   if (!isScarbEnabled) {
     ctx.log.warn("Scarb integration is disabled");
     ctx.log.warn("note: set `cairo1.enableScarb` to `true` to enable it");
+    return undefined;
   } else {
     try {
-      scarb = await Scarb.find(workspaceFolder, ctx);
+      return await Scarb.find(workspaceFolder, ctx);
     } catch (e) {
       ctx.log.error(`${e}`);
       ctx.log.error("note: Scarb integration is disabled due to this error");
+      return undefined;
     }
   }
+}
 
+async function getServerOptions(
+  workspaceFolder: vscode.WorkspaceFolder | undefined,
+  scarb: Scarb | undefined,
+  ctx: Context,
+): Promise<lc.ServerOptions> {
   let serverExecutableProvider: LanguageServerExecutableProvider | undefined;
   try {
     serverExecutableProvider = await determineLanguageServerExecutableProvider(
@@ -198,8 +225,13 @@ function setupEnv(serverExecutable: lc.Executable, ctx: Context) {
   const extraEnv = ctx.config.get("languageServerExtraEnv");
 
   serverExecutable.options ??= {};
-  serverExecutable.options.env ??= {};
-  Object.assign(serverExecutable.options.env, logEnv, extraEnv);
+  serverExecutable.options.env = {
+    // Inherit env from parent process.
+    ...process.env,
+    ...(serverExecutable.options.env ?? {}),
+    ...logEnv,
+    ...extraEnv,
+  };
 }
 
 function buildEnvFilter(ctx: Context): string {

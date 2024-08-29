@@ -77,9 +77,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -90,9 +90,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -130,6 +130,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -171,18 +172,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -253,6 +254,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x2943e6b272892c78655f823e0abb3da425a1ac0c3f9bdd70869a3f37bc54797;
@@ -332,18 +334,18 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:11:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:11:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -457,9 +459,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -470,9 +472,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -510,6 +512,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -551,18 +554,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -633,6 +636,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0xe61d99740f46b06b2ccd91d014bc9f9acc438fec59d79dd30fd0d852e5210;
@@ -712,18 +716,18 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:11:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:11:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -825,9 +829,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -838,9 +842,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -878,6 +882,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -919,18 +924,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1001,6 +1006,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x14aaf6de6aff44d64b4c3609768860615e979fdd851d125bbdfc10597a50a1d;
@@ -1080,18 +1086,18 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:11:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:11:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1206,9 +1212,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -1219,9 +1225,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -1259,6 +1265,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1300,18 +1307,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1382,6 +1389,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x215c44bbf0e7c3b987e93bf1597778322461e87fd0059894735b0464ce94aff;
@@ -1461,18 +1469,18 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:11:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:11:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1590,9 +1598,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -1603,9 +1611,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -1643,6 +1651,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1684,18 +1693,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1729,13 +1738,13 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let non_path_type_value = starknet::storage::FlattenedStorage {};
-        let non_component_value = starknet::storage::FlattenedStorage {};
-        let test_component_storage_value = starknet::storage::FlattenedStorage {};
+        let __non_path_type_value__ = starknet::storage::FlattenedStorage {};
+        let __non_component_value__ = starknet::storage::FlattenedStorage {};
+        let __test_component_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           non_path_type: non_path_type_value,
-           non_component: non_component_value,
-           test_component_storage: test_component_storage_value,
+           non_path_type: __non_path_type_value__,
+           non_component: __non_component_value__,
+           test_component_storage: __test_component_storage_value__,
         }
     }
 }
@@ -1748,13 +1757,13 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let non_path_type_value = starknet::storage::FlattenedStorage {};
-        let non_component_value = starknet::storage::FlattenedStorage {};
-        let test_component_storage_value = starknet::storage::FlattenedStorage {};
+        let __non_path_type_value__ = starknet::storage::FlattenedStorage {};
+        let __non_component_value__ = starknet::storage::FlattenedStorage {};
+        let __test_component_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           non_path_type: non_path_type_value,
-           non_component: non_component_value,
-           test_component_storage: test_component_storage_value,
+           non_path_type: __non_path_type_value__,
+           non_component: __non_component_value__,
+           test_component_storage: __test_component_storage_value__,
         }
     }
 }
@@ -1793,6 +1802,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x13a81b6876baa1445c90fd69add3e928a4f6c6807e5227544ac6f6698c463b2;
@@ -1891,18 +1901,18 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:12:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:12:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2005,9 +2015,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -2018,9 +2028,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -2058,6 +2068,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -2099,18 +2110,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2181,6 +2192,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x1092f63083af07b77ee426fd76d9695c3747a2e42571a914cee1dd17960254f;
@@ -2260,18 +2272,18 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:12:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:12:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2367,9 +2379,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -2380,9 +2392,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -2420,6 +2432,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -2461,18 +2474,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2498,9 +2511,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let test_component_storage_value = starknet::storage::StorageBase {__base_address__: selector!("test_component_storage")};
+        let __test_component_storage_value__ = starknet::storage::StorageBase {__base_address__: selector!("test_component_storage")};
         StorageStorageBase {
-           test_component_storage: test_component_storage_value,
+           test_component_storage: __test_component_storage_value__,
         }
     }
 }
@@ -2511,9 +2524,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let test_component_storage_value = starknet::storage::StorageBase {__base_address__: selector!("test_component_storage")};
+        let __test_component_storage_value__ = starknet::storage::StorageBase {__base_address__: selector!("test_component_storage")};
         StorageStorageBaseMut {
-           test_component_storage: test_component_storage_value,
+           test_component_storage: __test_component_storage_value__,
         }
     }
 }
@@ -2550,6 +2563,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x8618264598f52601eed9355f5b7c0fc7c8912d966e620eb0a2914ed8cb5c10;
@@ -2629,18 +2643,18 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:12:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:12:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2736,9 +2750,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -2749,9 +2763,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -2789,6 +2803,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -2830,18 +2845,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -2871,9 +2886,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let test_component_storage_value = starknet::storage::FlattenedStorage {};
+        let __test_component_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           test_component_storage: test_component_storage_value,
+           test_component_storage: __test_component_storage_value__,
         }
     }
 }
@@ -2884,9 +2899,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let test_component_storage_value = starknet::storage::FlattenedStorage {};
+        let __test_component_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           test_component_storage: test_component_storage_value,
+           test_component_storage: __test_component_storage_value__,
         }
     }
 }
@@ -2925,6 +2940,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x8f9d2a9bd3a3fe28e42c16030ed25a2756a86a13d4297597e43683c3df9a02;
@@ -3007,18 +3023,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:12:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:9:1
-#[starknet::contract]
-^*******************^
+lib.cairo:12:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3177,9 +3193,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -3190,9 +3206,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -3230,6 +3246,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -3271,18 +3288,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3309,9 +3326,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let test_component_storage_value = starknet::storage::FlattenedStorage {};
+        let __test_component_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           test_component_storage: test_component_storage_value,
+           test_component_storage: __test_component_storage_value__,
         }
     }
 }
@@ -3322,9 +3339,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let test_component_storage_value = starknet::storage::FlattenedStorage {};
+        let __test_component_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           test_component_storage: test_component_storage_value,
+           test_component_storage: __test_component_storage_value__,
         }
     }
 }
@@ -3363,6 +3380,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x150d2e1961908098174a1d0101315691e91ab91682760b04003683fab54f03e;
@@ -3415,18 +3433,18 @@ pub mod __constructor {
 
 
 
-lib.cairo:14:1
-#[starknet::contract]
-^*******************^
+lib.cairo:17:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:14:1
-#[starknet::contract]
-^*******************^
+lib.cairo:17:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3565,9 +3583,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -3578,9 +3596,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -3618,6 +3636,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -3659,18 +3678,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:3:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3699,9 +3718,9 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBase {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -3712,9 +3731,9 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let data_value = starknet::storage::StorageBase {__base_address__: selector!("data")};
+        let __data_value__ = starknet::storage::StorageBase {__base_address__: selector!("data")};
         StorageStorageBaseMut {
-           data: data_value,
+           data: __data_value__,
         }
     }
 }
@@ -3752,6 +3771,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -3793,18 +3813,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
+lib.cairo:10:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:8:1
-#[starknet::component]
-^********************^
+lib.cairo:10:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -3834,11 +3854,11 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let component1_storage_value = starknet::storage::FlattenedStorage {};
-        let component2_storage_value = starknet::storage::FlattenedStorage {};
+        let __component1_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __component2_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           component1_storage: component1_storage_value,
-           component2_storage: component2_storage_value,
+           component1_storage: __component1_storage_value__,
+           component2_storage: __component2_storage_value__,
         }
     }
 }
@@ -3850,11 +3870,11 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let component1_storage_value = starknet::storage::FlattenedStorage {};
-        let component2_storage_value = starknet::storage::FlattenedStorage {};
+        let __component1_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __component2_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           component1_storage: component1_storage_value,
-           component2_storage: component2_storage_value,
+           component1_storage: __component1_storage_value__,
+           component2_storage: __component2_storage_value__,
         }
     }
 }
@@ -3895,6 +3915,7 @@ pub fn contract_state_for_testing() -> ContractState {
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0xa09b926ceb282d29edce76bb84e4aeb97f1a82ce15099322f1c2869a49b549;
@@ -4013,18 +4034,18 @@ impl EventComp1EventIntoEvent of Into<super::component1::Event, Event> {
 
 
 
-lib.cairo:16:1
-#[starknet::contract]
-^*******************^
+lib.cairo:22:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:16:1
-#[starknet::contract]
-^*******************^
+lib.cairo:22:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;

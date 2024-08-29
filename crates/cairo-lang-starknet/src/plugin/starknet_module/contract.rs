@@ -48,6 +48,8 @@ pub struct NestedComponent {
     pub component_path: ast::ExprPath,
     pub storage_name: ast::ExprPath,
     pub event_name: ast::ExprPath,
+    /// The original ast node of the component usage declaration.
+    pub node: ast::ItemInlineMacro,
 }
 
 impl ComponentsGenerationData {
@@ -57,7 +59,9 @@ impl ComponentsGenerationData {
         diagnostics: &mut Vec<PluginDiagnostic>,
     ) -> RewriteNode {
         let mut has_component_impls = vec![];
-        for NestedComponent { component_path, storage_name, event_name } in self.components.iter() {
+        for NestedComponent { component_path, storage_name, event_name, node } in
+            self.components.iter()
+        {
             if !self.validate_component(db, diagnostics, storage_name, event_name) {
                 // Don't generate the code for the impl of HasComponent.
                 continue;
@@ -119,7 +123,8 @@ impl ComponentsGenerationData {
                     ),
                 ]
                 .into(),
-            );
+            )
+            .mapped(db, node);
 
             has_component_impls.push(has_component_impl);
         }
@@ -209,6 +214,7 @@ impl ContractSpecificGenerationData {
                     feature: \"deprecated_legacy_map\",
                     note: \"Use `starknet::storage::Map` instead.\"
                 )]
+                #[allow(unused_imports)]
                 use starknet::storage::Map as LegacyMap;
                 $test_config$
                 $entry_points_code$
@@ -538,21 +544,24 @@ fn handle_embed_impl_alias(
         impl_module.iter().map(|segment| RewriteNode::new_trimmed(segment.as_syntax_node())),
         RewriteNode::text("::"),
     );
-    data.generated_wrapper_functions.push(RewriteNode::interpolate_patched(
-        &formatdoc! {"
-        impl ContractState$impl_name$ of
-            $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
-            fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
-                unsafe_new_contract_state()
+    data.generated_wrapper_functions.push(
+        RewriteNode::interpolate_patched(
+            &formatdoc! {"
+            impl ContractState$impl_name$ of
+                $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
+                fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
+                    unsafe_new_contract_state()
+                }}
             }}
-        }}
-    "},
-        &[
-            ("impl_name".to_string(), RewriteNode::new_trimmed(impl_name.as_syntax_node())),
-            ("impl_module".to_string(), impl_module),
-        ]
-        .into(),
-    ));
+        "},
+            &[
+                ("impl_name".to_string(), RewriteNode::new_trimmed(impl_name.as_syntax_node())),
+                ("impl_module".to_string(), impl_module),
+            ]
+            .into(),
+        )
+        .mapped(db, alias_ast),
+    );
 }
 
 /// Handles a `component!` inline macro. Assumes that the macro name is `COMPONENT_INLINE_MACRO`.
@@ -591,6 +600,7 @@ pub fn handle_component_inline_macro(
         component_path: component_path.clone(),
         storage_name: storage_name.clone(),
         event_name: event_name.clone(),
+        node: component_macro_ast.clone(),
     });
 }
 

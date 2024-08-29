@@ -16,11 +16,8 @@ fn concretize_function(
 ) -> Maybe<FunctionId> {
     let long_id = match function.lookup_intern(db) {
         FunctionLongId::Semantic(id) => FunctionLongId::Semantic(rewriter.rewrite(id)?),
-        FunctionLongId::Generated(GeneratedFunction { parent, element }) => {
-            FunctionLongId::Generated(GeneratedFunction {
-                parent: rewriter.rewrite(parent)?,
-                element,
-            })
+        FunctionLongId::Generated(GeneratedFunction { parent, key }) => {
+            FunctionLongId::Generated(GeneratedFunction { parent: rewriter.rewrite(parent)?, key })
         }
     };
     Ok(long_id.intern(db))

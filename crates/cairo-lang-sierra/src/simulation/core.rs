@@ -292,6 +292,7 @@ pub fn simulate<
         CoreConcreteLibfunc::Coupon(_) => unimplemented!(),
         CoreConcreteLibfunc::BoundedInt(_) => unimplemented!(),
         CoreConcreteLibfunc::Circuit(_) => unimplemented!(),
+        CoreConcreteLibfunc::IntRange(_) => unimplemented!(),
     })
 }
 

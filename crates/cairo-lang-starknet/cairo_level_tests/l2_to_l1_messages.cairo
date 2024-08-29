@@ -1,9 +1,4 @@
-use core::traits::{Into, TryInto, PartialEq};
-use core::array::{ArrayTrait, SpanTrait};
-use core::option::OptionTrait;
-use core::result::ResultTrait;
 use starknet::{testing, SyscallResultTrait};
-use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 
 use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
 
@@ -11,7 +6,6 @@ use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
 mod contract_with_messages_sent_to_l1 {
     use starknet::SyscallResultTrait;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use core::traits::Into;
     use core::array::ArrayTrait;
 
     use super::generate_payload;

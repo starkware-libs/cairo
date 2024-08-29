@@ -111,6 +111,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -152,18 +153,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -290,6 +291,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -331,18 +333,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -469,6 +471,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -510,18 +513,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -644,6 +647,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -685,18 +689,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -819,6 +823,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -860,18 +865,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -998,6 +1003,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1039,18 +1045,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1173,6 +1179,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1214,18 +1221,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1344,6 +1351,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1385,18 +1393,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1527,6 +1535,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1573,18 +1582,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1755,6 +1764,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1796,18 +1806,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1934,6 +1944,7 @@ pub fn component_state_for_testing<TContractState>() -> ComponentState<TContract
     feature: "deprecated_legacy_map",
     note: "Use `starknet::storage::Map` instead."
 )]
+#[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 pub trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
@@ -1975,18 +1986,18 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:1:1
-#[starknet::component]
-^********************^
+lib.cairo:5:5
+    #[storage]
+    ^********^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;

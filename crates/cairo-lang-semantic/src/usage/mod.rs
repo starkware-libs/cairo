@@ -1,22 +1,21 @@
 //! Introduces [Usages], which is responsible for computing variables usage in semantic blocks\
 //! of a function.
 
-use cairo_lang_defs::ids::MemberId;
+use cairo_lang_defs::ids::{MemberId, ParamId};
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_semantic::expr::fmt::ExprFormatter;
-use cairo_lang_semantic::items::function_with_body::Arenas;
-use cairo_lang_semantic::{
-    self as semantic, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath, FunctionBody, Pattern,
-    Statement, VarId,
-};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use id_arena::Arena;
-use semantic::{ConcreteStructId, PatternId};
+
+use crate::expr::fmt::ExprFormatter;
+use crate::expr::objects::Arenas;
+use crate::{
+    ConcreteStructId, Condition, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath,
+    FixedSizeArrayItems, FunctionBody, Pattern, PatternId, Statement, VarId,
+};
 
 #[cfg(test)]
-#[path = "usage_test.rs"]
 mod test;
 
 /// Member path (e.g. a.b.c). Unlike [ExprVarMemberPath], this is not an expression, and has no
@@ -24,7 +23,7 @@ mod test;
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 pub enum MemberPath {
-    Var(semantic::VarId),
+    Var(VarId),
     Member { parent: Box<MemberPath>, member_id: MemberId, concrete_struct_id: ConcreteStructId },
 }
 impl MemberPath {
@@ -166,6 +165,20 @@ impl Usages {
         usages
     }
 
+    pub fn handle_closure(
+        &mut self,
+        arenas: &Arenas,
+        param_ids: &[ParamId],
+        body: ExprId,
+    ) -> Usage {
+        let mut usage: Usage = Default::default();
+
+        usage.introductions.extend(param_ids.iter().map(|id| VarId::Param(*id)));
+        self.handle_expr(arenas, body, &mut usage);
+        usage.finalize_as_scope();
+        usage
+    }
+
     fn handle_expr(&mut self, arenas: &Arenas, expr_id: ExprId, current: &mut Usage) {
         match &arenas.exprs[expr_id] {
             Expr::Tuple(expr) => {
@@ -174,12 +187,12 @@ impl Usages {
                 }
             }
             Expr::FixedSizeArray(expr) => match &expr.items {
-                semantic::FixedSizeArrayItems::Items(items) => {
+                FixedSizeArrayItems::Items(items) => {
                     for expr_id in items {
                         self.handle_expr(arenas, *expr_id, current);
                     }
                 }
-                semantic::FixedSizeArrayItems::ValueAndSize(value, _) => {
+                FixedSizeArrayItems::ValueAndSize(value, _) => {
                     self.handle_expr(arenas, *value, current);
                 }
             },
@@ -250,10 +263,10 @@ impl Usages {
             Expr::While(expr) => {
                 let mut usage = Default::default();
                 match &expr.condition {
-                    semantic::Condition::BoolExpr(expr) => {
+                    Condition::BoolExpr(expr) => {
                         self.handle_expr(arenas, *expr, &mut usage);
                     }
-                    semantic::Condition::Let(expr, patterns) => {
+                    Condition::Let(expr, patterns) => {
                         self.handle_expr(arenas, *expr, &mut usage);
                         for pattern in patterns {
                             Self::handle_pattern(&arenas.patterns, *pattern, &mut usage);
@@ -267,6 +280,7 @@ impl Usages {
                 self.usages.insert(expr_id, usage);
             }
             Expr::For(expr) => {
+                self.handle_expr(arenas, expr.expr_id, current);
                 current.introductions.insert(
                     extract_matches!(&expr.into_iter_member_path, ExprVarMemberPath::Var).var,
                 );
@@ -286,11 +300,9 @@ impl Usages {
                 self.usages.insert(expr_id, usage);
             }
             Expr::ExprClosure(expr) => {
-                let mut usage: Usage = Default::default();
+                let usage = self.handle_closure(arenas, &expr.param_ids, expr.body);
 
-                usage.introductions.extend(expr.param_ids.iter().map(|id| VarId::Param(*id)));
-                self.handle_expr(arenas, expr.body, &mut usage);
-                usage.finalize_as_scope();
+                current.add_usage_and_changes(&usage);
                 self.usages.insert(expr_id, usage);
             }
             Expr::FunctionCall(expr) => {
@@ -317,10 +329,10 @@ impl Usages {
             }
             Expr::If(expr) => {
                 match &expr.condition {
-                    semantic::Condition::BoolExpr(expr) => {
+                    Condition::BoolExpr(expr) => {
                         self.handle_expr(arenas, *expr, current);
                     }
-                    semantic::Condition::Let(expr, patterns) => {
+                    Condition::Let(expr, patterns) => {
                         self.handle_expr(arenas, *expr, current);
                         for pattern in patterns {
                             Self::handle_pattern(&arenas.patterns, *pattern, current);
@@ -361,7 +373,7 @@ impl Usages {
         }
     }
 
-    fn handle_pattern(arena: &Arena<semantic::Pattern>, pattern: PatternId, current: &mut Usage) {
+    fn handle_pattern(arena: &Arena<Pattern>, pattern: PatternId, current: &mut Usage) {
         let pattern = &arena[pattern];
         match pattern {
             Pattern::Literal(_) | Pattern::StringLiteral(_) => {}

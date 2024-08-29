@@ -1,5 +1,7 @@
+#[allow(unused_imports)]
 use core::zeroable::Zeroable;
 use core::serde::Serde;
+#[allow(unused_imports)]
 use core::hash::{Hash, HashStateTrait};
 use core::RangeCheck;
 
@@ -68,18 +70,6 @@ impl ContractAddressPartialOrd of PartialOrd<ContractAddress> {
         // TODO(orizi): Check if implementing a libfunc for `felt252` ordering is more efficient.
         let lhs: u256 = contract_address_to_felt252(lhs).into();
         lhs < contract_address_to_felt252(rhs).into()
-    }
-    #[inline]
-    fn le(lhs: ContractAddress, rhs: ContractAddress) -> bool {
-        !(rhs < lhs)
-    }
-    #[inline]
-    fn gt(lhs: ContractAddress, rhs: ContractAddress) -> bool {
-        rhs < lhs
-    }
-    #[inline]
-    fn ge(lhs: ContractAddress, rhs: ContractAddress) -> bool {
-        !(lhs < rhs)
     }
 }
 

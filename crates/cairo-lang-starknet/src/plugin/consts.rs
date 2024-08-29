@@ -6,7 +6,6 @@ pub const CONSTRUCTOR_MODULE: &str = "__constructor";
 pub const WRAPPER_PREFIX: &str = "__wrapper__";
 pub const STORAGE_STRUCT_NAME: &str = "Storage";
 pub const EVENT_TYPE_NAME: &str = "Event";
-pub const LEGACY_STORAGE_MAPPING: &str = "LegacyMap";
 pub const STORAGE_MAPPING: &str = "Map";
 pub const CONTRACT_STATE_NAME: &str = "ContractState";
 pub const GENERIC_CONTRACT_STATE_NAME: &str = "TContractState";

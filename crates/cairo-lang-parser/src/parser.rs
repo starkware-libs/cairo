@@ -33,7 +33,8 @@ pub struct Parser<'a> {
     pending_trivia: Vec<TriviumGreen>,
     /// The current offset, excluding the current terminal.
     offset: TextOffset,
-    /// The width of the current terminal being handled.
+    /// The width of the current terminal being handled (excluding the trivia length of this
+    /// terminal).
     current_width: TextWidth,
     /// The length of the trailing trivia following the last read token.
     last_trivia_length: TextWidth,
@@ -181,14 +182,17 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse_syntax_file(mut self) -> SyntaxFileGreen {
-        let items = ModuleItemList::new_green(
-            self.db,
-            self.parse_attributed_list(
-                Self::try_parse_module_item,
-                is_of_kind!(),
-                MODULE_ITEM_DESCRIPTION,
-            ),
-        );
+        let mut module_items = vec![];
+        if let Some(doc_item) = self.take_doc() {
+            module_items.push(doc_item.into());
+        }
+        module_items.extend(self.parse_attributed_list(
+            Self::try_parse_module_item,
+            is_of_kind!(),
+            MODULE_ITEM_DESCRIPTION,
+        ));
+        // Create a new vec with the doc item as the children.
+        let items = ModuleItemList::new_green(self.db, module_items);
         // This will not panic since the above parsing only stops when reaches EOF.
         assert_eq!(self.peek().kind, SyntaxKind::TerminalEndOfFile);
 
@@ -346,14 +350,16 @@ impl<'a> Parser<'a> {
         let body = match self.peek().kind {
             SyntaxKind::TerminalLBrace => {
                 let lbrace = self.take::<TerminalLBrace>();
-                let items = ModuleItemList::new_green(
-                    self.db,
-                    self.parse_attributed_list(
-                        Self::try_parse_module_item,
-                        is_of_kind!(rbrace),
-                        MODULE_ITEM_DESCRIPTION,
-                    ),
-                );
+                let mut module_items = vec![];
+                if let Some(doc_item) = self.take_doc() {
+                    module_items.push(doc_item.into());
+                }
+                module_items.extend(self.parse_attributed_list(
+                    Self::try_parse_module_item,
+                    is_of_kind!(rbrace),
+                    MODULE_ITEM_DESCRIPTION,
+                ));
+                let items = ModuleItemList::new_green(self.db, module_items);
                 let rbrace = self.parse_token::<TerminalRBrace>();
                 ModuleBody::new_green(self.db, lbrace, items, rbrace).into()
             }
@@ -1064,6 +1070,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr>().into(),
             SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
             SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
+            SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
             _ => unreachable!(),
         }
     }
@@ -1983,6 +1990,12 @@ impl<'a> Parser<'a> {
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Ok(StatementBreak::new_green(self.db, attributes, break_kw, expr, semicolon).into())
             }
+            SyntaxKind::TerminalConst => Ok(StatementItem::new_green(
+                self.db,
+                self.expect_item_const(attributes, VisibilityDefault::new_green(self.db).into())
+                    .into(),
+            )
+            .into()),
             _ => match self.try_parse_expr() {
                 Ok(expr) => {
                     let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
@@ -2833,6 +2846,46 @@ impl<'a> Parser<'a> {
         let token = self.take_raw();
         assert_eq!(token.kind, Terminal::KIND);
         self.add_trivia_to_terminal::<Terminal>(token)
+    }
+
+    /// If the current leading trivia start with non-doc comments, creates a new `ItemHeaderDoc` and
+    /// appends the trivia to it. The purpose of this item is to prevent non-doc comments moving
+    /// from the top of the file formatter.
+    fn take_doc(&mut self) -> Option<ItemHeaderDocGreen> {
+        // Take all the trivia from `self.next_terminal`, until a doc-comment is found. If the
+        // result does not contain a non-doc comment (i.e. regular comment or inner
+        // comment), return None and do not change the next terminal leading trivia.
+        let mut has_header_doc = false;
+        let mut split_index = 0;
+        for trivium in self.next_terminal.leading_trivia.iter() {
+            match trivium.0.lookup_intern(self.db).kind {
+                SyntaxKind::TokenSingleLineComment | SyntaxKind::TokenSingleLineInnerComment => {
+                    has_header_doc = true;
+                }
+                SyntaxKind::TokenSingleLineDocComment => {
+                    break;
+                }
+                _ => {}
+            }
+            split_index += 1;
+        }
+        if !has_header_doc {
+            return None;
+        }
+        // Split the trivia into header doc and the rest.
+        let leading_trivia = self.next_terminal.leading_trivia.clone();
+        let (header_doc, rest) = leading_trivia.split_at(split_index);
+        self.next_terminal.leading_trivia = rest.to_vec();
+        let empty_lexer_terminal = LexerTerminal {
+            text: "".into(),
+            kind: SyntaxKind::TerminalEmpty,
+            leading_trivia: header_doc.to_vec(),
+            trailing_trivia: vec![],
+        };
+        self.offset = self.offset.add_width(empty_lexer_terminal.width(self.db));
+
+        let empty_terminal = self.add_trivia_to_terminal::<TerminalEmpty>(empty_lexer_terminal);
+        Some(ItemHeaderDoc::new_green(self.db, empty_terminal))
     }
 
     /// If the current terminal is of kind `Terminal`, returns its Green wrapper. Otherwise, returns

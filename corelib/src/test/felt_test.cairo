@@ -1,4 +1,4 @@
-use core::test::test_utils::{assert_eq, assert_ne};
+use crate::test::test_utils::assert_eq;
 
 #[test]
 fn test_felt252_operators() {

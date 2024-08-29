@@ -578,7 +578,7 @@ false
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   ├── child #0 (kind: TokenNewline).
-    │   │   │   │   │   ├── child #1 (kind: TokenSingleLineComment): '/// Calculates fib...'
+    │   │   │   │   │   ├── child #1 (kind: TokenSingleLineDocComment): '/// Calculates fib...'
     │   │   │   │   │   └── child #2 (kind: TokenNewline).
     │   │   │   │   ├── token (kind: TokenFunction): 'fn'
     │   │   │   │   └── trailing_trivia (kind: Trivia)

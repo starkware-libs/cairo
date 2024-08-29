@@ -62,7 +62,16 @@ impl TestRunner {
         allow_warnings: bool,
         config: TestRunConfig,
     ) -> Result<Self> {
-        let compiler = TestCompiler::try_new(path, starknet, allow_warnings, config.gas_enabled)?;
+        let compiler = TestCompiler::try_new(
+            path,
+            allow_warnings,
+            config.gas_enabled,
+            TestsCompilationConfig {
+                starknet,
+                add_statements_functions: config.run_profiler == RunProfilerConfig::Cairo,
+                add_statements_code_locations: false,
+            },
+        )?;
         Ok(Self { compiler, config })
     }
 
@@ -100,9 +109,15 @@ impl CompiledTestRunner {
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
             if self.config.run_profiler == RunProfilerConfig::Cairo {
+                let db = db.expect("db must be passed when profiling.");
+                let statements_locations = compiled
+                    .metadata
+                    .statements_locations
+                    .expect("statements locations must be present when profiling.");
                 Some(PorfilingAuxData {
-                    db: db.expect("db must be passed when profiling."),
-                    statements_functions: compiled.metadata.statements_functions.unwrap(),
+                    db,
+                    statements_functions: statements_locations
+                        .get_statements_functions_map_for_tests(db),
                 })
             } else {
                 None
@@ -190,8 +205,8 @@ pub struct TestCompiler {
     pub db: RootDatabase,
     pub main_crate_ids: Vec<CrateId>,
     pub test_crate_ids: Vec<CrateId>,
-    pub starknet: bool,
     pub allow_warnings: bool,
+    pub config: TestsCompilationConfig,
 }
 
 impl TestCompiler {
@@ -203,9 +218,9 @@ impl TestCompiler {
     /// * `starknet` - Add the starknet plugin to run the tests
     pub fn try_new(
         path: &Path,
-        starknet: bool,
         allow_warnings: bool,
         gas_enabled: bool,
+        config: TestsCompilationConfig,
     ) -> Result<Self> {
         let db = &mut {
             let mut b = RootDatabase::builder();
@@ -215,7 +230,7 @@ impl TestCompiler {
             b.detect_corelib();
             b.with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]));
             b.with_plugin_suite(test_plugin_suite());
-            if starknet {
+            if config.starknet {
                 b.with_plugin_suite(starknet_plugin_suite());
             }
             b.build()?
@@ -229,8 +244,8 @@ impl TestCompiler {
             db: db.snapshot(),
             test_crate_ids: main_crate_ids.clone(),
             main_crate_ids,
-            starknet,
             allow_warnings,
+            config,
         })
     }
 
@@ -238,7 +253,7 @@ impl TestCompiler {
     pub fn build(&self) -> Result<TestCompilation> {
         compile_test_prepared_db(
             &self.db,
-            TestsCompilationConfig { starknet: self.starknet, add_statements_functions: false },
+            self.config.clone(),
             self.main_crate_ids.clone(),
             self.test_crate_ids.clone(),
             self.allow_warnings,

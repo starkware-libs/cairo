@@ -79,7 +79,7 @@ pub fn extern_function_declaration_generic_params_data(
         ModuleItemId::ExternFunction(extern_function_id),
     ));
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
-    resolver.set_allowed_features(&extern_function_id, &extern_function_syntax, &mut diagnostics);
+    resolver.set_feature_config(&extern_function_id, &extern_function_syntax, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -151,7 +151,7 @@ pub fn priv_extern_function_declaration_data(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.extend(generic_params_data.diagnostics);
-    resolver.set_allowed_features(&extern_function_id, &extern_function_syntax, &mut diagnostics);
+    resolver.set_feature_config(&extern_function_id, &extern_function_syntax, &mut diagnostics);
 
     let mut environment = Environment::empty();
     let signature_syntax = declaration.signature(syntax_db);

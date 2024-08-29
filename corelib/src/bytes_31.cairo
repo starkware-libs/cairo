@@ -1,7 +1,8 @@
-use core::traits::{Into, TryInto};
-use core::option::OptionTrait;
-use core::integer::{u128_safe_divmod, u128_to_felt252};
-use core::RangeCheck;
+use crate::traits::{Into, TryInto};
+use crate::option::OptionTrait;
+#[allow(unused_imports)]
+use crate::integer::{u128_safe_divmod, u128_to_felt252};
+use crate::RangeCheck;
 
 pub(crate) const BYTES_IN_BYTES31: usize = 31;
 const BYTES_IN_U128: usize = 16;
@@ -31,13 +32,13 @@ pub impl Bytes31Impl of Bytes31Trait {
 }
 
 #[feature("deprecated-index-traits")]
-pub(crate) impl Bytes31IndexView of core::traits::IndexView<bytes31, usize, u8> {
+pub(crate) impl Bytes31IndexView of crate::traits::IndexView<bytes31, usize, u8> {
     fn index(self: @bytes31, index: usize) -> u8 {
         self.at(index)
     }
 }
 
-impl Bytes31BitSize of core::num::traits::BitSize<bytes31> {
+impl Bytes31BitSize of crate::num::traits::BitSize<bytes31> {
     fn bits() -> usize {
         248
     }
@@ -62,31 +63,31 @@ pub(crate) impl Felt252TryIntoBytes31 of TryInto<felt252, bytes31> {
     }
 }
 
-impl Bytes31Serde = core::serde::into_felt252_based::SerdeImpl<bytes31>;
+impl Bytes31Serde = crate::serde::into_felt252_based::SerdeImpl<bytes31>;
 
 pub(crate) impl U8IntoBytes31 of Into<u8, bytes31> {
     fn into(self: u8) -> bytes31 {
-        core::integer::upcast(self)
+        crate::integer::upcast(self)
     }
 }
 impl U16IntoBytes31 of Into<u16, bytes31> {
     fn into(self: u16) -> bytes31 {
-        core::integer::upcast(self)
+        crate::integer::upcast(self)
     }
 }
 impl U32IntoBytes31 of Into<u32, bytes31> {
     fn into(self: u32) -> bytes31 {
-        core::integer::upcast(self)
+        crate::integer::upcast(self)
     }
 }
 impl U64IntoBytes31 of Into<u64, bytes31> {
     fn into(self: u64) -> bytes31 {
-        core::integer::upcast(self)
+        crate::integer::upcast(self)
     }
 }
 pub(crate) impl U128IntoBytes31 of Into<u128, bytes31> {
     fn into(self: u128) -> bytes31 {
-        core::integer::upcast(self)
+        crate::integer::upcast(self)
     }
 }
 
@@ -172,7 +173,7 @@ pub(crate) fn one_shift_left_bytes_u128(n_bytes: usize) -> u128 {
         13 => 0x100000000000000000000000000,
         14 => 0x10000000000000000000000000000,
         15 => 0x1000000000000000000000000000000,
-        _ => core::panic_with_felt252('n_bytes too big'),
+        _ => crate::panic_with_felt252('n_bytes too big'),
     }
 }
 

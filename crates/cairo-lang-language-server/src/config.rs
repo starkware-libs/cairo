@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::path::PathBuf;
 
 use anyhow::Context;
+use serde_json::Value;
 use tower_lsp::lsp_types::{ClientCapabilities, ConfigurationItem};
 use tower_lsp::Client;
 use tracing::{debug, error, warn};
@@ -27,6 +28,12 @@ pub struct Config {
     ///
     /// The property is set by the user under the `cairo1.corelibPath` key in client configuration.
     pub unmanaged_core_path: Option<PathBuf>,
+    /// Whether to include the trace of the generation location of diagnostic location mapped by
+    /// macros.
+    ///
+    /// The property is set by the user under the `cairo1.traceMacroDiagnostics` key in client
+    /// configuration.
+    pub trace_macro_diagnostics: bool,
 }
 
 impl Config {
@@ -41,10 +48,13 @@ impl Config {
             return;
         }
 
-        let items = vec![ConfigurationItem {
-            scope_uri: None,
-            section: Some("cairo1.corelibPath".to_owned()),
-        }];
+        let items = vec![
+            ConfigurationItem { scope_uri: None, section: Some("cairo1.corelibPath".to_owned()) },
+            ConfigurationItem {
+                scope_uri: None,
+                section: Some("cairo1.traceMacroDiagnostics".to_owned()),
+            },
+        ];
         let expected_len = items.len();
         if let Ok(response) = client
             .configuration(items)
@@ -64,8 +74,14 @@ impl Config {
             // This conversion is O(1), and makes popping from front also O(1).
             let mut response = VecDeque::from(response);
 
-            self.unmanaged_core_path =
-                response.pop_front().as_ref().and_then(|v| v.as_str()).map(Into::into);
+            self.unmanaged_core_path = response
+                .pop_front()
+                .as_ref()
+                .and_then(Value::as_str)
+                .filter(|s| !s.is_empty())
+                .map(Into::into);
+            self.trace_macro_diagnostics =
+                response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default();
 
             debug!("reloaded configuration: {self:#?}");
         }

@@ -21,7 +21,7 @@ impl DisplayByteArray of Display<ByteArray> {
 }
 
 impl DisplayInteger<
-    T, +core::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
+    T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
 > of Display<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         // TODO(yuval): determine base according to Formatter parameters.
@@ -34,7 +34,7 @@ impl DisplayInteger<
 impl DisplaySignedInteger<
     Signed,
     Unsigned,
-    +core::integer::AbsAndSign<Signed, Unsigned>,
+    +crate::integer::AbsAndSign<Signed, Unsigned>,
     +Display<Unsigned>,
     +Copy<Signed>,
     +Drop<Unsigned>,
@@ -85,7 +85,7 @@ impl DebugByteArray of Debug<ByteArray> {
 }
 
 impl DebugInteger<
-    T, +core::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
+    T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
 > of Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         Display::fmt(self, ref f)
@@ -95,7 +95,7 @@ impl DebugInteger<
 impl DebugSignedInteger<
     Signed,
     Unsigned,
-    +core::integer::AbsAndSign<Signed, Unsigned>,
+    +crate::integer::AbsAndSign<Signed, Unsigned>,
     +Display<Unsigned>,
     +Copy<Signed>,
     +Drop<Unsigned>,
@@ -128,9 +128,9 @@ impl DebugSnapshot<T, +Debug<T>> of Debug<@T> {
 /// Tuple `Debug` implementation.
 impl TupleDebug<
     T,
-    impl TSF: core::metaprogramming::TupleSnapForward<T>,
+    impl TSF: crate::metaprogramming::TupleSnapForward<T>,
     +TupleDebugHelper<TSF::SnapForward>,
-    +core::metaprogramming::IsTuple<T>,
+    +crate::metaprogramming::IsTuple<T>,
 > of Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         write!(f, "(")?;
@@ -142,9 +142,9 @@ impl TupleDebug<
 /// Fixed sized array `Debug` implementation.
 impl FixedSizedArrayDebug<
     T,
-    impl TSF: core::metaprogramming::TupleSnapForward<T>,
+    impl TSF: crate::metaprogramming::TupleSnapForward<T>,
     +TupleDebugHelper<TSF::SnapForward>,
-    -core::metaprogramming::IsTuple<T>,
+    -crate::metaprogramming::IsTuple<T>,
 > of Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         write!(f, "[")?;
@@ -197,14 +197,14 @@ impl TupleDebugHelperTuple2<
 /// Not starting from size 1 since we have special cases for 0 and 1.
 impl TupleDebugHelperTupleNext<
     T,
-    impl TS: core::metaprogramming::TupleSplit<T>,
-    +core::metaprogramming::IsTuple<T>,
+    impl TS: crate::metaprogramming::TupleSplit<T>,
+    +crate::metaprogramming::IsTuple<T>,
     +TupleDebugHelper<TS::Head>,
     +TupleDebugHelper<TS::Rest>,
     +Drop<TS::Rest>,
     // Making sure the size it at least 3.
-    impl NTS: core::metaprogramming::TupleSplit<TS::Rest>,
-    +core::metaprogramming::TupleSplit<NTS::Rest>,
+    impl NTS: crate::metaprogramming::TupleSplit<TS::Rest>,
+    +crate::metaprogramming::TupleSplit<NTS::Rest>,
 > of TupleDebugHelper<T> {
     fn fmt(value: T, ref f: Formatter) -> Result<(), Error> {
         fmt_head_and_rest(value, ref f)
@@ -231,12 +231,12 @@ impl TupleDebugHelperFixedSizedArray1<T, +TupleDebugHelper<@T>> of TupleDebugHel
 impl TupleDebugHelperFixedSizedArrayNext<
     T,
     const N: usize,
-    impl TS: core::metaprogramming::TupleSplit<[@T; N]>,
+    impl TS: crate::metaprogramming::TupleSplit<[@T; N]>,
     +TupleDebugHelper<TS::Head>,
     +TupleDebugHelper<TS::Rest>,
     +Drop<TS::Rest>,
     // Making sure the size it at least 2.
-    +core::metaprogramming::TupleSplit<TS::Rest>,
+    +crate::metaprogramming::TupleSplit<TS::Rest>,
 > of TupleDebugHelper<[@T; N]> {
     fn fmt(value: [@T; N], ref f: Formatter) -> Result<(), Error> {
         fmt_head_and_rest(value, ref f)
@@ -246,7 +246,7 @@ impl TupleDebugHelperFixedSizedArrayNext<
 /// A helper function for formatting the head and tail of a tuple style struct.
 fn fmt_head_and_rest<
     T,
-    impl TS: core::metaprogramming::TupleSplit<T>,
+    impl TS: crate::metaprogramming::TupleSplit<T>,
     +TupleDebugHelper<TS::Head>,
     +TupleDebugHelper<TS::Rest>,
     +Drop<TS::Rest>,
@@ -292,12 +292,12 @@ impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
 /// Impls for `Debug` for types that can be converted into `felt252` using the `Into` trait.
 /// Usage example:
 /// ```ignore
-/// impl MyTypeDebug = core::fmt::into_felt252_based::DebugImpl<MyType>;`
+/// impl MyTypeDebug = crate::fmt::into_felt252_based::DebugImpl<MyType>;`
 /// ```
 pub mod into_felt252_based {
-    pub impl DebugImpl<T, +Into<T, felt252>, +Copy<T>> of core::fmt::Debug<T> {
-        fn fmt(self: @T, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
-            core::fmt::DebugInteger::<felt252>::fmt(@(*self).into(), ref f)
+    pub impl DebugImpl<T, +Into<T, felt252>, +Copy<T>> of crate::fmt::Debug<T> {
+        fn fmt(self: @T, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
+            crate::fmt::DebugInteger::<felt252>::fmt(@(*self).into(), ref f)
         }
     }
 }

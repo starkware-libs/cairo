@@ -1,6 +1,4 @@
-use core::test::test_utils::{assert_eq, assert_ne};
-use core::starknet::SyscallResultTrait;
-use core::sha256::compute_sha256_byte_array;
+use crate::sha256::compute_sha256_byte_array;
 
 #[test]
 fn test_sha256_byte_array() {

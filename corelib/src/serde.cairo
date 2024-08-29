@@ -1,5 +1,5 @@
-use core::array::ArrayTrait;
-use core::array::SpanTrait;
+#[allow(unused_imports)]
+use crate::array::{ArrayTrait, SpanTrait};
 
 pub trait Serde<T> {
     fn serialize(self: @T, ref output: Array<felt252>);
@@ -9,7 +9,7 @@ pub trait Serde<T> {
 /// Tuple style structs `Serde` implementation.
 impl SerdeTuple<
     T,
-    impl TSF: core::metaprogramming::TupleSnapForward<T>,
+    impl TSF: crate::metaprogramming::TupleSnapForward<T>,
     impl Serialize: SerializeTuple<TSF::SnapForward>,
     impl Deserialize: DeserializeTuple<T>,
 > of Serde<T> {
@@ -65,7 +65,7 @@ impl DeserializeTupleBaseFixedSizedArray<T> of DeserializeTuple<[T; 0]> {
 /// Recursive implementation of `SerializeTuple` for tuple style structs.
 impl SerializeTupleNext<
     T,
-    impl TS: core::metaprogramming::TupleSplit<T>,
+    impl TS: crate::metaprogramming::TupleSplit<T>,
     +SerializeTuple<TS::Head>,
     +SerializeTuple<TS::Rest>,
     +Drop<TS::Rest>,
@@ -80,7 +80,7 @@ impl SerializeTupleNext<
 /// Recursive implementation of `DeserializeTuple` for tuple style structs.
 impl DeserializeTupleNext<
     T,
-    impl TS: core::metaprogramming::TupleSplit<T>,
+    impl TS: crate::metaprogramming::TupleSplit<T>,
     +Serde<TS::Head>,
     +DeserializeTuple<TS::Rest>,
     +Drop<TS::Head>,
@@ -99,8 +99,8 @@ impl DeserializeTupleNext<
 /// impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`
 /// ```
 pub mod into_felt252_based {
-    use core::traits::{Into, TryInto};
-    use core::array::ArrayTrait;
+    use crate::traits::{Into, TryInto};
+    use crate::array::ArrayTrait;
     pub impl SerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::Serde<T> {
         #[inline]
         fn serialize(self: @T, ref output: Array<felt252>) {
