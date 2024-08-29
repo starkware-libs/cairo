@@ -14,6 +14,10 @@ pub trait ClientCapabilitiesExt {
 
     /// The client supports `workspace/configuration` requests.
     fn workspace_configuration_support(&self) -> bool;
+
+    /// The client supports dynamic registration for the `workspace/didChangeWatchedFiles`
+    /// notification.
+    fn text_document_synchronization_dynamic_registration(&self) -> bool;
 }
 
 impl ClientCapabilitiesExt for ClientCapabilities {
@@ -27,5 +31,11 @@ impl ClientCapabilitiesExt for ClientCapabilities {
         try_or_default! {
             self.workspace.as_ref()?.configuration?
         }
+    }
+
+    fn text_document_synchronization_dynamic_registration(&self) -> bool {
+        try_or_default!(
+            self.text_document.as_ref()?.synchronization.as_ref()?.dynamic_registration?
+        )
     }
 }
