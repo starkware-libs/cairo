@@ -5,7 +5,7 @@ use genco::prelude::*;
 use xshell::{cmd, Shell};
 
 use crate::cairo_spec::get_spec;
-use crate::spec::{Member, Node, NodeKind, Variant};
+use crate::spec::{Member, Node, NodeKind, Variant, Variants};
 
 pub fn project_root() -> PathBuf {
     // This is the directory of Cargo.toml of the syntax_codegen crate.
@@ -209,10 +209,20 @@ fn generate_ast_code() -> rust::Tokens {
         #[path = "ast_ext.rs"]
         mod ast_ext;
     };
+    let spec_clone = spec.clone();
+    let all_tokens: Vec<_> =
+        spec_clone.iter().filter(|node| matches!(node.kind, NodeKind::Terminal { .. })).collect();
     for Node { name, kind } in spec.into_iter() {
         tokens.extend(match kind {
             NodeKind::Enum { variants, missing_variant } => {
-                gen_enum_code(name, variants, missing_variant)
+                let variants_list = match variants {
+                    Variants::List(variants) => variants,
+                    Variants::AllTokens => all_tokens
+                        .iter()
+                        .map(|node| Variant { name: node.name.clone(), kind: node.name.clone() })
+                        .collect(),
+                };
+                gen_enum_code(name, variants_list, missing_variant)
             }
             NodeKind::Struct { members } => gen_struct_code(name, members, false),
             NodeKind::Terminal { members, .. } => gen_struct_code(name, members, true),
@@ -221,7 +231,7 @@ fn generate_ast_code() -> rust::Tokens {
             NodeKind::SeparatedList { element_type, separator_type } => {
                 gen_separated_list_code(name, element_type, separator_type)
             }
-        })
+        });
     }
     tokens
 }
