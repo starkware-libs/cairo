@@ -2,7 +2,6 @@
 #[path = "lexer_test.rs"]
 mod test;
 
-use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
     TokenNewline, TokenSingleLineComment, TokenSingleLineDocComment, TokenSingleLineInnerComment,
@@ -24,7 +23,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     // Ctors.
-    pub fn from_text(db: &'a dyn SyntaxGroup, _source: FileId, text: &'a str) -> Lexer<'a> {
+    pub fn from_text(db: &'a dyn SyntaxGroup, text: &'a str) -> Lexer<'a> {
         Lexer {
             db,
             text,
