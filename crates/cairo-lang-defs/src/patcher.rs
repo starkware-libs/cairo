@@ -38,8 +38,12 @@ impl RewriteNode {
         Self::Text(text.to_string())
     }
 
-    pub fn mapped_text(text: &str, db: &dyn SyntaxGroup, origin: &impl TypedSyntaxNode) -> Self {
-        RewriteNode::Text(text.to_string()).mapped(db, origin)
+    pub fn mapped_text(
+        text: impl Into<String>,
+        db: &dyn SyntaxGroup,
+        origin: &impl TypedSyntaxNode,
+    ) -> Self {
+        RewriteNode::Text(text.into()).mapped(db, origin)
     }
 
     pub fn empty() -> Self {
