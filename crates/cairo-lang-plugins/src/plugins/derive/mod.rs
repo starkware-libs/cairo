@@ -1,8 +1,7 @@
+use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -11,7 +10,6 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
@@ -48,7 +46,6 @@ impl MacroPlugin for DerivePlugin {
                     struct_ast.attributes(db),
                     struct_ast.generic_params(db),
                     TypeVariantInfo::Struct(extract_members(db, struct_ast.members(db))),
-                    struct_ast.as_syntax_node().span(db),
                 ),
                 ast::ModuleItem::Enum(enum_ast) => DeriveInfo::new(
                     db,
@@ -56,7 +53,6 @@ impl MacroPlugin for DerivePlugin {
                     enum_ast.attributes(db),
                     enum_ast.generic_params(db),
                     TypeVariantInfo::Enum(extract_variants(db, enum_ast.variants(db))),
-                    enum_ast.as_syntax_node().span(db),
                 ),
                 ast::ModuleItem::ExternType(extern_type_ast) => DeriveInfo::new(
                     db,
@@ -64,7 +60,6 @@ impl MacroPlugin for DerivePlugin {
                     extern_type_ast.attributes(db),
                     extern_type_ast.generic_params(db),
                     TypeVariantInfo::Extern,
-                    extern_type_ast.as_syntax_node().span(db),
                 ),
                 _ => return PluginResult::default(),
             },
@@ -162,7 +157,6 @@ pub struct DeriveInfo {
     attributes: AttributeList,
     generics: GenericParamsInfo,
     specific_info: TypeVariantInfo,
-    span: TextSpan,
 }
 impl DeriveInfo {
     /// Extracts the information on the type being derived.
@@ -172,14 +166,12 @@ impl DeriveInfo {
         attributes: AttributeList,
         generic_args: OptionWrappedGenericParamList,
         specific_info: TypeVariantInfo,
-        span: TextSpan,
     ) -> Self {
         Self {
             name: ident.text(db),
             attributes,
             generics: GenericParamsInfo::new(db, generic_args),
             specific_info,
-            span,
         }
     }
 
@@ -239,24 +231,19 @@ fn extract_variants(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<MemberIn
         .collect()
 }
 
-#[derive(Default)]
-pub struct DeriveResult {
-    impls: Vec<String>,
-    diagnostics: Vec<PluginDiagnostic>,
-}
-
 /// Adds an implementation for all requested derives for the type.
 fn generate_derive_code_for_type(
     db: &dyn SyntaxGroup,
     metadata: &MacroPluginMetadata<'_>,
     info: DeriveInfo,
 ) -> PluginResult {
-    let mut result = DeriveResult::default();
+    let mut diagnostics = vec![];
+    let mut builder = PatchBuilder::new(db, &info.attributes);
     for attr in info.attributes.query_attr(db, DERIVE_ATTR) {
         let attr = attr.structurize(db);
 
         if attr.args.is_empty() {
-            result.diagnostics.push(PluginDiagnostic::error(
+            diagnostics.push(PluginDiagnostic::error(
                 attr.args_stable_ptr.untyped(),
                 "Expected args.".into(),
             ));
@@ -265,57 +252,52 @@ fn generate_derive_code_for_type(
 
         for arg in attr.args {
             let AttributeArg {
-                variant: AttributeArgVariant::Unnamed(ast::Expr::Path(path)), ..
+                variant: AttributeArgVariant::Unnamed(ast::Expr::Path(derived_path)),
+                ..
             } = arg
             else {
-                result.diagnostics.push(PluginDiagnostic::error(&arg.arg, "Expected path.".into()));
+                diagnostics.push(PluginDiagnostic::error(&arg.arg, "Expected path.".into()));
                 continue;
             };
 
-            let derived = path.as_syntax_node().get_text_without_trivia(db);
-            let stable_ptr = path.stable_ptr().untyped();
-            match derived.as_str() {
-                "Copy" | "Drop" => result.impls.push(get_empty_impl(&derived, &info)),
-                "Clone" => clone::handle_clone(&info, stable_ptr, &mut result),
-                "Debug" => debug::handle_debug(&info, stable_ptr, &mut result),
-                "Default" => default::handle_default(db, &info, stable_ptr, &mut result),
-                "Destruct" => destruct::handle_destruct(&info, stable_ptr, &mut result),
-                "Hash" => hash::handle_hash(&info, stable_ptr, &mut result),
+            let derived = derived_path.as_syntax_node().get_text_without_trivia(db);
+            if let Some(code) = match derived.as_str() {
+                "Copy" | "Drop" => Some(get_empty_impl(&derived, &info)),
+                "Clone" => clone::handle_clone(&info, &derived_path, &mut diagnostics),
+                "Debug" => debug::handle_debug(&info, &derived_path, &mut diagnostics),
+                "Default" => default::handle_default(db, &info, &derived_path, &mut diagnostics),
+                "Destruct" => destruct::handle_destruct(&info, &derived_path, &mut diagnostics),
+                "Hash" => hash::handle_hash(&info, &derived_path, &mut diagnostics),
                 "PanicDestruct" => {
-                    panic_destruct::handle_panic_destruct(&info, stable_ptr, &mut result)
+                    panic_destruct::handle_panic_destruct(&info, &derived_path, &mut diagnostics)
                 }
-                "PartialEq" => partial_eq::handle_partial_eq(&info, stable_ptr, &mut result),
-                "Serde" => serde::handle_serde(&info, stable_ptr, &mut result),
+                "PartialEq" => {
+                    partial_eq::handle_partial_eq(&info, &derived_path, &mut diagnostics)
+                }
+                "Serde" => serde::handle_serde(&info, &derived_path, &mut diagnostics),
                 _ => {
                     if !metadata.declared_derives.contains(&derived) {
-                        result.diagnostics.push(PluginDiagnostic::error(
-                            stable_ptr,
+                        diagnostics.push(PluginDiagnostic::error(
+                            &derived_path,
                             format!("Unknown derive `{derived}` - a plugin might be missing."),
                         ));
                     }
+                    None
                 }
+            } {
+                builder.add_modified(RewriteNode::mapped_text(code, db, &derived_path));
             }
         }
     }
+    let (content, code_mappings) = builder.build();
     PluginResult {
-        code: if result.impls.is_empty() {
-            None
-        } else {
-            let content = result.impls.join("");
-            Some(PluginGeneratedFile {
-                name: "impls".into(),
-                code_mappings: vec![CodeMapping {
-                    origin: CodeOrigin::Span(info.span),
-                    span: TextSpan {
-                        start: TextOffset::default(),
-                        end: TextOffset::default().add_width(TextWidth::from_str(&content)),
-                    },
-                }],
-                content,
-                aux_data: None,
-            })
-        },
-        diagnostics: result.diagnostics,
+        code: (!content.is_empty()).then(|| PluginGeneratedFile {
+            name: "impls".into(),
+            code_mappings,
+            content,
+            aux_data: None,
+        }),
+        diagnostics,
         remove_original_item: false,
     }
 }
@@ -332,6 +314,6 @@ fn get_empty_impl(derived_trait: &str, info: &DeriveInfo) -> String {
 }
 
 /// Returns a diagnostic for when a derive is not supported for extern types.
-fn unsupported_for_extern_diagnostic(stable_ptr: SyntaxStablePtrId) -> PluginDiagnostic {
-    PluginDiagnostic::error(stable_ptr, "Unsupported trait for derive for extern types.".into())
+fn unsupported_for_extern_diagnostic(path: &ast::ExprPath) -> PluginDiagnostic {
+    PluginDiagnostic::error(path, "Unsupported trait for derive for extern types.".into())
 }

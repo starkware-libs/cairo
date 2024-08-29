@@ -1,13 +1,18 @@
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::node::ast;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{unsupported_for_extern_diagnostic, DeriveInfo, DeriveResult};
+use super::{unsupported_for_extern_diagnostic, DeriveInfo};
 use crate::plugins::derive::TypeVariantInfo;
 
 /// Adds derive result for the `Serde` trait.
-pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mut DeriveResult) {
+pub fn handle_serde(
+    info: &DeriveInfo,
+    derived: &ast::ExprPath,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Option<String> {
     let header = info.format_impl_header(
         "core::serde",
         "Serde",
@@ -41,8 +46,8 @@ pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
                 })
                 .join(";\n"),
             TypeVariantInfo::Extern => {
-                result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
-                return;
+                diagnostics.push(unsupported_for_extern_diagnostic(derived));
+                return None;
             }
         },
     );
@@ -79,12 +84,12 @@ pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
                 }
             }
             TypeVariantInfo::Extern => {
-                result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
-                return;
+                diagnostics.push(unsupported_for_extern_diagnostic(derived));
+                return None;
             }
         },
     );
-    result.impls.push(formatdoc! {"
+    Some(formatdoc! {"
         {header} {{
             fn serialize(self: @{full_typename}, ref output: core::array::Array<felt252>) {{
                 {serialize_body}
@@ -93,5 +98,5 @@ pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
                 {deserialize_body}
             }}
         }}
-    "});
+    "})
 }

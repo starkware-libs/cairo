@@ -245,13 +245,18 @@ pub struct PatchBuilder<'a> {
     origin: CodeOrigin,
 }
 impl<'a> PatchBuilder<'a> {
-    /// Creates a new patch builder, originating from `origin` node.
+    /// Creates a new patch builder, originating from `origin` typed node.
     pub fn new(db: &'a dyn SyntaxGroup, origin: &impl TypedSyntaxNode) -> Self {
+        Self::new_ex(db, &origin.as_syntax_node())
+    }
+
+    /// Creates a new patch builder, originating from `origin` node.
+    pub fn new_ex(db: &'a dyn SyntaxGroup, origin: &SyntaxNode) -> Self {
         Self {
             db,
             code: String::default(),
             code_mappings: vec![],
-            origin: CodeOrigin::Span(origin.as_syntax_node().span_without_trivia(db)),
+            origin: CodeOrigin::Span(origin.span_without_trivia(db)),
         }
     }
 
