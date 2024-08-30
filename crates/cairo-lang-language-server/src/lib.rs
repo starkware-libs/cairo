@@ -40,7 +40,6 @@
 
 use std::collections::HashSet;
 use std::io;
-use std::iter::zip;
 use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -357,6 +356,22 @@ impl Backend {
     #[tracing::instrument(level = "trace", skip_all)]
     async fn db_snapshot(&self) -> salsa::Snapshot<AnalysisDatabase> {
         self.with_state_mut(|state| state.db.snapshot()).await
+    }
+
+    async fn register_capability_dynamically(
+        &self,
+        method: &str,
+        register_options: impl Serialize,
+    ) {
+        let registration = Registration {
+            id: method.to_string(),
+            method: method.to_string(),
+            register_options: Some(serde_json::to_value(register_options).unwrap()),
+        };
+        let result = self.client.register_capability(vec![registration]).await;
+        if let Err(err) = result {
+            warn!("failed to register dynamic capabilities for {method}: {err:#?}");
+        }
     }
 
     // TODO(spapini): Consider managing vfs in a different way, using the
@@ -745,18 +760,17 @@ impl TryFrom<String> for ServerCommands {
 impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
     async fn initialize(&self, params: InitializeParams) -> LSPResult<InitializeResult> {
-        self.with_state_mut(|state| {
-            state.client_capabilities = Owned::new(Arc::new(params.capabilities));
+        let client_capabilities = Owned::new(Arc::new(params.capabilities));
+        let client_capabilities_snapshot = client_capabilities.snapshot();
+        self.with_state_mut(move |state| {
+            state.client_capabilities = client_capabilities;
         })
         .await;
 
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
-                text_document_sync: if self
-                    .client_capabilities
-                    .read()
-                    .await
+                text_document_sync: if client_capabilities_snapshot
                     .text_document_synchronization_dynamic_registration()
                 {
                     None
@@ -826,20 +840,14 @@ impl LanguageServer for Backend {
                 .into(),
             };
 
-            register_dynamically(
+            self.register_capability_dynamically(
                 "workspace/didChangeWatchedFiles",
                 Some(registration_options),
-                &self.client,
             )
             .await;
         }
 
-        if self
-            .client_capabilities
-            .read()
-            .await
-            .text_document_synchronization_dynamic_registration()
-        {
+        if client_capabilities.text_document_synchronization_dynamic_registration() {
             let document_selector = Some(vec![
                 DocumentFilter {
                     language: Some("cairo".to_string()),
@@ -856,30 +864,32 @@ impl LanguageServer for Backend {
             let text_document_registration_options =
                 TextDocumentRegistrationOptions { document_selector: document_selector.clone() };
 
-            let methods = [
+            self.register_capability_dynamically(
                 "textDocument/didOpen",
+                &text_document_registration_options,
+            )
+            .await;
+            self.register_capability_dynamically(
                 "textDocument/didChange",
-                "textDocument/didSave",
-                "textDocument/didClose",
-            ];
-            let register_options = [
-                serde_json::to_value(&text_document_registration_options).unwrap(),
-                serde_json::to_value(TextDocumentChangeRegistrationOptions {
+                TextDocumentChangeRegistrationOptions {
                     document_selector,
-                    sync_kind: 2, // TextDocumentSyncKind::FULL
-                })
-                .unwrap(),
-                serde_json::to_value(TextDocumentSaveRegistrationOptions {
+                    sync_kind: 1, // TextDocumentSyncKind::FULL
+                },
+            )
+            .await;
+            self.register_capability_dynamically(
+                "textDocument/didSave",
+                TextDocumentSaveRegistrationOptions {
                     include_text: Some(false),
                     text_document_registration_options: text_document_registration_options.clone(),
-                })
-                .unwrap(),
-                serde_json::to_value(text_document_registration_options).unwrap(),
-            ];
-
-            for (method, options) in zip(methods, register_options) {
-                register_dynamically(method, Some(options), &self.client).await;
-            }
+                },
+            )
+            .await;
+            self.register_capability_dynamically(
+                "textDocument/didClose",
+                &text_document_registration_options,
+            )
+            .await;
         }
     }
 
@@ -1064,22 +1074,6 @@ impl LanguageServer for Backend {
     async fn code_action(&self, params: CodeActionParams) -> LSPResult<Option<CodeActionResponse>> {
         let db = self.db_snapshot().await;
         self.catch_panics(move || ide::code_actions::code_actions(params, &db)).await
-    }
-}
-
-async fn register_dynamically(
-    method: &str,
-    register_options: Option<impl Serialize>,
-    client: &Client,
-) {
-    let registration = Registration {
-        id: method.to_string(),
-        method: method.to_string(),
-        register_options: register_options.map(|ro| serde_json::to_value(ro).unwrap()),
-    };
-    let result = client.register_capability(vec![registration]).await;
-    if let Err(err) = result {
-        warn!("Failed to register {method} event: {err:#?}");
     }
 }
 
