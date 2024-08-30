@@ -357,9 +357,6 @@ impl Backend {
         self.with_state_mut(|state| state.db.snapshot()).await
     }
 
-    // TODO(spapini): Consider managing vfs in a different way, using the
-    // client.send_notification::<UpdateVirtualFile> call.
-
     /// Refresh diagnostics and send diffs to client.
     #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
