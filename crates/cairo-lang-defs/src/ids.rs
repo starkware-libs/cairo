@@ -724,8 +724,7 @@ impl GenericParamId {
     }
     pub fn format(&self, db: &dyn DefsGroup) -> String {
         let long_ids = self.lookup_intern(db);
-        let SyntaxStablePtr::Child { key_fields, kind, .. } = long_ids.1.0.lookup_intern(db)
-        else {
+        let SyntaxStablePtr::Child { key_fields, kind, .. } = long_ids.1.0.lookup_intern(db) else {
             unreachable!()
         };
 

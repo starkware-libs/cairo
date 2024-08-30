@@ -1,16 +1,12 @@
 use anyhow::{anyhow, Result};
-use cairo_lang_defs::{
-    db::{DefsDatabase, DefsGroup},
-    ids::ModuleId,
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
+use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_filesystem::db::{
+    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles,
+    FilesDatabase, FilesGroup, FilesGroupEx,
 };
-use cairo_lang_filesystem::{
-    db::{
-        init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles,
-        FilesDatabase, FilesGroup, FilesGroupEx,
-    },
-    detect::detect_corelib,
-    ids::{CrateId, CrateLongId, Directory, FileLongId},
-};
+use cairo_lang_filesystem::detect::detect_corelib;
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};

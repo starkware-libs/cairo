@@ -26,10 +26,10 @@ impl TraitTestImpl of TraitTest {
     }
 }
 
-/// Test module used to check if the documentation is being attachted to the nodes correctly.
+/// Test module used to check if the documentation is being attached to the nodes correctly.
 //! Additional comment for test_module.
 pub mod test_module {
-    //! Test module used to check if the documentation is being attachted to the nodes correctly.
+    //! Test module used to check if the documentation is being attached to the nodes correctly.
     /// Just a function outside the test_module.
     pub fn inner_test_module_function() {
         //! Just a function inside the test_module.

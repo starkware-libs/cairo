@@ -302,7 +302,8 @@ impl<'a> Display for NodeInnerCommentFormatter<'a> {
                 for child in self.db.get_children(self.node.clone()).iter() {
                     let kind = child.kind(self.db);
 
-                    // Checks all the items that the inner comment can be bubbled to (implementation function is also a FunctionWithBody).
+                    // Checks all the items that the inner comment can be bubbled to (implementation
+                    // function is also a FunctionWithBody).
                     if kind != SyntaxKind::FunctionWithBody
                         && kind != SyntaxKind::ItemModule
                         && kind != SyntaxKind::TraitItemFunction

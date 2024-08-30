@@ -4,7 +4,8 @@
 //! Testing purposes only!
 
 mod inner_sub_module {
-    //! This comment just proves that it won't be considered as a file-module comment. It just refers to the inner_sub_module
+    //! This comment just proves that it won't be considered as a file-module comment. It just
+    //! refers to the inner_sub_module
 
     fn hello() {
         println!("Hello!");

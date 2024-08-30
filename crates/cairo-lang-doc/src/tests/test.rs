@@ -1,16 +1,12 @@
-use crate::{
-    db::{DocGroup, Documentation},
-    documentable_item::{DocumentableItemId, DocumentableModuleItemId},
-};
-use cairo_lang_defs::{
-    db::DefsGroup,
-    ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId},
-};
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::{extract_matches, LookupIntern};
 
 use super::test_utils::{set_file_content, setup_test_module, TestDatabase};
+use crate::db::{DocGroup, Documentation};
+use crate::documentable_item::{DocumentableItemId, DocumentableModuleItemId};
 
 const PREFIX_AND_INNER_COMMENTS_TEST_CODE: &str =
     include_str!("test-code/prefix_and_inner_comments.cairo");
@@ -48,18 +44,27 @@ fn test_module_level_documentation() {
     assert_eq!(
         crate_documentation,
         Documentation {
-          prefix_comments: None,
-          inner_comments: None,
-          module_level_comments: Some(String::from("This is a testing crate file. It's for the tests purposes only.\nWe don't take responsibility for compiling this file.\nSo don't even try.\n")),
+            prefix_comments: None,
+            inner_comments: None,
+            module_level_comments: Some(String::from(
+                "This is a testing crate file. It's for the tests purposes only.\nWe don't take \
+                 responsibility for compiling this file.\nSo don't even try.\n"
+            )),
         }
     );
 
     assert_eq!(
         submodule_documentation,
         Documentation {
-            prefix_comments: Some(String::from("This one is just a prefix comment for a module.\n")),
+            prefix_comments: Some(String::from(
+                "This one is just a prefix comment for a module.\n"
+            )),
             inner_comments: None,
-            module_level_comments: Some(String::from("This is a submodule regarding the module_level_comments.\nIt's used to make sure crate / module level comments are parsed in a correct way.\nTesting purposes only!\n"))
+            module_level_comments: Some(String::from(
+                "This is a submodule regarding the module_level_comments.\nIt's used to make sure \
+                 crate / module level comments are parsed in a correct way.\nTesting purposes \
+                 only!\n"
+            ))
         }
     )
 }
@@ -182,11 +187,17 @@ fn test_prefix_and_inner_comments() {
         }
     );
 
-    assert_eq!(impl_documentation, Documentation {
-      prefix_comments: Some(String::from("Implementation of TraitTest's abc function.\nAdditional comment for TraitTestImpl.\n")),
-      inner_comments: None,
-      module_level_comments: None
-    });
+    assert_eq!(
+        impl_documentation,
+        Documentation {
+            prefix_comments: Some(String::from(
+                "Implementation of TraitTest's abc function.\nAdditional comment for \
+                 TraitTestImpl.\n"
+            )),
+            inner_comments: None,
+            module_level_comments: None
+        }
+    );
 
     assert_eq!(
         impl_function_documentation,
@@ -199,11 +210,20 @@ fn test_prefix_and_inner_comments() {
         },
     );
 
-    assert_eq!(submodule_documentation, Documentation {
-      prefix_comments: Some(String::from("Test module used to check if the documentation is being attachted to the nodes correctly.\nAdditional comment for test_module.\n")),
-      inner_comments: Some(String::from("Test module used to check if the documentation is being attachted to the nodes correctly.\n")),
-      module_level_comments: None
-    });
+    assert_eq!(
+        submodule_documentation,
+        Documentation {
+            prefix_comments: Some(String::from(
+                "Test module used to check if the documentation is being attached to the nodes \
+                 correctly.\nAdditional comment for test_module.\n"
+            )),
+            inner_comments: Some(String::from(
+                "Test module used to check if the documentation is being attached to the nodes \
+                 correctly.\n"
+            )),
+            module_level_comments: None
+        }
+    );
 
     assert_eq!(
         submodule_function_documentation,

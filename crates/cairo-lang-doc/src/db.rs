@@ -60,7 +60,7 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Doc
 fn get_crate_documentation(db: &dyn DocGroup, crate_id: CrateId) -> Option<String> {
     let root_crate_file_id = db.module_main_file(ModuleId::CrateRoot(crate_id));
     match root_crate_file_id {
-        Ok(module_file_id) => extract_module_level_commets_from_file(db, module_file_id),
+        Ok(module_file_id) => extract_module_level_comments_from_file(db, module_file_id),
         Err(_) => None,
     }
 }
@@ -217,7 +217,7 @@ fn extract_inner_comments_from_raw_text(
 }
 
 // Gets the module level comments of certain file.
-fn extract_module_level_commets_from_file(db: &dyn DocGroup, file_id: FileId) -> Option<String> {
+fn extract_module_level_comments_from_file(db: &dyn DocGroup, file_id: FileId) -> Option<String> {
     let file_content = db.file_content(file_id)?.to_string();
 
     let doc = file_content
@@ -253,7 +253,7 @@ fn extract_module_level_comments(
             }
             let module_file_id = db.module_main_file(ModuleId::Submodule(submodule_id));
             match module_file_id {
-                Ok(module_file_id) => extract_module_level_commets_from_file(db, module_file_id),
+                Ok(module_file_id) => extract_module_level_comments_from_file(db, module_file_id),
                 Err(_) => None,
             }
         }
