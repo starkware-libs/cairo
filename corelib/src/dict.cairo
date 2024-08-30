@@ -1,12 +1,12 @@
 #[feature("deprecated-index-traits")]
-use core::traits::{Index, Default, Felt252DictValue};
+use crate::traits::{Index, Default, Felt252DictValue};
 
 pub extern type Felt252Dict<T>;
 pub extern type SquashedFelt252Dict<T>;
 pub extern type Felt252DictEntry<T>;
 impl SquashedFelt252DictDrop<T, +Drop<T>> of Drop<SquashedFelt252Dict<T>>;
-use core::{RangeCheck, SegmentArena};
-use core::gas::GasBuiltin;
+use crate::{RangeCheck, SegmentArena};
+use crate::gas::GasBuiltin;
 
 pub(crate) extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
 
@@ -60,7 +60,7 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
         felt252_dict_squash(self)
     }
 
-    #[inline(always)]
+    #[inline]
     fn entry(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic {
         felt252_dict_entry_get(self, key)
     }
@@ -71,28 +71,28 @@ pub trait Felt252DictEntryTrait<T> {
 }
 
 impl Felt252DictEntryImpl<T, +Felt252DictValue<T>> of Felt252DictEntryTrait<T> {
-    #[inline(always)]
+    #[inline]
     fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T> {
         felt252_dict_entry_finalize(self, new_value)
     }
 }
 
 impl Felt252DictDefault<T> of Default<Felt252Dict<T>> {
-    #[inline(always)]
+    #[inline]
     fn default() -> Felt252Dict<T> {
         felt252_dict_new()
     }
 }
 
 impl Felt252DictDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Felt252Dict<T>> {
-    #[inline(always)]
+    #[inline]
     fn destruct(self: Felt252Dict<T>) nopanic {
         self.squash();
     }
 }
 
 impl Felt252DictEntryDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Felt252DictEntry<T>> {
-    #[inline(always)]
+    #[inline]
     fn destruct(self: Felt252DictEntry::<T>) nopanic {
         felt252_dict_entry_finalize(self, Felt252DictValue::zero_default());
     }
@@ -101,7 +101,7 @@ impl Felt252DictEntryDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Fel
 impl Felt252DictIndex<
     T, +Felt252DictTrait<T>, +Copy<T>, +Destruct<Felt252DictEntry<T>>
 > of Index<Felt252Dict<T>, felt252, T> {
-    #[inline(always)]
+    #[inline]
     fn index(ref self: Felt252Dict<T>, index: felt252) -> T {
         self.get(index)
     }

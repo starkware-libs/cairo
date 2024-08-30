@@ -21,7 +21,7 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     /// let x = 42;
     /// let boxed_x = BoxTrait::new(x);
     /// ```
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn new(value: T) -> Box<T> nopanic {
         into_box(value)
@@ -33,7 +33,7 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     /// let boxed = BoxTrait::new(42);
     /// assert_eq!(boxed.unbox(), 42);
     /// ```
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn unbox(self: Box<T>) -> T nopanic {
         unbox(self)
@@ -53,15 +53,15 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     }
 }
 
-impl BoxDeref<T> of core::ops::Deref<Box<T>> {
+impl BoxDeref<T> of crate::ops::Deref<Box<T>> {
     type Target = T;
     fn deref(self: Box<T>) -> T {
         self.unbox()
     }
 }
 
-impl BoxDebug<T, impl TDebug: core::fmt::Debug<T>> of core::fmt::Debug<Box<T>> {
-    fn fmt(self: @Box<T>, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+impl BoxDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Box<T>> {
+    fn fmt(self: @Box<T>, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
         write!(f, "&")?;
         TDebug::fmt(self.as_snapshot().unbox(), ref f)
     }

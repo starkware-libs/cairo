@@ -121,15 +121,15 @@ pub struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let var_value = starknet::storage::StorageBase {__base_address__: selector!("var")};
-        let zero_size_value = starknet::storage::StorageBase {__base_address__: selector!("zero_size")};
-        let mapping_value = starknet::storage::StorageBase {__base_address__: selector!("mapping")};
-        let zero_size_mapping_value = starknet::storage::StorageBase {__base_address__: selector!("zero_size_mapping")};
+        let __var_value__ = starknet::storage::StorageBase {__base_address__: selector!("var")};
+        let __zero_size_value__ = starknet::storage::StorageBase {__base_address__: selector!("zero_size")};
+        let __mapping_value__ = starknet::storage::StorageBase {__base_address__: selector!("mapping")};
+        let __zero_size_mapping_value__ = starknet::storage::StorageBase {__base_address__: selector!("zero_size_mapping")};
         StorageStorageBase {
-           var: var_value,
-           zero_size: zero_size_value,
-           mapping: mapping_value,
-           zero_size_mapping: zero_size_mapping_value,
+           var: __var_value__,
+           zero_size: __zero_size_value__,
+           mapping: __mapping_value__,
+           zero_size_mapping: __zero_size_mapping_value__,
         }
     }
 }
@@ -143,15 +143,15 @@ pub struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let var_value = starknet::storage::StorageBase {__base_address__: selector!("var")};
-        let zero_size_value = starknet::storage::StorageBase {__base_address__: selector!("zero_size")};
-        let mapping_value = starknet::storage::StorageBase {__base_address__: selector!("mapping")};
-        let zero_size_mapping_value = starknet::storage::StorageBase {__base_address__: selector!("zero_size_mapping")};
+        let __var_value__ = starknet::storage::StorageBase {__base_address__: selector!("var")};
+        let __zero_size_value__ = starknet::storage::StorageBase {__base_address__: selector!("zero_size")};
+        let __mapping_value__ = starknet::storage::StorageBase {__base_address__: selector!("mapping")};
+        let __zero_size_mapping_value__ = starknet::storage::StorageBase {__base_address__: selector!("zero_size_mapping")};
         StorageStorageBaseMut {
-           var: var_value,
-           zero_size: zero_size_value,
-           mapping: mapping_value,
-           zero_size_mapping: zero_size_mapping_value,
+           var: __var_value__,
+           zero_size: __zero_size_value__,
+           mapping: __mapping_value__,
+           zero_size_mapping: __zero_size_mapping_value__,
         }
     }
 }
@@ -286,12 +286,12 @@ impl WrappedFelt252SubPointersImpl of starknet::storage::SubPointers<WrappedFelt
     fn sub_pointers(self: starknet::storage::StoragePointer<WrappedFelt252>) -> WrappedFelt252SubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let value_value = starknet::storage::StoragePointer {
+        let __value_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 WrappedFelt252SubPointers {
-           value: value_value,
+           value: __value_value__,
         }
     }
 }
@@ -304,12 +304,12 @@ impl WrappedFelt252SubPointersMutImpl of starknet::storage::SubPointersMut<Wrapp
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<WrappedFelt252>>) -> WrappedFelt252SubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
-        let value_value = starknet::storage::StoragePointer {
+        let __value_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
                 WrappedFelt252SubPointersMut {
-           value: value_value,
+           value: __value_value__,
         }
     }
 }
@@ -712,9 +712,9 @@ impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPoin
 impl WrappedFelt252SubPointersCopy of core::traits::Copy::<WrappedFelt252SubPointers>;
 
 
-lib.cairo:13:26
+lib.cairo:13:5
     #[derive(Drop, Hash, starknet::Store)]
-                         ^*************^
+    ^************************************^
 impls:
 
 impl WrappedFelt252SubPointersMutDrop of core::traits::Drop::<WrappedFelt252SubPointersMut>;
@@ -735,8 +735,3 @@ warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[featur
  --> lib.cairo:11:28
         zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
                            ^*******^
-
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:6:5
-    #[storage]
-    ^********^

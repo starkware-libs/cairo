@@ -51,7 +51,6 @@ use super::impl_alias::{
     impl_alias_generic_params_data_helper, impl_alias_semantic_data_cycle_helper,
     impl_alias_semantic_data_helper, ImplAliasData,
 };
-use super::structure::SemanticStructEx;
 use super::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId,
 };
@@ -3111,7 +3110,7 @@ fn validate_impl_function_signature(
         let expected_ty = inference.rewrite(trait_param.ty).no_err();
         let actual_ty = inference.rewrite(param.ty).no_err();
 
-        if expected_ty != actual_ty {
+        if expected_ty != actual_ty && !expected_ty.is_missing(db) && !actual_ty.is_missing(db) {
             diagnostics.report(
                 &extract_matches!(
                     signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
@@ -3167,7 +3166,7 @@ fn validate_impl_function_signature(
     let expected_ty = inference.rewrite(concrete_trait_signature.return_type).no_err();
     let actual_ty = inference.rewrite(signature.return_type).no_err();
 
-    if expected_ty != actual_ty {
+    if expected_ty != actual_ty && !expected_ty.is_missing(db) && !actual_ty.is_missing(db) {
         let location_ptr = match signature_syntax.ret_ty(syntax_db) {
             OptionReturnTypeClause::ReturnTypeClause(ret_ty) => {
                 ret_ty.ty(syntax_db).as_syntax_node()

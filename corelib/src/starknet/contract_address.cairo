@@ -34,11 +34,11 @@ impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }
-    #[inline(always)]
+    #[inline]
     fn is_zero(self: @ContractAddress) -> bool {
         core::num::traits::Zero::<felt252>::is_zero(@contract_address_to_felt252(*self))
     }
-    #[inline(always)]
+    #[inline]
     fn is_non_zero(self: @ContractAddress) -> bool {
         !self.is_zero()
     }
@@ -59,7 +59,7 @@ impl ContractAddressSerde of Serde<ContractAddress> {
 }
 
 impl ContractAddressPartialEq of PartialEq<ContractAddress> {
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @ContractAddress, rhs: @ContractAddress) -> bool {
         contract_address_to_felt252(*lhs) == contract_address_to_felt252(*rhs)
     }
@@ -77,3 +77,4 @@ impl HashContractAddress<S, +HashStateTrait<S>, +Drop<S>> =
     core::hash::into_felt252_based::HashImpl<ContractAddress, S>;
 
 impl DebugContractAddress = core::fmt::into_felt252_based::DebugImpl<ContractAddress>;
+impl LowerHexContractAddress = core::fmt::into_felt252_based::LowerHexImpl<ContractAddress>;

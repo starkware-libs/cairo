@@ -71,19 +71,18 @@ fn get_item_inner_documentation(
     item_id: DocumentableModuleItemId,
 ) -> Option<String> {
     match item_id {
-        DocumentableModuleItemId::LookupItem(lookup_item_id) => match lookup_item_id {
+        DocumentableModuleItemId::LookupItem(
             LookupItemId::ModuleItem(ModuleItemId::FreeFunction(_))
             | LookupItemId::ModuleItem(ModuleItemId::Submodule(_))
             | LookupItemId::ImplItem(ImplItemId::Function(_))
-            | LookupItemId::TraitItem(TraitItemId::Function(_)) => {
-                let raw_text = item_id
-                    .stable_location(db.upcast())
-                    .syntax_node(db.upcast())
-                    .get_shallow_inner_comments_text(db.upcast());
-                extract_inner_comments_from_raw_text(raw_text, &["//!"])
-            }
-            _ => None,
-        },
+            | LookupItemId::TraitItem(TraitItemId::Function(_)),
+        ) => {
+            let raw_text = item_id
+                .stable_location(db.upcast())
+                .syntax_node(db.upcast())
+                .get_shallow_inner_comments_text(db.upcast());
+            extract_inner_comments_from_raw_text(raw_text, &["//!"])
+        }
         _ => None,
     }
 }

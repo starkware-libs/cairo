@@ -8,7 +8,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use super::attribute::SemanticQueryAttrs;
@@ -147,7 +147,7 @@ pub fn struct_declaration_resolver_data(
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct StructDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    members: OrderedHashMap<SmolStr, Member>,
+    members: Arc<OrderedHashMap<SmolStr, Member>>,
     resolver_data: Arc<ResolverData>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
@@ -213,7 +213,11 @@ pub fn priv_struct_definition_data(
     }
 
     let resolver_data = Arc::new(resolver.data);
-    Ok(StructDefinitionData { diagnostics: diagnostics.build(), members, resolver_data })
+    Ok(StructDefinitionData {
+        diagnostics: diagnostics.build(),
+        members: members.into(),
+        resolver_data,
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_definition_diagnostics].
@@ -248,7 +252,7 @@ pub fn struct_definition_diagnostics(
 pub fn struct_members(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Maybe<OrderedHashMap<SmolStr, Member>> {
+) -> Maybe<Arc<OrderedHashMap<SmolStr, Member>>> {
     Ok(db.priv_struct_definition_data(struct_id)?.members)
 }
 
@@ -260,30 +264,26 @@ pub fn struct_definition_resolver_data(
     Ok(db.priv_struct_definition_data(struct_id)?.resolver_data)
 }
 
-pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
-    fn concrete_struct_members(
-        &self,
-        concrete_struct_id: ConcreteStructId,
-    ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>> {
-        // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
-        //   always have the correct number of generic arguments.
-        let db = self.upcast();
-        let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
-        let generic_args = concrete_struct_id.lookup_intern(db).generic_args;
-        let substitution = GenericSubstitution::new(&generic_params, &generic_args);
+/// Query implementation of [crate::db::SemanticGroup::concrete_struct_members].
+pub fn concrete_struct_members(
+    db: &dyn SemanticGroup,
+    concrete_struct_id: ConcreteStructId,
+) -> Maybe<Arc<OrderedHashMap<SmolStr, semantic::Member>>> {
+    // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
+    //   always have the correct number of generic arguments.
+    let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
+    let generic_args = concrete_struct_id.lookup_intern(db).generic_args;
+    let substitution = GenericSubstitution::new(&generic_params, &generic_args);
 
-        let generic_members =
-            self.upcast().struct_members(concrete_struct_id.struct_id(self.upcast()))?;
+    let generic_members = db.struct_members(concrete_struct_id.struct_id(db))?;
+    Ok(Arc::new(
         generic_members
-            .into_iter()
+            .iter()
             .map(|(name, member)| {
                 let ty =
                     SubstitutionRewriter { db, substitution: &substitution }.rewrite(member.ty)?;
-                let member = semantic::Member { ty, ..member };
-                Ok((name, member))
+                Ok((name.clone(), semantic::Member { ty, ..member.clone() }))
             })
-            .collect::<Maybe<_>>()
-    }
+            .collect::<Maybe<_>>()?,
+    ))
 }
-
-impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticStructEx<'a> for T {}

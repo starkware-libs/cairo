@@ -9,7 +9,7 @@ use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{Mutability, Variable};
+use cairo_lang_semantic::{Binding, Mutability};
 use cairo_lang_syntax::node::ast::{Param, PatternIdentifier, PatternPtr, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
@@ -164,7 +164,7 @@ impl ItemDef {
 /// Information about the definition of a variable (local, function parameter).
 pub struct VariableDef {
     name: SmolStr,
-    var: Variable,
+    var: Binding,
 }
 
 impl VariableDef {
@@ -251,19 +251,21 @@ impl VariableDef {
         let Self { name, var } = self;
 
         let prefix = match var {
-            Variable::Local(_) => "let ",
-            Variable::Param(_) => "",
+            Binding::LocalVar(_) => "let ",
+            Binding::LocalConst(_) => "const ",
+            Binding::Param(_) => "",
         };
 
         let mutability = match var {
-            Variable::Local(local) => {
+            Binding::LocalVar(local) => {
                 if local.is_mut {
                     "mut "
                 } else {
                     ""
                 }
             }
-            Variable::Param(param) => match param.mutability {
+            Binding::LocalConst(_) => "",
+            Binding::Param(param) => match param.mutability {
                 Mutability::Immutable => "",
                 Mutability::Mutable => "mut ",
                 Mutability::Reference => "ref ",

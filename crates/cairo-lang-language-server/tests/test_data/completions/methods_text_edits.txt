@@ -87,6 +87,9 @@ Text edit: use core::fmt::Display;
 Completion: fmt()
 Text edit: use core::fmt::Debug;
 --------------------------
+Completion: fmt()
+Text edit: use core::fmt::LowerHex;
+--------------------------
 Completion: is_zero()
 --------------------------
 Completion: is_non_zero()
@@ -191,6 +194,9 @@ Text edit: use core::fmt::Display;
 --------------------------
 Completion: fmt()
 Text edit: use core::fmt::Debug;
+--------------------------
+Completion: fmt()
+Text edit: use core::fmt::LowerHex;
 --------------------------
 Completion: is_zero()
 --------------------------

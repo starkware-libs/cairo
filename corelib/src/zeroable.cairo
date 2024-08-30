@@ -46,7 +46,7 @@ pub(crate) trait Zeroable<T> {
 pub(crate) mod zero_based {
     /// Implements `Zeroable` for any type that implements `Zero`, `Drop`, and `Copy`.
     pub(crate) impl ZeroableImpl<
-        T, impl ZeroImpl: core::num::traits::Zero<T>, +Drop<T>, +Copy<T>
+        T, impl ZeroImpl: crate::num::traits::Zero<T>, +Drop<T>, +Copy<T>
     > of super::Zeroable<T> {
         /// Returns the zero value for the type.
         fn zero() -> T {
@@ -54,13 +54,13 @@ pub(crate) mod zero_based {
         }
 
         /// Checks if the value is zero.
-        #[inline(always)]
+        #[inline]
         fn is_zero(self: T) -> bool {
             ZeroImpl::is_zero(@self)
         }
 
         /// Checks if the value is non-zero.
-        #[inline(always)]
+        #[inline]
         fn is_non_zero(self: T) -> bool {
             ZeroImpl::is_non_zero(@self)
         }
@@ -112,7 +112,7 @@ impl IsZeroResultIntoBool<T, +Drop<T>> of Into<IsZeroResult<T>, bool> {
 /// Implements the `PartialEq` trait for NonZero<T>.
 impl NonZeroPartialEq<T, +PartialEq<T>, +Copy<T>, +Drop<T>> of PartialEq<NonZero<T>> {
     /// Checks if two NonZero<T> values are equal.
-    #[inline(always)]
+    #[inline]
     fn eq(lhs: @NonZero<T>, rhs: @NonZero<T>) -> bool {
         let lhs: T = (*lhs).into();
         let rhs: T = (*rhs).into();
@@ -120,7 +120,7 @@ impl NonZeroPartialEq<T, +PartialEq<T>, +Copy<T>, +Drop<T>> of PartialEq<NonZero
     }
 
     /// Checks if two NonZero<T> values are not equal.
-    #[inline(always)]
+    #[inline]
     fn ne(lhs: @NonZero<T>, rhs: @NonZero<T>) -> bool {
         let lhs: T = (*lhs).into();
         let rhs: T = (*rhs).into();

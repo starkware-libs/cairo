@@ -1,4 +1,4 @@
-use core::starknet::SyscallResultTrait;
+use crate::starknet::SyscallResultTrait;
 
 /// A handle to the state of a SHA-256 hash.
 #[derive(Copy, Drop)]
@@ -81,7 +81,7 @@ fn add_sha256_padding(ref arr: Array<u32>, last_input_word: u32, last_input_num_
         } else {
             (0x1000000, 0x100, 0x80)
         };
-        let (_, r) = core::integer::u32_safe_divmod(last_input_word, q);
+        let (_, r) = crate::integer::u32_safe_divmod(last_input_word, q);
         arr.append(r * m + pad);
     }
 

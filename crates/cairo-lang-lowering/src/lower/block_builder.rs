@@ -8,7 +8,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{require, Intern, LookupIntern};
 use itertools::{chain, zip_eq, Itertools};
-use semantic::items::structure::SemanticStructEx;
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
@@ -157,7 +156,7 @@ impl BlockBuilder {
             generators::StructMemberAccess {
                 input: parent_var,
                 member_tys: members
-                    .into_iter()
+                    .iter()
                     .map(|(_, member)| {
                         wrap_in_snapshots(ctx.db.upcast(), member.ty, parent_number_of_snapshots)
                     })

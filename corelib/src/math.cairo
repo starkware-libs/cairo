@@ -1,10 +1,10 @@
 #[allow(unused_imports)]
-use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 #[allow(unused_imports)]
-use core::traits::{Into, TryInto};
-use core::option::OptionTrait;
-use core::integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
-use core::RangeCheck;
+use crate::traits::{Into, TryInto};
+use crate::option::OptionTrait;
+use crate::integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
+use crate::RangeCheck;
 
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
@@ -105,7 +105,7 @@ extern fn u256_guarantee_inv_mod_n(
 
 /// Returns the inverse of `a` modulo `n`, or None if `a` is not invertible modulo `n`.
 /// All `a`s will be considered not invertible for `n == 1`.
-#[inline(always)]
+#[inline]
 pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     match u256_guarantee_inv_mod_n(a, n) {
         Result::Ok((inv_a, _, _, _, _, _, _, _, _)) => Option::Some(inv_a),
@@ -140,16 +140,16 @@ trait Oneable<T> {
 
 pub(crate) mod one_based {
     pub(crate) impl OneableImpl<
-        T, impl OneImpl: core::num::traits::One<T>, +Drop<T>, +Copy<T>
+        T, impl OneImpl: crate::num::traits::One<T>, +Drop<T>, +Copy<T>
     > of super::Oneable<T> {
         fn one() -> T {
             OneImpl::one()
         }
-        #[inline(always)]
+        #[inline]
         fn is_one(self: T) -> bool {
             OneImpl::is_one(@self)
         }
-        #[inline(always)]
+        #[inline]
         fn is_non_one(self: T) -> bool {
             OneImpl::is_non_one(@self)
         }

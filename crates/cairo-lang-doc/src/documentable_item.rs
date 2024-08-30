@@ -21,6 +21,23 @@ impl From<DocumentableModuleItemId> for DocumentableItemId {
     }
 }
 
+impl From<LookupItemId> for DocumentableItemId {
+    fn from(value: LookupItemId) -> Self {
+        DocumentableItemId::from(DocumentableModuleItemId::from(value))
+    }
+}
+
+impl From<MemberId> for DocumentableItemId {
+    fn from(value: MemberId) -> Self {
+        DocumentableItemId::from(DocumentableModuleItemId::from(value))
+    }
+}
+impl From<VariantId> for DocumentableItemId {
+    fn from(value: VariantId) -> Self {
+        DocumentableItemId::from(DocumentableModuleItemId::from(value))
+    }
+}
+
 /// Item which documentation can be fetched from source code.
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub enum DocumentableModuleItemId {

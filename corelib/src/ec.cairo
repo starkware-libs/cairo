@@ -2,11 +2,11 @@
 //! curve.
 
 #[allow(unused_imports)]
-use core::array::ArrayTrait;
+use crate::array::ArrayTrait;
 #[allow(unused_imports)]
-use core::traits::{Into, TryInto};
-use core::zeroable::IsZeroResult;
-use core::RangeCheck;
+use crate::traits::{Into, TryInto};
+use crate::zeroable::IsZeroResult;
+use crate::RangeCheck;
 
 pub mod stark_curve {
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
@@ -43,7 +43,7 @@ extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult<EcPoint> nopanic;
 
 /// Converts `EcPoint` to `NonZeroEcPoint`.
 impl EcPointTryIntoNonZero of TryInto<EcPoint, NonZeroEcPoint> {
-    #[inline(always)]
+    #[inline]
     fn try_into(self: EcPoint) -> Option<NonZeroEcPoint> {
         match ec_point_is_zero(self) {
             IsZeroResult::Zero => Option::None,
@@ -59,7 +59,7 @@ pub extern type EcState;
 mod internal {
     impl EcStateCopy of Copy<super::EcState>;
     pub impl EcStateClone of Clone<super::EcState> {
-        #[inline(always)]
+        #[inline]
         fn clone(self: @super::EcState) -> super::EcState {
             *self
         }
@@ -88,12 +88,12 @@ pub impl EcStateImpl of EcStateTrait {
         ec_state_init()
     }
     /// Adds a point to the computation.
-    #[inline(always)]
+    #[inline]
     fn add(ref self: EcState, p: NonZeroEcPoint) nopanic {
         ec_state_add(ref self, :p);
     }
     /// Subs a point to the computation.
-    #[inline(always)]
+    #[inline]
     fn sub(ref self: EcState, p: NonZeroEcPoint) {
         // TODO(orizi): Have a `ec_neg` for NonZeroEcPoint as well, or a `ec_state_sub`.
         let p: EcPoint = p.into();
@@ -102,18 +102,18 @@ pub impl EcStateImpl of EcStateTrait {
         ec_state_add(ref self, p_neg_nz);
     }
     /// Adds the product p * scalar to the state.
-    #[inline(always)]
+    #[inline]
     fn add_mul(ref self: EcState, scalar: felt252, p: NonZeroEcPoint) nopanic {
         ec_state_add_mul(ref self, :scalar, :p);
     }
     /// Finalizes the EC computation and returns the result (returns `None` if the result is the
     /// zero point).
-    #[inline(always)]
+    #[inline]
     fn finalize_nz(self: EcState) -> Option<NonZeroEcPoint> nopanic {
         ec_state_try_finalize_nz(self)
     }
     /// Finalizes the EC computation and returns the result.
-    #[inline(always)]
+    #[inline]
     fn finalize(self: EcState) -> EcPoint {
         match self.finalize_nz() {
             Option::Some(p_nz) => p_nz.into(),
@@ -125,22 +125,22 @@ pub impl EcStateImpl of EcStateTrait {
 #[generate_trait]
 pub impl EcPointImpl of EcPointTrait {
     /// Creates a new EC point from its (x, y) coordinates.
-    #[inline(always)]
+    #[inline]
     fn new(x: felt252, y: felt252) -> Option<EcPoint> {
         Option::Some(Self::new_nz(:x, :y)?.into())
     }
     /// Creates a new NonZero EC point from its (x, y) coordinates.
-    #[inline(always)]
+    #[inline]
     fn new_nz(x: felt252, y: felt252) -> Option<NonZeroEcPoint> {
         ec_point_try_new_nz(:x, :y)
     }
     /// Creates a new EC point from its x coordinate.
-    #[inline(always)]
+    #[inline]
     fn new_from_x(x: felt252) -> Option<EcPoint> {
         Option::Some(Self::new_nz_from_x(:x)?.into())
     }
     /// Creates a new NonZero EC point from its x coordinate.
-    #[inline(always)]
+    #[inline]
     fn new_nz_from_x(x: felt252) -> Option<NonZeroEcPoint> {
         ec_point_from_x_nz(:x)
     }
@@ -197,8 +197,8 @@ impl EcPointAdd of Add<EcPoint> {
 }
 
 #[feature("deprecated-op-assign-traits")]
-impl EcPointAddEq of core::traits::AddEq<EcPoint> {
-    #[inline(always)]
+impl EcPointAddEq of crate::traits::AddEq<EcPoint> {
+    #[inline]
     fn add_eq(ref self: EcPoint, other: EcPoint) {
         self = Add::add(self, other);
     }
@@ -218,8 +218,8 @@ impl EcPointSub of Sub<EcPoint> {
 }
 
 #[feature("deprecated-op-assign-traits")]
-impl EcPointSubEq of core::traits::SubEq<EcPoint> {
-    #[inline(always)]
+impl EcPointSubEq of crate::traits::SubEq<EcPoint> {
+    #[inline]
     fn sub_eq(ref self: EcPoint, other: EcPoint) {
         self = Sub::sub(self, other);
     }

@@ -38,6 +38,20 @@ enum EnumExample {
     BoolValue: bool,
 }
 
+#[derive(Drop, Copy)]
+struct IntoFelt252Based {
+    felt_value: felt252
+}
+
+impl IntoFelt252BasedInto of Into<IntoFelt252Based, felt252> {
+    fn into(self: IntoFelt252Based) -> felt252 {
+        self.felt_value
+    }
+}
+
+impl IntoFelt252BasedDebug = core::fmt::into_felt252_based::DebugImpl<IntoFelt252Based>;
+impl IntoFelt252BasedLowerHex = core::fmt::into_felt252_based::LowerHexImpl<IntoFelt252Based>;
+
 #[test]
 fn test_format_debug() {
     let ba: ByteArray = "hello";
@@ -79,15 +93,54 @@ fn test_format_debug() {
         format!("{:?}", (empty, [1], [2, 3], [4, 5, 6])) == "([], [1], [2, 3], [4, 5, 6])",
         'bad fixed sized array fmt'
     );
-    assert(format!("{:?}", core::box::BoxTrait::new(1)) == "&1", 'bad box fmt');
+    assert(format!("{:?}", crate::box::BoxTrait::new(1)) == "&1", 'bad box fmt');
     assert(
-        format!("{:?}", core::nullable::NullableTrait::new(1)) == "&1", 'bad nullable value fmt'
+        format!("{:?}", crate::nullable::NullableTrait::new(1)) == "&1", 'bad nullable value fmt'
     );
-    assert(format!("{:?}", core::nullable::null::<felt252>()) == "null", 'bad null fmt');
+    assert(format!("{:?}", crate::nullable::null::<felt252>()) == "null", 'bad null fmt');
+
+    let s = IntoFelt252Based { felt_value: 42 };
+    assert(format!("{:?}", s) == "42", 'felt252 based bad formatting');
 }
 
 #[test]
 fn test_array_debug() {
     let arr = array![1, 2, 3];
     assert(format!("{:?}", arr) == "[1, 2, 3]", 'bad array fmt');
+}
+
+#[test]
+fn test_format_hex() {
+    assert(format!("{:x}", 42) == "2a", 'bad felt252 hex formatting');
+    assert(format!("{:x}", 42_u8) == "2a", 'bad u8 lower hex formatting');
+    assert(format!("{:x}", 42_u16) == "2a", 'bad u16 lower hex formatting');
+    assert(format!("{:x}", 48879_u16) == "beef", 'bad u16 lower hex formatting');
+    assert(format!("{:x}", 42_u32) == "2a", 'bad u32 lower hex formatting');
+    assert(format!("{:x}", 3735928559_u32) == "deadbeef", 'bad u32 lower hex formatting');
+    assert(format!("{:x}", 42_u64) == "2a", 'bad u64 lower hex formatting');
+    assert(
+        format!("{:x}", 16045690984833335023_u64) == "deadbeefdeadbeef",
+        'bad u64 lower hex formatting'
+    );
+    assert(format!("{:x}", 42_u128) == "2a", 'bad u128 lower hex formatting');
+    assert(
+        format!(
+            "{:x}", 295990755083049101712519384020072382191_u128
+        ) == "deadbeefdeadbeefdeadbeefdeadbeef",
+        'bad u128 lower hex formatting'
+    );
+    assert(format!("{:x}", 42_u256) == "2a", 'bad u256 lower hex formatting');
+    assert(
+        format!(
+            "{:x}",
+            100720434726375746010458024839911619878118703404436202866098422983289408962287_u256
+        ) == "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+        'bad u256 lower hex formatting'
+    );
+
+    let nz_value: NonZero<felt252> = 42.try_into().unwrap();
+    assert(format!("{:x}", nz_value) == "2a", 'non zero bad formatting');
+
+    let s = IntoFelt252Based { felt_value: 42 };
+    assert(format!("{:x}", s) == "2a", 'felt252 based bad formatting');
 }

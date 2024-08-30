@@ -23,13 +23,13 @@ pub fn inspect_analyzed_crates(db: &AnalysisDatabase) -> String {
 fn inspect_crate(cr: Crate) -> String {
     formatdoc! {
         r#"
-        - `{name}`: `{source_path}`
+        - `{name}`: `{source_path:?}`
             ```rust
             {settings}
             ```
         "#,
         name = cr.name,
-        source_path = cr.source_path().display(),
+        source_path = cr.source_paths().into_iter().map(|path| path.display().to_string()).collect::<Vec<_>>(),
         settings = indent_by(4, format!("{:#?}", cr.settings)),
     }
 }

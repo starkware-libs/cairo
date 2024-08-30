@@ -21,36 +21,36 @@ pub trait SaturatingMul<T> {
 
 pub(crate) mod overflow_based {
     pub(crate) impl TSaturatingAdd<
-        T, +Drop<T>, +core::num::traits::OverflowingAdd<T>, +core::num::traits::Bounded<T>
-    > of core::num::traits::SaturatingAdd<T> {
+        T, +Drop<T>, +crate::num::traits::OverflowingAdd<T>, +crate::num::traits::Bounded<T>
+    > of crate::num::traits::SaturatingAdd<T> {
         fn saturating_add(self: T, other: T) -> T {
             let (result, overflow) = self.overflowing_add(other);
             match overflow {
-                true => core::num::traits::Bounded::MAX,
+                true => crate::num::traits::Bounded::MAX,
                 false => result,
             }
         }
     }
 
     pub(crate) impl TSaturatingSub<
-        T, +Drop<T>, +core::num::traits::OverflowingSub<T>, +core::num::traits::Bounded<T>
-    > of core::num::traits::SaturatingSub<T> {
+        T, +Drop<T>, +crate::num::traits::OverflowingSub<T>, +crate::num::traits::Bounded<T>
+    > of crate::num::traits::SaturatingSub<T> {
         fn saturating_sub(self: T, other: T) -> T {
             let (result, overflow) = self.overflowing_sub(other);
             match overflow {
-                true => core::num::traits::Bounded::MIN,
+                true => crate::num::traits::Bounded::MIN,
                 false => result,
             }
         }
     }
 
     pub(crate) impl TSaturatingMul<
-        T, +Drop<T>, +core::num::traits::OverflowingMul<T>, +core::num::traits::Bounded<T>
-    > of core::num::traits::SaturatingMul<T> {
+        T, +Drop<T>, +crate::num::traits::OverflowingMul<T>, +crate::num::traits::Bounded<T>
+    > of crate::num::traits::SaturatingMul<T> {
         fn saturating_mul(self: T, other: T) -> T {
             let (result, overflow) = self.overflowing_mul(other);
             match overflow {
-                true => core::num::traits::Bounded::MAX,
+                true => crate::num::traits::Bounded::MAX,
                 false => result,
             }
         }

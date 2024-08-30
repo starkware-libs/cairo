@@ -246,6 +246,7 @@ impl Usages {
                                 self.handle_expr(arenas, expr, &mut usage)
                             };
                         }
+                        Statement::Item(_) => {}
                     };
                 }
                 if let Some(expr_id) = expr.tail {

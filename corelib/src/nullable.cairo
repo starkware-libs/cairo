@@ -1,6 +1,6 @@
-use core::box::BoxTrait;
-use core::traits::Default;
-use core::traits::Felt252DictValue;
+use crate::box::BoxTrait;
+use crate::traits::Default;
+use crate::traits::Felt252DictValue;
 
 #[derive(Copy, Drop)]
 pub extern type Nullable<T>;
@@ -15,11 +15,11 @@ pub(crate) extern fn nullable_from_box<T>(value: Box<T>) -> Nullable<T> nopanic;
 pub extern fn match_nullable<T>(value: Nullable<T>) -> FromNullableResult<T> nopanic;
 extern fn nullable_forward_snapshot<T>(value: @Nullable<T>) -> Nullable<@T> nopanic;
 
-impl NullableDeref<T> of core::ops::Deref<Nullable<T>> {
+impl NullableDeref<T> of crate::ops::Deref<Nullable<T>> {
     type Target = T;
     fn deref(self: Nullable<T>) -> T {
         match match_nullable(self) {
-            FromNullableResult::Null => core::panic_with_felt252('Attempted to deref null value'),
+            FromNullableResult::Null => crate::panic_with_felt252('Attempted to deref null value'),
             FromNullableResult::NotNull(value) => value.unbox(),
         }
     }
@@ -54,7 +54,7 @@ pub impl NullableImpl<T> of NullableTrait<T> {
 }
 
 impl NullableDefault<T> of Default<Nullable<T>> {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn default() -> Nullable<T> nopanic {
         null()
@@ -62,15 +62,15 @@ impl NullableDefault<T> of Default<Nullable<T>> {
 }
 
 impl NullableFelt252DictValue<T> of Felt252DictValue<Nullable<T>> {
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn zero_default() -> Nullable<T> nopanic {
         null()
     }
 }
 
-impl NullableDebug<T, impl TDebug: core::fmt::Debug<T>> of core::fmt::Debug<Nullable<T>> {
-    fn fmt(self: @Nullable<T>, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+impl NullableDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Nullable<T>> {
+    fn fmt(self: @Nullable<T>, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
         match match_nullable(self.as_snapshot()) {
             FromNullableResult::Null => write!(f, "null"),
             FromNullableResult::NotNull(value) => {

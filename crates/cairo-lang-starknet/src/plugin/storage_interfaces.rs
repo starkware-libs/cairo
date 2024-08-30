@@ -86,7 +86,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
                     return PluginResult { code: None, diagnostics, remove_original_item: false };
                 }
                 let (content, code_mappings) =
-                    handle_storage_interface_struct(db, &struct_ast, metadata);
+                    handle_storage_interface_struct(db, &struct_ast, metadata).build();
                 PluginResult {
                     code: Some(PluginGeneratedFile {
                         name: "storage_node".into(),
@@ -367,11 +367,12 @@ impl<'a> StorageInterfaceInfo<'a> {
         match self.node_type {
             StorageInterfaceType::StorageNode => {
                 if member.has_attr(self.db, FLAT_ATTR) {
-                    return "        let $field_name$_value = self.into();
+                    return "        let __$field_name$_value__ = self.into();
                     "
                     .to_string();
                 }
-                "        let $field_name$_value = starknet::storage::PendingStoragePathTrait::new(
+                "        let __$field_name$_value__ = \
+                 starknet::storage::PendingStoragePathTrait::new(
                         @self,
                         selector!(\"$field_name$\")
                     );
@@ -388,7 +389,7 @@ impl<'a> StorageInterfaceInfo<'a> {
                     )
                 };
                 format!(
-                    "        let $field_name$_value = {member_type} {{
+                    "        let __$field_name$_value__ = {member_type} {{
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         }};
@@ -398,11 +399,11 @@ impl<'a> StorageInterfaceInfo<'a> {
             StorageInterfaceType::StorageTrait => {
                 if member.has_attr(self.db, SUBSTORAGE_ATTR) || member.has_attr(self.db, FLAT_ATTR)
                 {
-                    "        let $field_name$_value = starknet::storage::FlattenedStorage {};
+                    "        let __$field_name$_value__ = starknet::storage::FlattenedStorage {};
 "
                     .to_string()
                 } else {
-                    "        let $field_name$_value = starknet::storage::StorageBase \
+                    "        let __$field_name$_value__ = starknet::storage::StorageBase \
                      {__base_address__: selector!(\"$field_name$\")};
 "
                     .to_string()
@@ -447,11 +448,11 @@ fn handle_storage_interface_for_interface_type(
 ///  - From this plugin for adding storage nodes, and storage base trait.
 ///  - From the derive plugin of the `Store` trait which also generates a sub-pointers interface.
 ///  - From the contract storage plugin, which generates storage base trait.
-pub fn handle_storage_interface_struct(
-    db: &dyn SyntaxGroup,
+pub fn handle_storage_interface_struct<'a>(
+    db: &'a dyn SyntaxGroup,
     struct_ast: &ast::ItemStruct,
     metadata: &MacroPluginMetadata<'_>,
-) -> (String, Vec<CodeMapping>) {
+) -> PatchBuilder<'a> {
     let mut builder = PatchBuilder::new(db, struct_ast);
     // Run for both StorageNode and StorageTrait
     let storage_interface_types = if struct_ast.has_attr(db, STORAGE_NODE_ATTR) {
@@ -472,7 +473,7 @@ pub fn handle_storage_interface_struct(
             &mut builder,
         );
     }
-    builder.build()
+    builder
 }
 
 /// Adds the storage interface enum and its constructor impl, for enums with sub-pointers.
@@ -602,7 +603,7 @@ fn add_interface_impl(
     for field in struct_ast.members(db).elements(db) {
         let field_name = field.name(db).as_syntax_node();
         builder.add_modified(RewriteNode::interpolate_patched(
-            "           $field_name$: $field_name$_value,\n",
+            "           $field_name$: __$field_name$_value__,\n",
             &[("field_name".to_string(), RewriteNode::new_trimmed(field_name))].into(),
         ));
     }
@@ -633,9 +634,9 @@ fn add_node_enum_definition(
         let concrete_node_members_type = storage_node_info.concrete_node_members_type(&variant);
         let field_name = variant.name(db).as_syntax_node();
         let field_type = match variant.type_clause(db) {
-            ast::OptionTypeClause::Empty(_) => "()".to_string(),
+            ast::OptionTypeClause::Empty(_) => RewriteNode::text("()"),
             ast::OptionTypeClause::TypeClause(tc) => {
-                tc.ty(db).as_syntax_node().get_text_without_trivia(db)
+                RewriteNode::new_trimmed(tc.ty(db).as_syntax_node())
             }
         };
 
@@ -643,7 +644,7 @@ fn add_node_enum_definition(
             &format!("    $field_name$: {concrete_node_members_type},\n",),
             &[
                 ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
-                ("field_type".to_string(), RewriteNode::text(&field_type)),
+                ("field_type".to_string(), field_type),
             ]
             .into(),
         ));

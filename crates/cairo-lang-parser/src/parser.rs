@@ -107,7 +107,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         text: &'a str,
     ) -> SyntaxFile {
-        let mut lexer = Lexer::from_text(db, file_id, text);
+        let mut lexer = Lexer::from_text(db, text);
         let next_terminal = lexer.next().unwrap();
         let parser = Parser {
             db,
@@ -132,7 +132,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         text: &'a str,
     ) -> Expr {
-        let mut lexer = Lexer::from_text(db, file_id, text);
+        let mut lexer = Lexer::from_text(db, text);
         let next_terminal = lexer.next().unwrap();
         let mut parser = Parser {
             db,
@@ -1070,6 +1070,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr>().into(),
             SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
             SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
+            SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
             _ => unreachable!(),
         }
     }
@@ -1992,6 +1993,12 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalConst => Ok(StatementItem::new_green(
                 self.db,
                 self.expect_item_const(attributes, VisibilityDefault::new_green(self.db).into())
+                    .into(),
+            )
+            .into()),
+            SyntaxKind::TerminalUse => Ok(StatementItem::new_green(
+                self.db,
+                self.expect_item_use(attributes, VisibilityDefault::new_green(self.db).into())
                     .into(),
             )
             .into()),

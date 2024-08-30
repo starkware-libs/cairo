@@ -94,9 +94,13 @@ fn test_prefix_and_inner_comments() {
 
     let submodule_function_id = extract_matches!(submodule_items[0], ModuleItemId::FreeFunction);
 
-    let mut struct_member_ids = db.struct_members(struct_id).unwrap().into_iter();
-    let member_1_id = struct_member_ids.next().unwrap().1.id;
-    let member_2_id = struct_member_ids.next().unwrap().1.id;
+    let struct_members = db.struct_members(struct_id).unwrap();
+
+    let struct_member_ids: Vec<_> = struct_members.iter().collect();
+    // let member_1_id = struct_member_ids.next().unwrap().1.id;
+    // let member_2_id = struct_member_ids.next().unwrap().1.id;
+    let member_1_id = struct_member_ids[0].1.id;
+    let member_2_id = struct_member_ids[1].1.id;
 
     let main_function_documentation =
         db.get_item_documentation(DocumentableItemId::from(DocumentableModuleItemId::from(

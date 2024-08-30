@@ -23,7 +23,6 @@ use semantic::corelib::{
     never_ty, unit_ty,
 };
 use semantic::items::constant::{value_as_const_value, ConstValue};
-use semantic::items::structure::SemanticStructEx;
 use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
@@ -97,7 +96,7 @@ pub fn lower_semantic_function(
     for semantic_var in &signature.params {
         encapsulating_ctx.semantic_defs.insert(
             semantic::VarId::Param(semantic_var.id),
-            semantic::Variable::Param(semantic_var.clone()),
+            semantic::Binding::Param(semantic_var.clone()),
         );
     }
 
@@ -669,6 +668,7 @@ pub fn lower_statement(
             };
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
+        semantic::Statement::Item(_) => {}
     }
     Ok(())
 }
@@ -700,7 +700,7 @@ fn lower_single_pattern(
             var: sem_var,
             stable_ptr,
         }) => {
-            let sem_var = semantic::Variable::Local(sem_var);
+            let sem_var = semantic::Binding::LocalVar(sem_var);
             // Deposit the owned variable in the semantic variables store.
             let var = lowered_expr.as_var_usage(ctx, builder)?.var_id;
             // Override variable location.
@@ -736,7 +736,8 @@ fn lower_single_pattern(
                     })
                     .collect(),
             };
-            for (var_id, (_, member)) in izip!(generator.add(ctx, &mut builder.statements), members)
+            for (var_id, (_, member)) in
+                izip!(generator.add(ctx, &mut builder.statements), members.iter())
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
                     let member_pattern = ctx.function_body.arenas.patterns[*member_pattern].clone();
@@ -1384,7 +1385,7 @@ fn lower_expr_loop(
             builder.put_semantic(into_iter_member_path.base_var(), into_iter_var.var_id);
 
             ctx.semantic_defs
-                .insert(into_iter_member_path.base_var(), semantic::Variable::Local(sem_var));
+                .insert(into_iter_member_path.base_var(), semantic::Binding::LocalVar(sem_var));
 
             (stable_ptr, ty)
         }
@@ -1598,7 +1599,7 @@ fn lower_expr_member_access(
         generators::StructMemberAccess {
             input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
             member_tys: members
-                .into_iter()
+                .iter()
                 .map(|(_, member)| wrap_in_snapshots(ctx.db.upcast(), member.ty, expr.n_snapshots))
                 .collect(),
             member_idx,
@@ -1668,7 +1669,7 @@ fn lower_expr_struct_ctor(
     Ok(LoweredExpr::AtVariable(
         generators::StructConstruct {
             inputs: members
-                .into_iter()
+                .iter()
                 .map(|(_, member)| member_expr_usages.remove(&member.id).unwrap())
                 .collect::<Result<Vec<_>, _>>()?,
             ty: expr.ty,

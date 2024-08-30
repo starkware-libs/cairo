@@ -302,7 +302,7 @@ error: Plugin diagnostic: Invalid format string: Unexpected character in placeho
     write!(f, "{:x ?}");
               ^******^
 
-error: Plugin diagnostic: Invalid format string: Unsupported formatting trait: only `Display` and `Debug` are supported.
+error: Plugin diagnostic: Invalid format string: Unsupported formatting trait: only `Display`, `Debug` and `LowerHex` are supported.
  --> lib.cairo:51:15
     write!(f, "{:??}");
               ^*****^
@@ -493,7 +493,7 @@ error: Plugin diagnostic: Invalid format string: Unexpected character in placeho
     writeln!(f, "{:x ?}");
                 ^******^
 
-error: Plugin diagnostic: Invalid format string: Unsupported formatting trait: only `Display` and `Debug` are supported.
+error: Plugin diagnostic: Invalid format string: Unsupported formatting trait: only `Display`, `Debug` and `LowerHex` are supported.
  --> lib.cairo:51:17
     writeln!(f, "{:??}");
                 ^*****^

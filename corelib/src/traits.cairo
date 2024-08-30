@@ -1,4 +1,4 @@
-use core::panics::Panic;
+use crate::panics::Panic;
 
 pub trait Copy<T>;
 pub trait Drop<T>;
@@ -179,7 +179,7 @@ pub trait Destruct<T> {
 }
 // TODO(spapini): Remove this, it can lead to multiple impls and unwanted Destruct implementation.
 impl DestructFromDrop<T, +Drop<T>> of Destruct<T> {
-    #[inline(always)]
+    #[inline]
     fn destruct(self: T) nopanic {}
 }
 
@@ -187,7 +187,7 @@ pub trait PanicDestruct<T> {
     fn panic_destruct(self: T, ref panic: Panic) nopanic;
 }
 pub(crate) impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
-    #[inline(always)]
+    #[inline]
     fn panic_destruct(self: T, ref panic: Panic) nopanic {
         Destruct::destruct(self);
     }
@@ -199,7 +199,7 @@ pub trait Default<T> {
 }
 
 impl SnapshotDefault<T, +Default<T>, +Drop<T>> of Default<@T> {
-    #[inline(always)]
+    #[inline]
     fn default() -> @T {
         @Default::default()
     }
@@ -218,15 +218,15 @@ pub(crate) impl TupleSize0Copy of Copy<()>;
 pub(crate) impl TupleSize0Drop of Drop<()>;
 impl TupleNextDrop<
     T,
-    impl TH: core::metaprogramming::TupleSplit<T>,
-    +core::metaprogramming::IsTuple<T>,
+    impl TH: crate::metaprogramming::TupleSplit<T>,
+    +crate::metaprogramming::IsTuple<T>,
     +Drop<TH::Head>,
     +Drop<TH::Rest>
 > of Drop<T>;
 impl TupleNextCopy<
     T,
-    impl TH: core::metaprogramming::TupleSplit<T>,
-    +core::metaprogramming::IsTuple<T>,
+    impl TH: crate::metaprogramming::TupleSplit<T>,
+    +crate::metaprogramming::IsTuple<T>,
     +Copy<TH::Head>,
     +Copy<TH::Rest>
 > of Copy<T>;
@@ -234,7 +234,7 @@ impl TupleNextCopy<
 /// Tuple `PartialEq` implementation.
 impl TuplePartialEq<
     T,
-    impl TSF: core::metaprogramming::TupleSnapForward<T>,
+    impl TSF: crate::metaprogramming::TupleSnapForward<T>,
     +TuplePartialEqHelper<TSF::SnapForward>,
 > of PartialEq<T> {
     fn eq(lhs: @T, rhs: @T) -> bool {
@@ -286,7 +286,7 @@ impl TuplePartialEqHelperBaseFixedSizedArray<T> of TuplePartialEqHelper<[@T; 0]>
 /// The recursive implementation of `TuplePartialEqHelper` for tuple style structs.
 impl TuplePartialEqHelperNext<
     T,
-    impl TS: core::metaprogramming::TupleSplit<T>,
+    impl TS: crate::metaprogramming::TupleSplit<T>,
     +TuplePartialEqHelper<TS::Head>,
     +TuplePartialEqHelper<TS::Rest>,
     +Drop<TS::Rest>,
@@ -322,7 +322,7 @@ impl DefaultFixedSizedArray<T> of Default<[T; 0]> {
 /// Recursive implementation for `Default` for tuple style structs.
 impl DefaultNext<
     T,
-    impl TS: core::metaprogramming::TupleSplit<T>,
+    impl TS: crate::metaprogramming::TupleSplit<T>,
     +Default<TS::Head>,
     +Default<TS::Rest>,
     +Drop<TS::Head>,
@@ -338,7 +338,7 @@ impl FixedSizedArrayCopy<T, +Copy<T>, const N: u32> of Copy<[T; N]>;
 /// Recursive implementation of `Destruct` for tuple style structs.
 impl TupleNextDestruct<
     T,
-    impl TH: core::metaprogramming::TupleSplit<T>,
+    impl TH: crate::metaprogramming::TupleSplit<T>,
     +Destruct<TH::Head>,
     +Destruct<TH::Rest>,
     -Drop<T>,

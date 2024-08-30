@@ -22,9 +22,7 @@ pub fn handle_store_derive(
             // a sub-pointers implementation.
             let store_trait_code = handle_struct_store(db, struct_ast)?;
             let sub_pointers_code = if !struct_ast.members(db).elements(db).is_empty() {
-                let (sub_pointers_code, _) =
-                    handle_storage_interface_struct(db, struct_ast, metadata);
-                RewriteNode::Text(sub_pointers_code)
+                handle_storage_interface_struct(db, struct_ast, metadata).into_rewrite_node()
             } else {
                 RewriteNode::Text("".to_string())
             };

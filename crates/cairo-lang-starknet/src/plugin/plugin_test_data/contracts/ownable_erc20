@@ -65,11 +65,11 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let ownable_storage_value = starknet::storage::FlattenedStorage {};
-        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           ownable_storage: ownable_storage_value,
-           erc20_storage: erc20_storage_value,
+           ownable_storage: __ownable_storage_value__,
+           erc20_storage: __erc20_storage_value__,
         }
     }
 }
@@ -81,11 +81,11 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let ownable_storage_value = starknet::storage::FlattenedStorage {};
-        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           ownable_storage: ownable_storage_value,
-           erc20_storage: erc20_storage_value,
+           ownable_storage: __ownable_storage_value__,
+           erc20_storage: __erc20_storage_value__,
         }
     }
 }
@@ -365,11 +365,11 @@ struct StorageStorageBase {
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let ownable_storage_value = starknet::storage::FlattenedStorage {};
-        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBase {
-           ownable_storage: ownable_storage_value,
-           erc20_storage: erc20_storage_value,
+           ownable_storage: __ownable_storage_value__,
+           erc20_storage: __erc20_storage_value__,
         }
     }
 }
@@ -381,11 +381,11 @@ struct StorageStorageBaseMut {
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let ownable_storage_value = starknet::storage::FlattenedStorage {};
-        let erc20_storage_value = starknet::storage::FlattenedStorage {};
+        let __ownable_storage_value__ = starknet::storage::FlattenedStorage {};
+        let __erc20_storage_value__ = starknet::storage::FlattenedStorage {};
         StorageStorageBaseMut {
-           ownable_storage: ownable_storage_value,
-           erc20_storage: erc20_storage_value,
+           ownable_storage: __ownable_storage_value__,
+           erc20_storage: __erc20_storage_value__,
         }
     }
 }

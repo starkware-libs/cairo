@@ -3,4 +3,4 @@ pub mod documentable_item;
 mod markdown;
 
 #[cfg(test)]
-mod test;
+mod tests;

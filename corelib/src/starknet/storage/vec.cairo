@@ -134,42 +134,20 @@ impl PathableMutableVecImpl<
     }
 }
 
-pub impl VecIndexView<T> of core::ops::IndexView<StoragePath<Vec<T>>, u64> {
-    type Target = StoragePath<T>;
-    fn index(self: @StoragePath<Vec<T>>, index: u64) -> Self::Target {
+pub impl VecIndexView<
+    VecT, impl VecImpl: VecTrait<VecT>, +Copy<VecT>
+> of core::ops::IndexView<VecT, u64> {
+    type Target = StoragePath<VecImpl::ElementType>;
+    fn index(self: @VecT, index: u64) -> Self::Target {
         (*self).at(index)
     }
 }
 
-pub impl MutableVecIndexView<T> of core::ops::IndexView<StoragePath<Mutable<Vec<T>>>, u64> {
-    type Target = StoragePath<Mutable<T>>;
-    fn index(self: @StoragePath<Mutable<Vec<T>>>, index: u64) -> Self::Target {
+pub impl MutableVecIndexView<
+    VecT, impl VecImpl: MutableVecTrait<VecT>, +Copy<VecT>
+> of core::ops::IndexView<VecT, u64> {
+    type Target = StoragePath<Mutable<VecImpl::ElementType>>;
+    fn index(self: @VecT, index: u64) -> Self::Target {
         (*self).at(index)
-    }
-}
-
-pub impl PathableVecIndexView<
-    T,
-    +Copy<T>,
-    +Drop<T>,
-    impl PathImpl: StorageAsPath<T>,
-    impl VecTraitImpl: VecTrait<StoragePath<PathImpl::Value>>
-> of core::ops::IndexView<T, u64> {
-    type Target = StoragePath<VecTraitImpl::ElementType>;
-    fn index(self: @T, index: u64) -> Self::Target {
-        (*self).as_path().at(index)
-    }
-}
-
-pub impl PathableMutableVecIndexView<
-    T,
-    +Drop<T>,
-    +Copy<T>,
-    impl PathImpl: StorageAsPath<T>,
-    impl VecTraitImpl: MutableVecTrait<StoragePath<PathImpl::Value>>
-> of core::ops::IndexView<T, u64> {
-    type Target = StoragePath<Mutable<VecTraitImpl::ElementType>>;
-    fn index(self: @T, index: u64) -> Self::Target {
-        (*self).as_path().at(index)
     }
 }

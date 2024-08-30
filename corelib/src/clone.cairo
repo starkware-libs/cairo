@@ -12,7 +12,7 @@ impl TCopyClone<T, +Copy<T>> of Clone<T> {
 /// Tuple `Clone` implementation.
 impl TupleClone<
     T,
-    impl TSF: core::metaprogramming::TupleSnapForward<T>,
+    impl TSF: crate::metaprogramming::TupleSnapForward<T>,
     impl CH: CloneHelper<TSF::SnapForward, T>,
     -Copy<T>,
 > of Clone<T> {
@@ -53,12 +53,12 @@ impl FixedSizedArrayCloneHelper<T> of CloneHelper<[@T; 0], [T; 0]> {
 /// Recursive implementation of `CloneHelper` for tuple style structs.
 impl TupleNextCloneHelper<
     T,
-    impl TH: core::metaprogramming::TupleSplit<T>,
-    impl HeadNoSnap: core::metaprogramming::SnapRemove<TH::Head>,
-    impl RestNoSnap: core::metaprogramming::SnapRemove<TH::Rest>,
+    impl TH: crate::metaprogramming::TupleSplit<T>,
+    impl HeadNoSnap: crate::metaprogramming::SnapRemove<TH::Head>,
+    impl RestNoSnap: crate::metaprogramming::SnapRemove<TH::Rest>,
     impl HeadHelper: CloneHelper<TH::Head, HeadNoSnap::Result>,
     impl RestHelper: CloneHelper<TH::Rest, RestNoSnap::Result>,
-    impl TEF: core::metaprogramming::TupleExtendFront<RestNoSnap::Result, HeadNoSnap::Result>,
+    impl TEF: crate::metaprogramming::TupleExtendFront<RestNoSnap::Result, HeadNoSnap::Result>,
     +Destruct<HeadNoSnap::Result>,
     +Drop<TH::Rest>,
 > of CloneHelper<T, TEF::Result> {

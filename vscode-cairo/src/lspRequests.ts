@@ -20,3 +20,8 @@ export const vfsProvide = new lc.RequestType<
   ProvideVirtualFileResponse,
   void
 >("vfs/provide");
+
+export type ViewAnalyzedCratesResponse = string;
+export const viewAnalyzedCrates = new lc.RequestType0<ViewAnalyzedCratesResponse, void>(
+  "cairo/viewAnalyzedCrates",
+);
