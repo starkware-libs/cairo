@@ -314,7 +314,7 @@ fn module_files(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<[FileId]>>
 }
 
 fn module_file(db: &dyn DefsGroup, module_file_id: ModuleFileId) -> Maybe<FileId> {
-    Ok(db.module_files(module_file_id.0)?[module_file_id.1 .0])
+    Ok(db.module_files(module_file_id.0)?[module_file_id.1.0])
 }
 
 fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {

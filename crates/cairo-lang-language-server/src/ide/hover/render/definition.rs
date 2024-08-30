@@ -72,19 +72,13 @@ fn parse_and_concat_documentation(mut md: String, item_documentation: Documentat
             md += RULE;
             let mut comments: Vec<String> = Vec::new();
             if let Some(prefix_comments) = prefix_comments {
-                // md += &format!(" {}", &prefix_comments);
                 comments.push(prefix_comments.trim_end().to_string());
-                // md = md.trim_end().to_string();
             }
             if let Some(inner_comments) = inner_comments {
-                // md += &format!(" {}", &inner_comments);
                 comments.push(inner_comments.trim_end().to_string());
-                // md = md.trim_end().to_string();
             }
             if let Some(module_level_comments) = module_level_comments {
-                // md += &format!(" {}", &module_level_comments);
                 comments.push(module_level_comments.trim_end().to_string());
-                // md = md.trim_end().to_string();
             }
             md += &comments.join(" ");
         }

@@ -299,7 +299,7 @@ pub struct FileIndex(pub usize);
 pub struct ModuleFileId(pub ModuleId, pub FileIndex);
 impl ModuleFileId {
     pub fn file_id(&self, db: &dyn DefsGroup) -> Maybe<FileId> {
-        Ok(db.module_files(self.0)?[self.1 .0])
+        Ok(db.module_files(self.0)?[self.1.0])
     }
 }
 
@@ -679,7 +679,7 @@ define_language_element_id_basic!(
 );
 impl GenericParamLongId {
     pub fn name(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1 .0.lookup_intern(db) else {
+        let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1.0.lookup_intern(db) else {
             unreachable!()
         };
         require(!matches!(
@@ -695,7 +695,7 @@ impl GenericParamLongId {
         self.name(db).unwrap_or_else(|| "_".into())
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> GenericKind {
-        let SyntaxStablePtr::Child { kind, .. } = self.1 .0.lookup_intern(db) else {
+        let SyntaxStablePtr::Child { kind, .. } = self.1.0.lookup_intern(db) else {
             unreachable!()
         };
         match kind {
@@ -710,7 +710,7 @@ impl GenericParamLongId {
     }
     /// Retrieves the ID of the generic item holding this generic parameter.
     pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
-        let item_ptr = self.1 .0.nth_parent(db.upcast(), 3);
+        let item_ptr = self.1.0.nth_parent(db.upcast(), 3);
         GenericItemId::from_ptr(db, self.0, item_ptr)
     }
 }
@@ -723,7 +723,7 @@ impl GenericParamId {
     }
     pub fn format(&self, db: &dyn DefsGroup) -> String {
         let long_ids = self.lookup_intern(db);
-        let SyntaxStablePtr::Child { key_fields, kind, .. } = long_ids.1 .0.lookup_intern(db)
+        let SyntaxStablePtr::Child { key_fields, kind, .. } = long_ids.1.0.lookup_intern(db)
         else {
             unreachable!()
         };
