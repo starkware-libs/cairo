@@ -263,9 +263,9 @@ pub fn completion_for_method(
 ) -> Option<CompletionItem> {
     let trait_id = trait_function.trait_id(db.upcast());
     let name = trait_function.name(db.upcast());
-    db.trait_function_signature(trait_function).ok()?;
+    let signature = db.trait_function_signature(trait_function).ok()?;
 
-    // TODO(spapini): Add signature.
+    // Add the trait path as the detail for the completion item.
     let detail = trait_id.full_path(db.upcast());
     let mut additional_text_edits = vec![];
 
@@ -279,14 +279,24 @@ pub fn completion_for_method(
         }
     }
 
+    // Determine the insert text based on whether the function has parameters.
+    let insert_text = if signature.params.is_empty() {
+        // No parameters, place cursor after the closing parenthesis.
+        format!("{}()", name)
+    } else {
+        // Has parameters, place cursor between the parentheses.
+        format!("{}(", name)
+    };
+
     let completion = CompletionItem {
-        label: format!("{}()", name),
-        insert_text: Some(format!("{}(", name)),
+        label: format!("{}()", name), // Display the full method signature.
+        insert_text: Some(insert_text),
         detail: Some(detail),
         kind: Some(CompletionItemKind::METHOD),
         additional_text_edits: Some(additional_text_edits),
         ..CompletionItem::default()
     };
+
     Some(completion)
 }
 
