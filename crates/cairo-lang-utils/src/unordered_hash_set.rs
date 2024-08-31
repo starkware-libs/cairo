@@ -97,6 +97,11 @@ impl<Key: Hash + Eq, BH: BuildHasher> UnorderedHashSet<Key, BH> {
     {
         self.0.contains(value)
     }
+
+    /// Returns true if the two sets have a non-empty intersection.
+    pub fn intersects(&self, other: &Self) -> bool {
+        self.0.intersection(&other.0).next().is_some()
+    }
 }
 
 impl<Key: Hash + Eq, BH: BuildHasher + Default> FromIterator<Key> for UnorderedHashSet<Key, BH> {

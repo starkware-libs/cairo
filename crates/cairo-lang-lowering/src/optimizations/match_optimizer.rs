@@ -4,6 +4,7 @@ mod test;
 
 use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
@@ -18,6 +19,26 @@ pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
 
 /// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
 /// relevant match arm.
+///
+/// For example, given:
+///
+/// ```plain
+/// blk0:
+/// Statements:
+/// (v1: core::option::Option::<core::integer::u32>) <- Option::Some(v0)
+/// End:
+/// Goto(blk1, {v1-> v2})
+///
+/// blk1:
+/// Statements:
+/// End:
+/// Match(match_enum(v2) {
+///   Option::Some(v3) => blk4,
+///   Option::None(v4) => blk5,
+/// })
+/// ```
+///
+/// Change `blk0` to jump directly to `blk4`.
 pub fn optimize_matches(lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
@@ -31,7 +52,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     let mut next_block_id = BlockId(lowered.blocks.len());
 
     // Fixes were added in reverse order, so we apply them in reverse.
-    // Either order is will result in correct code, but this way variables with smaller ids appear
+    // Either order will result in correct code, but this way variables with smaller ids appear
     // earlier.
     for FixInfo { statement_location, match_block, arm_idx, target_block, remapping } in
         ctx.fixes.into_iter().rev()
@@ -179,15 +200,26 @@ struct OptimizationCandidate<'a> {
 
     /// The demands at the arms.
     arm_demands: Vec<MatchOptimizerDemand>,
+
+    /// Whether there is a future merge between the match arms.
+    // TODO(lior): Remove the following line once `future_merge` is used.
+    #[allow(dead_code)]
+    future_merge: bool,
 }
 
 #[derive(Clone)]
 pub struct AnalysisInfo<'a> {
     candidate: Option<OptimizationCandidate<'a>>,
     demand: MatchOptimizerDemand,
+    /// Blocks that can be reach from the current block.
+    reachable_blocks: UnorderedHashSet<BlockId>,
 }
 impl<'a> Analyzer<'a> for MatchOptimizerContext {
     type Info = AnalysisInfo<'a>;
+
+    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
+        info.reachable_blocks.insert(block_id);
+    }
 
     fn visit_stmt(
         &mut self,
@@ -254,6 +286,16 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             .collect_vec();
         let mut demand = MatchOptimizerDemand::merge_demands(&arm_demands, self);
 
+        // Union the reachable blocks for all the infos.
+        let mut reachable_blocks = UnorderedHashSet::default();
+        let mut found_collision = false;
+        for info in &infos {
+            if !found_collision {
+                found_collision = info.reachable_blocks.intersects(&reachable_blocks);
+            }
+            reachable_blocks.extend_unordered(info.reachable_blocks.clone());
+        }
+
         let candidate = match match_info {
             // A match is a candidate for the optimization if it is a match on an Enum
             // and its input is unused after the match.
@@ -265,9 +307,9 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     match_arms: arms,
                     match_block: block_id,
                     arm_demands: infos.into_iter().map(|info| info.demand).collect(),
+                    future_merge: !found_collision,
                 })
             }
-
             _ => None,
         };
 
@@ -276,7 +318,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             match_info.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
         );
 
-        Self::Info { candidate, demand }
+        Self::Info { candidate, demand, reachable_blocks }
     }
 
     fn info_from_return(
@@ -286,6 +328,6 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
     ) -> Self::Info {
         let mut demand = MatchOptimizerDemand::default();
         demand.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
-        Self::Info { candidate: None, demand }
+        Self::Info { candidate: None, demand, reachable_blocks: Default::default() }
     }
 }
