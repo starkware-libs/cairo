@@ -331,9 +331,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         candidate.match_variable = var_usage.var_id;
 
         if remapping.len() > 1 {
-            // TODO(lior): Remove the `|| true` below to enable to optimization in this case.
-            #[allow(clippy::overly_complex_bool_expr)]
-            if candidate.future_merge || candidate.additional_remappings.is_some() || true {
+            if candidate.future_merge || candidate.additional_remappings.is_some() {
                 // TODO(ilya): Support multiple remappings with future merges.
 
                 // Revoke the candidate.

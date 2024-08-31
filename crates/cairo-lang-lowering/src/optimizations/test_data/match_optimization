@@ -903,21 +903,18 @@ End:
 blk1:
 Statements:
   (v6: core::integer::u32) <- 0
-  (v7: test::Color) <- Color::Red(v2)
 End:
-  Goto(blk5, {v6 -> v8, v7 -> v9})
+  Goto(blk6, {v2 -> v12, v6 -> v20})
 
 blk2:
 Statements:
-  (v10: test::Color) <- Color::Green(v3)
 End:
-  Goto(blk5, {v0 -> v8, v10 -> v9})
+  Goto(blk7, {v3 -> v13, v0 -> v22})
 
 blk3:
 Statements:
-  (v11: test::Color) <- Color::Green(v4)
 End:
-  Goto(blk5, {v0 -> v8, v11 -> v9})
+  Goto(blk7, {v4 -> v13, v0 -> v22})
 
 blk4:
 Statements:
@@ -928,8 +925,8 @@ blk5:
 Statements:
 End:
   Match(match_enum(v9) {
-    Color::Red(v12) => blk6,
-    Color::Green(v13) => blk7,
+    Color::Red(v21) => blk10,
+    Color::Green(v23) => blk11,
     Color::Blue(v14) => blk8,
     Color::White(v15) => blk9,
   })
@@ -938,13 +935,13 @@ blk6:
 Statements:
   (v16: test::Color) <- Color::Red(v12)
 End:
-  Return(v8, v16)
+  Return(v20, v16)
 
 blk7:
 Statements:
   (v17: test::Color) <- Color::Green(v13)
 End:
-  Return(v8, v17)
+  Return(v22, v17)
 
 blk8:
 Statements:
@@ -957,6 +954,16 @@ Statements:
   (v19: test::Color) <- Color::White(v15)
 End:
   Return(v8, v19)
+
+blk10:
+Statements:
+End:
+  Goto(blk6, {v21 -> v12, v8 -> v20})
+
+blk11:
+Statements:
+End:
+  Goto(blk7, {v23 -> v13, v8 -> v22})
 
 //! > ==========================================================================
 
