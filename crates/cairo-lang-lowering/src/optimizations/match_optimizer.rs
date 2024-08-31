@@ -4,6 +4,7 @@ mod test;
 
 use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
@@ -18,6 +19,26 @@ pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
 
 /// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
 /// relevant match arm.
+///
+/// For example, given:
+///
+/// ```plain
+/// blk0:
+/// Statements:
+/// (v1: core::option::Option::<core::integer::u32>) <- Option::Some(v0)
+/// End:
+/// Goto(blk1, {v1-> v2})
+///
+/// blk1:
+/// Statements:
+/// End:
+/// Match(match_enum(v2) {
+///   Option::Some(v3) => blk4,
+///   Option::None(v4) => blk5,
+/// })
+/// ```
+///
+/// Change `blk0` to jump directly to `blk4`.
 pub fn optimize_matches(lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
@@ -31,10 +52,16 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     let mut next_block_id = BlockId(lowered.blocks.len());
 
     // Fixes were added in reverse order, so we apply them in reverse.
-    // Either order is will result in correct code, but this way variables with smaller ids appear
+    // Either order will result in correct code, but this way variables with smaller ids appear
     // earlier.
-    for FixInfo { statement_location, match_block, arm_idx, target_block, remapping } in
-        ctx.fixes.into_iter().rev()
+    for FixInfo {
+        statement_location,
+        match_block,
+        arm_idx,
+        target_block,
+        remapping,
+        reachable_blocks: _,
+    } in ctx.fixes.into_iter().rev()
     {
         let block = &mut lowered.blocks[statement_location.0];
         assert_eq!(
@@ -134,6 +161,8 @@ fn statement_can_be_optimized_out(
         arm_idx,
         target_block: arm.block_id,
         remapping,
+        // TODO: Avoid the following clone() by passing candidate to this function by value.
+        reachable_blocks: candidate.arm_reachable_blocks[arm_idx].clone(),
     })
 }
 
@@ -148,6 +177,9 @@ pub struct FixInfo {
     target_block: BlockId,
     /// The variable remapping that should be applied.
     remapping: VarRemapping,
+    /// The blocks that can be reached from the relevant arm of the match.
+    #[allow(dead_code)]
+    reachable_blocks: OrderedHashSet<BlockId>,
 }
 
 #[derive(Clone)]
@@ -163,6 +195,14 @@ struct OptimizationCandidate<'a> {
 
     /// The demands at the arms.
     arm_demands: Vec<MatchOptimizerDemand>,
+
+    /// Whether there is a future merge between the match arms.
+    // TODO(lior): Remove the following line once `future_merge` is used.
+    #[allow(dead_code)]
+    future_merge: bool,
+
+    /// The blocks that can be reached from each of the arms.
+    arm_reachable_blocks: Vec<OrderedHashSet<BlockId>>,
 }
 
 pub struct MatchOptimizerContext {
@@ -173,9 +213,15 @@ pub struct MatchOptimizerContext {
 pub struct AnalysisInfo<'a> {
     candidate: Option<OptimizationCandidate<'a>>,
     demand: MatchOptimizerDemand,
+    /// Blocks that can be reach from the current block.
+    reachable_blocks: OrderedHashSet<BlockId>,
 }
 impl<'a> Analyzer<'a> for MatchOptimizerContext {
     type Info = AnalysisInfo<'a>;
+
+    fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
+        info.reachable_blocks.insert(block_id);
+    }
 
     fn visit_stmt(
         &mut self,
@@ -252,6 +298,19 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         let mut demand =
             MatchOptimizerDemand::merge_demands(&arm_demands, &mut EmptyDemandReporter {});
 
+        // Union the reachable blocks for all the infos.
+        let arm_reachable_blocks =
+            infos.iter().map(|info| info.reachable_blocks.clone()).collect_vec();
+        let mut reachable_blocks = OrderedHashSet::default();
+        let mut max_possible_size = 0;
+        for cur_reachable_blocks in &arm_reachable_blocks {
+            reachable_blocks.extend(cur_reachable_blocks.iter().cloned());
+            max_possible_size += cur_reachable_blocks.len();
+        }
+        // If the size of `reachable_blocks` is less than the sum of the sizes of the
+        // `arm_reachable_blocks`, then there was a collision.
+        let found_collision = reachable_blocks.len() < max_possible_size;
+
         let candidate = match match_info {
             // A match is a candidate for the optimization if it is a match on an Enum
             // and its input is unused after the match.
@@ -263,9 +322,10 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     match_arms: arms,
                     match_block: block_id,
                     arm_demands: infos.into_iter().map(|info| info.demand).collect(),
+                    future_merge: found_collision,
+                    arm_reachable_blocks,
                 })
             }
-
             _ => None,
         };
 
@@ -274,7 +334,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             match_info.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
         );
 
-        Self::Info { candidate, demand }
+        Self::Info { candidate, demand, reachable_blocks }
     }
 
     fn info_from_return(
@@ -287,6 +347,6 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             &mut EmptyDemandReporter {},
             vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())),
         );
-        Self::Info { candidate: None, demand }
+        Self::Info { candidate: None, demand, reachable_blocks: Default::default() }
     }
 }
