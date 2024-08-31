@@ -280,12 +280,15 @@ pub fn completion_for_method(
     }
 
     // Determine the insert text based on whether the function has parameters.
-    let insert_text = if signature.params.is_empty() {
+    let (insert_text, cursor_position) = if signature.params.is_empty() {
         // No parameters, place cursor after the closing parenthesis.
-        format!("{}()", name)
+        (format!("{}()", name), None)
     } else {
         // Has parameters, place cursor between the parentheses.
-        format!("{}(", name)
+        (format!("{}()", name), Some(Position {
+            line: position.line,
+            character: position.character + name.len() + 1, // Position cursor inside the parentheses
+        }))
     };
 
     let completion = CompletionItem {
@@ -296,6 +299,13 @@ pub fn completion_for_method(
         additional_text_edits: Some(additional_text_edits),
         ..CompletionItem::default()
     };
+
+    if let Some(cursor_position) = cursor_position {
+        completion.additional_text_edits.push(TextEdit {
+            range: Range::new(cursor_position, cursor_position),
+            new_text: " ".to_string(), // Add a space to place cursor
+        });
+    }
 
     Some(completion)
 }
