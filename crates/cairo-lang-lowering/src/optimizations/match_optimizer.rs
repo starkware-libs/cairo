@@ -245,27 +245,28 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        if !remapping.is_empty() {
-            info.demand
-                .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
+        if remapping.is_empty() {
+            return;
+        }
 
-            if let Some(ref mut candidate) = &mut info.candidate {
-                let expected_remappings =
-                    if let Some(var_usage) = remapping.get(&candidate.match_variable) {
-                        candidate.match_variable = var_usage.var_id;
-                        1
-                    } else {
-                        0
-                    };
+        info.demand
+            .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
 
-                if remapping.len() != expected_remappings {
-                    // Remapping is currently not supported as it breaks SSA when we use the same
-                    // remapping with different destination blocks.
+        let Some(ref mut candidate) = &mut info.candidate else {
+            return;
+        };
 
-                    // TODO(ilya): Support multiple remappings.
-                    info.candidate = None;
-                }
-            }
+        let Some(var_usage) = remapping.get(&candidate.match_variable) else {
+            return;
+        };
+        candidate.match_variable = var_usage.var_id;
+
+        if remapping.len() != 1 {
+            // Remapping is currently not supported as it breaks SSA when we use the same
+            // remapping with different destination blocks.
+
+            // TODO(ilya): Support multiple remappings.
+            info.candidate = None;
         }
     }
 
