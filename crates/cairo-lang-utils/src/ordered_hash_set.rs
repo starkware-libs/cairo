@@ -115,6 +115,24 @@ impl<Key: Hash + Eq, BH: BuildHasher> OrderedHashSet<Key, BH> {
     ) -> indexmap::set::Union<'a, Key, BH> {
         self.0.union(&other.0)
     }
+
+    /// Return an iterator over all values that are in both `self` and `other`.
+    ///
+    /// Values are produced in the same order that they appear in `self`.
+    pub fn intersection<'a, BH2: BuildHasher>(
+        &'a self,
+        other: &'a OrderedHashSet<Key, BH2>,
+    ) -> indexmap::set::Intersection<'a, Key, BH2> {
+        self.0.intersection(&other.0)
+    }
+
+    /// Returns `true` if the intersection of `self` and `other` is non-empty.
+    pub fn intersects<'a, BH2: BuildHasher>(
+        &'a self,
+        other: &'a OrderedHashSet<Key, BH2>,
+    ) -> bool {
+        self.intersection(other).next().is_some()
+    }
 }
 
 impl<Key, BH> IntoIterator for OrderedHashSet<Key, BH> {
