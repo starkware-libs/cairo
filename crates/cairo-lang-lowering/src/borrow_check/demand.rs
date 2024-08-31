@@ -20,6 +20,13 @@ pub trait DemandReporter<Var, Aux = ()> {
     fn unused_mapped_var(&mut self, _var: Var) {}
 }
 
+pub struct EmptyDemandReporter {}
+
+impl<Var> DemandReporter<Var> for EmptyDemandReporter {
+    type IntroducePosition = ();
+    type UsePosition = ();
+}
+
 /// Demanded variables from a certain point in the flow until the end of the function.
 /// Needs to be updates in backwards order.
 #[derive(Clone)]
