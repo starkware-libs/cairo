@@ -197,8 +197,6 @@ struct OptimizationCandidate<'a> {
     arm_demands: Vec<MatchOptimizerDemand>,
 
     /// Whether there is a future merge between the match arms.
-    // TODO(lior): Remove the following line once `future_merge` is used.
-    #[allow(dead_code)]
     future_merge: bool,
 
     /// The blocks that can be reached from each of the arms.
@@ -270,11 +268,11 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         };
         candidate.match_variable = var_usage.var_id;
 
-        if remapping.len() > 1 {
-            // Remapping is currently not supported as it breaks SSA when we use the same
+        if remapping.len() > 1 && candidate.future_merge {
+            // Don't apply the optimization in this case, as it breaks SSA when we use the same
             // remapping with different destination blocks.
 
-            // TODO(ilya): Support multiple remappings.
+            // TODO(ilya): Support multiple remappings with future merges.
             // Revoke the candidate.
             info.candidate = None;
         }
