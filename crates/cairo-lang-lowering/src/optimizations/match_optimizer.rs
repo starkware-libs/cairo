@@ -89,63 +89,50 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     }
 }
 
-pub struct MatchOptimizerContext {
-    fixes: Vec<FixInfo>,
-}
-
-impl MatchOptimizerContext {
-    /// Returns true if the statement can be optimized out and false otherwise.
-    /// If the statement can be optimized a fix info is added to `self.fixes`.
-    fn statement_can_be_optimized_out(
-        &mut self,
-        stmt: &Statement,
-        info: &mut AnalysisInfo<'_>,
-        statement_location: (BlockId, usize),
-    ) -> bool {
-        let Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) = stmt
-        else {
-            return false;
-        };
-        let Some(ref mut candidate) = &mut info.candidate else {
-            return false;
-        };
-        if *output != candidate.match_variable {
-            return false;
-        }
-        let (arm_idx, arm) = candidate
-            .match_arms
-            .iter()
-            .find_position(|arm| {
-                arm.arm_selector == MatchArmSelector::VariantId((*variant).clone())
-            })
-            .expect("arm not found.");
-
-        let [var_id] = arm.var_ids.as_slice() else {
-            panic!("An arm of an EnumMatch should produce a single variable.");
-        };
-
-        let mut demand = candidate.arm_demands[arm_idx].clone();
-
-        let mut remapping = VarRemapping::default();
-        // The input to EnumConstruct should be available as `var_id`
-        // in `arm.block_id`
-        remapping.insert(*var_id, *input);
-
-        demand.apply_remapping(
-            &mut EmptyDemandReporter {},
-            remapping.iter().map(|(dst, src_var_usage)| (dst, (&src_var_usage.var_id, ()))),
-        );
-        info.demand = demand;
-
-        self.fixes.push(FixInfo {
-            statement_location,
-            match_block: candidate.match_block,
-            arm_idx,
-            target_block: arm.block_id,
-            remapping,
-        });
-        true
+/// Returns true if the statement can be optimized out and false otherwise.
+/// If the statement can be optimized, returns a [FixInfo] object.
+fn statement_can_be_optimized_out(
+    stmt: &Statement,
+    info: &mut AnalysisInfo<'_>,
+    statement_location: (BlockId, usize),
+) -> Option<FixInfo> {
+    let Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) = stmt else {
+        return None;
+    };
+    let candidate = info.candidate.as_mut()?;
+    if *output != candidate.match_variable {
+        return None;
     }
+    let (arm_idx, arm) = candidate
+        .match_arms
+        .iter()
+        .find_position(|arm| arm.arm_selector == MatchArmSelector::VariantId((*variant).clone()))
+        .expect("arm not found.");
+
+    let [var_id] = arm.var_ids.as_slice() else {
+        panic!("An arm of an EnumMatch should produce a single variable.");
+    };
+
+    let mut demand = candidate.arm_demands[arm_idx].clone();
+
+    let mut remapping = VarRemapping::default();
+    // The input to EnumConstruct should be available as `var_id`
+    // in `arm.block_id`
+    remapping.insert(*var_id, *input);
+
+    demand.apply_remapping(
+        &mut EmptyDemandReporter {},
+        remapping.iter().map(|(dst, src_var_usage)| (dst, (&src_var_usage.var_id, ()))),
+    );
+    info.demand = demand;
+
+    Some(FixInfo {
+        statement_location,
+        match_block: candidate.match_block,
+        arm_idx,
+        target_block: arm.block_id,
+        remapping,
+    })
 }
 
 pub struct FixInfo {
@@ -176,6 +163,10 @@ struct OptimizationCandidate<'a> {
     arm_demands: Vec<MatchOptimizerDemand>,
 }
 
+pub struct MatchOptimizerContext {
+    fixes: Vec<FixInfo>,
+}
+
 #[derive(Clone)]
 pub struct AnalysisInfo<'a> {
     candidate: Option<OptimizationCandidate<'a>>,
@@ -190,7 +181,9 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        if !self.statement_can_be_optimized_out(stmt, info, statement_location) {
+        if let Some(fix_info) = statement_can_be_optimized_out(stmt, info, statement_location) {
+            self.fixes.push(fix_info);
+        } else {
             info.demand.variables_introduced(&mut EmptyDemandReporter {}, stmt.outputs(), ());
             info.demand.variables_used(
                 &mut EmptyDemandReporter {},
