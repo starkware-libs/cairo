@@ -280,16 +280,9 @@ pub fn completion_for_method(
     }
 
     // Determine the insert text based on whether the function has parameters.
-    let params: Vec<String> = signature.params.iter().map(|p| p.name.clone()).collect();
-    // Format the method signature with parameters
-    let formatted_params = params.join(", ");
-    let call_signature = if formatted_params.is_empty() {
-        format!("{name}()")
-    } else {
-        format!("{name}({})", formatted_params)
-    };
+    let call_signature = format!("{name}()");
     let completion = CompletionItem {
-        // Display the full method signature.
+        // Display the method signature.
         label: call_signature.clone(),
         insert_text: Some(call_signature),
         detail: Some(detail),
