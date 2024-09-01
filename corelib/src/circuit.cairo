@@ -431,14 +431,21 @@ mod conversions {
     use crate::internal::{
         bounded_int, bounded_int::{BoundedInt, AddHelper, MulHelper, DivRemHelper}
     };
+    use crate::integer::upcast;
+
+    use super::{u384, u96};
 
     type ConstValue<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
+    const POW128: felt252 = 0x100000000000000000000000000000000;
     const POW96: felt252 = 0x1000000000000000000000000;
+    const POW96_TYPED: ConstValue<POW96> = 0x1000000000000000000000000;
     const NZ_POW96_TYPED: NonZero<ConstValue<POW96>> = 0x1000000000000000000000000;
     const POW64: felt252 = 0x10000000000000000;
+    const POW64_TYPED: ConstValue<POW64> = 0x10000000000000000;
     const NZ_POW64_TYPED: NonZero<ConstValue<POW64>> = 0x10000000000000000;
     const POW32: felt252 = 0x100000000;
     const POW32_TYPED: ConstValue<POW32> = 0x100000000;
+    const NZ_POW32_TYPED: NonZero<ConstValue<POW32>> = 0x100000000;
 
     impl DivRemU128By96 of DivRemHelper<u128, ConstValue<POW96>> {
         type DivT = BoundedInt<0, { POW32 - 1 }>;
@@ -450,26 +457,88 @@ mod conversions {
         type RemT = BoundedInt<0, { POW64 - 1 }>;
     }
 
-    impl MulHelperImpl of MulHelper<BoundedInt<0, { POW64 - 1 }>, ConstValue<POW32>> {
+    impl DivRemU96By32 of DivRemHelper<u96, ConstValue<POW32>> {
+        type DivT = BoundedInt<0, { POW64 - 1 }>;
+        type RemT = BoundedInt<0, { POW32 - 1 }>;
+    }
+
+    impl DivRemU96By64 of DivRemHelper<u96, ConstValue<POW64>> {
+        type DivT = BoundedInt<0, { POW32 - 1 }>;
+        type RemT = BoundedInt<0, { POW64 - 1 }>;
+    }
+
+    impl MulHelper64By32Impl of MulHelper<BoundedInt<0, { POW64 - 1 }>, ConstValue<POW32>> {
         type Result = BoundedInt<0, { POW96 - POW32 }>;
     }
 
-    impl AddHelperImpl of AddHelper<
+    impl MulHelper32By96Impl of MulHelper<BoundedInt<0, { POW32 - 1 }>, ConstValue<POW96>> {
+        type Result = BoundedInt<0, { POW128 - POW96 }>;
+    }
+
+    impl MulHelper64By64Impl of MulHelper<BoundedInt<0, { POW64 - 1 }>, ConstValue<POW64>> {
+        type Result = BoundedInt<0, { POW128 - POW64 }>;
+    }
+
+    impl AddHelperTo96By32Impl of AddHelper<
         BoundedInt<0, { POW96 - POW32 }>, BoundedInt<0, { POW32 - 1 }>
     > {
-        type Result = BoundedInt<0, { POW96 - 1 }>;
+        type Result = u96;
     }
 
-    pub fn from_u128(value: u128) -> super::u384 {
+    impl AddHelperTo128By64Impl of AddHelper<
+        BoundedInt<0, { POW128 - POW64 }>, BoundedInt<0, { POW64 - 1 }>
+    > {
+        type Result = BoundedInt<0, { POW128 - 1 }>;
+    }
+
+    impl AddHelperTo128By96Impl of AddHelper<BoundedInt<0, { POW128 - POW96 }>, u96> {
+        type Result = BoundedInt<0, { POW128 - 1 }>;
+    }
+
+    pub fn from_u128(value: u128) -> u384 {
         let (limb1, limb0) = bounded_int::div_rem(value, NZ_POW96_TYPED);
-        crate::circuit::u384 { limb0, limb1: crate::integer::upcast(limb1), limb2: 0, limb3: 0 }
+        u384 { limb0, limb1: upcast(limb1), limb2: 0, limb3: 0 }
     }
 
-    pub fn from_u256(value: u256) -> super::u384 {
+    pub fn from_u256(value: u256) -> u384 {
         let (limb1_low32, limb0) = bounded_int::div_rem(value.low, NZ_POW96_TYPED);
         let (limb2, limb1_high64) = bounded_int::div_rem(value.high, NZ_POW64_TYPED);
         let limb1 = bounded_int::add(bounded_int::mul(limb1_high64, POW32_TYPED), limb1_low32);
-        crate::circuit::u384 { limb0, limb1, limb2: crate::integer::upcast(limb2), limb3: 0 }
+        u384 { limb0, limb1, limb2: upcast(limb2), limb3: 0 }
+    }
+
+    pub fn to_u128(value: u384) -> Option<u128> {
+        if value.limb2 != 0 || value.limb3 != 0 {
+            return Option::None;
+        }
+        let (limb1_high, limb1_low) = bounded_int::div_rem(value.limb1, NZ_POW32_TYPED);
+        if limb1_high != 0 {
+            return Option::None;
+        }
+        Option::Some(
+            upcast(bounded_int::add(bounded_int::mul(limb1_low, POW96_TYPED), value.limb0))
+        )
+    }
+
+    pub fn to_u256(value: u384) -> Option<u256> {
+        if value.limb3 != 0 {
+            return Option::None;
+        }
+        let (limb2_high, limb2_low) = bounded_int::div_rem(value.limb2, NZ_POW64_TYPED);
+        if limb2_high != 0 {
+            return Option::None;
+        }
+        let (limb1_high, limb1_low) = bounded_int::div_rem(value.limb1, NZ_POW32_TYPED);
+        Option::Some(
+            u256 {
+                high: upcast(
+                    bounded_int::add(bounded_int::mul(limb2_low, POW64_TYPED), limb1_high)
+                ),
+                low: upcast(
+                    bounded_int::add(bounded_int::mul(limb1_low, POW96_TYPED), value.limb0)
+                ),
+            }
+        )
     }
 }
 
@@ -488,5 +557,17 @@ impl U256IntoU384 of Into<u256, u384> {
 impl Felt252IntoU384 of Into<felt252, u384> {
     fn into(self: felt252) -> u384 {
         conversions::from_u256(self.into())
+    }
+}
+
+impl U384TryIntoU128 of TryInto<u384, u128> {
+    fn try_into(self: u384) -> Option<u128> {
+        conversions::to_u128(self)
+    }
+}
+
+impl U384TryIntoU256 of TryInto<u384, u256> {
+    fn try_into(self: u384) -> Option<u256> {
+        conversions::to_u256(self)
     }
 }
