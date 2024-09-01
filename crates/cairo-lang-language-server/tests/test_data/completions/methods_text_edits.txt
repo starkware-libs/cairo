@@ -1,7 +1,7 @@
-//! > Test completion for methods with parameters.
+//! > Test completion for methods with parameters showing additional info.
 
 //! > test_runner_name
-test_completions_text_edits
+test_completions_with_info
 
 //! > cairo_project.toml
 [crate_roots]
@@ -12,7 +12,13 @@ edition = "2024_07"
 
 //! > cairo_code
 mod hidden_trait {
+    /// Trait representing a method with parameters.
     pub trait ATrait1<T> {
+        /// Executes some method with two parameters.
+        ///
+        /// # Parameters
+        /// - `param1`: The first parameter as `i32`.
+        /// - `param2`: The second parameter as `String`.
         fn some_method(self: @T, param1: i32, param2: String);
     }
     impl Felt252ATraitImpl of ATrait1<felt252> {
@@ -32,15 +38,19 @@ mod inner_mod {
 //! > Completions #0
         x.some_method<caret>
 --------------------------
-Completion: some_method()
+Completion: some_method(param1: i32, param2: String)
 Text edit: use super::ATrait1;
+Additional info:
+    Signature: `fn some_method(self: @felt252, param1: i32, param2: String)`
+    Documentation: `Executes some method with two parameters.`
+--------------------------
 
 //! > ==========================================================================
 
-//! > Test completion for methods without parameters.
+//! > Test completion for methods without parameters showing additional info.
 
 //! > test_runner_name
-test_completions_text_edits
+test_completions_with_info
 
 //! > cairo_project.toml
 [crate_roots]
@@ -51,7 +61,9 @@ edition = "2024_07"
 
 //! > cairo_code
 mod hidden_trait {
+    /// Trait representing a method without parameters.
     pub trait ATrait2<T> {
+        /// Executes a method that doesn't require parameters.
         fn no_param_method(self: @T);
     }
     impl Felt252ATraitImpl of ATrait2<felt252> {
@@ -73,3 +85,7 @@ mod inner_mod {
 --------------------------
 Completion: no_param_method()
 Text edit: use super::ATrait2;
+Additional info:
+    Signature: `fn no_param_method(self: @felt252)`
+    Documentation: `Executes a method that doesn't require parameters.`
+--------------------------
