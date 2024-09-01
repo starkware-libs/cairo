@@ -1421,9 +1421,9 @@ impl BalancePairStorageNodeMutImpl of starknet::storage::StorageNodeMut<BalanceP
 }
 
 
-lib.cairo:33:1
-
-^
+lib.cairo:34:10
+#[derive(Drop, starknet::Store)]
+         ^**^
 impls:
 
 impl SlicedBalanceTrioDrop of core::traits::Drop::<SlicedBalanceTrio>;
@@ -1529,9 +1529,9 @@ impl SlicedBalanceTrioSubPointersMutImpl of starknet::storage::SubPointersMut<Sl
 }
 
 
-lib.cairo:39:1
-
-^
+lib.cairo:40:10
+#[derive(Drop, starknet::Store)]
+         ^**^
 impls:
 
 impl SlicedBalancePairDrop of core::traits::Drop::<SlicedBalancePair>;
@@ -1720,9 +1720,9 @@ impl LinkedListStorageNodeMutImpl of starknet::storage::StorageNodeMut<LinkedLis
 }
 
 
-lib.cairo:51:1
-
-^
+lib.cairo:53:10
+#[derive(Drop, starknet::Store)]
+         ^**^
 impls:
 
 impl QueryableEnumDrop of core::traits::Drop::<QueryableEnum>;
@@ -2294,9 +2294,9 @@ impl SlicedBalanceTrioSubPointersDrop of core::traits::Drop::<SlicedBalanceTrioS
 impl SlicedBalanceTrioSubPointersCopy of core::traits::Copy::<SlicedBalanceTrioSubPointers>;
 
 
-lib.cairo:34:1
+lib.cairo:34:16
 #[derive(Drop, starknet::Store)]
-^******************************^
+               ^*************^
 impls:
 
 impl SlicedBalanceTrioSubPointersMutDrop of core::traits::Drop::<SlicedBalanceTrioSubPointersMut>;
@@ -2312,9 +2312,9 @@ impl SlicedBalancePairSubPointersDrop of core::traits::Drop::<SlicedBalancePairS
 impl SlicedBalancePairSubPointersCopy of core::traits::Copy::<SlicedBalancePairSubPointers>;
 
 
-lib.cairo:40:1
+lib.cairo:40:16
 #[derive(Drop, starknet::Store)]
-^******************************^
+               ^*************^
 impls:
 
 impl SlicedBalancePairSubPointersMutDrop of core::traits::Drop::<SlicedBalancePairSubPointersMut>;
