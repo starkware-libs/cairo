@@ -37,6 +37,9 @@ enum VarInfo {
     Snapshot(Box<VarInfo>),
     /// The variable is a struct of other variables.
     Struct(Vec<VarInfo>),
+    /// A marker for inner `VarInfo`s to be untracked - enables building recursive `VarInfo`s
+    /// dependending on untracked values (such as a struct of const and an uncopiable values).
+    Untracked,
 }
 
 /// Performs constant folding on the lowered program.
@@ -101,7 +104,11 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                     let mut contains_info = false;
                     for input in inputs.iter() {
                         let Some(info) = ctx.var_info.get(&input.var_id) else {
-                            all_args.push(VarInfo::Var(*input));
+                            all_args.push(if lowered.variables[input.var_id].copyable.is_ok() {
+                                VarInfo::Var(*input)
+                            } else {
+                                VarInfo::Untracked
+                            });
                             continue;
                         };
                         contains_info = true;
@@ -141,7 +148,9 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                             }
                             VarInfo::Struct(members) => {
                                 for (output, member) in zip_eq(outputs, members.clone()) {
-                                    ctx.var_info.insert(*output, wrap_with_snapshots(member));
+                                    if !matches!(member, VarInfo::Untracked) {
+                                        ctx.var_info.insert(*output, wrap_with_snapshots(member));
+                                    }
                                 }
                             }
                             _ => {}
