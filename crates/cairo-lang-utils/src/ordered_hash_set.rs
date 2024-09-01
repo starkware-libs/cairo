@@ -127,10 +127,7 @@ impl<Key: Hash + Eq, BH: BuildHasher> OrderedHashSet<Key, BH> {
     }
 
     /// Returns `true` if the intersection of `self` and `other` is non-empty.
-    pub fn intersects<'a, BH2: BuildHasher>(
-        &'a self,
-        other: &'a OrderedHashSet<Key, BH2>,
-    ) -> bool {
+    pub fn intersects<'a, BH2: BuildHasher>(&'a self, other: &'a OrderedHashSet<Key, BH2>) -> bool {
         self.intersection(other).next().is_some()
     }
 }
