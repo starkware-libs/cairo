@@ -206,7 +206,7 @@ impl ValueInfo {
 
                 if cancels_out {
                     // If the StructDeconstruct cancels out the StructConstruct, then we don't need
-                    // to `apply_deconstruct` to the innner var infos.
+                    // to `apply_deconstruct` to the inner var infos.
                     *self = ValueInfo::Var(stmt.input);
                     return OpResult::InputConsumed;
                 }
