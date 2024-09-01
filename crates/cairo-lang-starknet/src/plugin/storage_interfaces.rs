@@ -453,17 +453,21 @@ pub fn handle_storage_interface_struct<'a>(
     struct_ast: &ast::ItemStruct,
     metadata: &MacroPluginMetadata<'_>,
 ) -> PatchBuilder<'a> {
-    let mut builder = PatchBuilder::new(db, struct_ast);
     // Run for both StorageNode and StorageTrait
-    let storage_interface_types = if struct_ast.has_attr(db, STORAGE_NODE_ATTR) {
-        vec![StorageInterfaceType::StorageTrait, StorageInterfaceType::StorageNode]
-    } else if struct_ast.has_attr(db, STORAGE_ATTR) {
-        vec![StorageInterfaceType::StorageTrait]
-    } else if has_derive(struct_ast, db, STORE_TRAIT).is_some() {
-        vec![StorageInterfaceType::StructSubPointers]
-    } else {
-        panic!("Invalid storage interface type.");
-    };
+    let (origin, storage_interface_types) =
+        if let Some(attr) = struct_ast.find_attr(db, STORAGE_NODE_ATTR) {
+            (
+                attr.as_syntax_node(),
+                vec![StorageInterfaceType::StorageTrait, StorageInterfaceType::StorageNode],
+            )
+        } else if let Some(attr) = struct_ast.find_attr(db, STORAGE_ATTR) {
+            (attr.as_syntax_node(), vec![StorageInterfaceType::StorageTrait])
+        } else if let Some(arg) = has_derive(struct_ast, db, STORE_TRAIT) {
+            (arg.as_syntax_node(), vec![StorageInterfaceType::StructSubPointers])
+        } else {
+            panic!("Invalid storage interface type.");
+        };
+    let mut builder = PatchBuilder::new_ex(db, &origin);
     for interface_type in storage_interface_types {
         handle_storage_interface_for_interface_type(
             db,

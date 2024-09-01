@@ -209,9 +209,9 @@ impl ASubPointersMutImpl of starknet::storage::SubPointersMut<A> {
 }
 
 
-lib.cairo:7:1
-
-^
+lib.cairo:8:1
+#[derive(starknet::Event, PartialEq, Drop, Serde)]
+^************************************************^
 impls:
 
 impl BPartialEq of core::traits::PartialEq::<B> {
@@ -254,9 +254,9 @@ impl BIsEvent of starknet::Event<B> {
 }
 
 
-lib.cairo:12:1
-
-^
+lib.cairo:14:1
+#[derive(starknet::Event, PartialEq, Drop)]
+^*****************************************^
 impls:
 
 impl NestedEventEnumPartialEq of core::traits::PartialEq::<NestedEventEnum> {
@@ -310,9 +310,9 @@ impl NestedEventEnumBIntoEvent of Into<B, NestedEventEnum> {
 
 
 
-lib.cairo:18:1
-
-^
+lib.cairo:20:1
+#[derive(starknet::Event, PartialEq, Drop)]
+^*****************************************^
 impls:
 
 impl MyEventEnumPartialEq of core::traits::PartialEq::<MyEventEnum> {
@@ -453,9 +453,9 @@ impl ASubPointersDrop of core::traits::Drop::<ASubPointers>;
 impl ASubPointersCopy of core::traits::Copy::<ASubPointers>;
 
 
-lib.cairo:1:1
+lib.cairo:1:27
 #[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
-^*****************************************************************^
+                          ^*************^
 impls:
 
 impl ASubPointersMutDrop of core::traits::Drop::<ASubPointersMut>;

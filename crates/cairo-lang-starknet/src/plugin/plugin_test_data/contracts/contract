@@ -319,9 +319,9 @@ pub mod __constructor {
 
 
 
-lib.cairo:27:1
-
-^
+lib.cairo:29:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -383,9 +383,9 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 
 
-lib.cairo:34:1
+lib.cairo:34:14
     #[derive(Drop, starknet::Event)]
-^**********************************^
+             ^**^
 impls:
 
 impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
@@ -417,9 +417,9 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 }
 
 
-lib.cairo:39:1
+lib.cairo:39:14
     #[derive(Drop, starknet::Event)]
-^**********************************^
+             ^**^
 impls:
 
 impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
