@@ -287,7 +287,7 @@ pub fn completion_for_method(
         insert_text: Some(call_signature),
         detail: Some(detail),
         kind: Some(CompletionItemKind::METHOD),
-        additional_text_edits: Some(additional_text_edits),
+        additional_text_edits: additional_text_edits.into(),
         ..CompletionItem::default()
     };
 
@@ -295,8 +295,8 @@ pub fn completion_for_method(
         let insert_position = Position {
             line: position.line,
             // Position cursor inside the parentheses.
-            character: position.character + name.len() + 1,
-        }
+            character: position.character + name.len() as u32 + 1,
+        };
         completion.additional_text_edits.push(TextEdit {
             range: Range::new(insert_position, insert_position),
             // Add a space to place cursor.
