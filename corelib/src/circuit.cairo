@@ -490,3 +490,17 @@ impl Felt252IntoU384 of Into<felt252, u384> {
         conversions::from_u256(self.into())
     }
 }
+
+impl U384Zero of crate::num::traits::Zero<u384> {
+    fn zero() -> u384 {
+        crate::circuit::u384 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }
+    }
+
+    fn is_zero(self: @u384) -> bool {
+        *self == Self::zero()
+    }
+
+    fn is_non_zero(self: @u384) -> bool {
+        !self.is_zero()
+    }
+}
