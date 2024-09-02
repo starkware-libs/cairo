@@ -382,34 +382,46 @@ impl Backend {
         let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
         let mut processed_modules: HashSet<ModuleId> = HashSet::default();
 
-        let open_files_ids: HashSet<FileId> = async {
-            let state_snapshot = self.state_snapshot().await;
-            let open_files = state_snapshot.open_files.iter();
-            open_files.filter_map(|url| state_snapshot.db.file_for_url(url)).collect()
+        let state = self.state_snapshot().await;
+        let open_files = state.open_files;
+        let db = state.db;
+
+        let (db, open_files_ids) = async move {
+            let open_files = open_files.iter();
+            let result =
+                open_files.filter_map(|url| db.file_for_url(url)).collect::<HashSet<FileId>>();
+            (db, result)
         }
         .instrument(trace_span!("get_open_files_ids"))
         .await;
 
-        let open_files_modules = self.get_files_modules(open_files_ids.iter()).await;
+        let (mut db, open_files_modules) = self.get_files_modules(open_files_ids.iter(), db);
 
         // Refresh open files modules first for better UX
-        async {
+        let config_ref = &state.config;
+        let processed_modules_ref = &mut processed_modules;
+        let files_with_set_diagnostics_ref = &mut files_with_set_diagnostics;
+
+        let db = async move {
             for (file, file_modules_ids) in open_files_modules {
-                self.refresh_file_diagnostics(
-                    &file,
-                    &file_modules_ids,
-                    &mut processed_modules,
-                    &mut files_with_set_diagnostics,
-                )
-                .await;
+                db = self
+                    .refresh_file_diagnostics(
+                        &file,
+                        &file_modules_ids,
+                        db,
+                        config_ref,
+                        processed_modules_ref,
+                        files_with_set_diagnostics_ref,
+                    )
+                    .await;
             }
+            db
         }
         .instrument(trace_span!("refresh_open_files_modules"))
         .await;
 
-        let rest_of_files = async {
+        let (db, rest_of_files) = trace_span!("get_rest_of_files").in_scope(|| {
             let mut rest_of_files: HashSet<FileId> = HashSet::default();
-            let db = self.db_snapshot().await;
             for crate_id in db.crates() {
                 for module_id in db.crate_modules(crate_id).iter() {
                     if let Ok(module_files) = db.module_files(*module_id) {
@@ -419,23 +431,27 @@ impl Backend {
                     }
                 }
             }
-            rest_of_files
-        }
-        .instrument(trace_span!("get_rest_of_files"))
-        .await;
+            (db, rest_of_files)
+        });
 
-        let rest_of_files_modules = self.get_files_modules(rest_of_files.iter()).await;
+        let (mut db, rest_of_files_modules) = self.get_files_modules(rest_of_files.iter(), db);
+
+        let processed_modules_ref = &mut processed_modules;
+        let files_with_set_diagnostics_ref = &mut files_with_set_diagnostics;
 
         // Refresh rest of files after, since they are not viewed currently
-        async {
+        async move {
             for (file, file_modules_ids) in rest_of_files_modules {
-                self.refresh_file_diagnostics(
-                    &file,
-                    &file_modules_ids,
-                    &mut processed_modules,
-                    &mut files_with_set_diagnostics,
-                )
-                .await;
+                db = self
+                    .refresh_file_diagnostics(
+                        &file,
+                        &file_modules_ids,
+                        db,
+                        &state.config,
+                        processed_modules_ref,
+                        files_with_set_diagnostics_ref,
+                    )
+                    .await;
             }
         }
         .instrument(trace_span!("refresh_other_files_modules"))
@@ -478,12 +494,11 @@ impl Backend {
         &self,
         file: &FileId,
         modules_ids: &Vec<ModuleId>,
+        db: salsa::Snapshot<AnalysisDatabase>,
+        config: &Config,
         processed_modules: &mut HashSet<ModuleId>,
         files_with_set_diagnostics: &mut HashSet<Url>,
-    ) {
-        let state = self.state_snapshot().await;
-        let db = state.db;
-        let config = state.config;
+    ) -> salsa::Snapshot<AnalysisDatabase> {
         let file_url = db.url_for_file(*file);
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
@@ -543,7 +558,7 @@ impl Backend {
             .await;
 
         if skip_update {
-            return;
+            return db;
         }
 
         let mut diags = Vec::new();
@@ -567,28 +582,27 @@ impl Backend {
             trace_macro_diagnostics,
         );
 
-        // Drop database snapshot before we wait for the client responding to our notification.
-        drop(db);
-
         self.client
             .publish_diagnostics(file_url, diags, None)
             .instrument(trace_span!("publish_diagnostics"))
             .await;
+
+        db
     }
 
     /// Gets the mapping of files to their respective modules.
-    async fn get_files_modules(
+    fn get_files_modules<'a>(
         &self,
-        files_ids: impl Iterator<Item = &FileId>,
-    ) -> HashMap<FileId, Vec<ModuleId>> {
-        let state_snapshot = self.state_snapshot().await;
+        files_ids: impl Iterator<Item = &'a FileId>,
+        db: salsa::Snapshot<AnalysisDatabase>,
+    ) -> (salsa::Snapshot<AnalysisDatabase>, HashMap<FileId, Vec<ModuleId>>) {
         let mut result = HashMap::default();
         for file_id in files_ids {
-            if let Ok(file_modules) = state_snapshot.db.file_modules(*file_id) {
+            if let Ok(file_modules) = db.file_modules(*file_id) {
                 result.insert(*file_id, file_modules.iter().cloned().collect_vec());
             }
         }
-        result
+        (db, result)
     }
 
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
