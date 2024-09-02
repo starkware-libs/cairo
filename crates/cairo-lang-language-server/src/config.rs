@@ -7,7 +7,7 @@ use tower_lsp::lsp_types::{ClientCapabilities, ConfigurationItem};
 use tower_lsp::Client;
 use tracing::{debug, error, warn};
 
-use crate::lsp::client_capabilities::ClientCapabilitiesExt;
+use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 
 // TODO(mkaput): Write a macro that will auto-generate this struct and the `reload` logic.
 // TODO(mkaput): Write a test that checks that fields in this struct are sorted alphabetically.

@@ -89,11 +89,12 @@ use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::config::Config;
-use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
-use crate::lsp::client_capabilities::ClientCapabilitiesExt;
+use crate::lsp::capabilities::server::{
+    collect_dynamic_registrations, collect_server_capabilities,
+};
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
@@ -825,52 +826,16 @@ impl TryFrom<String> for ServerCommands {
 impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
     async fn initialize(&self, params: InitializeParams) -> LSPResult<InitializeResult> {
-        self.with_state_mut(|state| {
-            state.client_capabilities = Owned::new(Arc::new(params.capabilities));
+        let client_capabilities = Owned::new(Arc::new(params.capabilities));
+        let client_capabilities_snapshot = client_capabilities.snapshot();
+        self.with_state_mut(move |state| {
+            state.client_capabilities = client_capabilities;
         })
         .await;
 
         Ok(InitializeResult {
             server_info: None,
-            capabilities: ServerCapabilities {
-                text_document_sync: Some(TextDocumentSyncCapability::Kind(
-                    TextDocumentSyncKind::FULL,
-                )),
-                completion_provider: Some(CompletionOptions {
-                    resolve_provider: Some(false),
-                    trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
-                    all_commit_characters: None,
-                    work_done_progress_options: Default::default(),
-                    completion_item: None,
-                }),
-                execute_command_provider: Some(ExecuteCommandOptions {
-                    commands: vec!["cairo.reload".to_string()],
-                    work_done_progress_options: Default::default(),
-                }),
-                workspace: Some(WorkspaceServerCapabilities {
-                    workspace_folders: Some(WorkspaceFoldersServerCapabilities {
-                        supported: Some(true),
-                        change_notifications: Some(OneOf::Left(true)),
-                    }),
-                    file_operations: None,
-                }),
-                semantic_tokens_provider: Some(
-                    SemanticTokensOptions {
-                        legend: SemanticTokensLegend {
-                            token_types: SemanticTokenKind::legend(),
-                            token_modifiers: vec![],
-                        },
-                        full: Some(SemanticTokensFullOptions::Bool(true)),
-                        ..SemanticTokensOptions::default()
-                    }
-                    .into(),
-                ),
-                document_formatting_provider: Some(OneOf::Left(true)),
-                hover_provider: Some(HoverProviderCapability::Simple(true)),
-                definition_provider: Some(OneOf::Left(true)),
-                code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
-                ..ServerCapabilities::default()
-            },
+            capabilities: collect_server_capabilities(&client_capabilities_snapshot),
         })
     }
 
@@ -879,28 +844,14 @@ impl LanguageServer for Backend {
         // Initialize the configuration.
         self.reload_config().await;
 
+        // Dynamically register capabilities.
         let client_capabilities = self.state_snapshot().await.client_capabilities;
 
-        if client_capabilities.did_change_watched_files_dynamic_registration() {
-            // Register patterns for client file watcher.
-            // This is used to detect changes to Scarb.toml and invalidate .cairo files.
-            let registration_options = DidChangeWatchedFilesRegistrationOptions {
-                watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
-                    .into_iter()
-                    .map(|glob_pattern| FileSystemWatcher {
-                        glob_pattern: GlobPattern::String(glob_pattern.to_string()),
-                        kind: None,
-                    })
-                    .collect(),
-            };
-            let registration = Registration {
-                id: "workspace/didChangeWatchedFiles".to_string(),
-                method: "workspace/didChangeWatchedFiles".to_string(),
-                register_options: Some(serde_json::to_value(registration_options).unwrap()),
-            };
-            let result = self.client.register_capability(vec![registration]).await;
+        let dynamic_registrations = collect_dynamic_registrations(&client_capabilities);
+        if !dynamic_registrations.is_empty() {
+            let result = self.client.register_capability(dynamic_registrations).await;
             if let Err(err) = result {
-                warn!("Failed to register workspace/didChangeWatchedFiles event: {:#?}", err);
+                warn!("failed to register dynamic capabilities: {err:#?}");
             }
         }
     }
@@ -908,9 +859,6 @@ impl LanguageServer for Backend {
     async fn shutdown(&self) -> LSPResult<()> {
         Ok(())
     }
-
-    #[tracing::instrument(level = "debug", skip_all)]
-    async fn did_change_workspace_folders(&self, _: DidChangeWorkspaceFoldersParams) {}
 
     #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {
@@ -932,11 +880,14 @@ impl LanguageServer for Backend {
         })
         .await;
 
-        // Reload workspace if Scarb.toml changed.
+        // Reload workspace if a config file has changed.
         for change in params.changes {
             let changed_file_path = change.uri.to_file_path().unwrap_or_default();
             let changed_file_name = changed_file_path.file_name().unwrap_or_default();
-            if changed_file_name == "Scarb.toml" {
+            // TODO(pmagiera): react to Scarb.lock. Keep in mind Scarb does save Scarb.lock on each
+            //  metadata call, so it is easy to fall in a loop here.
+            if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
+            {
                 self.reload().await.ok();
             }
         }
