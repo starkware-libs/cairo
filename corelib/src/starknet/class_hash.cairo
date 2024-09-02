@@ -8,7 +8,9 @@ use core::RangeCheck;
 #[derive(Copy, Drop)]
 pub extern type ClassHash;
 
+#[deprecated(feature: "deprecated-starknet-consts", note: "Use `starknet::const_value` instead.")]
 pub extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
+
 pub(crate) extern fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
 
 pub(crate) extern fn class_hash_try_from_felt252(
@@ -28,7 +30,7 @@ pub(crate) impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
 
 impl ClassHashZero of core::num::traits::Zero<ClassHash> {
     fn zero() -> ClassHash {
-        class_hash_const::<0>()
+        starknet::const_value::<0>()
     }
     #[inline]
     fn is_zero(self: @ClassHash) -> bool {

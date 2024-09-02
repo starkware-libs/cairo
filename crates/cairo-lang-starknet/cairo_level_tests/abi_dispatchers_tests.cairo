@@ -1,4 +1,4 @@
-use starknet::account::Call;
+use starknet::{account::Call, ContractAddress};
 
 use super::utils::serialized;
 
@@ -48,14 +48,14 @@ mod test_contract {
 
 #[test]
 fn test_dispatcher_serialization() {
-    let a = starknet::contract_address_const::<11>();
+    let a: ContractAddress = starknet::const_value::<11>();
     test_contract::__external::set_another_address(serialized(a));
     assert_eq!(test_contract::__external::get_another_address(serialized(())), serialized(a),);
 }
 
 #[test]
 fn test_library_dispatcher_serialization() {
-    let a = starknet::contract_address_const::<11>();
+    let a: ContractAddress = starknet::const_value::<11>();
     test_contract::__external::set_another_class_hash(serialized(a));
     assert_eq!(test_contract::__external::get_another_class_hash(serialized(())), serialized(a),);
 }
@@ -74,7 +74,7 @@ pub fn withdraw_and_get_available_gas() -> u128 {
 // Tests the serialization and deserialize of the arguments to `__validate__`.
 #[test]
 fn test_validate_gas_cost() {
-    let contract_address = starknet::contract_address_const::<11>();
+    let contract_address = starknet::const_value::<11>();
     let base_gas = withdraw_and_get_available_gas();
     let calls = [
         Call {

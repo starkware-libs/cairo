@@ -1,4 +1,4 @@
-use starknet::{ContractAddress, get_caller_address, contract_address_const};
+use starknet::{ContractAddress, get_caller_address, const_value};
 use starknet::storage::{
     StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess, StorageMapWriteAccess
 };
@@ -196,9 +196,7 @@ pub impl ERC20HelperImpl<
         self
             .emit(
                 Event::Transfer(
-                    TransferEvent {
-                        from: contract_address_const::<0>(), to: recipient, value: initial_supply
-                    }
+                    TransferEvent { from: const_value::<0>(), to: recipient, value: initial_supply }
                 )
             );
     }

@@ -7,7 +7,7 @@ use cairo_level_tests::contracts::multi_component::{
 #[test]
 fn test_flow() {
     // Set up.
-    let recipient = starknet::contract_address_const::<0x1337>();
+    let recipient = starknet::const_value::<0x1337>();
     let (contract_address, _) = starknet::syscalls::deploy_syscall(
         contract_with_4_components::TEST_CLASS_HASH.try_into().unwrap(),
         0,

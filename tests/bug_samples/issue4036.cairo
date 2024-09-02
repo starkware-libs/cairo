@@ -16,9 +16,7 @@ mod toto {
 
     #[external(v0)]
     fn test_mint_and_unbox(self: @ContractState) {
-        let contract = FirstInterfaceDispatcher {
-            contract_address: starknet::contract_address_const::<5>()
-        };
+        let contract = FirstInterfaceDispatcher { contract_address: starknet::const_value::<5>() };
 
         contract.balance_of();
         contract.toto(array![contract.contract_address]);

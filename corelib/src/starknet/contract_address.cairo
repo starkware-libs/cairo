@@ -10,8 +10,9 @@ use core::RangeCheck;
 #[derive(Copy, Drop)]
 pub extern type ContractAddress;
 
-
+#[deprecated(feature: "deprecated-starknet-consts", note: "Use `starknet::const_value` instead.")]
 pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
+
 pub(crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
 pub(crate) extern fn contract_address_try_from_felt252(
@@ -32,7 +33,7 @@ pub(crate) impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
 
 impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
-        contract_address_const::<0>()
+        starknet::const_value::<0>()
     }
     #[inline]
     fn is_zero(self: @ContractAddress) -> bool {
