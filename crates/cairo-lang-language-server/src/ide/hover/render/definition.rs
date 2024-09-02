@@ -4,6 +4,7 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::Upcast;
+use itertools::chain;
 use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
@@ -25,9 +26,16 @@ pub fn definition(
         SymbolDef::Item(item) => {
             let mut md = String::new();
             md += &fenced_code_block(&item.definition_path(db));
-            md += &fenced_code_block(&item.signature(db));
+            if let Some(signature) = item.signature(db) {
+                md += &fenced_code_block(&signature);
+            }
+
             let item_documentation = item.documentation(db);
-            parse_and_concat_documentation(md, item_documentation)
+            if let Some(doc) = parse_and_concat_documentation(item_documentation) {
+                md += RULE;
+                md += &doc;
+            }
+            md
         }
 
         SymbolDef::Variable(var) => fenced_code_block(&var.signature(db)),
@@ -45,9 +53,15 @@ pub fn definition(
             // Signature is the signature of the struct, so it makes sense that the definition
             // path is too.
             md += &fenced_code_block(&structure.definition_path(db));
-            md += &fenced_code_block(&structure.signature(db));
+            if let Some(signature) = structure.signature(db) {
+                md += &fenced_code_block(&signature);
+            }
             let item_documentation = db.get_item_documentation((*member).into());
-            parse_and_concat_documentation(md, item_documentation)
+            if let Some(doc) = parse_and_concat_documentation(item_documentation) {
+                md += RULE;
+                md += &doc;
+            }
+            md
         }
     };
 
@@ -61,7 +75,8 @@ pub fn definition(
     })
 }
 
-fn parse_and_concat_documentation(mut md: String, item_documentation: Documentation) -> String {
+fn parse_and_concat_documentation(item_documentation: Documentation) -> Option<String> {
+    let mut comments: Vec<String> = Vec::new();
     match (
         item_documentation.prefix_comments,
         item_documentation.inner_comments,
@@ -69,19 +84,13 @@ fn parse_and_concat_documentation(mut md: String, item_documentation: Documentat
     ) {
         (None, None, None) => (),
         (prefix_comments, inner_comments, module_level_comments) => {
-            md += RULE;
-            let mut comments: Vec<String> = Vec::new();
-            if let Some(prefix_comments) = prefix_comments {
-                comments.push(prefix_comments.trim_end().to_string());
+            for comment_content in chain!(prefix_comments, inner_comments, module_level_comments) {
+                comments.push(comment_content.trim_end().to_string());
             }
-            if let Some(inner_comments) = inner_comments {
-                comments.push(inner_comments.trim_end().to_string());
-            }
-            if let Some(module_level_comments) = module_level_comments {
-                comments.push(module_level_comments.trim_end().to_string());
-            }
-            md += &comments.join(" ");
         }
     }
-    md
+    if comments.is_empty() {
+        return None;
+    }
+    Some(comments.join(" "))
 }

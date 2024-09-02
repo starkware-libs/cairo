@@ -298,7 +298,7 @@ fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
-            if is_submodule_inline(db, submodule_id)? {
+            if db.is_submodule_inline(submodule_id)? {
                 // This is an inline module, we return the file where the inline module was
                 // defined. It can be either the file of the parent module
                 // or a plugin-generated virtual file.
@@ -316,7 +316,7 @@ fn module_files(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<[FileId]>>
 }
 
 fn module_file(db: &dyn DefsGroup, module_file_id: ModuleFileId) -> Maybe<FileId> {
-    Ok(db.module_files(module_file_id.0)?[module_file_id.1.0])
+    Ok(db.module_files(module_file_id.0)?[module_file_id.1 .0])
 }
 
 fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {

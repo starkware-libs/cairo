@@ -287,11 +287,11 @@ impl<'a> Display for NodeTextFormatter<'a> {
     }
 }
 
-pub struct NodeInnerCommentFormatter<'a> {
+struct NodeInnerCommentFormatter<'a> {
     /// The node to format.
-    pub node: &'a SyntaxNode,
+    node: &'a SyntaxNode,
     /// The syntax db.
-    pub db: &'a dyn SyntaxGroup,
+    db: &'a dyn SyntaxGroup,
 }
 
 impl<'a> Display for NodeInnerCommentFormatter<'a> {

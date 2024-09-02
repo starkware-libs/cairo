@@ -6,7 +6,7 @@ use cairo_lang_utils::{extract_matches, LookupIntern};
 
 use super::test_utils::{set_file_content, setup_test_module, TestDatabase};
 use crate::db::{DocGroup, Documentation};
-use crate::documentable_item::{DocumentableItemId, DocumentableModuleItemId};
+use crate::documentable_item::DocumentableItemId;
 
 const PREFIX_AND_INNER_COMMENTS_TEST_CODE: &str =
     include_str!("test-code/prefix_and_inner_comments.cairo");
@@ -36,10 +36,9 @@ fn test_module_level_documentation() {
 
     let crate_documentation = db.get_item_documentation(DocumentableItemId::Crate(crate_id));
 
-    let submodule_documentation =
-        db.get_item_documentation(DocumentableItemId::from(DocumentableModuleItemId::from(
-            LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id)),
-        )));
+    let submodule_documentation = db.get_item_documentation(DocumentableItemId::from(
+        DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id))),
+    ));
 
     assert_eq!(
         crate_documentation,
@@ -108,52 +107,47 @@ fn test_prefix_and_inner_comments() {
     let member_2_id = struct_member_ids[1].1.id;
 
     let main_function_documentation =
-        db.get_item_documentation(DocumentableItemId::from(DocumentableModuleItemId::from(
+        db.get_item_documentation(DocumentableItemId::from(DocumentableItemId::from(
             LookupItemId::ModuleItem(ModuleItemId::FreeFunction(main_function_id)),
         )));
 
     let trait_documentation = db.get_item_documentation(DocumentableItemId::from(
-        DocumentableModuleItemId::from(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id))),
+        DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id))),
     ));
 
-    let trait_function_documentation =
-        db.get_item_documentation(DocumentableItemId::from(DocumentableModuleItemId::from(
-            LookupItemId::TraitItem(TraitItemId::Function(trait_function_id)),
-        )));
+    let trait_function_documentation = db.get_item_documentation(DocumentableItemId::from(
+        DocumentableItemId::from(LookupItemId::TraitItem(TraitItemId::Function(trait_function_id))),
+    ));
 
     let impl_documentation = db.get_item_documentation(DocumentableItemId::from(
-        DocumentableModuleItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(impl_id))),
+        DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(impl_id))),
     ));
 
-    let impl_function_documentation =
-        db.get_item_documentation(DocumentableItemId::from(DocumentableModuleItemId::from(
-            LookupItemId::ImplItem(ImplItemId::Function(impl_function_id)),
-        )));
+    let impl_function_documentation = db.get_item_documentation(DocumentableItemId::from(
+        DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Function(impl_function_id))),
+    ));
 
-    let submodule_documentation =
-        db.get_item_documentation(DocumentableItemId::from(DocumentableModuleItemId::from(
-            LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id)),
-        )));
+    let submodule_documentation = db.get_item_documentation(DocumentableItemId::from(
+        DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id))),
+    ));
 
     let submodule_function_documentation =
-        db.get_item_documentation(DocumentableItemId::from(DocumentableModuleItemId::from(
+        db.get_item_documentation(DocumentableItemId::from(DocumentableItemId::from(
             LookupItemId::ModuleItem(ModuleItemId::FreeFunction(submodule_function_id)),
         )));
 
     let struct_documentation = db.get_item_documentation(DocumentableItemId::from(
-        DocumentableModuleItemId::from(LookupItemId::ModuleItem(ModuleItemId::Struct(struct_id))),
+        DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Struct(struct_id))),
     ));
 
-    let member_1_documentation = db.get_item_documentation(DocumentableItemId::from(
-        DocumentableModuleItemId::from(member_1_id),
-    ));
+    let member_1_documentation =
+        db.get_item_documentation(DocumentableItemId::from(DocumentableItemId::from(member_1_id)));
 
-    let member_2_documentation = db.get_item_documentation(DocumentableItemId::from(
-        DocumentableModuleItemId::from(member_2_id),
-    ));
+    let member_2_documentation =
+        db.get_item_documentation(DocumentableItemId::from(DocumentableItemId::from(member_2_id)));
 
     let enum_documentation = db.get_item_documentation(DocumentableItemId::from(
-        DocumentableModuleItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id))),
+        DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id))),
     ));
 
     assert_eq!(

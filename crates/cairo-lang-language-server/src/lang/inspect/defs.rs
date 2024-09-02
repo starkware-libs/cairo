@@ -15,7 +15,6 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
-use itertools::Itertools;
 use smol_str::SmolStr;
 use tracing::error;
 
@@ -138,10 +137,15 @@ impl ItemDef {
     }
 
     /// Get item signature without its body including signatures of its contexts.
-    pub fn signature(&self, db: &AnalysisDatabase) -> String {
+    pub fn signature(&self, db: &AnalysisDatabase) -> Option<String> {
         let contexts = self.context_items.iter().copied().rev();
         let this = iter::once(self.lookup_item_id);
-        contexts.chain(this).map(|item| db.get_item_signature(item.into())).join("\n")
+        let result: Vec<_> =
+            contexts.chain(this).filter_map(|item| db.get_item_signature(item.into())).collect();
+        if result.is_empty() {
+            return None;
+        }
+        Some(result.join("\n"))
     }
 
     /// Gets item documentation in a final form usable for display.
