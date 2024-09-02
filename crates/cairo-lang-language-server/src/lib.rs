@@ -87,11 +87,12 @@ use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::config::Config;
-use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
-use crate::lsp::client_capabilities::ClientCapabilitiesExt;
+use crate::lsp::capabilities::server::{
+    collect_dynamic_registrations, collect_server_capabilities,
+};
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
@@ -355,93 +356,6 @@ impl Backend {
     #[tracing::instrument(level = "trace", skip_all)]
     async fn db_snapshot(&self) -> salsa::Snapshot<AnalysisDatabase> {
         self.with_state_mut(|state| state.db.snapshot()).await
-    }
-
-    /// Returns registrations of capabilities we want to register dynamically.
-    async fn collect_dynamic_registrations(&self) -> Vec<Registration> {
-        let client_capabilities = self.state_snapshot().await.client_capabilities;
-
-        let mut registrations = vec![];
-
-        if client_capabilities.did_change_watched_files_dynamic_registration() {
-            // Register patterns for the client file watcher.
-            // This is used to detect changes to Scarb.toml and invalidate .cairo files.
-            let registration_options = DidChangeWatchedFilesRegistrationOptions {
-                watchers: [
-                    "/**/*.cairo",
-                    "/**/Scarb.toml",
-                    "/**/Scarb.lock",
-                    "/**/cairo_project.toml",
-                ]
-                .map(|glob_pattern| FileSystemWatcher {
-                    glob_pattern: GlobPattern::String(glob_pattern.to_string()),
-                    kind: None,
-                })
-                .into(),
-            };
-            registrations.push(Registration {
-                id: "workspace/didChangeWatchedFiles".to_string(),
-                method: "workspace/didChangeWatchedFiles".to_string(),
-                register_options: Some(serde_json::to_value(registration_options).unwrap()),
-            });
-        }
-
-        if client_capabilities.text_document_synchronization_dynamic_registration() {
-            let document_selector = Some(vec![
-                DocumentFilter {
-                    language: Some("cairo".to_string()),
-                    scheme: Some("file".to_string()),
-                    pattern: None,
-                },
-                DocumentFilter {
-                    language: Some("cairo".to_string()),
-                    scheme: Some("vfs".to_string()),
-                    pattern: None,
-                },
-            ]);
-
-            let text_document_registration_options =
-                TextDocumentRegistrationOptions { document_selector: document_selector.clone() };
-
-            registrations.push(Registration {
-                id: "textDocument/didOpen".to_string(),
-                method: "textDocument/didOpen".to_string(),
-                register_options: Some(
-                    serde_json::to_value(&text_document_registration_options).unwrap(),
-                ),
-            });
-            registrations.push(Registration {
-                id: "textDocument/didChange".to_string(),
-                method: "textDocument/didChange".to_string(),
-                register_options: Some(
-                    serde_json::to_value(TextDocumentChangeRegistrationOptions {
-                        document_selector,
-                        sync_kind: 1, // TextDocumentSyncKind::FULL
-                    })
-                    .unwrap(),
-                ),
-            });
-            registrations.push(Registration {
-                id: "textDocument/didSave".to_string(),
-                method: "textDocument/didSave".to_string(),
-                register_options: Some(
-                    serde_json::to_value(TextDocumentSaveRegistrationOptions {
-                        include_text: Some(false),
-                        text_document_registration_options: text_document_registration_options
-                            .clone(),
-                    })
-                    .unwrap(),
-                ),
-            });
-            registrations.push(Registration {
-                id: "textDocument/didClose".to_string(),
-                method: "textDocument/didClose".to_string(),
-                register_options: Some(
-                    serde_json::to_value(&text_document_registration_options).unwrap(),
-                ),
-            });
-        }
-        registrations
     }
 
     // TODO(spapini): Consider managing vfs in a different way, using the
@@ -839,50 +753,7 @@ impl LanguageServer for Backend {
 
         Ok(InitializeResult {
             server_info: None,
-            capabilities: ServerCapabilities {
-                text_document_sync: if client_capabilities_snapshot
-                    .text_document_synchronization_dynamic_registration()
-                {
-                    None
-                } else {
-                    Some(TextDocumentSyncCapability::Options(TextDocumentSyncOptions {
-                        open_close: Some(true),
-                        change: Some(TextDocumentSyncKind::FULL),
-                        will_save: Some(false),
-                        will_save_wait_until: Some(false),
-                        save: Some(TextDocumentSyncSaveOptions::SaveOptions(SaveOptions {
-                            include_text: Some(false),
-                        })),
-                    }))
-                },
-                completion_provider: Some(CompletionOptions {
-                    resolve_provider: Some(false),
-                    trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
-                    all_commit_characters: None,
-                    work_done_progress_options: Default::default(),
-                    completion_item: None,
-                }),
-                execute_command_provider: Some(ExecuteCommandOptions {
-                    commands: vec!["cairo.reload".to_string()],
-                    work_done_progress_options: Default::default(),
-                }),
-                semantic_tokens_provider: Some(
-                    SemanticTokensOptions {
-                        legend: SemanticTokensLegend {
-                            token_types: SemanticTokenKind::legend(),
-                            token_modifiers: vec![],
-                        },
-                        full: Some(SemanticTokensFullOptions::Bool(true)),
-                        ..SemanticTokensOptions::default()
-                    }
-                    .into(),
-                ),
-                document_formatting_provider: Some(OneOf::Left(true)),
-                hover_provider: Some(HoverProviderCapability::Simple(true)),
-                definition_provider: Some(OneOf::Left(true)),
-                code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
-                ..ServerCapabilities::default()
-            },
+            capabilities: collect_server_capabilities(&client_capabilities_snapshot),
         })
     }
 
@@ -892,7 +763,9 @@ impl LanguageServer for Backend {
         self.reload_config().await;
 
         // Dynamically register capabilities.
-        let dynamic_registrations = self.collect_dynamic_registrations().await;
+        let client_capabilities = self.state_snapshot().await.client_capabilities;
+
+        let dynamic_registrations = collect_dynamic_registrations(&client_capabilities);
         let result = self.client.register_capability(dynamic_registrations).await;
         if let Err(err) = result {
             warn!("failed to register dynamic capabilities: {err:#?}");
