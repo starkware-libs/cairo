@@ -88,6 +88,34 @@ fn test_into_u384() {
     );
 }
 
+#[test]
+fn test_from_u384() {
+    let limb0 = 0xb000000cd000000ef0000000;
+    let limb1 = 0x50000006700000089000000a;
+    let limb2 = 0x1000000230000004;
+    let limb3 = 0;
+    assert!(
+        u384 { limb0, limb1, limb2, limb3 }
+            .try_into() == Option::Some(
+                0x100000023000000450000006700000089000000ab000000cd000000ef0000000_u256
+            )
+    );
+    assert!(u384 { limb0, limb1, limb2, limb3: 1 }.try_into() == Option::<u256>::None);
+    assert!(
+        u384 { limb0, limb1, limb2: 0x11000000230000004, limb3 }.try_into() == Option::<u256>::None
+    );
+    let limb0 = 0x300000045000000670000008;
+    let limb1 = 0x10000002;
+    let limb2 = 0;
+    let limb3 = 0;
+    assert!(
+        u384 { limb0, limb1, limb2, limb3 }
+            .try_into() == Option::Some(0x10000002300000045000000670000008_u128)
+    );
+    assert!(u384 { limb0, limb1: 0x110000002, limb2, limb3 }.try_into() == Option::<u128>::None);
+    assert!(u384 { limb0, limb1, limb2: 1, limb3 }.try_into() == Option::<u128>::None);
+    assert!(u384 { limb0, limb1, limb2, limb3: 1 }.try_into() == Option::<u128>::None);
+}
 
 #[test]
 fn test_fill_inputs_loop() {
