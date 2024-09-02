@@ -587,11 +587,13 @@ dependencies = [
  "cairo-lang-parser",
  "cairo-lang-semantic",
  "cairo-lang-syntax",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "indoc",
  "itertools 0.12.1",
  "rust-analyzer-salsa",
  "serde",
+ "test-log",
 ]
 
 [[package]]

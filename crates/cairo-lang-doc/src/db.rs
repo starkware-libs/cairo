@@ -1,3 +1,5 @@
+use core::fmt;
+
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -22,6 +24,25 @@ pub struct Documentation {
     /// It's a comment that's on the top of the file starting with "//!".
     /// It can relate either to module or a crate.
     pub module_level_comments: Option<String>,
+}
+
+impl fmt::Display for Documentation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut comments: Vec<String> = Vec::new();
+        if let Some(prefix_comments) = &self.prefix_comments {
+            comments.push(String::from("Prefix:\n") + prefix_comments);
+        }
+        if let Some(inner_comments) = &self.inner_comments {
+            comments.push(String::from("Inner:\n") + inner_comments);
+        }
+        if let Some(module_level_comments) = &self.module_level_comments {
+            comments.push(String::from("Module level:\n") + module_level_comments)
+        }
+        if comments.is_empty() {
+            return write!(f, "");
+        }
+        write!(f, "{}", comments.join(""))
+    }
 }
 
 #[salsa::query_group(DocDatabase)]
@@ -257,7 +278,8 @@ fn extract_module_level_comments(db: &dyn DocGroup, item_id: DocumentableItemId)
 
 /// This function does 2 things to the line of comment:
 /// 1. Removes indentation
-/// 2. If it starts with one of the passed prefixes, removes the given prefixes (including the space after the prefix).
+/// 2. If it starts with one of the passed prefixes, removes the given prefixes (including the space
+///    after the prefix).
 fn map_raw_text_line_to_comment(line: &str, prefixes: &[&'static str]) -> Option<String> {
     // Remove indentation.
     let dedent = line.trim_start();
