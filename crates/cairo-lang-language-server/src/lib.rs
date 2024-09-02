@@ -766,9 +766,11 @@ impl LanguageServer for Backend {
         let client_capabilities = self.state_snapshot().await.client_capabilities;
 
         let dynamic_registrations = collect_dynamic_registrations(&client_capabilities);
-        let result = self.client.register_capability(dynamic_registrations).await;
-        if let Err(err) = result {
-            warn!("failed to register dynamic capabilities: {err:#?}");
+        if !dynamic_registrations.is_empty() {
+            let result = self.client.register_capability(dynamic_registrations).await;
+            if let Err(err) = result {
+                warn!("failed to register dynamic capabilities: {err:#?}");
+            }
         }
     }
 
