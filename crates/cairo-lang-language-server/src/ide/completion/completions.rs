@@ -281,7 +281,7 @@ pub fn completion_for_method(
 
     // Determine the insert text based on whether the function has parameters.
     let call_signature = format!("{name}()");
-    let completion = CompletionItem {
+    let mut completion = CompletionItem {
         // Display the method signature.
         label: call_signature.clone(),
         insert_text: Some(call_signature),
