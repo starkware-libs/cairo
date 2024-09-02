@@ -320,7 +320,16 @@ impl Backend {
     {
         spawn_blocking(move || {
             catch_unwind(AssertUnwindSafe(f)).map_err(|err| {
-                if err.is::<Cancelled>() {
+                // Salsa is broken and sometimes when cancelled throws regular assert instead of
+                // [`Cancelled`]. Catch this case too.
+                if err.is::<Cancelled>()
+                    || err.downcast_ref::<&str>().is_some_and(|msg| {
+                        msg.contains(
+                            "assertion failed: old_memo.revisions.changed_at <= \
+                             revisions.changed_at",
+                        )
+                    })
+                {
                     debug!("LSP worker thread was cancelled");
                     LSPError::request_cancelled()
                 } else {
