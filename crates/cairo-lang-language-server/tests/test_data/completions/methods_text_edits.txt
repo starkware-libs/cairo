@@ -1,7 +1,7 @@
 //! > Test completion for methods with parameters showing additional info.
 
 //! > test_runner_name
-test_completions_with_info
+test_completions_text_edits
 
 //! > cairo_project.toml
 [crate_roots]
@@ -50,7 +50,7 @@ Additional info:
 //! > Test completion for methods without parameters showing additional info.
 
 //! > test_runner_name
-test_completions_with_info
+test_completions_text_edits
 
 //! > cairo_project.toml
 [crate_roots]
