@@ -221,9 +221,9 @@ pub mod __constructor {
 
 
 
-lib.cairo:13:1
+lib.cairo:13:5
     #[derive(Drop, Hash, starknet::Store)]
-^****************************************^
+    ^************************************^
 impls:
 
 impl WrappedFelt252Drop of core::traits::Drop::<WrappedFelt252>;
@@ -315,9 +315,9 @@ impl WrappedFelt252SubPointersMutImpl of starknet::storage::SubPointersMut<Wrapp
 }
 
 
-lib.cairo:17:1
+lib.cairo:17:5
     #[derive(Drop, Hash, Serde, starknet::Store)]
-^***********************************************^
+    ^*******************************************^
 impls:
 
 impl ZeroSizeDrop of core::traits::Drop::<ZeroSize>;
@@ -383,9 +383,9 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
 
 
 
-lib.cairo:19:1
-
-^
+lib.cairo:20:5
+    #[derive(Drop, Serde, starknet::Store)]
+    ^*************************************^
 impls:
 
 impl SimpleEnumDrop of core::traits::Drop::<SimpleEnum>;
@@ -493,9 +493,9 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
 }
 
 
-lib.cairo:25:1
-
-^
+lib.cairo:26:5
+    #[derive(Drop, Serde, starknet::Store)]
+    ^*************************************^
 impls:
 
 impl EnumWithDefaultDrop of core::traits::Drop::<EnumWithDefault>;
@@ -627,9 +627,9 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
 }
 
 
-lib.cairo:33:1
-
-^
+lib.cairo:34:5
+    #[derive(Drop, Serde, starknet::Store)]
+    ^*************************************^
 impls:
 
 impl BadEnumWithDefaultDrop of core::traits::Drop::<BadEnumWithDefault>;
@@ -712,9 +712,9 @@ impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPoin
 impl WrappedFelt252SubPointersCopy of core::traits::Copy::<WrappedFelt252SubPointers>;
 
 
-lib.cairo:13:5
+lib.cairo:13:26
     #[derive(Drop, Hash, starknet::Store)]
-    ^************************************^
+                         ^*************^
 impls:
 
 impl WrappedFelt252SubPointersMutDrop of core::traits::Drop::<WrappedFelt252SubPointersMut>;

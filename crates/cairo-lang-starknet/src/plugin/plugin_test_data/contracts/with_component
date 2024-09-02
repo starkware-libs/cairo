@@ -364,9 +364,9 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
 }
 
 
-lib.cairo:19:1
-
-^
+lib.cairo:21:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -968,9 +968,9 @@ impl HasComponentImpl_component2 of super::component2::HasComponent<ContractStat
 }
 
 
-lib.cairo:28:1
-
-^
+lib.cairo:30:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1599,9 +1599,9 @@ impl HasComponentImpl_component2 of super::component2::HasComponent<ContractStat
 }
 
 
-lib.cairo:28:1
-
-^
+lib.cairo:30:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;

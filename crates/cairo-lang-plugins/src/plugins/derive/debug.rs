@@ -1,13 +1,18 @@
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::node::ast;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{unsupported_for_extern_diagnostic, DeriveInfo, DeriveResult};
+use super::{unsupported_for_extern_diagnostic, DeriveInfo};
 use crate::plugins::derive::TypeVariantInfo;
 
 /// Adds derive result for the `Debug` trait.
-pub fn handle_debug(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mut DeriveResult) {
+pub fn handle_debug(
+    info: &DeriveInfo,
+    derived: &ast::ExprPath,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Option<String> {
     let header = info.format_impl_header("core::fmt", "Debug", &["core::fmt::Debug"]);
     let full_typename = info.full_typename();
     let name = &info.name;
@@ -51,16 +56,17 @@ pub fn handle_debug(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &m
                 )
             }
             TypeVariantInfo::Extern => {
-                result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
-                return;
+                diagnostics.push(unsupported_for_extern_diagnostic(derived));
+                return None;
             }
         },
     );
-    result.impls.push(formatdoc! {"
+
+    Some(formatdoc! {"
         {header} {{
             fn fmt(self: @{full_typename}, ref f: core::fmt::Formatter) -> core::result::Result::<(), core::fmt::Error> {{
                 {body}
             }}
         }}
-    "});
+    "})
 }
