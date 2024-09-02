@@ -89,3 +89,4 @@ Additional info:
     Signature: `fn no_param_method(self: @felt252)`
     Documentation: `Executes a method that doesn't require parameters.`
 --------------------------
+
