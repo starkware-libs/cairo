@@ -382,10 +382,17 @@ impl Backend {
         let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
         let mut processed_modules: HashSet<ModuleId> = HashSet::default();
 
-        let open_files_ids: HashSet<FileId> = async {
-            let state_snapshot = self.state_snapshot().await;
-            let open_files = state_snapshot.open_files.iter();
-            open_files.filter_map(|url| state_snapshot.db.file_for_url(url)).collect()
+        // db snapshot is not clone so make more here
+        let (mut state, db, mut db2, db3) = self
+            .with_state_mut(|state| {
+                (state.snapshot(), state.db.snapshot(), state.db.snapshot(), state.db.snapshot())
+            })
+            .await;
+        let open_files = state.open_files;
+
+        let open_files_ids: HashSet<FileId> = async move {
+            let open_files = open_files.iter();
+            open_files.filter_map(|url| db.file_for_url(url)).collect()
         }
         .instrument(trace_span!("get_open_files_ids"))
         .await;
@@ -393,26 +400,32 @@ impl Backend {
         let open_files_modules = self.get_files_modules(open_files_ids.iter()).await;
 
         // Refresh open files modules first for better UX
-        async {
+        let config_ref = &state.config;
+        let processed_modules_ref = &mut processed_modules;
+        let files_with_set_diagnostics_ref = &mut files_with_set_diagnostics;
+
+        async move {
             for (file, file_modules_ids) in open_files_modules {
-                self.refresh_file_diagnostics(
-                    &file,
-                    &file_modules_ids,
-                    &mut processed_modules,
-                    &mut files_with_set_diagnostics,
-                )
-                .await;
+                db2 = self
+                    .refresh_file_diagnostics(
+                        &file,
+                        &file_modules_ids,
+                        db2,
+                        config_ref,
+                        processed_modules_ref,
+                        files_with_set_diagnostics_ref,
+                    )
+                    .await;
             }
         }
         .instrument(trace_span!("refresh_open_files_modules"))
         .await;
 
-        let rest_of_files = async {
+        let rest_of_files = trace_span!("get_rest_of_files").in_scope(|| {
             let mut rest_of_files: HashSet<FileId> = HashSet::default();
-            let db = self.db_snapshot().await;
-            for crate_id in db.crates() {
-                for module_id in db.crate_modules(crate_id).iter() {
-                    if let Ok(module_files) = db.module_files(*module_id) {
+            for crate_id in db3.crates() {
+                for module_id in db3.crate_modules(crate_id).iter() {
+                    if let Ok(module_files) = db3.module_files(*module_id) {
                         let unprocessed_files =
                             module_files.iter().filter(|file| !open_files_ids.contains(file));
                         rest_of_files.extend(unprocessed_files);
@@ -420,22 +433,26 @@ impl Backend {
                 }
             }
             rest_of_files
-        }
-        .instrument(trace_span!("get_rest_of_files"))
-        .await;
+        });
 
         let rest_of_files_modules = self.get_files_modules(rest_of_files.iter()).await;
 
+        let processed_modules_ref = &mut processed_modules;
+        let files_with_set_diagnostics_ref = &mut files_with_set_diagnostics;
+
         // Refresh rest of files after, since they are not viewed currently
-        async {
+        async move {
             for (file, file_modules_ids) in rest_of_files_modules {
-                self.refresh_file_diagnostics(
-                    &file,
-                    &file_modules_ids,
-                    &mut processed_modules,
-                    &mut files_with_set_diagnostics,
-                )
-                .await;
+                state.db = self
+                    .refresh_file_diagnostics(
+                        &file,
+                        &file_modules_ids,
+                        state.db,
+                        &state.config,
+                        processed_modules_ref,
+                        files_with_set_diagnostics_ref,
+                    )
+                    .await;
             }
         }
         .instrument(trace_span!("refresh_other_files_modules"))
@@ -478,12 +495,11 @@ impl Backend {
         &self,
         file: &FileId,
         modules_ids: &Vec<ModuleId>,
+        db: salsa::Snapshot<AnalysisDatabase>,
+        config: &Config,
         processed_modules: &mut HashSet<ModuleId>,
         files_with_set_diagnostics: &mut HashSet<Url>,
-    ) {
-        let state = self.state_snapshot().await;
-        let db = state.db;
-        let config = state.config;
+    ) -> salsa::Snapshot<AnalysisDatabase> {
         let file_url = db.url_for_file(*file);
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
@@ -543,7 +559,7 @@ impl Backend {
             .await;
 
         if skip_update {
-            return;
+            return db;
         }
 
         let mut diags = Vec::new();
@@ -567,13 +583,12 @@ impl Backend {
             trace_macro_diagnostics,
         );
 
-        // Drop database snapshot before we wait for the client responding to our notification.
-        drop(db);
-
         self.client
             .publish_diagnostics(file_url, diags, None)
             .instrument(trace_span!("publish_diagnostics"))
             .await;
+
+        db
     }
 
     /// Gets the mapping of files to their respective modules.
