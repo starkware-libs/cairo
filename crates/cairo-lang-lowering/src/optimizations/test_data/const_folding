@@ -2946,3 +2946,101 @@ End:
   Return(v6)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Construct with undroppable.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> bool {
+    let x: (felt252, Felt252Dict<felt252>) = (0, Default::<Felt252Dict>::default());
+    let (l, _) = @x;
+    *l == 0
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v1: core::dict::Felt252Dict::<core::felt252>) <- core::dict::felt252_dict_new::<core::felt252>()
+  (v2: (core::felt252, core::dict::Felt252Dict::<core::felt252>)) <- struct_construct(v0, v1)
+  (v3: (core::felt252, core::dict::Felt252Dict::<core::felt252>), v4: @(core::felt252, core::dict::Felt252Dict::<core::felt252>)) <- snapshot(v2)
+  (v5: core::felt252, v6: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
+  (v7: core::dict::SquashedFelt252Dict::<core::felt252>) <- core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash(v6)
+  (v9: @core::felt252, v10: @core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v4)
+  (v11: core::felt252) <- desnap(v9)
+  (v14: core::felt252) <- 0
+  (v19: core::felt252) <- core::felt252_sub(v11, v14)
+End:
+  Match(match core::felt252_is_zero(v19) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v20) => blk2,
+  })
+
+blk1:
+Statements:
+  (v21: ()) <- struct_construct()
+  (v22: core::bool) <- bool::True(v21)
+End:
+  Goto(blk3, {v22 -> v23})
+
+blk2:
+Statements:
+  (v24: ()) <- struct_construct()
+  (v25: core::bool) <- bool::False(v24)
+End:
+  Goto(blk3, {v25 -> v23})
+
+blk3:
+Statements:
+End:
+  Return(v23)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 0
+  (v1: core::dict::Felt252Dict::<core::felt252>) <- core::dict::felt252_dict_new::<core::felt252>()
+  (v2: (core::felt252, core::dict::Felt252Dict::<core::felt252>)) <- struct_construct(v0, v1)
+  (v3: (core::felt252, core::dict::Felt252Dict::<core::felt252>), v4: @(core::felt252, core::dict::Felt252Dict::<core::felt252>)) <- snapshot(v2)
+  (v5: core::felt252, v6: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
+  (v7: core::dict::SquashedFelt252Dict::<core::felt252>) <- core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash(v6)
+  (v9: @core::felt252, v10: @core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v4)
+  (v11: core::felt252) <- desnap(v9)
+  (v14: core::felt252) <- 0
+  (v19: core::felt252) <- core::felt252_sub(v11, v14)
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v21: ()) <- struct_construct()
+  (v22: core::bool) <- bool::True(v21)
+End:
+  Goto(blk3, {v22 -> v23})
+
+blk2:
+Statements:
+  (v24: ()) <- struct_construct()
+  (v25: core::bool) <- bool::False(v24)
+End:
+  Goto(blk3, {v25 -> v23})
+
+blk3:
+Statements:
+End:
+  Return(v23)
+
+//! > lowering_diagnostics

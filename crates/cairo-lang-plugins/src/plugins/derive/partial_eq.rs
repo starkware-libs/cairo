@@ -1,17 +1,18 @@
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::node::ast;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{unsupported_for_extern_diagnostic, DeriveInfo, DeriveResult};
+use super::{unsupported_for_extern_diagnostic, DeriveInfo};
 use crate::plugins::derive::TypeVariantInfo;
 
 /// Adds derive result for the `PartialEq` trait.
 pub fn handle_partial_eq(
     info: &DeriveInfo,
-    stable_ptr: SyntaxStablePtrId,
-    result: &mut DeriveResult,
-) {
+    derived: &ast::ExprPath,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Option<String> {
     let header = info.format_impl_header("core::traits", "PartialEq", &["core::traits::PartialEq"]);
     let full_typename = info.full_typename();
     let body = indent_by(
@@ -50,16 +51,16 @@ pub fn handle_partial_eq(
                 }
             }
             TypeVariantInfo::Extern => {
-                result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
-                return;
+                diagnostics.push(unsupported_for_extern_diagnostic(derived));
+                return None;
             }
         },
     );
-    result.impls.push(formatdoc! {"
+    Some(formatdoc! {"
         {header} {{
             fn eq(lhs: @{full_typename}, rhs: @{full_typename}) -> bool {{
                 {body}
             }}
         }}
-    "});
+    "})
 }

@@ -66,7 +66,7 @@ trait CompareAssertionPlugin: NamedPlugin {
         } else {
             (
                 RewriteNode::mapped_text(
-                    &format!("__lhs_value_for_{}_macro__", Self::NAME),
+                    format!("__lhs_value_for_{}_macro__", Self::NAME),
                     db,
                     &lhs,
                 ),
@@ -78,7 +78,7 @@ trait CompareAssertionPlugin: NamedPlugin {
         } else {
             (
                 RewriteNode::mapped_text(
-                    &format!("__rhs_value_for_{}_macro__", Self::NAME),
+                    format!("__rhs_value_for_{}_macro__", Self::NAME),
                     db,
                     &rhs,
                 ),

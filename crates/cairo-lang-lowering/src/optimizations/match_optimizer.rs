@@ -7,7 +7,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::borrow_check::demand::DemandReporter;
+use crate::borrow_check::demand::EmptyDemandReporter;
 use crate::borrow_check::Demand;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
@@ -89,68 +89,52 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     }
 }
 
-pub struct MatchOptimizerContext {
-    fixes: Vec<FixInfo>,
-}
-
-impl MatchOptimizerContext {
-    /// Returns true if the statement can be optimized out and false otherwise.
-    /// If the statement can be optimized a fix info is added to `self.fixes`.
-    fn statement_can_be_optimized_out(
-        &mut self,
-        stmt: &Statement,
-        info: &mut AnalysisInfo<'_>,
-        statement_location: (BlockId, usize),
-    ) -> bool {
-        let Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) = stmt
-        else {
-            return false;
-        };
-        let Some(ref mut candidate) = &mut info.candidate else {
-            return false;
-        };
-        if *output != candidate.match_variable {
-            return false;
-        }
-        let (arm_idx, arm) = candidate
-            .match_arms
-            .iter()
-            .find_position(|arm| {
-                arm.arm_selector == MatchArmSelector::VariantId((*variant).clone())
-            })
-            .expect("arm not found.");
-
-        let [var_id] = arm.var_ids.as_slice() else {
-            panic!("An arm of an EnumMatch should produce a single variable.");
-        };
-
-        let mut demand = candidate.arm_demands[arm_idx].clone();
-
-        let mut remapping = VarRemapping::default();
-        // The input to EnumConstruct should be available as `var_id`
-        // in `arm.block_id`
-        remapping.insert(*var_id, *input);
-
-        demand.apply_remapping(
-            self,
-            remapping.iter().map(|(dst, src_var_usage)| (dst, (&src_var_usage.var_id, ()))),
-        );
-        info.demand = demand;
-
-        self.fixes.push(FixInfo {
-            statement_location,
-            match_block: candidate.match_block,
-            arm_idx,
-            target_block: arm.block_id,
-            remapping,
-        });
-        true
+/// Returns true if the statement can be optimized out and false otherwise.
+/// If the statement can be optimized, returns a [FixInfo] object.
+fn statement_can_be_optimized_out(
+    stmt: &Statement,
+    info: &mut AnalysisInfo<'_>,
+    statement_location: (BlockId, usize),
+) -> Option<FixInfo> {
+    let Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) = stmt else {
+        return None;
+    };
+    let candidate = info.candidate.as_mut()?;
+    if *output != candidate.match_variable {
+        return None;
     }
-}
+    let (arm_idx, arm) = candidate
+        .match_arms
+        .iter()
+        .find_position(
+            |arm| matches!(&arm.arm_selector, MatchArmSelector::VariantId(v) if v == variant),
+        )
+        .expect("arm not found.");
 
-impl DemandReporter<VariableId> for MatchOptimizerContext {
-    type IntroducePosition = ();
-    type UsePosition = ();
+    let [var_id] = arm.var_ids.as_slice() else {
+        panic!("An arm of an EnumMatch should produce a single variable.");
+    };
+
+    let mut demand = candidate.arm_demands[arm_idx].clone();
+
+    let mut remapping = VarRemapping::default();
+    // The input to EnumConstruct should be available as `var_id`
+    // in `arm.block_id`
+    remapping.insert(*var_id, *input);
+
+    demand.apply_remapping(
+        &mut EmptyDemandReporter {},
+        remapping.iter().map(|(dst, src_var_usage)| (dst, (&src_var_usage.var_id, ()))),
+    );
+    info.demand = demand;
+
+    Some(FixInfo {
+        statement_location,
+        match_block: candidate.match_block,
+        arm_idx,
+        target_block: arm.block_id,
+        remapping,
+    })
 }
 
 pub struct FixInfo {
@@ -181,6 +165,10 @@ struct OptimizationCandidate<'a> {
     arm_demands: Vec<MatchOptimizerDemand>,
 }
 
+pub struct MatchOptimizerContext {
+    fixes: Vec<FixInfo>,
+}
+
 #[derive(Clone)]
 pub struct AnalysisInfo<'a> {
     candidate: Option<OptimizationCandidate<'a>>,
@@ -195,10 +183,12 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        if !self.statement_can_be_optimized_out(stmt, info, statement_location) {
-            info.demand.variables_introduced(self, stmt.outputs(), ());
+        if let Some(fix_info) = statement_can_be_optimized_out(stmt, info, statement_location) {
+            self.fixes.push(fix_info);
+        } else {
+            info.demand.variables_introduced(&mut EmptyDemandReporter {}, stmt.outputs(), ());
             info.demand.variables_used(
-                self,
+                &mut EmptyDemandReporter {},
                 stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
             );
         }
@@ -213,27 +203,34 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        if !remapping.is_empty() {
-            info.demand
-                .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
+        if remapping.is_empty() {
+            // Do nothing. Keep the candidate if exists.
+            return;
+        }
 
-            if let Some(ref mut candidate) = &mut info.candidate {
-                let expected_remappings =
-                    if let Some(var_usage) = remapping.get(&candidate.match_variable) {
-                        candidate.match_variable = var_usage.var_id;
-                        1
-                    } else {
-                        0
-                    };
+        info.demand.apply_remapping(
+            &mut EmptyDemandReporter {},
+            remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))),
+        );
 
-                if remapping.len() != expected_remappings {
-                    // Remapping is currently not supported as it breaks SSA when we use the same
-                    // remapping with different destination blocks.
+        let Some(ref mut candidate) = &mut info.candidate else {
+            return;
+        };
 
-                    // TODO(ilya): Support multiple remappings.
-                    info.candidate = None;
-                }
-            }
+        let Some(var_usage) = remapping.get(&candidate.match_variable) else {
+            // Revoke the candidate.
+            info.candidate = None;
+            return;
+        };
+        candidate.match_variable = var_usage.var_id;
+
+        if remapping.len() > 1 {
+            // Remapping is currently not supported as it breaks SSA when we use the same
+            // remapping with different destination blocks.
+
+            // TODO(ilya): Support multiple remappings.
+            // Revoke the candidate.
+            info.candidate = None;
         }
     }
 
@@ -247,12 +244,13 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         let arm_demands = zip_eq(match_info.arms(), &infos)
             .map(|(arm, info)| {
                 let mut demand = info.demand.clone();
-                demand.variables_introduced(self, &arm.var_ids, ());
+                demand.variables_introduced(&mut EmptyDemandReporter {}, &arm.var_ids, ());
 
                 (demand, ())
             })
             .collect_vec();
-        let mut demand = MatchOptimizerDemand::merge_demands(&arm_demands, self);
+        let mut demand =
+            MatchOptimizerDemand::merge_demands(&arm_demands, &mut EmptyDemandReporter {});
 
         let candidate = match match_info {
             // A match is a candidate for the optimization if it is a match on an Enum
@@ -272,7 +270,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         };
 
         demand.variables_used(
-            self,
+            &mut EmptyDemandReporter {},
             match_info.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
         );
 
@@ -285,7 +283,10 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         vars: &[VarUsage],
     ) -> Self::Info {
         let mut demand = MatchOptimizerDemand::default();
-        demand.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
+        demand.variables_used(
+            &mut EmptyDemandReporter {},
+            vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())),
+        );
         Self::Info { candidate: None, demand }
     }
 }

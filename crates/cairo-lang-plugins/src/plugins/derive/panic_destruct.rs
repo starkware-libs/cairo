@@ -1,17 +1,18 @@
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::node::ast;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{unsupported_for_extern_diagnostic, DeriveInfo, DeriveResult};
+use super::{unsupported_for_extern_diagnostic, DeriveInfo};
 use crate::plugins::derive::TypeVariantInfo;
 
 /// Adds derive result for the `PanicDestruct` trait.
 pub fn handle_panic_destruct(
     info: &DeriveInfo,
-    stable_ptr: SyntaxStablePtrId,
-    result: &mut DeriveResult,
-) {
+    derived: &ast::ExprPath,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Option<String> {
     let header =
         info.format_impl_header("core::traits", "PanicDestruct", &["core::traits::PanicDestruct"]);
     let full_typename = info.full_typename();
@@ -46,16 +47,16 @@ pub fn handle_panic_destruct(
                 )
             }
             TypeVariantInfo::Extern => {
-                result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
-                return;
+                diagnostics.push(unsupported_for_extern_diagnostic(derived));
+                return None;
             }
         },
     );
-    result.impls.push(formatdoc! {"
+    Some(formatdoc! {"
         {header} {{
             fn panic_destruct(self: {full_typename}, ref panic: Panic) nopanic {{
                 {body}
             }}
         }}
-    "});
+    "})
 }

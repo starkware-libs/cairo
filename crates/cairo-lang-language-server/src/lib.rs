@@ -38,7 +38,7 @@
 //! }
 //! ```
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
 use std::path::PathBuf;
@@ -53,13 +53,14 @@ use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, LookupItemId, MemberId, ModuleId, SubmoduleLongId,
     TraitItemId,
 };
-use cairo_lang_diagnostics::ToOption;
+use cairo_lang_diagnostics::{Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
     get_originating_location, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_filesystem::span::{TextPosition, TextSpan};
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -69,12 +70,13 @@ use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{Expr, TypeLongId};
+use cairo_lang_semantic::{Expr, SemanticDiagnostic, TypeLongId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use itertools::Itertools;
 use salsa::{Cancelled, ParallelDatabase};
 use serde_json::Value;
 use state::{FileDiagnostics, Owned, StateSnapshot};
@@ -87,11 +89,12 @@ use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::config::Config;
-use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
-use crate::lsp::client_capabilities::ClientCapabilitiesExt;
+use crate::lsp::capabilities::server::{
+    collect_dynamic_registrations, collect_server_capabilities,
+};
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
@@ -318,7 +321,16 @@ impl Backend {
     {
         spawn_blocking(move || {
             catch_unwind(AssertUnwindSafe(f)).map_err(|err| {
-                if err.is::<Cancelled>() {
+                // Salsa is broken and sometimes when cancelled throws regular assert instead of
+                // [`Cancelled`]. Catch this case too.
+                if err.is::<Cancelled>()
+                    || err.downcast_ref::<&str>().is_some_and(|msg| {
+                        msg.contains(
+                            "assertion failed: old_memo.revisions.changed_at <= \
+                             revisions.changed_at",
+                        )
+                    })
+                {
                     debug!("LSP worker thread was cancelled");
                     LSPError::request_cancelled()
                 } else {
@@ -357,9 +369,6 @@ impl Backend {
         self.with_state_mut(|state| state.db.snapshot()).await
     }
 
-    // TODO(spapini): Consider managing vfs in a different way, using the
-    // client.send_notification::<UpdateVirtualFile> call.
-
     /// Refresh diagnostics and send diffs to client.
     #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
@@ -370,51 +379,75 @@ impl Backend {
         // TODO(orizi): Consider removing when request cancellation is supported.
         let Ok(waiter_permit) = self.refresh_waiters_semaphore.try_acquire() else { return Ok(()) };
         let refresh_lock = self.refresh_lock.lock().await;
-        let open_files = self.state_snapshot().await.open_files;
 
-        // First, refresh diagnostics for each open file.
-        async {
-            for uri in &*open_files {
-                self.refresh_file_diagnostics(uri).await;
-            }
+        let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
+        let mut processed_modules: HashSet<ModuleId> = HashSet::default();
+
+        let open_files_ids: HashSet<FileId> = async {
+            let state_snapshot = self.state_snapshot().await;
+            let open_files = state_snapshot.open_files.iter();
+            open_files.filter_map(|url| state_snapshot.db.file_for_url(url)).collect()
         }
-        .instrument(trace_span!("refresh_open_files_diagnostics"))
+        .instrument(trace_span!("get_open_files_ids"))
         .await;
 
-        // Second, refresh diagnostics for the rest of the compilation unit.
-        let files_set = async {
+        let open_files_modules = self.get_files_modules(open_files_ids.iter()).await;
+
+        // Refresh open files modules first for better UX
+        async {
+            for (file, file_modules_ids) in open_files_modules {
+                self.refresh_file_diagnostics(
+                    &file,
+                    &file_modules_ids,
+                    &mut processed_modules,
+                    &mut files_with_set_diagnostics,
+                )
+                .await;
+            }
+        }
+        .instrument(trace_span!("refresh_open_files_modules"))
+        .await;
+
+        let rest_of_files = async {
+            let mut rest_of_files: HashSet<FileId> = HashSet::default();
             let db = self.db_snapshot().await;
-            let mut files_set = HashSet::new();
             for crate_id in db.crates() {
-                for module_files in db
-                    .crate_modules(crate_id)
-                    .iter()
-                    .filter_map(|module_id| db.module_files(*module_id).ok())
-                {
-                    for file_id in module_files.iter() {
-                        files_set.insert(db.url_for_file(*file_id));
+                for module_id in db.crate_modules(crate_id).iter() {
+                    if let Ok(module_files) = db.module_files(*module_id) {
+                        let unprocessed_files =
+                            module_files.iter().filter(|file| !open_files_ids.contains(file));
+                        rest_of_files.extend(unprocessed_files);
                     }
                 }
             }
-            files_set
+            rest_of_files
         }
-        .instrument(trace_span!("get_all_files"))
+        .instrument(trace_span!("get_rest_of_files"))
         .await;
 
+        let rest_of_files_modules = self.get_files_modules(rest_of_files.iter()).await;
+
+        // Refresh rest of files after, since they are not viewed currently
         async {
-            for uri in files_set.iter().filter(|uri| !open_files.contains(uri)) {
-                self.refresh_file_diagnostics(uri).await;
+            for (file, file_modules_ids) in rest_of_files_modules {
+                self.refresh_file_diagnostics(
+                    &file,
+                    &file_modules_ids,
+                    &mut processed_modules,
+                    &mut files_with_set_diagnostics,
+                )
+                .await;
             }
         }
-        .instrument(trace_span!("refresh_closed_files_diagnostics"))
+        .instrument(trace_span!("refresh_other_files_modules"))
         .await;
 
-        // Finally, clear old diagnostics.
+        // Clear old diagnostics
         async {
             let mut removed_files = Vec::new();
             self.with_state_mut(|s| {
                 s.file_diagnostics.retain(|uri, _| {
-                    let retain = files_set.contains(uri);
+                    let retain = files_with_set_diagnostics.contains(uri);
                     if !retain {
                         removed_files.push(uri.clone());
                     }
@@ -422,9 +455,10 @@ impl Backend {
                 });
             })
             .await;
-            for uri in removed_files {
+
+            for file in removed_files {
                 self.client
-                    .publish_diagnostics(uri, Vec::new(), None)
+                    .publish_diagnostics(file, Vec::new(), None)
                     .instrument(trace_span!("publish_diagnostics"))
                     .await;
             }
@@ -441,13 +475,19 @@ impl Backend {
     }
 
     /// Refresh diagnostics for a single file.
-    #[tracing::instrument(level = "trace", skip_all, fields(%uri))]
-    async fn refresh_file_diagnostics(&self, uri: &Url) {
+    async fn refresh_file_diagnostics(
+        &self,
+        file: &FileId,
+        modules_ids: &Vec<ModuleId>,
+        processed_modules: &mut HashSet<ModuleId>,
+        files_with_set_diagnostics: &mut HashSet<Url>,
+    ) {
         let state = self.state_snapshot().await;
         let db = state.db;
         let config = state.config;
-
-        let Some(file_id) = db.file_for_url(uri) else { return };
+        let file_url = db.url_for_file(*file);
+        let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
+        let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
 
         macro_rules! diags {
             ($db:ident. $query:ident($file_id:expr), $f:expr) => {
@@ -455,29 +495,57 @@ impl Backend {
                     catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
                         .map($f)
                         .inspect_err(|_| {
-                            error!("caught panic when computing diagnostics for {uri}");
+                            error!("caught panic when computing diagnostics for file {file_url}");
                         })
                         .unwrap_or_default()
                 })
             };
         }
 
+        for module_id in modules_ids {
+            if !processed_modules.contains(module_id) {
+                semantic_file_diagnostics.extend(
+                    diags!(db.module_semantic_diagnostics(*module_id), Result::unwrap_or_default)
+                        .get_all(),
+                );
+                lowering_file_diagnostics.extend(
+                    diags!(db.module_lowering_diagnostics(*module_id), Result::unwrap_or_default)
+                        .get_all(),
+                );
+
+                processed_modules.insert(*module_id);
+            }
+        }
+
+        let parser_file_diagnostics = diags!(db.file_syntax_diagnostics(*file), |r| r);
+
         let new_file_diagnostics = FileDiagnostics {
-            parser: diags!(db.file_syntax_diagnostics(file_id), |r| r),
-            semantic: diags!(db.file_semantic_diagnostics(file_id), Result::unwrap_or_default),
-            lowering: diags!(db.file_lowering_diagnostics(file_id), Result::unwrap_or_default),
+            parser: parser_file_diagnostics,
+            semantic: Diagnostics::from_iter(semantic_file_diagnostics),
+            lowering: Diagnostics::from_iter(lowering_file_diagnostics),
         };
 
-        self.with_state_mut(|state| {
-            // Since we are using Arcs, this comparison should be efficient.
-            if let Some(old_file_diagnostics) = state.file_diagnostics.get(uri) {
-                if old_file_diagnostics == &new_file_diagnostics {
-                    return;
+        if !new_file_diagnostics.is_empty() {
+            files_with_set_diagnostics.insert(file_url.clone());
+        }
+
+        // Since we are using Arcs, this comparison should be efficient.
+        let skip_update = self
+            .with_state_mut(|state| {
+                if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file_url) {
+                    if old_file_diagnostics == &new_file_diagnostics {
+                        return true;
+                    }
                 }
-            }
-            state.file_diagnostics.insert(uri.clone(), new_file_diagnostics.clone());
-        })
-        .await;
+
+                state.file_diagnostics.insert(file_url.clone(), new_file_diagnostics.clone());
+                false
+            })
+            .await;
+
+        if skip_update {
+            return;
+        }
 
         let mut diags = Vec::new();
         let trace_macro_diagnostics = config.trace_macro_diagnostics;
@@ -504,9 +572,24 @@ impl Backend {
         drop(db);
 
         self.client
-            .publish_diagnostics(uri.clone(), diags, None)
+            .publish_diagnostics(file_url, diags, None)
             .instrument(trace_span!("publish_diagnostics"))
             .await;
+    }
+
+    /// Gets the mapping of files to their respective modules.
+    async fn get_files_modules(
+        &self,
+        files_ids: impl Iterator<Item = &FileId>,
+    ) -> HashMap<FileId, Vec<ModuleId>> {
+        let state_snapshot = self.state_snapshot().await;
+        let mut result = HashMap::default();
+        for file_id in files_ids {
+            if let Ok(file_modules) = state_snapshot.db.file_modules(*file_id) {
+                result.insert(*file_id, file_modules.iter().cloned().collect_vec());
+            }
+        }
+        result
     }
 
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
@@ -743,52 +826,16 @@ impl TryFrom<String> for ServerCommands {
 impl LanguageServer for Backend {
     #[tracing::instrument(level = "debug", skip_all)]
     async fn initialize(&self, params: InitializeParams) -> LSPResult<InitializeResult> {
-        self.with_state_mut(|state| {
-            state.client_capabilities = Owned::new(Arc::new(params.capabilities));
+        let client_capabilities = Owned::new(Arc::new(params.capabilities));
+        let client_capabilities_snapshot = client_capabilities.snapshot();
+        self.with_state_mut(move |state| {
+            state.client_capabilities = client_capabilities;
         })
         .await;
 
         Ok(InitializeResult {
             server_info: None,
-            capabilities: ServerCapabilities {
-                text_document_sync: Some(TextDocumentSyncCapability::Kind(
-                    TextDocumentSyncKind::FULL,
-                )),
-                completion_provider: Some(CompletionOptions {
-                    resolve_provider: Some(false),
-                    trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
-                    all_commit_characters: None,
-                    work_done_progress_options: Default::default(),
-                    completion_item: None,
-                }),
-                execute_command_provider: Some(ExecuteCommandOptions {
-                    commands: vec!["cairo.reload".to_string()],
-                    work_done_progress_options: Default::default(),
-                }),
-                workspace: Some(WorkspaceServerCapabilities {
-                    workspace_folders: Some(WorkspaceFoldersServerCapabilities {
-                        supported: Some(true),
-                        change_notifications: Some(OneOf::Left(true)),
-                    }),
-                    file_operations: None,
-                }),
-                semantic_tokens_provider: Some(
-                    SemanticTokensOptions {
-                        legend: SemanticTokensLegend {
-                            token_types: SemanticTokenKind::legend(),
-                            token_modifiers: vec![],
-                        },
-                        full: Some(SemanticTokensFullOptions::Bool(true)),
-                        ..SemanticTokensOptions::default()
-                    }
-                    .into(),
-                ),
-                document_formatting_provider: Some(OneOf::Left(true)),
-                hover_provider: Some(HoverProviderCapability::Simple(true)),
-                definition_provider: Some(OneOf::Left(true)),
-                code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
-                ..ServerCapabilities::default()
-            },
+            capabilities: collect_server_capabilities(&client_capabilities_snapshot),
         })
     }
 
@@ -797,28 +844,14 @@ impl LanguageServer for Backend {
         // Initialize the configuration.
         self.reload_config().await;
 
+        // Dynamically register capabilities.
         let client_capabilities = self.state_snapshot().await.client_capabilities;
 
-        if client_capabilities.did_change_watched_files_dynamic_registration() {
-            // Register patterns for client file watcher.
-            // This is used to detect changes to Scarb.toml and invalidate .cairo files.
-            let registration_options = DidChangeWatchedFilesRegistrationOptions {
-                watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
-                    .into_iter()
-                    .map(|glob_pattern| FileSystemWatcher {
-                        glob_pattern: GlobPattern::String(glob_pattern.to_string()),
-                        kind: None,
-                    })
-                    .collect(),
-            };
-            let registration = Registration {
-                id: "workspace/didChangeWatchedFiles".to_string(),
-                method: "workspace/didChangeWatchedFiles".to_string(),
-                register_options: Some(serde_json::to_value(registration_options).unwrap()),
-            };
-            let result = self.client.register_capability(vec![registration]).await;
+        let dynamic_registrations = collect_dynamic_registrations(&client_capabilities);
+        if !dynamic_registrations.is_empty() {
+            let result = self.client.register_capability(dynamic_registrations).await;
             if let Err(err) = result {
-                warn!("Failed to register workspace/didChangeWatchedFiles event: {:#?}", err);
+                warn!("failed to register dynamic capabilities: {err:#?}");
             }
         }
     }
@@ -826,9 +859,6 @@ impl LanguageServer for Backend {
     async fn shutdown(&self) -> LSPResult<()> {
         Ok(())
     }
-
-    #[tracing::instrument(level = "debug", skip_all)]
-    async fn did_change_workspace_folders(&self, _: DidChangeWorkspaceFoldersParams) {}
 
     #[tracing::instrument(level = "debug", skip_all)]
     async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {
@@ -850,11 +880,14 @@ impl LanguageServer for Backend {
         })
         .await;
 
-        // Reload workspace if Scarb.toml changed.
+        // Reload workspace if a config file has changed.
         for change in params.changes {
             let changed_file_path = change.uri.to_file_path().unwrap_or_default();
             let changed_file_name = changed_file_path.file_name().unwrap_or_default();
-            if changed_file_name == "Scarb.toml" {
+            // TODO(pmagiera): react to Scarb.lock. Keep in mind Scarb does save Scarb.lock on each
+            //  metadata call, so it is easy to fall in a loop here.
+            if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
+            {
                 self.reload().await.ok();
             }
         }
