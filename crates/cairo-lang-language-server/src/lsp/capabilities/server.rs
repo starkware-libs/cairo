@@ -8,6 +8,7 @@ use missing_lsp_types::{
     CodeActionRegistrationOptions, DefinitionRegistrationOptions,
     DocumentFormattingRegistrationOptions,
 };
+use serde::Serialize;
 use tower_lsp::lsp_types::{
     ClientCapabilities, CodeActionProviderCapability, CompletionOptions,
     CompletionRegistrationOptions, DefinitionOptions, DidChangeWatchedFilesRegistrationOptions,
@@ -112,7 +113,7 @@ pub fn collect_dynamic_registrations(
 
     if client_capabilities.did_change_watched_files_dynamic_registration() {
         // Register patterns for the client file watcher.
-        // This is used to detect changes to Scarb.toml and invalidate .cairo files.
+        // This is used to detect changes to config files and invalidate .cairo files.
         let registration_options = DidChangeWatchedFilesRegistrationOptions {
             watchers: ["/**/*.cairo", "/**/Scarb.toml", "/**/Scarb.lock", "/**/cairo_project.toml"]
                 .map(|glob_pattern| FileSystemWatcher {
@@ -121,50 +122,35 @@ pub fn collect_dynamic_registrations(
                 })
                 .into(),
         };
-        registrations.push(Registration {
-            id: "workspace/didChangeWatchedFiles".to_string(),
-            method: "workspace/didChangeWatchedFiles".to_string(),
-            register_options: Some(serde_json::to_value(registration_options).unwrap()),
-        });
+
+        registrations
+            .push(create_registration("workspace/didChangeWatchedFiles", registration_options));
     }
 
     if client_capabilities.text_document_synchronization_dynamic_registration() {
-        registrations.push(Registration {
-            id: "textDocument/didOpen".to_string(),
-            method: "textDocument/didOpen".to_string(),
-            register_options: Some(
-                serde_json::to_value(&text_document_registration_options).unwrap(),
-            ),
-        });
-        registrations.push(Registration {
-            id: "textDocument/didChange".to_string(),
-            method: "textDocument/didChange".to_string(),
-            register_options: Some(
-                serde_json::to_value(TextDocumentChangeRegistrationOptions {
-                    document_selector,
-                    sync_kind: 1, // TextDocumentSyncKind::FULL
-                })
-                .unwrap(),
-            ),
-        });
-        registrations.push(Registration {
-            id: "textDocument/didSave".to_string(),
-            method: "textDocument/didSave".to_string(),
-            register_options: Some(
-                serde_json::to_value(TextDocumentSaveRegistrationOptions {
-                    include_text: Some(false),
-                    text_document_registration_options: text_document_registration_options.clone(),
-                })
-                .unwrap(),
-            ),
-        });
-        registrations.push(Registration {
-            id: "textDocument/didClose".to_string(),
-            method: "textDocument/didClose".to_string(),
-            register_options: Some(
-                serde_json::to_value(&text_document_registration_options).unwrap(),
-            ),
-        });
+        registrations
+            .push(create_registration("textDocument/didOpen", &text_document_registration_options));
+
+        registrations.push(create_registration(
+            "textDocument/didChange",
+            TextDocumentChangeRegistrationOptions {
+                document_selector,
+                sync_kind: 1, // TextDocumentSyncKind::FULL
+            },
+        ));
+
+        registrations.push(create_registration(
+            "textDocument/didSave",
+            TextDocumentSaveRegistrationOptions {
+                include_text: Some(false),
+                text_document_registration_options: text_document_registration_options.clone(),
+            },
+        ));
+
+        registrations.push(create_registration(
+            "textDocument/didClose",
+            &text_document_registration_options,
+        ));
     }
 
     if client_capabilities.completion_dynamic_registration() {
@@ -179,11 +165,7 @@ pub fn collect_dynamic_registrations(
             },
         };
 
-        registrations.push(Registration {
-            id: "textDocument/completion".to_string(),
-            method: "textDocument/completion".to_string(),
-            register_options: Some(serde_json::to_value(&registration_options).unwrap()),
-        });
+        registrations.push(create_registration("textDocument/completion", registration_options));
     }
 
     if client_capabilities.execute_command_dynamic_registration() {
@@ -195,11 +177,7 @@ pub fn collect_dynamic_registrations(
             },
         };
 
-        registrations.push(Registration {
-            id: "workspace/executeCommand".to_string(),
-            method: "workspace/executeCommand".to_string(),
-            register_options: Some(serde_json::to_value(&registration_options).unwrap()),
-        });
+        registrations.push(create_registration("workspace/executeCommand", registration_options));
     }
 
     if client_capabilities.semantic_tokens_dynamic_registration() {
@@ -216,11 +194,8 @@ pub fn collect_dynamic_registrations(
             static_registration_options: Default::default(),
         };
 
-        registrations.push(Registration {
-            id: "textDocument/semanticTokens".to_string(),
-            method: "textDocument/semanticTokens".to_string(),
-            register_options: Some(serde_json::to_value(&registration_options).unwrap()),
-        });
+        registrations
+            .push(create_registration("textDocument/semanticTokens", registration_options));
     }
 
     if client_capabilities.formatting_dynamic_registration() {
@@ -229,11 +204,7 @@ pub fn collect_dynamic_registrations(
             document_formatting_options: Default::default(),
         };
 
-        registrations.push(Registration {
-            id: "textDocument/formatting".to_string(),
-            method: "textDocument/formatting".to_string(),
-            register_options: Some(serde_json::to_value(&registration_options).unwrap()),
-        });
+        registrations.push(create_registration("textDocument/formatting", registration_options));
     }
 
     if client_capabilities.hover_dynamic_registration() {
@@ -242,11 +213,7 @@ pub fn collect_dynamic_registrations(
             hover_options: Default::default(),
         };
 
-        registrations.push(Registration {
-            id: "textDocument/hover".to_string(),
-            method: "textDocument/hover".to_string(),
-            register_options: Some(serde_json::to_value(&registration_options).unwrap()),
-        });
+        registrations.push(create_registration("textDocument/hover", registration_options));
     }
 
     if client_capabilities.definition_dynamic_registration() {
@@ -257,11 +224,7 @@ pub fn collect_dynamic_registrations(
             },
         };
 
-        registrations.push(Registration {
-            id: "textDocument/definition".to_string(),
-            method: "textDocument/definition".to_string(),
-            register_options: Some(serde_json::to_value(&registration_options).unwrap()),
-        });
+        registrations.push(create_registration("textDocument/definition", registration_options));
     }
 
     if client_capabilities.code_action_dynamic_registration() {
@@ -270,14 +233,18 @@ pub fn collect_dynamic_registrations(
             code_action_options: Default::default(),
         };
 
-        registrations.push(Registration {
-            id: "textDocument/codeAction".to_string(),
-            method: "textDocument/codeAction".to_string(),
-            register_options: Some(serde_json::to_value(&registration_options).unwrap()),
-        });
+        registrations.push(create_registration("textDocument/codeAction", registration_options));
     }
 
     registrations
+}
+
+fn create_registration(method: &str, registration_options: impl Serialize) -> Registration {
+    Registration {
+        id: method.to_string(),
+        method: method.to_string(),
+        register_options: Some(serde_json::to_value(registration_options).unwrap()),
+    }
 }
 
 mod missing_lsp_types {
