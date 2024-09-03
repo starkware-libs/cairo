@@ -8,7 +8,7 @@ use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::Upcast;
-use itertools::Itertools;
+use itertools::{chain, Itertools};
 use serde::Serialize;
 
 use crate::documentable_item::DocumentableItemId;
@@ -28,20 +28,15 @@ pub struct Documentation {
 
 impl fmt::Display for Documentation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut comments: Vec<String> = Vec::new();
-        if let Some(prefix_comments) = &self.prefix_comments {
-            comments.push(String::from("Prefix:\n") + prefix_comments);
+        for (title, comment) in chain!(
+            self.prefix_comments.as_ref().map(|comment| ("Prefix", comment)),
+            self.inner_comments.as_ref().map(|comment| ("Inner", comment)),
+            self.module_level_comments.as_ref().map(|comment| ("Module level", comment)),
+        ) {
+            writeln!(f, "{title}:")?;
+            write!(f, "{comment}")?;
         }
-        if let Some(inner_comments) = &self.inner_comments {
-            comments.push(String::from("Inner:\n") + inner_comments);
-        }
-        if let Some(module_level_comments) = &self.module_level_comments {
-            comments.push(String::from("Module level:\n") + module_level_comments)
-        }
-        if comments.is_empty() {
-            return write!(f, "");
-        }
-        write!(f, "{}", comments.join(""))
+        Ok(())
     }
 }
 
@@ -253,6 +248,8 @@ fn extract_module_level_comments_from_file(db: &dyn DocGroup, file_id: FileId) -
     cleanup_doc(doc)
 }
 
+/// Formats markdown part of the documentation, and returns None, if the final documentation is
+/// empty or contains only whitespaces.
 fn cleanup_doc(doc: String) -> Option<String> {
     let doc = cleanup_doc_markdown(doc);
 
