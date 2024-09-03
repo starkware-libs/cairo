@@ -76,21 +76,17 @@ pub fn definition(
 }
 
 fn parse_and_concat_documentation(item_documentation: Documentation) -> Option<String> {
-    let mut comments: Vec<String> = Vec::new();
     match (
         item_documentation.prefix_comments,
         item_documentation.inner_comments,
         item_documentation.module_level_comments,
     ) {
-        (None, None, None) => (),
-        (prefix_comments, inner_comments, module_level_comments) => {
-            for comment_content in chain!(prefix_comments, inner_comments, module_level_comments) {
-                comments.push(comment_content.trim_end().to_string());
-            }
-        }
+        (None, None, None) => None,
+        (prefix_comments, inner_comments, module_level_comments) => Some(
+            chain!(prefix_comments, inner_comments, module_level_comments)
+                .map(|comment| comment.trim_end().to_string())
+                .collect::<Vec<_>>()
+                .join(" "),
+        ),
     }
-    if comments.is_empty() {
-        return None;
-    }
-    Some(comments.join(" "))
 }
