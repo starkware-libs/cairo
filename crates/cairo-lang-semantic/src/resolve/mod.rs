@@ -53,8 +53,8 @@ use crate::items::{visibility, TraitOrImplContext};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{are_coupons_enabled, resolve_type, ImplTypeId};
 use crate::{
-    ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
-    TypeId, TypeLongId,
+    ConcreteFunction, ConcreteTypeId, ExprId, FunctionId, FunctionLongId, GenericArgumentId,
+    GenericParam, Member, Mutability, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -106,6 +106,49 @@ impl ResolvedItems {
     }
 }
 
+/// The enriched members of a type, including direct members of structs, as well as members of
+/// targets of `Deref` and `DerefMut` of the type.
+#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct EnrichedMembers {
+    /// A map from member names to their semantic representation and the number of deref operations
+    /// needed to access them.
+    pub members: OrderedHashMap<SmolStr, (Member, usize)>,
+    /// The sequence of deref functions needed to access the members.
+    pub deref_functions: Vec<(FunctionId, Mutability)>,
+    /// The tail remaining for required computation - the current expression `Deref`/`DerefMut`
+    /// traits lookup. Useful for partial computation of enriching members where a member was
+    /// already previously found.
+    pub calc_tail: Option<ExprId>,
+}
+impl EnrichedMembers {
+    /// Returns `EnrichedMembers` for a single member if exists.
+    /// If `self` is final - would return the empty marker `EnrichedMembers` if member does not
+    /// exist, and `None` if `self` not final.
+    ///
+    /// Note: Finality is determined by if `calc_tail` is `None` marking the calculation of members
+    /// as done.
+    pub fn accessed(&self, name: &str) -> Option<Self> {
+        let Some((member, n_derefs)) = self.members.get(name) else {
+            return if self.calc_tail.is_none() {
+                Some(EnrichedMembers {
+                    members: Default::default(),
+                    deref_functions: Default::default(),
+                    calc_tail: None,
+                })
+            } else {
+                None
+            };
+        };
+        Some(EnrichedMembers {
+            members: [(name.into(), (member.clone(), *n_derefs))].into(),
+            deref_functions: self.deref_functions[..*n_derefs].to_vec(),
+            // Not used - as it is used only for computation caching.
+            calc_tail: None,
+        })
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ResolverData {
@@ -115,6 +158,8 @@ pub struct ResolverData {
     generic_param_by_name: OrderedHashMap<SmolStr, GenericParamId>,
     /// All generic parameters accessible to the resolver.
     pub generic_params: Vec<GenericParamId>,
+    /// The enriched members per type and its mutability in the resolver context.
+    pub type_enriched_members: OrderedHashMap<(TypeId, bool), EnrichedMembers>,
     /// Lookback map for resolved identifiers in path. Used in "Go to definition".
     pub resolved_items: ResolvedItems,
     /// Inference data for the resolver.
@@ -132,6 +177,7 @@ impl ResolverData {
             module_file_id,
             generic_param_by_name: Default::default(),
             generic_params: Default::default(),
+            type_enriched_members: Default::default(),
             resolved_items: Default::default(),
             inference_data: InferenceData::new(inference_id),
             trait_or_impl_ctx: TraitOrImplContext::None,
@@ -148,6 +194,7 @@ impl ResolverData {
             module_file_id: self.module_file_id,
             generic_param_by_name: self.generic_param_by_name.clone(),
             generic_params: self.generic_params.clone(),
+            type_enriched_members: self.type_enriched_members.clone(),
             resolved_items: self.resolved_items.clone(),
             inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
             trait_or_impl_ctx: self.trait_or_impl_ctx,
