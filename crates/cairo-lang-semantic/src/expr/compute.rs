@@ -27,7 +27,7 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils as utils;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -68,7 +68,7 @@ use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
-use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
+use crate::resolve::{EnrichedMembers, ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
@@ -2730,8 +2730,8 @@ fn member_access_expr(
 
     match &long_ty {
         TypeLongId::Concrete(_) | TypeLongId::Tuple(_) | TypeLongId::FixedSizeArray { .. } => {
-            let EnrichedMembers { members, deref_functions } =
-                enriched_members(ctx, lexpr.clone(), stable_ptr, Some(member_name.clone()))?;
+            let EnrichedMembers { members, deref_functions, .. } =
+                enriched_members(ctx, lexpr.clone(), stable_ptr, Some(&member_name))?;
             let Some((member, n_derefs)) = members.get(&member_name) else {
                 return Err(ctx.diagnostics.report(
                     &rhs_syntax,
@@ -2820,15 +2820,6 @@ fn member_access_expr(
     }
 }
 
-/// The result of enriched_members lookup.
-struct EnrichedMembers {
-    /// A map from member names to their semantic representation and the number of deref operations
-    /// needed to access them.
-    members: OrderedHashMap<SmolStr, (semantic::Member, usize)>,
-    /// The sequence of deref functions needed to access the members.
-    deref_functions: Vec<(FunctionId, Mutability)>,
-}
-
 /// Enriched members include both direct members (in case of a struct), and members of derefed types
 /// if the type implements the Deref trait into a struct. Returns a map from member names to the
 /// semantic representation, and the number of deref operations needed for each member.
@@ -2837,39 +2828,88 @@ struct EnrichedMembers {
 /// is useful for completions in the language server.
 fn enriched_members(
     ctx: &mut ComputationContext<'_>,
-    mut expr: ExprAndId,
+    expr: ExprAndId,
     stable_ptr: ast::ExprPtr,
-    accessed_member_name: Option<SmolStr>,
+    accessed_member_name: Option<&str>,
 ) -> Maybe<EnrichedMembers> {
     // TODO(Gil): Use this function for LS completions.
-    let mut ty = expr.ty();
-    let mut res = OrderedHashMap::default();
-    let mut deref_functions = vec![];
-    let mut visited_types: OrderedHashSet<TypeId> = OrderedHashSet::default();
-    // Add direct members.
-    let (_, mut long_ty) = peel_snapshots(ctx.db, ty);
+    let (_, mut long_ty) = peel_snapshots(ctx.db, expr.ty());
     if matches!(long_ty, TypeLongId::Var(_)) {
         // Save some work. ignore the result. The error, if any, will be reported later.
         ctx.resolver.inference().solve().ok();
         long_ty = ctx.resolver.inference().rewrite(long_ty).no_err();
     }
     let (_, long_ty) = peel_snapshots_ex(ctx.db, long_ty);
-
-    if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
-        let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-        if let Some(accessed_member_name) = &accessed_member_name {
-            if let Some(member) = members.get(accessed_member_name) {
-                return Ok(EnrichedMembers {
-                    members: [(accessed_member_name.clone(), (member.clone(), 0))].into(),
-                    deref_functions,
-                });
-            }
-        } else {
-            for (member_name, member) in members.iter() {
-                res.insert(member_name.clone(), (member.clone(), 0));
-            }
+    let base_var = match &expr.expr {
+        Expr::Var(expr_var) => Some(expr_var.var),
+        Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
+            Some(member_path.base_var())
         }
-    }
+        _ => None,
+    };
+    let is_mut_var = base_var
+        .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
+        .is_some();
+    let ty = long_ty.clone().intern(ctx.db);
+    let key = (ty, is_mut_var);
+    let mut enriched_members = match ctx.resolver.type_enriched_members.entry(key) {
+        Entry::Occupied(entry) => {
+            let e = entry.get();
+            if let Some(name) = accessed_member_name {
+                if let Some(value) = e.accessed(name) {
+                    return Ok(value);
+                }
+            } else if e.calc_tail.is_none() {
+                return Ok(e.clone());
+            }
+            entry.swap_remove()
+        }
+        Entry::Vacant(_) => {
+            let members = if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) =
+                long_ty
+            {
+                let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
+                if let Some(accessed_member_name) = accessed_member_name {
+                    if let Some(member) = members.get(accessed_member_name) {
+                        // Found direct member access - so directly returning it.
+                        return Ok(EnrichedMembers {
+                            members: [(accessed_member_name.into(), (member.clone(), 0))].into(),
+                            deref_functions: vec![],
+                            calc_tail: None,
+                        });
+                    }
+                }
+                members.iter().map(|(k, v)| (k.clone(), (v.clone(), 0))).collect()
+            } else {
+                Default::default()
+            };
+            EnrichedMembers { members, deref_functions: vec![], calc_tail: Some(expr.id) }
+        }
+    };
+    enrich_members(ctx, &mut enriched_members, is_mut_var, stable_ptr, accessed_member_name)?;
+    let e = ctx.resolver.type_enriched_members.entry(key).or_insert(enriched_members);
+    Ok(if let Some(name) = accessed_member_name {
+        e.accessed(name).expect("Post enrich the member must exist, or the info must be final.")
+    } else {
+        e.clone()
+    })
+}
+
+/// Enriched members include both direct members (in case of a struct), and members of derefed
+/// types.
+fn enrich_members(
+    ctx: &mut ComputationContext<'_>,
+    enriched_members: &mut EnrichedMembers,
+    is_mut_var: bool,
+    stable_ptr: ast::ExprPtr,
+    accessed_member_name: Option<&str>,
+) -> Maybe<()> {
+    let EnrichedMembers { members: enriched, deref_functions, calc_tail } = enriched_members;
+    let mut visited_types: OrderedHashSet<TypeId> = OrderedHashSet::default();
+
+    let expr_id = calc_tail.expect("`enrich_members` should be called with a `calc_tail` value.");
+    *calc_tail = None;
+    let mut expr = ExprAndId { expr: ctx.arenas.exprs[expr_id].clone(), id: expr_id };
 
     let deref_mut_trait_id = deref_mut_trait(ctx.db);
     let deref_trait_id = deref_trait(ctx.db);
@@ -2889,27 +2929,18 @@ fn enriched_members(
             )
         };
 
-    // Add members of derefed types.
-    let mut n_deref = 0;
-    let base_var = match &expr.expr {
-        Expr::Var(expr_var) => Some(expr_var.var),
-        Expr::MemberAccess(ExprMemberAccess { member_path: Some(member_path), .. }) => {
-            Some(member_path.base_var())
-        }
-        _ => None,
-    };
     // If the variable is mutable, and implements DerefMut, we use DerefMut in the first iteration.
-    let mut use_deref_mut = base_var
-        .filter(|var_id| matches!(ctx.semantic_defs.get(var_id), Some(var) if var.is_mut()))
-        .is_some()
+    let mut use_deref_mut = deref_functions.is_empty()
+        && is_mut_var
         && compute_deref_method_function_call_data(ctx, expr.clone(), true).is_ok();
 
+    // Add members of derefed types.
     while let Ok((function_id, _, cur_expr, mutability)) =
         compute_deref_method_function_call_data(ctx, expr, use_deref_mut)
     {
         deref_functions.push((function_id, mutability));
         use_deref_mut = false;
-        n_deref += 1;
+        let n_deref = deref_functions.len();
         expr = cur_expr;
         let derefed_expr = expr_function_call(
             ctx,
@@ -2918,8 +2949,7 @@ fn enriched_members(
             stable_ptr,
             stable_ptr,
         )?;
-        ty = derefed_expr.ty();
-        ty = ctx.reduce_ty(ty);
+        let ty = ctx.reduce_ty(derefed_expr.ty());
         let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, stable_ptr)?;
         // If the type is still a variable we stop looking for derefed members.
         if let TypeLongId::Var(_) = long_ty {
@@ -2928,19 +2958,17 @@ fn enriched_members(
         expr = ExprAndId { expr: derefed_expr.clone(), id: ctx.arenas.exprs.alloc(derefed_expr) };
         if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
             let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-            if let Some(accessed_member_name) = &accessed_member_name {
-                if let Some(member) = members.get(accessed_member_name) {
-                    return Ok(EnrichedMembers {
-                        members: [(accessed_member_name.clone(), (member.clone(), n_deref))].into(),
-                        deref_functions,
-                    });
+            for (member_name, member) in members.iter() {
+                // Insert member if there is not already a member with the same name.
+                if !enriched.contains_key(member_name) {
+                    enriched.insert(member_name.clone(), (member.clone(), n_deref));
                 }
-            } else {
-                for (member_name, member) in members.iter() {
-                    // Insert member if there is not already a member with the same name.
-                    if !res.contains_key(member_name) {
-                        res.insert(member_name.clone(), (member.clone(), n_deref));
-                    }
+            }
+            if let Some(accessed_member_name) = accessed_member_name {
+                // If member is contained we can stop the calculation post the lookup.
+                if members.contains_key(accessed_member_name) {
+                    *calc_tail = Some(expr.id);
+                    break;
                 }
             }
         }
@@ -2950,7 +2978,7 @@ fn enriched_members(
             break;
         }
     }
-    Ok(EnrichedMembers { members: res, deref_functions })
+    Ok(())
 }
 
 /// Peels snapshots from a type and making sure it is fully not a variable type.
