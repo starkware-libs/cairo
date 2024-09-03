@@ -142,12 +142,12 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
         | CostTokenType::RangeCheck96 => {
             panic!("Token type {:?} has no gas cost.", token_type)
         }
-        CostTokenType::Pedersen => 4130,
-        CostTokenType::Poseidon => 500,
-        CostTokenType::Bitwise => 594,
-        CostTokenType::EcOp => 4166,
-        CostTokenType::AddMod => 234,
-        CostTokenType::MulMod => 616,
+        CostTokenType::Pedersen => 4050,
+        CostTokenType::Poseidon => 491,
+        CostTokenType::Bitwise => 583,
+        CostTokenType::EcOp => 4085,
+        CostTokenType::AddMod => 230,
+        CostTokenType::MulMod => 604,
     }
 }
 
