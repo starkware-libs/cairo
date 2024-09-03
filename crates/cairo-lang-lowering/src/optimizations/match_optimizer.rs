@@ -286,21 +286,23 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         match_info: &'a MatchInfo,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
-        let infos: Vec<_> = infos.collect();
-        let arm_demands = zip_eq(match_info.arms(), &infos)
-            .map(|(arm, info)| {
-                let mut demand = info.demand.clone();
+        let (arm_demands, arm_reachable_blocks): (Vec<_>, Vec<_>) =
+            infos.map(|info| (info.demand, info.reachable_blocks)).unzip();
+
+        let arm_demands_with_arm_var = zip_eq(match_info.arms(), &arm_demands)
+            .map(|(arm, demand)| {
+                let mut demand = demand.clone();
                 demand.variables_introduced(&mut EmptyDemandReporter {}, &arm.var_ids, ());
 
                 (demand, ())
             })
             .collect_vec();
-        let mut demand =
-            MatchOptimizerDemand::merge_demands(&arm_demands, &mut EmptyDemandReporter {});
+        let mut demand = MatchOptimizerDemand::merge_demands(
+            &arm_demands_with_arm_var,
+            &mut EmptyDemandReporter {},
+        );
 
         // Union the reachable blocks for all the infos.
-        let arm_reachable_blocks =
-            infos.iter().map(|info| info.reachable_blocks.clone()).collect_vec();
         let mut reachable_blocks = OrderedHashSet::default();
         let mut expected_size = 0;
         for cur_reachable_blocks in &arm_reachable_blocks {
@@ -321,7 +323,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     match_variable: input.var_id,
                     match_arms: arms,
                     match_block: block_id,
-                    arm_demands: infos.into_iter().map(|info| info.demand).collect(),
+                    arm_demands,
                     future_merge: found_collision,
                     arm_reachable_blocks,
                 })
