@@ -39,76 +39,75 @@ mod inner_mod {
         x.some_method<caret>
 --------------------------
 Completion: add_eq()
-Text edit: use core::traits::AddEq;
-Text edit:  --------------------------
+use core::traits::AddEq;
+ --------------------------
 Completion: sub_eq()
-Text edit: use core::traits::SubEq;
-Text edit:  --------------------------
+use core::traits::SubEq;
+ --------------------------
 Completion: mul_eq()
-Text edit: use core::traits::MulEq;
-Text edit:  --------------------------
+use core::traits::MulEq;
+ --------------------------
 Completion: into()
-Text edit:  --------------------------
+ --------------------------
 Completion: try_into()
-Text edit:  --------------------------
+ --------------------------
 Completion: destruct()
-Text edit:  --------------------------
+ --------------------------
 Completion: panic_destruct()
-Text edit:  --------------------------
+ --------------------------
 Completion: new_inputs()
-Text edit: use core::circuit::CircuitInputs;
-Text edit:  --------------------------
+use core::circuit::CircuitInputs;
+ --------------------------
 Completion: get_descriptor()
-Text edit:  --------------------------
+ --------------------------
 Completion: clone()
-Text edit:  --------------------------
+ --------------------------
 Completion: is_zero()
-Text edit: use core::num::traits::Zero;
-Text edit:  --------------------------
+use core::num::traits::Zero;
+ --------------------------
 Completion: is_non_zero()
-Text edit: use core::num::traits::Zero;
-Text edit:  --------------------------
+use core::num::traits::Zero;
+ --------------------------
 Completion: is_one()
-Text edit: use core::num::traits::One;
-Text edit:  --------------------------
+use core::num::traits::One;
+ --------------------------
 Completion: is_non_one()
-Text edit: use core::num::traits::One;
-Text edit:  --------------------------
+use core::num::traits::One;
+ --------------------------
 Completion: add_assign()
-Text edit: use core::ops::AddAssign;
-Text edit:  --------------------------
+use core::ops::AddAssign;
+ --------------------------
 Completion: sub_assign()
-Text edit: use core::ops::SubAssign;
-Text edit:  --------------------------
+use core::ops::SubAssign;
+ --------------------------
 Completion: mul_assign()
-Text edit: use core::ops::MulAssign;
-Text edit:  --------------------------
+use core::ops::MulAssign;
+ --------------------------
 Completion: serialize()
-Text edit:  --------------------------
+ --------------------------
 Completion: print()
-Text edit:  --------------------------
+ --------------------------
 Completion: fmt()
-Text edit: use core::fmt::Display;
-Text edit:  --------------------------
+use core::fmt::Display;
+ --------------------------
 Completion: fmt()
-Text edit: use core::fmt::Debug;
-Text edit:  --------------------------
+use core::fmt::Debug;
+ --------------------------
 Completion: fmt()
-Text edit: use core::fmt::LowerHex;
-Text edit:  --------------------------
+use core::fmt::LowerHex;
+ --------------------------
 Completion: is_zero()
-Text edit:  --------------------------
+ --------------------------
 Completion: is_non_zero()
-Text edit:  --------------------------
+ --------------------------
 Completion: append_formatted_to_byte_array()
-Text edit: use core::to_byte_array::AppendFormattedToByteArray;
-Text edit:  --------------------------
+use core::to_byte_array::AppendFormattedToByteArray;
+ --------------------------
 Completion: format_as_byte_array()
-Text edit: use core::to_byte_array::FormatAsByteArray;
-Text edit:  --------------------------
+use core::to_byte_array::FormatAsByteArray;
+ --------------------------
 Completion: some_method()
-Text edit: use super::ATrait1;
-Text edit:
+use super::ATrait1;
 
 //! > ==========================================================================
 
@@ -149,77 +148,73 @@ mod inner_mod {
         x.no_param_method<caret>
 --------------------------
 Completion: add_eq()
-Text edit: use core::traits::AddEq;
-Text edit:  --------------------------
+use core::traits::AddEq;
+ --------------------------
 Completion: sub_eq()
-Text edit: use core::traits::SubEq;
-Text edit:  --------------------------
+use core::traits::SubEq;
+ --------------------------
 Completion: mul_eq()
-Text edit: use core::traits::MulEq;
-Text edit:  --------------------------
+use core::traits::MulEq;
+ --------------------------
 Completion: into()
-Text edit:  --------------------------
+ --------------------------
 Completion: try_into()
-Text edit:  --------------------------
+ --------------------------
 Completion: destruct()
-Text edit:  --------------------------
+ --------------------------
 Completion: panic_destruct()
-Text edit:  --------------------------
+ --------------------------
 Completion: new_inputs()
-Text edit: use core::circuit::CircuitInputs;
-Text edit:  --------------------------
+use core::circuit::CircuitInputs;
+ --------------------------
 Completion: get_descriptor()
-Text edit:  --------------------------
+ --------------------------
 Completion: clone()
-Text edit:  --------------------------
+ --------------------------
 Completion: is_zero()
-Text edit: use core::num::traits::Zero;
-Text edit:  --------------------------
+use core::num::traits::Zero;
+ --------------------------
 Completion: is_non_zero()
-Text edit: use core::num::traits::Zero;
-Text edit:  --------------------------
+use core::num::traits::Zero;
+ --------------------------
 Completion: is_one()
-Text edit: use core::num::traits::One;
-Text edit:  --------------------------
+use core::num::traits::One;
+ --------------------------
 Completion: is_non_one()
-Text edit: use core::num::traits::One;
-Text edit:  --------------------------
+use core::num::traits::One;
+ --------------------------
 Completion: add_assign()
-Text edit: use core::ops::AddAssign;
-Text edit:  --------------------------
+use core::ops::AddAssign;
+ --------------------------
 Completion: sub_assign()
-Text edit: use core::ops::SubAssign;
-Text edit:  --------------------------
+use core::ops::SubAssign;
+ --------------------------
 Completion: mul_assign()
-Text edit: use core::ops::MulAssign;
-Text edit:  --------------------------
+use core::ops::MulAssign;
+ --------------------------
 Completion: serialize()
-Text edit:  --------------------------
+ --------------------------
 Completion: print()
-Text edit:  --------------------------
+ --------------------------
 Completion: fmt()
-Text edit: use core::fmt::Display;
-Text edit:  --------------------------
+use core::fmt::Display;
+ --------------------------
 Completion: fmt()
-Text edit: use core::fmt::Debug;
-Text edit:  --------------------------
+use core::fmt::Debug;
+ --------------------------
 Completion: fmt()
-Text edit: use core::fmt::LowerHex;
-Text edit:  --------------------------
+use core::fmt::LowerHex;
+ --------------------------
 Completion: is_zero()
-Text edit:  --------------------------
+ --------------------------
 Completion: is_non_zero()
-Text edit:  --------------------------
+ --------------------------
 Completion: append_formatted_to_byte_array()
-Text edit: use core::to_byte_array::AppendFormattedToByteArray;
-Text edit:  --------------------------
+use core::to_byte_array::AppendFormattedToByteArray;
+ --------------------------
 Completion: format_as_byte_array()
-Text edit: use core::to_byte_array::FormatAsByteArray;
-Text edit:  --------------------------
+use core::to_byte_array::FormatAsByteArray;
+ --------------------------
 Completion: no_param_method()
-Text edit: use super::ATrait2;
-Text edit:
-
-
-
+use super::ATrait2;
 
