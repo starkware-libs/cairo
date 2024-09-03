@@ -1,7 +1,7 @@
 //! Module for collecting static and dynamic capabilities the server wants to register.
 //! A capability can be registered statically ONLY
 //! if the client does not support dynamic registration for this capability, as per LSP spec
-//! https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#client_registerCapability:
+//! <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#client_registerCapability>:
 //!
 //! > Server must not register the same capability both statically through the initialize result and
 //! > dynamically for the same document selector. If a server wants to support both static and
