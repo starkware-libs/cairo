@@ -4,6 +4,7 @@ use std::vec::IntoIter;
 
 use anyhow::{bail, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::FilesGroupEx;
@@ -251,12 +252,18 @@ impl TestCompiler {
 
     /// Build the tests and collect metadata.
     pub fn build(&self) -> Result<TestCompilation> {
+        let mut diag_reporter =
+            DiagnosticsReporter::stderr().with_crates(&self.main_crate_ids.clone());
+        if self.allow_warnings {
+            diag_reporter = diag_reporter.allow_warnings();
+        }
+
         compile_test_prepared_db(
             &self.db,
             self.config.clone(),
             self.main_crate_ids.clone(),
             self.test_crate_ids.clone(),
-            self.allow_warnings,
+            diag_reporter,
         )
     }
 }

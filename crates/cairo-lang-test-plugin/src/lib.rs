@@ -77,7 +77,7 @@ pub fn compile_test_prepared_db(
     tests_compilation_config: TestsCompilationConfig,
     main_crate_ids: Vec<CrateId>,
     test_crate_ids: Vec<CrateId>,
-    allow_warnings: bool,
+    diagnostics_reporter: DiagnosticsReporter<'_>,
 ) -> Result<TestCompilation> {
     let all_entry_points = if tests_compilation_config.starknet {
         find_contracts(db, &main_crate_ids)
@@ -109,13 +109,8 @@ pub fn compile_test_prepared_db(
     )
     .collect();
 
-    let mut diag_reporter = DiagnosticsReporter::stderr().with_crates(&main_crate_ids);
-    if allow_warnings {
-        diag_reporter = diag_reporter.allow_warnings();
-    }
-
     let SierraProgramWithDebug { program: mut sierra_program, debug_info } =
-        Arc::unwrap_or_clone(get_sierra_program_for_functions(db, func_ids, diag_reporter)?);
+        Arc::unwrap_or_clone(get_sierra_program_for_functions(db, func_ids, diagnostics_reporter)?);
 
     let function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
         all_entry_points
