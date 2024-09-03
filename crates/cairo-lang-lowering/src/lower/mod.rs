@@ -6,9 +6,9 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::corelib::{unwrap_error_propagation_type, ErrorPropagationType};
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionLongId;
+use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::usage::MemberPath;
-use cairo_lang_semantic::{corelib, ExprVar, LocalVariable, VarId};
+use cairo_lang_semantic::{corelib, ConcreteFunction, ExprVar, LocalVariable, VarId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -18,6 +18,7 @@ use defs::ids::TopLevelLanguageElementId;
 use itertools::{chain, izip, zip_eq, Itertools};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
+use refs::ClosureInfo;
 use semantic::corelib::{
     core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
     never_ty, unit_ty,
@@ -66,7 +67,6 @@ mod logical_op;
 mod lower_if;
 mod lower_match;
 pub mod refs;
-use crate::lower::refs::ClosureInfo;
 
 #[cfg(test)]
 mod generated_test;
@@ -155,7 +155,6 @@ pub fn lower_function(
             Ok(root_block_id)
         })
     };
-
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
         .unwrap_or_else(FlatBlocks::new_errored);
@@ -1702,16 +1701,20 @@ fn add_capture_destruct_impl(
     assert_eq!(trait_functions.len(), 1);
     let trait_function = *trait_functions.values().next().unwrap();
 
-    let concrete_trait_function =
-        ConcreteTraitGenericFunctionLongId::new(semantic_db, concrete_trait, trait_function)
-            .intern(semantic_db);
+    let generic_function = GenericFunctionId::Impl(ImplGenericFunctionId {
+        impl_id: *impl_id,
+        function: trait_function,
+    });
 
-    let signature = Signature::from_semantic(
-        ctx.db,
-        semantic_db.concrete_trait_function_signature(concrete_trait_function)?,
-    );
+    let function = semantic::FunctionLongId {
+        function: ConcreteFunction { generic_function, generic_args: vec![] },
+    }
+    .intern(ctx.db);
 
-    let func_key = GeneratedFunctionKey::TraitFunc(concrete_trait_function, location);
+    let signature =
+        Signature::from_semantic(ctx.db, semantic_db.concrete_function_signature(function)?);
+
+    let func_key = GeneratedFunctionKey::TraitFunc(function, location);
     let function_id =
         FunctionWithBodyLongId::Generated { parent: ctx.semantic_function_id, key: func_key }
             .intern(ctx.db);
@@ -1781,15 +1784,16 @@ fn lower_expr_closure(
 
     let capture_var_usage = builder.capture(ctx, usage.clone(), expr);
 
+    let closure_variable = LoweredExpr::AtVariable(capture_var_usage);
+    let closure_ty = extract_matches!(expr.ty.lookup_intern(ctx.db), TypeLongId::Closure);
     let _ = add_capture_destruct_impl(
         ctx,
         capture_var_usage,
         builder.semantics.closures.get(&capture_var_usage.var_id).unwrap(),
-        StableLocation::new(expr.stable_ptr.untyped()),
+        closure_ty.wrapper_location,
     );
 
-    ctx.diagnostics.report(expr.stable_ptr, LoweringDiagnosticKind::Unsupported);
-    Ok(LoweredExpr::AtVariable(capture_var_usage))
+    Ok(closure_variable)
 }
 
 /// Lowers an expression of type [semantic::ExprPropagateError].
