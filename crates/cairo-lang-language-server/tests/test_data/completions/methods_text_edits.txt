@@ -38,12 +38,77 @@ mod inner_mod {
 //! > Completions #0
         x.some_method<caret>
 --------------------------
-Completion: some_method(param1: i32, param2: String)
+Completion: add_eq()
+Text edit: use core::traits::AddEq;
+Text edit:  --------------------------
+Completion: sub_eq()
+Text edit: use core::traits::SubEq;
+Text edit:  --------------------------
+Completion: mul_eq()
+Text edit: use core::traits::MulEq;
+Text edit:  --------------------------
+Completion: into()
+Text edit:  --------------------------
+Completion: try_into()
+Text edit:  --------------------------
+Completion: destruct()
+Text edit:  --------------------------
+Completion: panic_destruct()
+Text edit:  --------------------------
+Completion: new_inputs()
+Text edit: use core::circuit::CircuitInputs;
+Text edit:  --------------------------
+Completion: get_descriptor()
+Text edit:  --------------------------
+Completion: clone()
+Text edit:  --------------------------
+Completion: is_zero()
+Text edit: use core::num::traits::Zero;
+Text edit:  --------------------------
+Completion: is_non_zero()
+Text edit: use core::num::traits::Zero;
+Text edit:  --------------------------
+Completion: is_one()
+Text edit: use core::num::traits::One;
+Text edit:  --------------------------
+Completion: is_non_one()
+Text edit: use core::num::traits::One;
+Text edit:  --------------------------
+Completion: add_assign()
+Text edit: use core::ops::AddAssign;
+Text edit:  --------------------------
+Completion: sub_assign()
+Text edit: use core::ops::SubAssign;
+Text edit:  --------------------------
+Completion: mul_assign()
+Text edit: use core::ops::MulAssign;
+Text edit:  --------------------------
+Completion: serialize()
+Text edit:  --------------------------
+Completion: print()
+Text edit:  --------------------------
+Completion: fmt()
+Text edit: use core::fmt::Display;
+Text edit:  --------------------------
+Completion: fmt()
+Text edit: use core::fmt::Debug;
+Text edit:  --------------------------
+Completion: fmt()
+Text edit: use core::fmt::LowerHex;
+Text edit:  --------------------------
+Completion: is_zero()
+Text edit:  --------------------------
+Completion: is_non_zero()
+Text edit:  --------------------------
+Completion: append_formatted_to_byte_array()
+Text edit: use core::to_byte_array::AppendFormattedToByteArray;
+Text edit:  --------------------------
+Completion: format_as_byte_array()
+Text edit: use core::to_byte_array::FormatAsByteArray;
+Text edit:  --------------------------
+Completion: some_method()
 Text edit: use super::ATrait1;
-Additional info:
-    Signature: `fn some_method(self: @felt252, param1: i32, param2: String)`
-    Documentation: `Executes some method with two parameters.`
---------------------------
+Text edit:
 
 //! > ==========================================================================
 
@@ -83,10 +148,74 @@ mod inner_mod {
 //! > Completions #0
         x.no_param_method<caret>
 --------------------------
+Completion: add_eq()
+Text edit: use core::traits::AddEq;
+Text edit:  --------------------------
+Completion: sub_eq()
+Text edit: use core::traits::SubEq;
+Text edit:  --------------------------
+Completion: mul_eq()
+Text edit: use core::traits::MulEq;
+Text edit:  --------------------------
+Completion: into()
+Text edit:  --------------------------
+Completion: try_into()
+Text edit:  --------------------------
+Completion: destruct()
+Text edit:  --------------------------
+Completion: panic_destruct()
+Text edit:  --------------------------
+Completion: new_inputs()
+Text edit: use core::circuit::CircuitInputs;
+Text edit:  --------------------------
+Completion: get_descriptor()
+Text edit:  --------------------------
+Completion: clone()
+Text edit:  --------------------------
+Completion: is_zero()
+Text edit: use core::num::traits::Zero;
+Text edit:  --------------------------
+Completion: is_non_zero()
+Text edit: use core::num::traits::Zero;
+Text edit:  --------------------------
+Completion: is_one()
+Text edit: use core::num::traits::One;
+Text edit:  --------------------------
+Completion: is_non_one()
+Text edit: use core::num::traits::One;
+Text edit:  --------------------------
+Completion: add_assign()
+Text edit: use core::ops::AddAssign;
+Text edit:  --------------------------
+Completion: sub_assign()
+Text edit: use core::ops::SubAssign;
+Text edit:  --------------------------
+Completion: mul_assign()
+Text edit: use core::ops::MulAssign;
+Text edit:  --------------------------
+Completion: serialize()
+Text edit:  --------------------------
+Completion: print()
+Text edit:  --------------------------
+Completion: fmt()
+Text edit: use core::fmt::Display;
+Text edit:  --------------------------
+Completion: fmt()
+Text edit: use core::fmt::Debug;
+Text edit:  --------------------------
+Completion: fmt()
+Text edit: use core::fmt::LowerHex;
+Text edit:  --------------------------
+Completion: is_zero()
+Text edit:  --------------------------
+Completion: is_non_zero()
+Text edit:  --------------------------
+Completion: append_formatted_to_byte_array()
+Text edit: use core::to_byte_array::AppendFormattedToByteArray;
+Text edit:  --------------------------
+Completion: format_as_byte_array()
+Text edit: use core::to_byte_array::FormatAsByteArray;
+Text edit:  --------------------------
 Completion: no_param_method()
 Text edit: use super::ATrait2;
-Additional info:
-    Signature: `fn no_param_method(self: @felt252)`
-    Documentation: `Executes a method that doesn't require parameters.`
---------------------------
-
+Text edit:
