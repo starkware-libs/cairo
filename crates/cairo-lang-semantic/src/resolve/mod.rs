@@ -53,8 +53,8 @@ use crate::items::{visibility, TraitOrImplContext};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{are_coupons_enabled, resolve_type, ImplTypeId};
 use crate::{
-    ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
-    TypeId, TypeLongId,
+    ConcreteFunction, ConcreteTypeId, ExprId, FunctionId, FunctionLongId, GenericArgumentId,
+    GenericParam, Member, Mutability, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -106,6 +106,63 @@ impl ResolvedItems {
     }
 }
 
+/// The enriched members of a type, including direct members of structs, as well as members of
+/// targets of `Deref` and `DerefMut` of the type.
+#[derive(Debug, PartialEq, Eq, DebugWithDb, Clone)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct EnrichedMembers {
+    /// A map from member names to their semantic representation and the number of deref operations
+    /// needed to access them.
+    pub members: OrderedHashMap<SmolStr, (Member, usize)>,
+    /// The sequence of deref functions needed to access the members.
+    pub deref_functions: Vec<(FunctionId, Mutability)>,
+    /// The tail remaining for required computation - the current expression `Deref`/`DerefMut`
+    /// traits lookup. Useful for partial computation of enriching members where a member was
+    /// already previously found.
+    pub calc_tail: Option<ExprId>,
+}
+impl EnrichedMembers {
+    /// Returns `EnrichedTypeMemberAccess` for a single member if exists.
+    ///
+    /// If it does not exist and the enriched type info is final, returns
+    /// `EnrichedTypeMemberAccessFailure::NotFound` otherwise returns
+    /// `EnrichedTypeMemberAccessFailure::NotFinal`.
+    pub fn accessed(
+        &self,
+        name: &str,
+    ) -> Result<EnrichedTypeMemberAccess, EnrichedTypeMemberAccessFailure> {
+        if let Some((member, n_derefs)) = self.members.get(name) {
+            Ok(EnrichedTypeMemberAccess {
+                member: member.clone(),
+                deref_functions: self.deref_functions[..*n_derefs].to_vec(),
+            })
+        } else {
+            Err(if self.calc_tail.is_none() {
+                EnrichedTypeMemberAccessFailure::NotFound
+            } else {
+                EnrichedTypeMemberAccessFailure::NotFinal
+            })
+        }
+    }
+}
+
+/// The enriched member of a type, including the member itself and the deref functions needed to
+/// access it.
+pub struct EnrichedTypeMemberAccess {
+    /// The member itself.
+    pub member: Member,
+    /// The sequence of deref functions needed to access the member.
+    pub deref_functions: Vec<(FunctionId, Mutability)>,
+}
+
+/// The failure cases for enriched member access.
+pub enum EnrichedTypeMemberAccessFailure {
+    /// The member was not found.
+    NotFound,
+    /// The member was not found, but the enriched type info is not final.
+    NotFinal,
+}
+
 #[derive(Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ResolverData {
@@ -115,6 +172,8 @@ pub struct ResolverData {
     generic_param_by_name: OrderedHashMap<SmolStr, GenericParamId>,
     /// All generic parameters accessible to the resolver.
     pub generic_params: Vec<GenericParamId>,
+    /// The enriched members per type and its mutability in the resolver context.
+    pub type_enriched_members: OrderedHashMap<(TypeId, bool), EnrichedMembers>,
     /// Lookback map for resolved identifiers in path. Used in "Go to definition".
     pub resolved_items: ResolvedItems,
     /// Inference data for the resolver.
@@ -132,6 +191,7 @@ impl ResolverData {
             module_file_id,
             generic_param_by_name: Default::default(),
             generic_params: Default::default(),
+            type_enriched_members: Default::default(),
             resolved_items: Default::default(),
             inference_data: InferenceData::new(inference_id),
             trait_or_impl_ctx: TraitOrImplContext::None,
@@ -148,6 +208,7 @@ impl ResolverData {
             module_file_id: self.module_file_id,
             generic_param_by_name: self.generic_param_by_name.clone(),
             generic_params: self.generic_params.clone(),
+            type_enriched_members: self.type_enriched_members.clone(),
             resolved_items: self.resolved_items.clone(),
             inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
             trait_or_impl_ctx: self.trait_or_impl_ctx,
