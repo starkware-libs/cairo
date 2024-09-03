@@ -1,7 +1,7 @@
 //! Introduces [Usages], which is responsible for computing variables usage in semantic blocks\
 //! of a function.
 
-use cairo_lang_defs::ids::{MemberId, ParamId};
+use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -12,7 +12,7 @@ use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
 use crate::{
     ConcreteStructId, Condition, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath,
-    FixedSizeArrayItems, FunctionBody, Pattern, PatternId, Statement, VarId,
+    FixedSizeArrayItems, FunctionBody, Parameter, Pattern, PatternId, Statement, VarId,
 };
 
 #[cfg(test)]
@@ -168,12 +168,12 @@ impl Usages {
     pub fn handle_closure(
         &mut self,
         arenas: &Arenas,
-        param_ids: &[ParamId],
+        param_ids: &[Parameter],
         body: ExprId,
     ) -> Usage {
         let mut usage: Usage = Default::default();
 
-        usage.introductions.extend(param_ids.iter().map(|id| VarId::Param(*id)));
+        usage.introductions.extend(param_ids.iter().map(|param| VarId::Param(param.id)));
         self.handle_expr(arenas, body, &mut usage);
         usage.finalize_as_scope();
         usage
@@ -300,7 +300,7 @@ impl Usages {
                 self.usages.insert(expr_id, usage);
             }
             Expr::ExprClosure(expr) => {
-                let usage = self.handle_closure(arenas, &expr.param_ids, expr.body);
+                let usage = self.handle_closure(arenas, &expr.params, expr.body);
 
                 current.add_usage_and_changes(&usage);
                 self.usages.insert(expr_id, usage);
