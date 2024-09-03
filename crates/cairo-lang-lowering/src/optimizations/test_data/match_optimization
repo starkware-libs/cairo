@@ -774,3 +774,379 @@ blk7:
 Statements:
 End:
   Goto(blk4, {v9 -> v6})
+
+//! > ==========================================================================
+
+//! > ref argument remapping with return.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(ref a: u32, c: Color) -> Color {
+    let c = match c {
+        Color::Red(x) => {
+            a = 0;
+            Color::Red(x)
+        },
+        Color::Green(x) => Color::Green(x),
+        // Map `Blue` to `Green` to check an arm that is reached twice.
+        Color::Blue(x) => Color::Green(x),
+        Color::White(_) => c,
+    };
+    match c {
+        Color::Red(x) => { return Color::Red(x); },
+        Color::Green(x) => { return Color::Green(x); },
+        Color::Blue(x) => { return Color::Blue(x); },
+        Color::White(x) => { return Color::White(x); },
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum Color {
+    Red: u32,
+    Green: u32,
+    Blue: u32,
+    White: u32,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32, v1: test::Color
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    Color::Red(v2) => blk1,
+    Color::Green(v3) => blk2,
+    Color::Blue(v4) => blk3,
+    Color::White(v5) => blk4,
+  })
+
+blk1:
+Statements:
+  (v6: core::integer::u32) <- 0
+  (v7: test::Color) <- Color::Red(v2)
+End:
+  Goto(blk5, {v6 -> v8, v7 -> v9})
+
+blk2:
+Statements:
+  (v10: test::Color) <- Color::Green(v3)
+End:
+  Goto(blk5, {v0 -> v8, v10 -> v9})
+
+blk3:
+Statements:
+  (v11: test::Color) <- Color::Green(v4)
+End:
+  Goto(blk5, {v0 -> v8, v11 -> v9})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {v0 -> v8, v1 -> v9})
+
+blk5:
+Statements:
+End:
+  Match(match_enum(v9) {
+    Color::Red(v12) => blk6,
+    Color::Green(v13) => blk7,
+    Color::Blue(v14) => blk8,
+    Color::White(v15) => blk9,
+  })
+
+blk6:
+Statements:
+  (v16: test::Color) <- Color::Red(v12)
+End:
+  Return(v8, v16)
+
+blk7:
+Statements:
+  (v17: test::Color) <- Color::Green(v13)
+End:
+  Return(v8, v17)
+
+blk8:
+Statements:
+  (v18: test::Color) <- Color::Blue(v14)
+End:
+  Return(v8, v18)
+
+blk9:
+Statements:
+  (v19: test::Color) <- Color::White(v15)
+End:
+  Return(v8, v19)
+
+//! > after
+Parameters: v0: core::integer::u32, v1: test::Color
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    Color::Red(v2) => blk1,
+    Color::Green(v3) => blk2,
+    Color::Blue(v4) => blk3,
+    Color::White(v5) => blk4,
+  })
+
+blk1:
+Statements:
+  (v6: core::integer::u32) <- 0
+  (v7: test::Color) <- Color::Red(v2)
+End:
+  Goto(blk5, {v6 -> v8, v7 -> v9})
+
+blk2:
+Statements:
+  (v10: test::Color) <- Color::Green(v3)
+End:
+  Goto(blk5, {v0 -> v8, v10 -> v9})
+
+blk3:
+Statements:
+  (v11: test::Color) <- Color::Green(v4)
+End:
+  Goto(blk5, {v0 -> v8, v11 -> v9})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {v0 -> v8, v1 -> v9})
+
+blk5:
+Statements:
+End:
+  Match(match_enum(v9) {
+    Color::Red(v12) => blk6,
+    Color::Green(v13) => blk7,
+    Color::Blue(v14) => blk8,
+    Color::White(v15) => blk9,
+  })
+
+blk6:
+Statements:
+  (v16: test::Color) <- Color::Red(v12)
+End:
+  Return(v8, v16)
+
+blk7:
+Statements:
+  (v17: test::Color) <- Color::Green(v13)
+End:
+  Return(v8, v17)
+
+blk8:
+Statements:
+  (v18: test::Color) <- Color::Blue(v14)
+End:
+  Return(v8, v18)
+
+blk9:
+Statements:
+  (v19: test::Color) <- Color::White(v15)
+End:
+  Return(v8, v19)
+
+//! > ==========================================================================
+
+//! > ref argument remapping with merge.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(ref a: u32, c: Color) -> Color {
+    let c = match c {
+        Color::Red(x) => {
+            a = 0;
+            Color::Red(x)
+        },
+        Color::Green(x) => Color::Green(x),
+        // Map `Blue` to `Green` to check an arm that is reached twice.
+        Color::Blue(x) => Color::Green(x),
+        Color::White(_) => c,
+    };
+    match c {
+        Color::Red(x) => Color::Red(x),
+        Color::Green(x) => Color::Green(x),
+        Color::Blue(x) => Color::Blue(x),
+        Color::White(x) => Color::White(x),
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy, Drop)]
+enum Color {
+    Red: u32,
+    Green: u32,
+    Blue: u32,
+    White: u32,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32, v1: test::Color
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    Color::Red(v2) => blk1,
+    Color::Green(v3) => blk2,
+    Color::Blue(v4) => blk3,
+    Color::White(v5) => blk4,
+  })
+
+blk1:
+Statements:
+  (v6: core::integer::u32) <- 0
+  (v7: test::Color) <- Color::Red(v2)
+End:
+  Goto(blk5, {v6 -> v8, v7 -> v9})
+
+blk2:
+Statements:
+  (v10: test::Color) <- Color::Green(v3)
+End:
+  Goto(blk5, {v0 -> v8, v10 -> v9})
+
+blk3:
+Statements:
+  (v11: test::Color) <- Color::Green(v4)
+End:
+  Goto(blk5, {v0 -> v8, v11 -> v9})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {v0 -> v8, v1 -> v9})
+
+blk5:
+Statements:
+End:
+  Match(match_enum(v9) {
+    Color::Red(v12) => blk6,
+    Color::Green(v13) => blk7,
+    Color::Blue(v14) => blk8,
+    Color::White(v15) => blk9,
+  })
+
+blk6:
+Statements:
+  (v16: test::Color) <- Color::Red(v12)
+End:
+  Goto(blk10, {v16 -> v17})
+
+blk7:
+Statements:
+  (v18: test::Color) <- Color::Green(v13)
+End:
+  Goto(blk10, {v18 -> v17})
+
+blk8:
+Statements:
+  (v19: test::Color) <- Color::Blue(v14)
+End:
+  Goto(blk10, {v19 -> v17})
+
+blk9:
+Statements:
+  (v20: test::Color) <- Color::White(v15)
+End:
+  Goto(blk10, {v20 -> v17})
+
+blk10:
+Statements:
+End:
+  Return(v8, v17)
+
+//! > after
+Parameters: v0: core::integer::u32, v1: test::Color
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    Color::Red(v2) => blk1,
+    Color::Green(v3) => blk2,
+    Color::Blue(v4) => blk3,
+    Color::White(v5) => blk4,
+  })
+
+blk1:
+Statements:
+  (v6: core::integer::u32) <- 0
+  (v7: test::Color) <- Color::Red(v2)
+End:
+  Goto(blk5, {v6 -> v8, v7 -> v9})
+
+blk2:
+Statements:
+  (v10: test::Color) <- Color::Green(v3)
+End:
+  Goto(blk5, {v0 -> v8, v10 -> v9})
+
+blk3:
+Statements:
+  (v11: test::Color) <- Color::Green(v4)
+End:
+  Goto(blk5, {v0 -> v8, v11 -> v9})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {v0 -> v8, v1 -> v9})
+
+blk5:
+Statements:
+End:
+  Match(match_enum(v9) {
+    Color::Red(v12) => blk6,
+    Color::Green(v13) => blk7,
+    Color::Blue(v14) => blk8,
+    Color::White(v15) => blk9,
+  })
+
+blk6:
+Statements:
+  (v16: test::Color) <- Color::Red(v12)
+End:
+  Goto(blk10, {v16 -> v17})
+
+blk7:
+Statements:
+  (v18: test::Color) <- Color::Green(v13)
+End:
+  Goto(blk10, {v18 -> v17})
+
+blk8:
+Statements:
+  (v19: test::Color) <- Color::Blue(v14)
+End:
+  Goto(blk10, {v19 -> v17})
+
+blk9:
+Statements:
+  (v20: test::Color) <- Color::White(v15)
+End:
+  Goto(blk10, {v20 -> v17})
+
+blk10:
+Statements:
+End:
+  Return(v8, v17)
