@@ -64,7 +64,7 @@ fn test_completions_text_edits(
                     report.push_str("--------------------------\n");
                     report.push_str(format!("Completion: {}\n", completion.label).as_str());
                     for edit in text_edit {
-                        report.push_str(format!("Text edit: {}", edit.new_text).as_str());
+                        report.push_str(format!("Text edit: {}\n", edit.new_text).as_str());
                     }
                 }
             }

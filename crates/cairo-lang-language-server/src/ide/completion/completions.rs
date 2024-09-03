@@ -16,6 +16,7 @@ use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
+use cairo_lang_semantic::Parameter;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{LookupIntern, Upcast};
@@ -254,6 +255,10 @@ pub fn dot_completions(
 }
 
 /// Returns a completion item for a method.
+fn is_self_param(param: &Parameter) -> bool {
+    param.name == "self" || param.name == "&self" || param.name == "&mut self"
+}
+
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn completion_for_method(
     db: &AnalysisDatabase,
@@ -263,9 +268,9 @@ pub fn completion_for_method(
 ) -> Option<CompletionItem> {
     let trait_id = trait_function.trait_id(db.upcast());
     let name = trait_function.name(db.upcast());
-    db.trait_function_signature(trait_function).ok()?;
+    let signature = db.trait_function_signature(trait_function).ok()?;
 
-    // TODO(spapini): Add signature.
+    // Add the trait path as the detail for the completion item.
     let detail = trait_id.full_path(db.upcast());
     let mut additional_text_edits = vec![];
 
@@ -279,14 +284,33 @@ pub fn completion_for_method(
         }
     }
 
-    let completion = CompletionItem {
-        label: format!("{}()", name),
-        insert_text: Some(format!("{}(", name)),
+    // Determine the insert text based on whether the function has parameters.
+    let call_signature = format!("{name}()");
+    let mut completion = CompletionItem {
+        // Display the method signature.
+        label: call_signature.clone(),
+        insert_text: Some(call_signature),
         detail: Some(detail),
         kind: Some(CompletionItemKind::METHOD),
         additional_text_edits: Some(additional_text_edits),
         ..CompletionItem::default()
     };
+
+    if !signature.params.is_empty() && signature.params.iter().any(|param| !is_self_param(param)) {
+        let insert_position = Position {
+            line: position.line,
+            // Position cursor inside the parentheses.
+            character: position.character + name.len() as u32 + 1,
+        };
+        if let Some(ref mut edits) = completion.additional_text_edits {
+            edits.push(TextEdit {
+                range: Range::new(insert_position, insert_position),
+                // Add a space to place cursor.
+                new_text: " ".to_string(),
+            });
+        }
+    }
+
     Some(completion)
 }
 

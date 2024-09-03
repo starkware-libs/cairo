@@ -1,4 +1,4 @@
-//! > Test adding simple trait.
+//! > Test completion for methods with parameters showing additional info.
 
 //! > test_runner_name
 test_completions_text_edits
@@ -12,11 +12,17 @@ edition = "2024_07"
 
 //! > cairo_code
 mod hidden_trait {
+    /// Trait representing a method with parameters.
     pub trait ATrait1<T> {
-        fn some_method(self: @T);
+        /// Executes some method with two parameters.
+        ///
+        /// # Parameters
+        /// - `param1`: The first parameter as `i32`.
+        /// - `param2`: The second parameter as `String`.
+        fn some_method(self: @T, param1: i32, param2: String);
     }
     impl Felt252ATraitImpl of ATrait1<felt252> {
-        fn some_method(self: @felt252) {}
+        fn some_method(self: @felt252, param1: i32, param2: String) {}
     }
 }
 
@@ -25,21 +31,27 @@ use hidden_trait::ATrait1;
 mod inner_mod {
     fn main() {
         let x = 5_felt252;
-        x.some_me<caret>
+        x.some_method<caret>
     }
 }
 
 //! > Completions #0
-        x.some_me<caret>
+        x.some_method<caret>
 --------------------------
 Completion: add_eq()
 Text edit: use core::traits::AddEq;
+
+Text edit:  
 --------------------------
 Completion: sub_eq()
 Text edit: use core::traits::SubEq;
+
+Text edit:  
 --------------------------
 Completion: mul_eq()
 Text edit: use core::traits::MulEq;
+
+Text edit:  
 --------------------------
 Completion: into()
 --------------------------
@@ -48,9 +60,11 @@ Completion: try_into()
 Completion: destruct()
 --------------------------
 Completion: panic_destruct()
+Text edit:  
 --------------------------
 Completion: new_inputs()
 Text edit: use core::circuit::CircuitInputs;
+
 --------------------------
 Completion: get_descriptor()
 --------------------------
@@ -58,37 +72,54 @@ Completion: clone()
 --------------------------
 Completion: is_zero()
 Text edit: use core::num::traits::Zero;
+
 --------------------------
 Completion: is_non_zero()
 Text edit: use core::num::traits::Zero;
+
 --------------------------
 Completion: is_one()
 Text edit: use core::num::traits::One;
+
 --------------------------
 Completion: is_non_one()
 Text edit: use core::num::traits::One;
+
 --------------------------
 Completion: add_assign()
 Text edit: use core::ops::AddAssign;
+
+Text edit:  
 --------------------------
 Completion: sub_assign()
 Text edit: use core::ops::SubAssign;
+
+Text edit:  
 --------------------------
 Completion: mul_assign()
 Text edit: use core::ops::MulAssign;
+
+Text edit:  
 --------------------------
 Completion: serialize()
+Text edit:  
 --------------------------
 Completion: print()
 --------------------------
 Completion: fmt()
 Text edit: use core::fmt::Display;
+
+Text edit:  
 --------------------------
 Completion: fmt()
 Text edit: use core::fmt::Debug;
+
+Text edit:  
 --------------------------
 Completion: fmt()
 Text edit: use core::fmt::LowerHex;
+
+Text edit:  
 --------------------------
 Completion: is_zero()
 --------------------------
@@ -96,16 +127,22 @@ Completion: is_non_zero()
 --------------------------
 Completion: append_formatted_to_byte_array()
 Text edit: use core::to_byte_array::AppendFormattedToByteArray;
+
+Text edit:  
 --------------------------
 Completion: format_as_byte_array()
 Text edit: use core::to_byte_array::FormatAsByteArray;
+
+Text edit:  
 --------------------------
 Completion: some_method()
 Text edit: use super::ATrait1;
+
+Text edit:
 
 //! > ==========================================================================
 
-//! > Test adding non directly visible traits.
+//! > Test completion for methods without parameters showing additional info.
 
 //! > test_runner_name
 test_completions_text_edits
@@ -119,35 +156,42 @@ edition = "2024_07"
 
 //! > cairo_code
 mod hidden_trait {
-
-    pub trait ATrait1<T> {
-        fn some_method(self: @T);
+    /// Trait representing a method without parameters.
+    pub trait ATrait2<T> {
+        /// Executes a method that doesn't require parameters.
+        fn no_param_method(self: @T);
     }
-    impl Felt252ATraitImpl of ATrait1<felt252> {
-        fn some_method(self: @felt252) {}
+    impl Felt252ATraitImpl of ATrait2<felt252> {
+        fn no_param_method(self: @felt252) {}
     }
 }
 
-use hidden_trait::ATrait1;
+use hidden_trait::ATrait2;
 
 mod inner_mod {
     fn main() {
         let x = 5_felt252;
-        x.some_me<caret>
+        x.no_param_method<caret>
     }
 }
 
 //! > Completions #0
-        x.some_me<caret>
+        x.no_param_method<caret>
 --------------------------
 Completion: add_eq()
 Text edit: use core::traits::AddEq;
+
+Text edit:  
 --------------------------
 Completion: sub_eq()
 Text edit: use core::traits::SubEq;
+
+Text edit:  
 --------------------------
 Completion: mul_eq()
 Text edit: use core::traits::MulEq;
+
+Text edit:  
 --------------------------
 Completion: into()
 --------------------------
@@ -156,9 +200,11 @@ Completion: try_into()
 Completion: destruct()
 --------------------------
 Completion: panic_destruct()
+Text edit:  
 --------------------------
 Completion: new_inputs()
 Text edit: use core::circuit::CircuitInputs;
+
 --------------------------
 Completion: get_descriptor()
 --------------------------
@@ -166,37 +212,54 @@ Completion: clone()
 --------------------------
 Completion: is_zero()
 Text edit: use core::num::traits::Zero;
+
 --------------------------
 Completion: is_non_zero()
 Text edit: use core::num::traits::Zero;
+
 --------------------------
 Completion: is_one()
 Text edit: use core::num::traits::One;
+
 --------------------------
 Completion: is_non_one()
 Text edit: use core::num::traits::One;
+
 --------------------------
 Completion: add_assign()
 Text edit: use core::ops::AddAssign;
+
+Text edit:  
 --------------------------
 Completion: sub_assign()
 Text edit: use core::ops::SubAssign;
+
+Text edit:  
 --------------------------
 Completion: mul_assign()
 Text edit: use core::ops::MulAssign;
+
+Text edit:  
 --------------------------
 Completion: serialize()
+Text edit:  
 --------------------------
 Completion: print()
 --------------------------
 Completion: fmt()
 Text edit: use core::fmt::Display;
+
+Text edit:  
 --------------------------
 Completion: fmt()
 Text edit: use core::fmt::Debug;
+
+Text edit:  
 --------------------------
 Completion: fmt()
 Text edit: use core::fmt::LowerHex;
+
+Text edit:  
 --------------------------
 Completion: is_zero()
 --------------------------
@@ -204,9 +267,14 @@ Completion: is_non_zero()
 --------------------------
 Completion: append_formatted_to_byte_array()
 Text edit: use core::to_byte_array::AppendFormattedToByteArray;
+
+Text edit:  
 --------------------------
 Completion: format_as_byte_array()
 Text edit: use core::to_byte_array::FormatAsByteArray;
+
+Text edit:  
 --------------------------
-Completion: some_method()
-Text edit: use super::ATrait1;
+Completion: no_param_method()
+Text edit: use super::ATrait2;
+
