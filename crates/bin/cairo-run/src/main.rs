@@ -8,8 +8,8 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_runner::casm_run::format_next_item;
 use cairo_lang_runner::profiling::ProfilingInfoProcessor;
-use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{ProfilingInfoCollectionConfig, SierraCasmRunner, StarknetState};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
@@ -115,11 +115,14 @@ fn main() -> anyhow::Result<()> {
         }
         cairo_lang_runner::RunResultValue::Panic(values) => {
             print!("Run panicked with [");
-            for value in &values {
-                match as_cairo_short_string(value) {
-                    Some(as_string) => print!("{value} ('{as_string}'), "),
-                    None => print!("{value}, "),
+            let mut felts = values.into_iter();
+            let mut first = true;
+            while let Some(item) = format_next_item(&mut felts) {
+                if !first {
+                    print!(", ");
+                    first = false;
                 }
+                print!("{}", item.quote_if_string());
             }
             println!("].")
         }
