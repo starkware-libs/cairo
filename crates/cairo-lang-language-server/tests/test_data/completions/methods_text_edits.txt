@@ -220,3 +220,6 @@ Completion: no_param_method()
 Text edit: use super::ATrait2;
 Text edit:
 
+
+
+
