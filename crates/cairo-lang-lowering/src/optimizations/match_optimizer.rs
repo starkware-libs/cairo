@@ -61,6 +61,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         target_block,
         remapping,
         reachable_blocks: _,
+        additional_remapping,
     } in ctx.fixes.into_iter().rev()
     {
         let block = &mut lowered.blocks[statement_location.0];
@@ -73,7 +74,9 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         block.end = FlatBlockEnd::Goto(target_block, remapping);
 
         if statement_location.0 == match_block {
-            // The match was removed, no need to fix it.
+            // The match was removed (by the assignment of `block.end` above), no need to fix it.
+            // Sanity check: there should be no additional remapping in this case.
+            assert!(additional_remapping.remapping.is_empty());
             continue;
         }
 
@@ -163,6 +166,7 @@ fn statement_can_be_optimized_out(
         remapping,
         // TODO: Avoid the following clone() by passing candidate to this function by value.
         reachable_blocks: candidate.arm_reachable_blocks[arm_idx].clone(),
+        additional_remapping: candidate.additional_remappings.clone().unwrap_or_default(),
     })
 }
 
@@ -180,6 +184,8 @@ pub struct FixInfo {
     /// The blocks that can be reached from the relevant arm of the match.
     #[allow(dead_code)]
     reachable_blocks: OrderedHashSet<BlockId>,
+    /// Additional remappings that appeared in a `Goto` leading to the match.
+    additional_remapping: VarRemapping,
 }
 
 #[derive(Clone)]
@@ -203,6 +209,9 @@ struct OptimizationCandidate<'a> {
 
     /// The blocks that can be reached from each of the arms.
     arm_reachable_blocks: Vec<OrderedHashSet<BlockId>>,
+
+    /// Additional remappings that appeared in a `Goto` leading to the match.
+    additional_remappings: Option<VarRemapping>,
 }
 
 pub struct MatchOptimizerContext {
@@ -274,6 +283,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             // Remapping is currently not supported as it breaks SSA when we use the same
             // remapping with different destination blocks.
 
+            // TODO(lior): Update `candidate.additional_remappings`.
             // TODO(ilya): Support multiple remappings.
             // Revoke the candidate.
             info.candidate = None;
@@ -326,6 +336,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     arm_demands,
                     future_merge: found_collision,
                     arm_reachable_blocks,
+                    additional_remappings: None,
                 })
             }
             _ => None,
