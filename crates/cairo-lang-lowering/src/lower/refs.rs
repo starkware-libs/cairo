@@ -26,6 +26,8 @@ pub struct SemanticLoweringMapping {
     scattered: OrderedHashMap<MemberPath, Value>,
     /// Maps captured member paths to a clusure that captured them.
     pub captured: UnorderedHashMap<MemberPath, VariableId>,
+    /// Maps captured member paths which are copiable to a clusure that captured them.
+    pub copiable_captured: UnorderedHashMap<MemberPath, VariableId>,
     /// Maps the variable id of a closure to the closure info.
     pub closures: UnorderedHashMap<VariableId, ClosureInfo>,
 }
@@ -91,8 +93,11 @@ impl SemanticLoweringMapping {
             // Note that members.keys() can be shorter than new_vars, as the members captured
             // as snapshots don't need to be updated.
             for (path, new_var) in closure_info.members.keys().zip(new_vars) {
-                self.captured.remove(path);
-                self.update(ctx, path, new_var).unwrap();
+                if self.captured.remove(path).is_some() {
+                    self.update(ctx, path, new_var).unwrap();
+                } else {
+                    self.copiable_captured.remove(path);
+                }
             }
         }
     }
@@ -119,6 +124,12 @@ impl SemanticLoweringMapping {
         path: &MemberPath,
         var: VariableId,
     ) -> Option<()> {
+        // TODO(TomerStarkware): check if path is captured by a closure and invalidate the closure.
+        // Right now this can only happen if we take a snapshot of the variable (as the
+        // snapshot function returns a new var).
+        // we need the make sure the borrow checker invalidates the closure when mutable capture
+        // is supported.
+
         let value = self.break_into_value(ctx, path)?;
         *value = Value::Var(var);
         Some(())

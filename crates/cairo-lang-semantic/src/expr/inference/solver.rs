@@ -11,7 +11,8 @@ use super::{
 };
 use crate::db::SemanticGroup;
 use crate::items::imp::{
-    find_candidates_at_context, find_generated_candidate, ImplId, ImplLookupContext, UninferredImpl,
+    find_candidates_at_context, find_closure_generated_candidate, ImplId, ImplLookupContext,
+    UninferredImpl,
 };
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, GenericArgumentId, TypeId, TypeLongId};
@@ -140,7 +141,7 @@ impl Solver {
         let filter = canonical_trait.0.filter(db);
         let mut candidates =
             find_candidates_at_context(db, &lookup_context, &filter).unwrap_or_default();
-        find_generated_candidate(db, canonical_trait.0, &filter)
+        find_closure_generated_candidate(db, canonical_trait.0)
             .map(|candidate| candidates.insert(candidate));
         let candidate_solvers = candidates
             .into_iter()
