@@ -277,4 +277,3 @@ Text edit:
 --------------------------
 Completion: no_param_method()
 Text edit: use super::ATrait2;
-
