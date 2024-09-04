@@ -1,8 +1,8 @@
 use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::usage::MemberPath;
+use cairo_lang_semantic::{self as semantic};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -14,10 +14,11 @@ use crate::VariableId;
 //  Information about members captured by the closure and their types.
 #[derive(Clone, Debug)]
 pub struct ClosureInfo {
+    // TODO(TomerStarkware): unite copiable members and snapshots into a single map.
     /// The members captured by the closure (not as snapshot).
     pub members: OrderedHashMap<MemberPath, semantic::TypeId>,
     /// The types of the captured snapshot variables.
-    pub snapshot_types: Vec<semantic::TypeId>,
+    pub snapshots: OrderedHashMap<MemberPath, semantic::TypeId>,
 }
 
 #[derive(Clone, Default, Debug)]
@@ -77,7 +78,7 @@ impl SemanticLoweringMapping {
     ) -> Vec<VariableId> {
         ctx.deconstruct_by_types(
             closure_var,
-            chain!(closure_info.members.values(), closure_info.snapshot_types.iter()).cloned(),
+            chain!(closure_info.members.values(), closure_info.snapshots.values()).cloned(),
         )
     }
 
