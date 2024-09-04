@@ -3,21 +3,13 @@
 //! if the client does not support dynamic registration for this capability, as per LSP spec
 //! <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#client_registerCapability>:
 //!
-//! > Server must not register the same capability both statically through the initialize result and
-//! > dynamically for the same document selector. If a server wants to support both static and
-//! > dynamic
-//! > registration it needs to check the client capability in the initialize request and only
-//! > register
-//! > the capability statically if the client doesn’t support dynamic registration for that
-//! > capability.
+//! > Server must not register the same capability both statically through the `initialize` result
+//! > and dynamically for the same document selector.
+//! > If a server wants to support both static and dynamic registration,
+//! > it needs to check the client capability in the `initialize` request and only register the
+//! > capability statically
+//! > if the client does not support dynamic registration for that capability.
 
-use std::ops::Not;
-
-use missing_lsp_types::{
-    CodeActionRegistrationOptions, DefinitionRegistrationOptions,
-    DocumentFormattingRegistrationOptions,
-};
-use serde::Serialize;
 use tower_lsp::lsp_types::{
     ClientCapabilities, CodeActionProviderCapability, CompletionOptions,
     CompletionRegistrationOptions, DefinitionOptions, DidChangeWatchedFilesRegistrationOptions,
@@ -30,16 +22,116 @@ use tower_lsp::lsp_types::{
     TextDocumentSyncSaveOptions,
 };
 
+use self::missing_lsp_types::{
+    CodeActionRegistrationOptions, DefinitionRegistrationOptions,
+    DocumentFormattingRegistrationOptions,
+};
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 
 /// Returns capabilities the server wants to register statically.
 pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> ServerCapabilities {
-    ServerCapabilities {
-        text_document_sync: client_capabilities
-            .text_document_synchronization_dynamic_registration()
-            .not()
-            .then_some(TextDocumentSyncCapability::Options(TextDocumentSyncOptions {
+    collect_server_capabilities_impl(client_capabilities)
+}
+
+/// Returns registrations of capabilities the server wants to register dynamically.
+pub fn collect_dynamic_registrations(
+    client_capabilities: &ClientCapabilities,
+) -> Vec<Registration> {
+    collect_dynamic_registrations_impl(client_capabilities)
+}
+
+macro_rules! server_capabilities {
+    [
+        $(
+            {
+                client_capability = $client_capability:expr,
+                $(
+                    let $var_name:ident = $var_value:expr;
+                )*
+                $(
+                    dyn {
+                        method = $dyn_method:literal,
+                        register_options = $dyn_register_options:expr,
+                    }
+                )*
+                $(
+                    static {
+                        field = $static_field:ident,
+                        capability = $static_capability:expr,
+                    }
+                )?
+            },
+        )*
+    ] => {
+        fn collect_server_capabilities_impl(
+            client_capabilities: &ClientCapabilities
+        ) -> ServerCapabilities {
+            let mut capabilities = ServerCapabilities::default();
+
+            $({
+                if !$client_capability(client_capabilities) {
+                    $(let $var_name = $var_value;)*
+                    $(capabilities.$static_field = Some($static_capability);)?
+                }
+            })*
+
+            capabilities
+        }
+
+        fn collect_dynamic_registrations_impl(
+            client_capabilities: &ClientCapabilities
+        ) -> Vec<Registration> {
+            let mut registrations = Vec::new();
+
+            $(
+                if $client_capability(client_capabilities) {
+                    $(let $var_name = $var_value;)*
+                    $(
+                        registrations.push(Registration {
+                            id: $dyn_method.to_string(),
+                            method: $dyn_method.to_string(),
+                            register_options: Some(
+                                serde_json::to_value(&$dyn_register_options).unwrap()
+                            ),
+                        });
+                    )*
+                }
+            )*
+
+            registrations
+        }
+    };
+}
+
+server_capabilities![
+    {
+        client_capability = ClientCapabilities::text_document_synchronization_dynamic_registration,
+        dyn {
+            method = "textDocument/didOpen",
+            register_options = text_document_registration_options(),
+        }
+        dyn {
+            method = "textDocument/didChange",
+            register_options = TextDocumentChangeRegistrationOptions {
+                document_selector: text_document_registration_options().document_selector,
+                sync_kind: 1, // TextDocumentSyncKind::FULL
+            },
+        }
+        dyn {
+            method = "textDocument/didSave",
+            register_options = TextDocumentSaveRegistrationOptions {
+                include_text: Some(false),
+                text_document_registration_options: text_document_registration_options(),
+            },
+        }
+        dyn {
+            method = "textDocument/didClose",
+            register_options = text_document_registration_options(),
+        }
+        static {
+            field = text_document_sync,
+            capability = TextDocumentSyncCapability::Options(TextDocumentSyncOptions {
                 open_close: Some(true),
                 change: Some(TextDocumentSyncKind::FULL),
                 will_save: Some(false),
@@ -47,212 +139,159 @@ pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> 
                 save: Some(TextDocumentSyncSaveOptions::SaveOptions(SaveOptions {
                     include_text: Some(false),
                 })),
-            })),
-        completion_provider: client_capabilities.completion_dynamic_registration().not().then(
-            || CompletionOptions {
-                resolve_provider: Some(false),
-                trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
-                all_commit_characters: None,
-                work_done_progress_options: Default::default(),
-                completion_item: None,
-            },
-        ),
-        execute_command_provider: client_capabilities
-            .execute_command_dynamic_registration()
-            .not()
-            .then(|| ExecuteCommandOptions {
-                commands: vec!["cairo.reload".to_string()],
-                work_done_progress_options: Default::default(),
             }),
-        semantic_tokens_provider: client_capabilities
-            .semantic_tokens_dynamic_registration()
-            .not()
-            .then(|| {
-                SemanticTokensOptions {
-                    legend: SemanticTokensLegend {
-                        token_types: SemanticTokenKind::legend(),
-                        token_modifiers: vec![],
-                    },
-                    full: Some(SemanticTokensFullOptions::Bool(true)),
-                    ..SemanticTokensOptions::default()
-                }
-                .into()
-            }),
-        document_formatting_provider: client_capabilities
-            .formatting_dynamic_registration()
-            .not()
-            .then_some(OneOf::Left(true)),
-        hover_provider: client_capabilities
-            .hover_dynamic_registration()
-            .not()
-            .then_some(HoverProviderCapability::Simple(true)),
-        definition_provider: client_capabilities
-            .definition_dynamic_registration()
-            .not()
-            .then_some(OneOf::Left(true)),
-        code_action_provider: client_capabilities
-            .code_action_dynamic_registration()
-            .not()
-            .then_some(CodeActionProviderCapability::Simple(true)),
-        ..ServerCapabilities::default()
-    }
-}
-
-/// Returns registrations of capabilities the server wants to register dynamically.
-pub fn collect_dynamic_registrations(
-    client_capabilities: &ClientCapabilities,
-) -> Vec<Registration> {
-    let mut registrations = vec![];
-
-    // Relevant files.
-    let document_selector = Some(vec![
-        DocumentFilter {
-            language: Some("cairo".to_string()),
-            scheme: Some("file".to_string()),
-            pattern: None,
-        },
-        DocumentFilter {
-            language: Some("cairo".to_string()),
-            scheme: Some("vfs".to_string()),
-            pattern: None,
-        },
-    ]);
-    let text_document_registration_options =
-        TextDocumentRegistrationOptions { document_selector: document_selector.clone() };
-
-    if client_capabilities.did_change_watched_files_dynamic_registration() {
-        // Register patterns for the client file watcher.
-        // This is used to detect changes to config files and invalidate .cairo files.
-        let registration_options = DidChangeWatchedFilesRegistrationOptions {
-            watchers: ["/**/*.cairo", "/**/Scarb.toml", "/**/Scarb.lock", "/**/cairo_project.toml"]
-                .map(|glob_pattern| FileSystemWatcher {
-                    glob_pattern: GlobPattern::String(glob_pattern.to_string()),
-                    kind: None,
-                })
-                .into(),
+        }
+    },
+    {
+        client_capability = ClientCapabilities::did_change_watched_files_dynamic_registration,
+        dyn {
+            method = "workspace/didChangeWatchedFiles",
+            register_options = DidChangeWatchedFilesRegistrationOptions {
+                watchers: ["/**/*.cairo", "/**/Scarb.toml", "/**/Scarb.lock", "/**/cairo_project.toml"]
+                    .map(|glob_pattern| FileSystemWatcher {
+                        glob_pattern: GlobPattern::String(glob_pattern.to_string()),
+                        kind: None,
+                    })
+                    .into(),
+            },
+        }
+    },
+    {
+        client_capability = ClientCapabilities::completion_dynamic_registration,
+        let completion_options = CompletionOptions {
+            resolve_provider: Some(false),
+            trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
+            all_commit_characters: None,
+            work_done_progress_options: Default::default(),
+            completion_item: None,
         };
-
-        registrations
-            .push(create_registration("workspace/didChangeWatchedFiles", registration_options));
-    }
-
-    if client_capabilities.text_document_synchronization_dynamic_registration() {
-        registrations
-            .push(create_registration("textDocument/didOpen", &text_document_registration_options));
-
-        registrations.push(create_registration(
-            "textDocument/didChange",
-            TextDocumentChangeRegistrationOptions {
-                document_selector,
-                sync_kind: 1, // TextDocumentSyncKind::FULL
+        dyn {
+            method = "textDocument/completion",
+            register_options = CompletionRegistrationOptions {
+                text_document_registration_options: text_document_registration_options(),
+                completion_options,
             },
-        ));
-
-        registrations.push(create_registration(
-            "textDocument/didSave",
-            TextDocumentSaveRegistrationOptions {
-                include_text: Some(false),
-                text_document_registration_options: text_document_registration_options.clone(),
-            },
-        ));
-
-        registrations.push(create_registration(
-            "textDocument/didClose",
-            &text_document_registration_options,
-        ));
-    }
-
-    if client_capabilities.completion_dynamic_registration() {
-        let registration_options = CompletionRegistrationOptions {
-            text_document_registration_options: text_document_registration_options.clone(),
-            completion_options: CompletionOptions {
-                resolve_provider: Some(false),
-                trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
-                all_commit_characters: None,
-                work_done_progress_options: Default::default(),
-                completion_item: None,
-            },
-        };
-
-        registrations.push(create_registration("textDocument/completion", registration_options));
-    }
-
-    if client_capabilities.execute_command_dynamic_registration() {
-        let registration_options = ExecuteCommandRegistrationOptions {
+        }
+        static {
+            field = completion_provider,
+            capability = completion_options,
+        }
+    },
+    {
+        client_capability = ClientCapabilities::execute_command_dynamic_registration,
+        let execute_command_options = ExecuteCommandOptions {
             commands: vec!["cairo.reload".to_string()],
-            execute_command_options: ExecuteCommandOptions {
-                commands: vec!["cairo.reload".to_string()],
-                work_done_progress_options: Default::default(),
-            },
+            work_done_progress_options: Default::default(),
         };
-
-        registrations.push(create_registration("workspace/executeCommand", registration_options));
-    }
-
-    if client_capabilities.semantic_tokens_dynamic_registration() {
-        let registration_options = SemanticTokensRegistrationOptions {
-            text_document_registration_options: text_document_registration_options.clone(),
-            semantic_tokens_options: SemanticTokensOptions {
-                legend: SemanticTokensLegend {
-                    token_types: SemanticTokenKind::legend(),
-                    token_modifiers: vec![],
+        dyn {
+            method = "workspace/executeCommand",
+            register_options = ExecuteCommandRegistrationOptions {
+                commands: execute_command_options.commands.clone(),
+                execute_command_options,
+            },
+        }
+        static {
+            field = execute_command_provider,
+            capability = execute_command_options,
+        }
+    },
+    {
+        client_capability = ClientCapabilities::semantic_tokens_dynamic_registration,
+        let semantic_tokens_options = SemanticTokensOptions {
+            legend: SemanticTokensLegend {
+                token_types: SemanticTokenKind::legend(),
+                token_modifiers: vec![],
+            },
+            full: Some(SemanticTokensFullOptions::Bool(true)),
+            ..SemanticTokensOptions::default()
+        };
+        dyn {
+            method = "textDocument/semanticTokens",
+            register_options = SemanticTokensRegistrationOptions {
+                text_document_registration_options: text_document_registration_options(),
+                semantic_tokens_options,
+                static_registration_options: Default::default(),
+            },
+        }
+        static {
+            field = semantic_tokens_provider,
+            capability = semantic_tokens_options.into(),
+        }
+    },
+    {
+        client_capability = ClientCapabilities::formatting_dynamic_registration,
+        dyn {
+            method = "textDocument/formatting",
+            register_options = DocumentFormattingRegistrationOptions {
+                text_document_registration_options: text_document_registration_options(),
+                document_formatting_options: Default::default(),
+            },
+        }
+        static {
+            field = document_formatting_provider,
+            capability = OneOf::Left(true),
+        }
+    },
+    {
+        client_capability = ClientCapabilities::hover_dynamic_registration,
+        dyn {
+            method = "textDocument/hover",
+            register_options = HoverRegistrationOptions {
+                text_document_registration_options: text_document_registration_options(),
+                hover_options: Default::default(),
+            },
+        }
+        static {
+            field = hover_provider,
+            capability = HoverProviderCapability::Simple(true),
+        }
+    },
+    {
+        client_capability = ClientCapabilities::definition_dynamic_registration,
+        dyn {
+            method = "textDocument/definition",
+            register_options = DefinitionRegistrationOptions {
+                text_document_registration_options: text_document_registration_options(),
+                definition_options: DefinitionOptions {
+                    work_done_progress_options: Default::default(),
                 },
-                full: Some(SemanticTokensFullOptions::Bool(true)),
-                ..SemanticTokensOptions::default()
             },
-            static_registration_options: Default::default(),
-        };
-
-        registrations
-            .push(create_registration("textDocument/semanticTokens", registration_options));
-    }
-
-    if client_capabilities.formatting_dynamic_registration() {
-        let registration_options = DocumentFormattingRegistrationOptions {
-            text_document_registration_options: text_document_registration_options.clone(),
-            document_formatting_options: Default::default(),
-        };
-
-        registrations.push(create_registration("textDocument/formatting", registration_options));
-    }
-
-    if client_capabilities.hover_dynamic_registration() {
-        let registration_options = HoverRegistrationOptions {
-            text_document_registration_options: text_document_registration_options.clone(),
-            hover_options: Default::default(),
-        };
-
-        registrations.push(create_registration("textDocument/hover", registration_options));
-    }
-
-    if client_capabilities.definition_dynamic_registration() {
-        let registration_options = DefinitionRegistrationOptions {
-            text_document_registration_options: text_document_registration_options.clone(),
-            definition_options: DefinitionOptions {
-                work_done_progress_options: Default::default(),
+        }
+        static {
+            field = definition_provider,
+            capability = OneOf::Left(true),
+        }
+    },
+    {
+        client_capability = ClientCapabilities::code_action_dynamic_registration,
+        dyn {
+            method = "textDocument/codeAction",
+            register_options = CodeActionRegistrationOptions {
+                text_document_registration_options: text_document_registration_options(),
+                code_action_options: Default::default(),
             },
-        };
+        }
+        static {
+            field = code_action_provider,
+            capability = CodeActionProviderCapability::Simple(true),
+        }
+    },
+];
 
-        registrations.push(create_registration("textDocument/definition", registration_options));
-    }
-
-    if client_capabilities.code_action_dynamic_registration() {
-        let registration_options = CodeActionRegistrationOptions {
-            text_document_registration_options,
-            code_action_options: Default::default(),
-        };
-
-        registrations.push(create_registration("textDocument/codeAction", registration_options));
-    }
-
-    registrations
-}
-
-fn create_registration(method: &str, registration_options: impl Serialize) -> Registration {
-    Registration {
-        id: method.to_string(),
-        method: method.to_string(),
-        register_options: Some(serde_json::to_value(registration_options).unwrap()),
+fn text_document_registration_options() -> TextDocumentRegistrationOptions {
+    TextDocumentRegistrationOptions {
+        document_selector: Some(vec![
+            DocumentFilter {
+                language: Some("cairo".to_string()),
+                scheme: Some("file".to_string()),
+                pattern: None,
+            },
+            DocumentFilter {
+                language: Some("cairo".to_string()),
+                scheme: Some("vfs".to_string()),
+                pattern: None,
+            },
+        ]),
     }
 }
 
