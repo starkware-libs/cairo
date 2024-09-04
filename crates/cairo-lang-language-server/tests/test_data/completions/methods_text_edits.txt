@@ -40,104 +40,74 @@ mod inner_mod {
 --------------------------
 Completion: add_eq()
 Text edit: use core::traits::AddEq;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: sub_eq()
 Text edit: use core::traits::SubEq;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: mul_eq()
 Text edit: use core::traits::MulEq;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: into()
---------------------------
+Text edit:  --------------------------
 Completion: try_into()
---------------------------
+Text edit:  --------------------------
 Completion: destruct()
---------------------------
+Text edit:  --------------------------
 Completion: panic_destruct()
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: new_inputs()
 Text edit: use core::circuit::CircuitInputs;
-
---------------------------
+Text edit:  --------------------------
 Completion: get_descriptor()
---------------------------
+Text edit:  --------------------------
 Completion: clone()
---------------------------
+Text edit:  --------------------------
 Completion: is_zero()
 Text edit: use core::num::traits::Zero;
-
---------------------------
+Text edit:  --------------------------
 Completion: is_non_zero()
 Text edit: use core::num::traits::Zero;
-
---------------------------
+Text edit:  --------------------------
 Completion: is_one()
 Text edit: use core::num::traits::One;
-
---------------------------
+Text edit:  --------------------------
 Completion: is_non_one()
 Text edit: use core::num::traits::One;
-
---------------------------
+Text edit:  --------------------------
 Completion: add_assign()
 Text edit: use core::ops::AddAssign;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: sub_assign()
 Text edit: use core::ops::SubAssign;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: mul_assign()
 Text edit: use core::ops::MulAssign;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: serialize()
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: print()
---------------------------
+Text edit:  --------------------------
 Completion: fmt()
 Text edit: use core::fmt::Display;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: fmt()
 Text edit: use core::fmt::Debug;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: fmt()
 Text edit: use core::fmt::LowerHex;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: is_zero()
---------------------------
+Text edit:  --------------------------
 Completion: is_non_zero()
---------------------------
+Text edit:  --------------------------
 Completion: append_formatted_to_byte_array()
 Text edit: use core::to_byte_array::AppendFormattedToByteArray;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: format_as_byte_array()
 Text edit: use core::to_byte_array::FormatAsByteArray;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: some_method()
 Text edit: use super::ATrait1;
-
 Text edit:
 
 //! > ==========================================================================
@@ -180,100 +150,72 @@ mod inner_mod {
 --------------------------
 Completion: add_eq()
 Text edit: use core::traits::AddEq;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: sub_eq()
 Text edit: use core::traits::SubEq;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: mul_eq()
 Text edit: use core::traits::MulEq;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: into()
---------------------------
+Text edit:  --------------------------
 Completion: try_into()
---------------------------
+Text edit:  --------------------------
 Completion: destruct()
---------------------------
+Text edit:  --------------------------
 Completion: panic_destruct()
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: new_inputs()
 Text edit: use core::circuit::CircuitInputs;
-
---------------------------
+Text edit:  --------------------------
 Completion: get_descriptor()
---------------------------
+Text edit:  --------------------------
 Completion: clone()
---------------------------
+Text edit:  --------------------------
 Completion: is_zero()
 Text edit: use core::num::traits::Zero;
-
---------------------------
+Text edit:  --------------------------
 Completion: is_non_zero()
 Text edit: use core::num::traits::Zero;
-
---------------------------
+Text edit:  --------------------------
 Completion: is_one()
 Text edit: use core::num::traits::One;
-
---------------------------
+Text edit:  --------------------------
 Completion: is_non_one()
 Text edit: use core::num::traits::One;
-
---------------------------
+Text edit:  --------------------------
 Completion: add_assign()
 Text edit: use core::ops::AddAssign;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: sub_assign()
 Text edit: use core::ops::SubAssign;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: mul_assign()
 Text edit: use core::ops::MulAssign;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: serialize()
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: print()
---------------------------
+Text edit:  --------------------------
 Completion: fmt()
 Text edit: use core::fmt::Display;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: fmt()
 Text edit: use core::fmt::Debug;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: fmt()
 Text edit: use core::fmt::LowerHex;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: is_zero()
---------------------------
+Text edit:  --------------------------
 Completion: is_non_zero()
---------------------------
+Text edit:  --------------------------
 Completion: append_formatted_to_byte_array()
 Text edit: use core::to_byte_array::AppendFormattedToByteArray;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: format_as_byte_array()
 Text edit: use core::to_byte_array::FormatAsByteArray;
-
-Text edit:  
---------------------------
+Text edit:  --------------------------
 Completion: no_param_method()
 Text edit: use super::ATrait2;
+Text edit:
