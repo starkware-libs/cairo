@@ -217,8 +217,4 @@ impl Rebuilder for VarReassigner<'_> {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
         *self.vars.entry(var).or_insert_with(|| self.new_vars.alloc(self.old_vars[var].clone()))
     }
-
-    fn map_block_id(&mut self, block: BlockId) -> BlockId {
-        block
-    }
 }

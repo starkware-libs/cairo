@@ -82,10 +82,6 @@ impl Rebuilder for Context {
         }
     }
 
-    fn map_block_id(&mut self, block: BlockId) -> BlockId {
-        block
-    }
-
     fn transform_remapping(&mut self, remapping: &mut VarRemapping) {
         let mut new_remapping = VarRemapping::default();
         for (dst, src) in remapping.iter() {
