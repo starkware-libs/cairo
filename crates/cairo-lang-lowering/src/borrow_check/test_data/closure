@@ -22,33 +22,19 @@ foo
 //! > module_code
 
 //! > semantic_diagnostics
+error: Capture of mutable variables in a closure is not supported
+ --> lib.cairo:6:17
+        let _ = b.append(d);
+                ^
+
+error: Capture of mutable variables in a closure is not supported
+ --> lib.cairo:9:17
+        let _ = c.insert(d, d);
+                ^
 
 //! > lowering_diagnostics
-error: Unsupported feature.
- --> lib.cairo:2:5
-    |d: u32| {
-    ^********^
-
-error: Unsupported feature.
- --> lib.cairo:5:5
-    |d: u32| {
-    ^********^
-
-error: Unsupported feature.
- --> lib.cairo:8:5
-    |d: felt252| {
-    ^************^
 
 //! > lowering
-Parameters: v0: core::integer::u32, v1: core::array::Array::<core::integer::u32>, v2: core::dict::Felt252Dict::<core::felt252>
-blk0 (root):
-Statements:
-  (v3: {closure@lib.cairo:2:5: 2:13}) <- struct_construct(v0{`a`})
-  (v4: {closure@lib.cairo:5:5: 5:13}) <- struct_construct(v1{`b`})
-  (v5: {closure@lib.cairo:8:5: 8:17}) <- struct_construct(v2{`c`})
-  (v6: ()) <- struct_construct()
-End:
-  Return(v6)
 
 //! > ==========================================================================
 
@@ -98,7 +84,7 @@ End:
 
 //! > ==========================================================================
 
-//! > invalidated capture
+//! > invalidated capture mutable variable
 
 //! > test_runner_name
 test_borrow_check
@@ -117,24 +103,55 @@ foo
 //! > module_code
 
 //! > semantic_diagnostics
+error: Capture of mutable variables in a closure is not supported
+ --> lib.cairo:3:17
+        let _ = a.append(b);
+                ^
+
+//! > lowering_diagnostics
+
+//! > lowering
+
+//! > ==========================================================================
+
+//! > invalidated capture immutable variable
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(a: S) {
+    |b: u32| {
+        let _ = a.a + b;
+    };
+    let _ = a.a;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S {
+    a: u32,
+}
+
+//! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Unsupported feature.
- --> lib.cairo:2:5
+ --> lib.cairo:5:5
     |b: u32| {
     ^********^
 
 //! > lowering
-Parameters: v0: core::array::Array::<core::integer::u32>
+Parameters: v0: test::S
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:2:5: 2:13}) <- struct_construct(v0{`a`})
-  (v2: core::integer::u32) <- 0
-  (v3: core::array::Array::<core::integer::u32>) <- struct_destructure(v1{`a`})
-  (v5: core::array::Array::<core::integer::u32>, v4: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v3{`a`}, v2{`0`})
-  (v6: ()) <- struct_construct()
+  (v1: core::integer::u32) <- struct_destructure(v0{`a.a`})
+  (v2: {closure@lib.cairo:5:5: 5:13}) <- struct_construct(v1{`a.a`})
+  (v3: ()) <- struct_construct()
 End:
-  Return(v6)
+  Return(v3)
 
 //! > ==========================================================================
 
@@ -159,35 +176,14 @@ foo
 extern fn use_f<T>(f: T) nopanic;
 
 //! > semantic_diagnostics
+error: Capture of mutable variables in a closure is not supported
+ --> lib.cairo:4:17
+        let _ = a.append(b);
+                ^
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
- --> lib.cairo:7:11
-    use_f(f)
-          ^
-note: variable was previously used here:
-  --> lib.cairo:6:5
-    a.append(0);
-    ^
-note: Trait has no implementation in context: core::traits::Copy::<{closure@lib.cairo:3:13: 3:21}>.
-
-error: Unsupported feature.
- --> lib.cairo:3:13
-    let f = |b: u32| {
-            ^********^
 
 //! > lowering
-Parameters: v0: core::array::Array::<core::integer::u32>
-blk0 (root):
-Statements:
-  (v1: {closure@lib.cairo:3:13: 3:21}) <- struct_construct(v0{`a`})
-  (v2: core::integer::u32) <- 0
-  (v3: core::array::Array::<core::integer::u32>) <- struct_destructure(v1{`a`})
-  (v5: core::array::Array::<core::integer::u32>, v4: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v3{`a`}, v2{`0`})
-  () <- test::use_f::<{closure@lib.cairo:3:13: 3:21}>(v1{`f`})
-  (v6: ()) <- struct_construct()
-End:
-  Return(v6)
 
 //! > ==========================================================================
 
@@ -212,25 +208,14 @@ foo
 extern fn use_f<T>(f: T) nopanic;
 
 //! > semantic_diagnostics
+error: Capture of mutable variables in a closure is not supported
+ --> lib.cairo:4:17
+        let _ = a.len();
+                ^
 
 //! > lowering_diagnostics
-error: Unsupported feature.
- --> lib.cairo:3:13
-    let f = |_b: u32| {
-            ^*********^
 
 //! > lowering
-Parameters: v0: core::array::Array::<core::integer::u32>
-blk0 (root):
-Statements:
-  (v1: core::array::Array::<core::integer::u32>, v2: @core::array::Array::<core::integer::u32>) <- snapshot(v0{`a`})
-  (v3: {closure@lib.cairo:3:13: 3:22}) <- struct_construct(v2{`|_b: u32| { let _ = a.len(); }`})
-  (v4: core::integer::u32) <- 0
-  (v6: core::array::Array::<core::integer::u32>, v5: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v1{`a`}, v4{`0`})
-  () <- test::use_f::<{closure@lib.cairo:3:13: 3:22}>(v3{`f`})
-  (v7: ()) <- struct_construct()
-End:
-  Return(v7)
 
 //! > ==========================================================================
 
@@ -254,21 +239,177 @@ foo
 extern fn use_f<T>(f: T) nopanic;
 
 //! > semantic_diagnostics
+error: Capture of mutable variables in a closure is not supported
+ --> lib.cairo:4:9
+        a = array![];
+        ^
+
+//! > lowering_diagnostics
+
+//! > lowering
+
+//! > ==========================================================================
+
+//! > Test using captured copiable variable after closure.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo() -> felt252 {
+    let x = 8;
+    let c = |a| {
+        x * (a + 3)
+    };
+    let y = c(2);
+    y + x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Unsupported feature.
- --> lib.cairo:3:5
-    |_b: u32| {
-    ^*********^
+ --> lib.cairo:3:13
+    let c = |a| {
+            ^***^
 
 //! > lowering
-Parameters: v0: core::array::Array::<core::integer::u32>
+Parameters:
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:3:5: 3:14}) <- struct_construct(v0{`a`})
-  (v2: core::integer::u32) <- 0
-  (v3: core::array::Array::<core::integer::u32>) <- struct_destructure(v1{`a`})
-  (v5: core::array::Array::<core::integer::u32>, v4: ()) <- core::array::ArrayImpl::<core::integer::u32>::append(v3{`a`}, v2{`0`})
-  (v6: ()) <- struct_construct()
+  (v0: core::felt252) <- 8
+  (v1: {closure@lib.cairo:3:13: 3:16}) <- struct_construct(v0{`x`})
+  (v2: core::felt252) <- 2
+  (v3: (core::felt252,)) <- struct_construct(v2{`2`})
+  (v4: core::felt252) <- Generated core::ops::function::FnOnce::<{closure@lib.cairo:3:13: 3:16}, (core::felt252,)>::call(v1{`c`}, v3{`c(2)`})
+  (v5: core::felt252) <- core::Felt252Add::add(v4{`y`}, v0{`x`})
 End:
-  Return(v6)
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test using captured snapshoted variable after closure.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo() -> felt252 {
+    let x = array![99_felt252];
+    let c = |a| {
+        (@x).len() * (a + 3)
+    };
+    let _ = c(2);
+    *x[0]
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:3:13
+    let c = |a| {
+            ^***^
+
+//! > lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
+  (v1: core::felt252) <- 99
+  (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0{`__array_builder_macro_result__`}, v1{`99_felt252`})
+  (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v3{`x`})
+  (v6: {closure@lib.cairo:3:13: 3:16}) <- struct_construct(v5{`|a| { (@x).len() * (a + 3) }`})
+  (v7: core::integer::u32) <- 2
+  (v8: (core::integer::u32,)) <- struct_construct(v7{`2`})
+  (v9: core::integer::u32) <- Generated core::ops::function::FnOnce::<{closure@lib.cairo:3:13: 3:16}, (core::integer::u32,)>::call(v6{`c`}, v8{`c(2)`})
+  (v10: core::array::Array::<core::felt252>, v11: @core::array::Array::<core::felt252>) <- snapshot(v4{`x`})
+  (v12: core::integer::u32) <- 0
+  (v13: @core::felt252) <- core::ops::index::DeprecatedIndexViewImpl::<core::array::Array::<core::felt252>, core::integer::u32, @core::felt252, core::array::ArrayIndex::<core::felt252>>::index(v11{`x`}, v12{`0`})
+  (v14: core::felt252) <- desnap(v13{`0`})
+End:
+  Return(v14)
+
+//! > ==========================================================================
+
+//! > Test mutating captured copiable variable before closure.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo() -> felt252 {
+    let mut x = 8;
+    let c = |a| {
+        x * (a + 3)
+    };
+    x = 9;
+    let y = c(2);
+    y + x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+error: Capture of mutable variables in a closure is not supported
+ --> lib.cairo:4:9
+        x * (a + 3)
+        ^
+
+//! > lowering_diagnostics
+
+//! > lowering
+
+//! > ==========================================================================
+
+//! > Test mutating captured copiable variable before closure with indirection.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn identity<T>(x: T) -> T {
+    x
+}
+fn foo() {
+    let mut x = 8;
+    let c = |a| {
+        x * (a + 3)
+    };
+    let c2 = identity(c);
+    x = 9;
+    let y = c2(2);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+error: Capture of mutable variables in a closure is not supported
+ --> lib.cairo:7:9
+        x * (a + 3)
+        ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:11:9
+    let y = c2(2);
+        ^
+
+//! > lowering_diagnostics
+
+//! > lowering
