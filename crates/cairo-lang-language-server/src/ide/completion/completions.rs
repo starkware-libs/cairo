@@ -16,7 +16,6 @@ use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
-use cairo_lang_semantic::Parameter;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{LookupIntern, Upcast};
@@ -255,10 +254,6 @@ pub fn dot_completions(
 }
 
 /// Returns a completion item for a method.
-fn is_self_param(param: &Parameter) -> bool {
-    param.name == "self" || param.name == "&self" || param.name == "&mut self"
-}
-
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn completion_for_method(
     db: &AnalysisDatabase,
@@ -296,7 +291,7 @@ pub fn completion_for_method(
         ..CompletionItem::default()
     };
 
-    if !signature.params.is_empty() && signature.params.iter().any(|param| !is_self_param(param)) {
+    if !signature.params.is_empty() && signature.params.iter().any(|param| param.name != "self")  {
         let insert_position = Position {
             line: position.line,
             // Position cursor inside the parentheses.
