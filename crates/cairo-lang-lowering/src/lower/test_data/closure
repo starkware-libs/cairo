@@ -18,10 +18,6 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported feature.
- --> lib.cairo:2:5
-    || {
-    ^**^
 
 //! > lowering
 Main:
@@ -65,6 +61,30 @@ Statements:
 End:
   Return(v5, v6, v7)
 
+
+Generated FnOnce::call lowering for source location:
+    || {
+    ^^
+
+Parameters: v0: {closure@lib.cairo:2:5: 2:7}, v1: ()
+blk0 (root):
+Statements:
+  (v2: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v0)
+  () <- struct_destructure(v1)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v3)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@lib.cairo:2:5: 2:7}, v4: ()
+blk0 (root):
+Statements:
+  (v5: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
+  (v6: core::RangeCheck, v7: core::SegmentArena, v8: core::gas::GasBuiltin, v9: core::dict::SquashedFelt252Dict::<core::felt252>) <- core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash(v0, v1, v2, v5)
+End:
+  Return(v6, v7, v8)
+
 //! > ==========================================================================
 
 //! > Test closure with PanicDestruct.
@@ -97,10 +117,6 @@ impl MyPanicDesruct of PanicDestruct<PanicDestructable> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported feature.
- --> lib.cairo:11:5
-    || {
-    ^**^
 
 //! > lowering
 Main:
@@ -165,3 +181,26 @@ Statements:
   (v3: core::panics::Panic) <- test::MyPanicDesruct::panic_destruct(v2, v1)
 End:
   Return(v3)
+
+
+Generated FnOnce::call lowering for source location:
+    || {
+    ^^
+
+Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: ()
+blk0 (root):
+Statements:
+  (v2: test::PanicDestructable) <- struct_destructure(v0)
+  () <- struct_destructure(v1)
+  () <- struct_destructure(v2)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v3)
+
+
+Final lowering:
+Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: ()
+blk0 (root):
+Statements:
+End:
+  Return()
