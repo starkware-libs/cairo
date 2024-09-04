@@ -47,6 +47,8 @@ pub fn lower_panics(
     }
 
     let signature = function_id.signature(db)?;
+    // All types should be fully concrete at this point.
+    assert!(signature.is_fully_concrete(db));
     let panic_info = PanicSignatureInfo::new(db, &signature);
     let mut ctx = PanicLoweringContext {
         variables,

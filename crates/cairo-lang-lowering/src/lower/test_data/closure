@@ -4,9 +4,9 @@
 test_generated_function
 
 //! > function
-fn foo(mut a: Felt252Dict<felt252>,) {
-    |b: felt252| {
-        let _ = a.insert(b, b);
+fn foo(a: Felt252Dict<felt252>,) {
+    || {
+        let _ = a;
     };
 }
 
@@ -20,35 +20,34 @@ foo
 //! > lowering_diagnostics
 error: Unsupported feature.
  --> lib.cairo:2:5
-    |b: felt252| {
-    ^************^
+    || {
+    ^**^
 
 //! > lowering
 Main:
 Parameters: v0: core::dict::Felt252Dict::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:2:5: 2:17}) <- struct_construct(v0)
+  (v1: {closure@lib.cairo:2:5: 2:7}) <- struct_construct(v0)
   (v2: ()) <- struct_construct()
 End:
   Return(v2)
 
 
 Final lowering:
-Parameters: v0: core::dict::Felt252Dict::<core::felt252>
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: core::dict::Felt252Dict::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:2:5: 2:17}) <- struct_construct(v0)
-  (v2: ()) <- Generated core::traits::Destruct::<{closure@lib.cairo:2:5: 2:17}>::destruct(v1)
+  (v4: core::RangeCheck, v5: core::SegmentArena, v6: core::gas::GasBuiltin, v7: core::dict::SquashedFelt252Dict::<core::felt252>) <- core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash(v0, v1, v2, v3)
 End:
-  Return()
+  Return(v4, v5, v6)
 
 
 Generated Destruct::destruct lowering for source location:
-    |b: felt252| {
-    ^************^
+    || {
+    ^^
 
-Parameters: v0: {closure@lib.cairo:2:5: 2:17}
+Parameters: v0: {closure@lib.cairo:2:5: 2:7}
 blk0 (root):
 Statements:
   (v1: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v0)
@@ -58,7 +57,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@lib.cairo:2:5: 2:17}
+Parameters: v0: core::RangeCheck, v1: core::SegmentArena, v2: core::gas::GasBuiltin, v3: {closure@lib.cairo:2:5: 2:7}
 blk0 (root):
 Statements:
   (v4: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
@@ -74,7 +73,7 @@ End:
 test_generated_function
 
 //! > function
-fn foo(mut a: PanicDestructable) {
+fn foo(a: PanicDestructable) {
     || {
         let PanicDestructable { } = a;
     };
@@ -137,18 +136,17 @@ Statements:
   (v7: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v5, v6)
   (v8: core::felt252) <- 5
   (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v8)
-  (v10: {closure@lib.cairo:11:5: 11:7}) <- struct_construct(v0)
-  (v11: core::panics::Panic) <- struct_construct()
-  (v12: core::panics::Panic, v13: ()) <- Generated core::traits::PanicDestruct::<{closure@lib.cairo:11:5: 11:7}>::panic_destruct(v10, v11)
-  (v14: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v12, v9)
-  (v15: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v14)
+  (v10: core::panics::Panic) <- struct_construct()
+  (v11: core::panics::Panic) <- test::MyPanicDesruct::panic_destruct(v0, v10)
+  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v11, v9)
+  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v12)
 End:
-  Return(v15)
+  Return(v13)
 
 
 Generated PanicDestruct::panic_destruct lowering for source location:
     || {
-    ^**^
+    ^^
 
 Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: core::panics::Panic
 blk0 (root):

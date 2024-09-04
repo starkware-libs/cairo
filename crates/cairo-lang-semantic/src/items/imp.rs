@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::hash::Hash;
 use std::sync::Arc;
-use std::{iter, mem, panic, vec};
+use std::{mem, panic, vec};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -24,7 +24,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{
     define_short_id, extract_matches, try_extract_matches, Intern, LookupIntern,
 };
-use itertools::{izip, Itertools};
+use itertools::{chain, izip, Itertools};
 use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
@@ -60,8 +60,9 @@ use super::type_aliases::{
 };
 use super::{resolve_trait_path, TraitOrImplContext};
 use crate::corelib::{
-    concrete_destruct_trait, concrete_drop_trait, concrete_panic_destruct_trait, copy_trait,
-    core_submodule, deref_trait, drop_trait, get_core_trait, CoreTraitContext,
+    concrete_destruct_trait, concrete_drop_trait, copy_trait, core_submodule, deref_trait,
+    destruct_trait, drop_trait, fn_once_trait, get_core_trait, panic_destruct_trait,
+    CoreTraitContext,
 };
 use crate::db::{get_resolver_data_options, SemanticGroup};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -77,9 +78,7 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{
-    add_type_based_diagnostics, get_impl_at_context, resolve_type, ClosureTypeLongId, ImplTypeId,
-};
+use crate::types::{add_type_based_diagnostics, get_impl_at_context, resolve_type, ImplTypeId};
 use crate::{
     semantic, semantic_object_for_id, Arenas, ConcreteFunction, ConcreteTraitId,
     ConcreteTraitLongId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability,
@@ -1653,6 +1652,7 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredGeneratedImplLongId {
         write!(f, "Generated {:?}", self.concrete_trait.debug(db))
     }
 }
+
 /// Finds all the implementations of a concrete trait, in a specific lookup context.
 pub fn find_candidates_at_context(
     db: &dyn SemanticGroup,
@@ -1702,106 +1702,77 @@ pub fn find_candidates_at_context(
     }
     Ok(res)
 }
-pub fn find_generated_candidate(
+
+/// Finds the generated candidate for a concrete trait.
+pub fn find_closure_generated_candidate(
     db: &dyn SemanticGroup,
     concrete_trait_id: ConcreteTraitId,
-    filter: &TraitFilter,
 ) -> Option<UninferredImpl> {
-    let fn_once_trait = crate::corelib::fn_once_trait(db);
     let GenericArgumentId::Type(closure_type) = *concrete_trait_id.generic_args(db).first()? else {
         return None;
     };
     let TypeLongId::Closure(closure_type_long) = closure_type.lookup_intern(db) else {
         return None;
     };
-    if concrete_trait_id.trait_id(db) == fn_once_trait {
-        let concrete_trait = ConcreteTraitLongId {
-            trait_id: fn_once_trait,
-            generic_args: vec![
-                GenericArgumentId::Type(closure_type),
-                GenericArgumentId::Type(
-                    TypeLongId::Tuple(closure_type_long.param_tys.clone()).intern(db),
-                ),
-            ],
-        }
-        .intern(db);
-        if !concrete_trait_fits_trait_filter(db, concrete_trait_id, filter).ok()? {
-            return None;
-        };
-        let ret_ty = db.trait_type_by_name(fn_once_trait, "Output".into()).unwrap().unwrap();
-        return Some(UninferredImpl::GeneratedImpl(
-            UninferredGeneratedImplLongId {
-                concrete_trait,
-                generic_params: vec![],
-                impl_items: GeneratedImplItems(
-                    iter::once((ret_ty, closure_type_long.ret_ty)).collect(),
-                ),
+
+    // Handles the special cases of `Drop`, `Destruct` and `PanicDestruct`.
+    let handle_mem_trait = |trait_id, neg_impl_trait: Option<_>| {
+        let id = db.trait_generic_params(trait_id).unwrap().first().unwrap().id();
+        (
+            concrete_trait_id,
+            chain!(
+                closure_type_long.captured_types.iter().map(|ty| {
+                    GenericParam::Impl(GenericParamImpl {
+                        id,
+                        concrete_trait: Maybe::Ok(db.intern_concrete_trait(ConcreteTraitLongId {
+                            trait_id,
+                            generic_args: vec![GenericArgumentId::Type(*ty)],
+                        })),
+                    })
+                }),
+                neg_impl_trait.map(|neg_impl_trait| {
+                    GenericParam::NegImpl(GenericParamImpl {
+                        id,
+                        concrete_trait: Maybe::Ok(neg_impl_trait),
+                    })
+                })
+            )
+            .collect(),
+            [].into(),
+        )
+    };
+    let (concrete_trait, generic_params, impl_items) = match concrete_trait_id.trait_id(db) {
+        trait_id if trait_id == fn_once_trait(db) => {
+            let concrete_trait = ConcreteTraitLongId {
+                trait_id,
+                generic_args: vec![
+                    GenericArgumentId::Type(closure_type),
+                    GenericArgumentId::Type(
+                        TypeLongId::Tuple(closure_type_long.param_tys.clone()).intern(db),
+                    ),
+                ],
             }
-            .intern(db),
-        ));
-    }
-
-    add_destruct_like_impls(db, concrete_trait_id)
-}
-
-/// Adds the Drop, Destruct or PanicDestruct candidate impl.
-fn add_destruct_like_impls(
-    db: &dyn SemanticGroup,
-    concrete_trait: ConcreteTraitId,
-) -> Option<UninferredImpl> {
-    let gargs = concrete_trait.generic_args(db);
-    let Some(GenericArgumentId::Type(ty)) = gargs.first() else {
-        return None;
+            .intern(db);
+            let ret_ty = db.trait_type_by_name(trait_id, "Output".into()).unwrap().unwrap();
+            (concrete_trait, vec![], [(ret_ty, closure_type_long.ret_ty)].into())
+        }
+        trait_id if trait_id == drop_trait(db) => handle_mem_trait(trait_id, None),
+        trait_id if trait_id == destruct_trait(db) => {
+            handle_mem_trait(trait_id, Some(concrete_drop_trait(db, closure_type)))
+        }
+        trait_id if trait_id == panic_destruct_trait(db) => {
+            handle_mem_trait(trait_id, Some(concrete_destruct_trait(db, closure_type)))
+        }
+        _ => return None,
     };
-    let TypeLongId::Closure(ClosureTypeLongId { captured_types, .. }) = db.lookup_intern_type(*ty)
-    else {
-        // Currently only closure types have generated impls.
-        return None;
-    };
-    let drop_trait = concrete_drop_trait(db, *ty);
-    let destruct_trait = concrete_destruct_trait(db, *ty);
-    let panic_destruct_trait = concrete_panic_destruct_trait(db, *ty);
-
-    let opt_neg_impl_trait = if concrete_trait == drop_trait {
-        None
-    } else if concrete_trait == destruct_trait {
-        Some(drop_trait)
-    } else if concrete_trait == panic_destruct_trait {
-        Some(destruct_trait)
-    } else {
-        return None;
-    };
-
-    let trait_id = concrete_trait.trait_id(db);
-    let generic_param_id = db.trait_generic_params(trait_id).unwrap().first().unwrap().id();
-
-    let mut generic_params = captured_types
-        .iter()
-        .map(|ty| {
-            GenericParam::Impl(GenericParamImpl {
-                id: generic_param_id,
-                concrete_trait: Maybe::Ok(db.intern_concrete_trait(ConcreteTraitLongId {
-                    trait_id,
-                    generic_args: vec![GenericArgumentId::Type(*ty)],
-                })),
-            })
-        })
-        .collect_vec();
-
-    if let Some(neg_impl_trait) = opt_neg_impl_trait {
-        generic_params.push(GenericParam::NegImpl(GenericParamImpl {
-            id: generic_param_id,
-            concrete_trait: Maybe::Ok(neg_impl_trait),
-        }));
-    }
-
-    Some(UninferredImpl::GeneratedImpl(db.intern_uninferred_generated_impl(
+    Some(UninferredImpl::GeneratedImpl(
         UninferredGeneratedImplLongId {
             concrete_trait,
             generic_params,
-            impl_items: Default::default(),
-        },
-    )))
+            impl_items: GeneratedImplItems(impl_items),
+        }
+        .intern(db),
+    ))
 }
 
 /// Checks if an impl of a trait function with a given self_ty exists.
