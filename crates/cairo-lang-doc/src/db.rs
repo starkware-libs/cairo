@@ -49,16 +49,14 @@ pub trait DocGroup:
     + FilesGroup
     + DefsGroup
 {
-    // TODO(mkaput): Add tests.
     // TODO(mkaput): Support #[doc] attribute. This will be a bigger chunk of work because it would
     //   be the best to convert all /// comments to #[doc] attrs before processing items by plugins,
     //   so that plugins would get a nice and clean syntax of documentation to manipulate further.
     /// Gets the documentation above an item definition.
     fn get_item_documentation(&self, item_id: DocumentableItemId) -> Documentation;
 
-    // TODO(mkaput): Add tests.
     /// Gets the signature of an item (i.e., item without its body).
-    fn get_item_signature(&self, item_id: DocumentableItemId) -> Option<String>;
+    fn get_item_signature(&self, item_id: DocumentableItemId) -> String;
 }
 
 fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Documentation {
@@ -103,8 +101,12 @@ fn get_item_inner_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) 
     }
 }
 
-fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
-    let syntax_node = item_id.stable_location(db.upcast())?.syntax_node(db.upcast());
+fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
+    if let DocumentableItemId::Crate(crate_id) = item_id {
+        return format!("crate {}", crate_id.name(db.upcast()));
+    }
+
+    let syntax_node = item_id.stable_location(db.upcast()).unwrap().syntax_node(db.upcast());
     let definition = match syntax_node.green_node(db.upcast()).kind {
         SyntaxKind::ItemConstant
         | SyntaxKind::TraitItemFunction
@@ -175,7 +177,7 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<
         }
         _ => "".to_owned(),
     };
-    Some(fmt(definition))
+    fmt(definition)
 }
 
 /// Run Cairo formatter over code with extra post-processing that is specific to signatures.

@@ -28,7 +28,7 @@ test-log.workspace = true
 env_logger.workspace = true
 
 [features]
-default = ["std"]
+default = ["env_logger"]
 std = [
   "indexmap/std",
   "num-bigint/std",

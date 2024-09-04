@@ -4,7 +4,7 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::Upcast;
-use itertools::chain;
+use itertools::{chain, Itertools};
 use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
@@ -26,9 +26,7 @@ pub fn definition(
         SymbolDef::Item(item) => {
             let mut md = String::new();
             md += &fenced_code_block(&item.definition_path(db));
-            if let Some(signature) = item.signature(db) {
-                md += &fenced_code_block(&signature);
-            }
+            md += &fenced_code_block(&item.signature(db));
 
             let item_documentation = item.documentation(db);
             if let Some(doc) = parse_and_concat_documentation(item_documentation) {
@@ -53,9 +51,8 @@ pub fn definition(
             // Signature is the signature of the struct, so it makes sense that the definition
             // path is too.
             md += &fenced_code_block(&structure.definition_path(db));
-            if let Some(signature) = structure.signature(db) {
-                md += &fenced_code_block(&signature);
-            }
+            md += &fenced_code_block(&structure.signature(db));
+
             let item_documentation = db.get_item_documentation((*member).into());
             if let Some(doc) = parse_and_concat_documentation(item_documentation) {
                 md += RULE;
@@ -75,6 +72,7 @@ pub fn definition(
     })
 }
 
+/// Parses documentation for an item to be displayed inside the definition.
 fn parse_and_concat_documentation(item_documentation: Documentation) -> Option<String> {
     match (
         item_documentation.prefix_comments,
@@ -83,9 +81,8 @@ fn parse_and_concat_documentation(item_documentation: Documentation) -> Option<S
     ) {
         (None, None, None) => None,
         (prefix_comments, inner_comments, module_level_comments) => Some(
-            chain!(prefix_comments, inner_comments, module_level_comments)
-                .map(|comment| comment.trim_end().to_string())
-                .collect::<Vec<_>>()
+            chain!(&prefix_comments, &inner_comments, &module_level_comments)
+                .map(|comment| comment.trim_end())
                 .join(" "),
         ),
     }
