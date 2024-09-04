@@ -1715,7 +1715,7 @@ pub fn find_closure_generated_candidate(
         return None;
     };
 
-    // Handles the special cases of `Drop`, `Destruct` and `PanicDestruct`.
+    // Handles the special cases of `Copy`, `Drop`, `Destruct` and `PanicDestruct`.
     let handle_mem_trait = |trait_id, neg_impl_trait: Option<_>| {
         let id = db.trait_generic_params(trait_id).unwrap().first().unwrap().id();
         (
@@ -1763,6 +1763,7 @@ pub fn find_closure_generated_candidate(
         trait_id if trait_id == panic_destruct_trait(db) => {
             handle_mem_trait(trait_id, Some(concrete_destruct_trait(db, closure_type)))
         }
+        trait_id if trait_id == copy_trait(db) => handle_mem_trait(trait_id, None),
         _ => return None,
     };
     Some(UninferredImpl::GeneratedImpl(
