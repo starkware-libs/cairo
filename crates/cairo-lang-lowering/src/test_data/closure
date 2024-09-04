@@ -1,0 +1,70 @@
+//! > simple closure.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+    let c = |a| {
+        a + 3
+    };
+    c(2)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- 3
+  (v3: core::felt252) <- core::felt252_add(v1, v2)
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > using captured copiable variable.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> felt252 {
+    let x = 8;
+    let c = |a| {
+        x * (a + 3)
+    };
+    let y = c(2);
+    y + x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 8
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- 3
+  (v3: core::felt252) <- core::felt252_add(v1, v2)
+  (v4: core::felt252) <- core::felt252_mul(v0, v3)
+  (v5: core::felt252) <- core::felt252_add(v4, v0)
+End:
+  Return(v5)
