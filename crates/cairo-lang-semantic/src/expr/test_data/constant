@@ -380,9 +380,9 @@ foo
 
 //! > expected_diagnostics
 error: Multiple definitions of constant "A".
- --> lib.cairo:3:5
+ --> lib.cairo:3:11
     const A: u8 = 2;
-    ^**************^
+          ^
 
 error: Multiple definitions of identifier 'B' as constant and variable.
  --> lib.cairo:5:9
@@ -390,14 +390,14 @@ error: Multiple definitions of identifier 'B' as constant and variable.
         ^
 
 error: Multiple definitions of identifier 'C' as constant and variable.
- --> lib.cairo:7:5
+ --> lib.cairo:7:11
     const C: u8 = 6;
-    ^**************^
+          ^
 
 error: Multiple definitions of constant "D".
- --> lib.cairo:10:9
+ --> lib.cairo:10:15
         const D: u8 = 8;
-        ^**************^
+              ^
 
 error: Multiple definitions of identifier 'E' as constant and variable.
  --> lib.cairo:12:13
@@ -405,9 +405,9 @@ error: Multiple definitions of identifier 'E' as constant and variable.
             ^
 
 error: Multiple definitions of identifier 'F' as constant and variable.
- --> lib.cairo:14:9
+ --> lib.cairo:14:15
         const F: u8 = 12;
-        ^***************^
+              ^
 
 warning: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:10:15
