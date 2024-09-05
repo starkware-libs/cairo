@@ -483,7 +483,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::MultipleConstantDefinition(constant_name) => {
                 format!(r#"Multiple definitions of constant "{}"."#, constant_name)
             }
-            SemanticDiagnosticKind::MultipleDefinitionforConstantVariable(identifier_name) => {
+            SemanticDiagnosticKind::MultipleDefinitionforItem(identifier_name) => {
                 format!(
                     r#"Multiple definitions of identifier '{}' as constant and variable."#,
                     identifier_name
@@ -1097,7 +1097,7 @@ pub enum SemanticDiagnosticKind {
     UnusedVariable,
     UnusedConstant,
     MultipleConstantDefinition(SmolStr),
-    MultipleDefinitionforConstantVariable(SmolStr),
+    MultipleDefinitionforItem(SmolStr),
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,
     NegativeImplsOnlyOnImpls,
