@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId, VarId};
+use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId, StatementUseId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
@@ -569,6 +569,16 @@ pub struct ExprPropagateError {
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprConstant {
     pub const_value_id: ConstValueId,
+    pub ty: semantic::TypeId,
+    #[dont_rewrite]
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprUse {
+    pub const_value_id: StatementUseId,
     pub ty: semantic::TypeId,
     #[dont_rewrite]
     #[hide_field_debug_with_db]
