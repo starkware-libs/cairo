@@ -334,9 +334,9 @@ foo
 
 //! > expected_diagnostics
 warning: Unused constant. Consider ignoring by prefixing with `_`.
- --> lib.cairo:3:15
+ --> lib.cairo:3:9
         const X: u8 = 2;
-              ^
+        ^**************^
 
 error: Identifier not found.
  --> lib.cairo:5:13
@@ -410,9 +410,9 @@ error: Multiple definitions of identifier 'F' as constant and variable.
         ^***************^
 
 warning: Unused constant. Consider ignoring by prefixing with `_`.
- --> lib.cairo:10:15
+ --> lib.cairo:10:9
         const D: u8 = 8;
-              ^
+        ^**************^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:12:13
@@ -420,14 +420,14 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
             ^
 
 warning: Unused constant. Consider ignoring by prefixing with `_`.
- --> lib.cairo:14:15
+ --> lib.cairo:14:9
         const F: u8 = 12;
-              ^
+        ^***************^
 
 warning: Unused constant. Consider ignoring by prefixing with `_`.
- --> lib.cairo:3:11
+ --> lib.cairo:3:5
     const A: u8 = 2;
-          ^
+    ^**************^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:5:9
@@ -435,6 +435,6 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
         ^
 
 warning: Unused constant. Consider ignoring by prefixing with `_`.
- --> lib.cairo:7:11
+ --> lib.cairo:7:5
     const C: u8 = 6;
-          ^
+    ^**************^
