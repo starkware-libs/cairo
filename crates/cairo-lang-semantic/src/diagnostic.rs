@@ -483,11 +483,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::MultipleConstantDefinition(constant_name) => {
                 format!(r#"Multiple definitions of constant "{}"."#, constant_name)
             }
-            SemanticDiagnosticKind::MultipleDefinitionforItem(identifier_name) => {
+            SemanticDiagnosticKind::UnusedUse => "Unused use.".into(),
+            SemanticDiagnosticKind::MultipleDefinitionforBinding(identifier_name) => {
                 format!(
                     r#"Multiple definitions of identifier '{}' as constant and variable."#,
                     identifier_name
                 )
+            }
+            SemanticDiagnosticKind::UnsupportedUseItemInStatement => {
+                "Unsupported use item in statement.".into()
             }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
@@ -894,7 +898,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::DeprecatedFeature { .. }
             | SemanticDiagnosticKind::UnusedImport { .. }
             | SemanticDiagnosticKind::CallingShadowedFunction { .. }
-            | SemanticDiagnosticKind::UnusedConstant => Severity::Warning,
+            | SemanticDiagnosticKind::UnusedConstant
+            | SemanticDiagnosticKind::UnusedUse => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1096,8 +1101,10 @@ pub enum SemanticDiagnosticKind {
     UnhandledMustUseFunction,
     UnusedVariable,
     UnusedConstant,
+    UnusedUse,
     MultipleConstantDefinition(SmolStr),
-    MultipleDefinitionforItem(SmolStr),
+    MultipleDefinitionforBinding(SmolStr),
+    UnsupportedUseItemInStatement,
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,
     NegativeImplsOnlyOnImpls,
