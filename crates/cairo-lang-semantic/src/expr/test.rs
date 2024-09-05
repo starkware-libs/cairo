@@ -84,6 +84,7 @@ cairo_lang_test_utils::test_file_test!(
         for_: "for",
         range: "range",
         const_: "const",
+        use_: "use",
     },
     test_expr_semantics
 );

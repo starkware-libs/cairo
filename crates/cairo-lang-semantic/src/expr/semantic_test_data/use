@@ -1,0 +1,104 @@
+//! > Test use usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    pub const Y: u8 = 2;
+}
+
+//! > function_body
+
+//! > expr_code
+{ use X::Y; }
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Item(
+                StatementItem,
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning: Unused use.
+ --> lib.cairo:5:10
+{ use X::Y; }
+         ^
+
+//! > ==========================================================================
+
+//! > Test several uses
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    const X: u8 = 2;
+    const Y: u8 = X;
+    const Z: u8 = Y;
+}
+
+//! > function_body
+use X::{X, Y, Z};
+let _ = X + Y;
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning: Unused use.
+ --> lib.cairo:6:32
+fn test_func() { use X::{X, Y, Z};
+                               ^
+
+//! > ==========================================================================
+
+//! > Test use not allowed shadowing
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+mod X {
+    const A: u8 = 1;
+}
+
+//! > function_body
+use X::A;
+const A: u8 = 4;
+let _ = A;
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+error: Multiple definitions of constant "A".
+ --> lib.cairo:5:7
+const A: u8 = 4;
+      ^
