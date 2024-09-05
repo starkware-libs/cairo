@@ -4,12 +4,15 @@ use std::path::Path;
 
 use anyhow::{bail, ensure, Context, Result};
 use cairo_lang_filesystem::db::{CrateSettings, Edition, ExperimentalFeaturesConfig};
+use cairo_lang_filesystem::ids::CrateLongId;
+use cairo_lang_utils::Intern;
 use itertools::Itertools;
 use scarb_metadata::{Metadata, PackageMetadata};
 use tracing::{debug, error, warn};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::project::crate_data::Crate;
+use crate::state::Dependencies;
 
 /// Updates crate roots in the database with the information from Scarb metadata.
 ///
@@ -24,9 +27,16 @@ use crate::project::crate_data::Crate;
 //  once. Often packages declare several targets (lib, starknet-contract, test), which currently
 //  causes overriding of the crate within single call of this function. This is an UX problem, for
 //  which we do not know the solution yet.
-pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
+pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase, deps: &mut Dependencies) {
     let mut crates = Vec::<Crate>::new();
     let mut crates_grouped_by_group_id = HashMap::new();
+
+    *deps = metadata
+        .packages
+        .iter()
+        .filter(|p| !metadata.workspace.members.contains(&p.id))
+        .map(|p| CrateLongId::Real(p.name.clone().into()).intern(db))
+        .collect();
 
     for compilation_unit in &metadata.compilation_units {
         if compilation_unit.target.kind == "cairo-plugin" {
