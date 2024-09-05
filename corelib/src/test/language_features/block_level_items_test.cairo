@@ -45,3 +45,15 @@ fn test_global_const_to_let_shadowing() {
     let A = 4;
     assert_eq!(A, 4);
 }
+
+mod X {
+    pub const A: u8 = 1;
+}
+
+#[test]
+fn test_use_const_to_const_shadowing() {
+    use X::A;
+    assert_eq!(A, 1);
+    const A: u8 = 4;
+    assert_eq!(A, 4);
+}

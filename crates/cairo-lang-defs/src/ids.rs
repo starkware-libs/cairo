@@ -959,6 +959,14 @@ define_top_level_language_element_id!(
     intern_local_const
 );
 
+define_top_level_language_element_id!(
+    LocalUseId,
+    LocalUseLongId,
+    ast::UsePathLeaf,
+    lookup_intern_local_use,
+    intern_local_use
+);
+
 define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of a function's signature in the code.
@@ -1063,6 +1071,7 @@ define_language_element_id_as_enum! {
     #[toplevel]
     pub enum StatementItemId {
         Constant(LocalConstId),
+        Use(LocalUseId),
     }
 }
 
@@ -1070,6 +1079,7 @@ impl StatementItemId {
     pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         match self {
             StatementItemId::Constant(id) => id.name(db),
+            StatementItemId::Use(id) => id.name(db),
         }
     }
     pub fn name_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
@@ -1077,6 +1087,7 @@ impl StatementItemId {
             StatementItemId::Constant(id) => {
                 id.lookup_intern(db).1.lookup(db.upcast()).name(db.upcast()).stable_ptr().untyped()
             }
+            StatementItemId::Use(id) => id.stable_ptr(db).into(),
         }
     }
 }

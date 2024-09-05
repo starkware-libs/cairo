@@ -87,6 +87,8 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_local_const(&self, id: LocalConstLongId) -> LocalConstId;
     #[salsa::interned]
+    fn intern_local_use(&self, id: LocalUseLongId) -> LocalUseId;
+    #[salsa::interned]
     fn intern_plugin_generated_file(&self, id: PluginGeneratedFileLongId) -> PluginGeneratedFileId;
 
     // Plugins.
