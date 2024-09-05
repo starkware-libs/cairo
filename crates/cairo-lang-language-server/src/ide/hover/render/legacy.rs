@@ -11,8 +11,8 @@ use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
+use crate::ide::hover::render::markdown::{fenced_code_block, RULE};
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
-use crate::markdown::{fenced_code_block, RULE};
 
 /// Legacy hover rendering backported from Cairo 2.6.3 codebase.
 ///
