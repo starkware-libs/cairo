@@ -1,27 +1,33 @@
 use std::iter;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    LanguageElementId, LookupItemId, MemberId, ModuleItemId, TopLevelLanguageElementId, TraitItemId,
+    FunctionTitleId, LanguageElementId, LookupItemId, MemberId, ModuleId, ModuleItemId,
+    SubmoduleLongId, TopLevelLanguageElementId, TraitItemId,
 };
+use cairo_lang_diagnostics::ToOption;
 use cairo_lang_doc::db::DocGroup;
+use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
-use cairo_lang_semantic::{Binding, Mutability};
+use cairo_lang_semantic::{Binding, Expr, Mutability, TypeLongId};
 use cairo_lang_syntax::node::ast::{Param, PatternIdentifier, PatternPtr, TerminalIdentifier};
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
-use cairo_lang_utils::Upcast;
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use tracing::error;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::inspect::defs::SymbolDef::Member;
-use crate::{find_definition, ResolvedItem};
 
 /// Keeps information about the symbol that is being searched for/inspected.
 ///
@@ -38,6 +44,13 @@ pub enum SymbolDef {
 pub struct MemberDef {
     pub member: MemberId,
     pub structure: ItemDef,
+}
+
+/// Either [`ResolvedGenericItem`], [`ResolvedConcreteItem`] or [`MemberId`].
+pub enum ResolvedItem {
+    Generic(ResolvedGenericItem),
+    Concrete(ResolvedConcreteItem),
+    Member(MemberId),
 }
 
 impl SymbolDef {
@@ -276,4 +289,187 @@ impl VariableDef {
 
         format!("{prefix}{mutability}{name}: {ty}")
     }
+}
+
+// TODO(mkaput): make private.
+#[tracing::instrument(level = "trace", skip_all)]
+pub fn find_definition(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<(ResolvedItem, SyntaxStablePtrId)> {
+    if let Some(parent) = identifier.as_syntax_node().parent() {
+        if parent.kind(db) == SyntaxKind::ItemModule {
+            let Some(containing_module_file_id) = db.find_module_file_containing_node(&parent)
+            else {
+                error!("`find_definition` failed: could not find module");
+                return None;
+            };
+
+            let submodule_id = SubmoduleLongId(
+                containing_module_file_id,
+                ast::ItemModule::from_syntax_node(db, parent).stable_ptr(),
+            )
+            .intern(db);
+            let item = ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id));
+            return Some((
+                ResolvedItem::Generic(item.clone()),
+                resolved_generic_item_def(db, item)?,
+            ));
+        }
+    }
+
+    if let Some(member_id) = try_extract_member(db, identifier, lookup_items) {
+        return Some((ResolvedItem::Member(member_id), member_id.untyped_stable_ptr(db)));
+    }
+
+    for lookup_item_id in lookup_items.iter().copied() {
+        if let Some(item) =
+            db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+        {
+            return Some((
+                ResolvedItem::Generic(item.clone()),
+                resolved_generic_item_def(db, item)?,
+            ));
+        }
+
+        if let Some(item) =
+            db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+        {
+            let stable_ptr = resolved_concrete_item_def(db.upcast(), item.clone())?;
+            return Some((ResolvedItem::Concrete(item), stable_ptr));
+        }
+    }
+
+    // Skip variable definition, otherwise we would get parent ModuleItem for variable.
+    if db.first_ancestor_of_kind(identifier.as_syntax_node(), SyntaxKind::StatementLet).is_none() {
+        let item = match lookup_items.first().copied()? {
+            LookupItemId::ModuleItem(item) => {
+                ResolvedGenericItem::from_module_item(db, item).to_option()?
+            }
+            LookupItemId::TraitItem(trait_item) => {
+                if let TraitItemId::Function(trait_fn) = trait_item {
+                    ResolvedGenericItem::TraitFunction(trait_fn)
+                } else {
+                    ResolvedGenericItem::Trait(trait_item.trait_id(db))
+                }
+            }
+            LookupItemId::ImplItem(impl_item) => {
+                ResolvedGenericItem::Impl(impl_item.impl_def_id(db))
+            }
+        };
+
+        Some((ResolvedItem::Generic(item.clone()), resolved_generic_item_def(db, item)?))
+    } else {
+        None
+    }
+}
+
+/// Extracts [`MemberId`] if the [`ast::TerminalIdentifier`] points to
+/// right-hand side of access member expression e.g., to `xyz` in `self.xyz`.
+fn try_extract_member(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<MemberId> {
+    let syntax_node = identifier.as_syntax_node();
+    let binary_expr_syntax_node =
+        db.first_ancestor_of_kind(syntax_node.clone(), SyntaxKind::ExprBinary)?;
+    let binary_expr = ast::ExprBinary::from_syntax_node(db, binary_expr_syntax_node);
+
+    let function_with_body = lookup_items.first()?.function_with_body()?;
+
+    let expr_id =
+        db.lookup_expr_by_ptr(function_with_body, binary_expr.stable_ptr().into()).ok()?;
+    let semantic_expr = db.expr_semantic(function_with_body, expr_id);
+
+    if let Expr::MemberAccess(expr_member_access) = semantic_expr {
+        let pointer_to_rhs = binary_expr.rhs(db).stable_ptr().untyped();
+
+        let mut current_node = syntax_node;
+        // Check if the terminal identifier points to a member, not a struct variable.
+        while pointer_to_rhs != current_node.stable_ptr() {
+            // If we found the node with the binary expression, then we are sure we won't find the
+            // node with the member.
+            if current_node.stable_ptr() == binary_expr.stable_ptr().untyped() {
+                return None;
+            }
+            current_node = current_node.parent().unwrap();
+        }
+
+        Some(expr_member_access.member)
+    } else {
+        None
+    }
+}
+
+#[tracing::instrument(level = "trace", skip_all)]
+fn resolved_concrete_item_def(
+    db: &AnalysisDatabase,
+    item: ResolvedConcreteItem,
+) -> Option<SyntaxStablePtrId> {
+    match item {
+        ResolvedConcreteItem::Type(ty) => {
+            if let TypeLongId::GenericParameter(param) = ty.lookup_intern(db) {
+                Some(param.untyped_stable_ptr(db.upcast()))
+            } else {
+                None
+            }
+        }
+        ResolvedConcreteItem::Impl(imp) => {
+            if let ImplLongId::GenericParameter(param) = imp.lookup_intern(db) {
+                Some(param.untyped_stable_ptr(db.upcast()))
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
+}
+
+#[tracing::instrument(level = "trace", skip_all)]
+fn resolved_generic_item_def(
+    db: &AnalysisDatabase,
+    item: ResolvedGenericItem,
+) -> Option<SyntaxStablePtrId> {
+    let defs_db = db.upcast();
+    Some(match item {
+        ResolvedGenericItem::GenericConstant(item) => item.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::Module(module_id) => {
+            // Check if the module is an inline submodule.
+            if let ModuleId::Submodule(submodule_id) = module_id {
+                if let ast::MaybeModuleBody::Some(submodule_id) =
+                    submodule_id.stable_ptr(defs_db).lookup(db.upcast()).body(db.upcast())
+                {
+                    // Inline module.
+                    return Some(submodule_id.stable_ptr().untyped());
+                }
+            }
+            let module_file = db.module_main_file(module_id).ok()?;
+            let file_syntax = db.file_module_syntax(module_file).ok()?;
+            file_syntax.as_syntax_node().stable_ptr()
+        }
+        ResolvedGenericItem::GenericFunction(item) => {
+            let title = match item {
+                GenericFunctionId::Free(id) => FunctionTitleId::Free(id),
+                GenericFunctionId::Extern(id) => FunctionTitleId::Extern(id),
+                GenericFunctionId::Impl(id) => {
+                    // Note: Only the trait title is returned.
+                    FunctionTitleId::Trait(id.function)
+                }
+                GenericFunctionId::Trait(id) => FunctionTitleId::Trait(id.trait_function(db)),
+            };
+            title.untyped_stable_ptr(defs_db)
+        }
+        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(defs_db),
+        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(defs_db).untyped(),
+        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(defs_db).untyped(),
+        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(defs_db).untyped(),
+        ResolvedGenericItem::TraitFunction(trait_function) => {
+            trait_function.stable_ptr(defs_db).untyped()
+        }
+        ResolvedGenericItem::Variable(var) => var.untyped_stable_ptr(defs_db),
+    })
 }
