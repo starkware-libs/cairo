@@ -252,7 +252,7 @@ impl VariableDef {
 
         let prefix = match var {
             Binding::LocalVar(_) => "let ",
-            Binding::LocalConst(_) => "const ",
+            Binding::LocalItem(_) => "const ",
             Binding::Param(_) => "",
         };
 
@@ -264,7 +264,7 @@ impl VariableDef {
                     ""
                 }
             }
-            Binding::LocalConst(_) => "",
+            Binding::LocalItem(_) => "",
             Binding::Param(param) => match param.mutability {
                 Mutability::Immutable => "",
                 Mutability::Mutable => "mut ",
