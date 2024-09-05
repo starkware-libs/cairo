@@ -11,6 +11,7 @@ use tower_lsp::lsp_types::{ClientCapabilities, Url};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
+use cairo_lang_filesystem::ids::CrateId;
 
 /// State of Language server.
 pub struct State {
@@ -19,6 +20,24 @@ pub struct State {
     pub file_diagnostics: Owned<HashMap<Url, FileDiagnostics>>,
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
+    pub dependencies: Owned<Dependencies>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Dependencies(HashSet<CrateId>);
+
+impl Deref for Dependencies {
+    type Target = HashSet<CrateId>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl FromIterator<CrateId> for Dependencies {
+    fn from_iter<T: IntoIterator<Item = CrateId>>(iter: T) -> Self {
+        Self(iter.into_iter().collect())
+    }
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -43,6 +62,7 @@ impl State {
             file_diagnostics: Default::default(),
             config: Default::default(),
             client_capabilities: Default::default(),
+            dependencies: Default::default(),
         }
     }
 
@@ -52,6 +72,7 @@ impl State {
             open_files: self.open_files.snapshot(),
             config: self.config.snapshot(),
             client_capabilities: self.client_capabilities.snapshot(),
+            dependencies: self.dependencies.snapshot(),
         }
     }
 }
@@ -62,6 +83,7 @@ pub struct StateSnapshot {
     pub open_files: Snapshot<HashSet<Url>>,
     pub config: Snapshot<Config>,
     pub client_capabilities: Snapshot<ClientCapabilities>,
+    pub dependencies: Snapshot<Dependencies>,
 }
 
 impl std::panic::UnwindSafe for StateSnapshot {}
