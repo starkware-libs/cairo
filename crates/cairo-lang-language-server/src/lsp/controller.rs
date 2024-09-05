@@ -136,7 +136,7 @@ impl LanguageServer for Backend {
                 // The crate for virtual files is already known.
                 if uri.scheme() == "file" {
                     let Ok(path) = uri.to_file_path() else { return false };
-                    self.detect_crate_for(&mut state.db, &state.config, path).await;
+                    self.detect_crate_for(&mut state.db, &mut state.dependencies, &state.config, path).await;
                 }
 
                 let Some(file_id) = state.db.file_for_url(&uri) else { return false };

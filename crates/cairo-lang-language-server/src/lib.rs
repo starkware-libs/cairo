@@ -50,7 +50,7 @@ use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::Diagnostics;
+use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
@@ -64,7 +64,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
 use salsa::{Cancelled, ParallelDatabase};
-use state::{FileDiagnostics, StateSnapshot};
+use state::{Dependencies, FileDiagnostics, StateSnapshot};
 use tokio::sync::Semaphore;
 use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
@@ -353,6 +353,14 @@ impl Backend {
     /// Refresh diagnostics and send diffs to client.
     #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
+        fn is_compiler_generated_file(db: &AnalysisDatabase, file: FileId) -> bool {
+            match file.lookup_intern(<AnalysisDatabase as Upcast<dyn FilesGroup>>::upcast(db)) {
+                FileLongId::OnDisk(_) => false,
+                FileLongId::Virtual(_) => true,
+                FileLongId::External(_) => true,
+            }
+        }
+
         // Making sure only a single thread is refreshing diagnostics at a time, and that at most
         // one thread is waiting to start refreshing. This allows changed to be grouped
         // together before querying the database, as well as releasing extra threads waiting to
@@ -376,10 +384,15 @@ impl Backend {
 
         // Refresh open files modules first for better UX
         async {
+            let db = self.db_snapshot().await;
+
             for (file, file_modules_ids) in open_files_modules {
                 self.refresh_file_diagnostics(
                     &file,
                     &file_modules_ids,
+                    // We don't check if the open file belongs to a dependency - we want to show
+                    // warnings for open files from dependencies.
+                    is_compiler_generated_file(&db, file),
                     &mut processed_modules,
                     &mut files_with_set_diagnostics,
                 )
@@ -389,19 +402,28 @@ impl Backend {
         .instrument(trace_span!("refresh_open_files_modules"))
         .await;
 
-        let rest_of_files = async {
+        let (rest_of_files, files_from_dependencies) = async {
             let mut rest_of_files: HashSet<FileId> = HashSet::default();
-            let db = self.db_snapshot().await;
+            let mut files_from_dependencies: HashSet<FileId> = HashSet::default();
+            let state = self.state_snapshot().await;
+            let db = state.db;
             for crate_id in db.crates() {
+                let is_dependency = state.dependencies.contains(&crate_id);
+
                 for module_id in db.crate_modules(crate_id).iter() {
                     if let Ok(module_files) = db.module_files(*module_id) {
+                        files_from_dependencies.extend(module_files.iter().filter(|file| {
+                            is_dependency || is_compiler_generated_file(&db, **file)
+                        }));
+
                         let unprocessed_files =
                             module_files.iter().filter(|file| !open_files_ids.contains(file));
+
                         rest_of_files.extend(unprocessed_files);
                     }
                 }
             }
-            rest_of_files
+            (rest_of_files, files_from_dependencies)
         }
         .instrument(trace_span!("get_rest_of_files"))
         .await;
@@ -411,9 +433,12 @@ impl Backend {
         // Refresh rest of files after, since they are not viewed currently
         async {
             for (file, file_modules_ids) in rest_of_files_modules {
+                let skip_warnings = files_from_dependencies.contains(&file);
+
                 self.refresh_file_diagnostics(
                     &file,
                     &file_modules_ids,
+                    skip_warnings,
                     &mut processed_modules,
                     &mut files_with_set_diagnostics,
                 )
@@ -460,6 +485,7 @@ impl Backend {
         &self,
         file: &FileId,
         modules_ids: &Vec<ModuleId>,
+        skip_warnings: bool,
         processed_modules: &mut HashSet<ModuleId>,
         files_with_set_diagnostics: &mut HashSet<Url>,
     ) {
@@ -500,10 +526,26 @@ impl Backend {
 
         let parser_file_diagnostics = diags!(db.file_syntax_diagnostics(*file), |r| r);
 
-        let new_file_diagnostics = FileDiagnostics {
-            parser: parser_file_diagnostics,
-            semantic: Diagnostics::from_iter(semantic_file_diagnostics),
-            lowering: Diagnostics::from_iter(lowering_file_diagnostics),
+        let new_file_diagnostics = if skip_warnings {
+            #[inline(always)]
+            fn filter_warnings<T>(iter: impl IntoIterator<Item = T>) -> Diagnostics<T>
+            where
+                T: DiagnosticEntry,
+            {
+                iter.into_iter().filter(|d| d.severity() != Severity::Warning).collect()
+            }
+
+            FileDiagnostics {
+                parser: filter_warnings(parser_file_diagnostics.get_all()),
+                semantic: filter_warnings(semantic_file_diagnostics),
+                lowering: filter_warnings(lowering_file_diagnostics),
+            }
+        } else {
+            FileDiagnostics {
+                parser: parser_file_diagnostics,
+                semantic: Diagnostics::from_iter(semantic_file_diagnostics),
+                lowering: Diagnostics::from_iter(lowering_file_diagnostics),
+            }
         };
 
         if !new_file_diagnostics.is_empty() {
@@ -610,14 +652,15 @@ impl Backend {
             })
             .await?;
         debug!("initial setup done");
-        self.ensure_diagnostics_queries_up_to_date(&mut new_db, config, open_files.iter().cloned())
-            .await;
-        debug!("initial compilation done");
-        debug!("starting");
-        self.with_state_mut(|state| {
+        state_mut_async!(state, self,
+            self.ensure_diagnostics_queries_up_to_date(&mut new_db, &mut state.dependencies, config, open_files.iter().cloned())
+                .await;
+            debug!("initial compilation done");
+            debug!("starting");
+
             ensure_exists_in_db(&mut new_db, &state.db, state.open_files.iter().cloned());
             state.db = new_db;
-        })
+        )
         .await;
 
         debug!("done");
@@ -629,6 +672,7 @@ impl Backend {
     async fn ensure_diagnostics_queries_up_to_date(
         &self,
         db: &mut AnalysisDatabase,
+        deps: &mut Dependencies,
         config: &Config,
         open_files: impl Iterator<Item = Url>,
     ) {
@@ -640,7 +684,7 @@ impl Backend {
         for uri in open_files {
             let Some(file_id) = db.file_for_url(&uri) else { continue };
             if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
-                self.detect_crate_for(db, config, file_path).await;
+                self.detect_crate_for(db, deps, config, file_path).await;
             }
             query_diags(db, file_id);
         }
@@ -691,6 +735,7 @@ impl Backend {
     async fn detect_crate_for(
         &self,
         db: &mut AnalysisDatabase,
+        deps: &mut Dependencies,
         config: &Config,
         file_path: PathBuf,
     ) {
@@ -721,7 +766,7 @@ impl Backend {
                 };
 
                 if let Some(metadata) = metadata {
-                    update_crate_roots(&metadata, db);
+                    update_crate_roots(&metadata, db, deps);
                 } else {
                     // Try to set up a corelib at least.
                     try_to_init_unmanaged_core(db, config, &self.scarb_toolchain);
@@ -768,7 +813,7 @@ impl Backend {
             for uri in state.open_files.iter() {
                 let Some(file_id) = db.file_for_url(uri) else { continue };
                 if let FileLongId::OnDisk(file_path) = db.lookup_intern_file(file_id) {
-                    self.detect_crate_for(db, &state.config, file_path).await;
+                    self.detect_crate_for(db, &mut state.dependencies, &state.config, file_path).await;
                 }
             }
         }
