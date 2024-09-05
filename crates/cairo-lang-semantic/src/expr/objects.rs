@@ -377,7 +377,7 @@ impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVarMemberPath {
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprClosure {
     pub body: ExprId,
-    pub param_ids: Vec<semantic::ParamId>,
+    pub params: Vec<semantic::Parameter>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
