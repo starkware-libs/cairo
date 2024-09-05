@@ -8,12 +8,12 @@ use std::sync::Arc;
 
 use ast::PathSegment;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::validate_attributes_flat;
+use cairo_lang_defs::db::{get_all_path_leaves, validate_attributes_flat};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, LookupItemId,
     MemberId, ModuleItemId, NamedLanguageElementId, StatementConstLongId, StatementItemId,
-    TraitFunctionId, TraitId, VarId,
+    StatementUseLongId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
@@ -67,6 +67,7 @@ use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
+use crate::items::us::get_use_segments;
 use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
@@ -208,9 +209,14 @@ impl<'ctx> ComputationContext<'ctx> {
     fn add_unused_binding_warning(&mut self, var_name: &str, var: &Binding) {
         if !self.environment.used_variables.contains(&var.id()) && !var_name.starts_with('_') {
             match var {
-                Binding::LocalItem(_) => {
-                    self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedConstant);
-                }
+                Binding::LocalItem(local_item) => match local_item.id {
+                    StatementItemId::Constant(_) => {
+                        self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedConstant);
+                    }
+                    StatementItemId::Use(_) => {
+                        self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedUse);
+                    }
+                },
                 Binding::LocalVar(_) | Binding::Param(_) => {
                     self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedVariable);
                 }
@@ -3496,25 +3502,72 @@ pub fn compute_statement_semantic(
                             rhs_resolved_expr.ty(db.upcast())?,
                         ),
                     });
-                    if let Some(old_var) =
-                        ctx.environment.variables.insert(name.clone(), var_def.clone())
-                    {
-                        return Err(ctx.diagnostics.report(
-                            name_syntax.stable_ptr(),
-                            match old_var {
-                                Binding::LocalItem(_) => MultipleConstantDefinition(name),
-                                Binding::LocalVar(_) | Binding::Param(_) => {
-                                    MultipleDefinitionforItem(name)
-                                }
-                            },
-                        ));
+                    add_item_to_statement_environment(
+                        ctx,
+                        name,
+                        var_def,
+                        name_syntax.stable_ptr().untyped(),
+                    );
+                }
+                ast::ModuleItem::Use(use_syntax) => {
+                    let path_leaves =
+                        get_all_path_leaves(db.upcast(), use_syntax.use_path(syntax_db));
+                    for leaf in path_leaves.iter() {
+                        let mut segments = vec![];
+                        get_use_segments(
+                            db.upcast(),
+                            &ast::UsePath::Leaf(leaf.clone()),
+                            &mut segments,
+                        )?;
+                        let resolved_item = ctx.resolver.resolve_generic_path(
+                            ctx.diagnostics,
+                            segments,
+                            NotFoundItemType::Identifier,
+                        )?;
+
+                        let path_segment = leaf.ident(db.upcast());
+                        let name = path_segment.identifier(db.upcast());
+                        let var_def_id = StatementItemId::Use(
+                            StatementUseLongId(ctx.resolver.module_file_id, leaf.stable_ptr())
+                                .intern(db),
+                        );
+                        match resolved_item {
+                            ResolvedGenericItem::GenericConstant(const_id) => {
+                                let const_value = db.constant_const_value(const_id)?;
+                                let var_def = Binding::LocalItem(LocalItem {
+                                    id: var_def_id,
+                                    kind: StatementItemKind::Constant(
+                                        db.intern_const_value(const_value.clone()),
+                                        db.constant_const_type(const_id)?,
+                                    ),
+                                });
+                                add_item_to_statement_environment(
+                                    ctx,
+                                    name,
+                                    var_def,
+                                    leaf.stable_ptr().untyped(),
+                                );
+                            }
+                            ResolvedGenericItem::Module(_)
+                            | ResolvedGenericItem::GenericFunction(_)
+                            | ResolvedGenericItem::TraitFunction(_)
+                            | ResolvedGenericItem::GenericType(_)
+                            | ResolvedGenericItem::GenericTypeAlias(_)
+                            | ResolvedGenericItem::GenericImplAlias(_)
+                            | ResolvedGenericItem::Variant(_)
+                            | ResolvedGenericItem::Trait(_)
+                            | ResolvedGenericItem::Impl(_)
+                            | ResolvedGenericItem::Variable(_) => {
+                                return Err(ctx
+                                    .diagnostics
+                                    .report(leaf.stable_ptr(), UnsupportedUseItemInStatement));
+                            }
+                        }
                     }
-                    ctx.semantic_defs.insert(var_def.id(), var_def);
                 }
                 ast::ModuleItem::Module(_) => {
                     unreachable!("Modules are not supported inside a function.")
                 }
-                ast::ModuleItem::Use(_) => unreachable!("Use type not supported."),
                 ast::ModuleItem::FreeFunction(_) => {
                     unreachable!("FreeFunction type not supported.")
                 }
@@ -3538,6 +3591,26 @@ pub fn compute_statement_semantic(
     };
     ctx.resolver.data.feature_config.restore(feature_restore);
     Ok(ctx.arenas.statements.alloc(statement))
+}
+
+/// Adds an item to the statement environment and reports a diagnostic if the item is already
+/// defined.
+fn add_item_to_statement_environment(
+    ctx: &mut ComputationContext<'_>,
+    name: SmolStr,
+    var_def: Binding,
+    stable_ptr: SyntaxStablePtrId,
+) {
+    if let Some(old_var) = ctx.environment.variables.insert(name.clone(), var_def.clone()) {
+        ctx.diagnostics.report(
+            stable_ptr,
+            match old_var {
+                Binding::LocalItem(_) => MultipleConstantDefinition(name),
+                Binding::LocalVar(_) | Binding::Param(_) => MultipleDefinitionforItem(name),
+            },
+        );
+    }
+    ctx.semantic_defs.insert(var_def.id(), var_def);
 }
 
 /// Computes the semantic model of an expression and reports diagnostics if the expression does not
