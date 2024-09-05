@@ -1,5 +1,5 @@
 use core::hash::Hash;
-use std::fmt::Display;
+use std::fmt::{Display, Write};
 use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
@@ -172,8 +172,13 @@ impl SyntaxNode {
         format!("{}", NodeTextFormatter { node: self, db })
     }
 
+    /// Returns all the text under the syntax node.
+    /// It ignores all the inner elements, that can contain their own inner comments (functions and
+    /// modules).
     pub fn get_shallow_inner_comments_text(&self, db: &dyn SyntaxGroup) -> String {
-        format!("{}", NodeInnerCommentFormatter { node: self, db })
+        let mut buffer = String::new();
+        get_shallow_text_of_syntax_node(db, self, &mut buffer).unwrap();
+        buffer
     }
 
     /// Returns all the text under the syntax node, without the outmost trivia (the leading trivia
@@ -287,32 +292,31 @@ impl<'a> Display for NodeTextFormatter<'a> {
     }
 }
 
-struct NodeInnerCommentFormatter<'a> {
-    /// The node to format.
-    node: &'a SyntaxNode,
-    /// The syntax db.
-    db: &'a dyn SyntaxGroup,
-}
+/// Writes all the SyntaxNode text to a buffer. It traverses all the syntax tree of the node, but
+/// ignores functions and modules.
+fn get_shallow_text_of_syntax_node(
+    db: &dyn SyntaxGroup,
+    node: &SyntaxNode,
+    buffer: &mut String,
+) -> std::fmt::Result {
+    match &node.green_node(db).as_ref().details {
+        green::GreenNodeDetails::Token(text) => write!(buffer, "{text}")?,
+        green::GreenNodeDetails::Node { .. } => {
+            for child in db.get_children(node.clone()).iter() {
+                let kind = child.kind(db);
 
-impl<'a> Display for NodeInnerCommentFormatter<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.node.green_node(self.db).as_ref().details {
-            green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
-            green::GreenNodeDetails::Node { .. } => {
-                for child in self.db.get_children(self.node.clone()).iter() {
-                    let kind = child.kind(self.db);
-
-                    // Checks all the items that the inner comment can be bubbled to (implementation
-                    // function is also a FunctionWithBody).
-                    if kind != SyntaxKind::FunctionWithBody
-                        && kind != SyntaxKind::ItemModule
-                        && kind != SyntaxKind::TraitItemFunction
-                    {
-                        write!(f, "{}", NodeInnerCommentFormatter { node: child, db: self.db })?;
-                    }
+                // Checks all the items that the inner comment can be bubbled to (implementation
+                // function is also a FunctionWithBody).
+                if !matches!(
+                    kind,
+                    SyntaxKind::FunctionWithBody
+                        | SyntaxKind::ItemModule
+                        | SyntaxKind::TraitItemFunction
+                ) {
+                    get_shallow_text_of_syntax_node(db, child, buffer)?;
                 }
             }
         }
-        Ok(())
     }
+    Ok(())
 }

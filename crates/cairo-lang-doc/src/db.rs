@@ -1,4 +1,4 @@
-use core::fmt;
+use std::ops::Not;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
@@ -9,36 +9,9 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::Upcast;
 use itertools::{chain, Itertools};
-use serde::Serialize;
 
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
-
-/// A struct containing all types of comments regarding a single item.
-#[derive(PartialEq, Eq, Debug, Clone, Serialize)]
-pub struct Documentation {
-    /// Comments that come before the item.
-    pub prefix_comments: Option<String>,
-    /// "//!" comments inside the item (if it supports this type of comments).
-    pub inner_comments: Option<String>,
-    /// It's a comment that's on the top of the file starting with "//!".
-    /// It can relate either to module or a crate.
-    pub module_level_comments: Option<String>,
-}
-
-impl fmt::Display for Documentation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (title, comment) in chain!(
-            self.prefix_comments.as_ref().map(|comment| ("Prefix", comment)),
-            self.inner_comments.as_ref().map(|comment| ("Inner", comment)),
-            self.module_level_comments.as_ref().map(|comment| ("Module level", comment)),
-        ) {
-            writeln!(f, "{title}:")?;
-            write!(f, "{comment}")?;
-        }
-        Ok(())
-    }
-}
 
 #[salsa::query_group(DocDatabase)]
 pub trait DocGroup:
@@ -52,31 +25,34 @@ pub trait DocGroup:
     // TODO(mkaput): Support #[doc] attribute. This will be a bigger chunk of work because it would
     //   be the best to convert all /// comments to #[doc] attrs before processing items by plugins,
     //   so that plugins would get a nice and clean syntax of documentation to manipulate further.
-    /// Gets the documentation above an item definition.
-    fn get_item_documentation(&self, item_id: DocumentableItemId) -> Documentation;
+    /// Gets the documentation of an item.
+    fn get_item_documentation(&self, item_id: DocumentableItemId) -> Option<String>;
 
     /// Gets the signature of an item (i.e., item without its body).
     fn get_item_signature(&self, item_id: DocumentableItemId) -> String;
 }
 
-fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Documentation {
+fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
     match item_id {
-        DocumentableItemId::Crate(crate_id) => Documentation {
-            prefix_comments: None,
-            inner_comments: None,
-            module_level_comments: get_crate_documentation(db, crate_id),
-        },
+        DocumentableItemId::Crate(crate_id) => get_crate_root_module_documentation(db, crate_id),
         item_id => {
             let prefix_comments = extract_prefixed_comments_from_raw_text(db, item_id);
             let inner_comments = get_item_inner_documentation(db, item_id);
             let module_level_comments = extract_module_level_comments(db.upcast(), item_id);
-            Documentation { prefix_comments, inner_comments, module_level_comments }
+            match (prefix_comments, inner_comments, module_level_comments) {
+                (None, None, None) => None,
+                (module_level_comments, prefix_comments, inner_comments) => Some(
+                    chain!(&module_level_comments, &prefix_comments, &inner_comments)
+                        .map(|comment| comment.trim_end())
+                        .join(" "),
+                ),
+            }
         }
     }
 }
 
 /// Gets the crate level documentation.
-fn get_crate_documentation(db: &dyn DocGroup, crate_id: CrateId) -> Option<String> {
+fn get_crate_root_module_documentation(db: &dyn DocGroup, crate_id: CrateId) -> Option<String> {
     let module_file_id = db.module_main_file(ModuleId::CrateRoot(crate_id)).ok()?;
     extract_module_level_comments_from_file(db, module_file_id)
 }
@@ -203,12 +179,10 @@ fn extract_prefixed_comments_from_raw_text(
         item_id.stable_location(db.upcast())?.syntax_node(db.upcast()).get_text(db.upcast());
     let doc = raw_text
         .lines()
-        // Takes the lines from the beginning that doesn't start with alphabetic characters ("/" isn't alphabetic).
-        .take_while_ref(|line| {
-            !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
-        })
-        .filter_map(|line| map_raw_text_line_to_comment(line, &["///", "//!"]))
-        .join("\n");
+        .filter(|line| !line.trim().is_empty())
+        .take_while_ref(|line| is_comment_line(line))
+        .filter_map(|line| extract_comment_from_code_line(line, &["///", "//!"]))
+        .join(" ");
 
     cleanup_doc(doc)
 }
@@ -220,10 +194,10 @@ fn extract_inner_comments_from_raw_text(
 ) -> Option<String> {
     let doc = raw_text
         .lines()
-        // Skips all the comment lines from the beginning. 
-        .skip_while(|line| !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic()))
-        .filter_map(|line| map_raw_text_line_to_comment(line, prefixes))
-        .join("\n");
+        .filter(|line| !line.trim().is_empty())
+        .skip_while(|line| is_comment_line(line) || line.is_empty())
+        .filter_map(|line| extract_comment_from_code_line(line, prefixes))
+        .join(" ");
 
     cleanup_doc(doc)
 }
@@ -234,18 +208,15 @@ fn extract_module_level_comments_from_file(db: &dyn DocGroup, file_id: FileId) -
 
     let doc = file_content
         .lines()
-        // Takes all the lines from the beginning that are either a comment lines or empty lines.
-        .take_while_ref(|line| {
-            !line.trim_start().chars().next().map_or(false, |c| c.is_alphabetic())
-                || line.trim().is_empty()
-        })
+        .filter(|line| !line.trim().is_empty())
+        .take_while_ref(|line| is_comment_line(line) || line.trim().is_empty())
         .filter_map(|line| {
             if line.is_empty() {
                 return None;
             }
-            map_raw_text_line_to_comment(line, &["//!"])
+            extract_comment_from_code_line(line, &["//!"])
         })
-        .join("\n");
+        .join(" ");
 
     cleanup_doc(doc)
 }
@@ -256,7 +227,7 @@ fn cleanup_doc(doc: String) -> Option<String> {
     let doc = cleanup_doc_markdown(doc);
 
     // Nullify empty or just-whitespace documentation strings as they are not useful.
-    (!doc.trim().is_empty()).then_some(doc)
+    (doc.trim().is_empty().not()).then_some(doc)
 }
 
 /// Gets the module level comments of the item.
@@ -279,7 +250,7 @@ fn extract_module_level_comments(db: &dyn DocGroup, item_id: DocumentableItemId)
 /// 1. Removes indentation
 /// 2. If it starts with one of the passed prefixes, removes the given prefixes (including the space
 ///    after the prefix).
-fn map_raw_text_line_to_comment(line: &str, prefixes: &[&'static str]) -> Option<String> {
+fn extract_comment_from_code_line(line: &str, prefixes: &[&'static str]) -> Option<String> {
     // Remove indentation.
     let dedent = line.trim_start();
     // Check if this is a doc comment.
@@ -294,4 +265,9 @@ fn map_raw_text_line_to_comment(line: &str, prefixes: &[&'static str]) -> Option
         }
     }
     None
+}
+
+/// Check whether the code line is a comment line.
+fn is_comment_line(line: &str) -> bool {
+    line.trim_start().starts_with("//")
 }

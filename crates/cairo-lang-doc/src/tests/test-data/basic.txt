@@ -66,70 +66,43 @@ enum Answer {
 }
 
 //! > Item #1
-Module level:
 This comment refers to the crate.
 
 //! > Item #2
-Prefix:
-Main function comment outside.
-Inner:
-Main function comment inside.
+Main function comment outside. Main function comment inside.
 
 //! > Item #3
-Prefix:
 Trait containing abc function.
 
 //! > Item #4
-Prefix:
-abc function returning u32.
-Default impl of abc TraitTest function.
-Inner:
-Default impl of abc TraitTest function inner comment.
+abc function returning u32. Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
 //! > Item #5
-Prefix:
-Implementation of TraitTest's abc function.
-Additional comment for TraitTestImpl.
+Implementation of TraitTest's abc function. Additional comment for TraitTestImpl.
 
 //! > Item #6
-Prefix:
-Default impl of abc TraitTest function.
-Inner:
-Default impl of abc TraitTest function inner comment.
+Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
 //! > Item #7
-Prefix:
-Test module used to check if the documentation is being attached to the nodes correctly.
-Additional comment for test_module.
-Inner:
-Test module used to check if the documentation is being attached to the nodes correctly.
+Test module used to check if the documentation is being attached to the nodes correctly. Additional comment for test_module. Test module used to check if the documentation is being attached to the nodes correctly.
 
 //! > Item #8
-Prefix:
-Just a function outside the test_module.
-Inner:
-Just a function inside the test_module.
+Just a function outside the test_module. Just a function inside the test_module.
 
 //! > Item #9
-Prefix:
 Point struct representing a point in a 2d space.
 
 //! > Item #10
-Prefix:
 X coordinate.
 
 //! > Item #11
-Prefix:
 Y coordinate.
 
 //! > Item #12
-Prefix:
 Answer Enum representing an answer to a yes/no question.
 
 //! > Item #13
-Prefix:
 Yes answer variant.
 
 //! > Item #14
-Prefix:
 No answer variant.

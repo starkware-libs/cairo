@@ -8,7 +8,7 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::test_utils::{set_file_content, setup_test_module, TestDatabase};
-use crate::db::{DocGroup, Documentation};
+use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 
 cairo_lang_test_utils::test_file_test!(
@@ -199,8 +199,11 @@ fn document_impl_with_items(
 fn insert_doc_to_test_output(
     output: &mut OrderedHashMap<String, String>,
     item_number: &mut u32,
-    documentation: Documentation,
+    documentation: Option<String>,
 ) {
-    output.insert("Item #".to_string() + &item_number.to_string(), documentation.to_string());
+    output.insert(
+        "Item #".to_string() + &item_number.to_string(),
+        documentation.map_or(String::from(""), |doc| doc),
+    );
     *item_number += 1;
 }

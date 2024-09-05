@@ -1,10 +1,9 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_doc::db::{DocGroup, Documentation};
+use cairo_lang_doc::db::DocGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::Upcast;
-use itertools::{chain, Itertools};
 use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
@@ -28,8 +27,7 @@ pub fn definition(
             md += &fenced_code_block(&item.definition_path(db));
             md += &fenced_code_block(&item.signature(db));
 
-            let item_documentation = item.documentation(db);
-            if let Some(doc) = parse_and_concat_documentation(item_documentation) {
+            if let Some(doc) = item.documentation(db) {
                 md += RULE;
                 md += &doc;
             }
@@ -53,8 +51,7 @@ pub fn definition(
             md += &fenced_code_block(&structure.definition_path(db));
             md += &fenced_code_block(&structure.signature(db));
 
-            let item_documentation = db.get_item_documentation((*member).into());
-            if let Some(doc) = parse_and_concat_documentation(item_documentation) {
+            if let Some(doc) = db.get_item_documentation((*member).into()) {
                 md += RULE;
                 md += &doc;
             }
@@ -70,20 +67,4 @@ pub fn definition(
             .position_in_file(db.upcast(), file_id)
             .map(|p| p.to_lsp()),
     })
-}
-
-/// Parses documentation for an item to be displayed inside the definition.
-fn parse_and_concat_documentation(item_documentation: Documentation) -> Option<String> {
-    match (
-        item_documentation.prefix_comments,
-        item_documentation.inner_comments,
-        item_documentation.module_level_comments,
-    ) {
-        (None, None, None) => None,
-        (prefix_comments, inner_comments, module_level_comments) => Some(
-            chain!(&prefix_comments, &inner_comments, &module_level_comments)
-                .map(|comment| comment.trim_end())
-                .join(" "),
-        ),
-    }
 }

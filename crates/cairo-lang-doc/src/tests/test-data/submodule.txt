@@ -37,28 +37,16 @@ mod inner_sub_module {
 }
 
 //! > Item #1
-Module level:
-This is a testing crate file. It's for the tests purposes only.
-We don't take responsibility for compiling this file.
-So don't even try.
+This is a testing crate file. It's for the tests purposes only. We don't take responsibility for compiling this file. So don't even try.
 
 //! > Item #2
-Prefix:
-This one is just a prefix comment for a module.
-Module level:
-This is a submodule regarding the module_level_comments.
-It's used to make sure crate / module level comments are parsed in a correct way.
-Testing purposes only!
+This one is just a prefix comment for a module. This is a submodule regarding the module_level_comments. It's used to make sure crate / module level comments are parsed in a correct way. Testing purposes only!
 
 //! > Item #3
-Inner:
-This comment just proves that it won't be considered as a file-module comment. It just
-refers to the inner_sub_module
+This comment just proves that it won't be considered as a file-module comment. It just refers to the inner_sub_module
 
 //! > Item #4
-Prefix:
 Hello function inside the inner module.
 
 //! > Item #5
-Prefix:
 Main function.
