@@ -165,3 +165,57 @@ Statements:
   (v3: core::panics::Panic) <- test::MyPanicDesruct::panic_destruct(v2, v1)
 End:
   Return(v3)
+
+//! > ==========================================================================
+
+//! > Test closure with copy.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo(a: u32) {
+    let c =  || a;
+    identity(c);
+    identity(c);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn identity<T>(t: T) -> T {
+    t
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported feature.
+ --> lib.cairo:6:14
+    let c =  || a;
+             ^**^
+
+//! > lowering
+Main:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:6:14: 6:16}) <- struct_construct(v0)
+  (v2: {closure@lib.cairo:6:14: 6:16}) <- test::identity::<{closure@lib.cairo:6:14: 6:16}>(v1)
+  (v3: {closure@lib.cairo:6:14: 6:16}) <- test::identity::<{closure@lib.cairo:6:14: 6:16}>(v1)
+  (v4: ()) <- struct_construct()
+End:
+  Return(v4)
+
+
+Final lowering:
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: {closure@lib.cairo:6:14: 6:16}) <- struct_construct(v0)
+  (v2: {closure@lib.cairo:6:14: 6:16}) <- test::identity::<{closure@lib.cairo:6:14: 6:16}>(v1)
+  (v3: {closure@lib.cairo:6:14: 6:16}) <- test::identity::<{closure@lib.cairo:6:14: 6:16}>(v1)
+End:
+  Return()
