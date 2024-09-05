@@ -2,6 +2,7 @@ use crate::extensions::NoGenericArgsGenericType;
 use crate::ids::GenericTypeId;
 
 /// Type for the Segment Arena builtin.
+///
 /// This type should be initialized and destructed by the OS.
 /// It is assumed to be a pointer to a segment containing the following struct:
 /// A data segment start.

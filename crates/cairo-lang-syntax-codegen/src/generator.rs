@@ -49,7 +49,7 @@ pub fn reformat_rust_code(text: String) -> String {
 }
 pub fn reformat_rust_code_inner(text: String) -> String {
     let sh = Shell::new().unwrap();
-    sh.set_var("RUSTUP_TOOLCHAIN", "nightly-2024-08-22");
+    sh.set_var("RUSTUP_TOOLCHAIN", "nightly-2024-09-04");
     let rustfmt_toml = project_root().join("rustfmt.toml");
     let mut stdout = cmd!(sh, "rustfmt --config-path {rustfmt_toml}").stdin(text).read().unwrap();
     if !stdout.ends_with('\n') {
@@ -172,6 +172,7 @@ fn generate_key_fields_code() -> rust::Tokens {
         use super::kind::SyntaxKind;
 
         $("/// Gets the vector of children ids that are the indexing key for this SyntaxKind.\n")
+        $("///\n")
         $("/// Each SyntaxKind has some children that are defined in the spec to be its indexing key\n")
         $("/// for its stable pointer. See [super::stable_ptr].\n")
         pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {

@@ -12,6 +12,7 @@ enum TopologicalOrderStatus {
 }
 
 /// Returns the topological ordering.
+///
 /// `detect_cycles` - if true, the function will return an error if a cycle is detected, else will
 ///   not detect the cycle, and ordering within cycles won't be topological.
 /// `roots` - the roots of the graph.

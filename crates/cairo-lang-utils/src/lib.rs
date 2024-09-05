@@ -59,8 +59,9 @@ impl<T> OptionHelper for Option<T> {
     }
 }
 
-/// Borrows a mutable reference as Box for the lifespan of this function. Runs the given closure
-/// with the boxed value as a parameter.
+/// Borrows a mutable reference as Box for the lifespan of this function.
+///
+/// Runs the given closure with the boxed value as a parameter.
 /// The closure is expected to return a boxed value, whose changes will be reflected on the mutable
 /// reference.
 /// Example:
@@ -167,6 +168,7 @@ impl<T: ?Sized> UpcastMut<T> for T {
 }
 
 /// Returns `Some(())` if the condition is true, otherwise `None`.
+///
 /// Useful in functions returning `None` on some condition:
 /// `require(condition)?;`
 /// And for functions returning `Err` on some condition:

@@ -51,6 +51,7 @@ pub struct CrateSettings {
 }
 
 /// The Cairo edition of a crate.
+///
 /// Editions are a mechanism to allow breaking changes in the compiler.
 /// Compiler minor version updates will always support all editions supported by the previous
 /// updates with the same major version. Compiler major version updates may remove support for older

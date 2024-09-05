@@ -109,6 +109,7 @@ pub fn escape_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> String {
 }
 
 /// Macro to extract unnamed arguments of an inline macro.
+///
 /// Gets the expected number of unnamed arguments, and the pattern for the allowed bracket types,
 /// and returns a fixed size array with the argument expressions.
 ///

@@ -78,6 +78,7 @@ pub trait SierraIdReplacer {
 
 /// Replaces `cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId}` with a dummy
 /// ids whose debug string is the string representing the expanded information about the id.
+///
 /// For Libfuncs and Types - that would be recursively opening their generic arguments, for
 /// functions - that would be getting their original name. For example, while the original debug
 /// string may be `[6]`, the resulting debug string may be:
@@ -194,6 +195,7 @@ pub fn replace_sierra_ids(
 
 /// Replaces `cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId}` with a dummy
 /// ids whose debug string is the string representing the expanded information about the id.
+///
 /// For Libfuncs and Types - that would be recursively opening their generic arguments, for
 /// functions - that would be getting their original name. For example, while the original debug
 /// string may be `[6]`, the resulting debug string may be:

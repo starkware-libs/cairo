@@ -1,4 +1,5 @@
 //! Remove unnecessary remapping of variables optimization.
+//!
 //! At each convergence, we have one or more branches with remappings of variables.
 //! A destination variable `dest` introduced by the remappings must be remapped at every branch
 //! `b_i` by mapping a source variable `src_i->dest`.

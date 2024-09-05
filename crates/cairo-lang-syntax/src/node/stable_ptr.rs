@@ -4,6 +4,7 @@ use super::ids::{GreenId, SyntaxStablePtrId};
 use super::kind::SyntaxKind;
 
 /// Stable pointer to a node in the syntax tree.
+///
 /// Has enough information to uniquely define a node in the AST, given the tree.
 /// Has undefined behavior when used with the wrong tree.
 /// This is not a real pointer in the low-level sense, just a representation of the path from the

@@ -25,6 +25,7 @@ use hashbrown::HashMap;
 use itertools::Itertools;
 
 /// A hash map that does not care about the order of insertion.
+///
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
 /// It does support aggregation which can be used in intermediate computations (see `aggregate_by`).
 /// For an iterable version see [OrderedHashMap](crate::ordered_hash_map::OrderedHashMap).

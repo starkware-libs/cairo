@@ -242,7 +242,7 @@ struct BranchInfo {
 
 impl<'a> FindLocalsContext<'a> {
     /// Given a variable that might be an alias follow aliases until we get the original variable.
-    pub fn peel_aliases(&'a self, mut var: &'a VariableId) -> &VariableId {
+    pub fn peel_aliases(&'a self, mut var: &'a VariableId) -> &'a VariableId {
         while let Some(alias) = self.aliases.get(var) {
             var = alias;
         }
@@ -250,7 +250,7 @@ impl<'a> FindLocalsContext<'a> {
     }
     /// Given a variable, that might be an alias of a const, follow  the const aliases until we get
     /// the root variable.
-    pub fn peel_const_aliases(&'a self, mut var: &'a VariableId) -> &VariableId {
+    pub fn peel_const_aliases(&'a self, mut var: &'a VariableId) -> &'a VariableId {
         while let Some(alias) = self.const_aliases.get(var) {
             var = alias;
         }
