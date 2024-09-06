@@ -43,8 +43,13 @@ ExprClosure(
                 ty: core::felt252,
             },
         ),
-        param_ids: [
-            ParamId(test::a),
+        params: [
+            Parameter {
+                id: ParamId(test::a),
+                name: "a",
+                ty: core::felt252,
+                mutability: Immutable,
+            },
         ],
         ty: {closure@lib.cairo:2:1: 2:4},
     },
@@ -117,8 +122,13 @@ Block(
                                     ty: core::integer::u128,
                                 },
                             ),
-                            param_ids: [
-                                ParamId(test::a),
+                            params: [
+                                Parameter {
+                                    id: ParamId(test::a),
+                                    name: "a",
+                                    ty: core::integer::u8,
+                                    mutability: Immutable,
+                                },
                             ],
                             ty: {closure@lib.cairo:6:13: 6:16},
                         },
