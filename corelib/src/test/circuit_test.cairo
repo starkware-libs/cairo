@@ -4,6 +4,7 @@ use crate::circuit::{
     AddInputResultTrait, CircuitInputs,
 };
 
+use crate::num::traits::Zero;
 use crate::traits::TryInto;
 
 #[test]
@@ -132,4 +133,11 @@ fn test_fill_inputs_loop() {
 
     let modulus = TryInto::<_, CircuitModulus>::try_into([55, 0, 0, 0]).unwrap();
     circuit_inputs.done().eval(modulus).unwrap();
+}
+
+#[test]
+fn test_u384_zero() {
+    assert_eq!(Zero::zero(), u384 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 });
+    assert!(Zero::is_zero(@u384 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }));
+    assert!(Zero::is_non_zero(@u384 { limb0: 0, limb1: 1, limb2: 0, limb3: 0 }));
 }

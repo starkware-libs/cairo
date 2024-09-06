@@ -30,7 +30,9 @@ pub trait Rebuilder {
     fn map_location(&mut self, location: LocationId) -> LocationId {
         location
     }
-    fn map_block_id(&mut self, block: BlockId) -> BlockId;
+    fn map_block_id(&mut self, block: BlockId) -> BlockId {
+        block
+    }
     fn transform_statement(&mut self, _statement: &mut Statement) {}
     fn transform_remapping(&mut self, _remapping: &mut VarRemapping) {}
     fn transform_end(&mut self, _end: &mut FlatBlockEnd) {}

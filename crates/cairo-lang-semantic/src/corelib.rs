@@ -645,6 +645,14 @@ pub fn drop_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::TopLevel, "Drop".into())
 }
 
+pub fn destruct_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, CoreTraitContext::TopLevel, "Destruct".into())
+}
+
+pub fn panic_destruct_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, CoreTraitContext::TopLevel, "PanicDestruct".into())
+}
+
 pub fn deref_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, CoreTraitContext::Ops, "Deref".into())
 }
