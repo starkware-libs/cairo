@@ -1,5 +1,5 @@
 use core::hash::Hash;
-use std::fmt::{Display, Write};
+use std::fmt::Display;
 use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
@@ -173,11 +173,36 @@ impl SyntaxNode {
     }
 
     /// Returns all the text under the syntax node.
-    /// It ignores all the inner elements, that can contain their own inner comments (functions and
-    /// modules).
-    pub fn get_shallow_inner_comments_text(&self, db: &dyn SyntaxGroup) -> String {
+    /// It traverses all the syntax tree of the node, but ignores functions and modules.
+    pub fn get_syntax_tree_text_without_functions_and_modules(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> String {
         let mut buffer = String::new();
-        get_shallow_text_of_syntax_node(db, self, &mut buffer).unwrap();
+
+        match &self.green_node(db).as_ref().details {
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Node { .. } => {
+                for child in db.get_children(self.clone()).iter() {
+                    let kind = child.kind(db);
+
+                    // Checks all the items that the inner comment can be bubbled to (implementation
+                    // function is also a FunctionWithBody).
+                    if !matches!(
+                        kind,
+                        SyntaxKind::FunctionWithBody
+                            | SyntaxKind::ItemModule
+                            | SyntaxKind::TraitItemFunction
+                    ) {
+                        buffer.push_str(
+                            &SyntaxNode::get_syntax_tree_text_without_functions_and_modules(
+                                child, db,
+                            ),
+                        );
+                    }
+                }
+            }
+        }
         buffer
     }
 
@@ -290,33 +315,4 @@ impl<'a> Display for NodeTextFormatter<'a> {
         }
         Ok(())
     }
-}
-
-/// Writes all the SyntaxNode text to a buffer. It traverses all the syntax tree of the node, but
-/// ignores functions and modules.
-fn get_shallow_text_of_syntax_node(
-    db: &dyn SyntaxGroup,
-    node: &SyntaxNode,
-    buffer: &mut String,
-) -> std::fmt::Result {
-    match &node.green_node(db).as_ref().details {
-        green::GreenNodeDetails::Token(text) => write!(buffer, "{text}")?,
-        green::GreenNodeDetails::Node { .. } => {
-            for child in db.get_children(node.clone()).iter() {
-                let kind = child.kind(db);
-
-                // Checks all the items that the inner comment can be bubbled to (implementation
-                // function is also a FunctionWithBody).
-                if !matches!(
-                    kind,
-                    SyntaxKind::FunctionWithBody
-                        | SyntaxKind::ItemModule
-                        | SyntaxKind::TraitItemFunction
-                ) {
-                    get_shallow_text_of_syntax_node(db, child, buffer)?;
-                }
-            }
-        }
-    }
-    Ok(())
 }

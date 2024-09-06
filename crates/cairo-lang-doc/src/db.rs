@@ -36,13 +36,13 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
     match item_id {
         DocumentableItemId::Crate(crate_id) => get_crate_root_module_documentation(db, crate_id),
         item_id => {
-            let prefix_comments = extract_prefixed_comments_from_raw_text(db, item_id);
-            let inner_comments = get_item_inner_documentation(db, item_id);
+            let outer_comments = extract_outer_comments_from_raw_text(db, item_id);
+            let inner_comments = extract_item_inner_documentation(db, item_id);
             let module_level_comments = extract_module_level_comments(db.upcast(), item_id);
-            match (prefix_comments, inner_comments, module_level_comments) {
+            match (module_level_comments, outer_comments, inner_comments) {
                 (None, None, None) => None,
-                (module_level_comments, prefix_comments, inner_comments) => Some(
-                    chain!(&module_level_comments, &prefix_comments, &inner_comments)
+                (module_level_comments, outer_comments, inner_comments) => Some(
+                    chain!(&module_level_comments, &outer_comments, &inner_comments)
                         .map(|comment| comment.trim_end())
                         .join(" "),
                 ),
@@ -58,7 +58,10 @@ fn get_crate_root_module_documentation(db: &dyn DocGroup, crate_id: CrateId) -> 
 }
 
 /// Gets the "//!" inner comment of the item (if only item supports inner comments).
-fn get_item_inner_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
+fn extract_item_inner_documentation(
+    db: &dyn DocGroup,
+    item_id: DocumentableItemId,
+) -> Option<String> {
     if matches!(
         item_id,
         DocumentableItemId::LookupItem(
@@ -70,8 +73,8 @@ fn get_item_inner_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) 
         let raw_text = item_id
             .stable_location(db.upcast())?
             .syntax_node(db.upcast())
-            .get_shallow_inner_comments_text(db.upcast());
-        extract_inner_comments_from_raw_text(raw_text, &["//!"])
+            .get_syntax_tree_text_without_functions_and_modules(db.upcast());
+        extract_inner_comments_from_raw_text(raw_text)
     } else {
         None
     }
@@ -170,7 +173,7 @@ fn fmt(code: String) -> String {
 }
 
 /// Only gets the doc comments above the item.
-fn extract_prefixed_comments_from_raw_text(
+fn extract_outer_comments_from_raw_text(
     db: &dyn DocGroup,
     item_id: DocumentableItemId,
 ) -> Option<String> {
@@ -181,22 +184,19 @@ fn extract_prefixed_comments_from_raw_text(
         .lines()
         .filter(|line| !line.trim().is_empty())
         .take_while_ref(|line| is_comment_line(line))
-        .filter_map(|line| extract_comment_from_code_line(line, &["///", "//!"]))
+        .filter_map(|line| extract_comment_from_code_line(line, &["///"]))
         .join(" ");
 
     cleanup_doc(doc)
 }
 
 /// Only gets the comments inside the item.
-fn extract_inner_comments_from_raw_text(
-    raw_text: String,
-    prefixes: &[&'static str],
-) -> Option<String> {
+fn extract_inner_comments_from_raw_text(raw_text: String) -> Option<String> {
     let doc = raw_text
         .lines()
         .filter(|line| !line.trim().is_empty())
-        .skip_while(|line| is_comment_line(line) || line.is_empty())
-        .filter_map(|line| extract_comment_from_code_line(line, prefixes))
+        .skip_while(|line| is_comment_line(line))
+        .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
         .join(" ");
 
     cleanup_doc(doc)
@@ -209,7 +209,7 @@ fn extract_module_level_comments_from_file(db: &dyn DocGroup, file_id: FileId) -
     let doc = file_content
         .lines()
         .filter(|line| !line.trim().is_empty())
-        .take_while_ref(|line| is_comment_line(line) || line.trim().is_empty())
+        .take_while_ref(|line| is_comment_line(line))
         .filter_map(|line| {
             if line.is_empty() {
                 return None;
@@ -227,7 +227,7 @@ fn cleanup_doc(doc: String) -> Option<String> {
     let doc = cleanup_doc_markdown(doc);
 
     // Nullify empty or just-whitespace documentation strings as they are not useful.
-    (doc.trim().is_empty().not()).then_some(doc)
+    doc.trim().is_empty().not().then_some(doc)
 }
 
 /// Gets the module level comments of the item.
@@ -250,12 +250,12 @@ fn extract_module_level_comments(db: &dyn DocGroup, item_id: DocumentableItemId)
 /// 1. Removes indentation
 /// 2. If it starts with one of the passed prefixes, removes the given prefixes (including the space
 ///    after the prefix).
-fn extract_comment_from_code_line(line: &str, prefixes: &[&'static str]) -> Option<String> {
+fn extract_comment_from_code_line(line: &str, comment_markers: &[&'static str]) -> Option<String> {
     // Remove indentation.
     let dedent = line.trim_start();
     // Check if this is a doc comment.
-    for prefix in prefixes {
-        if let Some(content) = dedent.strip_prefix(*prefix) {
+    for comment_marker in comment_markers {
+        if let Some(content) = dedent.strip_prefix(*comment_marker) {
             // TODO(mkaput): The way how removing this indentation is performed is probably
             //   wrong. The code should probably learn how many spaces are used at the first
             //   line of comments block, and then remove the same amount of spaces in the

@@ -201,9 +201,7 @@ fn insert_doc_to_test_output(
     item_number: &mut u32,
     documentation: Option<String>,
 ) {
-    output.insert(
-        "Item #".to_string() + &item_number.to_string(),
-        documentation.map_or(String::from(""), |doc| doc),
-    );
+    output
+        .insert("Item #".to_string() + &item_number.to_string(), documentation.unwrap_or_default());
     *item_number += 1;
 }

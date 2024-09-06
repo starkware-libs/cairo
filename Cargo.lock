@@ -592,7 +592,6 @@ dependencies = [
  "indoc",
  "itertools 0.12.1",
  "rust-analyzer-salsa",
- "serde",
  "test-log",
 ]
 

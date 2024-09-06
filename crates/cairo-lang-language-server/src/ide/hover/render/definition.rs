@@ -26,7 +26,6 @@ pub fn definition(
             let mut md = String::new();
             md += &fenced_code_block(&item.definition_path(db));
             md += &fenced_code_block(&item.signature(db));
-
             if let Some(doc) = item.documentation(db) {
                 md += RULE;
                 md += &doc;

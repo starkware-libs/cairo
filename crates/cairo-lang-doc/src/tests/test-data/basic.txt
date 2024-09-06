@@ -28,7 +28,6 @@ trait TraitTest {
 }
 
 /// Implementation of TraitTest's abc function.
-//! Additional comment for TraitTestImpl.
 impl TraitTestImpl of TraitTest {
     /// Default impl of abc TraitTest function.
     fn abc() -> u32 {
@@ -39,7 +38,6 @@ impl TraitTestImpl of TraitTest {
 }
 
 /// Test module used to check if the documentation is being attached to the nodes correctly.
-//! Additional comment for test_module.
 pub mod test_module {
     //! Test module used to check if the documentation is being attached to the nodes correctly.
     /// Just a function outside the test_module.
@@ -78,13 +76,13 @@ Trait containing abc function.
 abc function returning u32. Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
 //! > Item #5
-Implementation of TraitTest's abc function. Additional comment for TraitTestImpl.
+Implementation of TraitTest's abc function.
 
 //! > Item #6
 Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
 //! > Item #7
-Test module used to check if the documentation is being attached to the nodes correctly. Additional comment for test_module. Test module used to check if the documentation is being attached to the nodes correctly.
+Test module used to check if the documentation is being attached to the nodes correctly. Test module used to check if the documentation is being attached to the nodes correctly.
 
 //! > Item #8
 Just a function outside the test_module. Just a function inside the test_module.
