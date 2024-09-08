@@ -282,7 +282,7 @@ impl FormattingInfo {
                             &mut ident_count,
                             &mut pending_chars,
                             RewriteNode::mapped_text(
-                                &format!("__write_macro_arg{positional}__"),
+                                format!("__write_macro_arg{positional}__"),
                                 builder.db,
                                 arg,
                             ),
@@ -297,7 +297,7 @@ impl FormattingInfo {
                                 &mut ident_count,
                                 &mut pending_chars,
                                 RewriteNode::mapped_text(
-                                    &format!("__write_macro_arg{i}__"),
+                                    format!("__write_macro_arg{i}__"),
                                     builder.db,
                                     &self.args[i],
                                 ),

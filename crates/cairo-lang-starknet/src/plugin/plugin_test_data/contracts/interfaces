@@ -1612,9 +1612,9 @@ impl HasComponentImpl_comp of super::comp::HasComponent<ContractState> {
 }
 
 
-lib.cairo:47:1
-
-^
+lib.cairo:49:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;

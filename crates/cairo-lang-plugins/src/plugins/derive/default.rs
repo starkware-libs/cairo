@@ -1,13 +1,12 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::{unsupported_for_extern_diagnostic, DeriveInfo, DeriveResult};
+use super::{unsupported_for_extern_diagnostic, DeriveInfo};
 use crate::plugins::derive::TypeVariantInfo;
 
 pub const DEFAULT_ATTR: &str = "default";
@@ -16,9 +15,9 @@ pub const DEFAULT_ATTR: &str = "default";
 pub fn handle_default(
     db: &dyn SyntaxGroup,
     info: &DeriveInfo,
-    stable_ptr: SyntaxStablePtrId,
-    result: &mut DeriveResult,
-) {
+    derived: &ast::ExprPath,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Option<String> {
     let header = info.format_impl_header(
         "core::traits",
         "Default",
@@ -34,15 +33,15 @@ pub fn handle_default(
                     Some((variant, variant.attributes.find_attr(db, DEFAULT_ATTR)?))
                 });
                 let Some((default_variant, _)) = default_variants.next() else {
-                    result.diagnostics.push(PluginDiagnostic::error(
-                        stable_ptr,
+                    diagnostics.push(PluginDiagnostic::error(
+                        derived,
                         "derive `Default` for enum only supported with a default variant.".into(),
                     ));
-                    return;
+                    return None;
                 };
                 for (_, extra_default_attr) in default_variants {
-                    result.diagnostics.push(PluginDiagnostic::error(
-                        extra_default_attr.as_syntax_node().stable_ptr(),
+                    diagnostics.push(PluginDiagnostic::error(
+                        &extra_default_attr,
                         "Multiple variants annotated with `#[default]`".into(),
                     ));
                 }
@@ -63,16 +62,16 @@ pub fn handle_default(
                 }
             }
             TypeVariantInfo::Extern => {
-                result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
-                return;
+                diagnostics.push(unsupported_for_extern_diagnostic(derived));
+                return None;
             }
         },
     );
-    result.impls.push(formatdoc! {"
+    Some(formatdoc! {"
         {header} {{
             fn default() -> {full_typename} {{
                 {body}
             }}
         }}
-    "});
+    "})
 }
