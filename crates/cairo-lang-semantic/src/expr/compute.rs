@@ -67,7 +67,7 @@ use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
-use crate::items::us::get_use_segments;
+use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{
@@ -3533,12 +3533,8 @@ pub fn compute_statement_semantic(
                     let path_leaves =
                         get_all_path_leaves(db.upcast(), use_syntax.use_path(syntax_db));
                     for leaf in path_leaves.iter() {
-                        let mut segments = vec![];
-                        get_use_segments(
-                            db.upcast(),
-                            &ast::UsePath::Leaf(leaf.clone()),
-                            &mut segments,
-                        )?;
+                        let segments =
+                            get_use_path_segments(db.upcast(), ast::UsePath::Leaf(leaf.clone()))?;
                         let resolved_item = ctx.resolver.resolve_generic_path(
                             ctx.diagnostics,
                             segments,

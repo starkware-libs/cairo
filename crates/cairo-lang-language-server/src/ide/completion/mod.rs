@@ -1,4 +1,4 @@
-use cairo_lang_semantic::items::us::get_use_segments;
+use cairo_lang_semantic::items::us::get_use_path_segments;
 use cairo_lang_semantic::resolve::AsSegments;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -94,8 +94,7 @@ fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
                 debug!("Generic");
                 return CompletionKind::ColonColon(vec![]);
             };
-            let mut segments = vec![];
-            let Ok(()) = get_use_segments(db.upcast(), &use_ast, &mut segments) else {
+            let Ok(mut segments) = get_use_path_segments(db.upcast(), use_ast) else {
                 debug!("Generic");
                 return CompletionKind::ColonColon(vec![]);
             };
@@ -132,9 +131,8 @@ fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
             }
             if grandparent.kind(db) == SyntaxKind::UsePathLeaf {
                 let use_ast = ast::UsePathLeaf::from_syntax_node(db, grandparent);
-                let mut segments = vec![];
-                let Ok(()) =
-                    get_use_segments(db.upcast(), &ast::UsePath::Leaf(use_ast), &mut segments)
+                let Ok(mut segments) =
+                    get_use_path_segments(db.upcast(), ast::UsePath::Leaf(use_ast))
                 else {
                     debug!("Generic");
                     return CompletionKind::ColonColon(vec![]);
