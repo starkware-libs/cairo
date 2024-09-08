@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::{LocalConstId, LocalVarId};
+use cairo_lang_defs::ids::{LocalVarId, StatementItemId};
 // Reexport objects
 pub use cairo_lang_defs::ids::{ParamId, VarId};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -42,18 +42,19 @@ impl LocalVariable {
     }
 }
 
-/// Semantic model of a local constant.
+/// Semantic model of a local item.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct LocalConstant {
-    pub id: LocalConstId,
-    pub value: ConstValueId,
-    pub ty: TypeId,
+pub struct LocalItem {
+    pub id: StatementItemId,
+    pub kind: StatementItemKind,
 }
-impl LocalConstant {
-    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifierPtr {
-        self.id.stable_ptr(db)
-    }
+
+/// Semantic model of statement item kind.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub enum StatementItemKind {
+    Constant(ConstValueId, TypeId),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
@@ -91,36 +92,38 @@ pub enum Mutability {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum Binding {
     LocalVar(LocalVariable),
-    LocalConst(LocalConstant),
     Param(Parameter),
+    LocalItem(LocalItem),
 }
 impl Binding {
     pub fn id(&self) -> VarId {
         match self {
             Binding::LocalVar(local) => VarId::Local(local.id),
-            Binding::LocalConst(local) => VarId::Const(local.id),
             Binding::Param(param) => VarId::Param(param.id),
+            Binding::LocalItem(local) => VarId::Item(local.id),
         }
     }
     pub fn ty(&self) -> TypeId {
         match self {
             Binding::LocalVar(local) => local.ty,
-            Binding::LocalConst(local) => local.ty,
             Binding::Param(param) => param.ty,
+            Binding::LocalItem(local) => match local.kind {
+                StatementItemKind::Constant(_, ty) => ty,
+            },
         }
     }
     pub fn is_mut(&self) -> bool {
         match self {
             Binding::LocalVar(local) => local.is_mut,
-            Binding::LocalConst(_) => false,
             Binding::Param(param) => param.mutability != Mutability::Immutable,
+            Binding::LocalItem(_) => false,
         }
     }
     pub fn stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
         match self {
             Binding::LocalVar(local) => local.stable_ptr(db).untyped(),
-            Binding::LocalConst(local) => local.stable_ptr(db).untyped(),
             Binding::Param(param) => param.stable_ptr(db).untyped(),
+            Binding::LocalItem(local) => local.id.name_stable_ptr(db),
         }
     }
 }
