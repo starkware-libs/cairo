@@ -1,0 +1,131 @@
+//! > Test type usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+
+//! > function_body
+
+//! > expr_code
+{ type R = u8; }
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Item(
+                StatementItem,
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning: Unused type.
+ --> lib.cairo:2:8
+{ type R = u8; }
+       ^
+
+//! > ==========================================================================
+
+//! > Test multiple type definitions in the same block
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+
+//! > function_body
+
+//! > expr_code
+{ type R = u8;
+  type R = u16; }
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Item(
+                StatementItem,
+            ),
+            Item(
+                StatementItem,
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+error: Multiple definitions of type "R".
+ --> lib.cairo:3:8
+  type R = u16; }
+       ^
+
+warning: Unused type.
+ --> lib.cairo:3:8
+  type R = u16; }
+       ^
+
+//! > ==========================================================================
+
+//! > Test use not allowed shadowing
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+
+//! > function_body
+
+//! > expr_code
+{ type R = u8;
+  let R = 3;
+  let R: R = R;
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Item(
+                StatementItem,
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        R,
+                    ),
+                    expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u8,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        R,
+                    ),
+                    expr: Var(
+                        LocalVarId(test::R),
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:4:7
+  let R: R = R;
+      ^
