@@ -287,15 +287,11 @@ pub fn completion_for_method(
     .collect();
 
     // Create a formatted parameter string for the method call.
-    let params_str = if params.is_empty() {
-        String::new()
-    } else {
-        params.join(", ")
-    };
+    let params_str = if params.is_empty() { String::new() } else { params.join(", ") };
 
     // Create the function signature string with parameters.
     let function_signature = format!("{name}({params_str})");
-    
+
     // Create a formatted call signature with just the function name.
     let call_signature = format!("{name}()");
 
