@@ -353,6 +353,7 @@ impl From<ConcreteTypeId> for ParamSignature {
 }
 
 /// Information regarding the reference created as an output of a library function.
+///
 /// For example, whether the reference is equal to one of the parameters (as in the dup() function),
 /// or whether it's newly allocated local variable.
 #[derive(Debug, Clone)]

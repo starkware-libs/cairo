@@ -121,6 +121,7 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
 }
 
 /// Libfunc for creating an EC point from its x coordinate.
+///
 /// If there exists `y` such that `(x, y)` is on the curve, either `(x, y)` or `(x, -y)` (both
 /// constitute valid points on the curve) is returned.
 /// Otherwise, nothing is returned.

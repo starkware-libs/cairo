@@ -523,6 +523,7 @@ fn is_cairo_trace(
 
 /// Converts a sierra statement index to the index of the function that contains it (the index in
 /// the list in the sierra program).
+///
 /// Assumes that the given `statement_idx` is valid (that is within range of the given
 /// `sierra_program`) and that the given `sierra_program` is valid, specifically that the first
 /// function's entry point is 0.

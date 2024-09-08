@@ -288,6 +288,7 @@ pub fn dummy_push_values_ex(
 }
 
 /// Creates a test for a given function that reads test files.
+///
 /// filenames - a vector of tests files the test will apply to.
 /// db - the salsa DB to use for the test.
 /// func - the function to be applied on the test params to generate the tested result.

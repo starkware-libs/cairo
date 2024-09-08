@@ -17,10 +17,10 @@ use crate::{
     StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableId,
 };
 
-/// Splits all the variables that were created by struct_construct and
-/// reintroduces the struct_construct statement when needed.
+/// Splits all the variables that were created by struct_construct and reintroduces the
+/// struct_construct statement when needed.
+///
 /// Note that if a member is used after the struct then is means that that struct is copyable.
-
 pub fn split_structs(lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;

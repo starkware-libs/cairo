@@ -10,6 +10,7 @@ use std::collections::HashSet;
 use hashbrown::HashSet;
 
 /// A hash set that does not care about the order of insertion.
+///
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
 /// For an iterable version see [OrderedHashSet](crate::ordered_hash_set::OrderedHashSet).
 #[cfg(feature = "std")]

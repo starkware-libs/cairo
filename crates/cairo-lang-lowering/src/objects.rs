@@ -1,4 +1,5 @@
 //! Intermediate representation objects after lowering from semantic.
+//!
 //! This representation is SSA (static single-assignment): each variable is defined before usage and
 //! assigned once. It is also normal form: each function argument is a variable, rather than a
 //! compound expression.

@@ -1,4 +1,6 @@
-//! This module implements the destructor call addition. It is assumed to run after the panic phase.
+//! This module implements the destructor call addition.
+//!
+//! It is assumed to run after the panic phase.
 //! This is similar to the borrow checking algorithm, except we handle "undroppable drops" by adding
 //! destructor calls.
 

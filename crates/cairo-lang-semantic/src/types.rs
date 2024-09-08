@@ -210,9 +210,11 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     }
 }
 
-/// Head of a type. A type that is not one of {generic param, type variable, impl type} has a head,
-/// which represents the kind of the root node in its type tree. This is used for caching queries
-/// for fast lookups when the type is not completely inferred yet.
+/// Head of a type.
+///
+/// A type that is not one of {generic param, type variable, impl type} has a head, which represents
+/// the kind of the root node in its type tree. This is used for caching queries for fast lookups
+/// when the type is not completely inferred yet.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum TypeHead {
     Concrete(GenericTypeId),

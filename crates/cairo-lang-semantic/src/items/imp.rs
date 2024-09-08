@@ -428,9 +428,11 @@ impl UnstableSalsaId for ImplId {
     }
 }
 
-/// Head of an impl. A non-param non-variable impl has a head, which represents the kind of the root
-/// node in its tree representation. This is used for caching queries for fast lookups when the impl
-/// is not completely inferred yet.
+/// Head of an impl.
+///
+/// A non-param non-variable impl has a head, which represents the kind of the root node in its tree
+/// representation. This is used for caching queries for fast lookups when the impl is not
+/// completely inferred yet.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ImplHead {
     Concrete(ImplDefId),

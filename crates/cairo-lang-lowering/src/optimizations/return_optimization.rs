@@ -303,6 +303,7 @@ pub struct ReturnInfo {
 }
 
 /// A wrapper around `ReturnInfo` that makes it optional.
+///
 /// None indicates that the return info is unknown.
 /// If early_return_possible() returns true, the function can return early as the return value is
 /// already known.

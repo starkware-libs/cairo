@@ -12,6 +12,7 @@ use crate::db::SemanticGroup;
 use crate::{semantic, ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVariable, PatternId};
 
 /// Semantic representation of a Pattern.
+///
 /// A pattern is a way to "destructure" values. A pattern may introduce new variables that are bound
 /// to inner values of a specific value. For example, a tuple pattern destructures a tuple
 /// and may result in new variables for an elements of that tuple.
