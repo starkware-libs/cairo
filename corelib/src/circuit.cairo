@@ -482,7 +482,6 @@ mod conversions {
     impl AddHelperTo96By32Impl of AddHelper<
         BoundedInt<0, { POW96 - POW32 }>, BoundedInt<0, { POW32 - 1 }>
     > {
-<<<<<<< HEAD
         type Result = u96;
     }
 
@@ -494,30 +493,9 @@ mod conversions {
 
     impl AddHelperTo128By96Impl of AddHelper<BoundedInt<0, { POW128 - POW96 }>, u96> {
         type Result = BoundedInt<0, { POW128 - 1 }>;
-||||||| 932217530
-        type Result = BoundedInt<0, { POW96 - 1 }>;
-=======
-        type Result = u96;
-    }
-
-    impl AddHelperTo128By64Impl of AddHelper<
-        BoundedInt<0, { POW128 - POW64 }>, BoundedInt<0, { POW64 - 1 }>
-    > {
-        type Result = BoundedInt<0, { POW128 - 1 }>;
->>>>>>> origin/dev-v2.8.2
-    }
-
-<<<<<<< HEAD
-    pub fn from_u128(value: u128) -> u384 {
-||||||| 932217530
-    pub fn from_u128(value: u128) -> super::u384 {
-=======
-    impl AddHelperTo128By96Impl of AddHelper<BoundedInt<0, { POW128 - POW96 }>, u96> {
-        type Result = BoundedInt<0, { POW128 - 1 }>;
     }
 
     pub fn from_u128(value: u128) -> u384 {
->>>>>>> origin/dev-v2.8.2
         let (limb1, limb0) = bounded_int::div_rem(value, NZ_POW96_TYPED);
         u384 { limb0, limb1: upcast(limb1), limb2: 0, limb3: 0 }
     }
