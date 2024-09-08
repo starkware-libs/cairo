@@ -309,7 +309,7 @@ pub fn completion_for_method(
         ..CompletionItem::default()
     };
 
-    if !signature.params.is_empty() && signature.params.iter().any(|param| param.name != "self") {
+    if !signature.params.len() >= 2 {
         let insert_position = Position {
             line: position.line,
             // Position cursor inside the parentheses.
