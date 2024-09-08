@@ -309,7 +309,8 @@ pub fn completion_for_method(
         ..CompletionItem::default()
     };
 
-    if !signature.params.len() >= 2 {
+    // Check function has atleast 2 parameters
+    if signature.params.len() >= 2 {
         let insert_position = Position {
             line: position.line,
             // Position cursor inside the parentheses.
