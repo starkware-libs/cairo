@@ -60,13 +60,9 @@ fn test_completions_text_edits(
                 tower_lsp::lsp_types::CompletionResponse::List(list) => list.items,
             };
             for completion in completion_items {
-                if let Some(text_edit) = completion.additional_text_edits {
-                    report.push_str("--------------------------\n");
-                    report.push_str(format!("Completion: {}\n", completion.label).as_str());
-                    for edit in text_edit {
-                        report.push_str(format!("Text edit: {}\n", edit.new_text).as_str());
-                    }
-                }
+                // Add detailed debug output for each completion item
+                report.push_str("--------------------------\n");
+                report.push_str(format!("Completion item: {:#?}\n", completion).as_str());
             }
         }
         completions.insert(format!("Completions #{}", n), report);

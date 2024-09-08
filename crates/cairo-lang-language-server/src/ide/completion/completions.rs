@@ -279,11 +279,29 @@ pub fn completion_for_method(
         }
     }
 
-    // Determine the insert text based on whether the function has parameters.
+    let params: Vec<String> = signature
+    .params
+    .iter()
+    .filter(|param| param.name != "self")
+    .map(|param| param.name.to_string()) // Convert SmolStr to String
+    .collect();
+
+    // Create a formatted parameter string for the method call.
+    let params_str = if params.is_empty() {
+        String::new()
+    } else {
+        params.join(", ")
+    };
+
+    // Create the function signature string with parameters.
+    let function_signature = format!("{name}({params_str})");
+    
+    // Create a formatted call signature with just the function name.
     let call_signature = format!("{name}()");
+
     let mut completion = CompletionItem {
         // Display the method signature.
-        label: call_signature.clone(),
+        label: function_signature.clone(),
         insert_text: Some(call_signature),
         detail: Some(detail),
         kind: Some(CompletionItemKind::METHOD),

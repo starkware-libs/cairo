@@ -38,107 +38,1210 @@ mod inner_mod {
 //! > Completions #0
         x.some_method<caret>
 --------------------------
-Completion: add_eq()
-Text edit: use core::traits::AddEq;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "add_eq(other)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::AddEq",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "add_eq()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::traits::AddEq;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 11,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 11,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: sub_eq()
-Text edit: use core::traits::SubEq;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "sub_eq(other)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::SubEq",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "sub_eq()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::traits::SubEq;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 11,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 11,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: mul_eq()
-Text edit: use core::traits::MulEq;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "mul_eq(other)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::MulEq",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "mul_eq()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::traits::MulEq;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 11,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 11,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: into()
+Completion item: CompletionItem {
+    label: "into()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::Into",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "into()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: try_into()
+Completion item: CompletionItem {
+    label: "try_into()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::TryInto",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "try_into()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: destruct()
+Completion item: CompletionItem {
+    label: "destruct()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::Destruct",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "destruct()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: panic_destruct()
-Text edit:  
+Completion item: CompletionItem {
+    label: "panic_destruct(panic)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::PanicDestruct",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "panic_destruct()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 19,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 19,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: new_inputs()
-Text edit: use core::circuit::CircuitInputs;
-
+Completion item: CompletionItem {
+    label: "new_inputs()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::circuit::CircuitInputs",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "new_inputs()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::circuit::CircuitInputs;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: get_descriptor()
+Completion item: CompletionItem {
+    label: "get_descriptor()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::circuit::GetCircuitDescriptor",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "get_descriptor()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: clone()
+Completion item: CompletionItem {
+    label: "clone()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::clone::Clone",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "clone()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_zero()
-Text edit: use core::num::traits::Zero;
-
+Completion item: CompletionItem {
+    label: "is_zero()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::num::traits::zero::Zero",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_zero()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::num::traits::Zero;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_non_zero()
-Text edit: use core::num::traits::Zero;
-
+Completion item: CompletionItem {
+    label: "is_non_zero()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::num::traits::zero::Zero",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_non_zero()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::num::traits::Zero;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_one()
-Text edit: use core::num::traits::One;
-
+Completion item: CompletionItem {
+    label: "is_one()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::num::traits::one::One",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_one()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::num::traits::One;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_non_one()
-Text edit: use core::num::traits::One;
-
+Completion item: CompletionItem {
+    label: "is_non_one()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::num::traits::one::One",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_non_one()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::num::traits::One;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: add_assign()
-Text edit: use core::ops::AddAssign;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "add_assign(rhs)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::ops::arith::AddAssign",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "add_assign()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::ops::AddAssign;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 15,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 15,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: sub_assign()
-Text edit: use core::ops::SubAssign;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "sub_assign(rhs)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::ops::arith::SubAssign",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "sub_assign()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::ops::SubAssign;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 15,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 15,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: mul_assign()
-Text edit: use core::ops::MulAssign;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "mul_assign(rhs)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::ops::arith::MulAssign",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "mul_assign()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::ops::MulAssign;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 15,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 15,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: serialize()
-Text edit:  
+Completion item: CompletionItem {
+    label: "serialize(output)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::serde::Serde",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "serialize()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 14,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 14,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: print()
+Completion item: CompletionItem {
+    label: "print()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::debug::PrintTrait",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "print()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: fmt()
-Text edit: use core::fmt::Display;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "fmt(f)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::fmt::Display",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "fmt()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::fmt::Display;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 8,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: fmt()
-Text edit: use core::fmt::Debug;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "fmt(f)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::fmt::Debug",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "fmt()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::fmt::Debug;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 8,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: fmt()
-Text edit: use core::fmt::LowerHex;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "fmt(f)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::fmt::LowerHex",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "fmt()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::fmt::LowerHex;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 8,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_zero()
+Completion item: CompletionItem {
+    label: "is_zero()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::zeroable::Zeroable",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_zero()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_non_zero()
+Completion item: CompletionItem {
+    label: "is_non_zero()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::zeroable::Zeroable",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_non_zero()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: append_formatted_to_byte_array()
-Text edit: use core::to_byte_array::AppendFormattedToByteArray;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "append_formatted_to_byte_array(byte_array, base)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::to_byte_array::AppendFormattedToByteArray",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "append_formatted_to_byte_array()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::to_byte_array::AppendFormattedToByteArray;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 35,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 35,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: format_as_byte_array()
-Text edit: use core::to_byte_array::FormatAsByteArray;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "format_as_byte_array(base)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::to_byte_array::FormatAsByteArray",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "format_as_byte_array()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::to_byte_array::FormatAsByteArray;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 25,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 25,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: some_method()
-Text edit: use super::ATrait1;
-
-Text edit:
+Completion item: CompletionItem {
+    label: "some_method(param1, param2)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "hello::hidden_trait::ATrait1",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "some_method()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 4,
+                    },
+                },
+                new_text: "use super::ATrait1;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 18,
+                        character: 16,
+                    },
+                    end: Position {
+                        line: 18,
+                        character: 16,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 
 //! > ==========================================================================
 
@@ -178,102 +1281,1194 @@ mod inner_mod {
 //! > Completions #0
         x.no_param_method<caret>
 --------------------------
-Completion: add_eq()
-Text edit: use core::traits::AddEq;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "add_eq(other)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::AddEq",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "add_eq()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::traits::AddEq;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 11,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 11,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: sub_eq()
-Text edit: use core::traits::SubEq;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "sub_eq(other)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::SubEq",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "sub_eq()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::traits::SubEq;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 11,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 11,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: mul_eq()
-Text edit: use core::traits::MulEq;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "mul_eq(other)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::MulEq",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "mul_eq()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::traits::MulEq;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 11,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 11,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: into()
+Completion item: CompletionItem {
+    label: "into()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::Into",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "into()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: try_into()
+Completion item: CompletionItem {
+    label: "try_into()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::TryInto",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "try_into()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: destruct()
+Completion item: CompletionItem {
+    label: "destruct()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::Destruct",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "destruct()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: panic_destruct()
-Text edit:  
+Completion item: CompletionItem {
+    label: "panic_destruct(panic)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::traits::PanicDestruct",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "panic_destruct()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 19,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 19,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: new_inputs()
-Text edit: use core::circuit::CircuitInputs;
-
+Completion item: CompletionItem {
+    label: "new_inputs()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::circuit::CircuitInputs",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "new_inputs()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::circuit::CircuitInputs;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: get_descriptor()
+Completion item: CompletionItem {
+    label: "get_descriptor()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::circuit::GetCircuitDescriptor",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "get_descriptor()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: clone()
+Completion item: CompletionItem {
+    label: "clone()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::clone::Clone",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "clone()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_zero()
-Text edit: use core::num::traits::Zero;
-
+Completion item: CompletionItem {
+    label: "is_zero()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::num::traits::zero::Zero",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_zero()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::num::traits::Zero;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_non_zero()
-Text edit: use core::num::traits::Zero;
-
+Completion item: CompletionItem {
+    label: "is_non_zero()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::num::traits::zero::Zero",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_non_zero()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::num::traits::Zero;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_one()
-Text edit: use core::num::traits::One;
-
+Completion item: CompletionItem {
+    label: "is_one()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::num::traits::one::One",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_one()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::num::traits::One;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_non_one()
-Text edit: use core::num::traits::One;
-
+Completion item: CompletionItem {
+    label: "is_non_one()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::num::traits::one::One",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_non_one()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::num::traits::One;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: add_assign()
-Text edit: use core::ops::AddAssign;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "add_assign(rhs)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::ops::arith::AddAssign",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "add_assign()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::ops::AddAssign;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 15,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 15,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: sub_assign()
-Text edit: use core::ops::SubAssign;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "sub_assign(rhs)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::ops::arith::SubAssign",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "sub_assign()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::ops::SubAssign;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 15,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 15,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: mul_assign()
-Text edit: use core::ops::MulAssign;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "mul_assign(rhs)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::ops::arith::MulAssign",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "mul_assign()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::ops::MulAssign;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 15,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 15,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: serialize()
-Text edit:  
+Completion item: CompletionItem {
+    label: "serialize(output)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::serde::Serde",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "serialize()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 14,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 14,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: print()
+Completion item: CompletionItem {
+    label: "print()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::debug::PrintTrait",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "print()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: fmt()
-Text edit: use core::fmt::Display;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "fmt(f)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::fmt::Display",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "fmt()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::fmt::Display;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 8,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: fmt()
-Text edit: use core::fmt::Debug;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "fmt(f)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::fmt::Debug",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "fmt()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::fmt::Debug;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 8,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: fmt()
-Text edit: use core::fmt::LowerHex;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "fmt(f)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::fmt::LowerHex",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "fmt()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::fmt::LowerHex;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 8,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 8,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_zero()
+Completion item: CompletionItem {
+    label: "is_zero()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::zeroable::Zeroable",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_zero()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: is_non_zero()
+Completion item: CompletionItem {
+    label: "is_non_zero()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::zeroable::Zeroable",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "is_non_zero()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: append_formatted_to_byte_array()
-Text edit: use core::to_byte_array::AppendFormattedToByteArray;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "append_formatted_to_byte_array(byte_array, base)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::to_byte_array::AppendFormattedToByteArray",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "append_formatted_to_byte_array()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::to_byte_array::AppendFormattedToByteArray;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 35,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 35,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: format_as_byte_array()
-Text edit: use core::to_byte_array::FormatAsByteArray;
-
-Text edit:  
+Completion item: CompletionItem {
+    label: "format_as_byte_array(base)",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "core::to_byte_array::FormatAsByteArray",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "format_as_byte_array()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use core::to_byte_array::FormatAsByteArray;\n",
+            },
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 25,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 25,
+                    },
+                },
+                new_text: " ",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
 --------------------------
-Completion: no_param_method()
-Text edit: use super::ATrait2;
+Completion item: CompletionItem {
+    label: "no_param_method()",
+    label_details: None,
+    kind: Some(
+        Method,
+    ),
+    detail: Some(
+        "hello::hidden_trait::ATrait2",
+    ),
+    documentation: None,
+    deprecated: None,
+    preselect: None,
+    sort_text: None,
+    filter_text: None,
+    insert_text: Some(
+        "no_param_method()",
+    ),
+    insert_text_format: None,
+    insert_text_mode: None,
+    text_edit: None,
+    additional_text_edits: Some(
+        [
+            TextEdit {
+                range: Range {
+                    start: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                    end: Position {
+                        line: 14,
+                        character: 4,
+                    },
+                },
+                new_text: "use super::ATrait2;\n",
+            },
+        ],
+    ),
+    command: None,
+    commit_characters: None,
+    data: None,
+    tags: None,
+}
