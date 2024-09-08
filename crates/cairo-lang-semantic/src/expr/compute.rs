@@ -19,6 +19,7 @@ use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, BlockOrIf, ClosureParamWrapper, ExprPtr, OptionReturnTypeClause, PatternListOr,
     PatternStructParam, UnaryOperator,
@@ -77,7 +78,7 @@ use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLong
 use crate::substitution::SemanticRewriter;
 use crate::types::{
     add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots,
-    peel_snapshots_ex, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots,
+    peel_snapshots_ex, resolve_type_ex, verify_fixed_size_array_size, wrap_in_snapshots,
     ClosureTypeLongId, ConcreteTypeId,
 };
 use crate::usage::Usages;
@@ -203,6 +204,9 @@ impl<'ctx> ComputationContext<'ctx> {
         for (var_name, var) in std::mem::take(&mut self.environment.variables) {
             self.add_unused_binding_warning(&var_name, &var);
         }
+        for (ty_name, statement_ty) in std::mem::take(&mut self.environment.types) {
+            self.add_unused_types_warning(&ty_name, &statement_ty);
+        }
         self.environment = parent.unwrap();
         res
     }
@@ -223,6 +227,13 @@ impl<'ctx> ComputationContext<'ctx> {
                     self.diagnostics.report(var.stable_ptr(self.db.upcast()), UnusedVariable);
                 }
             }
+        }
+    }
+
+    /// Adds warning for unused types if required.
+    fn add_unused_types_warning(&mut self, ty_name: &str, statement_ty: &StatementType) {
+        if !self.environment.used_types.contains(ty_name) && !ty_name.starts_with('_') {
+            self.diagnostics.report(statement_ty.stable_ptr, UnusedType);
         }
     }
 
@@ -278,6 +289,15 @@ impl<'ctx> ComputationContext<'ctx> {
 // TODO(ilya): Change value to VarId.
 pub type EnvVariables = OrderedHashMap<SmolStr, Binding>;
 
+type EnvTypes = OrderedHashMap<SmolStr, StatementType>;
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+struct StatementType {
+    ty: TypeId,
+    stable_ptr: SyntaxStablePtrId,
+}
+
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
 /// pointer to the parent environment.
@@ -286,6 +306,8 @@ pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
     used_variables: UnorderedHashSet<semantic::VarId>,
+    types: EnvTypes,
+    used_types: UnorderedHashSet<SmolStr>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -310,7 +332,13 @@ impl Environment {
     }
 
     pub fn empty() -> Self {
-        Self { parent: None, variables: Default::default(), used_variables: Default::default() }
+        Self {
+            parent: None,
+            variables: Default::default(),
+            used_variables: Default::default(),
+            types: Default::default(),
+            used_types: Default::default(),
+        }
     }
 }
 
@@ -1619,11 +1647,12 @@ fn compute_expr_closure_semantic(
             vec![]
         };
         let return_type = match syntax.ret_ty(syntax_db) {
-            OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type(
+            OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_ex(
                 new_ctx.db,
                 new_ctx.diagnostics,
                 &mut new_ctx.resolver,
                 &ty_syntax.ty(syntax_db),
+                Some(&mut new_ctx.environment),
             ),
             OptionReturnTypeClause::Empty(missing) => {
                 new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr().untyped()))
@@ -2359,7 +2388,13 @@ fn struct_ctor_expr(
     let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
-    let ty = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
+    let ty = resolve_type_ex(
+        db,
+        ctx.diagnostics,
+        &mut ctx.resolver,
+        &ast::Expr::Path(path.clone()),
+        Some(&mut ctx.environment),
+    );
     ty.check_not_missing(db)?;
 
     let concrete_struct_id = try_extract_matches!(ty.lookup_intern(ctx.db), TypeLongId::Concrete)
@@ -3125,6 +3160,19 @@ pub fn get_binded_expr_by_name(
     None
 }
 
+/// Returns the requested type from the environment if it exists. Returns None otherwise.
+pub fn get_statement_type_by_name(env: &mut Environment, type_name: &SmolStr) -> Option<TypeId> {
+    let mut maybe_env = Some(&mut *env);
+    while let Some(curr_env) = maybe_env {
+        if let Some(var) = curr_env.types.get(type_name) {
+            curr_env.used_types.insert(type_name.clone());
+            return Some(var.ty);
+        }
+        maybe_env = curr_env.parent.as_deref_mut();
+    }
+    None
+}
+
 /// Typechecks a function call.
 fn expr_function_call(
     ctx: &mut ComputationContext<'_>,
@@ -3328,8 +3376,13 @@ pub fn compute_statement_semantic(
                 }
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
-                    let explicit_type =
-                        resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
+                    let explicit_type = resolve_type_ex(
+                        db,
+                        ctx.diagnostics,
+                        &mut ctx.resolver,
+                        &var_type_path,
+                        Some(&mut ctx.environment),
+                    );
 
                     let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
                     let inferred_type = ctx.reduce_ty(rhs_expr.ty());
@@ -3506,7 +3559,13 @@ pub fn compute_statement_semantic(
                     let lhs = const_syntax.type_clause(db.upcast()).ty(db.upcast());
                     let rhs = const_syntax.value(db.upcast());
                     let rhs_expr = compute_expr_semantic(ctx, &rhs);
-                    let explicit_type = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &lhs);
+                    let explicit_type = resolve_type_ex(
+                        db,
+                        ctx.diagnostics,
+                        &mut ctx.resolver,
+                        &lhs,
+                        Some(&mut ctx.environment),
+                    );
                     let rhs_resolved_expr = resolve_const_expr_and_evaluate(
                         db,
                         ctx,
@@ -3570,6 +3629,22 @@ pub fn compute_statement_semantic(
                         }
                     }
                 }
+                ast::ModuleItem::TypeAlias(type_syntax) => {
+                    let name = type_syntax.name(syntax_db).text(db.upcast());
+                    let ty = resolve_type_ex(
+                        db,
+                        ctx.diagnostics,
+                        &mut ctx.resolver,
+                        &type_syntax.ty(db.upcast()),
+                        Some(&mut ctx.environment),
+                    );
+                    add_type_to_statement_environment(
+                        ctx,
+                        name,
+                        ty,
+                        type_syntax.name(syntax_db).stable_ptr(),
+                    );
+                }
                 ast::ModuleItem::Module(_) => {
                     unreachable!("Modules are not supported inside a function.")
                 }
@@ -3585,7 +3660,6 @@ pub fn compute_statement_semantic(
                 ast::ModuleItem::ImplAlias(_) => unreachable!("ImplAlias type not supported."),
                 ast::ModuleItem::Struct(_) => unreachable!("Struct type not supported."),
                 ast::ModuleItem::Enum(_) => unreachable!("Enum type not supported."),
-                ast::ModuleItem::TypeAlias(_) => unreachable!("TypeAlias type not supported."),
                 ast::ModuleItem::InlineMacro(_) => unreachable!("InlineMacro type not supported."),
                 ast::ModuleItem::HeaderDoc(_) => unreachable!("HeaderDoc type not supported."),
                 ast::ModuleItem::Missing(_) => unreachable!("Missing type not supported."),
@@ -3616,6 +3690,24 @@ fn add_item_to_statement_environment(
         );
     }
     ctx.semantic_defs.insert(var_def.id(), var_def);
+}
+
+/// Adds a type to the statement environment and reports a diagnostic if the type is already
+/// defined.
+fn add_type_to_statement_environment(
+    ctx: &mut ComputationContext<'_>,
+    name: SmolStr,
+    ty: TypeId,
+    stable_ptr: impl Into<SyntaxStablePtrId> + std::marker::Copy,
+) {
+    if ctx
+        .environment
+        .types
+        .insert(name.clone(), StatementType { ty, stable_ptr: stable_ptr.into() })
+        .is_some()
+    {
+        ctx.diagnostics.report(stable_ptr, MultipleTypeDefinition(name));
+    }
 }
 
 /// Computes the semantic model of an expression and reports diagnostics if the expression does not
