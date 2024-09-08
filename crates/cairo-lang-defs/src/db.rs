@@ -757,27 +757,17 @@ fn validate_attributes(
 /// Returns all the path leaves under a given use path.
 pub fn get_all_path_leaves(db: &dyn SyntaxGroup, use_path: ast::UsePath) -> Vec<ast::UsePathLeaf> {
     let mut res = vec![];
-    get_all_path_leaves_inner(db, use_path, &mut res);
-    res
-}
-
-/// Finds all the path leaves under a given use path and adds them to the given vector.
-fn get_all_path_leaves_inner(
-    db: &dyn SyntaxGroup,
-    use_path: ast::UsePath,
-    res: &mut Vec<ast::UsePathLeaf>,
-) {
-    match use_path {
-        ast::UsePath::Leaf(use_path) => {
-            res.push(use_path);
-        }
-        ast::UsePath::Single(use_path) => get_all_path_leaves_inner(db, use_path.use_path(db), res),
-        ast::UsePath::Multi(use_path) => {
-            for use_path in use_path.use_paths(db).elements(db) {
-                get_all_path_leaves_inner(db, use_path, res);
+    let mut stack = vec![use_path];
+    while let Some(use_path) = stack.pop() {
+        match use_path {
+            ast::UsePath::Leaf(use_path) => res.push(use_path),
+            ast::UsePath::Single(use_path) => stack.push(use_path.use_path(db)),
+            ast::UsePath::Multi(use_path) => {
+                stack.extend(use_path.use_paths(db).elements(db).into_iter().rev())
             }
         }
     }
+    res
 }
 
 /// Returns all the constant definitions of the given module.
