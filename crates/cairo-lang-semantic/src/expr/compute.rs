@@ -70,10 +70,20 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
 use crate::literals::try_extract_minus_literal;
+<<<<<<< HEAD
 use crate::resolve::{
     EnrichedMembers, EnrichedTypeMemberAccess, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
 };
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
+||||||| 932217530
+use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
+use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
+=======
+use crate::resolve::{
+    EnrichedMembers, EnrichedTypeMemberAccess, ResolvedConcreteItem, ResolvedGenericItem, Resolver,
+};
+use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
+>>>>>>> origin/dev-v2.8.2
 use crate::substitution::SemanticRewriter;
 use crate::types::{
     add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots,
