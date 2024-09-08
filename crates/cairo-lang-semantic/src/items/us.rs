@@ -37,8 +37,7 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     let use_ast = ast::UsePath::Leaf(db.module_use_by_id(use_id)?.to_maybe()?);
     let item = use_ast.get_item(db.upcast());
     resolver.set_feature_config(&use_id, &item, &mut diagnostics);
-    let mut segments = vec![];
-    get_use_segments(db.upcast(), &use_ast, &mut segments)?;
+    let segments = get_use_path_segments(db.upcast(), use_ast)?;
     let resolved_item =
         resolver.resolve_generic_path(&mut diagnostics, segments, NotFoundItemType::Identifier);
     let resolver_data = Arc::new(resolver.data);
@@ -46,51 +45,48 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data })
 }
 
-/// Returns the segments of a use path.
-pub fn get_use_segments(
+/// Returns the segments that are the parts of the use path.
+///
+/// The segments are returned in the order they appear in the use path.
+/// Only `UsePathLeaf` and `UsePathSingle` are supported.
+///
+/// For example:
+/// Given the `c` of `use a::b::{c, d};` will return `[a, b, c]`.
+/// Given the `b` of `use a::b::{c, d};` will return `[a, b]`.
+pub fn get_use_path_segments(
     db: &dyn SyntaxGroup,
-    use_path: &ast::UsePath,
-    segments: &mut Vec<ast::PathSegment>,
-) -> Maybe<()> {
-    // Add parent's segments.
-    if let Some(parent_use_path) = get_parent_use_path(db, use_path) {
-        get_use_segments(db, &parent_use_path, segments)?;
+    use_path: ast::UsePath,
+) -> Maybe<Vec<ast::PathSegment>> {
+    let mut rev_segments = vec![match &use_path {
+        ast::UsePath::Leaf(use_ast) => use_ast.ident(db),
+        ast::UsePath::Single(use_ast) => use_ast.ident(db),
+        ast::UsePath::Multi(_) => {
+            panic!("Only `UsePathLeaf` and `UsePathSingle` are supported.")
+        }
+    }];
+    let mut current_use_path = use_path;
+    while let Some(parent_use_path) = get_parent_single_use_path(db, &current_use_path) {
+        rev_segments.push(parent_use_path.ident(db));
+        current_use_path = ast::UsePath::Single(parent_use_path);
     }
-    // Add current segment.
-    match use_path {
-        ast::UsePath::Leaf(use_ast) => {
-            segments.push(use_ast.ident(db));
-        }
-        ast::UsePath::Single(use_ast) => {
-            segments.push(use_ast.ident(db));
-        }
-        ast::UsePath::Multi(_) => {}
-    };
-    Ok(())
+    Ok(rev_segments.into_iter().rev().collect())
 }
 
-/// Returns the parent path segment of a use path.
-fn get_parent_use_path(db: &dyn SyntaxGroup, use_path: &ast::UsePath) -> Option<ast::UsePath> {
+/// Returns the parent `UsePathSingle` of a use path if exists.
+fn get_parent_single_use_path(
+    db: &dyn SyntaxGroup,
+    use_path: &ast::UsePath,
+) -> Option<ast::UsePathSingle> {
+    use SyntaxKind::*;
     let mut node = use_path.as_syntax_node();
     loop {
-        node = node.parent().expect("UsePath is not under an ItemUse.");
-        return match node.kind(db) {
-            SyntaxKind::ItemUse => None,
-            SyntaxKind::UsePathSingle => {
-                Some(ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, node)))
-            }
-            SyntaxKind::UsePathMulti => {
-                Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, node)))
-            }
-            SyntaxKind::UsePathList => {
-                continue;
-            }
-            SyntaxKind::UsePathLeaf => {
-                unreachable!("UsePathLeaf can't be a parent of another UsePath.");
-            }
-            _ => {
-                unreachable!();
-            }
+        node = node.parent().expect("`UsePath` is not under an `ItemUse`.");
+        match node.kind(db) {
+            ItemUse => return None,
+            UsePathSingle => return Some(ast::UsePathSingle::from_syntax_node(db, node)),
+            UsePathList | UsePathMulti => continue,
+            UsePathLeaf => unreachable!("`UsePathLeaf` can't be a parent of another `UsePath`."),
+            other => unreachable!("`{other:?}` can't be a parent of `UsePath`."),
         };
     }
 }
