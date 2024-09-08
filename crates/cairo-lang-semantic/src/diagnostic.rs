@@ -490,6 +490,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     identifier_name
                 )
             }
+            SemanticDiagnosticKind::MultipleTypeDefinition(type_name) => {
+                format!(r#"Multiple definitions of type "{}"."#, type_name)
+            }
+            SemanticDiagnosticKind::UnusedType => "Unused type.".into(),
             SemanticDiagnosticKind::UnsupportedUseItemInStatement => {
                 "Unsupported use item in statement.".into()
             }
@@ -899,7 +903,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::UnusedImport { .. }
             | SemanticDiagnosticKind::CallingShadowedFunction { .. }
             | SemanticDiagnosticKind::UnusedConstant
-            | SemanticDiagnosticKind::UnusedUse => Severity::Warning,
+            | SemanticDiagnosticKind::UnusedUse
+            | SemanticDiagnosticKind::UnusedType => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
@@ -1102,8 +1107,10 @@ pub enum SemanticDiagnosticKind {
     UnusedVariable,
     UnusedConstant,
     UnusedUse,
+    UnusedType,
     MultipleConstantDefinition(SmolStr),
     MultipleDefinitionforBinding(SmolStr),
+    MultipleTypeDefinition(SmolStr),
     UnsupportedUseItemInStatement,
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,
