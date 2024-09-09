@@ -3544,11 +3544,10 @@ pub fn compute_statement_semantic(
                         let name = var_def_id.name(db.upcast());
                         match resolved_item {
                             ResolvedGenericItem::GenericConstant(const_id) => {
-                                let const_value = db.constant_const_value(const_id)?;
                                 let var_def = Binding::LocalItem(LocalItem {
                                     id: var_def_id,
                                     kind: StatementItemKind::Constant(
-                                        db.intern_const_value(const_value),
+                                        db.constant_const_value(const_id)?,
                                         db.constant_const_type(const_id)?,
                                     ),
                                 });

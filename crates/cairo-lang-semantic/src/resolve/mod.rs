@@ -850,7 +850,7 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<ResolvedConcreteItem> {
         Ok(match generic_item {
             ResolvedGenericItem::GenericConstant(id) => {
-                ResolvedConcreteItem::Constant(self.db.constant_const_value(id)?.intern(self.db))
+                ResolvedConcreteItem::Constant(self.db.constant_const_value(id)?)
             }
             ResolvedGenericItem::Module(module_id) => {
                 if generic_args_syntax.is_some() {

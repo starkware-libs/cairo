@@ -64,7 +64,7 @@ impl Constant {
 pub struct ConstantData {
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
     pub constant: Maybe<Constant>,
-    pub const_value: ConstValue,
+    pub const_value: ConstValueId,
     pub resolver_data: Arc<ResolverData>,
 }
 
@@ -312,7 +312,8 @@ pub fn constant_semantic_data_helper(
         &value,
         constant_ast.stable_ptr().untyped(),
         constant_type,
-    );
+    )
+    .intern(db);
 
     // Check fully resolved.
     ctx.resolver.inference().finalize(ctx.diagnostics, constant_ast.stable_ptr().untyped());
@@ -352,7 +353,7 @@ pub fn constant_semantic_data_cycle_helper(
     let diagnostic_added = diagnostics.report(constant_ast, SemanticDiagnosticKind::ConstCycle);
     Ok(ConstantData {
         constant: Err(diagnostic_added),
-        const_value: ConstValue::Missing(diagnostic_added),
+        const_value: ConstValue::Missing(diagnostic_added).intern(db),
         diagnostics: diagnostics.build(),
         resolver_data,
     })
@@ -667,7 +668,7 @@ pub fn constant_resolver_data_cycle(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::constant_const_value].
-pub fn constant_const_value(db: &dyn SemanticGroup, const_id: ConstantId) -> Maybe<ConstValue> {
+pub fn constant_const_value(db: &dyn SemanticGroup, const_id: ConstantId) -> Maybe<ConstValueId> {
     Ok(db.priv_constant_semantic_data(const_id, false)?.const_value)
 }
 
@@ -676,7 +677,7 @@ pub fn constant_const_value_cycle(
     db: &dyn SemanticGroup,
     _cycle: &salsa::Cycle,
     const_id: &ConstantId,
-) -> Maybe<ConstValue> {
+) -> Maybe<ConstValueId> {
     // Forwarding cycle handling to `priv_constant_semantic_data` handler.
     Ok(db.priv_constant_semantic_data(*const_id, true)?.const_value)
 }
