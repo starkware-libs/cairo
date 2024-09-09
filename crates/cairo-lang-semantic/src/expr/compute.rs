@@ -3540,13 +3540,11 @@ pub fn compute_statement_semantic(
                             segments,
                             NotFoundItemType::Identifier,
                         )?;
-
-                        let path_segment = leaf.ident(db.upcast());
-                        let name = path_segment.identifier(db.upcast());
                         let var_def_id = StatementItemId::Use(
                             StatementUseLongId(ctx.resolver.module_file_id, leaf.stable_ptr())
                                 .intern(db),
                         );
+                        let name = var_def_id.name(db.upcast());
                         match resolved_item {
                             ResolvedGenericItem::GenericConstant(const_id) => {
                                 let const_value = db.constant_const_value(const_id)?;

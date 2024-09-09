@@ -1087,7 +1087,9 @@ impl StatementItemId {
             StatementItemId::Constant(id) => {
                 id.lookup_intern(db).1.lookup(db.upcast()).name(db.upcast()).stable_ptr().untyped()
             }
-            StatementItemId::Use(id) => id.stable_ptr(db).into(),
+            StatementItemId::Use(id) => {
+                id.lookup_intern(db).1.lookup(db.upcast()).name_stable_ptr(db.upcast())
+            }
         }
     }
 }
