@@ -8,12 +8,12 @@ use super::ast::{
     ItemUse, Member, Modifier, ModuleItem, OptionArgListParenthesized, Statement, StatementBreak,
     StatementContinue, StatementExpr, StatementLet, StatementReturn, TerminalIdentifierGreen,
     TokenIdentifierGreen, TraitItem, TraitItemConstant, TraitItemFunction, TraitItemFunctionPtr,
-    TraitItemImpl, TraitItemType, Variant, WrappedArgList,
+    TraitItemImpl, TraitItemType, UsePathLeaf, Variant, WrappedArgList,
 };
 use super::db::SyntaxGroup;
 use super::ids::SyntaxStablePtrId;
 use super::kind::SyntaxKind;
-use super::{SyntaxNode, Terminal, TypedSyntaxNode};
+use super::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
 use crate::node::ast::{Attribute, AttributeList};
 use crate::node::green::GreenNodeDetails;
 
@@ -617,6 +617,16 @@ impl UsePathEx for ast::UsePath {
                 }
                 _ => node = parent,
             }
+        }
+    }
+}
+
+impl UsePathLeaf {
+    /// Retrieves the stable pointer of the name of the leaf.
+    pub fn name_stable_ptr(&self, db: &dyn SyntaxGroup) -> SyntaxStablePtrId {
+        match self.alias_clause(db) {
+            ast::OptionAliasClause::Empty(_) => self.ident(db).stable_ptr().untyped(),
+            ast::OptionAliasClause::AliasClause(alias) => alias.alias(db).stable_ptr().untyped(),
         }
     }
 }
