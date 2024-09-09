@@ -57,6 +57,12 @@ fn test_use_usage() {
 }
 
 #[test]
+fn test_use_usage_with_alias() {
+    use X::A as B;
+    assert_eq!(B, 1);
+}
+
+#[test]
 fn test_use_constant_shadowing() {
     use X::A;
     assert_eq!(A, 1);

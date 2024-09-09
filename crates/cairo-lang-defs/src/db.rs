@@ -1041,15 +1041,7 @@ fn module_item_name_stable_ptr(
     Ok(match &item_id {
         ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr().untyped(),
-        ModuleItemId::Use(id) => {
-            let use_leaf = &data.uses[id];
-            match use_leaf.alias_clause(db) {
-                ast::OptionAliasClause::Empty(_) => use_leaf.ident(db).stable_ptr().untyped(),
-                ast::OptionAliasClause::AliasClause(alias) => {
-                    alias.alias(db).stable_ptr().untyped()
-                }
-            }
-        }
+        ModuleItemId::Use(id) => data.uses[id].name_stable_ptr(db),
         ModuleItemId::FreeFunction(id) => {
             data.free_functions[id].declaration(db).name(db).stable_ptr().untyped()
         }
