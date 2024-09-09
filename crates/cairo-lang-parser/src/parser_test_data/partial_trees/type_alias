@@ -1,0 +1,70 @@
+//! > Test type simple
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    type R = u8;
+}
+
+//! > top_level_kind
+ItemTypeAlias
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemTypeAlias
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── type_kw (kind: TokenType): 'type'
+    ├── name (kind: TokenIdentifier): 'R'
+    ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── ty (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'u8'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test type attributes.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    #[attribute]
+    type R = u8;
+}
+
+//! > top_level_kind
+ItemTypeAlias
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemTypeAlias
+    ├── attributes (kind: AttributeList)
+    │   └── child #0 (kind: Attribute)
+    │       ├── hash (kind: TokenHash): '#'
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── attr (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'attribute'
+    │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       └── rbrack (kind: TokenRBrack): ']'
+    ├── visibility (kind: VisibilityDefault) []
+    ├── type_kw (kind: TokenType): 'type'
+    ├── name (kind: TokenIdentifier): 'R'
+    ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── ty (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'u8'
+    └── semicolon (kind: TokenSemicolon): ';'
