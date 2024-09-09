@@ -36,6 +36,8 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
     match item_id {
         DocumentableItemId::Crate(crate_id) => get_crate_root_module_documentation(db, crate_id),
         item_id => {
+            // We check for different type of comments for the item. Even modules can have both
+            // inner and module level comments.
             let outer_comments = extract_outer_comments_from_raw_text(db, item_id);
             let inner_comments = extract_item_inner_documentation(db, item_id);
             let module_level_comments = extract_module_level_comments(db.upcast(), item_id);
@@ -73,7 +75,7 @@ fn extract_item_inner_documentation(
         let raw_text = item_id
             .stable_location(db.upcast())?
             .syntax_node(db.upcast())
-            .get_syntax_tree_text_without_functions_and_modules(db.upcast());
+            .get_text_without_inner_commentable_children(db.upcast());
         extract_inner_comments_from_raw_text(raw_text)
     } else {
         None
@@ -210,12 +212,7 @@ fn extract_module_level_comments_from_file(db: &dyn DocGroup, file_id: FileId) -
         .lines()
         .filter(|line| !line.trim().is_empty())
         .take_while_ref(|line| is_comment_line(line))
-        .filter_map(|line| {
-            if line.is_empty() {
-                return None;
-            }
-            extract_comment_from_code_line(line, &["//!"])
-        })
+        .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
         .join(" ");
 
     cleanup_doc(doc)

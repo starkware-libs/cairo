@@ -174,10 +174,9 @@ impl SyntaxNode {
 
     /// Returns all the text under the syntax node.
     /// It traverses all the syntax tree of the node, but ignores functions and modules.
-    pub fn get_syntax_tree_text_without_functions_and_modules(
-        &self,
-        db: &dyn SyntaxGroup,
-    ) -> String {
+    /// We ignore those, because if there's some inner functions or modules, we don't want to get
+    /// raw text of them. Comments inside them refer themselves directly, not this SyntaxNode.
+    pub fn get_text_without_inner_commentable_children(&self, db: &dyn SyntaxGroup) -> String {
         let mut buffer = String::new();
 
         match &self.green_node(db).as_ref().details {
@@ -194,11 +193,9 @@ impl SyntaxNode {
                             | SyntaxKind::ItemModule
                             | SyntaxKind::TraitItemFunction
                     ) {
-                        buffer.push_str(
-                            &SyntaxNode::get_syntax_tree_text_without_functions_and_modules(
-                                child, db,
-                            ),
-                        );
+                        buffer.push_str(&SyntaxNode::get_text_without_inner_commentable_children(
+                            child, db,
+                        ));
                     }
                 }
             }
