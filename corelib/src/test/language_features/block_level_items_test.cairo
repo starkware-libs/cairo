@@ -162,3 +162,119 @@ fn test_type_shadowing() {
     assert_eq!(arr_u16.len(), 1);
     assert_eq!(arr_u16[0], @8);
 }
+
+pub mod B {
+    pub type R = u8;
+}
+
+#[test]
+fn test_use_type_usage() {
+    let mut arr = ArrayTrait::<u8>::new();
+    use B::R;
+    let a: R = 4;
+    arr.append(a);
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0], @4);
+}
+
+#[test]
+fn test_use_type_usage_with_alias() {
+    let mut arr = ArrayTrait::<u8>::new();
+    use B::R as B;
+    let a: B = 4;
+    arr.append(a);
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0], @4);
+}
+
+#[test]
+fn test_use_type_shadowing() {
+    let mut arr_u8 = ArrayTrait::<u8>::new();
+    let mut arr_u16 = ArrayTrait::<u16>::new();
+    use B::R;
+    let mut a: R = 4;
+    arr_u8.append(a);
+    {
+        type R = u16;
+        a = 3;
+        arr_u8.append(a);
+        let a: R = 8;
+        arr_u16.append(a);
+    }
+    a = 2;
+    arr_u8.append(a);
+    assert_eq!(arr_u8.len(), 3);
+    assert_eq!(arr_u8[0], @4);
+    assert_eq!(arr_u8[1], @3);
+    assert_eq!(arr_u8[2], @2);
+    assert_eq!(arr_u16.len(), 1);
+    assert_eq!(arr_u16[0], @8);
+}
+
+pub mod C {
+    pub type R = u16;
+    pub type Q = u8;
+}
+
+#[test]
+fn test_double_use_type_shadowing() {
+    let mut arr_u8 = ArrayTrait::<u8>::new();
+    let mut arr_u16 = ArrayTrait::<u16>::new();
+    use B::R;
+    let mut a: R = 4;
+    arr_u8.append(a);
+    {
+        use C::R;
+        a = 3;
+        arr_u8.append(a);
+        let a: R = 8;
+        arr_u16.append(a);
+    }
+    a = 2;
+    arr_u8.append(a);
+    assert_eq!(arr_u8.len(), 3);
+    assert_eq!(arr_u8[0], @4);
+    assert_eq!(arr_u8[1], @3);
+    assert_eq!(arr_u8[2], @2);
+    assert_eq!(arr_u16.len(), 1);
+    assert_eq!(arr_u16[0], @8);
+}
+
+#[test]
+fn test_type_use_shadowing() {
+    let mut arr_u8 = ArrayTrait::<u8>::new();
+    let mut arr_u16 = ArrayTrait::<u16>::new();
+    type R = u8;
+    let mut a: R = 4;
+    arr_u8.append(a);
+    {
+        use C::R;
+        a = 3;
+        arr_u8.append(a);
+        let a: R = 8;
+        arr_u16.append(a);
+    }
+    a = 2;
+    arr_u8.append(a);
+    assert_eq!(arr_u8.len(), 3);
+    assert_eq!(arr_u8[0], @4);
+    assert_eq!(arr_u8[1], @3);
+    assert_eq!(arr_u8[2], @2);
+    assert_eq!(arr_u16.len(), 1);
+    assert_eq!(arr_u16[0], @8);
+}
+
+#[test]
+fn test_multiple_use_type() {
+    let mut arr_u8 = ArrayTrait::<u8>::new();
+    let mut arr_u16 = ArrayTrait::<u16>::new();
+    use C::{R, Q};
+    let a: R = 4;
+    arr_u16.append(a);
+    let b: Q = 6;
+    arr_u8.append(b);
+    assert_eq!(arr_u16.len(), 1);
+    assert_eq!(arr_u16[0], @4);
+    assert_eq!(arr_u8.len(), 1);
+    assert_eq!(arr_u8[0], @6);
+}
