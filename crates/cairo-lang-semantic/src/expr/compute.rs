@@ -78,8 +78,8 @@ use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLong
 use crate::substitution::SemanticRewriter;
 use crate::types::{
     add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots,
-    peel_snapshots_ex, resolve_type_ex, verify_fixed_size_array_size, wrap_in_snapshots,
-    ClosureTypeLongId, ConcreteTypeId,
+    peel_snapshots_ex, resolve_type, resolve_type_ex, verify_fixed_size_array_size,
+    wrap_in_snapshots, ClosureTypeLongId, ConcreteTypeId,
 };
 use crate::usage::Usages;
 use crate::{
@@ -3612,11 +3612,17 @@ pub fn compute_statement_semantic(
                                 });
                                 add_item_to_statement_environment(ctx, name, var_def, stable_ptr);
                             }
+                            ResolvedGenericItem::GenericTypeAlias(type_id) => {
+                                let expr_ty =
+                                    type_id.lookup_intern(db).1.lookup(db.upcast()).ty(db.upcast());
+                                let ty =
+                                    resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &expr_ty);
+                                add_type_to_statement_environment(ctx, name, ty, stable_ptr);
+                            }
                             ResolvedGenericItem::Module(_)
                             | ResolvedGenericItem::GenericFunction(_)
                             | ResolvedGenericItem::TraitFunction(_)
                             | ResolvedGenericItem::GenericType(_)
-                            | ResolvedGenericItem::GenericTypeAlias(_)
                             | ResolvedGenericItem::GenericImplAlias(_)
                             | ResolvedGenericItem::Variant(_)
                             | ResolvedGenericItem::Trait(_)

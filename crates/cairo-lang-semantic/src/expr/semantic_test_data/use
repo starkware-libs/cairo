@@ -102,3 +102,173 @@ error: Multiple definitions of constant "A".
  --> lib.cairo:5:7
 const A: u8 = 4;
       ^
+
+//! > ==========================================================================
+
+//! > Test use type usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    type R = u8;
+}
+
+//! > function_body
+
+//! > expr_code
+{ use X::R; }
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Item(
+                StatementItem,
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning: Unused type.
+ --> lib.cairo:5:10
+{ use X::R; }
+         ^
+
+//! > ==========================================================================
+
+//! > Test use several type usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    type R = u8;
+    type Q = u16;
+    type W = u32;
+}
+
+//! > function_body
+
+//! > expr_code
+{ use X::{R, Q, W}; }
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Item(
+                StatementItem,
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning: Unused type.
+ --> lib.cairo:7:11
+{ use X::{R, Q, W}; }
+          ^
+
+warning: Unused type.
+ --> lib.cairo:7:14
+{ use X::{R, Q, W}; }
+             ^
+
+warning: Unused type.
+ --> lib.cairo:7:17
+{ use X::{R, Q, W}; }
+                ^
+
+//! > ==========================================================================
+
+//! > Test use type and const usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    type R = u8;
+}
+
+//! > function_body
+use X::R;
+const R: u8 = 3;
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning: Unused constant. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:5:7
+const R: u8 = 3; {
+      ^
+
+warning: Unused type.
+ --> lib.cairo:4:25
+fn test_func() { use X::R;
+                        ^
+
+//! > ==========================================================================
+
+//! > Test use type, const usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    type R = u8;
+}
+mod Y {
+    const R: u8 = 3;
+}
+
+//! > function_body
+
+//! > expr_code
+{ use X::R; use Y::R; }
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Item(
+                StatementItem,
+            ),
+            Item(
+                StatementItem,
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning: Unused use.
+ --> lib.cairo:8:20
+{ use X::R; use Y::R; }
+                   ^
+
+warning: Unused type.
+ --> lib.cairo:8:10
+{ use X::R; use Y::R; }
+         ^
