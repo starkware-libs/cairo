@@ -255,8 +255,7 @@ fn maybe_add_extra_use(
 ) {
     if let Some(ident) = match item {
         ast::ModuleItem::Use(item) => {
-            let leaves = get_all_path_leaves(db, item.use_path(db));
-            for leaf in leaves {
+            for leaf in get_all_path_leaves(db, &item) {
                 extra_uses
                     .entry(leaf.stable_ptr().identifier(db))
                     .or_insert_with_key(|ident| format!("super::{}", ident));

@@ -3530,19 +3530,16 @@ pub fn compute_statement_semantic(
                     add_item_to_statement_environment(ctx, name, var_def, &name_syntax);
                 }
                 ast::ModuleItem::Use(use_syntax) => {
-                    let path_leaves =
-                        get_all_path_leaves(db.upcast(), use_syntax.use_path(syntax_db));
-                    for leaf in path_leaves.iter() {
-                        let segments =
-                            get_use_path_segments(db.upcast(), ast::UsePath::Leaf(leaf.clone()))?;
+                    for leaf in get_all_path_leaves(syntax_db, use_syntax) {
+                        let stable_ptr = leaf.stable_ptr();
+                        let segments = get_use_path_segments(syntax_db, ast::UsePath::Leaf(leaf))?;
                         let resolved_item = ctx.resolver.resolve_generic_path(
                             ctx.diagnostics,
                             segments,
                             NotFoundItemType::Identifier,
                         )?;
                         let var_def_id = StatementItemId::Use(
-                            StatementUseLongId(ctx.resolver.module_file_id, leaf.stable_ptr())
-                                .intern(db),
+                            StatementUseLongId(ctx.resolver.module_file_id, stable_ptr).intern(db),
                         );
                         let name = var_def_id.name(db.upcast());
                         match resolved_item {
@@ -3551,11 +3548,11 @@ pub fn compute_statement_semantic(
                                 let var_def = Binding::LocalItem(LocalItem {
                                     id: var_def_id,
                                     kind: StatementItemKind::Constant(
-                                        db.intern_const_value(const_value.clone()),
+                                        db.intern_const_value(const_value),
                                         db.constant_const_type(const_id)?,
                                     ),
                                 });
-                                add_item_to_statement_environment(ctx, name, var_def, leaf);
+                                add_item_to_statement_environment(ctx, name, var_def, stable_ptr);
                             }
                             ResolvedGenericItem::Module(_)
                             | ResolvedGenericItem::GenericFunction(_)
@@ -3569,7 +3566,7 @@ pub fn compute_statement_semantic(
                             | ResolvedGenericItem::Variable(_) => {
                                 return Err(ctx
                                     .diagnostics
-                                    .report(leaf.stable_ptr(), UnsupportedUseItemInStatement));
+                                    .report(stable_ptr, UnsupportedUseItemInStatement));
                             }
                         }
                     }
