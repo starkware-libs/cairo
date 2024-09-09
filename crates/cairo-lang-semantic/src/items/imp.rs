@@ -428,9 +428,11 @@ impl UnstableSalsaId for ImplId {
     }
 }
 
-/// Head of an impl. A non-param non-variable impl has a head, which represents the kind of the root
-/// node in its tree representation. This is used for caching queries for fast lookups when the impl
-/// is not completely inferred yet.
+/// Head of an impl.
+///
+/// A non-param non-variable impl has a head, which represents the kind of the root node in its tree
+/// representation. This is used for caching queries for fast lookups when the impl is not
+/// completely inferred yet.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ImplHead {
     Concrete(ImplDefId),
@@ -2169,11 +2171,7 @@ pub fn impl_constant_def_value(
     db: &dyn SemanticGroup,
     impl_constant_def_id: ImplConstantDefId,
 ) -> Maybe<ConstValueId> {
-    Ok(db
-        .priv_impl_constant_semantic_data(impl_constant_def_id, false)?
-        .constant_data
-        .const_value
-        .intern(db))
+    Ok(db.priv_impl_constant_semantic_data(impl_constant_def_id, false)?.constant_data.const_value)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::impl_constant_def_value].
@@ -2182,11 +2180,7 @@ pub fn impl_constant_def_value_cycle(
     _cycle: &salsa::Cycle,
     impl_constant_def_id: &ImplConstantDefId,
 ) -> Maybe<ConstValueId> {
-    Ok(db
-        .priv_impl_constant_semantic_data(*impl_constant_def_id, true)?
-        .constant_data
-        .const_value
-        .intern(db))
+    Ok(db.priv_impl_constant_semantic_data(*impl_constant_def_id, true)?.constant_data.const_value)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_constant_def_resolver_data].

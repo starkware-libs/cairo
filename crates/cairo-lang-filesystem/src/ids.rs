@@ -35,6 +35,7 @@ impl CrateId {
 }
 
 /// A trait for getting the internal salsa::InternId of a short id object.
+///
 /// This id is unstable across runs and should not be used to anything that is externally visible.
 /// This is currently used to pick representative for strongly connected components.
 pub trait UnstableSalsaId {

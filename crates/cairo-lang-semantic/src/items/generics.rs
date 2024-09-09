@@ -99,9 +99,11 @@ impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
     }
 }
 
-/// Head of a generic argument. A non-param non-variable generic argument has a head, which
-/// represents the kind of the root node in its tree. This is used for caching queries for fast
-/// lookups when the generic argument is not completely inferred yet.
+/// Head of a generic argument.
+///
+/// A non-param non-variable generic argument has a head, which represents the kind of the root node
+/// in its tree. This is used for caching queries for fast lookups when the generic argument is not
+/// completely inferred yet.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GenericArgumentHead {
     Type(TypeHead),

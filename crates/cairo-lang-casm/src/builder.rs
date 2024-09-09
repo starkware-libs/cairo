@@ -113,9 +113,11 @@ pub struct CasmBuildResult<const BRANCH_COUNT: usize> {
     pub branches: [(State, Vec<usize>); BRANCH_COUNT],
 }
 
-/// Builder to more easily write casm code without specifically thinking about ap changes and the
-/// sizes of opcodes. Wrong usages of it would panic instead of returning a result, as this builder
-/// assumes we are in a post validation of parameters stage.
+/// Builder to more easily write casm code.
+///
+/// Allows CASM building without specifically thinking about ap changes and the sizes of opcodes.
+/// Wrong usages of it would panic instead of returning a result, as this builder assumes we are in
+/// a post validation of parameters stage.
 pub struct CasmBuilder {
     /// The state at a point of jumping into a label, per label.
     label_state: UnorderedHashMap<String, State>,

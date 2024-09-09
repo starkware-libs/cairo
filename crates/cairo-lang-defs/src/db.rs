@@ -85,7 +85,9 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_local_var(&self, id: LocalVarLongId) -> LocalVarId;
     #[salsa::interned]
-    fn intern_local_const(&self, id: LocalConstLongId) -> LocalConstId;
+    fn intern_statement_const(&self, id: StatementConstLongId) -> StatementConstId;
+    #[salsa::interned]
+    fn intern_statement_use(&self, id: StatementUseLongId) -> StatementUseId;
     #[salsa::interned]
     fn intern_plugin_generated_file(&self, id: PluginGeneratedFileLongId) -> PluginGeneratedFileId;
 
@@ -480,12 +482,10 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     items.push(ModuleItemId::Submodule(item_id));
                 }
                 ast::ModuleItem::Use(us) => {
-                    let path_leaves = get_all_path_leaves(db.upcast(), us.use_path(syntax_db));
-                    for path_leaf in path_leaves {
-                        let path_leaf_id =
-                            UseLongId(module_file_id, path_leaf.stable_ptr()).intern(db);
-                        uses.insert(path_leaf_id, path_leaf);
-                        items.push(ModuleItemId::Use(path_leaf_id));
+                    for leaf in get_all_path_leaves(db.upcast(), &us) {
+                        let id = UseLongId(module_file_id, leaf.stable_ptr()).intern(db);
+                        uses.insert(id, leaf);
+                        items.push(ModuleItemId::Use(id));
                     }
                 }
                 ast::ModuleItem::FreeFunction(function) => {
@@ -762,30 +762,20 @@ fn validate_attributes(
     }
 }
 
-/// Returns all the path leaves under a given use path.
-pub fn get_all_path_leaves(db: &dyn SyntaxGroup, use_path: ast::UsePath) -> Vec<ast::UsePathLeaf> {
+/// Returns all the path leaves under a given use item.
+pub fn get_all_path_leaves(db: &dyn SyntaxGroup, use_item: &ast::ItemUse) -> Vec<ast::UsePathLeaf> {
     let mut res = vec![];
-    get_all_path_leaves_inner(db, use_path, &mut res);
-    res
-}
-
-/// Finds all the path leaves under a given use path and adds them to the given vector.
-fn get_all_path_leaves_inner(
-    db: &dyn SyntaxGroup,
-    use_path: ast::UsePath,
-    res: &mut Vec<ast::UsePathLeaf>,
-) {
-    match use_path {
-        ast::UsePath::Leaf(use_path) => {
-            res.push(use_path);
-        }
-        ast::UsePath::Single(use_path) => get_all_path_leaves_inner(db, use_path.use_path(db), res),
-        ast::UsePath::Multi(use_path) => {
-            for use_path in use_path.use_paths(db).elements(db) {
-                get_all_path_leaves_inner(db, use_path, res);
+    let mut stack = vec![use_item.use_path(db)];
+    while let Some(use_path) = stack.pop() {
+        match use_path {
+            ast::UsePath::Leaf(use_path) => res.push(use_path),
+            ast::UsePath::Single(use_path) => stack.push(use_path.use_path(db)),
+            ast::UsePath::Multi(use_path) => {
+                stack.extend(use_path.use_paths(db).elements(db).into_iter().rev())
             }
         }
     }
+    res
 }
 
 /// Returns all the constant definitions of the given module.
@@ -1057,15 +1047,7 @@ fn module_item_name_stable_ptr(
     Ok(match &item_id {
         ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr().untyped(),
-        ModuleItemId::Use(id) => {
-            let use_leaf = &data.uses[id];
-            match use_leaf.alias_clause(db) {
-                ast::OptionAliasClause::Empty(_) => use_leaf.ident(db).stable_ptr().untyped(),
-                ast::OptionAliasClause::AliasClause(alias) => {
-                    alias.alias(db).stable_ptr().untyped()
-                }
-            }
-        }
+        ModuleItemId::Use(id) => data.uses[id].name_stable_ptr(db),
         ModuleItemId::FreeFunction(id) => {
             data.free_functions[id].declaration(db).name(db).stable_ptr().untyped()
         }

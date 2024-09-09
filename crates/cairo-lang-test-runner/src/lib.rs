@@ -176,6 +176,7 @@ fn format_for_panic(mut felts: IntoIter<Felt252>) -> String {
 }
 
 /// Whether to run the profiler, and what results to produce.
+///
 /// With `None`, don't run the profiler.
 /// With `Sierra`, run the profiler and produce sierra profiling information.
 /// With `Cairo`, run the profiler and additionally produce cairo profiling information (e.g.

@@ -14,6 +14,7 @@ use crate::program::GenericArg;
 
 /// Coupon type `Coupon<function>` (`function::Coupon`) which represents that the cost of a
 /// function was paid, without calling the function yet.
+///
 /// Using the coupon the function can be called without paying the cost.
 #[derive(Default)]
 pub struct CouponType {}
@@ -68,10 +69,11 @@ define_libfunc_hierarchy! {
     }, CouponConcreteLibfunc
 }
 
-/// Libfunc for buying a coupon for a function. The cost of the coupon is the cost of running the
-/// function (not including the `call` and `ret` instructions).
-/// The coupon can be used to pay in advance for running the function, and run it later for
-/// free (paying only for the `call` and `ret` instructions) using `coupon_call`.
+/// Libfunc for buying a coupon for a function.
+///
+/// The cost of the coupon is the cost of running the function (not including the `call` and `ret`
+/// instructions). The coupon can be used to pay in advance for running the function, and run it
+/// later for free (paying only for the `call` and `ret` instructions) using `coupon_call`.
 #[derive(Default)]
 pub struct CouponBuyLibfunc {}
 impl NamedLibfunc for CouponBuyLibfunc {

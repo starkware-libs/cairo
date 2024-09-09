@@ -176,6 +176,7 @@ pub fn compile_test_prepared_db(
 }
 
 /// Encapsulation of all data required to execute tests.
+///
 /// This includes the source code compiled to a Sierra program and all cairo-test specific
 /// data extracted from it.
 /// This can be stored on the filesystem and shared externally.
@@ -187,6 +188,7 @@ pub struct TestCompilation {
 }
 
 /// Encapsulation of all data required to execute tests, except for the Sierra program itself.
+///
 /// This includes all cairo-test specific data extracted from the program.
 /// This can be stored on the filesystem and shared externally.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]

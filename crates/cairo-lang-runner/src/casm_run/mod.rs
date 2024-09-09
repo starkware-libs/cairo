@@ -1131,6 +1131,8 @@ impl<'a> CairoHintProcessor<'a> {
             .run_function_with_starknet_context(
                 function,
                 &[Arg::Array(calldata.into_iter().map(Arg::Value).collect())],
+                // The costs of the relevant syscall include `ENTRY_POINT_INITIAL_BUDGET` so we
+                // need to refund it here before running the entry point to avoid double charging.
                 Some(*gas_counter + gas_costs::ENTRY_POINT_INITIAL_BUDGET),
                 self.starknet_state.clone(),
             )

@@ -57,9 +57,11 @@ use crate::objects::{
 };
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
-/// The cost per each unique key in the dictionary. This cost is pre-charged for each access
-/// (read/write/entry), and the overhead cost is refunded for each repeated access.
-/// Repeated access is access to a key that has already been accessed before.
+/// The cost per each unique key in the dictionary.
+///
+/// This cost is pre-charged for each access (read/write/entry), and the overhead cost is refunded
+/// for each repeated access. Repeated access is access to a key that has already been accessed
+/// before.
 pub const DICT_SQUASH_UNIQUE_KEY_COST: ConstCost =
     ConstCost { steps: 46, holes: 0, range_checks: 6, range_checks96: 0 };
 /// The cost per each access to a key after the first access.

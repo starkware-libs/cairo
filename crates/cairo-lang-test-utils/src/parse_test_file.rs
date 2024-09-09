@@ -183,6 +183,7 @@ pub trait TestFileRunner {
 }
 
 /// Creates a test that reads test files for a given function.
+///
 /// test_name - the name of the test.
 /// filenames - a vector of tests files the test applies to.
 /// runner - the struct implementing `TestFileRunner + Default`.
@@ -274,6 +275,7 @@ impl TestFileRunner for SimpleRunner {
 }
 
 /// Creates a test that reads test files for a given function.
+///
 /// test_name - the name of the test.
 /// filenames - a vector of test files the test applies to.
 /// func - the function to be applied on the test params to generate the tested result.

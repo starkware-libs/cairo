@@ -14,6 +14,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
 /// Plugin that enables ignoring modules not involved in the current config.
+///
 /// Mostly useful for marking test modules to prevent usage of their functionality out of tests,
 /// and reduce compilation time when the tests data isn't required.
 #[derive(Debug, Default)]

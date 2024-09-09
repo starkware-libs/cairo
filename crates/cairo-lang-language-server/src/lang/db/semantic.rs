@@ -221,15 +221,13 @@ fn lookup_item_from_ast(
             // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
             // items.
             let item_use = ast::ItemUse::from_syntax_node(db.upcast(), node);
-            let path_leaves = get_all_path_leaves(db.upcast(), item_use.use_path(syntax_db));
-            let mut res = Vec::new();
-            for path_leaf in path_leaves {
-                let use_long_id = UseLongId(module_file_id, path_leaf.stable_ptr());
-                let lookup_item_id =
-                    LookupItemId::ModuleItem(ModuleItemId::Use(use_long_id.intern(db)));
-                res.push(lookup_item_id);
-            }
-            res
+            get_all_path_leaves(db.upcast(), &item_use)
+                .into_iter()
+                .map(|leaf| {
+                    let use_long_id = UseLongId(module_file_id, leaf.stable_ptr());
+                    LookupItemId::ModuleItem(ModuleItemId::Use(use_long_id.intern(db)))
+                })
+                .collect()
         }
         SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
             ModuleTypeAliasLongId(

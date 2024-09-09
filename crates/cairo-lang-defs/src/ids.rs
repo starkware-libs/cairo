@@ -658,7 +658,7 @@ define_language_element_id_as_enum! {
     pub enum VarId {
         Param(ParamId),
         Local(LocalVarId),
-        Const(LocalConstId),
+        Item(StatementItemId),
         // TODO(spapini): Add var from pattern matching.
     }
 }
@@ -951,24 +951,21 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
     }
 }
 
-define_language_element_id_basic!(
-    LocalConstId,
-    LocalConstLongId,
-    ast::TerminalIdentifier,
-    lookup_intern_local_const,
-    intern_local_const
+define_top_level_language_element_id!(
+    StatementConstId,
+    StatementConstLongId,
+    ast::ItemConstant,
+    lookup_intern_statement_const,
+    intern_statement_const
 );
 
-impl DebugWithDb<dyn DefsGroup> for LocalConstLongId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
-        let syntax_db = db.upcast();
-        let LocalConstLongId(module_file_id, ptr) = self;
-        let text = ptr.lookup(syntax_db).text(syntax_db);
-        // TODO(Tomer-StarkWare): Fix the path to the constant to include the function containing
-        // the constant.
-        write!(f, "LocalConstId({}::{})", module_file_id.0.full_path(db), text)
-    }
-}
+define_top_level_language_element_id!(
+    StatementUseId,
+    StatementUseLongId,
+    ast::UsePathLeaf,
+    lookup_intern_statement_use,
+    intern_statement_use
+);
 
 define_language_element_id_as_enum! {
     #[toplevel]
@@ -1066,6 +1063,33 @@ impl From<GenericItemId> for LookupItemId {
             GenericItemId::ImplItem(impl_item) => match impl_item {
                 GenericImplItemId::Type(id) => LookupItemId::ImplItem(ImplItemId::Type(id)),
             },
+        }
+    }
+}
+
+define_language_element_id_as_enum! {
+    #[toplevel]
+    pub enum StatementItemId {
+        Constant(StatementConstId),
+        Use(StatementUseId),
+    }
+}
+
+impl StatementItemId {
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            StatementItemId::Constant(id) => id.name(db),
+            StatementItemId::Use(id) => id.name(db),
+        }
+    }
+    pub fn name_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
+        match self {
+            StatementItemId::Constant(id) => {
+                id.lookup_intern(db).1.lookup(db.upcast()).name(db.upcast()).stable_ptr().untyped()
+            }
+            StatementItemId::Use(id) => {
+                id.lookup_intern(db).1.lookup(db.upcast()).name_stable_ptr(db.upcast())
+            }
         }
     }
 }

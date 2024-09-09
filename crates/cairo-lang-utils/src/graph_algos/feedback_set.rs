@@ -1,5 +1,6 @@
 //! A feedback-vertex-set is a set of vertices whose removal leaves a graph without cycles
 //! (<https://en.wikipedia.org/wiki/Feedback_vertex_set>).
+//!
 //! We use this algorithm to spot the relevant places for adding `withdraw_gas` statements in the
 //! resulting Sierra code - there should be a `withdraw_gas` call in every recursive call, or in
 //! other words, in any cycle in the function call graph.

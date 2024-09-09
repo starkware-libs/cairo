@@ -99,6 +99,7 @@ impl<'db> Index<VariableId> for VariableAllocator<'db> {
 }
 
 /// Lowering context for the encapsulating semantic function.
+///
 /// Each semantic function may generate multiple lowered functions. This context is common to all
 /// the generated lowered functions of an encapsulating semantic function.
 pub struct EncapsulatingLoweringContext<'db> {

@@ -22,7 +22,7 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
-use crate::items::constant::{ConstValue, ConstValueId, Constant, ImplConstantId};
+use crate::items::constant::{ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
@@ -157,7 +157,7 @@ pub trait SemanticGroup:
     fn constant_resolver_data(&self, use_id: ConstantId) -> Maybe<Arc<ResolverData>>;
     #[salsa::invoke(items::constant::constant_const_value)]
     #[salsa::cycle(items::constant::constant_const_value_cycle)]
-    fn constant_const_value(&self, const_id: ConstantId) -> Maybe<ConstValue>;
+    fn constant_const_value(&self, const_id: ConstantId) -> Maybe<ConstValueId>;
     #[salsa::invoke(items::constant::constant_const_type)]
     #[salsa::cycle(items::constant::constant_const_type_cycle)]
     fn constant_const_type(&self, const_id: ConstantId) -> Maybe<TypeId>;

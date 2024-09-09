@@ -48,7 +48,7 @@ pub fn get_starknet_event_variants(
             (has_event_name, enm.name(db).stable_ptr().untyped(), variants)
         }
         ast::ModuleItem::Use(item) => {
-            for leaf in get_all_path_leaves(db, item.use_path(db)) {
+            for leaf in get_all_path_leaves(db, item) {
                 let stable_ptr = &leaf.stable_ptr();
                 if stable_ptr.identifier(db) == EVENT_TYPE_NAME {
                     if !item.has_attr(db, EVENT_ATTR) {
