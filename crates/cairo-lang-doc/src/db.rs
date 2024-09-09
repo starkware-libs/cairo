@@ -38,9 +38,14 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
         item_id => {
             // We check for different type of comments for the item. Even modules can have both
             // inner and module level comments.
-            let outer_comments = extract_outer_comments_from_raw_text(db, item_id);
+            let outer_comments = extract_item_outer_documentation(db, item_id);
+            // In case if item_id is a module, there are 2 possible cases:
+            // 1. Inline module: It could have inner comments, but not the module_level.
+            // 2. Non-inline Module (module as file): It could have module level comments, but not
+            //    the inner ones.
             let inner_comments = extract_item_inner_documentation(db, item_id);
-            let module_level_comments = extract_module_level_comments(db.upcast(), item_id);
+            let module_level_comments =
+                extract_item_module_level_documentation(db.upcast(), item_id);
             match (module_level_comments, outer_comments, inner_comments) {
                 (None, None, None) => None,
                 (module_level_comments, outer_comments, inner_comments) => Some(
@@ -50,35 +55,6 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
                 ),
             }
         }
-    }
-}
-
-/// Gets the crate level documentation.
-fn get_crate_root_module_documentation(db: &dyn DocGroup, crate_id: CrateId) -> Option<String> {
-    let module_file_id = db.module_main_file(ModuleId::CrateRoot(crate_id)).ok()?;
-    extract_module_level_comments_from_file(db, module_file_id)
-}
-
-/// Gets the "//!" inner comment of the item (if only item supports inner comments).
-fn extract_item_inner_documentation(
-    db: &dyn DocGroup,
-    item_id: DocumentableItemId,
-) -> Option<String> {
-    if matches!(
-        item_id,
-        DocumentableItemId::LookupItem(
-            LookupItemId::ModuleItem(ModuleItemId::FreeFunction(_) | ModuleItemId::Submodule(_))
-                | LookupItemId::ImplItem(ImplItemId::Function(_))
-                | LookupItemId::TraitItem(TraitItemId::Function(_))
-        )
-    ) {
-        let raw_text = item_id
-            .stable_location(db.upcast())?
-            .syntax_node(db.upcast())
-            .get_text_without_inner_commentable_children(db.upcast());
-        extract_inner_comments_from_raw_text(raw_text)
-    } else {
-        None
     }
 }
 
@@ -171,11 +147,40 @@ fn fmt(code: String) -> String {
         // Trim trailing semicolons, that are present in trait/impl functions, constants, etc.
         // and that formatter tends to put in separate line.
         .trim_end_matches("\n;")
-        .to_owned()
+      .to_owned()
+}
+
+/// Gets the crate level documentation.
+fn get_crate_root_module_documentation(db: &dyn DocGroup, crate_id: CrateId) -> Option<String> {
+    let module_file_id = db.module_main_file(ModuleId::CrateRoot(crate_id)).ok()?;
+    extract_item_module_level_documentation_from_file(db, module_file_id)
+}
+
+/// Gets the "//!" inner comment of the item (if only item supports inner comments).
+fn extract_item_inner_documentation(
+    db: &dyn DocGroup,
+    item_id: DocumentableItemId,
+) -> Option<String> {
+    if matches!(
+        item_id,
+        DocumentableItemId::LookupItem(
+            LookupItemId::ModuleItem(ModuleItemId::FreeFunction(_) | ModuleItemId::Submodule(_))
+                | LookupItemId::ImplItem(ImplItemId::Function(_))
+                | LookupItemId::TraitItem(TraitItemId::Function(_))
+        )
+    ) {
+        let raw_text = item_id
+            .stable_location(db.upcast())?
+            .syntax_node(db.upcast())
+            .get_text_without_inner_commentable_children(db.upcast());
+        extract_item_inner_documentation_from_raw_text(raw_text)
+    } else {
+        None
+    }
 }
 
 /// Only gets the doc comments above the item.
-fn extract_outer_comments_from_raw_text(
+fn extract_item_outer_documentation(
     db: &dyn DocGroup,
     item_id: DocumentableItemId,
 ) -> Option<String> {
@@ -192,26 +197,31 @@ fn extract_outer_comments_from_raw_text(
     cleanup_doc(doc)
 }
 
+/// Gets the module level comments of the item.
+fn extract_item_module_level_documentation(
+    db: &dyn DocGroup,
+    item_id: DocumentableItemId,
+) -> Option<String> {
+    match item_id {
+        DocumentableItemId::LookupItem(LookupItemId::ModuleItem(ModuleItemId::Submodule(
+            submodule_id,
+        ))) => {
+            if db.is_submodule_inline(submodule_id).is_ok_and(|is_inline| is_inline) {
+                return None;
+            }
+            let module_file_id = db.module_main_file(ModuleId::Submodule(submodule_id)).ok()?;
+            extract_item_module_level_documentation_from_file(db, module_file_id)
+        }
+        _ => None,
+    }
+}
+
 /// Only gets the comments inside the item.
-fn extract_inner_comments_from_raw_text(raw_text: String) -> Option<String> {
+fn extract_item_inner_documentation_from_raw_text(raw_text: String) -> Option<String> {
     let doc = raw_text
         .lines()
         .filter(|line| !line.trim().is_empty())
         .skip_while(|line| is_comment_line(line))
-        .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
-        .join(" ");
-
-    cleanup_doc(doc)
-}
-
-/// Gets the module level comments of certain file.
-fn extract_module_level_comments_from_file(db: &dyn DocGroup, file_id: FileId) -> Option<String> {
-    let file_content = db.file_content(file_id)?.to_string();
-
-    let doc = file_content
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .take_while_ref(|line| is_comment_line(line))
         .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
         .join(" ");
 
@@ -227,20 +237,21 @@ fn cleanup_doc(doc: String) -> Option<String> {
     doc.trim().is_empty().not().then_some(doc)
 }
 
-/// Gets the module level comments of the item.
-fn extract_module_level_comments(db: &dyn DocGroup, item_id: DocumentableItemId) -> Option<String> {
-    match item_id {
-        DocumentableItemId::LookupItem(LookupItemId::ModuleItem(ModuleItemId::Submodule(
-            submodule_id,
-        ))) => {
-            if db.is_submodule_inline(submodule_id).is_ok_and(|is_inline| is_inline) {
-                return None;
-            }
-            let module_file_id = db.module_main_file(ModuleId::Submodule(submodule_id)).ok()?;
-            extract_module_level_comments_from_file(db, module_file_id)
-        }
-        _ => None,
-    }
+/// Gets the module level comments of certain file.
+fn extract_item_module_level_documentation_from_file(
+    db: &dyn DocGroup,
+    file_id: FileId,
+) -> Option<String> {
+    let file_content = db.file_content(file_id)?.to_string();
+
+    let doc = file_content
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .take_while_ref(|line| is_comment_line(line))
+        .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
+        .join(" ");
+
+    cleanup_doc(doc)
 }
 
 /// This function does 2 things to the line of comment:
