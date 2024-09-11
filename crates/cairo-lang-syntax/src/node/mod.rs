@@ -172,6 +172,37 @@ impl SyntaxNode {
         format!("{}", NodeTextFormatter { node: self, db })
     }
 
+    /// Returns all the text under the syntax node.
+    /// It traverses all the syntax tree of the node, but ignores functions and modules.
+    /// We ignore those, because if there's some inner functions or modules, we don't want to get
+    /// raw text of them. Comments inside them refer themselves directly, not this SyntaxNode.
+    pub fn get_text_without_inner_commentable_children(&self, db: &dyn SyntaxGroup) -> String {
+        let mut buffer = String::new();
+
+        match &self.green_node(db).as_ref().details {
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Node { .. } => {
+                for child in db.get_children(self.clone()).iter() {
+                    let kind = child.kind(db);
+
+                    // Checks all the items that the inner comment can be bubbled to (implementation
+                    // function is also a FunctionWithBody).
+                    if !matches!(
+                        kind,
+                        SyntaxKind::FunctionWithBody
+                            | SyntaxKind::ItemModule
+                            | SyntaxKind::TraitItemFunction
+                    ) {
+                        buffer.push_str(&SyntaxNode::get_text_without_inner_commentable_children(
+                            child, db,
+                        ));
+                    }
+                }
+            }
+        }
+        buffer
+    }
+
     /// Returns all the text under the syntax node, without the outmost trivia (the leading trivia
     /// of the first token and the trailing trivia of the last token).
     ///

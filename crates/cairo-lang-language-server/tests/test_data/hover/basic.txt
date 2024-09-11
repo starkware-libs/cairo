@@ -23,7 +23,10 @@ fn main() {
 }
 
 /// `add_two` documentation.
-fn add_t<caret>wo(x: u32) -> u32 { x + 2 }
+fn add_t<caret>wo(x: u32) -> u32 { 
+  //! Adds 2 to an unsigned argument.
+  x + 2 
+}
 
 /// Rectangle struct.
 #[derive(Copy, Drop)]
@@ -131,7 +134,7 @@ hello
 fn add_two(x: u32) -> u32
 ```
 ---
-`add_two` documentation.
+`add_two` documentation. Adds 2 to an unsigned argument.
 
 //! > hover #4
 // = source context
@@ -146,7 +149,7 @@ hello
 fn add_two(x: u32) -> u32
 ```
 ---
-`add_two` documentation.
+`add_two` documentation. Adds 2 to an unsigned argument.
 
 //! > hover #5
 // = source context
@@ -161,7 +164,7 @@ hello
 fn add_two(x: u32) -> u32
 ```
 ---
-`add_two` documentation.
+`add_two` documentation. Adds 2 to an unsigned argument.
 
 //! > hover #6
 // = source context
@@ -262,9 +265,9 @@ Calculate the area of the rectangle.
 
 //! > hover #14
 // = source context
-fn add_t<caret>wo(x: u32) -> u32 { x + 2 }
+fn add_t<caret>wo(x: u32) -> u32 { 
 // = highlight
-fn <sel>add_two</sel>(x: u32) -> u32 { x + 2 }
+fn <sel>add_two</sel>(x: u32) -> u32 { 
 // = popover
 ```cairo
 hello
@@ -273,7 +276,7 @@ hello
 fn add_two(x: u32) -> u32
 ```
 ---
-`add_two` documentation.
+`add_two` documentation. Adds 2 to an unsigned argument.
 
 //! > hover #15
 // = source context
