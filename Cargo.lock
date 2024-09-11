@@ -580,14 +580,19 @@ dependencies = [
 name = "cairo-lang-doc"
 version = "2.8.2"
 dependencies = [
+ "anyhow",
  "cairo-lang-defs",
+ "cairo-lang-filesystem",
  "cairo-lang-formatter",
  "cairo-lang-parser",
+ "cairo-lang-semantic",
  "cairo-lang-syntax",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "indoc",
  "itertools 0.12.1",
  "rust-analyzer-salsa",
+ "test-log",
 ]
 
 [[package]]

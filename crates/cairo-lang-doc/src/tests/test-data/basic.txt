@@ -1,0 +1,106 @@
+//! > Documentation
+
+//! > test_runner_name
+documentation_test_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+//! This comment refers to the crate.
+
+/// Main function comment outside.
+fn main() {
+    //! Main function comment inside.
+    println!("main");
+}
+
+/// Trait containing abc function.
+trait TraitTest {
+    /// abc function returning u32.
+    /// Default impl of abc TraitTest function.
+    fn abc() -> u32 {
+        //! Default impl of abc TraitTest function inner comment.
+        println!("default impl");
+        32
+    }
+}
+
+/// Implementation of TraitTest's abc function.
+impl TraitTestImpl of TraitTest {
+    /// Default impl of abc TraitTest function.
+    fn abc() -> u32 {
+        //! Default impl of abc TraitTest function inner comment.
+        println!("abc");
+        32
+    }
+}
+
+/// Test module used to check if the documentation is being attached to the nodes correctly.
+pub mod test_module {
+    //! Test module used to check if the documentation is being attached to the nodes correctly.
+    /// Just a function outside the test_module.
+    pub fn inner_test_module_function() {
+        //! Just a function inside the test_module.
+        println!("inside inner test module inner function");
+    }
+}
+
+/// Point struct representing a point in a 2d space.
+struct Point {
+    /// X coordinate.
+    x: u32,
+    /// Y coordinate.
+    y: u32
+}
+
+/// Answer Enum representing an answer to a yes/no question.
+enum Answer {
+    /// Yes answer variant.
+    Yes,
+    /// No answer variant.
+    No
+}
+
+//! > Item #1
+This comment refers to the crate.
+
+//! > Item #2
+Main function comment outside. Main function comment inside.
+
+//! > Item #3
+Trait containing abc function.
+
+//! > Item #4
+abc function returning u32. Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
+
+//! > Item #5
+Implementation of TraitTest's abc function.
+
+//! > Item #6
+Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
+
+//! > Item #7
+Test module used to check if the documentation is being attached to the nodes correctly. Test module used to check if the documentation is being attached to the nodes correctly.
+
+//! > Item #8
+Just a function outside the test_module. Just a function inside the test_module.
+
+//! > Item #9
+Point struct representing a point in a 2d space.
+
+//! > Item #10
+X coordinate.
+
+//! > Item #11
+Y coordinate.
+
+//! > Item #12
+Answer Enum representing an answer to a yes/no question.
+
+//! > Item #13
+Yes answer variant.
+
+//! > Item #14
+No answer variant.
