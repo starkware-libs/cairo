@@ -3,13 +3,12 @@ use std::fmt::Write;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, Severity};
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{LookupIntern, Upcast};
+use cairo_lang_utils::LookupIntern;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -123,13 +122,17 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Returns the crate ids for which the diagnostics will be checked.
-    fn crates_of_interest(&self, db: &RootDatabase) -> Vec<CrateId> {
-        if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
+    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
+        if self.crate_ids.is_empty() {
+            db.crates()
+        } else {
+            self.crate_ids.clone()
+        }
     }
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `true` if diagnostics were found.
-    pub fn check(&mut self, db: &RootDatabase) -> bool {
+    pub fn check(&mut self, db: &dyn LoweringGroup) -> bool {
         let mut found_diagnostics = false;
 
         let crates = self.crates_of_interest(db);
@@ -212,8 +215,12 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `Err` if diagnostics were found.
-    pub fn ensure(&mut self, db: &RootDatabase) -> Result<(), DiagnosticsError> {
-        if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
+    pub fn ensure(&mut self, db: &dyn LoweringGroup) -> Result<(), DiagnosticsError> {
+        if self.check(db) {
+            Err(DiagnosticsError)
+        } else {
+            Ok(())
+        }
     }
 
     /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
