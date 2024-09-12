@@ -287,7 +287,6 @@ fn is_comment_line(line: &str) -> bool {
 
 /// Parses the lines of extracted comments so it can be displayed.
 fn join_lines_of_comments(lines: &Vec<String>) -> String {
-    println!("Lines: {:?}", lines);
     let mut in_code_block = false;
     let mut result = String::new();
 
