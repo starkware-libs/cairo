@@ -43,6 +43,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Consecutive math operators are not allowed: 'TerminalGT' followed by 'TerminalGT'
+ --> lib.cairo:6:9
+    a > a > a;
+        ^
+
 error: Unexpected argument type. Expected: "core::bool", found: "core::integer::u128".
  --> lib.cairo:6:13
     a > a > a;
