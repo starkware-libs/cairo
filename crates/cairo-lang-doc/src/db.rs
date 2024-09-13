@@ -187,14 +187,16 @@ fn extract_item_outer_documentation(
     // Get the text of the item (trivia + definition)
     let raw_text =
         item_id.stable_location(db.upcast())?.syntax_node(db.upcast()).get_text(db.upcast());
-    let doc = raw_text
+    let lines = raw_text
         .lines()
         .filter(|line| !line.trim().is_empty())
         .take_while_ref(|line| is_comment_line(line))
         .filter_map(|line| extract_comment_from_code_line(line, &["///"]))
-        .join(" ");
+        .collect::<Vec<_>>();
 
-    cleanup_doc(doc)
+    let result = join_lines_of_comments(&lines);
+
+    cleanup_doc(result)
 }
 
 /// Gets the module level comments of the item.
@@ -218,14 +220,16 @@ fn extract_item_module_level_documentation(
 
 /// Only gets the comments inside the item.
 fn extract_item_inner_documentation_from_raw_text(raw_text: String) -> Option<String> {
-    let doc = raw_text
+    let lines = raw_text
         .lines()
         .filter(|line| !line.trim().is_empty())
         .skip_while(|line| is_comment_line(line))
         .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
-        .join(" ");
+        .collect::<Vec<_>>();
 
-    cleanup_doc(doc)
+    let result = join_lines_of_comments(&lines);
+
+    cleanup_doc(result)
 }
 
 /// Formats markdown part of the documentation, and returns None, if the final documentation is
@@ -244,14 +248,15 @@ fn extract_item_module_level_documentation_from_file(
 ) -> Option<String> {
     let file_content = db.file_content(file_id)?.to_string();
 
-    let doc = file_content
+    let lines = file_content
         .lines()
         .filter(|line| !line.trim().is_empty())
         .take_while_ref(|line| is_comment_line(line))
         .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
-        .join(" ");
+        .collect::<Vec<_>>();
 
-    cleanup_doc(doc)
+    let result = join_lines_of_comments(&lines);
+    cleanup_doc(result)
 }
 
 /// This function does 2 things to the line of comment:
@@ -278,4 +283,35 @@ fn extract_comment_from_code_line(line: &str, comment_markers: &[&'static str]) 
 /// Check whether the code line is a comment line.
 fn is_comment_line(line: &str) -> bool {
     line.trim_start().starts_with("//")
+}
+
+/// Parses the lines of extracted comments so it can be displayed.
+fn join_lines_of_comments(lines: &Vec<String>) -> String {
+    let mut in_code_block = false;
+    let mut result = String::new();
+
+    for line in lines {
+        let contains_delimiter = line.trim().starts_with("```");
+
+        if contains_delimiter {
+            // If we stumble upon the opening of a code block, we have to make a newline.
+            if !in_code_block {
+                result.push('\n');
+            }
+            in_code_block = !in_code_block;
+
+            result.push_str(line);
+            result.push('\n');
+            continue;
+        }
+
+        if in_code_block {
+            result.push_str(line);
+            result.push('\n');
+        } else {
+            result.push_str(line.trim());
+            result.push(' ');
+        }
+    }
+    result.trim_end().to_string()
 }
