@@ -57,3 +57,38 @@ StatementExpr
     │   ├── op (kind: TokenMul): '*'
     │   └── rhs (kind: TokenLiteralNumber): '5'
     └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+
+//! > ==========================================================================
+
+//! > Test consecutive comparison operators
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn f() -> bool {
+    3 < 1 > 5
+}
+
+//! > top_level_kind
+StatementExpr
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Consecutive math operators are not allowed: 'TerminalLT' followed by 'TerminalGT'
+ --> dummy_file.cairo:2:9
+    3 < 1 > 5
+        ^
+
+//! > expected_tree
+└── Top level kind: StatementExpr
+    ├── attributes (kind: AttributeList) []
+    ├── expr (kind: ExprBinary)
+    │   ├── lhs (kind: ExprBinary)
+    │   │   ├── lhs (kind: TokenLiteralNumber): '3'
+    │   │   ├── op (kind: TokenLT): '<'
+    │   │   └── rhs (kind: TokenLiteralNumber): '1'
+    │   ├── op (kind: TokenGT): '>'
+    │   └── rhs (kind: TokenLiteralNumber): '5'
+    └── semicolon (kind: OptionTerminalSemicolonEmpty) []
