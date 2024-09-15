@@ -3,6 +3,7 @@
 //! It is invoked by queries for function bodies and other code blocks.
 
 use core::panic;
+use std::any::Any;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -291,10 +292,10 @@ pub type EnvVariables = OrderedHashMap<SmolStr, Binding>;
 
 type EnvTypes = OrderedHashMap<SmolStr, StatementType>;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 struct StatementType {
-    ty: TypeId,
+    resolved_generic_item: ResolvedGenericItem,
     stable_ptr: SyntaxStablePtrId,
 }
 
@@ -3166,7 +3167,7 @@ pub fn get_statement_type_by_name(env: &mut Environment, type_name: &SmolStr) ->
     while let Some(curr_env) = maybe_env {
         if let Some(var) = curr_env.types.get(type_name) {
             curr_env.used_types.insert(type_name.clone());
-            return Some(var.ty);
+            return Some(var.resolved_generic_item);
         }
         maybe_env = curr_env.parent.as_deref_mut();
     }
@@ -3614,18 +3615,24 @@ pub fn compute_statement_semantic(
                             }
                             ResolvedGenericItem::GenericTypeAlias(type_alias_id) => {
                                 let expr_ty = type_alias_id
-                                    .lookup_intern(db)
-                                    .1
+                                    .stable_ptr(db.upcast())
                                     .lookup(db.upcast())
                                     .ty(db.upcast());
                                 let ty =
                                     resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &expr_ty);
                                 add_type_to_statement_environment(ctx, name, ty, stable_ptr);
                             }
+                            ResolvedGenericItem::GenericType(generic_type_id) => {
+                                add_type_to_statement_environment(
+                                    ctx,
+                                    name,
+                                    ResolvedGenericItem::GenericType(generic_type_id),
+                                    stable_ptr,
+                                );
+                            }
                             ResolvedGenericItem::Module(_)
                             | ResolvedGenericItem::GenericFunction(_)
                             | ResolvedGenericItem::TraitFunction(_)
-                            | ResolvedGenericItem::GenericType(_)
                             | ResolvedGenericItem::GenericImplAlias(_)
                             | ResolvedGenericItem::Variant(_)
                             | ResolvedGenericItem::Trait(_)
@@ -3706,13 +3713,16 @@ fn add_item_to_statement_environment(
 fn add_type_to_statement_environment(
     ctx: &mut ComputationContext<'_>,
     name: SmolStr,
-    ty: TypeId,
+    resolved_generic_item: ResolvedGenericItem,
     stable_ptr: impl Into<SyntaxStablePtrId> + std::marker::Copy,
 ) {
     if ctx
         .environment
         .types
-        .insert(name.clone(), StatementType { ty, stable_ptr: stable_ptr.into() })
+        .insert(
+            name.clone(),
+            StatementType { resolved_generic_item, stable_ptr: stable_ptr.into() },
+        )
         .is_some()
     {
         ctx.diagnostics.report(stable_ptr, MultipleTypeDefinition(name));
