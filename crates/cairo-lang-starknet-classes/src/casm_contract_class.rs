@@ -32,6 +32,7 @@ use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
+use derivative::Derivative;
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use num_integer::Integer;
@@ -107,10 +108,12 @@ fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
 }
 
 /// Represents a contract in the Starknet network.
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Derivative, PartialEq, Eq, Serialize, Deserialize)]
+#[derivative(Default)]
 pub struct CasmContractClass {
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub prime: BigUint,
+    #[derivative(Default(value = "\"0.0.0\".to_string()"))]
     pub compiler_version: String,
     pub bytecode: Vec<BigUintAsHex>,
     #[serde(skip_serializing_if = "skip_if_none")]

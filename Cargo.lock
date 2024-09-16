@@ -1017,6 +1017,7 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "convert_case",
+ "derivative",
  "env_logger",
  "indoc",
  "itertools 0.12.1",
