@@ -66,12 +66,20 @@ pub fn lean_code_file_name(func_name: &str, with_suffix: bool) -> String {
     String::from(func_name) + "_code" + if with_suffix { ".lean" } else { "" }
 }
 
+pub fn lean_soundness_name(func_name: &str) -> String {
+    String::from(func_name) + "_soundness"
+}
+
 pub fn lean_soundness_spec_file_name(func_name: &str, with_suffix: bool) -> String {
     String::from(func_name) + "_soundness_spec" + if with_suffix { ".lean" } else { "" }
 }
 
 pub fn lean_soundness_file_name(func_name: &str, with_suffix: bool) -> String {
     String::from(func_name) + "_soundness" + if with_suffix { ".lean" } else { "" }
+}
+
+pub fn lean_completeness_name(func_name: &str) -> String {
+    String::from(func_name) + "_completeness"
 }
 
 pub fn lean_completeness_spec_file_name(func_name: &str, with_suffix: bool) -> String {
@@ -1861,6 +1869,8 @@ fn generate_soundness_spec_prelude(main_func_name: &str) -> Vec<String> {
     prelude.push(String::from("set_option autoImplicit false"));
     prelude.push("set_option maxRecDepth 1024".into());
     prelude.push(String::from(""));
+    prelude.push(format!("namespace {}", lean_soundness_name(main_func_name)));
+    prelude.push(String::from(""));
     prelude.push(String::from("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F]"));
     prelude.push(String::from(""));
 
@@ -1868,21 +1878,6 @@ fn generate_soundness_spec_prelude(main_func_name: &str) -> Vec<String> {
 }
 
 fn generate_soundness_prelude(main_func_name: &str) -> Vec<String> {
-    let mut prelude: Vec<String> = Vec::new();
-    prelude.push(String::from("import starkware.cairo.lean.semantics.soundness.prelude"));
-    prelude.push(format!("import .{}", lean_code_file_name(main_func_name, false)));
-    prelude.push(format!("import .{}", lean_soundness_spec_file_name(main_func_name, false)));
-    prelude.push(String::from("open tactic"));
-    prelude.push(String::from(""));
-    prelude.push(String::from("variables {F : Type} [field F] [decidable_eq F] [prelude_hyps F]"));
-    prelude.push(String::from("variable  mem : F → F"));
-    prelude.push(String::from("variable  σ : register_state F"));
-    prelude.push(String::from(""));
-
-    prelude
-}
-
-fn generate_soundness_prelude4(main_func_name: &str) -> Vec<String> {
     let mut prelude: Vec<String> = Vec::new();
     prelude.push(String::from("import Verification.Semantics.Soundness.Prelude"));
     prelude.push(String::from("import Verification.Libfuncs.Common"));
@@ -1894,6 +1889,7 @@ fn generate_soundness_prelude4(main_func_name: &str) -> Vec<String> {
     prelude.push("set_option maxRecDepth 1024".into());
     prelude.push(String::from(""));
     prelude.push(format!("open {}", lean_code_name(main_func_name)));
+    prelude.push(format!("open {}", lean_soundness_name(main_func_name)));
     prelude.push(String::from(""));
     prelude.push(String::from("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F] (mem : F → F) (σ : RegisterState F)"));
     prelude.push(String::from(""));
@@ -1911,6 +1907,8 @@ fn generate_completeness_spec_prelude(main_func_name: &str) -> Vec<String> {
 
     prelude.push(String::from("set_option autoImplicit false"));
     prelude.push(String::from("set_option maxRecDepth 1024"));
+    prelude.push(String::from(""));
+    prelude.push(format!("namespace {}", lean_completeness_name(main_func_name)));
     prelude.push(String::from(""));
 
     prelude
@@ -1931,6 +1929,7 @@ fn generate_completeness_prelude(main_func_name: &str) -> Vec<String> {
     prelude.push(String::from("set_option maxHeartbeats 1000000"));
     prelude.push(String::from(""));
     prelude.push(format!("open {}", lean_vm_code_name(main_func_name)));
+    prelude.push(format!("open {}", lean_completeness_name(main_func_name)));
     prelude.push(String::from(""));
     prelude.push(String::from("variable (mem : Mrel → Mrel) (σ : VmRegisterState)"));
     prelude.push(String::from(""));
@@ -5506,7 +5505,7 @@ pub fn generate_lean_soundness(lean_func_name: &str, cairo_program: &CairoProgra
 
     // Generate the prelude
     soundness_spec.append(generate_soundness_spec_prelude(&lean_func_name).as_mut());
-    soundness.append(generate_soundness_prelude4(&lean_func_name).as_mut());
+    soundness.append(generate_soundness_prelude(&lean_func_name).as_mut());
 
 
     for (aux_info, func_offsets) in cairo_program.aux_infos.iter().zip(offsets.iter()) {
