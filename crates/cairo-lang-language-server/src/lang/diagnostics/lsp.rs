@@ -2,7 +2,7 @@ use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, S
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::{
+use lsp_types::{
     Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Range,
 };
 use tracing::error;
@@ -35,7 +35,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
                     continue;
                 };
                 related_information.push(DiagnosticRelatedInformation {
-                    location: Location { uri: db.url_for_file(file_id), range },
+                    location: Location { uri: db.uri_for_file(file_id), range },
                     message: note.text.clone(),
                 });
             } else {
@@ -79,7 +79,7 @@ fn get_mapped_range_and_add_mapping_note(
         if *orig != mapped {
             if let Some(range) = get_lsp_range(db.upcast(), orig) {
                 related_info.push(DiagnosticRelatedInformation {
-                    location: Location { uri: db.url_for_file(orig.file_id), range },
+                    location: Location { uri: db.uri_for_file(orig.file_id), range },
                     message: message.to_string(),
                 });
             }

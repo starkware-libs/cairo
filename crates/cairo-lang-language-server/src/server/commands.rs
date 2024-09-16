@@ -1,5 +1,6 @@
 use anyhow::bail;
 
+#[derive(Debug)]
 pub enum ServerCommands {
     Reload,
 }

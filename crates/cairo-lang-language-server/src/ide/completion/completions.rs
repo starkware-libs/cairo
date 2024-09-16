@@ -19,7 +19,7 @@ use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{LookupIntern, Upcast};
-use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
+use lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 use tracing::debug;
 
 use crate::ide::utils::find_methods_for_type;

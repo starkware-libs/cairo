@@ -1,1 +1,2 @@
 enum-variant-name-threshold = 1
+ignore-interior-mutability = ["lsp_types::Uri"]

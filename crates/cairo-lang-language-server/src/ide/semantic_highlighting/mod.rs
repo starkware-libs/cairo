@@ -5,7 +5,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::*;
+use lsp_types::{SemanticToken, SemanticTokens, SemanticTokensParams, SemanticTokensResult};
 use tracing::error;
 
 use self::encoder::{EncodedToken, TokenEncoder};
@@ -17,19 +17,19 @@ mod encoder;
 mod token_kind;
 
 /// Resolve the semantic tokens of a given file.
-#[tracing::instrument(
-    level = "debug",
-    skip_all,
-    fields(uri = %params.text_document.uri)
-)]
+// #[tracing::instrument(
+//     level = "debug",
+//     skip_all,
+//     fields(uri = %params.text_document.uri)
+// )]
 pub fn semantic_highlight_full(
     params: SemanticTokensParams,
     db: &AnalysisDatabase,
 ) -> Option<SemanticTokensResult> {
     let file_uri = params.text_document.uri;
-    let file = db.file_for_url(&file_uri)?;
+    let file = db.file_for_uri(&file_uri)?;
     let Ok(node) = db.file_syntax(file) else {
-        error!("semantic analysis failed: file '{file_uri}' does not exist");
+        error!("semantic analysis failed: file '{file_uri:?}' does not exist");
         return None;
     };
 

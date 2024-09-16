@@ -34,11 +34,16 @@ serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 smol_str.workspace = true
 tempfile = "3"
-tokio.workspace = true
-tower-lsp = "0.20.0"
 tracing = "0.1"
 tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+crossbeam = "0.8.4"
+lsp-server = "0.7.7"
+lsp-types = "0.97.0"
+rustc-hash = "1.1.0"
+libc = "0.2.155"
+jod-thread = "0.1.2"
+url = "2.5.2"
 
 [dev-dependencies]
 assert_fs = "1.1"

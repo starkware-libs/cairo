@@ -1,16 +1,16 @@
 //! CairoLS extensions to the Language Server Protocol.
 
+use lsp_types::notification::Notification;
+use lsp_types::request::Request;
+use lsp_types::{TextDocumentPositionParams, Uri};
 use serde::{Deserialize, Serialize};
-use tower_lsp::lsp_types::notification::Notification;
-use tower_lsp::lsp_types::request::Request;
-use tower_lsp::lsp_types::{TextDocumentPositionParams, Url};
 
 /// Provides content of virtual file from the database.
 pub struct ProvideVirtualFile;
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct ProvideVirtualFileRequest {
-    pub uri: Url,
+    pub uri: Uri,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]

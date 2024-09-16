@@ -1,20 +1,20 @@
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
-use tower_lsp::lsp_types::Url;
+use lsp_types::Uri;
 
 use super::LsProtoGroup;
 
 #[test]
-fn file_url() {
+fn file_uri() {
     let db = FilesDatabaseForTesting::default();
 
-    let check = |expected_url: &str, expected_file_long: FileLongId| {
-        let expected_url = Url::parse(expected_url).unwrap();
+    let check = |expected_uri: &str, expected_file_long: FileLongId| {
+        let expected_uri = Uri::from_str(expected_uri).unwrap();
         let expected_file = db.intern_file(expected_file_long);
 
-        assert_eq!(db.file_for_url(&expected_url), Some(expected_file));
-        assert_eq!(db.url_for_file(expected_file), expected_url);
+        assert_eq!(db.file_for_uri(&expected_uri), Some(expected_file));
+        assert_eq!(db.uri_for_file(expected_file), expected_uri);
     };
 
     check("file:///foo/bar", FileLongId::OnDisk("/foo/bar".into()));

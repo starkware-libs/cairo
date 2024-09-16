@@ -1,2 +1,5 @@
+pub mod api;
+pub mod client;
 pub mod commands;
-pub mod notifier;
+pub mod connection;
+pub mod schedule;

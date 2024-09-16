@@ -16,14 +16,14 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 use indoc::formatdoc;
-use tower_lsp::lsp_types::TextDocumentPositionParams;
+use lsp_types::TextDocumentPositionParams;
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 /// Tries to expand macro, returns it as string.
 pub fn expand_macro(db: &AnalysisDatabase, params: &TextDocumentPositionParams) -> Option<String> {
-    let file_id = db.file_for_url(&params.text_document.uri)?;
+    let file_id = db.file_for_uri(&params.text_document.uri)?;
     let node = db.find_syntax_node_at_position(file_id, params.position.to_cairo())?;
 
     let module_id = db.find_module_file_containing_node(&node)?.0;

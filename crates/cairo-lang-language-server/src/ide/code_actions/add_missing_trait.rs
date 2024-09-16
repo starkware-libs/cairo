@@ -11,7 +11,7 @@ use cairo_lang_semantic::resolve::Resolver;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::{CodeAction, CodeActionKind, Range, TextEdit, Url, WorkspaceEdit};
+use lsp_types::{CodeAction, CodeActionKind, Range, TextEdit, Uri, WorkspaceEdit};
 use tracing::debug;
 
 use crate::ide::utils::find_methods_for_type;
@@ -20,8 +20,8 @@ use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
 /// Create a Quick Fix code action to add a missing trait given a `CannotCallMethod` diagnostic.
 #[tracing::instrument(level = "trace", skip_all)]
-pub fn add_missing_trait(db: &AnalysisDatabase, node: &SyntaxNode, uri: Url) -> Vec<CodeAction> {
-    let file_id = db.file_for_url(&uri).unwrap();
+pub fn add_missing_trait(db: &AnalysisDatabase, node: &SyntaxNode, uri: Uri) -> Vec<CodeAction> {
+    let file_id = db.file_for_uri(&uri).unwrap();
     let lookup_items = db.collect_lookup_items_stack(node).unwrap();
     let unknown_method_name = node.get_text(db.upcast());
     missing_traits_actions(db, file_id, lookup_items, node, &unknown_method_name, uri)
@@ -36,7 +36,7 @@ fn missing_traits_actions(
     lookup_items: Vec<LookupItemId>,
     node: &SyntaxNode,
     unknown_method_name: &str,
-    uri: Url,
+    uri: Uri,
 ) -> Option<Vec<CodeAction>> {
     let syntax_db = db.upcast();
     // Get a resolver in the current context.

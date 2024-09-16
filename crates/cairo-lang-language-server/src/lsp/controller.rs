@@ -1,259 +1,350 @@
-use std::sync::Arc;
+use std::path::PathBuf;
 
-use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroupEx, PrivRawFileContentQuery};
-use serde_json::Value;
-use tower_lsp::jsonrpc::Result as LSPResult;
-use tower_lsp::lsp_types::{
-    CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
-    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
-    DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
-    DocumentFormattingParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
-    Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, MessageType,
-    SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent, TextEdit, Url,
-    WorkspaceEdit,
+use anyhow::anyhow;
+use cairo_lang_filesystem::db::{
+    AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
-use tower_lsp::LanguageServer;
+use lsp_server::ErrorCode;
+use lsp_types::notification::{
+    DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
+    DidOpenTextDocument, DidSaveTextDocument, LogMessage,
+};
+use lsp_types::request::{
+    ApplyWorkspaceEdit, CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition,
+    HoverRequest, SemanticTokensFullRequest,
+};
+use lsp_types::{
+    ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeActionParams, CodeActionResponse,
+    CompletionParams, CompletionResponse, DidChangeConfigurationParams,
+    DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams,
+    DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams,
+    ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse, Hover, HoverParams,
+    LogMessageParams, MessageType, SemanticTokensParams, SemanticTokensResult,
+    TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Uri,
+};
+use serde_json::Value;
 use tracing::{error, warn};
 
 use crate::lang::lsp::LsProtoGroup;
-use crate::lsp::capabilities::server::{
-    collect_dynamic_registrations, collect_server_capabilities,
+use crate::lsp::ext::{
+    ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
+    ViewAnalyzedCrates,
 };
+use crate::server::api::traits::{
+    BackgroundDocumentRequestHandler, SyncNotificationHandler, SyncRequestHandler,
+};
+use crate::server::api::{Error, LSPResult, LSPResultConversionTrait};
+use crate::server::client::{Notifier, Requester};
 use crate::server::commands::ServerCommands;
-use crate::state::Owned;
-use crate::{ide, Backend};
+use crate::server::schedule::Task;
+use crate::state::{State, StateSnapshot};
+use crate::{ide, lang, Backend};
 
-/// TODO: Remove when we move to sync world.
-/// This is macro because of lifetimes problems with `self`.
-macro_rules! state_mut_async {
-    ($state:ident, $this:ident, $($f:tt)+) => {
-        async {
-            let mut state = $this.state_mutex.lock().await;
-            let $state = &mut *state;
-
-            $($f)+
-        }
-    };
+impl BackgroundDocumentRequestHandler for CodeActionRequest {
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: CodeActionParams,
+    ) -> Result<Option<CodeActionResponse>, Error> {
+        Ok(ide::code_actions::code_actions(params, &snapshot.db))
+    }
 }
 
-#[tower_lsp::async_trait]
-impl LanguageServer for Backend {
-    #[tracing::instrument(level = "debug", skip_all)]
-    async fn initialize(&self, params: InitializeParams) -> LSPResult<InitializeResult> {
-        let client_capabilities = Owned::new(Arc::new(params.capabilities));
-        let client_capabilities_snapshot = client_capabilities.snapshot();
-        self.with_state_mut(move |state| {
-            state.client_capabilities = client_capabilities;
-        })
-        .await;
-
-        Ok(InitializeResult {
-            server_info: None,
-            capabilities: collect_server_capabilities(&client_capabilities_snapshot),
-        })
-    }
-
-    #[tracing::instrument(level = "debug", skip_all)]
-    async fn initialized(&self, _: InitializedParams) {
-        // Initialize the configuration.
-        self.reload_config().await;
-
-        // Dynamically register capabilities.
-        let client_capabilities = self.state_snapshot().await.client_capabilities;
-
-        let dynamic_registrations = collect_dynamic_registrations(&client_capabilities);
-        if !dynamic_registrations.is_empty() {
-            let result = self.client.register_capability(dynamic_registrations).await;
-            if let Err(err) = result {
-                warn!("failed to register dynamic capabilities: {err:#?}");
-            }
-        }
-    }
-
-    async fn shutdown(&self) -> LSPResult<()> {
-        Ok(())
-    }
-
-    #[tracing::instrument(level = "debug", skip_all)]
-    async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {
-        self.reload_config().await;
-    }
-
-    #[tracing::instrument(level = "debug", skip_all)]
-    async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
-        // Invalidate changed cairo files.
-        self.with_state_mut(|state| {
-            for change in &params.changes {
-                if is_cairo_file_path(&change.uri) {
-                    let Some(file) = state.db.file_for_url(&change.uri) else { continue };
-                    PrivRawFileContentQuery
-                        .in_db_mut(state.db.as_files_group_mut())
-                        .invalidate(&file);
-                }
-            }
-        })
-        .await;
-
-        // Reload workspace if a config file has changed.
-        for change in params.changes {
-            let changed_file_path = change.uri.to_file_path().unwrap_or_default();
-            let changed_file_name = changed_file_path.file_name().unwrap_or_default();
-            // TODO(pmagiera): react to Scarb.lock. Keep in mind Scarb does save Scarb.lock on each
-            //  metadata call, so it is easy to fall in a loop here.
-            if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
-            {
-                self.reload().await.ok();
-            }
-        }
-    }
-
+impl SyncRequestHandler for ExecuteCommand {
     #[tracing::instrument(level = "debug", skip_all, fields(command = params.command))]
-    async fn execute_command(&self, params: ExecuteCommandParams) -> LSPResult<Option<Value>> {
+    fn run(
+        state: &mut State,
+        notifier: Notifier,
+        requester: &mut Requester<'_>,
+        params: ExecuteCommandParams,
+    ) -> LSPResult<Option<Value>> {
         let command = ServerCommands::try_from(params.command);
+
         if let Ok(cmd) = command {
             match cmd {
                 ServerCommands::Reload => {
-                    self.reload().await?;
+                    Backend::reload(state, &notifier, requester)?;
                 }
             }
         }
 
-        match self.client.apply_edit(WorkspaceEdit::default()).await {
-            Ok(res) if res.applied => self.client.log_message(MessageType::INFO, "applied").await,
-            Ok(_) => self.client.log_message(MessageType::INFO, "rejected").await,
-            Err(err) => self.client.log_message(MessageType::ERROR, err).await,
-        }
+        let handler = |response: ApplyWorkspaceEditResponse| {
+            if response.applied {
+                Task::local(|_, notifier, _, _| {
+                    if let Err(err) = notifier.notify::<LogMessage>(LogMessageParams {
+                        typ: MessageType::INFO,
+                        message: "applied".to_string(),
+                    }) {
+                        error!("failed to send 'applied' notification to client: {err:#}");
+                    }
+                })
+            } else {
+                Task::local(|_, notifier, _, _| {
+                    if let Err(err) = notifier.notify::<LogMessage>(LogMessageParams {
+                        typ: MessageType::INFO,
+                        message: "rejected".to_string(),
+                    }) {
+                        error!("failed to send 'rejected' notification to client: {err:#}");
+                    }
+                })
+            }
+        };
+
+        // FIXME: why do we send it? (ask murek)
+        requester
+            .request::<ApplyWorkspaceEdit>(
+                ApplyWorkspaceEditParams { label: None, edit: Default::default() },
+                handler,
+            )
+            .with_failure_code(ErrorCode::RequestFailed)?;
 
         Ok(None)
     }
+}
 
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
-    async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        let refresh = state_mut_async! {state, self,
-                let uri = params.text_document.uri;
-
-                // Try to detect the crate for physical files.
-                // The crate for virtual files is already known.
-                if uri.scheme() == "file" {
-                    let Ok(path) = uri.to_file_path() else { return false };
-                    self.detect_crate_for(&mut state.db, &state.config, path).await;
-                }
-
-                let Some(file_id) = state.db.file_for_url(&uri) else { return false };
-                state.open_files.insert(uri);
-                state.db.override_file_content(file_id, Some(params.text_document.text.into()));
-
-                true
-        }
-        .await;
-
-        if refresh {
-            self.refresh_diagnostics().await.ok();
-        }
+impl BackgroundDocumentRequestHandler for HoverRequest {
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: HoverParams,
+    ) -> LSPResult<Option<Hover>> {
+        Ok(ide::hover::hover(params, &snapshot.db))
     }
+}
 
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
-    async fn did_change(&self, params: DidChangeTextDocumentParams) {
+impl BackgroundDocumentRequestHandler for Formatting {
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: DocumentFormattingParams,
+    ) -> LSPResult<Option<Vec<TextEdit>>> {
+        Ok(ide::formatter::format(params, &snapshot.db))
+    }
+}
+
+impl SyncNotificationHandler for DidChangeTextDocument {
+    // #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    fn run(
+        state: &mut State,
+        notifier: Notifier,
+        _requester: &mut Requester<'_>,
+        params: DidChangeTextDocumentParams,
+    ) -> LSPResult<()> {
         let text = if let Ok([TextDocumentContentChangeEvent { text, .. }]) =
             TryInto::<[_; 1]>::try_into(params.content_changes)
         {
             text
         } else {
             error!("unexpected format of document change");
-            return;
+            return Ok(());
         };
-        let refresh = self
-            .with_state_mut(|state| {
-                let uri = params.text_document.uri;
-                let Some(file) = state.db.file_for_url(&uri) else { return false };
-                state.db.override_file_content(file, Some(text.into()));
 
-                true
-            })
-            .await;
+        if let Some(file) = state.db.file_for_uri(&params.text_document.uri) {
+            state.db.override_file_content(file, Some(text.into()));
+            Backend::refresh_diagnostics(state, &notifier)?;
+        };
 
-        if refresh {
-            self.refresh_diagnostics().await.ok();
-        }
-    }
-
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
-    async fn did_save(&self, params: DidSaveTextDocumentParams) {
-        self.with_state_mut(|state| {
-            let Some(file) = state.db.file_for_url(&params.text_document.uri) else { return };
-            PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
-            state.db.override_file_content(file, None);
-        })
-        .await;
-    }
-
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
-    async fn did_close(&self, params: DidCloseTextDocumentParams) {
-        let refresh = self
-            .with_state_mut(|state| {
-                state.open_files.remove(&params.text_document.uri);
-                let Some(file) = state.db.file_for_url(&params.text_document.uri) else {
-                    return false;
-                };
-                state.db.override_file_content(file, None);
-
-                true
-            })
-            .await;
-
-        if refresh {
-            self.refresh_diagnostics().await.ok();
-        }
-    }
-
-    #[tracing::instrument(level = "trace", skip_all)]
-    async fn completion(&self, params: CompletionParams) -> LSPResult<Option<CompletionResponse>> {
-        let db = self.db_snapshot().await;
-        self.catch_panics(move || ide::completion::complete(params, &db)).await
-    }
-
-    #[tracing::instrument(level = "trace", skip_all)]
-    async fn semantic_tokens_full(
-        &self,
-        params: SemanticTokensParams,
-    ) -> LSPResult<Option<SemanticTokensResult>> {
-        let db = self.db_snapshot().await;
-        self.catch_panics(move || ide::semantic_highlighting::semantic_highlight_full(params, &db))
-            .await
-    }
-
-    #[tracing::instrument(level = "trace", skip_all)]
-    async fn formatting(
-        &self,
-        params: DocumentFormattingParams,
-    ) -> LSPResult<Option<Vec<TextEdit>>> {
-        let db = self.db_snapshot().await;
-        self.catch_panics(move || ide::formatter::format(params, &db)).await
-    }
-
-    #[tracing::instrument(level = "trace", skip_all)]
-    async fn hover(&self, params: HoverParams) -> LSPResult<Option<Hover>> {
-        let db = self.db_snapshot().await;
-        self.catch_panics(move || ide::hover::hover(params, &db)).await
-    }
-
-    #[tracing::instrument(level = "trace", skip_all)]
-    async fn goto_definition(
-        &self,
-        params: GotoDefinitionParams,
-    ) -> LSPResult<Option<GotoDefinitionResponse>> {
-        let db = self.db_snapshot().await;
-        self.catch_panics(move || ide::navigation::goto_definition::goto_definition(params, &db))
-            .await
-    }
-
-    #[tracing::instrument(level = "trace", skip_all)]
-    async fn code_action(&self, params: CodeActionParams) -> LSPResult<Option<CodeActionResponse>> {
-        let db = self.db_snapshot().await;
-        self.catch_panics(move || ide::code_actions::code_actions(params, &db)).await
+        Ok(())
     }
 }
 
-fn is_cairo_file_path(file_path: &Url) -> bool {
-    file_path.path().ends_with(".cairo")
+impl SyncNotificationHandler for DidChangeConfiguration {
+    #[tracing::instrument(level = "debug", skip_all)]
+    fn run(
+        state: &mut State,
+        notifier: Notifier,
+        requester: &mut Requester<'_>,
+        _params: DidChangeConfigurationParams,
+    ) -> LSPResult<()> {
+        // FIXME it was this way but I think we shouldn't reload here, just read changes from params
+        Backend::reload_config(state, &notifier, requester)
+    }
+}
+
+impl SyncNotificationHandler for DidChangeWatchedFiles {
+    #[tracing::instrument(level = "debug", skip_all)]
+    fn run(
+        state: &mut State,
+        notifier: Notifier,
+        requester: &mut Requester<'_>,
+        params: DidChangeWatchedFilesParams,
+    ) -> LSPResult<()> {
+        // Invalidate changed cairo files.
+        for change in &params.changes {
+            if is_cairo_file_path(&change.uri) {
+                let Some(file) = state.db.file_for_uri(&change.uri) else { continue };
+                PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
+            }
+        }
+
+        // Reload workspace if a config file has changed.
+        for change in params.changes {
+            let changed_file_path =
+                change.uri.path().to_string().parse::<PathBuf>().unwrap_or_default();
+            let changed_file_name = changed_file_path.file_name().unwrap_or_default();
+            // TODO(pmagiera): react to Scarb.lock. Keep in mind Scarb does save Scarb.lock on each
+            //  metadata call, so it is easy to fall in a loop here.
+            if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
+            {
+                Backend::reload(state, &notifier, requester)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl SyncNotificationHandler for DidCloseTextDocument {
+    // #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    fn run(
+        state: &mut State,
+        notifier: Notifier,
+        _requester: &mut Requester<'_>,
+        params: DidCloseTextDocumentParams,
+    ) -> LSPResult<()> {
+        state.open_files.remove(&params.text_document.uri);
+        if let Some(file) = state.db.file_for_uri(&params.text_document.uri) {
+            state.db.override_file_content(file, None);
+            Backend::refresh_diagnostics(state, &notifier)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl SyncNotificationHandler for DidOpenTextDocument {
+    // #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    fn run(
+        state: &mut State,
+        notifier: Notifier,
+        _requester: &mut Requester<'_>,
+        params: DidOpenTextDocumentParams,
+    ) -> LSPResult<()> {
+        let uri = params.text_document.uri;
+
+        // Try to detect the crate for physical files.
+        // The crate for virtual files is already known.
+        if uri
+            .scheme()
+            .ok_or_else(|| Error::new(anyhow!("Invalid URI scheme"), ErrorCode::InternalError))?
+            .as_str()
+            == "file"
+        {
+            // FIXME verify is path().as_str() works here, it was Url here before.
+            let path = uri.path().as_str().parse::<PathBuf>().unwrap();
+
+            Backend::detect_crate_for(
+                &state.scarb_toolchain,
+                &mut state.db,
+                &state.config,
+                path,
+                &notifier,
+            );
+        }
+
+        if let Some(file_id) = state.db.file_for_uri(&uri) {
+            state.open_files.insert(uri);
+            state.db.override_file_content(file_id, Some(params.text_document.text.into()));
+
+            Backend::refresh_diagnostics(state, &notifier)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl SyncNotificationHandler for DidSaveTextDocument {
+    // #[tracing::instrument(level = "debug", skip_all, fields(uri = ?%params.text_document.uri))]
+    fn run(
+        state: &mut State,
+        _notifier: Notifier,
+        _requester: &mut Requester<'_>,
+        params: DidSaveTextDocumentParams,
+    ) -> LSPResult<()> {
+        if let Some(file) = state.db.file_for_uri(&params.text_document.uri) {
+            PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
+            state.db.override_file_content(file, None);
+        }
+
+        Ok(())
+    }
+}
+
+impl BackgroundDocumentRequestHandler for GotoDefinition {
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: GotoDefinitionParams,
+    ) -> LSPResult<Option<GotoDefinitionResponse>> {
+        Ok(ide::navigation::goto_definition::goto_definition(params, &snapshot.db))
+    }
+}
+
+impl BackgroundDocumentRequestHandler for Completion {
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: CompletionParams,
+    ) -> LSPResult<Option<CompletionResponse>> {
+        Ok(ide::completion::complete(params, &snapshot.db))
+    }
+}
+
+impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: SemanticTokensParams,
+    ) -> LSPResult<Option<SemanticTokensResult>> {
+        Ok(ide::semantic_highlighting::semantic_highlight_full(params, &snapshot.db))
+    }
+}
+
+impl BackgroundDocumentRequestHandler for ProvideVirtualFile {
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: ProvideVirtualFileRequest,
+    ) -> LSPResult<ProvideVirtualFileResponse> {
+        let content = snapshot
+            .db
+            .file_for_uri(&params.uri)
+            .and_then(|file_id| snapshot.db.file_content(file_id))
+            .map(|content| content.to_string());
+
+        Ok(ProvideVirtualFileResponse { content })
+    }
+}
+
+impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        _params: (),
+    ) -> LSPResult<String> {
+        Ok(lang::inspect::crates::inspect_analyzed_crates(&snapshot.db))
+    }
+}
+
+impl BackgroundDocumentRequestHandler for ExpandMacro {
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn run_with_snapshot(
+        snapshot: StateSnapshot,
+        _notifier: Notifier,
+        params: TextDocumentPositionParams,
+    ) -> LSPResult<Option<String>> {
+        Ok(ide::macros::expand::expand_macro(&snapshot.db, &params))
+    }
+}
+
+fn is_cairo_file_path(file_path: &Uri) -> bool {
+    file_path.path().as_str().ends_with(".cairo")
 }

@@ -1,24 +1,31 @@
 use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
 use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_semantic::SemanticDiagnostic;
+use lsp_types::{ClientCapabilities, Uri};
 use salsa::ParallelDatabase;
-use tower_lsp::lsp_types::{ClientCapabilities, Url};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
+use crate::toolchain::scarb::ScarbToolchain;
+use crate::{env_config, Tricks};
 
 /// State of Language server.
 pub struct State {
     pub db: AnalysisDatabase,
-    pub open_files: Owned<HashSet<Url>>,
-    pub file_diagnostics: Owned<HashMap<Url, FileDiagnostics>>,
+    pub open_files: Owned<HashSet<Uri>>,
+    pub file_diagnostics: Owned<HashMap<Uri, FileDiagnostics>>,
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
+    pub scarb_toolchain: ScarbToolchain,
+    pub last_replace: std::sync::Mutex<SystemTime>,
+    pub db_replace_interval: Duration,
+    pub tricks: Owned<Tricks>,
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -36,22 +43,32 @@ impl FileDiagnostics {
 impl std::panic::UnwindSafe for FileDiagnostics {}
 
 impl State {
-    pub fn new(db: AnalysisDatabase) -> Self {
+    pub fn new(
+        db: AnalysisDatabase,
+        client_capabilities: ClientCapabilities,
+        scarb_toolchain: ScarbToolchain,
+        tricks: Tricks,
+    ) -> Self {
         Self {
             db,
             open_files: Default::default(),
             file_diagnostics: Default::default(),
             config: Default::default(),
-            client_capabilities: Default::default(),
+            client_capabilities: Owned::new(client_capabilities.into()),
+            scarb_toolchain,
+            last_replace: std::sync::Mutex::new(SystemTime::now()),
+            db_replace_interval: env_config::db_replace_interval(),
+            tricks: Owned::new(tricks.into()),
         }
     }
 
     pub fn snapshot(&self) -> StateSnapshot {
         StateSnapshot {
             db: self.db.snapshot(),
-            open_files: self.open_files.snapshot(),
-            config: self.config.snapshot(),
-            client_capabilities: self.client_capabilities.snapshot(),
+            _open_files: self.open_files.snapshot(),
+            _config: self.config.snapshot(),
+            _client_capabilities: self.client_capabilities.snapshot(),
+            _tricks: self.tricks.snapshot(),
         }
     }
 }
@@ -59,9 +76,10 @@ impl State {
 /// Readonly snapshot of Language server state.
 pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,
-    pub open_files: Snapshot<HashSet<Url>>,
-    pub config: Snapshot<Config>,
-    pub client_capabilities: Snapshot<ClientCapabilities>,
+    pub _open_files: Snapshot<HashSet<Uri>>,
+    pub _config: Snapshot<Config>,
+    pub _client_capabilities: Snapshot<ClientCapabilities>,
+    pub _tricks: Snapshot<Tricks>,
 }
 
 impl std::panic::UnwindSafe for StateSnapshot {}

@@ -5,7 +5,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
+use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use tracing::debug;
 
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};
@@ -15,14 +15,14 @@ use crate::lang::lsp::{LsProtoGroup, ToCairo};
 mod completions;
 
 /// Compute completion items at a given cursor position.
-#[tracing::instrument(
-    level = "debug",
-    skip_all,
-    fields(uri = %params.text_document_position.text_document.uri)
-)]
+// #[tracing::instrument(
+//     level = "debug",
+//     skip_all,
+//     fields(uri = %params.text_document_position.text_document.uri)
+// )]
 pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<CompletionResponse> {
     let text_document_position = params.text_document_position;
-    let file_id = db.file_for_url(&text_document_position.text_document.uri)?;
+    let file_id = db.file_for_uri(&text_document_position.text_document.uri)?;
     let mut position = text_document_position.position;
     position.character = position.character.saturating_sub(1);
 

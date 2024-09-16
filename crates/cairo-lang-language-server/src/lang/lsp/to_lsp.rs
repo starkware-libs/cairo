@@ -1,5 +1,5 @@
 use cairo_lang_filesystem::span::{TextPosition, TextPositionSpan};
-use tower_lsp::lsp_types::{Position, Range};
+use lsp_types::{Position, Range};
 
 /// Convert a type into its LSP equivalent.
 ///
