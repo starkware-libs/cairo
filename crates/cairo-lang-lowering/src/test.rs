@@ -66,7 +66,6 @@ fn test_function_lowering(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
-    // First diagnostics from setup_test_function:
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
         inputs["function"].as_str(),
