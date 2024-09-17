@@ -1,7 +1,7 @@
 //! > Test strings.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> ByteArray {
@@ -34,7 +34,7 @@ End:
 //! > Test string of length exactly 31.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> ByteArray {
@@ -68,7 +68,7 @@ End:
 //! > Test string longer than 31.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> ByteArray {
@@ -102,7 +102,7 @@ End:
 //! > Test string longer than 62.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> ByteArray {
@@ -138,7 +138,7 @@ End:
 //! > Test empty string.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> ByteArray {
@@ -171,7 +171,7 @@ End:
 //! > Test string literal in an expression.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> ByteArray {

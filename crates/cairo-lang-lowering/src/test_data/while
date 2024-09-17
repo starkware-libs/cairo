@@ -1,7 +1,7 @@
 //! > Test loop.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(y: felt252) {
@@ -52,7 +52,7 @@ End:
 //! > Test while let
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: MyEnum) -> felt252 {
@@ -109,7 +109,7 @@ End:
 //! > Test while let extern enum
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -169,7 +169,7 @@ End:
 //! > Test while let tuple
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -229,7 +229,7 @@ End:
 //! > Test while let unsupported tuple
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -276,7 +276,7 @@ End:
 //! > Test while let numeric
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -317,7 +317,7 @@ End:
 //! > Test while let underscore
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: MyEnum) -> felt252 {
@@ -377,7 +377,7 @@ End:
 //! > Test while let unsupported type
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: MyStruct) -> felt252 {

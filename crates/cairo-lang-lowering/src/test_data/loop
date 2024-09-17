@@ -1,7 +1,7 @@
 //! > Test loop.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool {
@@ -43,7 +43,7 @@ End:
 //! > Test loop with break; only.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {
