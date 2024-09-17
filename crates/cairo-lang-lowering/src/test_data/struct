@@ -1,7 +1,7 @@
 //! > Test struct constructor.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: felt252) -> MyStruct {
@@ -39,7 +39,7 @@ End:
 //! > Test struct member access.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(s: MyStruct) -> felt252 {
@@ -73,7 +73,7 @@ End:
 //! > Test struct destructure.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(s: MyStruct) -> (felt252, felt252) {
@@ -110,7 +110,7 @@ End:
 //! > Test struct tail construction.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(s: MyStruct) -> MyStruct {
@@ -149,7 +149,7 @@ End:
 //! > Test struct construction members' order.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> MyStruct {

@@ -1,7 +1,7 @@
 //! > Literal value out of range.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -75,7 +75,7 @@ End:
 //! > Literal short string out of range.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -137,7 +137,7 @@ End:
 //! > Literal values
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> (
