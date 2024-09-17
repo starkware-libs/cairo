@@ -1,7 +1,7 @@
 //! > Test empty function.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -27,7 +27,7 @@ End:
 //! > Test unreachable code.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: felt252) -> felt252 {
@@ -64,7 +64,7 @@ End:
 //! > Test unreachable code by match.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: never) -> felt252 {
@@ -94,7 +94,7 @@ End:
 //! > Test single patterns.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: felt252) -> felt252 {
@@ -124,7 +124,7 @@ End:
 //! > Test compound expressions.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: felt252) -> felt252 {
@@ -230,7 +230,7 @@ End:
 //! > Test match enum.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(x: MyEnum) -> felt252 {
@@ -293,7 +293,7 @@ End:
 //! > Test literal generic argument.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: Array::<felt252, 5>) -> felt252 {
@@ -326,7 +326,7 @@ End:
 TODO(spapini): Make this a semantic diagnostic.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(mut a: felt252) -> felt252 {
@@ -361,7 +361,7 @@ End:
 //! > Test concretization with bad types.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(mut data: Span::<felt252>) -> u128 {

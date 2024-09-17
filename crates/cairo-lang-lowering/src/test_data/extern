@@ -1,7 +1,7 @@
 //! > Test extern function calling.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(ref a: felt252, b: felt252) {
@@ -40,7 +40,7 @@ End:
 //! > Test extern function enum calling.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(ref a: felt252, b: felt252) {
@@ -98,7 +98,7 @@ End:
 //! > Test extern function enum calling with optimization.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: felt252, b: felt252) -> felt252 {
@@ -155,7 +155,7 @@ End:
 //! > Test extern function enum calling with optimization with ref.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(ref a: felt252, b: felt252) -> felt252 {
@@ -212,7 +212,7 @@ End:
 //! > Test extern function enum calling with implicits.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(ref a: felt252, b: felt252) {
@@ -270,7 +270,7 @@ End:
 //! > Test extern function enum calling with optimization with implicits.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(ref a: felt252, b: felt252) -> felt252 {
@@ -327,7 +327,7 @@ End:
 //! > Test match on libfunc call that uses the refs of the libfunc in one of the arms.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(mut arr: Array::<felt252>, mut b: (felt252,)) -> Array::<felt252> {
@@ -369,7 +369,7 @@ End:
 //! > Test calling libfunc that returns enum but does nothing with the result.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -410,7 +410,7 @@ End:
 //! > Test calling libfunc that returns enum and returns the result as a tail expression.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Option::<()> {
@@ -455,7 +455,7 @@ End:
 //! > Test calling libfunc that returns enum and returns the result with `return`.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Option::<()> {

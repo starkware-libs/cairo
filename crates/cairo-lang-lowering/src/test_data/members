@@ -1,7 +1,8 @@
 //! > Test member borrowing.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
+
 
 //! > function
 fn foo(ref a: A) {
@@ -51,7 +52,7 @@ End:
 //! > Dup member.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(ref my_struct: MyStruct) {

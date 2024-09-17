@@ -1,7 +1,7 @@
 //! > Test panic.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(x: felt252) {
@@ -32,7 +32,7 @@ End:
 //! > Test struct snapshot.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(orig: @A) -> @A {
@@ -74,7 +74,7 @@ End:
 //! > Test enum snapshot.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(orig: @A) -> @A {
@@ -141,7 +141,7 @@ End:
 //! > Test felt252 desnap.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(value: @felt252) -> felt252 {
@@ -170,7 +170,7 @@ End:
 //! > Test array desnap.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(value: @Array::<felt252>) -> Array::<felt252> {
@@ -199,7 +199,7 @@ Parameters: v0: @core::array::Array::<core::felt252>
 //! > Test member snapshot
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A) -> usize {

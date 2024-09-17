@@ -1,7 +1,7 @@
 //! > match multi numbers.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: felt252) -> felt252 {
@@ -34,7 +34,7 @@ Parameters: v0: core::felt252
 //! > match felt.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: felt252) -> felt252 {
@@ -114,7 +114,7 @@ End:
 //! > Test match 0.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: felt252, x: felt252) -> felt252 {
@@ -160,7 +160,7 @@ End:
 //! > Test array at.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: @Array::<felt252>) -> Option<Box<@felt252>> {
@@ -205,7 +205,7 @@ End:
 //! > Test match zero with non-zero value.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -237,7 +237,7 @@ Parameters:
 //! > Test unsupported match zero.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -269,7 +269,7 @@ Parameters:
 //! > Test supported match non felt252 value.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -351,7 +351,7 @@ End:
 //! > Test unsupported match non felt252 value.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -383,7 +383,7 @@ error: Type mismatch: `core::felt252` and `core::integer::u8`.
 //! > Test empty enum match.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -416,7 +416,7 @@ Parameters:
 //! > Test empty enum match on empty enum.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(e: EmptyEnum) {
@@ -446,7 +446,7 @@ End:
 //! > Test empty extern match.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -479,7 +479,7 @@ Parameters:
 //! > Test otherwise extern match arm.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -543,7 +543,7 @@ End:
 //! > Test otherwise match arm.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A) -> felt252 {
@@ -625,7 +625,7 @@ End:
 //! > Test out of order extern match arm.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -677,7 +677,7 @@ End:
 //! > Test out of order match arm.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A) -> felt252 {
@@ -727,7 +727,7 @@ End:
 //! > Match on tuples.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: (felt252, felt252)) -> felt252 {
@@ -758,7 +758,7 @@ Parameters: v0: (core::felt252, core::felt252)
 //! > Match with complex patterns.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: Option<Option<felt252>>) -> felt252 {
@@ -789,7 +789,7 @@ Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
 //! > Test missing arms.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A) -> felt252 {
@@ -831,7 +831,7 @@ Parameters: v0: test::A
 //! > Test match on bool literals.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: bool) -> felt252 {
@@ -877,7 +877,7 @@ End:
 //! > Test match with or pattern with arm variables.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: MyEnum) -> felt252 {
@@ -954,7 +954,7 @@ End:
 //! > Test match with or pattern on felt252
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: felt252) -> felt252 {
@@ -1069,7 +1069,7 @@ End:
 //! > Test match on enum tuples.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A, b: A) -> felt252 {
@@ -1215,7 +1215,7 @@ End:
 //! > Test match on enum tuples missing arms.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A, b: A) -> felt252 {
@@ -1276,7 +1276,7 @@ Parameters: v0: test::A, v1: test::A
 //! > Test match on enum tuples with inner tuples.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A, b: A) -> felt252 {
@@ -1314,7 +1314,7 @@ Parameters: v0: test::A, v1: test::A
 //! > Test match on enum tuples extern.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A) -> felt252 {
@@ -1462,7 +1462,7 @@ End:
 //! > Test match unsupported type.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -1493,7 +1493,7 @@ Parameters:
 //! > Test match ints optimization.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(v: u32) -> felt252 {

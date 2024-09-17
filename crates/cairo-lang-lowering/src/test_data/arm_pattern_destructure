@@ -1,7 +1,7 @@
 //! > Test arm pattern destructure for match-enum param.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(e: MyEnum) {
@@ -97,7 +97,7 @@ End:
 //! > Test arm pattern destructure for match-extern.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(ref a: felt252) {
@@ -194,7 +194,7 @@ End:
 //! > Test arm pattern destructure for match-enum variable.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -292,7 +292,7 @@ End:
 //! > Test arm pattern destructure for match-extern (with refs and implicits).
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(mut z: felt252) {
@@ -389,7 +389,7 @@ End:
 //! > Test arm pattern destructure for match-enum variable (with refs and implicits).
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(mut z: felt252) {

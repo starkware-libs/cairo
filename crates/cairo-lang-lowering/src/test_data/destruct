@@ -1,7 +1,7 @@
 //! > Test boolean if.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(flag: bool) -> Option<A> {
@@ -66,7 +66,7 @@ End:
 //! > Test dict destruct through panic.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(d: Felt252Dict<felt252>) {
@@ -98,7 +98,7 @@ End:
 //! > Test panic destruct.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A, b: B) {
@@ -196,7 +196,7 @@ End:
 //! > Test panic destruct with merge.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: bool, d: A) -> A {
@@ -277,7 +277,7 @@ End:
 //! > Test custom unit destruct (Currently broken).
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: Option<()>) {
@@ -339,7 +339,7 @@ End:
 //! > Test inline of self calling destruct.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() {

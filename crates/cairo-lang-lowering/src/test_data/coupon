@@ -1,7 +1,7 @@
 //! > Call with coupon
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(x: bar::Coupon) {
@@ -30,7 +30,7 @@ End:
 //! > Call method with impl function coupon
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(x: MyImpl::bar::Coupon) {
@@ -64,7 +64,7 @@ End:
 //! > Call method with concrete trait function coupon
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(x: MyTrait::<felt252>::bar::Coupon) {
@@ -98,7 +98,7 @@ End:
 //! > Coupon moved
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(x: bar::Coupon) -> bar::Coupon {
@@ -133,7 +133,7 @@ Parameters: v0: test::bar::Coupon
 //! > Calling panicable function with coupon
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(x: bar::Coupon) {
@@ -168,7 +168,7 @@ End:
 //! > Inlining disabled when coupon is used.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(x: bar::Coupon) {

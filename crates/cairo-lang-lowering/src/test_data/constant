@@ -1,7 +1,7 @@
 //! > Constants
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(x: felt252) -> felt252 {
@@ -32,7 +32,7 @@ End:
 //! > Complex constant
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> MyStruct {
@@ -77,7 +77,7 @@ End:
 //! > associated consts.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> u32 {
