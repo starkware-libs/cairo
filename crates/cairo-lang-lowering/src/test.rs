@@ -10,6 +10,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, LookupIntern, Upcast};
 use itertools::Itertools;
@@ -62,7 +63,7 @@ cairo_lang_test_utils::test_file_test!(
 
 fn test_function_lowering(
     inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
@@ -83,16 +84,22 @@ fn test_function_lowering(
         );
     }
     let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
+    let formatted_lowering_diagnostics = diagnostics.format(db);
+    let combined_diagnostics =
+        format!("{}\n{}", semantic_diagnostics, formatted_lowering_diagnostics);
+    let error = verify_diagnostics_expectation(args, &combined_diagnostics);
     let lowering_format = lowered.map(|lowered| formatted_lowered(db, &lowered)).unwrap_or(
         "<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>"
             .to_string(),
     );
-
-    TestRunnerResult::success(OrderedHashMap::from([
-        ("semantic_diagnostics".into(), semantic_diagnostics),
-        ("lowering_diagnostics".into(), diagnostics.format(db)),
-        ("lowering_flat".into(), lowering_format),
-    ]))
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([
+            ("semantic_diagnostics".into(), semantic_diagnostics),
+            ("lowering_diagnostics".into(), formatted_lowering_diagnostics),
+            ("lowering_flat".into(), lowering_format),
+        ]),
+        error,
+    }
 }
 
 fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {

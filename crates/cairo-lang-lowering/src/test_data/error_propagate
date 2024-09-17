@@ -1,7 +1,7 @@
 //! > Test error propagation.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: Result<Result<u128, felt252>, felt252>) -> Result<felt252, felt252> {

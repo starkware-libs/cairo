@@ -1,7 +1,7 @@
 //! > Test function call.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(ref a: felt252) -> felt252 {
