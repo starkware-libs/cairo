@@ -84,31 +84,22 @@ fn test_function_lowering(
             "There should not be any unset flat blocks"
         );
     }
-    // Second diagnostics from module lowering:
     let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
-    // Format `diagnostics` into a string before combining the two diagnostics:
     let formatted_lowering_diagnostics = diagnostics.format(db);
-    // Combine both diagnostics into a single string:
     let combined_diagnostics =
         format!("{}\n{}", semantic_diagnostics, formatted_lowering_diagnostics);
-    // Use `args` and combined diagnostics in `verify_diagnostics_expectation`:
     let error = verify_diagnostics_expectation(args, &combined_diagnostics);
-    // Format the lowering result:
     let lowering_format = lowered.map(|lowered| formatted_lowered(db, &lowered)).unwrap_or(
         "<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>"
             .to_string(),
     );
-    // Return the combined diagnostics and lowering format:
     TestRunnerResult {
         outputs: OrderedHashMap::from([
-            ("semantic_diagnostics".into(), semantic_diagnostics), /* Return semantic
-                                                                    * diagnostics separately. */
-            ("lowering_diagnostics".into(), formatted_lowering_diagnostics), /* Return formatted
-                                                                              * diagnostics
-                                                                              * separately. */
-            ("lowering_flat".into(), lowering_format), // Result of the lowered function.
+            ("semantic_diagnostics".into(), semantic_diagnostics),
+            ("lowering_diagnostics".into(), formatted_lowering_diagnostics),
+            ("lowering_flat".into(), lowering_format),
         ]),
-        error, // Include the error from the combined diagnostics.
+        error,
     }
 }
 
