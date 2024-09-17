@@ -1,7 +1,7 @@
 //! > Call with coupon
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(x: bar::Coupon) {
