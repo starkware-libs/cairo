@@ -135,7 +135,7 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
         SyntaxKind::TraitItemConstant | SyntaxKind::TraitItemType => {
             let children: Vec<_> = db
                 .get_children(syntax_node.clone())
-                .into_iter()
+                .iter()
                 .map(|node| node.clone().get_text_without_trivia(db.upcast()))
                 .collect();
 
