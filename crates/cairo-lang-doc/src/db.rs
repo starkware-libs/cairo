@@ -132,6 +132,15 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
                 .collect::<Vec<String>>()
                 .join("")
         }
+        SyntaxKind::TraitItemConstant | SyntaxKind::TraitItemType => {
+            let children: Vec<_> = db
+                .get_children(syntax_node.clone())
+                .into_iter()
+                .map(|node| node.clone().get_text_without_trivia(db.upcast()))
+                .collect();
+
+            format!("{} {}", children[1], children[2..].join(""))
+        }
         _ => "".to_owned(),
     };
     fmt(definition)
