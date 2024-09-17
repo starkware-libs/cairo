@@ -59,6 +59,7 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
 }
 
 fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String {
+    let mut should_format = true;
     if let DocumentableItemId::Crate(crate_id) = item_id {
         return format!("crate {}", crate_id.name(db.upcast()));
     }
@@ -132,9 +133,22 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
                 .collect::<Vec<String>>()
                 .join("")
         }
+        SyntaxKind::Member | SyntaxKind::Variant => {
+            should_format = false;
+            db.get_children(syntax_node)
+                .iter()
+                .skip(2)
+                .map(|node| node.clone().get_text_without_trivia(db.upcast()))
+                .collect::<Vec<String>>()
+                .join("")
+        }
         _ => "".to_owned(),
     };
-    fmt(definition)
+    if should_format {
+        fmt(definition)
+    } else {
+        definition
+    }
 }
 
 /// Run Cairo formatter over code with extra post-processing that is specific to signatures.
