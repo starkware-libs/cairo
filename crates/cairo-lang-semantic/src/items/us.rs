@@ -38,8 +38,12 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     let item = use_ast.get_item(db.upcast());
     resolver.set_feature_config(&use_id, &item, &mut diagnostics);
     let segments = get_use_path_segments(db.upcast(), use_ast)?;
-    let resolved_item =
-        resolver.resolve_generic_path(&mut diagnostics, segments, NotFoundItemType::Identifier);
+    let resolved_item = resolver.resolve_generic_path(
+        &mut diagnostics,
+        segments,
+        NotFoundItemType::Identifier,
+        None,
+    );
     let resolver_data = Arc::new(resolver.data);
 
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data })
