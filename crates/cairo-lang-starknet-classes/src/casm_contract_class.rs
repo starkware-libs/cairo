@@ -107,7 +107,7 @@ fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
 }
 
 /// Represents a contract in the Starknet network.
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub prime: BigUint,
