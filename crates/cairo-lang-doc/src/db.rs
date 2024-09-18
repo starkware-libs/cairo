@@ -144,11 +144,7 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
         }
         _ => "".to_owned(),
     };
-    if should_format {
-        fmt(definition)
-    } else {
-        definition
-    }
+    if should_format { fmt(definition) } else { definition }
 }
 
 /// Run Cairo formatter over code with extra post-processing that is specific to signatures.
