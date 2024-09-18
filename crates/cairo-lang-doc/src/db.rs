@@ -138,7 +138,7 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
                 .iter()
                 .map(|node| node.clone().get_text_without_trivia(db.upcast()))
                 .collect::<Vec<String>>();
-            // Returing straight away as we don't want to format it.
+            // Returning straight away as we don't want to format it.
             return format!("{} {}", children_text[1], children_text[2..].join(""));
         }
         _ => "".to_owned(),
