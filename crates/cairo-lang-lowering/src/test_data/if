@@ -1,7 +1,7 @@
 //! > Test boolean if.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: bool, x: felt252) -> felt252 {
@@ -47,7 +47,7 @@ End:
 //! > Test if analyzer.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(x: felt252) -> felt252 {
@@ -93,7 +93,7 @@ End:
 //! > Test if without else.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(x: felt252) -> felt252 {
@@ -141,7 +141,7 @@ End:
 //! > Test if x == y
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
@@ -191,7 +191,7 @@ End:
 //! > Test if a == 0 || a = 5
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: felt252) -> felt252 {
@@ -258,7 +258,7 @@ End:
 //! > Test if let
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: MyEnum) -> felt252 {
@@ -320,7 +320,7 @@ End:
 //! > Test if let extern enum
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -392,7 +392,7 @@ End:
 //! > Test if let tuple
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -528,7 +528,7 @@ End:
 //! > Test if let unsupported tuple
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -567,7 +567,7 @@ Parameters:
 //! > Test if let numeric
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -600,7 +600,7 @@ Parameters:
 //! > Test if let underscore
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: MyEnum) -> felt252 {
@@ -667,7 +667,7 @@ End:
 //! > Test if let unreachable-else
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: MyEnum) -> felt252 {
@@ -740,7 +740,7 @@ End:
 //! > Test if let unsupported type
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: true)
 
 //! > function
 fn foo(a: MyStruct) -> felt252 {
@@ -779,7 +779,7 @@ Parameters: v0: test::MyStruct
 //! > Test if let in loop
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: MyEnum) -> felt252 {
