@@ -477,13 +477,24 @@ impl DebugWithDb<dyn SemanticGroup> for ImplTypeId {
 
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
+/// Type called not inside a statement
 pub fn resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, resolver, ty_syntax)
+    resolve_type_ex(db, diagnostics, resolver, ty_syntax, None)
+}
+/// Resolves a type given a module and a path.
+pub fn resolve_type_ex(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    resolver: &mut Resolver<'_>,
+    ty_syntax: &ast::Expr,
+    statement_env: Option<&mut Environment>,
+) -> TypeId {
+    maybe_resolve_type(db, diagnostics, resolver, ty_syntax, statement_env)
         .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
 }
 pub fn maybe_resolve_type(
@@ -491,11 +502,17 @@ pub fn maybe_resolve_type(
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
+    mut statement_env: Option<&mut Environment>,
 ) -> Maybe<TypeId> {
     let syntax_db = db.upcast();
     Ok(match ty_syntax {
         ast::Expr::Path(path) => {
-            match resolver.resolve_concrete_path(diagnostics, path, NotFoundItemType::Type)? {
+            match resolver.resolve_concrete_path_ex(
+                diagnostics,
+                path,
+                NotFoundItemType::Type,
+                statement_env,
+            )? {
                 ResolvedConcreteItem::Type(ty) => ty,
                 _ => {
                     return Err(diagnostics.report(path, NotAType));
@@ -503,27 +520,47 @@ pub fn maybe_resolve_type(
             }
         }
         ast::Expr::Parenthesized(expr_syntax) => {
-            resolve_type(db, diagnostics, resolver, &expr_syntax.expr(syntax_db))
+            resolve_type_ex(db, diagnostics, resolver, &expr_syntax.expr(syntax_db), statement_env)
         }
         ast::Expr::Tuple(tuple_syntax) => {
             let sub_tys = tuple_syntax
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
-                .map(|subexpr_syntax| resolve_type(db, diagnostics, resolver, &subexpr_syntax))
+                .map(|subexpr_syntax| {
+                    resolve_type_ex(
+                        db,
+                        diagnostics,
+                        resolver,
+                        &subexpr_syntax,
+                        statement_env.as_deref_mut(),
+                    )
+                })
                 .collect();
             TypeLongId::Tuple(sub_tys).intern(db)
         }
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::At(_)) =>
         {
-            let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
+            let ty = resolve_type_ex(
+                db,
+                diagnostics,
+                resolver,
+                &unary_syntax.expr(syntax_db),
+                statement_env,
+            );
             TypeLongId::Snapshot(ty).intern(db)
         }
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::Desnap(_)) =>
         {
-            let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
+            let ty = resolve_type_ex(
+                db,
+                diagnostics,
+                resolver,
+                &unary_syntax.expr(syntax_db),
+                statement_env,
+            );
             if let Some(desnapped_ty) =
                 try_extract_matches!(ty.lookup_intern(db), TypeLongId::Snapshot)
             {
@@ -536,7 +573,7 @@ pub fn maybe_resolve_type(
             let [ty] = &array_syntax.exprs(syntax_db).elements(syntax_db)[..] else {
                 return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeNonSingleType));
             };
-            let ty = resolve_type(db, diagnostics, resolver, ty);
+            let ty = resolve_type_ex(db, diagnostics, resolver, ty, statement_env);
             let size = match extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)?
             {
                 Some(size) => size,
