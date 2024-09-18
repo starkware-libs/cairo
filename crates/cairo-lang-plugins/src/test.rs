@@ -32,6 +32,7 @@ cairo_lang_test_utils::test_file_test!(
         derive: "derive",
         generate_trait: "generate_trait",
         panicable: "panicable",
+        doc: "doc"
     },
     test_expand_plugin
 );
