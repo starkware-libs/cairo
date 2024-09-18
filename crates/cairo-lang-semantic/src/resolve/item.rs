@@ -94,12 +94,13 @@ pub enum ResolvedConcreteItem {
     Variant(ConcreteVariant),
     Trait(ConcreteTraitId),
     Impl(ImplId),
+    Statement(ResolvedGenericItem),
 }
 
 impl ResolvedConcreteItem {
     pub fn generic(&self, db: &dyn SemanticGroup) -> Option<ResolvedGenericItem> {
         Some(match self {
-            ResolvedConcreteItem::Constant(_) => return None,
+            ResolvedConcreteItem::Constant(_) | &ResolvedConcreteItem::Statement(_) => return None,
             ResolvedConcreteItem::Module(item) => ResolvedGenericItem::Module(*item),
             ResolvedConcreteItem::Function(function) => ResolvedGenericItem::GenericFunction(
                 function.lookup_intern(db).function.generic_function,
