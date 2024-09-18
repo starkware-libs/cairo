@@ -1121,6 +1121,9 @@ impl<'db> Resolver<'db> {
         lookup_context
     }
 
+    /// Resolves generic arguments.
+    /// For each generic argument, if the syntax is provided, it will be resolved by the inference.
+    /// Otherwise, resolved by type.
     pub fn resolve_generic_args(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
@@ -1219,6 +1222,9 @@ impl<'db> Resolver<'db> {
         Ok(arg_syntax_per_param)
     }
 
+    /// Resolves a generic argument.
+    /// If no syntax Expr is provided, inference will be used.
+    /// If a syntax Expr is provided, it will be resolved by type.
     fn resolve_generic_arg(
         &mut self,
         generic_param: GenericParam,
