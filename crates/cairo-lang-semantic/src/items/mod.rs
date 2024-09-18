@@ -46,6 +46,7 @@ fn resolve_trait_path(
             diagnostics,
             trait_path_syntax,
             NotFoundItemType::Trait,
+            None,
         )?,
         ResolvedGenericItem::Trait
     )
