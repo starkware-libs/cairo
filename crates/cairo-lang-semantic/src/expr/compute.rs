@@ -19,6 +19,7 @@ use cairo_lang_defs::plugin::MacroPluginMetadata;
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToOption};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ast::{
     BinaryOperator, BlockOrIf, ClosureParamWrapper, ExprPtr, OptionReturnTypeClause, PatternListOr,
     PatternStructParam, UnaryOperator,
@@ -77,8 +78,8 @@ use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLong
 use crate::substitution::SemanticRewriter;
 use crate::types::{
     add_type_based_diagnostics, are_coupons_enabled, extract_fixed_size_array_size, peel_snapshots,
-    peel_snapshots_ex, resolve_type, verify_fixed_size_array_size, wrap_in_snapshots,
-    ClosureTypeLongId, ConcreteTypeId,
+    peel_snapshots_ex, resolve_type_with_environment, verify_fixed_size_array_size,
+    wrap_in_snapshots, ClosureTypeLongId, ConcreteTypeId,
 };
 use crate::usage::Usages;
 use crate::{
@@ -203,6 +204,12 @@ impl<'ctx> ComputationContext<'ctx> {
         for (var_name, var) in std::mem::take(&mut self.environment.variables) {
             self.add_unused_binding_warning(&var_name, &var);
         }
+        // Adds warning for unused types if required.
+        for (ty_name, statement_ty) in std::mem::take(&mut self.environment.use_items) {
+            if !self.environment.used_use_items.contains(&ty_name) && !ty_name.starts_with('_') {
+                self.diagnostics.report(statement_ty.stable_ptr, UnusedUse);
+            }
+        }
         self.environment = parent.unwrap();
         res
     }
@@ -278,6 +285,16 @@ impl<'ctx> ComputationContext<'ctx> {
 // TODO(ilya): Change value to VarId.
 pub type EnvVariables = OrderedHashMap<SmolStr, Binding>;
 
+type EnvItems = OrderedHashMap<SmolStr, StatementGenericItemData>;
+
+/// Struct that holds the resolved generic type of a statement item.
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+struct StatementGenericItemData {
+    resolved_generic_item: ResolvedGenericItem,
+    stable_ptr: SyntaxStablePtrId,
+}
+
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
 /// pointer to the parent environment.
@@ -286,6 +303,8 @@ pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
     used_variables: UnorderedHashSet<semantic::VarId>,
+    use_items: EnvItems,
+    used_use_items: UnorderedHashSet<SmolStr>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -310,8 +329,30 @@ impl Environment {
     }
 
     pub fn empty() -> Self {
-        Self { parent: None, variables: Default::default(), used_variables: Default::default() }
+        Self {
+            parent: None,
+            variables: Default::default(),
+            used_variables: Default::default(),
+            use_items: Default::default(),
+            used_use_items: Default::default(),
+        }
     }
+}
+
+/// Returns the requested type from the environment if it exists. Returns None otherwise.
+pub fn get_statement_type_by_name(
+    env: &mut Environment,
+    type_name: &SmolStr,
+) -> Option<ResolvedGenericItem> {
+    let mut maybe_env = Some(&mut *env);
+    while let Some(curr_env) = maybe_env {
+        if let Some(var) = curr_env.use_items.get(type_name) {
+            curr_env.used_use_items.insert(type_name.clone());
+            return Some(var.resolved_generic_item.clone());
+        }
+        maybe_env = curr_env.parent.as_deref_mut();
+    }
+    None
 }
 
 /// Computes the semantic model of an expression.
@@ -856,8 +897,12 @@ fn compute_expr_function_call_semantic(
         }
     }
 
-    let item =
-        ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path, NotFoundItemType::Function)?;
+    let item = ctx.resolver.resolve_concrete_path_ex(
+        ctx.diagnostics,
+        &path,
+        NotFoundItemType::Function,
+        Some(&mut ctx.environment),
+    )?;
 
     match item {
         ResolvedConcreteItem::Variant(variant) => {
@@ -1619,11 +1664,12 @@ fn compute_expr_closure_semantic(
             vec![]
         };
         let return_type = match syntax.ret_ty(syntax_db) {
-            OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type(
+            OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_with_environment(
                 new_ctx.db,
                 new_ctx.diagnostics,
                 &mut new_ctx.resolver,
                 &ty_syntax.ty(syntax_db),
+                Some(&mut new_ctx.environment),
             ),
             OptionReturnTypeClause::Empty(missing) => {
                 new_ctx.resolver.inference().new_type_var(Some(missing.stable_ptr().untyped()))
@@ -1989,6 +2035,7 @@ fn maybe_compute_pattern_semantic(
                 ctx.diagnostics,
                 &path,
                 NotFoundItemType::Identifier,
+                Some(&mut ctx.environment),
             )?;
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
                 .ok_or_else(|| ctx.diagnostics.report(&path, NotAVariant))?;
@@ -2056,10 +2103,11 @@ fn maybe_compute_pattern_semantic(
         ),
         ast::Pattern::Struct(pattern_struct) => {
             let pattern_ty = try_extract_matches!(
-                ctx.resolver.resolve_concrete_path(
+                ctx.resolver.resolve_concrete_path_ex(
                     ctx.diagnostics,
                     &pattern_struct.path(syntax_db),
-                    NotFoundItemType::Type
+                    NotFoundItemType::Type,
+                    Some(&mut ctx.environment)
                 )?,
                 ResolvedConcreteItem::Type
             )
@@ -2359,7 +2407,13 @@ fn struct_ctor_expr(
     let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
-    let ty = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
+    let ty = resolve_type_with_environment(
+        db,
+        ctx.diagnostics,
+        &mut ctx.resolver,
+        &ast::Expr::Path(path.clone()),
+        Some(&mut ctx.environment),
+    );
     ty.check_not_missing(db)?;
 
     let concrete_struct_id = try_extract_matches!(ty.lookup_intern(ctx.db), TypeLongId::Concrete)
@@ -3053,8 +3107,12 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
         }
     }
 
-    let resolved_item: ResolvedConcreteItem =
-        ctx.resolver.resolve_concrete_path(ctx.diagnostics, path, NotFoundItemType::Identifier)?;
+    let resolved_item: ResolvedConcreteItem = ctx.resolver.resolve_concrete_path_ex(
+        ctx.diagnostics,
+        path,
+        NotFoundItemType::Identifier,
+        Some(&mut ctx.environment),
+    )?;
 
     match resolved_item {
         ResolvedConcreteItem::Constant(const_value_id) => Ok(Expr::Constant(ExprConstant {
@@ -3328,8 +3386,13 @@ pub fn compute_statement_semantic(
                 }
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
-                    let explicit_type =
-                        resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
+                    let explicit_type = resolve_type_with_environment(
+                        db,
+                        ctx.diagnostics,
+                        &mut ctx.resolver,
+                        &var_type_path,
+                        Some(&mut ctx.environment),
+                    );
 
                     let rhs_expr = compute_expr_semantic(ctx, rhs_syntax);
                     let inferred_type = ctx.reduce_ty(rhs_expr.ty());
@@ -3506,7 +3569,13 @@ pub fn compute_statement_semantic(
                     let lhs = const_syntax.type_clause(db.upcast()).ty(db.upcast());
                     let rhs = const_syntax.value(db.upcast());
                     let rhs_expr = compute_expr_semantic(ctx, &rhs);
-                    let explicit_type = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &lhs);
+                    let explicit_type = resolve_type_with_environment(
+                        db,
+                        ctx.diagnostics,
+                        &mut ctx.resolver,
+                        &lhs,
+                        Some(&mut ctx.environment),
+                    );
                     let rhs_resolved_expr = resolve_const_expr_and_evaluate(
                         db,
                         ctx,
@@ -3537,6 +3606,7 @@ pub fn compute_statement_semantic(
                             ctx.diagnostics,
                             segments,
                             NotFoundItemType::Identifier,
+                            Some(&mut ctx.environment),
                         )?;
                         let var_def_id = StatementItemId::Use(
                             StatementUseLongId(ctx.resolver.module_file_id, stable_ptr).intern(db),
@@ -3553,10 +3623,17 @@ pub fn compute_statement_semantic(
                                 });
                                 add_item_to_statement_environment(ctx, name, var_def, stable_ptr);
                             }
+                            ResolvedGenericItem::GenericType(generic_type_id) => {
+                                add_type_to_statement_environment(
+                                    ctx,
+                                    name,
+                                    ResolvedGenericItem::GenericType(generic_type_id),
+                                    stable_ptr,
+                                );
+                            }
                             ResolvedGenericItem::Module(_)
                             | ResolvedGenericItem::GenericFunction(_)
                             | ResolvedGenericItem::TraitFunction(_)
-                            | ResolvedGenericItem::GenericType(_)
                             | ResolvedGenericItem::GenericTypeAlias(_)
                             | ResolvedGenericItem::GenericImplAlias(_)
                             | ResolvedGenericItem::Variant(_)
@@ -3616,6 +3693,27 @@ fn add_item_to_statement_environment(
         );
     }
     ctx.semantic_defs.insert(var_def.id(), var_def);
+}
+
+/// Adds a type to the statement environment and reports a diagnostic if the type is already
+/// defined.
+fn add_type_to_statement_environment(
+    ctx: &mut ComputationContext<'_>,
+    name: SmolStr,
+    resolved_generic_item: ResolvedGenericItem,
+    stable_ptr: impl Into<SyntaxStablePtrId> + std::marker::Copy,
+) {
+    if ctx
+        .environment
+        .use_items
+        .insert(
+            name.clone(),
+            StatementGenericItemData { resolved_generic_item, stable_ptr: stable_ptr.into() },
+        )
+        .is_some()
+    {
+        ctx.diagnostics.report(stable_ptr, MultipleGenericItemDefinition(name));
+    }
 }
 
 /// Computes the semantic model of an expression and reports diagnostics if the expression does not

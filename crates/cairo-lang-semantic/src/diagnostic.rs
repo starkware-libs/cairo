@@ -490,6 +490,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     identifier_name
                 )
             }
+            SemanticDiagnosticKind::MultipleGenericItemDefinition(type_name) => {
+                format!(r#"Multiple definitions of an item "{}"."#, type_name)
+            }
             SemanticDiagnosticKind::UnsupportedUseItemInStatement => {
                 "Unsupported use item in statement.".into()
             }
@@ -1104,6 +1107,7 @@ pub enum SemanticDiagnosticKind {
     UnusedUse,
     MultipleConstantDefinition(SmolStr),
     MultipleDefinitionforBinding(SmolStr),
+    MultipleGenericItemDefinition(SmolStr),
     UnsupportedUseItemInStatement,
     ConstGenericParamNotSupported,
     NegativeImplsNotEnabled,
@@ -1295,6 +1299,7 @@ impl From<&ResolvedConcreteItem> for ElementKind {
             ResolvedConcreteItem::Variant(_) => ElementKind::Variant,
             ResolvedConcreteItem::Trait(_) => ElementKind::Trait,
             ResolvedConcreteItem::Impl(_) => ElementKind::Impl,
+            ResolvedConcreteItem::Statement(_) => ElementKind::Type,
         }
     }
 }
