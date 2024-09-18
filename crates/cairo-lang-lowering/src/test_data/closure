@@ -1,7 +1,7 @@
 //! > simple closure.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: felt252) -> felt252 {
@@ -35,7 +35,7 @@ End:
 //! > using captured copiable variable.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
