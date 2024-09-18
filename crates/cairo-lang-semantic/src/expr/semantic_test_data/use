@@ -102,3 +102,776 @@ error: Multiple definitions of constant "A".
  --> lib.cairo:5:7
 const A: u8 = 4;
       ^
+
+//! > ==========================================================================
+
+//! > Test use type struct usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    struct R {
+        a: u8,
+    }
+}
+use X::R as RR;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    let y = RR { a: 3 };
+    use X::R;
+    let x = R { a: 4 }; 
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        y,
+                    ),
+                    expr: StructCtor(
+                        ExprStructCtor {
+                            concrete_struct_id: test::X::R,
+                            members: [
+                                (
+                                    MemberId(test::X::a),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            base_struct: None,
+                            ty: test::X::R,
+                        },
+                    ),
+                },
+            ),
+            Item(
+                StatementItem,
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: StructCtor(
+                        ExprStructCtor {
+                            concrete_struct_id: test::X::R,
+                            members: [
+                                (
+                                    MemberId(test::X::a),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 4,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            base_struct: None,
+                            ty: test::X::R,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:9:9
+    let y = RR { a: 3 };
+        ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:11:9
+    let x = R { a: 4 }; 
+        ^
+
+//! > ==========================================================================
+
+//! > Test use type struct generic usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    struct R<T> {
+        a: u8,
+    }
+}
+use X::R as RR;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    let y = RR::<u8> { a: 3 };
+    use X::R;
+    let x = R::<u8> { a: 4 }; 
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        y,
+                    ),
+                    expr: StructCtor(
+                        ExprStructCtor {
+                            concrete_struct_id: test::X::R::<core::integer::u8>,
+                            members: [
+                                (
+                                    MemberId(test::X::a),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            base_struct: None,
+                            ty: test::X::R::<core::integer::u8>,
+                        },
+                    ),
+                },
+            ),
+            Item(
+                StatementItem,
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: StructCtor(
+                        ExprStructCtor {
+                            concrete_struct_id: test::X::R::<core::integer::u8>,
+                            members: [
+                                (
+                                    MemberId(test::X::a),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 4,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            base_struct: None,
+                            ty: test::X::R::<core::integer::u8>,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:9:9
+    let y = RR::<u8> { a: 3 };
+        ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:11:9
+    let x = R::<u8> { a: 4 }; 
+        ^
+
+//! > ==========================================================================
+
+//! > Test use type enum usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    enum R {
+        A: u8,
+        B: u16,
+    }
+}
+use X::R as RR;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    let y = RR::A(2);
+    use X::R;
+    let x = R::B(3); 
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        y,
+                    ),
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: R::A,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 2,
+                                    ty: core::integer::u8,
+                                },
+                            ),
+                            ty: test::X::R,
+                        },
+                    ),
+                },
+            ),
+            Item(
+                StatementItem,
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: R::B,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 3,
+                                    ty: core::integer::u16,
+                                },
+                            ),
+                            ty: test::X::R,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:10:9
+    let y = RR::A(2);
+        ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:12:9
+    let x = R::B(3); 
+        ^
+
+//! > ==========================================================================
+
+//! > Test use type enum generic usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    enum R<T> {
+        A: u8,
+        B: u16,
+    }
+}
+use X::R as RR;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    let y = RR::<u8>::A(2);
+    use X::R;
+    let x = R::<u16>::B(3); 
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        y,
+                    ),
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: R::A,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 2,
+                                    ty: core::integer::u8,
+                                },
+                            ),
+                            ty: test::X::R::<core::integer::u8>,
+                        },
+                    ),
+                },
+            ),
+            Item(
+                StatementItem,
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: R::B,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 3,
+                                    ty: core::integer::u16,
+                                },
+                            ),
+                            ty: test::X::R::<core::integer::u16>,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:10:9
+    let y = RR::<u8>::A(2);
+        ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:12:9
+    let x = R::<u16>::B(3); 
+        ^
+
+//! > ==========================================================================
+
+//! > Test use type extern usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    extern type R;
+    extern fn new_r() -> R nopanic;
+}
+use X::R as RR;
+use X::new_r;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    let y: RR = new_r();
+    use X::R;
+    let x: R = new_r();
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        y,
+                    ),
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: test::X::new_r,
+                            args: [],
+                            coupon_arg: None,
+                            ty: test::X::R,
+                        },
+                    ),
+                },
+            ),
+            Item(
+                StatementItem,
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: test::X::new_r,
+                            args: [],
+                            coupon_arg: None,
+                            ty: test::X::R,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:9:9
+    let y: RR = new_r();
+        ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:11:9
+    let x: R = new_r();
+        ^
+
+//! > ==========================================================================
+
+//! > Test use type extern generic usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    extern type R<T>;
+    extern fn new_r<T>() -> R<T> nopanic;
+}
+use X::R as RR;
+use X::new_r;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    let y: RR::<u8> = new_r();
+    use X::R;
+    let x: R::<u16> = new_r();
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        y,
+                    ),
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: test::X::new_r::<core::integer::u8>,
+                            args: [],
+                            coupon_arg: None,
+                            ty: test::X::R::<core::integer::u8>,
+                        },
+                    ),
+                },
+            ),
+            Item(
+                StatementItem,
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: test::X::new_r::<core::integer::u16>,
+                            args: [],
+                            coupon_arg: None,
+                            ty: test::X::R::<core::integer::u16>,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:9:9
+    let y: RR::<u8> = new_r();
+        ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:11:9
+    let x: R::<u16> = new_r();
+        ^
+
+//! > ==========================================================================
+
+//! > Test use type enum and const shadowing
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+mod X {
+    enum R {
+        A: u8,
+        B: u16,
+    }
+}
+
+mod R {
+    pub const C: u8 = 2;
+}
+
+//! > function_body
+
+//! > expr_code
+{ 
+    use X::R;
+    let y = R::C;
+    let x = R::B(3); 
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Item(
+                StatementItem,
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        y,
+                    ),
+                    expr: Missing(
+                        ExprMissing {
+                            ty: <missing>,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: R::B,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 3,
+                                    ty: core::integer::u16,
+                                },
+                            ),
+                            ty: test::X::R,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+error: Enum "test::X::R" has no variant "C"
+ --> lib.cairo:14:16
+    let y = R::C;
+               ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:14:9
+    let y = R::C;
+        ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:15:9
+    let x = R::B(3); 
+        ^
+
+//! > ==========================================================================
+
+//! > Test use type enum and const together
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+mod X {
+    enum R {
+        A: u8,
+        B: u16,
+    }
+}
+
+const R: u8 = 3;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    let y = R;
+    let x = R::B(3);
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        y,
+                    ),
+                    expr: Constant(
+                        ExprConstant {
+                            const_value_id: 3,
+                            ty: core::integer::u8,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: Missing(
+                        ExprMissing {
+                            ty: <missing>,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+error: Invalid path.
+ --> lib.cairo:12:16
+    let x = R::B(3);
+               ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:11:9
+    let y = R;
+        ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:12:9
+    let x = R::B(3);
+        ^
+
+//! > ==========================================================================
+
+//! > Test use type enum and const inside statement
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > module_code
+mod X {
+    enum R {
+        A: u8,
+        B: u16,
+    }
+}
+
+use X::R;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    const R: u8 = 3;
+
+    let y = R;
+    let x = R::B(3);
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Item(
+                StatementItem,
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        y,
+                    ),
+                    expr: Constant(
+                        ExprConstant {
+                            const_value_id: 3,
+                            ty: core::integer::u8,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        x,
+                    ),
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: R::B,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 3,
+                                    ty: core::integer::u16,
+                                },
+                            ),
+                            ty: test::X::R,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:13:9
+    let y = R;
+        ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:14:9
+    let x = R::B(3);
+        ^

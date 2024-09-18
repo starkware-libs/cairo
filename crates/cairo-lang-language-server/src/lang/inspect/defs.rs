@@ -95,7 +95,8 @@ impl SymbolDef {
             | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Variant(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_)) => {
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_))
+            | ResolvedItem::Concrete(ResolvedConcreteItem::Statement(_)) => {
                 ItemDef::new(db, &definition_node).map(Self::Item)
             }
 
