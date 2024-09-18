@@ -1,7 +1,7 @@
 //! > Test calling trait function.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -51,7 +51,7 @@ End:
 //! > Test generic structs.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -87,7 +87,7 @@ End:
 //! > Test generic impls.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -124,7 +124,7 @@ End:
 //! > Test generic impls for type info.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -161,7 +161,7 @@ End:
 //! > Path in generic literal consts.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -191,7 +191,7 @@ End:
 //! > generic param in expression
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -229,7 +229,7 @@ End:
 //! > Test generic const types
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> MyStruct::<9> {

@@ -1,7 +1,7 @@
 //! > Test rebindings.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(ref a: felt252, b: felt252, c: felt252) -> felt252 {
