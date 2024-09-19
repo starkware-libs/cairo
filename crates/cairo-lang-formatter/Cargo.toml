@@ -18,7 +18,6 @@ ignore.workspace = true
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
 serde = { workspace = true, default-features = true }
-smol_str.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
