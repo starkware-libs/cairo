@@ -268,7 +268,7 @@ mod mintable {
         +HasComponent<TContractState>,
         impl Ownable: super::ownable::HasComponent<TContractState>,
         impl ERC20: super::erc20::HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::MintTrait<ComponentState<TContractState>> {
         fn mint(ref self: ComponentState<TContractState>, account: ContractAddress, amount: u256) {
             assert(!account.is_zero(), 'ERC20: mint to the 0 address');

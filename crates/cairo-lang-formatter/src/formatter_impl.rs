@@ -69,6 +69,8 @@ pub struct BreakLinePointProperties {
     pub is_single_breakpoint: bool,
     /// Indicates whether a comma should be added when the line breaks.
     pub is_comma_broken: bool,
+    /// Indicates whether a comma should be added when the line breaks.
+    pub is_comma_broken: bool,
 }
 impl Ord for BreakLinePointProperties {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -101,7 +103,36 @@ impl BreakLinePointProperties {
             is_empty_line_breakpoint: false,
             is_single_breakpoint: false,
             is_comma_broken: false,
+            is_comma_broken: false,
         }
+    }
+    /// Constructor that allows configuring whether a comma is added on line break.
+    pub fn new_with_comma(
+        precedence: usize,
+        break_indentation: BreakLinePointIndentation,
+        is_optional: bool,
+        space_if_not_broken: bool,
+        is_comma_broken: bool,
+    ) -> Self {
+        let mut properties = Self {
+            precedence,
+            break_indentation,
+            is_optional,
+            space_if_not_broken,
+            is_empty_line_breakpoint: false,
+            is_single_breakpoint: false,
+            is_comma_broken,
+        };
+        if is_comma_broken {
+            properties.set_comma_if_broken();
+        }
+        properties
+    }
+    pub fn set_comma_if_broken(&mut self) {
+        self.is_comma_broken = true;
+    }
+    pub fn is_comma_broken(&self) -> bool {
+        self.is_comma_broken
     }
     /// Constructor that allows configuring whether a comma is added on line break.
     pub fn new_with_comma(
@@ -139,6 +170,7 @@ impl BreakLinePointProperties {
             space_if_not_broken: false,
             is_empty_line_breakpoint: true,
             is_single_breakpoint: false,
+            is_comma_broken: false,
             is_comma_broken: false,
         }
     }
@@ -499,6 +531,11 @@ impl LineBuilder {
                     last_line.append_comma_if_needed();
                 }
             }
+            if break_line_point_properties.is_comma_broken() {
+                if let Some(last_line) = trees.last_mut() {
+                    last_line.append_comma_if_needed();
+                }
+            }
             current_line_start = *current_line_end + 1;
         }
         trees
@@ -611,7 +648,7 @@ impl LineBuilder {
     }
     pub fn append_comma_if_needed(&mut self) {
         // List of invalid end characters and sequences to insert a comma between.
-        let invalid_endings = [",", ")", "}", "|", ";", " ", "::"];
+        let invalid_endings = [",", ")", "(", "()", "}", "{", "{}", "|", ";", ":", "::"];
         if let Some(LineComponent::Token(ref mut s)) = self
             .children
             .iter_mut()

@@ -63,7 +63,7 @@ impl PathableVecImpl<
     T,
     +Drop<T>,
     impl PathImpl: StorageAsPath<T>,
-    impl VecTraitImpl: VecTrait<StoragePath<PathImpl::Value>>
+    impl VecTraitImpl: VecTrait<StoragePath<PathImpl::Value>>,
 > of VecTrait<T> {
     type ElementType = VecTraitImpl::ElementType;
     fn get(self: T, index: u64) -> Option<StoragePath<VecTraitImpl::ElementType>> {
@@ -117,7 +117,7 @@ impl PathableMutableVecImpl<
     T,
     +Drop<T>,
     impl PathImpl: StorageAsPath<T>,
-    impl VecTraitImpl: MutableVecTrait<StoragePath<PathImpl::Value>>
+    impl VecTraitImpl: MutableVecTrait<StoragePath<PathImpl::Value>>,
 > of MutableVecTrait<T> {
     type ElementType = VecTraitImpl::ElementType;
     fn get(self: T, index: u64) -> Option<StoragePath<Mutable<VecTraitImpl::ElementType>>> {

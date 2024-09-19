@@ -11,7 +11,7 @@ enum EnumForSerde {
 struct StructForDefault {
     a: felt252,
     b: u256,
-    c: bool
+    c: bool,
 }
 
 #[derive(Drop, Debug, Default, PartialEq)]
@@ -78,7 +78,7 @@ enum LongEnum5 {
     B,
     C,
     D,
-    E
+    E,
 }
 #[derive(Copy, Debug, Drop, Serde, PartialEq)]
 enum longEnum10 {
@@ -91,7 +91,7 @@ enum longEnum10 {
     G,
     H,
     I,
-    J
+    J,
 }
 #[derive(Copy, Debug, Drop, Serde, PartialEq)]
 enum longEnum15 {
@@ -109,7 +109,7 @@ enum longEnum15 {
     L,
     M,
     N,
-    O
+    O,
 }
 
 

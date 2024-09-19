@@ -2293,7 +2293,7 @@ fn bar<
     impl I1: MyTrait,
     impl I2: MyTrait,
     +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
-    +core::metaprogramming::TypeEqual<felt252, I1::ty>
+    +core::metaprogramming::TypeEqual<felt252, I1::ty>,
 >() -> I2::ty {
     3_u32
 }
@@ -2324,7 +2324,7 @@ test_function_diagnostics(expect_diagnostics: true)
 fn bar<
     +MyTrait,
     +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>,
-    +core::metaprogramming::TypeEqual<MyTrait::ty, u32>
+    +core::metaprogramming::TypeEqual<MyTrait::ty, u32>,
 >(
     _y: MyTrait::ty
 ) -> MyTrait::ty {

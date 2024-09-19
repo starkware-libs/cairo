@@ -88,7 +88,7 @@ mod test_contract {
     #[storage]
     struct Storage {
         _proposals: Map<u32, Proposal>,
-        _single_proposal: Proposal
+        _single_proposal: Proposal,
     }
 
     #[external(v0)]
