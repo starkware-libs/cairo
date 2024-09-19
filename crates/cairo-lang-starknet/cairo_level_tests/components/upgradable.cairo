@@ -22,7 +22,7 @@ pub mod upgradable {
     #[derive(Drop, starknet::Event)]
     struct ContractUpgraded {
         old_class_hash: ClassHash,
-        new_class_hash: ClassHash
+        new_class_hash: ClassHash,
     }
     #[embeddable_as(UpgradableImpl)]
     impl Upgradable<

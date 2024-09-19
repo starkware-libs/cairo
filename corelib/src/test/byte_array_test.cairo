@@ -39,7 +39,7 @@ fn test_append_word() {
     ba.append_word(0x2425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e, 27);
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e
+        0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e,
     ];
     compare_byte_array(@ba, expected_data.span(), 0, 0);
 
@@ -56,7 +56,7 @@ fn test_append() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba1, expected_data.span(), 2, 0x1f20);
 }
@@ -71,7 +71,7 @@ fn test_add_eq() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba1, expected_data.span(), 2, 0x1f20);
 }
@@ -85,7 +85,7 @@ fn test_concat() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
 }
@@ -100,7 +100,7 @@ fn test_add() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
 }
@@ -139,7 +139,7 @@ fn test_concat_first_pending_0() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
     ];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x20);
 }
@@ -154,7 +154,7 @@ fn test_concat_second_pending_0() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x1f);
 }
@@ -193,7 +193,7 @@ fn test_concat_split_index_gt_16() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e01,
-        0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20
+        0x02030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20,
     ];
     compare_byte_array(@ba3, expected_data.span(), 1, 0x21);
 }
@@ -208,7 +208,7 @@ fn test_concat_pending_sum_up_to_full() {
 
     let expected_data = [
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
-        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e,
     ];
     compare_byte_array(@ba3, expected_data.span(), 0, 0);
 }
@@ -469,9 +469,9 @@ fn test_serde() {
         serialized.span(),
         [
             1, // data len
-            0x4c6f6e6720737472696e672c206d6f7265207468616e203331206368617261, // data
+             0x4c6f6e6720737472696e672c206d6f7265207468616e203331206368617261, // data
             0x63746572732e, // pending_word
-            6 // pending_word_len
+             6, // pending_word_len
         ].span()
     );
 }

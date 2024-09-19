@@ -4,7 +4,7 @@ mod ownable_mini_contract {
     use starknet::ContractAddress;
     use starknet::storage::{
         StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
-        StoragePointerWriteAccess
+        StoragePointerWriteAccess,
     };
 
     #[storage]

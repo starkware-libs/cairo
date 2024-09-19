@@ -914,7 +914,7 @@ fn cast_subtype_valid<
     +PartialEq<SubType>,
     +PartialEq<SuperType>,
     +Into<SubType, SuperType>,
-    +TryInto<SuperType, SubType>
+    +TryInto<SuperType, SubType>,
 >() -> bool {
     let max_sub: SubType = Bounded::MAX;
     let max_sub_as_super: SuperType = max_sub.into();
@@ -939,7 +939,7 @@ fn validate_max_strictly_contained<
     +PartialEq<B>,
     +TryInto<A, B>,
     +TryInto<B, A>,
-    +TryInto<felt252, B>
+    +TryInto<felt252, B>,
 >(
     err: felt252
 ) {
@@ -964,7 +964,7 @@ fn validate_min_strictly_contained<
     +PartialEq<B>,
     +TryInto<A, B>,
     +TryInto<B, A>,
-    +TryInto<felt252, B>
+    +TryInto<felt252, B>,
 >(
     err: felt252
 ) {
@@ -990,7 +990,7 @@ fn validate_cast_bounds_strictly_contained<
     +PartialEq<SuperType>,
     +Into<SubType, SuperType>,
     +TryInto<SuperType, SubType>,
-    +TryInto<felt252, SuperType>
+    +TryInto<felt252, SuperType>,
 >(
     err: felt252
 ) {
@@ -1016,7 +1016,7 @@ fn validate_cast_bounds_contained_same_min<
     +PartialEq<SuperType>,
     +Into<SubType, SuperType>,
     +TryInto<SuperType, SubType>,
-    +TryInto<felt252, SuperType>
+    +TryInto<felt252, SuperType>,
 >(
     err: felt252
 ) {
@@ -1043,7 +1043,7 @@ fn validate_cast_bounds_overlapping<
     +TryInto<A, B>,
     +TryInto<B, A>,
     +TryInto<felt252, A>,
-    +TryInto<felt252, B>
+    +TryInto<felt252, B>,
 >(
     err: felt252
 ) {

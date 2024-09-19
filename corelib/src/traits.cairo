@@ -221,14 +221,14 @@ impl TupleNextDrop<
     impl TH: crate::metaprogramming::TupleSplit<T>,
     +crate::metaprogramming::IsTuple<T>,
     +Drop<TH::Head>,
-    +Drop<TH::Rest>
+    +Drop<TH::Rest>,
 > of Drop<T>;
 impl TupleNextCopy<
     T,
     impl TH: crate::metaprogramming::TupleSplit<T>,
     +crate::metaprogramming::IsTuple<T>,
     +Copy<TH::Head>,
-    +Copy<TH::Rest>
+    +Copy<TH::Rest>,
 > of Copy<T>;
 
 /// Tuple `PartialEq` implementation.

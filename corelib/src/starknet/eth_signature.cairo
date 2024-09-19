@@ -5,7 +5,7 @@ use starknet::{
     secp256_trait::{
         Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature
     },
-    secp256k1::Secp256k1Point, SyscallResult, SyscallResultTrait
+    secp256k1::Secp256k1Point, SyscallResult, SyscallResultTrait,
 };
 use core::keccak::keccak_u256s_be_inputs;
 

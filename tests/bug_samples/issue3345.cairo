@@ -1,7 +1,7 @@
 #[derive(Copy, Drop, starknet::Store)]
 struct Node {
     left: u128,
-    right: u128
+    right: u128,
 }
 
 #[starknet::interface]

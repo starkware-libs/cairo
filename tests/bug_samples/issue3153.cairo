@@ -1,6 +1,6 @@
 use starknet::{
     Store, SyscallResult, StorageBaseAddress, storage_read_syscall, storage_write_syscall,
-    storage_address_from_base_and_offset
+    storage_address_from_base_and_offset,
 };
 use core::integer::u256_from_felt252;
 
@@ -88,7 +88,7 @@ mod test_contract {
     #[storage]
     struct Storage {
         _proposals: Map<u32, Proposal>,
-        _single_proposal: Proposal
+        _single_proposal: Proposal,
     }
 
     #[external(v0)]

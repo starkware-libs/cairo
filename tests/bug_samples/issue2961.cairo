@@ -18,7 +18,7 @@ fn test_struct_serialization() {
 #[derive(Clone, PartialEq, Drop, Serde)]
 enum SimpleEnum {
     a: felt252,
-    b: felt252
+    b: felt252,
 }
 
 #[test]

@@ -48,7 +48,7 @@ mod storage_accesses {
     use super::{UserInfo, TransactionInfo};
     use starknet::storage::{
         StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess
+        StorageMapWriteAccess,
     };
 
     #[storage]
@@ -64,7 +64,7 @@ mod storage_accesses {
         symbol_: felt252,
         decimals_: u8,
         initial_supply: u256,
-        recipient: ContractAddress
+        recipient: ContractAddress,
     ) {
         self.user_info.name.write(name_);
         self.user_info.symbol.write(symbol_);
@@ -141,7 +141,7 @@ mod storage_accesses {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             self
                 .transaction_info
@@ -535,7 +535,7 @@ pub mod __constructor {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         );
 
         fn set_transaction_info(
@@ -1854,7 +1854,7 @@ impl IERC20SafeDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeDi
     use super::{UserInfo, TransactionInfo};
     use starknet::storage::{
         StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess
+        StorageMapWriteAccess,
     };
 
     #[storage]
@@ -1870,7 +1870,7 @@ impl IERC20SafeDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeDi
         symbol_: felt252,
         decimals_: u8,
         initial_supply: u256,
-        recipient: ContractAddress
+        recipient: ContractAddress,
     ) {
         self.user_info.name.write(name_);
         self.user_info.symbol.write(symbol_);
@@ -1947,7 +1947,7 @@ impl IERC20SafeDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeDi
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             self
                 .transaction_info
@@ -2341,7 +2341,7 @@ pub mod __constructor {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         );
 
         fn set_transaction_info(

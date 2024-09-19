@@ -60,7 +60,7 @@ impl SubPointersForwardImpl<
     T,
     +Drop<T>,
     impl AsPointerImpl: StorageAsPointer<T>,
-    impl PointerForwardImpl: SubPointersForward<StoragePointer0Offset<AsPointerImpl::Value>>
+    impl PointerForwardImpl: SubPointersForward<StoragePointer0Offset<AsPointerImpl::Value>>,
 > of SubPointersForward<T> {
     type SubPointersType = PointerForwardImpl::SubPointersType;
     fn sub_pointers(self: T) -> Self::SubPointersType {
@@ -94,7 +94,7 @@ impl SubPointersMutForwardImpl<
     T,
     +Drop<T>,
     impl AsPointerImpl: StorageAsPointer<T>,
-    impl PointerForwardImpl: SubPointersMutForward<StoragePointer0Offset<AsPointerImpl::Value>>
+    impl PointerForwardImpl: SubPointersMutForward<StoragePointer0Offset<AsPointerImpl::Value>>,
 > of SubPointersMutForward<T> {
     type SubPointersType = PointerForwardImpl::SubPointersType;
     fn sub_pointers_mut(self: T) -> Self::SubPointersType {

@@ -19,7 +19,7 @@ mod counter_contract {
         #[substorage(v0)]
         upgradable: upgradable_comp::Storage,
         #[substorage(v0)]
-        ownable: ownable_comp::Storage
+        ownable: ownable_comp::Storage,
     }
 
     #[event]
@@ -28,7 +28,7 @@ mod counter_contract {
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
         UpgradableEvent: upgradable_comp::Event,
-        OwnableEvent: ownable_comp::Event
+        OwnableEvent: ownable_comp::Event,
     }
 
     #[derive(Drop, starknet::Event)]

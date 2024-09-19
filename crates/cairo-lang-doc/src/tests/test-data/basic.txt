@@ -60,7 +60,7 @@ struct Point {
     /// X coordinate.
     pub x: u32,
     /// Y coordinate.
-    y: u32
+    y: u32,
 }
 
 /// Answer Enum representing an answer to a yes/no question.
@@ -68,7 +68,7 @@ enum Answer {
     /// Yes answer variant.
     Yes,
     /// No answer variant.
-    No
+    No,
 }
 
 //! > Item signature #1
@@ -122,7 +122,7 @@ Just a function outside the test_module. Just a function inside the test_module.
 #[derive(Copy)]
 struct Point {
     pub x: u32,
-    y: u32
+    y: u32,
 }
 
 //! > Item documentation #9
@@ -148,7 +148,7 @@ Y coordinate.
 //! > Item signature #12
 enum Answer {
     Yes,
-    No
+    No,
 }
 
 //! > Item documentation #12

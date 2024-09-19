@@ -8,7 +8,7 @@ pub struct Call {
     /// The entry point selector in the called contract.
     pub selector: felt252,
     /// The calldata to pass to entry point.
-    pub calldata: Span<felt252>
+    pub calldata: Span<felt252>,
 }
 
 /// A trait for account contracts that support class declarations (only validate and execute are

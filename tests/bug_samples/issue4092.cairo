@@ -1,14 +1,14 @@
 #[derive(Drop)]
 struct Attribute {
     name: ByteArray,
-    value: ByteArray
+    value: ByteArray,
 }
 
 #[derive(Drop)]
 struct Tag {
     attrs: Option<Array<Attribute>>,
     children: Option<Array<Tag>>,
-    content: Option<ByteArray>
+    content: Option<ByteArray>,
 }
 
 fn build(tag: Tag) -> ByteArray {

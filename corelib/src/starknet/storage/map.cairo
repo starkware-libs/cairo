@@ -2,7 +2,7 @@
 use super::{
     StoragePath, Mutable, StoragePathHashState, StoragePathTrait, StoragePathUpdateTrait,
     MutableTrait, StorageAsPointer, StoragePointerReadAccess, StoragePointerWriteAccess,
-    StorageAsPath
+    StorageAsPath,
 };
 
 /// Trait for reading a contract/component storage member in a specific key place.
@@ -59,7 +59,7 @@ impl MutableEntryStoragePathEntry<
     T,
     +MutableTrait<T>,
     impl EntryImpl: EntryInfo<MutableTrait::<T>::InnerType>,
-    +core::hash::Hash<EntryImpl::Key, StoragePathHashState>
+    +core::hash::Hash<EntryImpl::Key, StoragePathHashState>,
 > of StoragePathEntry<StoragePath<T>> {
     type Key = EntryImpl::Key;
     type Value = Mutable<EntryImpl::Value>;
@@ -125,14 +125,14 @@ impl MutableStorableEntryWriteAccess<
     +EntryInfo<MutableTrait::<T>::InnerType>,
     +core::hash::Hash<EntryInfo::<MutableTrait::<T>::InnerType>::Key, StoragePathHashState>,
     +starknet::Store<EntryInfo::<MutableTrait::<T>::InnerType>::Value>,
-    +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Value>
+    +Drop<EntryInfo::<MutableTrait::<T>::InnerType>::Value>,
 > of StorageMapWriteAccess<StoragePath<T>> {
     type Key = EntryInfo::<MutableTrait::<T>::InnerType>::Key;
     type Value = EntryInfo::<MutableTrait::<T>::InnerType>::Value;
     fn write(
         self: StoragePath<T>,
         key: EntryInfo::<MutableTrait::<T>::InnerType>::Key,
-        value: EntryInfo::<MutableTrait::<T>::InnerType>::Value
+        value: EntryInfo::<MutableTrait::<T>::InnerType>::Value,
     ) {
         self.entry(key).as_ptr().write(value)
     }

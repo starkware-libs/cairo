@@ -53,7 +53,7 @@ impl RangeIntoIterator<
     +Drop<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
-    -SierraIntRangeSupport<T>
+    -SierraIntRangeSupport<T>,
 > of IntoIterator<Range<T>> {
     type IntoIter = RangeIterator<T>;
 

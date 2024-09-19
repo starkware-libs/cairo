@@ -251,7 +251,7 @@ fn unsigned_int_libfuncs<
     +Mul<T>,
     +PartialEq<T>,
     +Copy<T>,
-    +Drop<T>
+    +Drop<T>,
 >(
     libfuncs: UnsignedIntLibfuncs<T>
 ) {
@@ -436,7 +436,7 @@ fn secp_libfuncs<
     Secp256Point,
     +Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
-    +Secp256PointTrait<Secp256Point>
+    +Secp256PointTrait<Secp256Point>,
 >(
     sign: (u256, u256, u256, u256)
 ) {

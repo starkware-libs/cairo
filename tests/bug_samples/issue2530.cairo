@@ -1,7 +1,7 @@
 #[derive(Drop)]
 struct MyStruct {
     value: felt252,
-    arr: Array<felt252>
+    arr: Array<felt252>,
 }
 
 #[test]

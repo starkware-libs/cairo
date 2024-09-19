@@ -1,7 +1,7 @@
 #[derive(Drop)]
 pub enum Pattern {
     Leaf,
-    Boxed: Box<Pattern>
+    Boxed: Box<Pattern>,
 }
 
 pub fn boxed(pat: Pattern) -> Pattern {

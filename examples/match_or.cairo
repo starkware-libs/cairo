@@ -5,7 +5,7 @@ use core::traits::Into;
 struct P {
     x: u8,
     y: u8,
-    z: u8
+    z: u8,
 }
 #[derive(Copy, Drop)]
 enum MyEnum {
