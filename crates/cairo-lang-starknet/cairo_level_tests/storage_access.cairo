@@ -100,7 +100,7 @@ mod test_contract {
     use core::starknet::storage::{SubPointersForward, SubPointersMutForward};
     use super::{
         AbcEtc, ByteArrays, NonZeros, Vecs, QueryableEnum, QueryableEnumVariants,
-        QueryableEnumVariantsMut
+        QueryableEnumVariantsMut,
     };
     use starknet::storage::{
         VecTrait, MutableVecTrait, StoragePointerWriteAccess, StoragePointerReadAccess

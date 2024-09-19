@@ -867,7 +867,7 @@ mod erc_20 {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             assert(!Zero::is_zero(@sender), 'ERC20: transfer from 0');
             assert(!Zero::is_zero(@recipient), 'ERC20: transfer to 0');

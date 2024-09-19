@@ -11,7 +11,7 @@ pub mod mintable {
     use starknet::{ContractAddress, contract_address_const};
     use starknet::storage::{
         StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapWriteAccess,
-        StorageMapReadAccess
+        StorageMapReadAccess,
     };
     use crate::components::erc20::erc20 as erc20_comp;
     use crate::components::ownable::ownable as ownable_comp;

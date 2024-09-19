@@ -10,7 +10,7 @@ mod test_contract {
     use starknet::StorageAddress;
     use starknet::storage::{
         Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess
+        StorageMapWriteAccess,
     };
 
     #[storage]

@@ -1,6 +1,6 @@
 use super::{
     StorageAsPath, StorageAsPointer, StoragePath, StoragePointer0Offset, Mutable, StoragePathTrait,
-    StoragePathUpdateTrait, StoragePointerReadAccess, StoragePointerWriteAccess
+    StoragePathUpdateTrait, StoragePointerReadAccess, StoragePointerWriteAccess,
 };
 use core::Option;
 
