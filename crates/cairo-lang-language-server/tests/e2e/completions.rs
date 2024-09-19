@@ -63,6 +63,9 @@ fn test_completions_text_edits(
                 if let Some(text_edit) = completion.additional_text_edits {
                     report.push_str("--------------------------\n");
                     report.push_str(format!("Completion: {}\n", completion.label).as_str());
+                    if let Some(text) = completion.insert_text {
+                        report.push_str(format!("Insert text: {text}\n").as_str());
+                    }
                     for edit in text_edit {
                         report.push_str(format!("Text edit: {}", edit.new_text).as_str());
                     }
