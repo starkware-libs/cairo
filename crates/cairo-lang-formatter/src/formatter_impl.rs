@@ -4,6 +4,11 @@ use std::fmt;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
+use cairo_lang_syntax::node::ast::{
+    ItemUse, TerminalLBrace, TerminalRBrace, UsePath, UsePathGreen, UsePathLeaf, UsePathLeafGreen,
+    UsePathList, UsePathListElementOrSeparatorGreen, UsePathMulti, UsePathMultiGreen,
+    UsePathSingle, UsePathSingleGreen,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
@@ -758,6 +763,8 @@ pub trait SyntaxNodeFormat {
     /// Otherwise, returns None.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Should a sequence of syntax nodes of this kind be sorted.
+    fn should_sort(&self, db: &dyn SyntaxGroup) -> Option<usize>;
 }
 
 pub struct FormatterImpl<'a> {
@@ -817,17 +824,205 @@ impl<'a> FormatterImpl<'a> {
         }
         self.append_break_line_point(node_break_points.trailing());
     }
-    /// Formats an internal node and appends the formatted string to the result.
+
+    fn sort_inner_use_paths_in_place(
+        multi_path: &ast::UsePathMulti,
+        db: &dyn SyntaxGroup,
+    ) -> Vec<String> {
+        // Step 1: Extract all inner paths as strings.
+        let mut paths = multi_path
+            .use_paths(db)
+            .elements(db)
+            .into_iter()
+            .map(|path| Self::collect_full_path(&path, db))  // Collect the full path as a string
+            .collect::<Vec<_>>();
+
+        // Debugging output to inspect the paths before sorting.
+        println!("Paths before sorting: {:?}", paths);
+
+        // Step 2: Sort the paths based on their full path representation.
+        paths.sort();
+
+        // Debugging output to inspect the paths after sorting.
+        println!("Paths after sorting: {:?}", paths);
+
+        // Step 3: Return the sorted paths as strings.
+        paths
+    }
+
+    fn collect_full_path(use_path: &ast::UsePath, db: &dyn SyntaxGroup) -> String {
+        match use_path {
+            ast::UsePath::Leaf(leaf) => {
+                // Correctly return the identifier for a leaf path (e.g., `a`, `b`, `c`).
+                let path_text = leaf.ident(db).as_syntax_node().get_text_without_trivia(db);
+                println!("Leaf path: {}", path_text); // Debugging to ensure we are getting the correct leaf identifier.
+                path_text
+            }
+            ast::UsePath::Single(single) => {
+                let mut full_path = single.ident(db).as_syntax_node().get_text_without_trivia(db);
+                println!("Single path, current part: {}", full_path);
+
+                // Collect the next part of the path
+                let next_path = single.use_path(db);
+
+                // Check if the next path is a Multi path to avoid recursive nesting
+                if let ast::UsePath::Multi(multi) = next_path {
+                    println!("Processing Multi path inside Single...");
+                    let sorted_multi_paths = Self::sort_inner_use_paths_in_place(&multi, db);
+                    let formatted_multi_path = format!("{{{}}}", sorted_multi_paths.join(", "));
+                    full_path.push_str("::");
+                    full_path.push_str(&formatted_multi_path);
+                    println!("Full path after processing Multi inside Single: {}", full_path);
+                } else {
+                    // Continue recursively for Single paths that don't contain Multi paths
+                    let next_full_path = Self::collect_full_path(&next_path, db);
+                    full_path.push_str("::");
+                    full_path.push_str(&next_full_path);
+                    println!("Full single path: {}", full_path);
+                }
+                full_path
+            }
+            ast::UsePath::Multi(multi) => {
+                println!("Processing Multi path...");
+                let inner_paths = multi.use_paths(db).elements(db);
+
+                let mut sorted_inner_paths: Vec<String> = inner_paths
+                    .into_iter()
+                    .map(|p| Self::collect_full_path(&p, db))  // Recursively collect full path for each inner path
+                    .collect();
+
+                println!("Multi path before sorting: {:?}", sorted_inner_paths);
+
+                // Sort the inner paths
+                sorted_inner_paths.sort();
+
+                println!("Multi path after sorting: {:?}", sorted_inner_paths);
+
+                // Format and return the sorted inner paths inside `{}` braces
+                let formatted_multi_path = format!("{{{}}}", sorted_inner_paths.join(", "));
+                println!("Formatted multi-path: {}", formatted_multi_path);
+                formatted_multi_path
+            }
+        }
+    }
+
+    fn sort_and_append_group<'b>(
+        group: &mut Vec<&'b SyntaxNode>,
+        kind: SyntaxKind,
+        sorted_children: &mut Vec<&'b SyntaxNode>,
+        db: &dyn SyntaxGroup,
+    ) {
+        if group.is_empty() {
+            return;
+        }
+
+        match kind {
+            SyntaxKind::ItemModule => {
+                group.sort_by_key(|c| {
+                    let item_module = ast::ItemModule::from_syntax_node(db, (*c).clone());
+                    item_module.name(db).text(db)
+                });
+            }
+            SyntaxKind::ItemUse => {
+                group.sort_by_key(|c| {
+                    let item_use = ast::ItemUse::from_syntax_node(db, (*c).clone());
+                    let use_path = item_use.use_path(db);
+                    Self::collect_full_path(&use_path, db)
+                });
+            }
+            _ => {}
+        }
+
+        sorted_children.append(group);
+    }
+
     fn format_internal(&mut self, syntax_node: &SyntaxNode) {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db);
-        // TODO(ilya): consider not copying here.
         let mut children = self.db.get_children(syntax_node.clone()).to_vec();
+        // println!("Children: {:?}", children);
         let n_children = children.len();
+
         if self.config.sort_module_level_items {
-            children.sort_by_key(|c| MovableNode::new(self.db, c));
-        };
+            let mut sorted_children = Vec::new();
+            let mut current_mod_group = Vec::new();
+            let mut current_use_group = Vec::new();
+
+            // Iterate through the children and sort the `mod` and `use` items:
+            for child in children.iter() {
+                match child.kind(self.db) {
+                    SyntaxKind::ItemModule => {
+                        // When encountering a module, sort and append the `use` group first.
+                        if !current_use_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_use_group,
+                                SyntaxKind::ItemUse,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        current_mod_group.push(child);
+                    }
+                    SyntaxKind::ItemUse => {
+                        // When encountering a `use` statement, sort and append the `mod` group
+                        // first.
+                        if !current_mod_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_mod_group,
+                                SyntaxKind::ItemModule,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        current_use_group.push(child);
+                    }
+                    _ => {
+                        // For other kinds of nodes, handle sorting.
+                        if !current_mod_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_mod_group,
+                                SyntaxKind::ItemModule,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        if !current_use_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_use_group,
+                                SyntaxKind::ItemUse,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        sorted_children.push(child);
+                    }
+                }
+            }
+
+            // Append any remaining groups after the loop:
+            if !current_mod_group.is_empty() {
+                Self::sort_and_append_group(
+                    &mut current_mod_group,
+                    SyntaxKind::ItemModule,
+                    &mut sorted_children,
+                    self.db,
+                );
+            }
+            if !current_use_group.is_empty() {
+                Self::sort_and_append_group(
+                    &mut current_use_group,
+                    SyntaxKind::ItemUse,
+                    &mut sorted_children,
+                    self.db,
+                );
+            }
+
+            // Replace the children with the sorted result:
+            children = sorted_children.into_iter().cloned().collect();
+        }
+
+        // Continue with formatting the rest.
         for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
                 continue;
@@ -843,6 +1038,7 @@ impl<'a> FormatterImpl<'a> {
             self.empty_lines_allowance = allowed_empty_between;
         }
     }
+
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
@@ -921,7 +1117,6 @@ impl<'a> FormatterImpl<'a> {
         syntax_node.has_attr(self.db, FMT_SKIP_ATTR)
     }
 }
-
 /// Represents a sortable SyntaxNode.
 #[derive(PartialEq, Eq)]
 enum MovableNode {
@@ -941,6 +1136,11 @@ impl MovableNode {
                     Self::Immovable
                 }
             }
+            // TODO(Dean): Fix this to ignore attributes. kind- if we need to sort. than have
+            // sequence to know if to sort and then by the module name. mode...something..{}
+            // mod haws and use doesnt. mod is more עדין because only on not body type.
+            // cairo_specs- 491 and 670- item module and etc. the other one- no name so by use path.
+            // every sequence- =diifrenet function to decide by which to sort.
             SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db).into()),
             SyntaxKind::ItemHeaderDoc => Self::ItemHeaderDoc,
             _ => Self::Immovable,

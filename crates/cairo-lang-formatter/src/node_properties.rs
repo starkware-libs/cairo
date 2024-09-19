@@ -720,6 +720,10 @@ impl SyntaxNodeFormat for SyntaxNode {
             false
         }
     }
+
+    fn should_sort(&self, db: &dyn SyntaxGroup) -> Option<usize> {
+        todo!()
+    }
 }
 
 /// For statement lists, returns if we want these as a single line.
