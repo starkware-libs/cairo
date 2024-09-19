@@ -6,23 +6,20 @@ use openzeppelin::introspection::interface;
 #[starknet::contract]
 mod SRC5 {
     //! Header comment, should not be moved by the formatter.
-    mod F;
-    mod G;
-
-    use A;
-
-    use openzeppelin::introspection::first;
     /// Doc comment, should be moved by the formatter.
     use openzeppelin::introspection::interface;
     use openzeppelin::introspection::{interface, AB};
-    use starknet::ArrayTrait;
 
     #[storage]
     struct Storage {
         supported_interfaces: LegacyMap<felt252, bool>
     }
 
+    use openzeppelin::introspection::first;
+
     mod A {}
+    mod F;
+    mod G;
 
     #[abi(embed_v0)]
     impl SRC5Impl of interface::ISRC5<ContractState> {
@@ -30,6 +27,9 @@ mod SRC5 {
             true
         }
     }
+
+    use A;
+    use starknet::ArrayTrait;
 
     mod Inner {
         use B;
