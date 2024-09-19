@@ -2,7 +2,7 @@
 use super::{
     StoragePath, Mutable, StoragePathHashState, StoragePathTrait, StoragePathUpdateTrait,
     MutableTrait, StorageAsPointer, StoragePointerReadAccess, StoragePointerWriteAccess,
-    StorageAsPath
+    StorageAsPath,
 };
 
 /// Trait for reading a contract/component storage member in a specific key place.
@@ -132,7 +132,7 @@ impl MutableStorableEntryWriteAccess<
     fn write(
         self: StoragePath<T>,
         key: EntryInfo::<MutableTrait::<T>::InnerType>::Key,
-        value: EntryInfo::<MutableTrait::<T>::InnerType>::Value
+        value: EntryInfo::<MutableTrait::<T>::InnerType>::Value,
     ) {
         self.entry(key).as_ptr().write(value)
     }

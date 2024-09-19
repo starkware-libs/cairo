@@ -41,7 +41,7 @@ mod erc20_mini_contract {
             symbol: felt252,
             decimals: u8,
             initial_supply: u256,
-            recipient: ContractAddress
+            recipient: ContractAddress,
         ) {
             self.erc20_init(name, symbol, decimals, initial_supply, recipient);
         }

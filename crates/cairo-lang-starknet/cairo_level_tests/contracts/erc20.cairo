@@ -27,7 +27,7 @@ pub mod erc_20 {
     use starknet::ContractAddress;
     use starknet::storage::{
         Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess
+        StorageMapWriteAccess,
     };
 
     #[storage]
@@ -66,7 +66,7 @@ pub mod erc_20 {
         symbol_: felt252,
         decimals_: u8,
         initial_supply: u256,
-        recipient: ContractAddress
+        recipient: ContractAddress,
     ) {
         self.name.write(name_);
         self.symbol.write(symbol_);
@@ -121,7 +121,7 @@ pub mod erc_20 {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             let caller = get_caller_address();
             self.spend_allowance(sender, caller, amount);
@@ -160,7 +160,7 @@ pub mod erc_20 {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             assert(!sender.is_zero(), 'ERC20: transfer from 0');
             assert(!recipient.is_zero(), 'ERC20: transfer to 0');
