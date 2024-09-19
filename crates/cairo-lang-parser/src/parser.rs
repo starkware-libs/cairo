@@ -1087,6 +1087,29 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Checks if the current token is a relational or equality operator (`<`, `>`, `<=`, `>=`,
+    /// `==`, or `!=`).
+    ///
+    /// This function is used to determine if the given `SyntaxKind` represents a relational or
+    /// equality operator, which is commonly used in binary expressions.
+    ///
+    /// # Parameters:
+    /// - `kind`: The `SyntaxKind` of the current token.
+    ///
+    /// # Returns:
+    /// `true` if the token is a relational or equality operator, otherwise `false`.
+    fn is_comperison_operator(&self, kind: SyntaxKind) -> bool {
+        matches!(
+            kind,
+            SyntaxKind::TerminalLT              // <
+                    | SyntaxKind::TerminalGT    // >
+                    | SyntaxKind::TerminalLE    // <=
+                    | SyntaxKind::TerminalGE    // >=
+                    | SyntaxKind::TerminalEqEq  // ==
+                    | SyntaxKind::TerminalNeq // !=
+        )
+    }
+
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
     /// or TryParseFailure if such an expression can't be parsed.
     ///
@@ -1099,6 +1122,7 @@ impl<'a> Parser<'a> {
         lbrace_allowed: LbraceAllowed,
     ) -> TryParseResult<ExprGreen> {
         let mut expr = self.try_parse_atom_or_unary(lbrace_allowed)?;
+        let mut last_op: Option<SyntaxKind> = None;
         while let Some(precedence) = get_post_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Ok(expr);
@@ -1112,10 +1136,26 @@ impl<'a> Parser<'a> {
                 let rbrack = self.parse_token::<TerminalRBrack>();
                 ExprIndexed::new_green(self.db, expr, lbrack, index_expr, rbrack).into()
             } else {
+                let current_op = self.peek().kind;
+                if let Some(last_op_kind) = last_op {
+                    if self.is_comperison_operator(last_op_kind)
+                        && self.is_comperison_operator(current_op)
+                    {
+                        self.diagnostics.add(ParserDiagnostic {
+                            file_id: self.file_id,
+                            kind: ParserDiagnosticKind::ConsecutiveMathOperators {
+                                first_op: last_op_kind,
+                                second_op: current_op,
+                            },
+                            span: TextSpan { start: self.offset, end: self.offset },
+                        });
+                    }
+                }
                 let op = self.parse_binary_operator();
                 let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
                 ExprBinary::new_green(self.db, expr, op, rhs).into()
             };
+            last_op = Some(self.peek().kind);
         }
         Ok(expr)
     }

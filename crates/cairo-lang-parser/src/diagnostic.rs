@@ -39,6 +39,7 @@ pub enum ParserDiagnosticKind {
     AttributesWithoutImplItem,
     AttributesWithoutStatement,
     DisallowedTrailingSeparatorOr,
+    ConsecutiveMathOperators { first_op: SyntaxKind, second_op: SyntaxKind },
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -123,6 +124,12 @@ Did you mean to write `{identifier}!{left}...{right}'?",
             }
             ParserDiagnosticKind::DisallowedTrailingSeparatorOr => {
                 "A trailing `|` is not allowed in an or-pattern.".to_string()
+            }
+            ParserDiagnosticKind::ConsecutiveMathOperators { first_op, second_op } => {
+                format!(
+                    "Consecutive math operators are not allowed: '{}' followed by '{}'",
+                    first_op, second_op
+                )
             }
         }
     }

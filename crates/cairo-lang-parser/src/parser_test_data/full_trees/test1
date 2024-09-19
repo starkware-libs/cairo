@@ -28,6 +28,11 @@ error: Skipped tokens. Expected: parameter.
 fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   ^
 
+error: Consecutive math operators are not allowed: 'TerminalEqEq' followed by 'TerminalEqEq'
+ --> src/parser_test_data/cairo_test_files/test1.cairo:15:20
+    let z = if 0 + x == y {
+                   ^
+
 error: Missing token TerminalRBrace.
  --> src/parser_test_data/cairo_test_files/test1.cairo:30:14
     return x;
@@ -864,6 +869,11 @@ error: Skipped tokens. Expected: parameter.
  --> src/parser_test_data/cairo_test_files/test1.cairo:7:19
 fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   ^
+
+error: Consecutive math operators are not allowed: 'TerminalEqEq' followed by 'TerminalEqEq'
+ --> src/parser_test_data/cairo_test_files/test1.cairo:15:20
+    let z = if 0 + x == y {
+                   ^
 
 error: Missing token TerminalRBrace.
  --> src/parser_test_data/cairo_test_files/test1.cairo:30:14
