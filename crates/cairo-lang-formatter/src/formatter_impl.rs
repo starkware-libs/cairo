@@ -67,6 +67,8 @@ pub struct BreakLinePointProperties {
     /// Indicates that in a group of such breakpoints, only one should be broken, specifically the
     /// last one which fits in the line length.
     pub is_single_breakpoint: bool,
+    /// Indicates whether a comma should be added when the line breaks.
+    pub is_comma_broken: bool,
 }
 impl Ord for BreakLinePointProperties {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -98,7 +100,36 @@ impl BreakLinePointProperties {
             space_if_not_broken,
             is_empty_line_breakpoint: false,
             is_single_breakpoint: false,
+            is_comma_broken: false,
         }
+    }
+    /// Constructor that allows configuring whether a comma is added on line break.
+    pub fn new_with_comma(
+        precedence: usize,
+        break_indentation: BreakLinePointIndentation,
+        is_optional: bool,
+        space_if_not_broken: bool,
+        is_comma_broken: bool,
+    ) -> Self {
+        let mut properties = Self {
+            precedence,
+            break_indentation,
+            is_optional,
+            space_if_not_broken,
+            is_empty_line_breakpoint: false,
+            is_single_breakpoint: false,
+            is_comma_broken,
+        };
+        if is_comma_broken {
+            properties.set_comma_if_broken();
+        }
+        properties
+    }
+    pub fn set_comma_if_broken(&mut self) {
+        self.is_comma_broken = true;
+    }
+    pub fn is_comma_broken(&self) -> bool {
+        self.is_comma_broken
     }
     pub fn new_empty_line() -> Self {
         Self {
@@ -108,11 +139,14 @@ impl BreakLinePointProperties {
             space_if_not_broken: false,
             is_empty_line_breakpoint: true,
             is_single_breakpoint: false,
+            is_comma_broken: false,
         }
     }
     pub fn set_single_breakpoint(&mut self) {
         self.is_single_breakpoint = true;
     }
+    // DONT CHANGE NEW. BUT ADD A PREOPERTY TO BE FALSEM AYBE. CHANGE THE ARGLIST AND MAKE IT WORK.
+    // SHOULD BE DOUBLE COMMA AT FIRST.
 }
 
 /// The possible parts of line trees.
@@ -462,10 +496,18 @@ impl LineBuilder {
                     comment_only_added_indent = 0;
                 }
             }
+            if break_line_point_properties.is_comma_broken() {
+                if let Some(last_line) = trees.last_mut() {
+                    last_line.append_comma_if_needed(); // Now calling the method on `last_line`
+                }
+            }
+
             current_line_start = *current_line_end + 1;
         }
+
         trees
     }
+
     /// Returns a reference to the currently active builder.
     fn get_active_builder_mut(&mut self) -> &mut LineBuilder {
         // Split into two match statements since self is mutably borrowed in the second match,
@@ -571,8 +613,25 @@ impl LineBuilder {
             pending_break_line_points: vec![],
         }
     }
+    pub fn append_comma_if_needed(&mut self) {
+        if let Some(LineComponent::Token(ref mut s)) = self
+            .children
+            .iter_mut()
+            .rev()
+            .find(|component| matches!(component, LineComponent::Token(_)))
+        {
+            if !s.trim_end().ends_with(',')
+                && !s.trim_end().ends_with(')')
+                && !s.trim_end().ends_with('}')
+                && !s.trim_end().ends_with('|')
+                && !s.trim_end().ends_with(';')
+                && !s.trim_end().ends_with(' ')
+            {
+                s.push(',');
+            }
+        }
+    }
 }
-
 /// Represents a comment line in the code.
 #[derive(Clone, PartialEq, Eq)]
 struct CommentLine {
@@ -730,7 +789,6 @@ impl BreakLinePointsPositions {
         }
     }
 }
-
 // TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
