@@ -29,7 +29,7 @@ pub trait HasStorage<
     /// The storage node.
     impl StorageImpl: starknet::storage::StorageTrait<Storage>,
     /// The mutable storage node.
-    impl StorageImplMut: starknet::storage::StorageTraitMut<Storage>
+    impl StorageImplMut: starknet::storage::StorageTraitMut<Storage>,
 > {
     fn storage(self: @TContractState) -> StorageImpl::BaseType;
     fn storage_mut(ref self: TContractState) -> StorageImplMut::BaseType;

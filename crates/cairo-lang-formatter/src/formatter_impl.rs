@@ -499,6 +499,11 @@ impl LineBuilder {
                     last_line.append_comma_if_needed();
                 }
             }
+            if break_line_point_properties.is_comma_broken() {
+                if let Some(last_line) = trees.last_mut() {
+                    last_line.append_comma_if_needed();
+                }
+            }
             current_line_start = *current_line_end + 1;
         }
         trees
@@ -611,7 +616,7 @@ impl LineBuilder {
     }
     pub fn append_comma_if_needed(&mut self) {
         // List of invalid end characters and sequences to insert a comma between.
-        let invalid_endings = [",", ")", "}", "|", ";", " ", "::"];
+        let invalid_endings = [",", ")", "(", "()", "}", "{", "{}", "|", ";", ":", "::"];
         if let Some(LineComponent::Token(ref mut s)) = self
             .children
             .iter_mut()

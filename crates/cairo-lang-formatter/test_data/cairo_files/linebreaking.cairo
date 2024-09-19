@@ -53,3 +53,8 @@ fn function_for_a_comment() {}
 
 use long_use::{a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a};
 fn many_arguments(very_long_argument_1: T, very_long_argument_2: T, very_long_argument_3: T, very_long_argument_4: T, very_long_argument_5: T) {}
+fn foo() {
+    let arr1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let arr2 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+
+}

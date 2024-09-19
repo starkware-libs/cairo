@@ -43,7 +43,7 @@ enum Efg {
     #[default]
     E: (),
     F: (),
-    G: u256
+    G: u256,
 }
 
 #[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]

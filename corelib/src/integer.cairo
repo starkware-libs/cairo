@@ -2268,7 +2268,7 @@ mod signed_div_rem {
             minus_i64_neg,
             i64_pos,
             BoundedInt<0, 0x8000000000000000>,
-            BoundedInt<0, 0x7ffffffffffffffe>
+            BoundedInt<0, 0x7ffffffffffffffe>,
         >;
     impl I64PNDR = impls::DivRem<i64_pos, minus_i64_neg, i64_pos, i64_pos>;
     impl I64NNDR =
@@ -2288,7 +2288,7 @@ mod signed_div_rem {
             minus_i128_neg,
             i128_pos,
             BoundedInt<0, 0x80000000000000000000000000000000>,
-            BoundedInt<0, 0x7ffffffffffffffffffffffffffffffe>
+            BoundedInt<0, 0x7ffffffffffffffffffffffffffffffe>,
         >;
     impl I128PNDR = impls::DivRem<i128_pos, minus_i128_neg, i128_pos, i128_pos>;
     impl I128NNDR =
@@ -2296,7 +2296,7 @@ mod signed_div_rem {
             minus_i128_neg,
             minus_i128_neg,
             BoundedInt<0, 0x80000000000000000000000000000000>,
-            i128_pos
+            i128_pos,
         >;
     pub impl I128DivRem = DivRemImpl<i128>;
 

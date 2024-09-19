@@ -651,13 +651,7 @@ impl SyntaxNodeFormat for SyntaxNode {
         db: &dyn SyntaxGroup,
     ) -> BreakLinePointsPositions {
         match self.kind(db) {
-            SyntaxKind::ImplicitsList
-            | SyntaxKind::PatternList
-            | SyntaxKind::PatternStructParamList
-            | SyntaxKind::StructArgList
-            | SyntaxKind::ExprList
-            | SyntaxKind::GenericArgList
-            | SyntaxKind::GenericParamList => BreakLinePointsPositions::List {
+            SyntaxKind::StructArgList => BreakLinePointsPositions::List {
                 properties: BreakLinePointProperties::new(
                     5,
                     BreakLinePointIndentation::NotIndented,
@@ -666,12 +660,49 @@ impl SyntaxNodeFormat for SyntaxNode {
                 ),
                 breaking_frequency: 2,
             },
+            SyntaxKind::ImplicitsList
+            | SyntaxKind::PatternList
+            | SyntaxKind::GenericArgList
+            | SyntaxKind::GenericParamList => BreakLinePointsPositions::List {
+                properties: BreakLinePointProperties::new_with_comma(
+                    5,
+                    BreakLinePointIndentation::NotIndented,
+                    true,
+                    true,
+                    true,
+                ),
+                breaking_frequency: 2,
+            },
+            SyntaxKind::ExprList => {
+                if matches!(parent_kind(db, self), Some(SyntaxKind::ExprFixedSizeArray)) {
+                    let mut properties = BreakLinePointProperties::new_with_comma(
+                        5,
+                        BreakLinePointIndentation::NotIndented,
+                        true,
+                        true,
+                        true,
+                    );
+                    properties.set_single_breakpoint();
+                    BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
+                } else {
+                    BreakLinePointsPositions::List {
+                        properties: BreakLinePointProperties::new(
+                            5,
+                            BreakLinePointIndentation::NotIndented,
+                            true,
+                            true,
+                        ),
+                        breaking_frequency: 2,
+                    }
+                }
+            }
             SyntaxKind::MatchArms | SyntaxKind::MemberList | SyntaxKind::VariantList => {
                 BreakLinePointsPositions::List {
-                    properties: BreakLinePointProperties::new(
+                    properties: BreakLinePointProperties::new_with_comma(
                         6,
                         BreakLinePointIndentation::NotIndented,
                         false,
+                        true,
                         true,
                     ),
                     breaking_frequency: 2,

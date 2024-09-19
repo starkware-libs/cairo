@@ -1239,6 +1239,7 @@ fn bar2<impl M: MyTrait<u32>>() {
 //! > expected_diagnostics
 
 //! > ==========================================================================
+
 //! > Inferring a Trait impl with generic param of a generic impl argument.
 
 //! > test_runner_name

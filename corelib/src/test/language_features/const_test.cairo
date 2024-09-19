@@ -93,7 +93,7 @@ fn test_complex_enum() {
                 1,
                 struct2::Const<u256, value::Const<u128, 0x10>, value::Const<u128, 0x20>,>,
             >,
-            1
+            1,
         >()
             .unbox() == ThreeOptions::B(0x2000000000000000000000000000000010)
     );
@@ -127,7 +127,7 @@ fn test_two_complex_enums() {
                 enum_value::Const<ThreeOptions2, 0, value::Const<felt252, 1337>>,
                 enum_value::Const<ThreeOptions2, 2, struct0::Const<()>>,
             >,
-            0
+            0,
         >()
             .unbox() == (ThreeOptions2::A(1337), ThreeOptions2::C),
     );
