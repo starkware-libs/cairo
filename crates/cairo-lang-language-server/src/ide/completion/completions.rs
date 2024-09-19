@@ -281,7 +281,8 @@ pub fn completion_for_method(
 
     let completion = CompletionItem {
         label: format!("{}()", name),
-        insert_text: Some(format!("{}(", name)),
+        insert_text: Some(format!("{}($0)", name)),
+        insert_text_format: Some(tower_lsp::lsp_types::InsertTextFormat::SNIPPET),
         detail: Some(detail),
         kind: Some(CompletionItemKind::METHOD),
         additional_text_edits: Some(additional_text_edits),
