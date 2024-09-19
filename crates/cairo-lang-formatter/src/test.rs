@@ -41,6 +41,16 @@ impl Upcast<dyn FilesGroup> for DatabaseImpl {
     "test_data/expected_results/fmt_skip.cairo",
     false
 )]
+#[test_case(
+    "test_data/cairo_files/sorted_mod_use.cairo",
+    "test_data/expected_results/sorted_mod_use.cairo",
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/sort_inner_use.cairo",
+    "test_data/expected_results/sort_inner_use.cairo",
+    false
+)]
 fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str, use_sorting: bool) {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
@@ -54,7 +64,7 @@ fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str, 
         diagnostics.format(db)
     ));
 
-    let config = FormatterConfig { sort_module_level_items: use_sorting, ..Default::default() };
+    let config = FormatterConfig { sort_module_level_items: true, ..Default::default() };
 
     let formatted_file = get_formatted_file(db, &syntax_root, config);
     let expected_file =
