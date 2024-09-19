@@ -4,8 +4,9 @@ use std::fmt;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
+use cairo_lang_syntax::node::ast::{PathSegment, UsePath};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
 use syntax::node::helpers::QueryAttrs;
 use syntax::node::kind::SyntaxKind;
@@ -427,7 +428,11 @@ impl LineBuilder {
             let mut comment_only_added_indent = if let BreakLinePointIndentation::IndentedWithTail =
                 break_line_point_properties.break_indentation
             {
-                if i == n_break_points - 1 { tab_size } else { 0 }
+                if i == n_break_points - 1 {
+                    tab_size
+                } else {
+                    0
+                }
             } else {
                 0
             };
@@ -826,41 +831,11 @@ impl<'a> FormatterImpl<'a> {
         // TODO(ilya): consider not copying here.
         let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();
-
         if self.config.sort_module_level_items {
-            let mut start_idx = 0;
-            while start_idx < children.len() {
-                let kind = children[start_idx].as_sort_kind(self.db);
-                let mut end_idx = start_idx + 1;
-                // Find the end of the current section.
-                while end_idx < children.len() {
-                    if kind != children[end_idx].as_sort_kind(self.db) {
-                        break;
-                    }
-                    end_idx += 1;
-                }
-                // Sort within this section if it's `Module` or `UseItem`.
-                match kind {
-                    SortKind::Module => {
-                        children[start_idx..end_idx].sort_by_key(|node| {
-                            ast::ItemModule::from_syntax_node(self.db, node.clone())
-                                .name(self.db)
-                                .text(self.db)
-                        });
-                    }
-                    SortKind::UseItem => {
-                        children[start_idx..end_idx].sort_by_key(|node| {
-                            ast::ItemUse::from_syntax_node(self.db, node.clone())
-                                .use_path(self.db)
-                                .as_syntax_node()
-                                .get_text_without_trivia(self.db)
-                        });
-                    }
-                    SortKind::Immovable => {}
-                }
-
-                // Move past the sorted section.
-                start_idx = end_idx;
+            if let SyntaxKind::UsePathList = syntax_node.kind(self.db) {
+                self.sort_inner_use_path(&mut children);
+            } else {
+                self.sort_items_sections(&mut children);
             }
         }
         for (i, child) in children.iter().enumerate() {
@@ -878,6 +853,142 @@ impl<'a> FormatterImpl<'a> {
             self.empty_lines_allowance = allowed_empty_between;
         }
     }
+    /// Sorting function for `UsePathMulti` children.
+    fn sort_inner_use_path(&self, children: &mut Vec<SyntaxNode>) {
+        // Filter and collect only UsePathLeaf and UsePathSingle, while excluding TokenComma.
+        let mut sorted_leaf_and_single: Vec<_> = children
+            .iter()
+            .filter(|node| {
+                matches!(node.kind(self.db), SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle)
+            })
+            .cloned()
+            .collect();
+
+        // Sort the filtered nodes by their ident (text).
+        sorted_leaf_and_single.sort_by_key(|node| {
+            match node.kind(self.db) {
+                SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle => {
+                    let path_segment =
+                        ast::UsePathLeaf::from_syntax_node(self.db, node.clone()).ident(self.db);
+                    match path_segment {
+                        PathSegment::Simple(simple_segment) => {
+                            simple_segment.as_syntax_node().get_text_without_trivia(self.db)
+                        }
+                        PathSegment::WithGenericArgs(_) => {
+                            // Handle the case with generic arguments if needed (e.g., extract base
+                            // name).
+                            "".to_string()
+                        }
+                    }
+                }
+                _ => "".to_string(), // Default case (shouldn't happen).
+            }
+        });
+
+        // Filter and collect the other node types (specifically commas).
+        let other_types: Vec<_> = children
+            .iter()
+            .filter(|node| {
+                !matches!(node.kind(self.db), SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle)
+            })
+            .cloned()
+            .collect();
+        *children = sorted_leaf_and_single
+        .into_iter()
+        .intersperse_with(|| other_types.first().cloned().unwrap()) // Insert commas or other separators
+        .collect();
+    }
+    /// Sorting function for module-level items.
+    fn sort_items_sections(&self, children: &mut [SyntaxNode]) {
+        let mut start_idx = 0;
+        while start_idx < children.len() {
+            let kind = children[start_idx].as_sort_kind(self.db);
+            let mut end_idx = start_idx + 1;
+            // Find the end of the current section.
+            while end_idx < children.len() {
+                if kind != children[end_idx].as_sort_kind(self.db) {
+                    break;
+                }
+                end_idx += 1;
+            }
+            // Sort within this section if it's `Module` or `UseItem`.
+            match kind {
+                SortKind::Module => {
+                    children[start_idx..end_idx].sort_by_key(|node| {
+                        ast::ItemModule::from_syntax_node(self.db, node.clone())
+                            .name(self.db)
+                            .text(self.db)
+                    });
+                }
+                SortKind::UseItem => {
+                    children[start_idx..end_idx].sort_by(|first_node, second_node| {
+                        let mut first_path = Some(
+                            ast::ItemUse::from_syntax_node(self.db, first_node.clone())
+                                .use_path(self.db),
+                        );
+                        let mut second_path = Some(
+                            ast::ItemUse::from_syntax_node(self.db, second_node.clone())
+                                .use_path(self.db),
+                        );
+
+                        while first_path.is_some() && second_path.is_some() {
+                            let first_segment = first_path.as_ref().unwrap();
+                            let second_segment = second_path.as_ref().unwrap();
+
+                            // Extract text values for comparison
+                            let first_str = match first_segment {
+                                UsePath::Leaf(leaf) => {
+                                    leaf.as_syntax_node().get_text_without_trivia(self.db).clone()
+                                }
+                                UsePath::Single(single) => single
+                                    .ident(self.db)
+                                    .as_syntax_node()
+                                    .get_text_without_trivia(self.db)
+                                    .clone(),
+                                _ => String::new(), // Handle unexpected cases safely
+                            };
+
+                            let second_str = match second_segment {
+                                UsePath::Leaf(leaf) => {
+                                    leaf.as_syntax_node().get_text_without_trivia(self.db).clone()
+                                }
+                                UsePath::Single(single) => single
+                                    .ident(self.db)
+                                    .as_syntax_node()
+                                    .get_text_without_trivia(self.db)
+                                    .clone(),
+                                _ => String::new(), // Handle unexpected cases safely
+                            };
+
+                            // Compare the extracted strings
+                            match first_str.cmp(&second_str) {
+                                Ordering::Greater => return Ordering::Greater,
+                                Ordering::Less => return Ordering::Less,
+                                Ordering::Equal => {}
+                            }
+
+                            // Move to the next part of the use path
+                            first_path = next_use_path(first_segment.clone(), self.db);
+                            second_path = next_use_path(second_segment.clone(), self.db);
+                        }
+
+                        if first_path.is_some() {
+                            Ordering::Greater
+                        } else if second_path.is_some() {
+                            Ordering::Less
+                        } else {
+                            Ordering::Equal
+                        }
+                    });
+                }
+                SortKind::Immovable => {}
+            }
+
+            // Move past the sorted section.
+            start_idx = end_idx;
+        }
+    }
+
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
@@ -954,6 +1065,32 @@ impl<'a> FormatterImpl<'a> {
     /// Gets a syntax node and returns if the node has an cairofmt::skip attribute.
     pub fn should_ignore_node_format(&self, syntax_node: &SyntaxNode) -> bool {
         syntax_node.has_attr(self.db, FMT_SKIP_ATTR)
+    }
+}
+
+/// Recursive function to get the next part of the `UsePath`.
+fn next_use_path(path: UsePath, db: &dyn SyntaxGroup) -> Option<UsePath> {
+    match path {
+        UsePath::Leaf(_) => None,
+        UsePath::Single(single) => match single.use_path(db) {
+            UsePath::Leaf(leaf) => Some(UsePath::Leaf(leaf)),
+            UsePath::Single(single) => Some(UsePath::Single(single)),
+            UsePath::Multi(multi) => multi
+                .use_paths(db)
+                .elements(db)
+                .iter()
+                .min_by_key(|x| match x {
+                    UsePath::Leaf(use_path_leaf) => {
+                        use_path_leaf.as_syntax_node().get_text_without_trivia(db)
+                    }
+                    UsePath::Single(use_path_single) => {
+                        use_path_single.ident(db).as_syntax_node().get_text_without_trivia(db)
+                    }
+                    UsePath::Multi(_) => unreachable!(),
+                })
+                .cloned(),
+        },
+        UsePath::Multi(_) => unreachable!(),
     }
 }
 
