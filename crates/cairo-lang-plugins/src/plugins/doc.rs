@@ -9,6 +9,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 pub struct DocPlugin;
 
 const DOC_ATTR: &str = "doc";
+const SUPPORTED_ARGS_ERROR_MESSAGE: &str = "hidden";
 
 impl MacroPlugin for DocPlugin {
     fn generate_code(
@@ -38,8 +39,10 @@ fn get_diagnostics<Item: QueryAttrs>(
     item.query_attr(db, DOC_ATTR).into_iter().for_each(|attr| {
         let args = attr.clone().structurize(db).args;
         if args.is_empty() {
-            diagnostics
-                .push(PluginDiagnostic::error(attr.stable_ptr(), "Expected arguments.".into()));
+            diagnostics.push(PluginDiagnostic::error(
+                attr.stable_ptr(),
+                format!("Expected arguments. Supported args: {}", SUPPORTED_ARGS_ERROR_MESSAGE),
+            ));
             return;
         }
         args.iter().for_each(|arg| match &arg.variant {
@@ -55,12 +58,20 @@ fn get_diagnostics<Item: QueryAttrs>(
                 if segment.ident(db).text(db) != "hidden" {
                     diagnostics.push(PluginDiagnostic::error(
                         path,
-                        "This argument is not supported.".into(),
+                        format!(
+                            "This argument is not supported. Supported args: {}",
+                            SUPPORTED_ARGS_ERROR_MESSAGE
+                        ),
                     ));
                 }
             }
-            _ => diagnostics
-                .push(PluginDiagnostic::error(&arg.arg, "This argument is not supported.".into())),
+            _ => diagnostics.push(PluginDiagnostic::error(
+                &arg.arg,
+                format!(
+                    "This argument is not supported. Supported args: {}",
+                    SUPPORTED_ARGS_ERROR_MESSAGE
+                ),
+            )),
         });
     });
     if diagnostics.is_empty() { None } else { Some(diagnostics) }
