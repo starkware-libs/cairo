@@ -65,6 +65,10 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
     }
 
     let syntax_node = item_id.stable_location(db.upcast()).unwrap().syntax_node(db.upcast());
+    println!("kind: {}", syntax_node.green_node(db.upcast()).kind);
+    db.get_children(syntax_node.clone())
+        .iter()
+        .for_each(|node| println!("{:?}", node.clone().get_text_without_trivia(db.upcast())));
     let definition = match syntax_node.green_node(db.upcast()).kind {
         SyntaxKind::ItemConstant
         | SyntaxKind::TraitItemFunction
@@ -98,13 +102,56 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
                 .collect::<Vec<String>>()
                 .join("")
         }
-        SyntaxKind::ItemEnum | SyntaxKind::ItemExternType | SyntaxKind::ItemStruct => db
-            .get_children(syntax_node)
-            .iter()
-            .skip(1)
-            .map(|node| node.clone().get_text(db.upcast()))
-            .collect::<Vec<String>>()
-            .join(""),
+        SyntaxKind::ItemEnum | SyntaxKind::ItemStruct => {
+            let children = db.get_children(syntax_node);
+
+            let item_content_children_without_trivia = db
+                .get_children(children[6].clone())
+                .iter()
+                .filter_map(|node| {
+                    let text = node.clone().get_text_without_trivia(db.upcast());
+                    (text != ",").then(|| text)
+                })
+                .join(",\n");
+
+            let [attributes, visibility, keyword, name, generic_types, left_brace, _, right_brace] =
+                &children
+                    .iter()
+                    .map(|node| node.clone().get_text_without_trivia(db.upcast()))
+                    .collect::<Vec<_>>()[..]
+            else {
+                return "".to_owned();
+            };
+
+            db.get_children(children[6].clone()).iter().for_each(|node| {
+                println!("inside{:?}", node.clone().get_text_without_trivia(db.upcast()))
+            });
+            format!(
+                "{}\n{} {} {}{} {}\n {}{}",
+                attributes,
+                visibility,
+                keyword,
+                name,
+                generic_types,
+                left_brace,
+                item_content_children_without_trivia,
+                right_brace
+            )
+        }
+        SyntaxKind::ItemExternType => {
+            let [attribures, visibility, extern_keyword, keyword, name, generic_types, _] = &db
+                .get_children(syntax_node)
+                .iter()
+                .map(|node| node.clone().get_text_without_trivia(db.upcast()))
+                .collect::<Vec<_>>()[..]
+            else {
+                return "zle jest".to_owned();
+            };
+            format!(
+                "{}\n{} {} {} {}{}",
+                attribures, visibility, extern_keyword, keyword, name, generic_types
+            )
+        }
         SyntaxKind::ItemTrait | SyntaxKind::ItemImpl => {
             let children = db.get_children(syntax_node);
             children[1..]

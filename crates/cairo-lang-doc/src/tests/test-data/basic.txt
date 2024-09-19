@@ -48,9 +48,11 @@ pub mod test_module {
 }
 
 /// Point struct representing a point in a 2d space.
+#[derive(Drop)]
+#[derive(Copy)]
 struct Point {
     /// X coordinate.
-    x: u32,
+    pub x: u32,
     /// Y coordinate.
     y: u32
 }
