@@ -4,8 +4,9 @@ use std::fmt;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
+use cairo_lang_syntax::node::ast::{PathSegment, UsePath};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
 use syntax::node::helpers::QueryAttrs;
 use syntax::node::kind::SyntaxKind;
@@ -427,7 +428,11 @@ impl LineBuilder {
             let mut comment_only_added_indent = if let BreakLinePointIndentation::IndentedWithTail =
                 break_line_point_properties.break_indentation
             {
-                if i == n_break_points - 1 { tab_size } else { 0 }
+                if i == n_break_points - 1 {
+                    tab_size
+                } else {
+                    0
+                }
             } else {
                 0
             };
@@ -826,41 +831,11 @@ impl<'a> FormatterImpl<'a> {
         // TODO(ilya): consider not copying here.
         let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();
-
         if self.config.sort_module_level_items {
-            let mut start_idx = 0;
-            while start_idx < children.len() {
-                let kind = children[start_idx].as_sort_kind(self.db);
-                let mut end_idx = start_idx + 1;
-                // Find the end of the current section.
-                while end_idx < children.len() {
-                    if kind != children[end_idx].as_sort_kind(self.db) {
-                        break;
-                    }
-                    end_idx += 1;
-                }
-                // Sort within this section if it's `Module` or `UseItem`.
-                match kind {
-                    SortKind::Module => {
-                        children[start_idx..end_idx].sort_by_key(|node| {
-                            ast::ItemModule::from_syntax_node(self.db, node.clone())
-                                .name(self.db)
-                                .text(self.db)
-                        });
-                    }
-                    SortKind::UseItem => {
-                        children[start_idx..end_idx].sort_by_key(|node| {
-                            ast::ItemUse::from_syntax_node(self.db, node.clone())
-                                .use_path(self.db)
-                                .as_syntax_node()
-                                .get_text_without_trivia(self.db)
-                        });
-                    }
-                    SortKind::Immovable => {}
-                }
-
-                // Move past the sorted section.
-                start_idx = end_idx;
+            if let SyntaxKind::UsePathList = syntax_node.kind(self.db) {
+                self.sort_inner_use_path(&mut children);
+            } else {
+                self.sort_items_sections(&mut children);
             }
         }
         for (i, child) in children.iter().enumerate() {
@@ -878,6 +853,217 @@ impl<'a> FormatterImpl<'a> {
             self.empty_lines_allowance = allowed_empty_between;
         }
     }
+
+    /// Sorting function for `UsePathMulti` children.
+    fn sort_inner_use_path(&self, children: &mut Vec<SyntaxNode>) {
+        // Filter and collect only UsePathLeaf and UsePathSingle, while excluding TokenComma.
+        let mut sorted_leaf_and_single: Vec<_> = children
+            .iter()
+            .filter(|node| {
+                matches!(node.kind(self.db), SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle)
+            })
+            .cloned()
+            .collect();
+
+        // Sort the filtered nodes by their ident (text).
+        sorted_leaf_and_single.sort_by_key(|node| {
+            let x = match node.kind(self.db) {
+                SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle => {
+                    let path_segment =
+                        ast::UsePathLeaf::from_syntax_node(self.db, node.clone()).ident(self.db);
+                    match path_segment {
+                        PathSegment::Simple(simple_segment) => {
+                            simple_segment.as_syntax_node().get_text_without_trivia(self.db)
+                        }
+                        PathSegment::WithGenericArgs(_) => {
+                            // Handle the case with generic arguments if needed (e.g., extract base
+                            // name).
+                            "".to_string()
+                        }
+                    }
+                }
+                _ => "".to_string(), // Default case (shouldn't happen).
+            };
+            // println!("x: {:?}", x);
+            x
+        });
+
+        // Filter and collect the other node types (specifically commas).
+        let other_types: Vec<_> = children
+            .iter()
+            .filter(|node| {
+                !matches!(node.kind(self.db), SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle)
+            })
+            .cloned()
+            .collect();
+
+        // Combine the sorted UsePathLeaf/UsePathSingle nodes with the other node types.
+        *children = sorted_leaf_and_single
+            .clone()
+            .into_iter()
+            .zip(other_types)
+            .flat_map(|(a, b)| vec![a, b])
+            .collect();
+
+        // Push the last remaining element from the sorted_leaf_and_single (we always have one less
+        // comma than the number of UsePathLeaf/UsePathSingle).
+        if let Some(last) = sorted_leaf_and_single.last() {
+            children.push(last.clone());
+        }
+    }
+
+    /// Sorting function for module-level items.
+    fn sort_items_sections(&self, children: &mut [SyntaxNode]) {
+        let mut start_idx = 0;
+        while start_idx < children.len() {
+            let kind = children[start_idx].as_sort_kind(self.db);
+            let mut end_idx = start_idx + 1;
+            // Find the end of the current section.
+            while end_idx < children.len() {
+                if kind != children[end_idx].as_sort_kind(self.db) {
+                    break;
+                }
+                end_idx += 1;
+            }
+            // Sort within this section if it's `Module` or `UseItem`.
+            match kind {
+                SortKind::Module => {
+                    children[start_idx..end_idx].sort_by_key(|node| {
+                        ast::ItemModule::from_syntax_node(self.db, node.clone())
+                            .name(self.db)
+                            .text(self.db)
+                    });
+                }
+                SortKind::UseItem => {
+                    children[start_idx..end_idx].sort_by(|a, b| {
+                        fn next_use_path(x: UsePath, db: &dyn SyntaxGroup) -> Option<UsePath> {
+                            match x {
+                                UsePath::Leaf(_) => None,
+
+                                UsePath::Single(single) => match single.use_path(db) {
+                                    UsePath::Leaf(leaf) => Some(UsePath::Leaf(leaf)),
+                                    UsePath::Single(single) => Some(UsePath::Single(single)),
+                                    UsePath::Multi(multi) => multi
+                                        .use_paths(db)
+                                        .elements(db)
+                                        .iter()
+                                        .min_by_key(|x| match x {
+                                            UsePath::Leaf(use_path_leaf) => use_path_leaf
+                                                .as_syntax_node()
+                                                .get_text_without_trivia(db),
+                                            UsePath::Single(use_path_single) => use_path_single
+                                                .ident(db)
+                                                .as_syntax_node()
+                                                .get_text_without_trivia(db),
+
+                                            UsePath::Multi(_) => unreachable!(),
+                                        })
+                                        .cloned(),
+                                },
+                                UsePath::Multi(_) => unreachable!(),
+                            }
+                        }
+                        let mut a = Some(
+                            ast::ItemUse::from_syntax_node(self.db, a.clone()).use_path(self.db),
+                        );
+                        let mut b = Some(
+                            ast::ItemUse::from_syntax_node(self.db, b.clone()).use_path(self.db),
+                        );
+                        while a.is_some() && b.is_some() {
+                            let a_val = a.as_ref().unwrap(); // Borrow the value instead of moving it
+                            let b_val = b.as_ref().unwrap(); // Borrow the value instead of moving it
+
+                            // Extract text values for comparison
+                            let a_str = match a_val {
+                                UsePath::Leaf(leaf) => {
+                                    leaf.as_syntax_node().get_text_without_trivia(self.db).clone()
+                                } // Borrow, then clone the string
+                                UsePath::Single(single) => single
+                                    .ident(self.db)
+                                    .as_syntax_node()
+                                    .get_text_without_trivia(self.db)
+                                    .clone(), // Borrow, then clone the string
+                                _ => String::new(), // Handle unexpected cases safely
+                            };
+
+                            let b_str = match b_val {
+                                UsePath::Leaf(leaf) => {
+                                    leaf.as_syntax_node().get_text_without_trivia(self.db).clone()
+                                } // Borrow, then clone the string
+                                UsePath::Single(single) => single
+                                    .ident(self.db)
+                                    .as_syntax_node()
+                                    .get_text_without_trivia(self.db)
+                                    .clone(), // Borrow, then clone the string
+                                _ => String::new(), // Handle unexpected cases safely
+                            };
+
+                            // Compare the extracted strings
+                            match a_str.cmp(&b_str) {
+                                Ordering::Greater => return Ordering::Greater,
+                                Ordering::Less => return Ordering::Less,
+                                Ordering::Equal => {}
+                            }
+
+                            // Move to the next part of the use path
+                            a = next_use_path(a_val.clone(), self.db); // Clone the value for next iteration
+                            b = next_use_path(b_val.clone(), self.db); // Clone the value for next
+                                                                       // iteration
+                        }
+
+                        if a.is_some() {
+                            Ordering::Greater
+                        } else if b.is_some() {
+                            Ordering::Less
+                        } else {
+                            Ordering::Equal
+                        }
+                    });
+                    children[start_idx..end_idx].sort_by_key(|node| {
+                        let x = ast::ItemUse::from_syntax_node(self.db, node.clone())
+                            .use_path(self.db)
+                            .as_syntax_node()
+                            .get_text_without_trivia(self.db);
+                        fn key(x: UsePath, db: &dyn SyntaxGroup) -> String {
+                            match x {
+                                UsePath::Leaf(leaf) => {
+                                    leaf.as_syntax_node().get_text_without_trivia(db)
+                                }
+
+                                UsePath::Single(single) => {
+                                    single.ident(db).as_syntax_node().get_text_without_trivia(db)
+                                        + key(single.use_path(db), db).as_str()
+                                }
+
+                                UsePath::Multi(multi) => multi
+                                    .use_paths(db)
+                                    .elements(db)
+                                    .iter()
+                                    .map(|x| key(x.clone(), db))
+                                    .sorted()
+                                    .collect::<Vec<String>>()
+                                    .join(""),
+                            }
+                        }
+                        let x = key(
+                            ast::ItemUse::from_syntax_node(self.db, node.clone()).use_path(self.db),
+                            self.db,
+                        );
+
+                        println!("x: {:?}", x);
+                        x
+                    });
+                }
+                SortKind::Immovable => {}
+            }
+
+            // Move past the sorted section.
+            start_idx = end_idx;
+        }
+    }
+    // add a sort by function
+    // use interspace
+    // sort by that goes with two pointers. also sort but not really the multi in case its a multi
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
