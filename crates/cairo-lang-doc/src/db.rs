@@ -5,11 +5,11 @@ use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, Tra
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
-use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_utils::Upcast;
-use itertools::{Itertools, chain};
+use itertools::{chain, Itertools};
 
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
@@ -66,12 +66,11 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
 
     let syntax_node = item_id.stable_location(db.upcast()).unwrap().syntax_node(db.upcast());
     let definition = match syntax_node.green_node(db.upcast()).kind {
-        SyntaxKind::ItemConstant | SyntaxKind::ItemTypeAlias | SyntaxKind::ItemImplAlias => {
-            syntax_node.clone().get_text_without_all_comment_trivia(db.upcast())
-        }
-        SyntaxKind::FunctionWithBody
-        | SyntaxKind::ItemExternFunction
-        | SyntaxKind::TraitItemFunction => {
+        SyntaxKind::ItemConstant
+        | SyntaxKind::TraitItemFunction
+        | SyntaxKind::ItemTypeAlias
+        | SyntaxKind::ItemImplAlias => syntax_node.clone().get_text_without_trivia(db.upcast()),
+        SyntaxKind::FunctionWithBody | SyntaxKind::ItemExternFunction => {
             let children = db.get_children(syntax_node);
             children[1..]
                 .iter()
@@ -84,14 +83,11 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
                             if kind == SyntaxKind::VisibilityPub
                                 || kind == SyntaxKind::TerminalExtern
                             {
-                                node.clone()
-                                    .get_text_without_all_comment_trivia(db.upcast())
-                                    .trim()
-                                    .to_owned()
+                                node.clone().get_text_without_trivia(db.upcast()).trim().to_owned()
                                     + " "
                             } else {
                                 node.clone()
-                                    .get_text_without_all_comment_trivia(db.upcast())
+                                    .get_text_without_trivia(db.upcast())
                                     .lines()
                                     .map(|line| line.trim())
                                     .collect::<Vec<&str>>()
@@ -102,50 +98,13 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
                 .collect::<Vec<String>>()
                 .join("")
         }
-        SyntaxKind::ItemEnum | SyntaxKind::ItemStruct => {
-            let children = db.get_children(syntax_node);
-
-            let item_content_children_without_trivia = db
-                .get_children(children[6].clone())
-                .iter()
-                .map(|node| node.clone().get_text_without_all_comment_trivia(db.upcast()))
-                .join("");
-
-            let [attributes, visibility, keyword, name, generic_types, left_brace, _, right_brace] =
-                &children
-                    .iter()
-                    .map(|node| node.clone().get_text_without_all_comment_trivia(db.upcast()))
-                    .collect::<Vec<_>>()[..]
-            else {
-                return "".to_owned();
-            };
-
-            format!(
-                "{}\n{} {} {}{} {}\n {}{}",
-                attributes,
-                visibility,
-                keyword,
-                name,
-                generic_types,
-                left_brace,
-                item_content_children_without_trivia,
-                right_brace
-            )
-        }
-        SyntaxKind::ItemExternType => {
-            let [attributes, visibility, extern_keyword, keyword, name, generic_types, _] = &db
-                .get_children(syntax_node)
-                .iter()
-                .map(|node| node.clone().get_text_without_all_comment_trivia(db.upcast()))
-                .collect::<Vec<_>>()[..]
-            else {
-                return "".to_owned();
-            };
-            format!(
-                "{}\n{} {} {} {}{}",
-                attributes, visibility, extern_keyword, keyword, name, generic_types
-            )
-        }
+        SyntaxKind::ItemEnum | SyntaxKind::ItemExternType | SyntaxKind::ItemStruct => db
+            .get_children(syntax_node)
+            .iter()
+            .skip(1)
+            .map(|node| node.clone().get_text(db.upcast()))
+            .collect::<Vec<String>>()
+            .join(""),
         SyntaxKind::ItemTrait | SyntaxKind::ItemImpl => {
             let children = db.get_children(syntax_node);
             children[1..]
@@ -156,7 +115,7 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
                     if kind != SyntaxKind::ImplBody && kind != SyntaxKind::TraitBody {
                         let text = node
                             .clone()
-                            .get_text_without_all_comment_trivia(db.upcast())
+                            .get_text_without_trivia(db.upcast())
                             .lines()
                             .map(|line| line.trim())
                             .collect::<Vec<&str>>()
@@ -176,20 +135,18 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
         }
         SyntaxKind::TraitItemConstant | SyntaxKind::TraitItemType => {
             let children = db.get_children(syntax_node.clone());
-            let get_text =
-                |node: &SyntaxNode| node.clone().get_text_without_all_comment_trivia(db.upcast());
+            let get_text = |node: &SyntaxNode| node.clone().get_text_without_trivia(db.upcast());
             format!("{} {}", get_text(&children[1]), children[2..].iter().map(get_text).join(""))
         }
         SyntaxKind::Member => {
             let children_text = db
                 .get_children(syntax_node)
                 .iter()
-                .map(|node| node.clone().get_text_without_all_comment_trivia(db.upcast()))
+                .map(|node| node.clone().get_text_without_trivia(db.upcast()))
                 .collect::<Vec<String>>();
             // Returning straight away as we don't want to format it.
-            return children_text[1..].join("").trim().into();
+            return format!("{} {}", children_text[1], children_text[2..].join(""));
         }
-        SyntaxKind::Variant => syntax_node.get_text_without_all_comment_trivia(db.upcast()),
         _ => "".to_owned(),
     };
     fmt(definition)
