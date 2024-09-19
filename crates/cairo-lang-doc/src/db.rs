@@ -138,6 +138,15 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
             let get_text = |node: &SyntaxNode| node.clone().get_text_without_trivia(db.upcast());
             format!("{} {}", get_text(&children[1]), children[2..].iter().map(get_text).join(""))
         }
+        SyntaxKind::Member => {
+            let children_text = db
+                .get_children(syntax_node)
+                .iter()
+                .map(|node| node.clone().get_text_without_trivia(db.upcast()))
+                .collect::<Vec<String>>();
+            // Returning straight away as we don't want to format it.
+            return format!("{} {}", children_text[1], children_text[2..].join(""));
+        }
         _ => "".to_owned(),
     };
     fmt(definition)
