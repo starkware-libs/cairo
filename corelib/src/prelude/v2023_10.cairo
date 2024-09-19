@@ -21,7 +21,7 @@ pub use crate::{starknet, starknet::System};
 pub use crate::to_byte_array;
 pub use crate::traits::{
     Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
-    Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto
+    Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
 };
 
 

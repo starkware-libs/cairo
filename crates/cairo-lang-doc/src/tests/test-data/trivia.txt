@@ -41,7 +41,7 @@ pub enum TestEnum {
     /// First variant
     Var1,
     /// Second variant
-    Var2
+    Var2,
 }
 
 /// extern type comment
@@ -106,7 +106,7 @@ Second field
 //! > Item signature #9
 pub enum TestEnum {
     Var1,
-    Var2
+    Var2,
 }
 
 //! > Item documentation #9

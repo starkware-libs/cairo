@@ -43,7 +43,7 @@ enum Efg {
     #[default]
     E: (),
     F: (),
-    G: u256
+    G: u256,
 }
 
 #[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
@@ -100,7 +100,7 @@ mod test_contract {
     use core::starknet::storage::{SubPointersForward, SubPointersMutForward};
     use super::{
         AbcEtc, ByteArrays, NonZeros, Vecs, QueryableEnum, QueryableEnumVariants,
-        QueryableEnumVariantsMut
+        QueryableEnumVariantsMut,
     };
     use starknet::storage::{
         VecTrait, MutableVecTrait, StoragePointerWriteAccess, StoragePointerReadAccess

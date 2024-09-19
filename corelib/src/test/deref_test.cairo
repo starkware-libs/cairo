@@ -1,7 +1,7 @@
 #[derive(Drop, Copy)]
 struct S1 {
     a: usize,
-    b: felt252
+    b: felt252,
 }
 
 #[derive(Drop, Copy)]

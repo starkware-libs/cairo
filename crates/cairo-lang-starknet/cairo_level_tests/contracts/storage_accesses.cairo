@@ -39,7 +39,7 @@ mod storage_accesses {
     use super::{UserInfo, TransactionInfo};
     use starknet::storage::{
         StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess
+        StorageMapWriteAccess,
     };
 
     #[storage]
@@ -55,7 +55,7 @@ mod storage_accesses {
         symbol_: felt252,
         decimals_: u8,
         initial_supply: u256,
-        recipient: ContractAddress
+        recipient: ContractAddress,
     ) {
         self.user_info.name.write(name_);
         self.user_info.symbol.write(symbol_);
@@ -132,7 +132,7 @@ mod storage_accesses {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             self
                 .transaction_info
