@@ -611,7 +611,7 @@ impl LineBuilder {
     }
     pub fn append_comma_if_needed(&mut self) {
         // List of invalid end characters and sequences to insert a comma between.
-        let invalid_endings = [",", ")", "}", "|", ";", " ", "::"];
+        let invalid_endings = [",", ")", "(", "()", "}", "{", "{}", "|", ";", ":", "::"];
         if let Some(LineComponent::Token(ref mut s)) = self
             .children
             .iter_mut()
