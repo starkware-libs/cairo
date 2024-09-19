@@ -817,17 +817,54 @@ impl<'a> FormatterImpl<'a> {
         }
         self.append_break_line_point(node_break_points.trailing());
     }
-    /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode) {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db);
-        // TODO(ilya): consider not copying here.
         let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();
+
         if self.config.sort_module_level_items {
-            children.sort_by_key(|c| MovableNode::new(self.db, c));
-        };
+            let mut start_idx = 0;
+            while start_idx < children.len() {
+                let kind = Self::sort_kind(self.db, &children[start_idx]);
+                let mut end_idx = start_idx + 1;
+                while end_idx < children.len()
+                    && Self::match_sort_kind(self.db, &children[end_idx], kind)
+                {
+                    end_idx += 1;
+                }
+
+                match kind {
+                    SyntaxKind::ItemModule | SyntaxKind::ItemUse => {
+                        // Sort by MovableNode, but now apply the change to the actual SyntaxNode
+                        // text
+                        let mut sorted_nodes: Vec<MovableNode> = children[start_idx..end_idx]
+                            .iter()
+                            .map(|node| MovableNode::new(self.db, node))
+                            .collect();
+                        sorted_nodes.sort(); // Sort MovableNodes
+
+                        // Apply sorted nodes back into the syntax tree
+                        for (i, sorted_node) in sorted_nodes.into_iter().enumerate() {
+                            match sorted_node {
+                                MovableNode::ItemUse(sorted_text) => {
+                                    let node = &mut children[start_idx + i];
+                                    // Modify the original node's text (apply sorted use statement)
+                                    node.set_text(self.db, sorted_text);
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+
+                start_idx = end_idx;
+            }
+        }
+
+        // Format each child node
         for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
                 continue;
@@ -842,6 +879,15 @@ impl<'a> FormatterImpl<'a> {
             }
             self.empty_lines_allowance = allowed_empty_between;
         }
+    }
+
+    /// Determines the "kind" for sorting (e.g., mod, use)
+    fn sort_kind(db: &dyn SyntaxGroup, node: &SyntaxNode) -> SyntaxKind {
+        node.kind(db)
+    }
+    /// Matches the current node's kind with the given kind
+    fn match_sort_kind(db: &dyn SyntaxGroup, node: &SyntaxNode, kind: SyntaxKind) -> bool {
+        node.kind(db) == kind
     }
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
@@ -923,7 +969,7 @@ impl<'a> FormatterImpl<'a> {
 }
 
 /// Represents a sortable SyntaxNode.
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 enum MovableNode {
     ItemModule(SmolStr),
     ItemUse(SmolStr),
@@ -941,7 +987,48 @@ impl MovableNode {
                     Self::Immovable
                 }
             }
-            SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db).into()),
+            SyntaxKind::ItemUse => {
+                // Step 1: Extract the text without trivia (whitespace/comments)
+                let original_text: SmolStr = node.clone().get_text_without_trivia(db).into();
+
+                // Step 2: Check if the use statement contains curly braces (multi-use)
+                if original_text.contains("{") && original_text.contains("}") {
+                    // Step 3: Find the positions of the curly braces
+                    let start_brace = original_text.find('{').unwrap();
+                    let end_brace = original_text.find('}').unwrap();
+
+                    // Extract the part between braces (inner paths)
+                    let inner_content = &original_text[start_brace + 1..end_brace];
+
+                    // Step 4: Split the inner content by commas to get individual paths, then sort
+                    // them
+                    let mut inner_paths: Vec<&str> =
+                        inner_content.split(',').map(str::trim).collect();
+                    inner_paths.sort();
+
+                    // Step 5: Join the sorted paths back together with commas
+                    let sorted_inner = inner_paths.join(", ");
+
+                    // Step 6: Rebuild the entire use statement with the sorted inner content
+                    let before_braces = &original_text[..start_brace + 1]; // Text before the opening brace
+                    let after_braces = &original_text[end_brace..]; // Text after the closing brace
+
+                    // Concatenate everything: before_braces + sorted_inner + after_braces
+                    let new_text = format!("{}{}{}", before_braces, sorted_inner, after_braces);
+
+                    // Step 7: Convert the new text into SmolStr
+                    let sorted_smol_str: SmolStr = new_text.into();
+
+                    // Debug print to check the new sorted result
+                    println!("Sorted ItemUse: {:?}", sorted_smol_str);
+
+                    // Return the sorted ItemUse variant
+                    Self::ItemUse(sorted_smol_str)
+                } else {
+                    // If no curly braces, just return the original use statement
+                    Self::ItemUse(original_text)
+                }
+            }
             SyntaxKind::ItemHeaderDoc => Self::ItemHeaderDoc,
             _ => Self::Immovable,
         }
