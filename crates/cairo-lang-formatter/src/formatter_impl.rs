@@ -825,9 +825,43 @@ impl<'a> FormatterImpl<'a> {
         // TODO(ilya): consider not copying here.
         let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();
+
         if self.config.sort_module_level_items {
-            children.sort_by_key(|c| MovableNode::new(self.db, c));
-        };
+            let mut start_idx = 0;
+            while start_idx < children.len() {
+                let kind = SortKind::new(self.db, &children[start_idx]);
+                let mut end_idx = start_idx + 1;
+                // Find the end of the current section.
+                while end_idx < children.len() {
+                    if kind != SortKind::new(self.db, &children[end_idx]) {
+                        break;
+                    }
+                    end_idx += 1;
+                }
+                // Sort within this section if it's `Module` or `UseItem`.
+                match kind {
+                    SortKind::Module => {
+                        children[start_idx..end_idx].sort_by_key(|node| {
+                            ast::ItemModule::from_syntax_node(self.db, node.clone())
+                                .name(self.db)
+                                .text(self.db)
+                        });
+                    }
+                    SortKind::UseItem => {
+                        children[start_idx..end_idx].sort_by_key(|node| {
+                            ast::ItemUse::from_syntax_node(self.db, node.clone())
+                                .use_path(self.db)
+                                .as_syntax_node()
+                                .get_text_without_trivia(self.db)
+                        });
+                    }
+                    SortKind::Immovable => {}
+                }
+
+                // Move past the sorted section.
+                start_idx = end_idx;
+            }
+        }
         for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
                 continue;
@@ -922,52 +956,36 @@ impl<'a> FormatterImpl<'a> {
     }
 }
 
-/// Represents a sortable SyntaxNode.
-#[derive(PartialEq, Eq)]
-enum MovableNode {
-    ItemModule(SmolStr),
-    ItemUse(SmolStr),
-    ItemHeaderDoc,
+/// Represents the kind of sections in the syntax tree that can be sorted:
+/// This enum is used to classify nodes within a section that are eligible for sorting,
+/// such as modules without bodies or `use` statements. It also includes an `Immovable` variant
+/// for nodes that act as boundaries, where sorting should stop.#[derive(PartialEq, Eq)]
+enum SortKind {
+    /// A module section without a body (written as `mod name;`).
+    /// This type of module is eligible for sorting with other modules of the same kind.
+    Module,
+
+    /// A section representing a `use` statement, which imports items from other modules or crates.
+    /// These items are eligible for sorting within their section.
+    UseItem,
+
+    /// A section that cannot be sorted, including modules with a body, functions, enums, etc.
+    /// This variant acts as a boundary, indicating that sorting should stop at this point.
     Immovable,
 }
-impl MovableNode {
+impl SortKind {
     fn new(db: &dyn SyntaxGroup, node: &SyntaxNode) -> Self {
         match node.kind(db) {
             SyntaxKind::ItemModule => {
                 let item = ast::ItemModule::from_syntax_node(db, node.clone());
                 if matches!(item.body(db), MaybeModuleBody::None(_)) {
-                    Self::ItemModule(item.name(db).text(db))
+                    Self::Module
                 } else {
                     Self::Immovable
                 }
             }
-            SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db).into()),
-            SyntaxKind::ItemHeaderDoc => Self::ItemHeaderDoc,
+            SyntaxKind::ItemUse => Self::UseItem,
             _ => Self::Immovable,
         }
-    }
-}
-
-impl Ord for MovableNode {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match (self, other) {
-            (MovableNode::ItemHeaderDoc, _) => Ordering::Less,
-            (_, MovableNode::ItemHeaderDoc) => Ordering::Greater,
-            (MovableNode::Immovable, MovableNode::Immovable) => Ordering::Equal,
-            (MovableNode::ItemModule(a), MovableNode::ItemModule(b))
-            | (MovableNode::ItemUse(a), MovableNode::ItemUse(b)) => a.cmp(b),
-            (_, MovableNode::Immovable) | (MovableNode::ItemModule(_), MovableNode::ItemUse(_)) => {
-                Ordering::Less
-            }
-            (MovableNode::Immovable, _) | (MovableNode::ItemUse(_), MovableNode::ItemModule(_)) => {
-                Ordering::Greater
-            }
-        }
-    }
-}
-
-impl PartialOrd for MovableNode {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
     }
 }
