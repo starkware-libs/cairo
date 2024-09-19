@@ -638,7 +638,6 @@ dependencies = [
  "pretty_assertions",
  "rust-analyzer-salsa",
  "serde",
- "smol_str",
  "test-case",
  "thiserror",
 ]
