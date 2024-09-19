@@ -41,13 +41,19 @@ impl TraitTestImpl of TraitTest {
 pub mod test_module {
     //! Test module used to check if the documentation is being attached to the nodes correctly.
     /// Just a function outside the test_module.
-    pub fn inner_test_module_function() {
+    pub fn inner_test_module_function() -> () {
         //! Just a function inside the test_module.
         println!("inside inner test module inner function");
     }
 }
 
 /// Point struct representing a point in a 2d space.
+/// Example usage:
+/// ```
+///   fn new_Point() {
+///     Point {x: 12, y: 14}
+///   }
+/// ```
 #[derive(Drop)]
 #[derive(Copy)]
 struct Point {
@@ -66,43 +72,70 @@ enum Answer {
 }
 
 //! > Item #1
+
 This comment refers to the crate.
 
 //! > Item #2
+fn main()
 Main function comment outside. Main function comment inside.
 
 //! > Item #3
+trait TraitTest
 Trait containing abc function.
 
 //! > Item #4
+fn abc() -> u32
 abc function returning u32. Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
 //! > Item #5
+impl TraitTestImpl of TraitTest
 Implementation of TraitTest's abc function.
 
 //! > Item #6
+fn abc() -> u32
 Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
 //! > Item #7
+
 Test module used to check if the documentation is being attached to the nodes correctly. Test module used to check if the documentation is being attached to the nodes correctly.
 
 //! > Item #8
+pub fn inner_test_module_function() -> ()
 Just a function outside the test_module. Just a function inside the test_module.
 
 //! > Item #9
-Point struct representing a point in a 2d space.
+#[derive(Drop)]
+#[derive(Copy)]
+struct Point {
+    pub x: u32,
+    y: u32
+}
+Point struct representing a point in a 2d space. Example usage: 
+```cairo
+  fn new_Point() {
+    Point {x: 12, y: 14}
+  }
+```
 
 //! > Item #10
+pub x: u32
 X coordinate.
 
 //! > Item #11
+ y: u32
 Y coordinate.
 
 //! > Item #12
+enum Answer {
+    Yes,
+    No
+}
 Answer Enum representing an answer to a yes/no question.
 
 //! > Item #13
+Yes
 Yes answer variant.
 
 //! > Item #14
+No
 No answer variant.

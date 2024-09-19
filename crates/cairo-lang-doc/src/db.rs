@@ -65,16 +65,13 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
     }
 
     let syntax_node = item_id.stable_location(db.upcast()).unwrap().syntax_node(db.upcast());
-    println!("kind: {}", syntax_node.green_node(db.upcast()).kind);
-    db.get_children(syntax_node.clone())
-        .iter()
-        .for_each(|node| println!("{:?}", node.clone().get_text_without_trivia(db.upcast())));
     let definition = match syntax_node.green_node(db.upcast()).kind {
-        SyntaxKind::ItemConstant
-        | SyntaxKind::TraitItemFunction
-        | SyntaxKind::ItemTypeAlias
-        | SyntaxKind::ItemImplAlias => syntax_node.clone().get_text_without_trivia(db.upcast()),
-        SyntaxKind::FunctionWithBody | SyntaxKind::ItemExternFunction => {
+        SyntaxKind::ItemConstant | SyntaxKind::ItemTypeAlias | SyntaxKind::ItemImplAlias => {
+            syntax_node.clone().get_text_without_trivia(db.upcast())
+        }
+        SyntaxKind::FunctionWithBody
+        | SyntaxKind::ItemExternFunction
+        | SyntaxKind::TraitItemFunction => {
             let children = db.get_children(syntax_node);
             children[1..]
                 .iter()
@@ -123,9 +120,6 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
                 return "".to_owned();
             };
 
-            db.get_children(children[6].clone()).iter().for_each(|node| {
-                println!("inside{:?}", node.clone().get_text_without_trivia(db.upcast()))
-            });
             format!(
                 "{}\n{} {} {}{} {}\n {}{}",
                 attributes,
@@ -145,7 +139,7 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
                 .map(|node| node.clone().get_text_without_trivia(db.upcast()))
                 .collect::<Vec<_>>()[..]
             else {
-                return "zle jest".to_owned();
+                return "".to_owned();
             };
             format!(
                 "{}\n{} {} {} {}{}",
@@ -194,6 +188,7 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
             // Returning straight away as we don't want to format it.
             return format!("{} {}", children_text[1], children_text[2..].join(""));
         }
+        SyntaxKind::Variant => syntax_node.get_text_without_trivia(db.upcast()),
         _ => "".to_owned(),
     };
     fmt(definition)
