@@ -11,7 +11,7 @@ pub mod mintable {
     use starknet::{ContractAddress, contract_address_const};
     use starknet::storage::{
         StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapWriteAccess,
-        StorageMapReadAccess
+        StorageMapReadAccess,
     };
     use crate::components::erc20::erc20 as erc20_comp;
     use crate::components::ownable::ownable as ownable_comp;
@@ -26,7 +26,7 @@ pub mod mintable {
         +HasComponent<TContractState>,
         impl Ownable: ownable_comp::HasComponent<TContractState>,
         impl ERC20: erc20_comp::HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::MintTrait<ComponentState<TContractState>> {
         fn mint(ref self: ComponentState<TContractState>, account: ContractAddress, amount: u256) {
             assert(!account.is_zero(), 'ERC20: mint to the 0 address');

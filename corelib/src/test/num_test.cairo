@@ -1,7 +1,7 @@
 use crate::num::traits::BitSize;
 use crate::num::traits::{
     OverflowingAdd, OverflowingSub, OverflowingMul, WrappingAdd, WrappingSub, WrappingMul,
-    CheckedAdd, CheckedSub, CheckedMul, SaturatingAdd, SaturatingSub, SaturatingMul
+    CheckedAdd, CheckedSub, CheckedMul, SaturatingAdd, SaturatingSub, SaturatingMul,
 };
 use crate::num::traits::Bounded;
 

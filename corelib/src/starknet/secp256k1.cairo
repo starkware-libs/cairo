@@ -8,7 +8,7 @@ use starknet::{
     secp256_trait::{
         Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature
     },
-    SyscallResult, SyscallResultTrait
+    SyscallResult, SyscallResultTrait,
 };
 
 /// A point on the Secp256k1 curve.

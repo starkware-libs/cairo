@@ -141,7 +141,7 @@ mod erc20 {
             ref self: ComponentState<TContractState>,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             let caller = get_caller_address();
             self.spend_allowance(sender, caller, amount);
@@ -168,7 +168,7 @@ mod erc20 {
         fn decrease_allowance(
             ref self: ComponentState<TContractState>,
             spender: ContractAddress,
-            subtracted_value: u256
+            subtracted_value: u256,
         ) {
             let caller = get_caller_address();
             self
@@ -186,7 +186,7 @@ mod erc20 {
             ref self: ComponentState<TContractState>,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             assert(!sender.is_zero(), 'ERC20: transfer from 0');
             assert(!recipient.is_zero(), 'ERC20: transfer to 0');
@@ -199,7 +199,7 @@ mod erc20 {
             ref self: ComponentState<TContractState>,
             owner: ContractAddress,
             spender: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             let current_allowance: u256 = self.allowances.read((owner, spender));
             let ONES_MASK = 0xffffffffffffffffffffffffffffffff_u128;
@@ -214,7 +214,7 @@ mod erc20 {
             ref self: ComponentState<TContractState>,
             owner: ContractAddress,
             spender: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             assert(!spender.is_zero(), 'ERC20: approve from 0');
             self.allowances.write((owner, spender), amount);
@@ -226,7 +226,7 @@ mod erc20 {
             symbol: felt252,
             decimals: u8,
             initial_supply: u256,
-            recipient: ContractAddress
+            recipient: ContractAddress,
         ) {
             self.name.write(name);
             self.symbol.write(symbol);
@@ -268,7 +268,7 @@ mod mintable {
         +HasComponent<TContractState>,
         impl Ownable: super::ownable::HasComponent<TContractState>,
         impl ERC20: super::erc20::HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::MintTrait<ComponentState<TContractState>> {
         fn mint(ref self: ComponentState<TContractState>, account: ContractAddress, amount: u256) {
             assert(!account.is_zero(), 'ERC20: mint to the 0 address');

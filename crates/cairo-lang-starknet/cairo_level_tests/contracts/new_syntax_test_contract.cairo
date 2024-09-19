@@ -27,7 +27,7 @@ mod counter_contract {
         #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
         counter: u128,
-        other_contract: IOtherContractDispatcher
+        other_contract: IOtherContractDispatcher,
     }
 
     #[event]
@@ -37,7 +37,7 @@ mod counter_contract {
         ABC: super::test_component::Event,
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
-        OutOfScopeEvent: OutOfScopeEvent
+        OutOfScopeEvent: OutOfScopeEvent,
     }
 
     #[derive(Drop, starknet::Event)]

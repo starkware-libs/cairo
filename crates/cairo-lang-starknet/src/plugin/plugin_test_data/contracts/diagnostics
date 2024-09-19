@@ -8619,7 +8619,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -8743,7 +8743,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -9750,7 +9750,7 @@ pub impl Comp3<
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
 
 > of super::Comp3Trait<TContractState> {
     
@@ -9830,7 +9830,7 @@ fn __wrapper__Comp3__foo3<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -9853,7 +9853,7 @@ fn __wrapper__Comp3__foo4<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -9934,7 +9934,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -10046,7 +10046,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -11001,7 +11001,7 @@ pub impl Comp3<
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
 
 > of super::Comp3Trait<TContractState> {
     
@@ -11076,7 +11076,7 @@ fn __wrapper__Comp3__foo3<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -12926,7 +12926,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 //! > cairo_code
 struct u256Pair {
     a: u256,
-    b: u256
+    b: u256,
 }
 
 impl u256PairStore of starknet::Store<u256Pair> {
@@ -12955,7 +12955,7 @@ impl u256PairStore of starknet::Store<u256Pair> {
         address_domain: u32,
         base: starknet::storage_access::StorageBaseAddress,
         offset: u8,
-        value: u256Pair
+        value: u256Pair,
     ) -> starknet::SyscallResult<()> {
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset, value.a)?;
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset + 2, value.b)?;
@@ -13003,7 +13003,7 @@ lib.cairo:
 
 struct u256Pair {
     a: u256,
-    b: u256
+    b: u256,
 }
 
 impl u256PairStore of starknet::Store<u256Pair> {
@@ -13032,7 +13032,7 @@ impl u256PairStore of starknet::Store<u256Pair> {
         address_domain: u32,
         base: starknet::storage_access::StorageBaseAddress,
         offset: u8,
-        value: u256Pair
+        value: u256Pair,
     ) -> starknet::SyscallResult<()> {
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset, value.a)?;
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset + 2, value.b)?;
