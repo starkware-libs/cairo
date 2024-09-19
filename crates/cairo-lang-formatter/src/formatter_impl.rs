@@ -4,6 +4,11 @@ use std::fmt;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
+use cairo_lang_syntax::node::ast::{
+    ItemUse, TerminalLBrace, TerminalRBrace, UsePath, UsePathGreen, UsePathLeaf, UsePathLeafGreen,
+    UsePathList, UsePathListElementOrSeparatorGreen, UsePathMulti, UsePathMultiGreen,
+    UsePathSingle, UsePathSingleGreen,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
@@ -758,6 +763,8 @@ pub trait SyntaxNodeFormat {
     /// Otherwise, returns None.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Should a sequence of syntax nodes of this kind be sorted.
+    fn should_sort(&self, db: &dyn SyntaxGroup) -> Option<usize>;
 }
 
 pub struct FormatterImpl<'a> {
@@ -817,15 +824,217 @@ impl<'a> FormatterImpl<'a> {
         }
         self.append_break_line_point(node_break_points.trailing());
     }
+
+    fn sort_inner_use_paths_in_place(multi_path: &ast::UsePathMulti, db: &dyn SyntaxGroup) {
+        // Step 1: Extract all inner paths
+        let mut paths = multi_path.use_paths(db).elements(db).into_iter().collect::<Vec<_>>();
+
+        // Step 2: Sort the paths based on their text representation
+        paths.sort_by_key(|path| match path {
+            ast::UsePath::Leaf(leaf) => {
+                let ident = leaf.ident(db); // Get the identifier
+                ident.as_syntax_node().get_text_without_trivia(db) // Get the text without trivia
+            }
+            ast::UsePath::Single(single) => {
+                let ident = single.ident(db); // Get the identifier
+                ident.as_syntax_node().get_text_without_trivia(db) // Get the text without trivia
+            }
+            ast::UsePath::Multi(multi) => multi.as_syntax_node().get_text_without_trivia(db),
+        });
+
+        // Step 3: Output the sorted paths in the desired format
+        for path in paths {
+            match path {
+                ast::UsePath::Leaf(leaf) => {
+                    let ident = leaf.ident(db);
+                    println!("Leaf: {}", ident.as_syntax_node().get_text_without_trivia(db));
+                }
+                ast::UsePath::Single(single) => {
+                    let ident = single.ident(db);
+                    println!("Single: {}", ident.as_syntax_node().get_text_without_trivia(db));
+                }
+                ast::UsePath::Multi(multi) => {
+                    println!("Multi: {}", multi.as_syntax_node().get_text_without_trivia(db));
+                }
+            }
+        }
+    }
+
+    fn sort_and_append_group<'b>(
+        group: &mut Vec<&'b SyntaxNode>, // Both group and sorted_children now share lifetime 'b
+        kind: SyntaxKind,
+        sorted_children: &mut Vec<&'b SyntaxNode>,
+        db: &dyn SyntaxGroup,
+    ) {
+        if group.is_empty() {
+            return;
+        }
+
+        match kind {
+            SyntaxKind::ItemModule => {
+                group.sort_by_key(|c| {
+                    let item_module = ast::ItemModule::from_syntax_node(db, (*c).clone());
+                    item_module.name(db).text(db)
+                });
+            }
+            SyntaxKind::ItemUse => {
+                group.sort_by_key(|c| {
+                    let item_use = ast::ItemUse::from_syntax_node(db, (*c).clone());
+                    let use_path = item_use.use_path(db);
+
+                    // Sort by the path's identifier or full path text
+                    match use_path {
+                        UsePath::Leaf(leaf) => {
+                            leaf.ident(db).as_syntax_node().get_text_without_trivia(db)
+                        }
+                        UsePath::Single(single) => {
+                            single.ident(db).as_syntax_node().get_text_without_trivia(db)
+                        }
+                        ast::UsePath::Multi(multi) => {
+                            // Call the sort_inner_use_paths_in_place to sort the inner paths
+                            Self::sort_inner_use_paths_in_place(&multi, db);
+                            multi.as_syntax_node().get_text_without_trivia(db)
+                        }
+                    }
+                });
+            }
+            _ => {}
+        }
+        sorted_children.append(group);
+    }
+
     /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode) {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db);
         // TODO(ilya): consider not copying here.
+        let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
+        let internal_break_line_points_positions =
+            syntax_node.get_internal_break_line_point_properties(self.db);
         let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();
         if self.config.sort_module_level_items {
+            let mut sorted_children = Vec::new();
+            let mut current_mod_group = Vec::new();
+            let mut current_use_group = Vec::new();
+            let mut current_use_path_group = Vec::new();
+            // Iterate through the children and handle sorting:
+            for child in children.iter() {
+                match child.kind(self.db) {
+                    SyntaxKind::ItemModule => {
+                        if !current_use_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_use_group,
+                                SyntaxKind::ItemUse,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        if !current_use_path_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_use_path_group,
+                                SyntaxKind::UsePathMulti,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        current_mod_group.push(child);
+                    }
+                    SyntaxKind::ItemUse => {
+                        if !current_mod_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_mod_group,
+                                SyntaxKind::ItemModule,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        if !current_use_path_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_use_path_group,
+                                SyntaxKind::UsePathMulti,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        current_use_group.push(child);
+                    }
+                    SyntaxKind::UsePathMulti => {
+                        if !current_mod_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_mod_group,
+                                SyntaxKind::ItemModule,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        if !current_use_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_use_group,
+                                SyntaxKind::ItemUse,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        current_use_path_group.push(child);
+                    }
+                    _ => {
+                        if !current_mod_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_mod_group,
+                                SyntaxKind::ItemModule,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        if !current_use_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_use_group,
+                                SyntaxKind::ItemUse,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        if !current_use_path_group.is_empty() {
+                            Self::sort_and_append_group(
+                                &mut current_use_path_group,
+                                SyntaxKind::UsePathMulti,
+                                &mut sorted_children,
+                                self.db,
+                            );
+                        }
+                        sorted_children.push(child);
+                    }
+                }
+            }
+            // Append any remaining groups:
+            if !current_mod_group.is_empty() {
+                Self::sort_and_append_group(
+                    &mut current_mod_group,
+                    SyntaxKind::ItemModule,
+                    &mut sorted_children,
+                    self.db,
+                );
+            }
+            if !current_use_group.is_empty() {
+                Self::sort_and_append_group(
+                    &mut current_use_group,
+                    SyntaxKind::ItemUse,
+                    &mut sorted_children,
+                    self.db,
+                );
+            }
+            if !current_use_path_group.is_empty() {
+                Self::sort_and_append_group(
+                    &mut current_use_path_group,
+                    SyntaxKind::UsePathMulti,
+                    &mut sorted_children,
+                    self.db,
+                );
+            }
+            // Replace the children with the sorted result:
+            // children = sorted_children.into_iter().cloned().collect();
             children.sort_by_key(|c| MovableNode::new(self.db, c));
         };
         for (i, child) in children.iter().enumerate() {
@@ -843,6 +1052,7 @@ impl<'a> FormatterImpl<'a> {
             self.empty_lines_allowance = allowed_empty_between;
         }
     }
+
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
@@ -921,7 +1131,6 @@ impl<'a> FormatterImpl<'a> {
         syntax_node.has_attr(self.db, FMT_SKIP_ATTR)
     }
 }
-
 /// Represents a sortable SyntaxNode.
 #[derive(PartialEq, Eq)]
 enum MovableNode {
@@ -941,6 +1150,11 @@ impl MovableNode {
                     Self::Immovable
                 }
             }
+            // TODO(Dean): Fix this to ignore attributes. kind- if we need to sort. than have
+            // sequence to know if to sort and then by the module name. mode...something..{}
+            // mod haws and use doesnt. mod is more עדין because only on not body type.
+            // cairo_specs- 491 and 670- item module and etc. the other one- no name so by use path.
+            // every sequence- =diifrenet function to decide by which to sort.
             SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db).into()),
             SyntaxKind::ItemHeaderDoc => Self::ItemHeaderDoc,
             _ => Self::Immovable,
