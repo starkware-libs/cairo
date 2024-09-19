@@ -22,6 +22,10 @@ error: Missing tokens. Expected an expression.
 get_diagnostics
 
 //! > cairo_code
+use A;
+use C;
+use B;
+
 fn f() {
     {
         5

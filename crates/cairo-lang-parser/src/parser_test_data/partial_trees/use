@@ -4,31 +4,70 @@
 test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
-fn foo() {
-    use X::Y;
-}
+use A::{C, D::E::V, F::{G, H::I}};
 
 //! > top_level_kind
-ItemUse
 
 //! > ignored_kinds
 
 //! > expected_diagnostics
 
 //! > expected_tree
-└── Top level kind: ItemUse
-    ├── attributes (kind: AttributeList) []
-    ├── visibility (kind: VisibilityDefault) []
-    ├── use_kw (kind: TokenUse): 'use'
-    ├── use_path (kind: UsePathSingle)
-    │   ├── ident (kind: PathSegmentSimple)
-    │   │   └── ident (kind: TokenIdentifier): 'X'
-    │   ├── colon_colon (kind: TokenColonColon): '::'
-    │   └── use_path (kind: UsePathLeaf)
-    │       ├── ident (kind: PathSegmentSimple)
-    │       │   └── ident (kind: TokenIdentifier): 'Y'
-    │       └── alias_clause (kind: OptionAliasClauseEmpty) []
-    └── semicolon (kind: TokenSemicolon): ';'
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: ItemUse)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── use_kw (kind: TokenUse): 'use'
+    │       ├── use_path (kind: UsePathSingle)
+    │       │   ├── ident (kind: PathSegmentSimple)
+    │       │   │   └── ident (kind: TokenIdentifier): 'A'
+    │       │   ├── colon_colon (kind: TokenColonColon): '::'
+    │       │   └── use_path (kind: UsePathMulti)
+    │       │       ├── lbrace (kind: TokenLBrace): '{'
+    │       │       ├── use_paths (kind: UsePathList)
+    │       │       │   ├── item #0 (kind: UsePathLeaf)
+    │       │       │   │   ├── ident (kind: PathSegmentSimple)
+    │       │       │   │   │   └── ident (kind: TokenIdentifier): 'C'
+    │       │       │   │   └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │       │       │   ├── separator #0 (kind: TokenComma): ','
+    │       │       │   ├── item #1 (kind: UsePathSingle)
+    │       │       │   │   ├── ident (kind: PathSegmentSimple)
+    │       │       │   │   │   └── ident (kind: TokenIdentifier): 'D'
+    │       │       │   │   ├── colon_colon (kind: TokenColonColon): '::'
+    │       │       │   │   └── use_path (kind: UsePathSingle)
+    │       │       │   │       ├── ident (kind: PathSegmentSimple)
+    │       │       │   │       │   └── ident (kind: TokenIdentifier): 'E'
+    │       │       │   │       ├── colon_colon (kind: TokenColonColon): '::'
+    │       │       │   │       └── use_path (kind: UsePathLeaf)
+    │       │       │   │           ├── ident (kind: PathSegmentSimple)
+    │       │       │   │           │   └── ident (kind: TokenIdentifier): 'V'
+    │       │       │   │           └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │       │       │   ├── separator #1 (kind: TokenComma): ','
+    │       │       │   └── item #2 (kind: UsePathSingle)
+    │       │       │       ├── ident (kind: PathSegmentSimple)
+    │       │       │       │   └── ident (kind: TokenIdentifier): 'F'
+    │       │       │       ├── colon_colon (kind: TokenColonColon): '::'
+    │       │       │       └── use_path (kind: UsePathMulti)
+    │       │       │           ├── lbrace (kind: TokenLBrace): '{'
+    │       │       │           ├── use_paths (kind: UsePathList)
+    │       │       │           │   ├── item #0 (kind: UsePathLeaf)
+    │       │       │           │   │   ├── ident (kind: PathSegmentSimple)
+    │       │       │           │   │   │   └── ident (kind: TokenIdentifier): 'G'
+    │       │       │           │   │   └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │       │       │           │   ├── separator #0 (kind: TokenComma): ','
+    │       │       │           │   └── item #1 (kind: UsePathSingle)
+    │       │       │           │       ├── ident (kind: PathSegmentSimple)
+    │       │       │           │       │   └── ident (kind: TokenIdentifier): 'H'
+    │       │       │           │       ├── colon_colon (kind: TokenColonColon): '::'
+    │       │       │           │       └── use_path (kind: UsePathLeaf)
+    │       │       │           │           ├── ident (kind: PathSegmentSimple)
+    │       │       │           │           │   └── ident (kind: TokenIdentifier): 'I'
+    │       │       │           │           └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │       │       │           └── rbrace (kind: TokenRBrace): '}'
+    │       │       └── rbrace (kind: TokenRBrace): '}'
+    │       └── semicolon (kind: TokenSemicolon): ';'
+    └── eof (kind: TokenEndOfFile).
 
 //! > ==========================================================================
 

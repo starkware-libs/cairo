@@ -1,9 +1,12 @@
 use std::cmp::Ordering;
 use std::fmt;
+use std::iter::Filter;
+use std::process::Child;
 
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
+use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
@@ -825,9 +828,109 @@ impl<'a> FormatterImpl<'a> {
         // TODO(ilya): consider not copying here.
         let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();
+        // check if current node is of type UsePathList. if so match its children to usePathSingle
+        // or UsePathLeaf.
         if self.config.sort_module_level_items {
-            children.sort_by_key(|c| MovableNode::new(self.db, c));
-        };
+            // We sort the inner path segments of the UsePathMulti node.
+            if let SyntaxKind::UsePathList = syntax_node.kind(self.db) {
+                // Filter and collect only UsePathLeaf and UsePathSingle, while excluding
+                // TokenComma.
+                let mut sorted_leaf_and_single: Vec<_> = children
+                    .iter()
+                    .filter(|node| {
+                        matches!(
+                            node.kind(self.db),
+                            SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle
+                        )
+                    })
+                    .cloned()
+                    .collect();
+
+                // Sort the filtered nodes by their ident (text).
+                sorted_leaf_and_single.sort_by_key(|node| {
+                    println!("Node kind: {:?}", node.kind(self.db));
+                    match node.kind(self.db) {
+                        SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle => {
+                            let path_segment =
+                                ast::UsePathLeaf::from_syntax_node(self.db, node.clone())
+                                    .ident(self.db);
+                            match path_segment {
+                                PathSegment::Simple(simple_segment) => {
+                                    simple_segment.as_syntax_node().get_text_without_trivia(self.db)
+                                }
+                                PathSegment::WithGenericArgs(_) => {
+                                    // Handle the case with generic arguments if needed (e.g.,
+                                    // extract base name).
+                                    "".to_string()
+                                }
+                            }
+                        }
+                        _ => "".to_string(), // Default case (shouldn't happen).
+                    }
+                });
+
+                // Filter and collect the other node types (like commas).
+                let other_types: Vec<_> = children
+                    .iter()
+                    .filter(|node| {
+                        !matches!(
+                            node.kind(self.db),
+                            SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle
+                        )
+                    })
+                    .cloned()
+                    .collect();
+
+                // Combine the sorted UsePathLeaf/UsePathSingle nodes with the other node types.
+                children = sorted_leaf_and_single
+                    .clone()
+                    .into_iter()
+                    .zip(other_types)
+                    .flat_map(|(a, b)| vec![a, b])
+                    .collect();
+                // Push the last remaining element from the sorted_leaf_and_single (we always have
+                // one less comma than the number of UsePathLeaf/UsePathSingle).
+                if let Some(last) = sorted_leaf_and_single.last() {
+                    children.push(last.clone());
+                }
+            } else {
+                // We sort sections of the items in the module.
+                let mut start_idx = 0;
+                while start_idx < children.len() {
+                    let kind = SortKind::new(self.db, &children[start_idx]);
+                    let mut end_idx = start_idx + 1;
+                    // Find the end of the current section.
+                    while end_idx < children.len() {
+                        if kind != SortKind::new(self.db, &children[end_idx]) {
+                            break;
+                        }
+                        end_idx += 1;
+                    }
+                    // Sort within this section if it's `Module` or `UseItem`.
+                    match kind {
+                        SortKind::Module => {
+                            children[start_idx..end_idx].sort_by_key(|node| {
+                                ast::ItemModule::from_syntax_node(self.db, node.clone())
+                                    .name(self.db)
+                                    .text(self.db)
+                            });
+                        }
+                        SortKind::UseItem => {
+                            children[start_idx..end_idx].sort_by_key(|node| {
+                                ast::ItemUse::from_syntax_node(self.db, node.clone())
+                                    .use_path(self.db)
+                                    .as_syntax_node()
+                                    .get_text_without_trivia(self.db)
+                            });
+                        }
+                        SortKind::Immovable => {}
+                    }
+
+                    // Move past the sorted section.
+                    start_idx = end_idx;
+                }
+            }
+        }
         for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
                 continue;
@@ -922,52 +1025,32 @@ impl<'a> FormatterImpl<'a> {
     }
 }
 
-/// Represents a sortable SyntaxNode.
+/// Represents the kind of sections in the syntax tree that can be sorted.
+/// Classify consecutive nodes into sections that are eligible for sorting.
 #[derive(PartialEq, Eq)]
-enum MovableNode {
-    ItemModule(SmolStr),
-    ItemUse(SmolStr),
-    ItemHeaderDoc,
+enum SortKind {
+    /// Module items without body, e.g. `mod a;`.
+    Module,
+
+    /// Use items, e.g. `use a::b;` or `use c::{d, e as f};`.
+    UseItem,
+
+    /// Items that cannot be moved - would be skipped and not included in any sorted segment.
     Immovable,
 }
-impl MovableNode {
+impl SortKind {
     fn new(db: &dyn SyntaxGroup, node: &SyntaxNode) -> Self {
         match node.kind(db) {
             SyntaxKind::ItemModule => {
                 let item = ast::ItemModule::from_syntax_node(db, node.clone());
                 if matches!(item.body(db), MaybeModuleBody::None(_)) {
-                    Self::ItemModule(item.name(db).text(db))
+                    Self::Module
                 } else {
                     Self::Immovable
                 }
             }
-            SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db).into()),
-            SyntaxKind::ItemHeaderDoc => Self::ItemHeaderDoc,
+            SyntaxKind::ItemUse => Self::UseItem,
             _ => Self::Immovable,
         }
-    }
-}
-
-impl Ord for MovableNode {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match (self, other) {
-            (MovableNode::ItemHeaderDoc, _) => Ordering::Less,
-            (_, MovableNode::ItemHeaderDoc) => Ordering::Greater,
-            (MovableNode::Immovable, MovableNode::Immovable) => Ordering::Equal,
-            (MovableNode::ItemModule(a), MovableNode::ItemModule(b))
-            | (MovableNode::ItemUse(a), MovableNode::ItemUse(b)) => a.cmp(b),
-            (_, MovableNode::Immovable) | (MovableNode::ItemModule(_), MovableNode::ItemUse(_)) => {
-                Ordering::Less
-            }
-            (MovableNode::Immovable, _) | (MovableNode::ItemUse(_), MovableNode::ItemModule(_)) => {
-                Ordering::Greater
-            }
-        }
-    }
-}
-
-impl PartialOrd for MovableNode {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
     }
 }
