@@ -11,7 +11,7 @@ enum EnumForSerde {
 struct StructForDefault {
     a: felt252,
     b: u256,
-    c: bool
+    c: bool,
 }
 
 #[derive(Drop, Debug, Default, PartialEq)]
@@ -37,27 +37,27 @@ fn test_derive_serde_enum() {
     assert_eq(
         @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
         @a,
-        'expected a'
+        'expected a',
     );
     assert_eq(
         @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
         @a,
-        'expected a'
+        'expected a',
     );
     assert_eq(
         @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
         @c,
-        'expected c'
+        'expected c',
     );
     assert_eq(
         @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
         @b,
-        'expected b'
+        'expected b',
     );
     assert_eq(
         @Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'),
         @a,
-        'expected a'
+        'expected a',
     );
     assert(serialized.is_empty(), 'expected empty');
 }
@@ -78,7 +78,7 @@ enum LongEnum5 {
     B,
     C,
     D,
-    E
+    E,
 }
 #[derive(Copy, Debug, Drop, Serde, PartialEq)]
 enum longEnum10 {
@@ -91,7 +91,7 @@ enum longEnum10 {
     G,
     H,
     I,
-    J
+    J,
 }
 #[derive(Copy, Debug, Drop, Serde, PartialEq)]
 enum longEnum15 {
@@ -109,7 +109,7 @@ enum longEnum15 {
     L,
     M,
     N,
-    O
+    O,
 }
 
 
@@ -120,7 +120,7 @@ fn test_long_enum5_deserialize() {
     x.serialize(ref output);
     let mut serialized = output.span();
     assert_eq(
-        @Serde::<LongEnum5>::deserialize(ref serialized).expect('failed to read'), @x, 'expected E'
+        @Serde::<LongEnum5>::deserialize(ref serialized).expect('failed to read'), @x, 'expected E',
     );
 }
 #[test]
@@ -130,7 +130,9 @@ fn test_long_enum10_deserialize() {
     x.serialize(ref output);
     let mut serialized = output.span();
     assert_eq(
-        @Serde::<longEnum10>::deserialize(ref serialized).expect('failed to read'), @x, 'expected J'
+        @Serde::<longEnum10>::deserialize(ref serialized).expect('failed to read'),
+        @x,
+        'expected J',
     );
 }
 #[test]
@@ -140,7 +142,9 @@ fn test_long_enum15_deserialize() {
     x.serialize(ref output);
     let mut serialized = output.span();
     assert_eq(
-        @Serde::<longEnum15>::deserialize(ref serialized).expect('failed to read'), @x, 'expected O'
+        @Serde::<longEnum15>::deserialize(ref serialized).expect('failed to read'),
+        @x,
+        'expected O',
     );
 }
 

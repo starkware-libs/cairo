@@ -114,7 +114,7 @@ fn foo(x: T) -> S {
     for i in 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4
         ..1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 + 1 + 2 + 3 + 4 {}
     for (x, y) in array![
-        (10, 10), (11, 11), (12, 12), (13, 13), (14, 14), (15, 15), (16, 16), (17, 17)
+        (10, 10), (11, 11), (12, 12), (13, 13), (14, 14), (15, 15), (16, 16), (17, 17),
     ] {
         do_something!(x, i);
     };
@@ -134,7 +134,7 @@ fn bar(
         second_arg: second_arg,
         third_arg: third_arg,
         fourth_arg: fourth_arg,
-        fifth_arg: fifth_arg
+        fifth_arg: fifth_arg,
     };
     let y = Struct {
         first_arg: SubStruct { first_arg: first_arg, second_arg: second_arg, third_arg: third_arg },
@@ -142,11 +142,11 @@ fn bar(
             first_arg: first_arg,
             second_arg: second_arg,
             third_arg: third_arg,
-            fourth_arg: fourth_arg
-        }
+            fourth_arg: fourth_arg,
+        },
     };
     let some_tuple = (
-        first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg
+        first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg,
     );
     let rec_tuple = (
         (first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg),
@@ -158,8 +158,8 @@ fn bar(
             fifth_arg,
             sixth_arg,
             seventh_arg,
-            eighth_arg
-        )
+            eighth_arg,
+        ),
     );
     match 5 {
         1 | 2 | 21 | 2 | 21 | 2 | 21 | 2 | 21 | 2 | 21 | 2 | 21 | 2 | 21 | 2 | 21 | 2 | 21 | 2 |
@@ -248,3 +248,15 @@ fn function_for_a_comment() {
 // leading words
 // long_single_word_that_should_not_be_broken_not_creating_additional_empty_lines_padding_padding_padding_padding
 fn function_for_a_comment() {}
+
+use long_use::{
+    a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a,
+    a, a, a, a, a, a, a, a, a, a, a, a, a, a,
+};
+fn many_arguments(
+    very_long_argument_1: T,
+    very_long_argument_2: T,
+    very_long_argument_3: T,
+    very_long_argument_4: T,
+    very_long_argument_5: T,
+) {}

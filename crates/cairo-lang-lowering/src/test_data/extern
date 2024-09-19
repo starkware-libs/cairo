@@ -16,9 +16,9 @@ foo
 
 //! > module_code
 extern fn f(ref a: felt252, b: felt252) -> felt252 nopanic;
-extern fn g(ref a: felt252, b: felt252) -> (felt252,) nopanic;
+extern fn g(ref a: felt252, b: felt252) -> (felt252, ) nopanic;
 extern fn h(ref a: felt252, b: felt252) -> (felt252, felt252) nopanic;
-extern fn i(ref a: felt252, b: felt252) -> ((felt252,),) nopanic;
+extern fn i(ref a: felt252, b: felt252) -> ((felt252, ), ) nopanic;
 
 //! > semantic_diagnostics
 
@@ -58,7 +58,7 @@ foo
 //! > module_code
 enum MyEnum {
     A: felt252,
-    B: (felt252,),
+    B: (felt252, ),
     C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
@@ -104,7 +104,7 @@ test_function_lowering(expect_diagnostics: false)
 fn foo(a: felt252, b: felt252) -> felt252 {
     match f(a, b) {
         MyEnum::A(y) => y,
-        MyEnum::B((y,)) => y,
+        MyEnum::B((y, )) => y,
         MyEnum::C((y, _)) => y,
     }
 }
@@ -115,7 +115,7 @@ foo
 //! > module_code
 enum MyEnum {
     A: felt252,
-    B: (felt252,),
+    B: (felt252, ),
     C: (felt252, felt252),
 }
 extern fn f(a: felt252, b: felt252) -> MyEnum nopanic;
@@ -161,7 +161,7 @@ test_function_lowering(expect_diagnostics: false)
 fn foo(ref a: felt252, b: felt252) -> felt252 {
     match f(ref a, b) {
         MyEnum::A(y) => y,
-        MyEnum::B((y,)) => y,
+        MyEnum::B((y, )) => y,
         MyEnum::C((y, _)) => y,
     }
 }
@@ -172,7 +172,7 @@ foo
 //! > module_code
 enum MyEnum {
     A: felt252,
-    B: (felt252,),
+    B: (felt252, ),
     C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
@@ -230,7 +230,7 @@ foo
 //! > module_code
 enum MyEnum {
     A: felt252,
-    B: (felt252,),
+    B: (felt252, ),
     C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
@@ -276,7 +276,7 @@ test_function_lowering(expect_diagnostics: false)
 fn foo(ref a: felt252, b: felt252) -> felt252 {
     match f(ref a, b) {
         MyEnum::A(y) => y,
-        MyEnum::B((y,)) => y,
+        MyEnum::B((y, )) => y,
         MyEnum::C((y, _)) => y,
     }
 }
@@ -287,7 +287,7 @@ foo
 //! > module_code
 enum MyEnum {
     A: felt252,
-    B: (felt252,),
+    B: (felt252, ),
     C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
@@ -330,9 +330,9 @@ End:
 test_function_lowering(expect_diagnostics: false)
 
 //! > function
-fn foo(mut arr: Array::<felt252>, mut b: (felt252,)) -> Array::<felt252> {
+fn foo(mut arr: Array::<felt252>, mut b: (felt252, )) -> Array::<felt252> {
     let y = match f(ref arr, ref b) {
-        MyEnum::A(_x) => arr
+        MyEnum::A(_x) => arr,
     };
     y
 }
@@ -344,7 +344,7 @@ foo
 enum MyEnum {
     A: felt252,
 }
-extern fn f(ref arr: Array::<felt252>, ref b: (felt252,)) -> MyEnum nopanic;
+extern fn f(ref arr: Array::<felt252>, ref b: (felt252, )) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 

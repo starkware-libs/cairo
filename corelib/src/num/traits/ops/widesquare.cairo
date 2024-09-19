@@ -49,7 +49,7 @@ mod inner {
         // Packing together the overflow bits, making a cheaper addition into limb2.
         let limb1_overflow = bounded_int::add(limb1_overflow0, limb1_overflow1);
         let (limb2, limb2_overflow2) = u128_add_with_bounded_int_carry(
-            limb2, upcast(limb1_overflow)
+            limb2, upcast(limb1_overflow),
         );
         // Packing together the overflow bits, making a cheaper addition into limb3.
         let limb2_overflow = bounded_int::add(limb2_overflow0, limb2_overflow1);

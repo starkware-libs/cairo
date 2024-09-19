@@ -4,7 +4,7 @@ fn test_option_some_expect() {
 }
 
 #[test]
-#[should_panic(expected: ('err msg',))]
+#[should_panic(expected: ('err msg'))]
 fn test_option_none_expect() {
     Option::<felt252>::None.expect('err msg');
 }
@@ -15,7 +15,7 @@ fn test_option_some_unwrap() {
 }
 
 #[test]
-#[should_panic(expected: ('Option::unwrap failed.',))]
+#[should_panic(expected: ('Option::unwrap failed.'))]
 fn test_option_none_unwrap() {
     Option::<felt252>::None.unwrap();
 }

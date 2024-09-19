@@ -134,7 +134,7 @@ test_expr_semantics(expect_diagnostics: false)
 enum A {
     A,
     B,
-    C
+    C,
 }
 
 //! > function_body
@@ -212,7 +212,7 @@ test_expr_semantics(expect_diagnostics: false)
 struct P {
     x: u8,
     y: u8,
-    z: u8
+    z: u8,
 }
 enum MyEnum<T> {
     A: u8,
@@ -580,7 +580,7 @@ test_expr_semantics(expect_diagnostics: true)
 struct P {
     x: u8,
     y: u8,
-    z: u8
+    z: u8,
 }
 enum MyEnum<T> {
     A: felt252,
@@ -792,7 +792,7 @@ test_expr_semantics(expect_diagnostics: true)
 struct P {
     x: u8,
     y: u8,
-    z: u8
+    z: u8,
 }
 enum MyEnum<T> {
     A: u8,

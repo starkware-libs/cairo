@@ -12,7 +12,7 @@ fn foo(mut z: felt252) {
         MyEnum::c(_x) => {},
         MyEnum::d((_x, _y)) => {},
         MyEnum::e(_x) => {},
-        MyEnum::f((_x,)) => {},
+        MyEnum::f((_x, )) => {},
         MyEnum::g(_x) => {},
         MyEnum::h(_x) => {},
     }
@@ -28,9 +28,9 @@ enum MyEnum {
     c: (felt252, (felt252, felt252)),
     d: (felt252, felt252),
     e: (felt252, felt252),
-    f: (felt252,),
-    g: (felt252,),
-    h: felt252
+    f: (felt252, ),
+    g: (felt252, ),
+    h: felt252,
 }
 extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 

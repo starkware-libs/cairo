@@ -203,8 +203,8 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
-    core::ops::FnOnce::call(c, (2,))
+fn bar<T, +core::ops::FnOnce<T, (u32, )>>(c: T) -> core::ops::FnOnce::<T, (u32, )>::Output {
+    core::ops::FnOnce::call(c, (2, ))
 }
 
 //! > expected_diagnostics
@@ -222,7 +222,7 @@ fn foo() {
         let d = a;
         d.into()
     };
-    let _f: felt252 = core::ops::FnOnce::call(c, (2_u64,));
+    let _f: felt252 = core::ops::FnOnce::call(c, (2_u64, ));
     let _k: felt252 = bar(c);
 }
 
@@ -230,8 +230,8 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
-    core::ops::FnOnce::call(c, (2,))
+fn bar<T, +core::ops::FnOnce<T, (u32, )>>(c: T) -> core::ops::FnOnce::<T, (u32, )>::Output {
+    core::ops::FnOnce::call(c, (2, ))
 }
 
 //! > expected_diagnostics
@@ -253,7 +253,7 @@ fn foo() {
         let d = a;
         d.into()
     };
-    let _f: u128 = core::ops::FnOnce::call(c, (2,));
+    let _f: u128 = core::ops::FnOnce::call(c, (2, ));
     let _k: felt252 = bar(c);
 }
 
@@ -261,8 +261,8 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
-    core::ops::FnOnce::call(c, (2,))
+fn bar<T, +core::ops::FnOnce<T, (u32, )>>(c: T) -> core::ops::FnOnce::<T, (u32, )>::Output {
+    core::ops::FnOnce::call(c, (2, ))
 }
 
 //! > expected_diagnostics
@@ -368,7 +368,7 @@ fn bar() -> u32 {
     2
 }
 
-fn baz<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>::Output {
+fn baz<T, +core::ops::FnOnce<T, (u32, )>>(c: T) -> core::ops::FnOnce::<T, (u32, )>::Output {
     let bar = 3;
     let _x: u32 = bar();
     c(9)

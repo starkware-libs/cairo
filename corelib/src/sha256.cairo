@@ -22,7 +22,7 @@ const SHA256_INITIAL_STATE: [
 /// last_input_num_bytes is the number of bytes in the last input word (must be less than 4).
 /// return the SHA-256 hash of the `input array` + `last_input_word` as big endian.
 pub fn compute_sha256_u32_array(
-    mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u32
+    mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u32,
     ) -> [
     u32
 ; 8] {

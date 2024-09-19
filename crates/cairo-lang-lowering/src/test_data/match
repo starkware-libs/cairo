@@ -8,7 +8,7 @@ fn foo(a: felt252) -> felt252 {
     let b = match a {
         5 => { 550 },
         6 => { 70 },
-        _ => { 90 }
+        _ => { 90 },
     };
     return b;
 }
@@ -564,7 +564,7 @@ enum A {
     One: (),
     Two: (),
     Three: (felt252, felt252),
-    Four: (felt252,),
+    Four: (felt252, ),
 }
 
 //! > semantic_diagnostics
@@ -1468,7 +1468,7 @@ test_function_lowering(expect_diagnostics: true)
 fn foo() -> felt252 {
     match 5_u256 {
         0 => 1,
-        _ => 2
+        _ => 2,
     }
 }
 
@@ -1505,7 +1505,7 @@ fn foo(v: u32) -> felt252 {
         4 => 5,
         5 => 6,
         6 => 7,
-        _ => 8
+        _ => 8,
     }
 }
 

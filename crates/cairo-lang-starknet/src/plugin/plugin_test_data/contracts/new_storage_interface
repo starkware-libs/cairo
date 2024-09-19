@@ -66,11 +66,11 @@ enum QueryableEnum {
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref, Vec, VecTrait,
-        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward
+        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward,
     };
     use super::{
         BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList, QueryableEnum,
-        QueryableEnumVariants
+        QueryableEnumVariants,
     };
 
     #[storage]
@@ -211,11 +211,11 @@ enum QueryableEnum {
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref, Vec, VecTrait,
-        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward
+        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward,
     };
     use super::{
         BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList, QueryableEnum,
-        QueryableEnumVariants
+        QueryableEnumVariants,
     };
 
     #[storage]
@@ -2624,7 +2624,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x13345f027182b66c8c6896fb7d81cff14cbe9cf251ecb0de870f4dd7fc5f8ce;
+pub const TEST_CLASS_HASH: felt252 = 0x988b96400ccf3c5189ccab3ea9691ef0c66a0cd625eccfadd98ba171adccd1;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]

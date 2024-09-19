@@ -67,6 +67,8 @@ pub struct BreakLinePointProperties {
     /// Indicates that in a group of such breakpoints, only one should be broken, specifically the
     /// last one which fits in the line length.
     pub is_single_breakpoint: bool,
+    /// Indicates whether a comma should be added when the line breaks.
+    pub is_comma_if_broken: bool,
 }
 impl Ord for BreakLinePointProperties {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -98,7 +100,32 @@ impl BreakLinePointProperties {
             space_if_not_broken,
             is_empty_line_breakpoint: false,
             is_single_breakpoint: false,
+            is_comma_if_broken: false,
         }
+    }
+    /// Constructor that allows configuring whether a comma is added on line break.
+    pub fn new_with_comma_if_broken(
+        precedence: usize,
+        break_indentation: BreakLinePointIndentation,
+        is_optional: bool,
+        space_if_not_broken: bool,
+        is_comma_if_broken: bool,
+    ) -> Self {
+        Self {
+            precedence,
+            break_indentation,
+            is_optional,
+            space_if_not_broken,
+            is_empty_line_breakpoint: false,
+            is_single_breakpoint: false,
+            is_comma_if_broken,
+        }
+    }
+    pub fn set_comma_if_broken(&mut self) {
+        self.is_comma_if_broken = true;
+    }
+    pub fn is_comma_if_broken(&self) -> bool {
+        self.is_comma_if_broken
     }
     pub fn new_empty_line() -> Self {
         Self {
@@ -108,6 +135,7 @@ impl BreakLinePointProperties {
             space_if_not_broken: false,
             is_empty_line_breakpoint: true,
             is_single_breakpoint: false,
+            is_comma_if_broken: false,
         }
     }
     pub fn set_single_breakpoint(&mut self) {
@@ -462,10 +490,18 @@ impl LineBuilder {
                     comment_only_added_indent = 0;
                 }
             }
+            if let Some(LineComponent::BreakLinePoint(cur_break_line_points_properties)) =
+                self.children.get(*current_line_end)
+            {
+                if cur_break_line_points_properties.is_comma_if_broken() {
+                    trees.last_mut().unwrap().push_str(",");
+                }
+            }
             current_line_start = *current_line_end + 1;
         }
         trees
     }
+
     /// Returns a reference to the currently active builder.
     fn get_active_builder_mut(&mut self) -> &mut LineBuilder {
         // Split into two match statements since self is mutably borrowed in the second match,
@@ -572,7 +608,6 @@ impl LineBuilder {
         }
     }
 }
-
 /// Represents a comment line in the code.
 #[derive(Clone, PartialEq, Eq)]
 struct CommentLine {
@@ -730,7 +765,6 @@ impl BreakLinePointsPositions {
         }
     }
 }
-
 // TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
@@ -757,6 +791,9 @@ pub trait SyntaxNodeFormat {
     /// Otherwise, returns None.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Indicates whether the last separator in a list should be skipped. Only applicable for
+    /// separated lists. The separator (if exists) is assumed to be in an even index.
+    fn should_skip_last_separator(&self, db: &dyn SyntaxGroup) -> Option<usize>;
     /// Returns the sorting kind of the syntax node. This method will be used to sections in the
     /// syntax tree.
     fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind;
@@ -836,16 +873,27 @@ impl<'a> FormatterImpl<'a> {
         }
         for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
+                // Skip empty nodes.
                 continue;
             }
+            if let Some(min_elements) = syntax_node.should_skip_last_separator(self.db) {
+                // Only skip the separator if there are more than `min_elements` children. This is
+                // to ensure we don't remove unnecessary separators(in case we have one elements in
+                // a tuple, for instance).
+                if n_children > min_elements && i == n_children - 1 && i % 2 == 1 {
+                    continue;
+                }
+            }
+
             self.format_node(child);
             if let BreakLinePointsPositions::List { properties, breaking_frequency } =
                 &internal_break_line_points_positions
             {
-                if i % breaking_frequency == breaking_frequency - 1 && i < n_children - 1 {
+                if i % breaking_frequency == breaking_frequency - 1 {
                     self.append_break_line_point(Some(properties.clone()));
                 }
             }
+
             self.empty_lines_allowance = allowed_empty_between;
         }
     }

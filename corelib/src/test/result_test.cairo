@@ -7,7 +7,7 @@ fn test_result_ok_expect() {
 }
 
 #[test]
-#[should_panic(expected: ('err msg',))]
+#[should_panic(expected: ('err msg'))]
 fn test_result_err_expect() {
     let result: Result<u32, felt252> = Result::Err('no');
     result.expect('err msg');
@@ -20,7 +20,7 @@ fn test_result_ok_unwrap() {
 }
 
 #[test]
-#[should_panic(expected: ('Result::unwrap failed.',))]
+#[should_panic(expected: ('Result::unwrap failed.'))]
 fn test_result_err_unwrap() {
     let result: Result<u32, felt252> = Result::Err('no');
     result.unwrap();
@@ -51,7 +51,7 @@ fn test_result_err_unwrap_or_default() {
 }
 
 #[test]
-#[should_panic(expected: ('err msg',))]
+#[should_panic(expected: ('err msg'))]
 fn test_result_ok_expect_err() {
     let result: Result<u32, felt252> = Result::Ok(42);
     result.expect_err('err msg');
@@ -64,7 +64,7 @@ fn test_result_err_expect_err() {
 }
 
 #[test]
-#[should_panic(expected: ('Result::unwrap_err failed.',))]
+#[should_panic(expected: ('Result::unwrap_err failed.'))]
 fn test_result_ok_unwrap_err() {
     let result: Result<u32, felt252> = Result::Ok(42);
     result.unwrap_err();

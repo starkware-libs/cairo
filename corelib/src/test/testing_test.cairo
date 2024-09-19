@@ -1,7 +1,7 @@
 use crate::test::test_utils::assert_gt;
 
 #[test]
-#[should_panic(expected: ('panic_with_felt252()',))]
+#[should_panic(expected: ('panic_with_felt252()'))]
 fn test_panic_with_felt252() {
     // No semicolon here: Missing implementation for crate::traits::Drop::<crate::never>
     crate::panic_with_felt252('panic_with_felt252()')

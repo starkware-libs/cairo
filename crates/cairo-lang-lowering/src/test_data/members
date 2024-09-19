@@ -16,11 +16,11 @@ foo
 struct A {
     b: B,
     f: felt252,
-    f2: felt252
+    f2: felt252,
 }
 struct B {
     f: felt252,
-    c: C
+    c: C,
 }
 struct C {
     f: felt252,
@@ -66,7 +66,7 @@ foo
 #[derive(Drop)]
 struct MyStruct {
     value: felt252,
-    arr: Array<felt252>
+    arr: Array<felt252>,
 }
 
 #[inline(never)]

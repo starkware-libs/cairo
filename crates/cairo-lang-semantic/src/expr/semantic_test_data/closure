@@ -65,8 +65,8 @@ ExprClosure(
 test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
-fn bar<T, +core::ops::FnOnce<T, (u8,)>>(c: T) -> core::ops::FnOnce::<T, (u8,)>::Output {
-    core::ops::FnOnce::call(c, (2,))
+fn bar<T, +core::ops::FnOnce<T, (u8, )>>(c: T) -> core::ops::FnOnce::<T, (u8, )>::Output {
+    core::ops::FnOnce::call(c, (2, ))
 }
 
 //! > expr_code

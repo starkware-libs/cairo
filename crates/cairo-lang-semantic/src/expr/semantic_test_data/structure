@@ -5,12 +5,12 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
 struct A {
-    a: (felt252,),
+    a: (felt252, ),
     b: felt252,
     c: B,
 }
 struct B {
-    a: felt252
+    a: felt252,
 }
 
 //! > function_body

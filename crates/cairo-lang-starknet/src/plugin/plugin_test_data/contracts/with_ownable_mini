@@ -13,7 +13,7 @@ mod ownable_mini_contract {
     use starknet::ContractAddress;
     use starknet::storage::{
         StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
-        StoragePointerWriteAccess
+        StoragePointerWriteAccess,
     };
 
     #[storage]
@@ -266,7 +266,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
     use starknet::ContractAddress;
     use starknet::storage::{
         StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
-        StoragePointerWriteAccess
+        StoragePointerWriteAccess,
     };
 
     #[storage]

@@ -5,10 +5,10 @@ test_split_structs
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-    let b = (a,);
-    let c = (b,);
-    let (d,) = c;
-    let (e,) = d;
+    let b = (a, );
+    let c = (b, );
+    let (d, ) = c;
+    let (e, ) = d;
     e
 }
 
@@ -48,9 +48,9 @@ test_split_structs
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-    let (b,) = match a {
-        0 => (0,),
-        _ => (a,),
+    let (b, ) = match a {
+        0 => (0, ),
+        _ => (a, ),
     };
     b
 }

@@ -96,7 +96,7 @@ fn test_u8_mul_overflow_3() {
 }
 
 #[test]
-#[should_panic(expected: ('Division by 0',))]
+#[should_panic(expected: ('Division by 0'))]
 fn test_u8_div_by_0() {
     2_u8 / 0_u8;
 }
@@ -199,7 +199,7 @@ fn test_u16_mul_overflow_3() {
 }
 
 #[test]
-#[should_panic(expected: ('Division by 0',))]
+#[should_panic(expected: ('Division by 0'))]
 fn test_u16_div_by_0() {
     2_u16 / 0_u16;
 }
@@ -302,7 +302,7 @@ fn test_u32_mul_overflow_3() {
 }
 
 #[test]
-#[should_panic(expected: ('Division by 0',))]
+#[should_panic(expected: ('Division by 0'))]
 fn test_u32_div_by_0() {
     2_u32 / 0_u32;
 }
@@ -324,7 +324,7 @@ fn test_u64_operators() {
     assert_eq(@(1_u64 * 3_u64), @3_u64, '1 * 3 == 3');
     assert_eq(@(2_u64 * 4_u64), @8_u64, '2 * 4 == 8');
     assert_eq(
-        @(5010670477878974275_u64 / 7_u64), @715810068268424896_u64, 'Wrong division result.'
+        @(5010670477878974275_u64 / 7_u64), @715810068268424896_u64, 'Wrong division result.',
     );
     assert_eq(@(5010670477878974275_u64 % 7_u64), @3_u64, '5010670477878974275 % 7 == 3');
     assert_eq(@((1_u64 | 2_u64)), @3_u64, '1 | 2 == 3');
@@ -407,7 +407,7 @@ fn test_u64_mul_overflow_3() {
 }
 
 #[test]
-#[should_panic(expected: ('Division by 0',))]
+#[should_panic(expected: ('Division by 0'))]
 fn test_u64_div_by_0() {
     2_u64 / 0_u64;
 }
@@ -456,12 +456,12 @@ fn test_u128_operators() {
     assert_eq(
         @~0x00000000000000000000000000000000_u128,
         @0xffffffffffffffffffffffffffffffff,
-        '~0x0..0 == 0xf..f'
+        '~0x0..0 == 0xf..f',
     );
     assert_eq(
         @~0x123456789abcdef123456789abcdef12_u128,
         @0xedcba9876543210edcba9876543210ed,
-        '~0x12..ef12 == 0xed..10ed'
+        '~0x12..ef12 == 0xed..10ed',
     );
 }
 
@@ -544,7 +544,7 @@ fn test_u128_mul_overflow_3() {
 }
 
 #[test]
-#[should_panic(expected: ('Division by 0',))]
+#[should_panic(expected: ('Division by 0'))]
 fn test_u128_div_by_0() {
     2_u128 / 0_u128;
 }
@@ -565,7 +565,7 @@ fn test_u256_from_felt252() {
     assert_eq(
         @(170141183460469231731687303715884105728 * 2).into(),
         @0x100000000000000000000000000000000_u256,
-        'into 2**128'
+        'into 2**128',
     );
 }
 
@@ -574,25 +574,25 @@ fn test_u256_operators() {
     let max_u128: u256 = Bounded::<u128>::MAX.into();
     assert!(
         0x100000000000000000000000000000001
-            + 0x300000000000000000000000000000002 == 0x400000000000000000000000000000003_u256
+            + 0x300000000000000000000000000000002 == 0x400000000000000000000000000000003_u256,
     );
     assert!(
         0x180000000000000000000000000000000
-            + 0x380000000000000000000000000000000 == 0x500000000000000000000000000000000_u256
+            + 0x380000000000000000000000000000000 == 0x500000000000000000000000000000000_u256,
     );
     assert!(
         0x400000000000000000000000000000003
-            - 0x100000000000000000000000000000001 == 0x300000000000000000000000000000002_u256
+            - 0x100000000000000000000000000000001 == 0x300000000000000000000000000000002_u256,
     );
     assert!(
         0x500000000000000000000000000000000
-            - 0x180000000000000000000000000000000 == 0x380000000000000000000000000000000_u256
+            - 0x180000000000000000000000000000000 == 0x380000000000000000000000000000000_u256,
     );
     assert!(0x400000000000000000000000000000003 * 1 == 0x400000000000000000000000000000003_u256);
     assert!(0x400000000000000000000000000000003 * 2 == 0x800000000000000000000000000000006_u256);
     assert!(0x80000000000000000000000000000000 * 2 == 0x100000000000000000000000000000000_u256);
     assert!(
-        max_u128 * max_u128 == 0xfffffffffffffffffffffffffffffffe00000000000000000000000000000001
+        max_u128 * max_u128 == 0xfffffffffffffffffffffffffffffffe00000000000000000000000000000001,
     );
     assert!(max_u128 * 1 == max_u128);
     assert!(1 * max_u128 == max_u128);
@@ -646,20 +646,20 @@ fn test_u256_operators() {
     assert!(0x10000000000000000 % 0x10000000000000000 == 0_u256);
     assert!(
         0x1000000000000000000000000000000000000000000000000
-            / 0x1000000000000000000000000000000000000000000000000 == 1_u256
+            / 0x1000000000000000000000000000000000000000000000000 == 1_u256,
     );
     assert!(
-        0x1000000000000000000000000000000000000000000000000 % 0x1000000000000000000000000000000000000000000000000 == 0_u256
+        0x1000000000000000000000000000000000000000000000000 % 0x1000000000000000000000000000000000000000000000000 == 0_u256,
     );
     assert!(Bounded::<u256>::MAX % 0x100000000 == 0xffffffff);
     assert!(Bounded::<u256>::MAX % 0x10000000000000000 == 0xffffffffffffffff);
     assert!(
         Bounded::<u256>::MAX
-            / 0x10000000000000000000000000000000000000000 == 0xffffffffffffffffffffffff
+            / 0x10000000000000000000000000000000000000000 == 0xffffffffffffffffffffffff,
     );
     assert!(
         Bounded::<u256>::MAX
-            / 0x1000000000000000000000000000000000000000000000000 == 0xffffffffffffffff
+            / 0x1000000000000000000000000000000000000000000000000 == 0xffffffffffffffff,
     );
     assert!(~max_u128 == 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000);
     assert!(~0xffffffffffffffffffffffffffffffff00000000000000000000000000000000 == max_u128);
@@ -696,13 +696,13 @@ fn test_u256_wide_mul() {
     assert!(
         0x1001001001001001001001001001001001001001001001001001_u256
             .wide_mul(
-                0x1000100010001000100010001000100010001000100010001000100010001_u256
+                0x1000100010001000100010001000100010001000100010001000100010001_u256,
             ) == u512 {
                 limb0: 0x33233223222222122112111111011001,
                 limb1: 0x54455445544554454444443443343333,
                 limb2: 0x21222222322332333333433443444444,
-                limb3: 0x1001101111112112
-            }
+                limb3: 0x1001101111112112,
+            },
     );
 }
 
@@ -715,8 +715,8 @@ fn test_u256_wide_square() {
                 limb0: 0x0b00a009008007006005004003002001,
                 limb1: 0xe00f01001101201101000f00e00d00c0,
                 limb2: 0x00400500600700800900a00b00c00d00,
-                limb3: 0x1002003
-            }
+                limb3: 0x1002003,
+            },
     );
     assert!(
         0x1000100010001000100010001000100010001000100010001000100010001_u256
@@ -724,8 +724,8 @@ fn test_u256_wide_square() {
                 limb0: 0x00080007000600050004000300020001,
                 limb1: 0x0010000f000e000d000c000b000a0009,
                 limb2: 0x00080009000a000b000c000d000e000f,
-                limb3: 0x1000200030004000500060007
-            }
+                limb3: 0x1000200030004000500060007,
+            },
     );
 }
 
@@ -739,21 +739,21 @@ fn test_u512_safe_div_rem_by_u256() {
         limb0: 0x33233223222222122112111111011001,
         limb1: 0x54455445544554454444443443343333,
         limb2: 0x21222222322332333333433443444444,
-        limb3: 0x1001101111112112
+        limb3: 0x1001101111112112,
     };
     assert!(u512_safe_div_rem_by_u256(large_num, 1) == (large_num, 0));
     assert!(
         u512_safe_div_rem_by_u256(
-            large_num, 0x33233223222222122112111111011001
+            large_num, 0x33233223222222122112111111011001,
         ) == (
             u512 {
                 limb0: 0x365ec98ac1c2c57afaff780a20a0b2b1,
                 limb1: 0xf3dfa68ede27c4236ef0c6eb66a8e0a2,
                 limb2: 0x501e5b7ba7f4ec12,
-                limb3: 0
+                limb3: 0,
             },
-            0x1e0eb905027d0150d2618bbd71844d50
-        )
+            0x1e0eb905027d0150d2618bbd71844d50,
+        ),
     );
 }
 
@@ -761,7 +761,7 @@ fn test_u512_safe_div_rem_by_u256() {
 fn test_u512_try_into_u256() {
     assert!(
         u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 0 }
-            .try_into() == Option::Some(0x200000000000000000000000000000001_u256)
+            .try_into() == Option::Some(0x200000000000000000000000000000001_u256),
     );
     assert!(u512 { limb0: 1, limb1: 2, limb2: 3, limb3: 0 }.try_into() == Option::<u256>::None);
     assert!(u512 { limb0: 1, limb1: 2, limb2: 0, limb3: 4 }.try_into() == Option::<u256>::None);
@@ -791,7 +791,7 @@ fn test_max() {
     assert!(Bounded::<u64>::MAX == 0xffffffffffffffff);
     assert!(Bounded::<u128>::MAX == 0xffffffffffffffffffffffffffffffff);
     assert!(
-        Bounded::<u256>::MAX == 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+        Bounded::<u256>::MAX == 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,
     );
     assert!(Bounded::<i8>::MAX == 0x7f);
     assert!(Bounded::<i16>::MAX == 0x7fff);
@@ -878,12 +878,12 @@ fn test_u256_try_into_felt252() {
     assert_eq(
         @0x800000000000011000000000000000000000000000000000000000000000000_u256.try_into().unwrap(),
         @0x800000000000011000000000000000000000000000000000000000000000000_felt252,
-        'P-1 == P-1'_felt252
+        'P-1 == P-1'_felt252,
     );
     assert_eq(
         @0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_u256.try_into().unwrap(),
         @0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_felt252,
-        'P-2 == P-2'_felt252
+        'P-2 == P-2'_felt252,
     );
     let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000001_u256
         .try_into();
@@ -914,7 +914,7 @@ fn cast_subtype_valid<
     +PartialEq<SubType>,
     +PartialEq<SuperType>,
     +Into<SubType, SuperType>,
-    +TryInto<SuperType, SubType>
+    +TryInto<SuperType, SubType>,
 >() -> bool {
     let max_sub: SubType = Bounded::MAX;
     let max_sub_as_super: SuperType = max_sub.into();
@@ -939,9 +939,9 @@ fn validate_max_strictly_contained<
     +PartialEq<B>,
     +TryInto<A, B>,
     +TryInto<B, A>,
-    +TryInto<felt252, B>
+    +TryInto<felt252, B>,
 >(
-    err: felt252
+    err: felt252,
 ) {
     let max_a: A = Bounded::MAX;
     let max_a_as_b: B = max_a.try_into().expect(err);
@@ -964,9 +964,9 @@ fn validate_min_strictly_contained<
     +PartialEq<B>,
     +TryInto<A, B>,
     +TryInto<B, A>,
-    +TryInto<felt252, B>
+    +TryInto<felt252, B>,
 >(
-    err: felt252
+    err: felt252,
 ) {
     let min_sub: A = Bounded::MIN;
     let min_sub_as_super: B = min_sub.try_into().expect(err);
@@ -990,9 +990,9 @@ fn validate_cast_bounds_strictly_contained<
     +PartialEq<SuperType>,
     +Into<SubType, SuperType>,
     +TryInto<SuperType, SubType>,
-    +TryInto<felt252, SuperType>
+    +TryInto<felt252, SuperType>,
 >(
-    err: felt252
+    err: felt252,
 ) {
     assert(cast_subtype_valid::<SubType, SuperType>(), err);
     validate_min_strictly_contained::<SubType, SuperType>(err);
@@ -1016,9 +1016,9 @@ fn validate_cast_bounds_contained_same_min<
     +PartialEq<SuperType>,
     +Into<SubType, SuperType>,
     +TryInto<SuperType, SubType>,
-    +TryInto<felt252, SuperType>
+    +TryInto<felt252, SuperType>,
 >(
-    err: felt252
+    err: felt252,
 ) {
     assert(cast_subtype_valid::<SubType, SuperType>(), err);
     assert(Bounded::<SubType>::MIN.into() == Bounded::<SuperType>::MIN, err);
@@ -1043,9 +1043,9 @@ fn validate_cast_bounds_overlapping<
     +TryInto<A, B>,
     +TryInto<B, A>,
     +TryInto<felt252, A>,
-    +TryInto<felt252, B>
+    +TryInto<felt252, B>,
 >(
-    err: felt252
+    err: felt252,
 ) {
     validate_min_strictly_contained::<B, A>(err);
     validate_max_strictly_contained::<A, B>(err);
@@ -1112,13 +1112,13 @@ fn test_into_self_type() {
     assert_eq(
         @0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128.into(),
         @0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128,
-        'u128 into u128'
+        'u128 into u128',
     );
     assert_eq(
         @u256 { low: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, high: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF }
             .into(),
         @u256 { high: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, low: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF },
-        'u256 into u256'
+        'u256 into u256',
     );
 }
 
@@ -1250,7 +1250,7 @@ fn test_u128_byte_reverse() {
     assert_eq(
         @integer::u128_byte_reverse(0x000102030405060708090a0b0c0d0e0f),
         @0x0f0e0d0c0b0a09080706050403020100,
-        'Wrong byte reverse'
+        'Wrong byte reverse',
     );
 }
 
@@ -1300,49 +1300,49 @@ fn test_i8_operators() {
 }
 
 #[test]
-#[should_panic(expected: ('i8_sub Underflow',))]
+#[should_panic(expected: ('i8_sub Underflow'))]
 fn test_i8_sub_underflow_1() {
     -0x80_i8 - 1_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_sub Underflow',))]
+#[should_panic(expected: ('i8_sub Underflow'))]
 fn test_i8_sub_underflow_2() {
     -0x80_i8 - 3_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_sub Underflow',))]
+#[should_panic(expected: ('i8_sub Underflow'))]
 fn test_i8_sub_underflow_3() {
     -0x7f_i8 - 3_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_sub Underflow',))]
+#[should_panic(expected: ('i8_sub Underflow'))]
 fn test_i8_sub_underflow_4() {
     -0x32_i8 - 0x7d_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_sub Overflow',))]
+#[should_panic(expected: ('i8_sub Overflow'))]
 fn test_i8_sub_overflow() {
     0x32_i8 - -0x7d_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_add Overflow',))]
+#[should_panic(expected: ('i8_add Overflow'))]
 fn test_i8_add_overflow_1() {
     0x40_i8 + 0x40_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_add Overflow',))]
+#[should_panic(expected: ('i8_add Overflow'))]
 fn test_i8_add_overflow_2() {
     0x64_i8 + 0x1e_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_add Underflow',))]
+#[should_panic(expected: ('i8_add Underflow'))]
 fn test_i8_add_underflow() {
     -0x64_i8 + -0x1e_i8;
 }
@@ -1415,49 +1415,49 @@ fn test_i16_operators() {
 }
 
 #[test]
-#[should_panic(expected: ('i16_sub Underflow',))]
+#[should_panic(expected: ('i16_sub Underflow'))]
 fn test_i16_sub_underflow_1() {
     -0x8000_i16 - 1_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_sub Underflow',))]
+#[should_panic(expected: ('i16_sub Underflow'))]
 fn test_i16_sub_underflow_2() {
     -0x8000_i16 - 3_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_sub Underflow',))]
+#[should_panic(expected: ('i16_sub Underflow'))]
 fn test_i16_sub_underflow_3() {
     -0x7fff_i16 - 3_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_sub Underflow',))]
+#[should_panic(expected: ('i16_sub Underflow'))]
 fn test_i16_sub_underflow_4() {
     -0x3200_i16 - 0x7d00_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_sub Overflow',))]
+#[should_panic(expected: ('i16_sub Overflow'))]
 fn test_i16_sub_overflow() {
     0x3200_i16 - -0x7d00_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_add Overflow',))]
+#[should_panic(expected: ('i16_add Overflow'))]
 fn test_i16_add_overflow_1() {
     0x4000_i16 + 0x4000_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_add Overflow',))]
+#[should_panic(expected: ('i16_add Overflow'))]
 fn test_i16_add_overflow_2() {
     0x6400_i16 + 0x1e00_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_add Underflow',))]
+#[should_panic(expected: ('i16_add Underflow'))]
 fn test_i16_add_underflow() {
     -0x6400_i16 + -0x1e00_i16;
 }
@@ -1530,49 +1530,49 @@ fn test_i32_operators() {
 }
 
 #[test]
-#[should_panic(expected: ('i32_sub Underflow',))]
+#[should_panic(expected: ('i32_sub Underflow'))]
 fn test_i32_sub_underflow_1() {
     -0x80000000_i32 - 1_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_sub Underflow',))]
+#[should_panic(expected: ('i32_sub Underflow'))]
 fn test_i32_sub_underflow_2() {
     -0x80000000_i32 - 3_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_sub Underflow',))]
+#[should_panic(expected: ('i32_sub Underflow'))]
 fn test_i32_sub_underflow_3() {
     -0x7fffffff_i32 - 3_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_sub Underflow',))]
+#[should_panic(expected: ('i32_sub Underflow'))]
 fn test_i32_sub_underflow_4() {
     -0x32000000_i32 - 0x7d000000_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_sub Overflow',))]
+#[should_panic(expected: ('i32_sub Overflow'))]
 fn test_i32_sub_overflow() {
     0x32000000_i32 - -0x7d000000_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_add Overflow',))]
+#[should_panic(expected: ('i32_add Overflow'))]
 fn test_i32_add_overflow_1() {
     0x40000000_i32 + 0x40000000_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_add Overflow',))]
+#[should_panic(expected: ('i32_add Overflow'))]
 fn test_i32_add_overflow_2() {
     0x64000000_i32 + 0x1e000000_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_add Underflow',))]
+#[should_panic(expected: ('i32_add Underflow'))]
 fn test_i32_add_underflow() {
     -0x64000000_i32 + -0x1e000000_i32;
 }
@@ -1608,14 +1608,14 @@ fn test_i64_operators() {
     assert_eq(
         @0x7fffffffffffffff_felt252.try_into().unwrap(),
         @0x7fffffffffffffff_i64,
-        '0x7fffffffffffffff is not i64'
+        '0x7fffffffffffffff is not i64',
     );
     let v: Option<i64> = 0x8000000000000000_felt252.try_into();
     assert(v.is_none(), '0x8000000000000000 is i64');
     assert_eq(
         @(-0x8000000000000000_felt252).try_into().unwrap(),
         @-0x8000000000000000_i64,
-        '-0x8000000000000000 is not i64'
+        '-0x8000000000000000 is not i64',
     );
     let v: Option<i64> = (-0x8000000000000001_felt252).try_into();
     assert(v.is_none(), '-0x8000000000000001 is i64');
@@ -1653,49 +1653,49 @@ fn test_i64_operators() {
 }
 
 #[test]
-#[should_panic(expected: ('i64_sub Underflow',))]
+#[should_panic(expected: ('i64_sub Underflow'))]
 fn test_i64_sub_underflow_1() {
     -0x8000000000000000_i64 - 1_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_sub Underflow',))]
+#[should_panic(expected: ('i64_sub Underflow'))]
 fn test_i64_sub_underflow_2() {
     -0x8000000000000000_i64 - 3_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_sub Underflow',))]
+#[should_panic(expected: ('i64_sub Underflow'))]
 fn test_i64_sub_underflow_3() {
     -0x7fffffffffffffff_i64 - 3_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_sub Underflow',))]
+#[should_panic(expected: ('i64_sub Underflow'))]
 fn test_i64_sub_underflow_4() {
     -0x3200000000000000_i64 - 0x7d00000000000000_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_sub Overflow',))]
+#[should_panic(expected: ('i64_sub Overflow'))]
 fn test_i64_sub_overflow() {
     0x3200000000000000_i64 - -0x7d00000000000000_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_add Overflow',))]
+#[should_panic(expected: ('i64_add Overflow'))]
 fn test_i64_add_overflow_1() {
     0x4000000000000000_i64 + 0x4000000000000000_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_add Overflow',))]
+#[should_panic(expected: ('i64_add Overflow'))]
 fn test_i64_add_overflow_2() {
     0x6400000000000000_i64 + 0x1e00000000000000_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_add Underflow',))]
+#[should_panic(expected: ('i64_add Underflow'))]
 fn test_i64_add_underflow() {
     -0x6400000000000000_i64 + -0x1e00000000000000_i64;
 }
@@ -1731,14 +1731,14 @@ fn test_i128_operators() {
     assert_eq(
         @0x7fffffffffffffffffffffffffffffff_felt252.try_into().unwrap(),
         @0x7fffffffffffffffffffffffffffffff_i128,
-        '0x7f..f is not i128'
+        '0x7f..f is not i128',
     );
     let v: Option<i128> = 0x80000000000000000000000000000000_felt252.try_into();
     assert(v.is_none(), '0x80..0 is i128');
     assert_eq(
         @(-0x80000000000000000000000000000000_felt252).try_into().unwrap(),
         @-0x80000000000000000000000000000000_i128,
-        '-0x80..0 is not i128'
+        '-0x80..0 is not i128',
     );
     let v: Option<i128> = (-0x80000000000000000000000000000001_felt252).try_into();
     assert(v.is_none(), '-0x80..01 is i128');
@@ -1762,7 +1762,7 @@ fn test_i128_operators() {
     assert_eq(
         @(0x800000000000000_i128 * -0x100000000000000000_i128),
         @-0x80000000000000000000000000000000_i128,
-        'failed MIN_I128 as mul result'
+        'failed MIN_I128 as mul result',
     );
     assert_lt(1_i128, 4_i128, '1 < 4');
     assert_le(1_i128, 4_i128, '1 <= 4');
@@ -1788,43 +1788,43 @@ fn test_i128_sub_underflow_1() {
 }
 
 #[test]
-#[should_panic(expected: ('i128_sub Underflow',))]
+#[should_panic(expected: ('i128_sub Underflow'))]
 fn test_i128_sub_underflow_2() {
     -0x80000000000000000000000000000000_i128 - 3_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_sub Underflow',))]
+#[should_panic(expected: ('i128_sub Underflow'))]
 fn test_i128_sub_underflow_3() {
     -0x7fffffffffffffffffffffffffffffff_i128 - 3_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_sub Underflow',))]
+#[should_panic(expected: ('i128_sub Underflow'))]
 fn test_i128_sub_underflow_4() {
     -0x32000000000000000000000000000000_i128 - 0x7d000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_sub Overflow',))]
+#[should_panic(expected: ('i128_sub Overflow'))]
 fn test_i128_sub_overflow() {
     0x32000000000000000000000000000000_i128 - -0x7d000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_add Overflow',))]
+#[should_panic(expected: ('i128_add Overflow'))]
 fn test_i128_add_overflow_1() {
     0x40000000000000000000000000000000_i128 + 0x40000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_add Overflow',))]
+#[should_panic(expected: ('i128_add Overflow'))]
 fn test_i128_add_overflow_2() {
     0x64000000000000000000000000000000_i128 + 0x1e000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_add Underflow',))]
+#[should_panic(expected: ('i128_add Underflow'))]
 fn test_i128_add_underflow() {
     -0x64000000000000000000000000000000_i128 + -0x1e000000000000000000000000000000_i128;
 }
@@ -1875,7 +1875,7 @@ fn test_signed_int_diff() {
 mod bounded_int {
     use crate::internal::{
         bounded_int,
-        bounded_int::{BoundedInt, AddHelper, SubHelper, MulHelper, DivRemHelper, ConstrainHelper}
+        bounded_int::{BoundedInt, AddHelper, SubHelper, MulHelper, DivRemHelper, ConstrainHelper},
     };
     use crate::RangeCheck;
 
@@ -2016,7 +2016,7 @@ mod bounded_int {
 
     /// Same as `bounded_int_div_rem`, but unwraps the result into felt252s.
     fn bounded_int_div_rem_unwrapped<T1, T2, impl DRR: DivRemHelper<T1, T2>>(
-        a: T1, b: T2
+        a: T1, b: T2,
     ) -> (felt252, felt252) {
         let (q, r) = bounded_int::div_rem(a, bounded_int_wrap_non_zero(b));
         (upcast(q), upcast(r))
@@ -2056,7 +2056,7 @@ mod bounded_int {
 
     mod helpers {
         pub impl DivRemHelperImpl<
-            const A: felt252, const B: felt252, const MAX_Q: felt252, const MAX_R: felt252
+            const A: felt252, const B: felt252, const MAX_Q: felt252, const MAX_R: felt252,
         > of super::DivRemHelper<super::BoundedInt<0, A>, super::BoundedInt<B, B>> {
             type DivT = super::BoundedInt<0, MAX_Q>;
             type RemT = super::BoundedInt<0, MAX_R>;
@@ -2069,7 +2069,7 @@ mod bounded_int {
         const A: felt252,
         +DivRemHelper<BoundedInt<0, A_MAX>, BoundedInt<B, B>>,
     >(
-        a: BoundedInt<A, A>
+        a: BoundedInt<A, A>,
     ) -> (felt252, felt252) {
         bounded_int_div_rem_unwrapped::<BoundedInt<0, A_MAX>>(upcast(a), bi_const::<B>())
     }
@@ -2106,20 +2106,22 @@ mod bounded_int {
         assert!(div_rem_small_quotient_helper::<U128_MAX, POW_2_124>(dividend) == (MASK4, MASK124));
         let dividend = bi_const::<POW_2_251>();
         assert!(
-            div_rem_small_quotient_helper::<POW_2_251, U128_MAX>(dividend) == (POW_2_123, POW_2_123)
+            div_rem_small_quotient_helper::<
+                POW_2_251, U128_MAX,
+            >(dividend) == (POW_2_123, POW_2_123),
         );
         assert!(
             bounded_int_div_rem_unwrapped::<
-                MaxRootLhs, MaxRootRhs
+                MaxRootLhs, MaxRootRhs,
             >(
                 0x1000000000000000000000000000001000000000000000000000000000000,
-                0x1000000000000000000000000000000
-            ) == (0x1000000000000000000000000000001, 0)
+                0x1000000000000000000000000000000,
+            ) == (0x1000000000000000000000000000001, 0),
         );
     }
 
     fn test_constrain_helper<T, const BOUNDARY: felt252, +ConstrainHelper<T, BOUNDARY>, +Copy<T>>(
-        value: T
+        value: T,
     ) -> bool {
         match bounded_int::constrain::<_, BOUNDARY>(value) {
             Result::Ok(result) => upcast(result),

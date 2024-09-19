@@ -223,11 +223,11 @@ End:
 test_return_optimizer
 
 //! > function
-fn foo(v: Option<(u16,)>) -> Option<(u16,)> {
+fn foo(v: Option<(u16, )>) -> Option<(u16, )> {
     match v {
         Option::Some(tuple) => {
-            let (x,) = tuple;
-            return Option::Some((x,));
+            let (x, ) = tuple;
+            return Option::Some((x, ));
         },
         Option::None => { return Option::None; },
     }
@@ -475,7 +475,7 @@ fn foo(ref a: u16, v: MyEnum) -> MyEnum {
         MyEnum::MyVariant(val) => {
             a = val;
             return MyEnum::MyVariant(val);
-        }
+        },
     }
 }
 
@@ -693,9 +693,9 @@ End:
 test_return_optimizer
 
 //! > function
-fn foo(a: felt252, b: (felt252,)) -> FeltWrap {
+fn foo(a: felt252, b: (felt252, )) -> FeltWrap {
     // create goto, since the return optimization works on block boundaries.
-    let (value,) = match a {
+    let (value, ) = match a {
         0 => b,
         _ => b,
     };
@@ -778,9 +778,9 @@ End:
 test_return_optimizer
 
 //! > function
-fn foo(a: (felt252,)) -> (felt252,) {
-    let (v,) = a;
-    (v,)
+fn foo(a: (felt252, )) -> (felt252, ) {
+    let (v, ) = a;
+    (v, )
 }
 
 //! > function_name

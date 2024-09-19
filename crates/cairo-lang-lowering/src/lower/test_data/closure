@@ -4,7 +4,7 @@
 test_generated_function
 
 //! > function
-fn foo(a: Felt252Dict<felt252>,) {
+fn foo(a: Felt252Dict<felt252>) {
     || {
         let _ = a;
     };

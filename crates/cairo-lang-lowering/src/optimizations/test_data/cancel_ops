@@ -5,10 +5,10 @@ test_cancel_ops
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-    let b = (a,);
-    let c = (b,);
-    let (d,) = c;
-    let (e,) = d;
+    let b = (a, );
+    let c = (b, );
+    let (d, ) = c;
+    let (e, ) = d;
     e
 }
 
@@ -47,10 +47,10 @@ End:
 test_cancel_ops
 
 //! > function
-fn foo(a: ((felt252,),)) -> ((felt252,),) {
-    let (b,) = a;
-    let (c,) = b;
-    ((c,),)
+fn foo(a: ((felt252, ), )) -> ((felt252, ), ) {
+    let (b, ) = a;
+    let (c, ) = b;
+    ((c, ), )
 }
 
 //! > function_name
@@ -89,9 +89,9 @@ test_cancel_ops
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-    let (b,) = match a {
-        0 => (0,),
-        _ => (a,),
+    let (b, ) = match a {
+        0 => (0, ),
+        _ => (a, ),
     };
     b
 }
@@ -480,8 +480,8 @@ End:
 test_cancel_ops
 
 //! > function
-fn foo(a: (u32,)) -> MyStruct {
-    let (b,) = a;
+fn foo(a: (u32, )) -> MyStruct {
+    let (b, ) = a;
     MyStruct { b }
 }
 
@@ -523,12 +523,12 @@ End:
 test_cancel_ops
 
 //! > function
-fn foo(a: (u32,), b: felt252) -> u32 {
+fn foo(a: (u32, ), b: felt252) -> u32 {
     let d = @if b == 0 {
-        let (c,) = a;
+        let (c, ) = a;
         c
     } else {
-        let (c,) = a;
+        let (c, ) = a;
         c
     };
 

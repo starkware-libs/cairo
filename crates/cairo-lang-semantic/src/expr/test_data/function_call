@@ -24,7 +24,7 @@ foo
 fn bar(a: felt252, b: felt252, c: felt252, d: felt252, e: felt252) {}
 
 enum MyEnum {
-    A: felt252
+    A: felt252,
 }
 
 //! > expected_diagnostics
