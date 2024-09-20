@@ -60,20 +60,16 @@ fn get_diagnostics<Item: QueryAttrs>(
                 let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
                     diagnostics.push(PluginDiagnostic::error(
                         path,
-                        format!(
-                            "Expected simple path. Supported paths: {}",
-                            SUPPORTED_ARGS_ERROR_MESSAGE
-                        ),
+                        "Wrong type of argument. Currently only #[doc(hidden)] is supported."
+                            .to_owned(),
                     ));
                     return;
                 };
                 if segment.ident(db).text(db) != "hidden" {
                     diagnostics.push(PluginDiagnostic::error(
                         path,
-                        format!(
-                            "This argument is not supported. Supported args: {}",
-                            SUPPORTED_ARGS_ERROR_MESSAGE
-                        ),
+                        "Wrong type of argument. Currently only #[doc(hidden)] is supported."
+                            .to_owned(),
                     ));
                 }
             }

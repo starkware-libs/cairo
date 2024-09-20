@@ -71,7 +71,7 @@ error: This argument is not supported. Supported args: hidden
 #[doc(:hidden)]
       ^*****^
 
-error: This argument is not supported. Supported args: hidden
+error: Wrong type of argument. Currently only #[doc(hidden)] is supported.
  --> test_src/lib.cairo:16:7
 #[doc(hidden_true)]
       ^*********^
