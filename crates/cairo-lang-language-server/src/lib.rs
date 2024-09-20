@@ -70,7 +70,9 @@ use tokio::task::spawn_blocking;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::request::Request;
 use tower_lsp::lsp_types::{TextDocumentPositionParams, Url};
-use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
+#[cfg(feature = "testing")]
+use tower_lsp::LanguageServer;
+use tower_lsp::{Client, ClientSocket, LspService, Server};
 use tracing::{debug, error, info, trace_span, warn, Instrument};
 
 use crate::config::Config;
@@ -78,7 +80,8 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
-    CorelibVersionMismatch, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
+    CorelibVersionMismatch, CorelibVersionMismatchParams, ProvideVirtualFileRequest,
+    ProvideVirtualFileResponse,
 };
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
@@ -254,6 +257,7 @@ struct Backend {
     scarb_toolchain: ScarbToolchain,
     last_replace: tokio::sync::Mutex<SystemTime>,
     db_replace_interval: Duration,
+    workspace_folder: Option<PathBuf>, // Backend can be unscoped as well
 }
 
 /// TODO: Remove when we move to sync world.
@@ -291,6 +295,7 @@ impl Backend {
             scarb_toolchain,
             last_replace: tokio::sync::Mutex::new(SystemTime::now()),
             db_replace_interval: env_config::db_replace_interval(),
+            workspace_folder: env_config::current_workspace_scope(),
         }
     }
 
@@ -466,7 +471,7 @@ impl Backend {
         let state = self.state_snapshot().await;
         let db = state.db;
         let config = state.config;
-        let file_url = db.url_for_file(*file);
+        let file_url = db.url_for_file(*file, self.workspace_folder.clone());
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
 
@@ -532,18 +537,21 @@ impl Backend {
         let trace_macro_diagnostics = config.trace_macro_diagnostics;
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
+            self.workspace_folder.clone(),
             &mut diags,
             &new_file_diagnostics.parser,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
+            self.workspace_folder.clone(),
             &mut diags,
             &new_file_diagnostics.semantic,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
+            self.workspace_folder.clone(),
             &mut diags,
             &new_file_diagnostics.lowering,
             trace_macro_diagnostics,
@@ -696,6 +704,7 @@ impl Backend {
     ) {
         match ProjectManifestPath::discover(&file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
+                let manifest_copy = manifest_path.clone();
                 let Ok(metadata) = spawn_blocking({
                     let scarb = self.scarb_toolchain.clone();
                     move || {
@@ -729,7 +738,13 @@ impl Backend {
 
                 if let Err(result) = validate_corelib(db) {
                     self.client
-                        .send_notification::<CorelibVersionMismatch>(result.to_string())
+                        .send_notification::<CorelibVersionMismatch>(CorelibVersionMismatchParams {
+                            error_message: result.to_string(),
+                            manifest_dir: manifest_copy
+                                .to_str()
+                                .expect("Invalid utf-8 as path")
+                                .to_string(),
+                        })
                         .await;
                 }
             }

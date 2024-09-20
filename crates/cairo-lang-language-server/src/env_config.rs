@@ -17,6 +17,8 @@ pub const CAIRO_LS_LOG: &'_ str = "CAIRO_LS_LOG";
 pub const CAIRO_LS_PROFILE: &'_ str = "CAIRO_LS_PROFILE";
 pub const SCARB: &'_ str = "SCARB";
 
+pub const CAIRO_LS_WORKSPACE_FOLDER: &'_ str = "CAIRO_LS_WORKSPACE_FOLDER";
+
 /// Interval between compiler database regenerations (to free unused memory).
 pub fn db_replace_interval() -> Duration {
     const DEFAULT: u64 = 300;
@@ -26,6 +28,10 @@ pub fn db_replace_interval() -> Duration {
         .and_then(|v| v.parse().ok())
         .map(Duration::from_secs)
         .unwrap_or_else(|| Duration::from_secs(DEFAULT))
+}
+
+pub fn current_workspace_scope() -> Option<PathBuf> {
+    env::var_os(CAIRO_LS_WORKSPACE_FOLDER).map(PathBuf::from)
 }
 
 /// LS tracing filter, see [`tracing_subscriber::EnvFilter`] for more.
@@ -45,6 +51,7 @@ pub fn scarb_path() -> Option<PathBuf> {
 
 /// Print all environment variables values (or defaults) as debug messages in logs.
 pub fn report_to_logs() {
+    debug!("{CAIRO_LS_WORKSPACE_FOLDER}={:?}", current_workspace_scope());
     debug!("{CAIRO_LS_DB_REPLACE_INTERVAL}={:?}", db_replace_interval());
     debug!("{CAIRO_LS_LOG}={}", log_env_filter());
     debug!("{CAIRO_LS_PROFILE}={}", tracing_profile());

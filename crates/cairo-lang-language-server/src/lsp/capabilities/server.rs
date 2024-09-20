@@ -12,6 +12,7 @@
 //! > capability.
 
 use std::ops::Not;
+use std::path::PathBuf;
 
 use missing_lsp_types::{
     CodeActionRegistrationOptions, DefinitionRegistrationOptions,
@@ -101,20 +102,31 @@ pub fn collect_server_capabilities(client_capabilities: &ClientCapabilities) -> 
 /// Returns registrations of capabilities the server wants to register dynamically.
 pub fn collect_dynamic_registrations(
     client_capabilities: &ClientCapabilities,
+    workspace_folder: Option<PathBuf>,
 ) -> Vec<Registration> {
     let mut registrations = vec![];
-
+    let workspace_pattern = workspace_folder
+        .clone()
+        .map(|folder| format!("{}/**/*", folder.to_str().expect("Incorrect workspace path")));
+    let vfs_workspace_pattern = workspace_folder.map(|folder| {
+        let workspace_name = folder
+            .file_name()
+            .expect("No folder name for workspace")
+            .to_str()
+            .expect("Incorrect utf-8 as workspace folder name");
+        format!("/[{}]/*", workspace_name)
+    });
     // Relevant files.
     let document_selector = Some(vec![
         DocumentFilter {
             language: Some("cairo".to_string()),
             scheme: Some("file".to_string()),
-            pattern: None,
+            pattern: workspace_pattern.clone(),
         },
         DocumentFilter {
             language: Some("cairo".to_string()),
             scheme: Some("vfs".to_string()),
-            pattern: None,
+            pattern: vfs_workspace_pattern,
         },
     ]);
     let text_document_registration_options =

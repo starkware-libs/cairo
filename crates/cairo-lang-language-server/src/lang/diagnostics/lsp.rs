@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
@@ -13,6 +15,7 @@ use crate::lang::lsp::{LsProtoGroup, ToLsp};
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
     db: &T::DbType,
+    workspace: Option<PathBuf>,
     diags: &mut Vec<Diagnostic>,
     diagnostics: &Diagnostics<T>,
     trace_macro_diagnostics: bool,
@@ -28,6 +31,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
             if let Some(location) = &note.location {
                 let Some((range, file_id)) = get_mapped_range_and_add_mapping_note(
                     db,
+                    workspace.clone(),
                     location,
                     trace_macro_diagnostics.then_some(&mut related_information),
                     "Next note mapped from here.",
@@ -35,7 +39,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
                     continue;
                 };
                 related_information.push(DiagnosticRelatedInformation {
-                    location: Location { uri: db.url_for_file(file_id), range },
+                    location: Location { uri: db.url_for_file(file_id, workspace.clone()), range },
                     message: note.text.clone(),
                 });
             } else {
@@ -45,6 +49,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
 
         let Some((range, _)) = get_mapped_range_and_add_mapping_note(
             db,
+            workspace.clone(),
             &diagnostic.location(db),
             trace_macro_diagnostics.then_some(&mut related_information),
             "Diagnostic mapped from here.",
@@ -69,6 +74,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
 /// location.
 fn get_mapped_range_and_add_mapping_note(
     db: &(impl Upcast<dyn FilesGroup> + ?Sized),
+    workspace: Option<PathBuf>,
     orig: &DiagnosticLocation,
     related_info: Option<&mut Vec<DiagnosticRelatedInformation>>,
     message: &str,
@@ -79,7 +85,7 @@ fn get_mapped_range_and_add_mapping_note(
         if *orig != mapped {
             if let Some(range) = get_lsp_range(db.upcast(), orig) {
                 related_info.push(DiagnosticRelatedInformation {
-                    location: Location { uri: db.url_for_file(orig.file_id), range },
+                    location: Location { uri: db.url_for_file(orig.file_id, workspace), range },
                     message: message.to_string(),
                 });
             }

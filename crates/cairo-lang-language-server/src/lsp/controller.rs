@@ -61,7 +61,8 @@ impl LanguageServer for Backend {
         // Dynamically register capabilities.
         let client_capabilities = self.state_snapshot().await.client_capabilities;
 
-        let dynamic_registrations = collect_dynamic_registrations(&client_capabilities);
+        let dynamic_registrations =
+            collect_dynamic_registrations(&client_capabilities, self.workspace_folder.clone());
         if !dynamic_registrations.is_empty() {
             let result = self.client.register_capability(dynamic_registrations).await;
             if let Err(err) = result {
@@ -243,8 +244,11 @@ impl LanguageServer for Backend {
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
         let db = self.db_snapshot().await;
-        self.catch_panics(move || ide::navigation::goto_definition::goto_definition(params, &db))
-            .await
+        let workspace_folder = self.workspace_folder.clone();
+        self.catch_panics(move || {
+            ide::navigation::goto_definition::goto_definition(params, &db, workspace_folder)
+        })
+        .await
     }
 
     #[tracing::instrument(level = "trace", skip_all)]
