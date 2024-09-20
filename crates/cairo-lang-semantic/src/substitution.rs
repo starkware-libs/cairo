@@ -441,7 +441,7 @@ add_basic_rewrites!(
     <'a>,
     SubstitutionRewriter<'a>,
     DiagnosticAdded,
-    @exclude TypeId TypeLongId ImplLongId ConstValue GenericFunctionId
+    @exclude TypeId TypeLongId ImplId ImplLongId ConstValue GenericFunctionId
 );
 
 impl<'a> SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'a> {
@@ -452,6 +452,16 @@ impl<'a> SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'a> 
         value.default_rewrite(self)
     }
 }
+
+impl<'a> SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'a> {
+    fn internal_rewrite(&mut self, value: &mut ImplId) -> Maybe<RewriteResult> {
+        if value.is_fully_concrete(self.db) {
+            return Ok(RewriteResult::NoChange);
+        }
+        value.default_rewrite(self)
+    }
+}
+
 impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'a> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Maybe<RewriteResult> {
         match value {
