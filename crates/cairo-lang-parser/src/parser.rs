@@ -1098,7 +1098,7 @@ impl<'a> Parser<'a> {
     ///
     /// # Returns:
     /// `true` if the token is a relational or equality operator, otherwise `false`.
-    fn is_comperison_operator(&self, kind: SyntaxKind) -> bool {
+    fn is_comparison_operator(&self, kind: SyntaxKind) -> bool {
         matches!(
             kind,
             SyntaxKind::TerminalLT
@@ -1138,8 +1138,8 @@ impl<'a> Parser<'a> {
             } else {
                 let current_op = self.peek().kind;
                 if let Some(child_op_kind) = child_op {
-                    if self.is_comperison_operator(child_op_kind)
-                        && self.is_comperison_operator(current_op)
+                    if self.is_comparison_operator(child_op_kind)
+                        && self.is_comparison_operator(current_op)
                     {
                         self.diagnostics.add(ParserDiagnostic {
                             file_id: self.file_id,
@@ -1151,7 +1151,7 @@ impl<'a> Parser<'a> {
                         });
                     }
                 }
-                child_op = Some(self.peek().kind);
+                child_op = Some(current_op);
                 let op = self.parse_binary_operator();
                 let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
                 ExprBinary::new_green(self.db, expr, op, rhs).into()
