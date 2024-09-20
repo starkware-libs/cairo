@@ -1,4 +1,4 @@
-//! > Test doc plugin.
+//! > Test external_attributes_validation plugin.
 
 //! > test_runner_name
 test_expand_plugin(expect_diagnostics: true)

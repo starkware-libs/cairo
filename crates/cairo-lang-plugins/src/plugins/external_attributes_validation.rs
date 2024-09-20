@@ -6,12 +6,12 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
-pub struct DocPlugin;
+pub struct ExternalAttributesValidationPlugin;
 
 const DOC_ATTR: &str = "doc";
 const SUPPORTED_ARGS_ERROR_MESSAGE: &str = "hidden";
 
-impl MacroPlugin for DocPlugin {
+impl MacroPlugin for ExternalAttributesValidationPlugin {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
@@ -48,11 +48,23 @@ fn get_diagnostics<Item: QueryAttrs>(
         args.iter().for_each(|arg| match &arg.variant {
             AttributeArgVariant::Unnamed(value) => {
                 let ast::Expr::Path(path) = value else {
-                    diagnostics.push(PluginDiagnostic::error(value, "Expected identifier.".into()));
+                    diagnostics.push(PluginDiagnostic::error(
+                        value,
+                        format!(
+                            "Expected identifier. Supported identifiers: {}",
+                            SUPPORTED_ARGS_ERROR_MESSAGE
+                        ),
+                    ));
                     return;
                 };
                 let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
-                    diagnostics.push(PluginDiagnostic::error(path, "Expected simple path.".into()));
+                    diagnostics.push(PluginDiagnostic::error(
+                        path,
+                        format!(
+                            "Expected simple path. Supported paths: {}",
+                            SUPPORTED_ARGS_ERROR_MESSAGE
+                        ),
+                    ));
                     return;
                 };
                 if segment.ident(db).text(db) != "hidden" {
