@@ -8,8 +8,8 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 #[non_exhaustive]
 pub struct ExternalAttributesValidationPlugin;
 
-const DOC_ATTR: &'static str = "doc";
-const SUPPORTED_ARGS_ERROR_MESSAGE: &'static str = "hidden";
+const DOC_ATTR: &str = "doc";
+const SUPPORTED_ARGS_ERROR_MESSAGE: &str = "hidden";
 
 impl MacroPlugin for ExternalAttributesValidationPlugin {
     fn generate_code(
