@@ -237,13 +237,9 @@ impl<'a> ProfilingInfoProcessor<'a> {
         db: Option<&'a dyn SierraGenGroup>,
         sierra_program: Program,
         statements_functions: UnorderedHashMap<StatementIdx, String>,
+        params: ProfilingInfoProcessorParams,
     ) -> Self {
-        Self {
-            db,
-            sierra_program,
-            statements_functions,
-            params: ProfilingInfoProcessorParams::default(),
-        }
+        Self { db, sierra_program, statements_functions, params }
     }
 
     /// Processes the raw profiling info according to the params set in the processor.

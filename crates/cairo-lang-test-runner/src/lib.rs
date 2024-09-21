@@ -542,6 +542,7 @@ fn update_summary(
             Some(*db),
             sierra_program.clone(),
             statements_functions.clone(),
+            Default::default(),
         );
         let processed_profiling_info =
             profiling_processor.process_ex(&profiling_info, profiling_params);

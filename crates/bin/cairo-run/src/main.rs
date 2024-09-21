@@ -99,6 +99,7 @@ fn main() -> anyhow::Result<()> {
             Some(db),
             sierra_program,
             debug_info.statements_locations.get_statements_functions_map_for_tests(db),
+            Default::default(),
         );
         match result.profiling_info {
             Some(raw_profiling_info) => {
