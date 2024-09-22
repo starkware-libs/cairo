@@ -3029,45 +3029,55 @@ pub(crate) trait AbsAndSign<Signed, Unsigned> {
 
 impl I8ToU8 of AbsAndSign<i8, u8> {
     fn abs_and_sign(self: i8) -> (u8, bool) {
-        match i8_diff(self, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        match core::internal::bounded_int::constrain::<i8, 0>(self) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true
+            ),
+            Result::Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I16ToU16 of AbsAndSign<i16, u16> {
     fn abs_and_sign(self: i16) -> (u16, bool) {
-        match i16_diff(self, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        match core::internal::bounded_int::constrain::<i16, 0>(self) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true
+            ),
+            Result::Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I32ToU32 of AbsAndSign<i32, u32> {
     fn abs_and_sign(self: i32) -> (u32, bool) {
-        match i32_diff(self, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        match core::internal::bounded_int::constrain::<i32, 0>(self) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true
+            ),
+            Result::Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I64ToU64 of AbsAndSign<i64, u64> {
     fn abs_and_sign(self: i64) -> (u64, bool) {
-        match i64_diff(self, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        match core::internal::bounded_int::constrain::<i64, 0>(self) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true
+            ),
+            Result::Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I128ToU128 of AbsAndSign<i128, u128> {
     fn abs_and_sign(self: i128) -> (u128, bool) {
-        match i128_diff(self, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        match core::internal::bounded_int::constrain::<i128, 0>(self) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true
+            ),
+            Result::Err(ge0) => (upcast(ge0), false),
         }
     }
 }
