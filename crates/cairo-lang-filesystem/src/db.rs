@@ -44,8 +44,11 @@ pub struct CrateSettings {
     pub edition: Edition,
     /// The crate's version.
     pub version: Option<Version>,
-
+    /// The `#[cfg(...)]` configuration.
     pub cfg_set: Option<CfgSet>,
+    /// The crate's dependencies.
+    #[serde(default)]
+    pub dependencies: BTreeMap<String, DependencySettings>,
 
     #[serde(default)]
     pub experimental_features: ExperimentalFeaturesConfig,
@@ -96,6 +99,13 @@ impl Edition {
             Self::V2023_11 | Self::V2024_07 => false,
         }
     }
+}
+
+/// The settings for a dependency.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DependencySettings {
+    /// The version of the dependency.
+    pub version: Option<Version>,
 }
 
 /// Configuration per crate.
@@ -173,14 +183,16 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
 
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
     let core_crate = CrateLongId::Real(CORELIB_CRATE_NAME.into()).intern(db);
+    let version = Version::parse(CORELIB_VERSION).ok();
     db.set_crate_config(
         core_crate,
         Some(CrateConfiguration {
             root: Directory::Real(core_lib_dir),
             settings: CrateSettings {
                 edition: Edition::V2024_07,
-                version: Version::parse(CORELIB_VERSION).ok(),
+                version: version.clone(),
                 cfg_set: Default::default(),
+                dependencies: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig {
                     negative_impls: true,
                     coupons: true,

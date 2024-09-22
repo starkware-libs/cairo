@@ -41,10 +41,11 @@ tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dev-dependencies]
-cairo-lang-language-server = { path = ".", features = ["testing"] }
 assert_fs = "1.1"
+cairo-lang-language-server = { path = ".", features = ["testing"] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 futures = "0.3"
 pathdiff = "0.2"
+pretty_assertions.workspace = true
 test-log.workspace = true
 tower-service = "0.3"
