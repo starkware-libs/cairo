@@ -78,6 +78,9 @@ pub fn build(
         StarkNetConcreteLibfunc::ReplaceClass(_) => {
             build_syscalls(builder, "ReplaceClass", [1], [])
         }
+        StarkNetConcreteLibfunc::GetClassHashAt(_) => {
+            build_syscalls(builder, "GetClassHashAt", [1], [1])
+        }
         StarkNetConcreteLibfunc::SendMessageToL1(_) => {
             build_syscalls(builder, "SendMessageToL1", [1, 2], [])
         }
