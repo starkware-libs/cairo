@@ -11,6 +11,20 @@ pub struct ParserDiagnostic {
     pub span: TextSpan,
     pub kind: ParserDiagnosticKind,
 }
+impl ParserDiagnostic {
+    /// Converts a `SyntaxKind` to its corresponding operator string.
+    fn operator_to_string(&self, kind: SyntaxKind) -> String {
+        match kind {
+            SyntaxKind::TerminalLT => "<".to_string(),
+            SyntaxKind::TerminalGT => ">".to_string(),
+            SyntaxKind::TerminalLE => "<=".to_string(),
+            SyntaxKind::TerminalGE => ">=".to_string(),
+            SyntaxKind::TerminalEqEq => "==".to_string(),
+            SyntaxKind::TerminalNeq => "!=".to_string(),
+            _ => format!("{:?}", kind),
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
     // TODO(spapini): Add tokens from the recovery set to the message.
@@ -39,6 +53,7 @@ pub enum ParserDiagnosticKind {
     AttributesWithoutImplItem,
     AttributesWithoutStatement,
     DisallowedTrailingSeparatorOr,
+    ConsecutiveMathOperators { first_op: SyntaxKind, second_op: SyntaxKind },
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -123,6 +138,13 @@ Did you mean to write `{identifier}!{left}...{right}'?",
             }
             ParserDiagnosticKind::DisallowedTrailingSeparatorOr => {
                 "A trailing `|` is not allowed in an or-pattern.".to_string()
+            }
+            ParserDiagnosticKind::ConsecutiveMathOperators { first_op, second_op } => {
+                format!(
+                    "Consecutive comparison operators are not allowed: '{}' followed by '{}'",
+                    self.operator_to_string(*first_op),
+                    self.operator_to_string(*second_op)
+                )
             }
         }
     }
