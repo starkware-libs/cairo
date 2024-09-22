@@ -336,6 +336,7 @@ mod gas_costs {
     pub const EMIT_EVENT: usize = 10 * STEP;
     pub const GET_BLOCK_HASH: usize = 50 * STEP;
     pub const GET_EXECUTION_INFO: usize = 10 * STEP;
+    pub const GET_CLASS_HASH_AT: usize = 50 * STEP;
     pub const KECCAK: usize = 0;
     pub const KECCAK_ROUND_COST: usize = 180000;
     pub const SHA256_PROCESS_BLOCK: usize = 1852 * STEP + 65 * RANGE_CHECK + 1115 * BITWISE;
@@ -799,6 +800,9 @@ impl<'a> CairoHintProcessor<'a> {
             "ReplaceClass" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.replace_class(gas_counter, system_buffer.next_felt252()?.into_owned())
             }),
+            "GetClassHashAt" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                self.get_class_hash_at(gas_counter, system_buffer.next_felt252()?.into_owned())
+            }),
             _ => panic!("Unknown selector for system call!"),
         }
     }
@@ -1112,6 +1116,21 @@ impl<'a> CairoHintProcessor<'a> {
         let address = self.starknet_state.exec_info.contract_address;
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))
+    }
+
+    /// Executes the `get_class_hash_at_syscall` syscall.
+    fn get_class_hash_at(
+        &mut self,
+        gas_counter: &mut usize,
+        contract_address: Felt252,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, GET_CLASS_HASH_AT);
+        // Look up the class hash of the deployed contract at the given address.
+        let Some(class_hash) = self.starknet_state.deployed_contracts.get(&contract_address) else {
+            fail_syscall!(b"CONTRACT_NOT_DEPLOYED");
+        };
+
+        Ok(SyscallResult::Success(vec![MaybeRelocatable::Int(class_hash.clone())]))
     }
 
     /// Executes the entry point with the given calldata.
