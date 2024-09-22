@@ -96,6 +96,18 @@ impl NonZeroConstrainHelper<
     type LowT = NonZero<H::LowT>;
     type HighT = NonZero<H::HighT>;
 }
+mod constrain0 {
+    pub impl Impl<T, const MIN: felt252, const MAX: felt252> of super::ConstrainHelper<T, 0> {
+        type LowT = super::BoundedInt<MIN, -1>;
+        type HighT = super::BoundedInt<0, MAX>;
+    }
+}
+impl I8Constrain0 = constrain0::Impl<i8, -0x80, 0x7f>;
+impl I16Constrain0 = constrain0::Impl<i16, -0x8000, 0x7fff>;
+impl I32Constrain0 = constrain0::Impl<i32, -0x80000000, 0x7fffffff>;
+impl I64Constrain0 = constrain0::Impl<i64, -0x8000000000000000, 0x7fffffffffffffff>;
+impl I128Constrain0 =
+    constrain0::Impl<i128, -0x80000000000000000000000000000000, 0x7fffffffffffffffffffffffffffffff>;
 
 extern fn bounded_int_constrain<T, const BOUNDARY: felt252, impl H: ConstrainHelper<T, BOUNDARY>>(
     value: T
