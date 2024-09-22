@@ -14,6 +14,7 @@ salsa.workspace = true
 semver.workspace = true
 serde = { workspace = true, default-features = true }
 smol_str.workspace = true
+toml.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true

@@ -6,7 +6,7 @@ use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
 use path_clean::PathClean;
 use smol_str::SmolStr;
 
-use crate::db::{CrateConfiguration, FilesGroup};
+use crate::db::FilesGroup;
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
@@ -17,7 +17,7 @@ pub enum CrateLongId {
     /// A crate that appears in crate_roots(), and on the filesystem.
     Real(SmolStr),
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
-    Virtual { name: SmolStr, config: CrateConfiguration },
+    Virtual { name: SmolStr, file_id: FileId, settings: String },
 }
 impl CrateLongId {
     pub fn name(&self) -> SmolStr {
