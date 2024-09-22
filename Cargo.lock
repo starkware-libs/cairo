@@ -670,6 +670,7 @@ dependencies = [
  "indoc",
  "itertools 0.12.1",
  "pathdiff",
+ "pretty_assertions",
  "rust-analyzer-salsa",
  "scarb-metadata",
  "serde",

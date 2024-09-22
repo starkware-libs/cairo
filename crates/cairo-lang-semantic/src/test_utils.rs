@@ -141,6 +141,7 @@ pub fn setup_test_crate_ex(
         CrateSettings {
             edition: Edition::default(),
             version: None,
+            dependencies: Default::default(),
             experimental_features: ExperimentalFeaturesConfig {
                 negative_impls: true,
                 coupons: true,
