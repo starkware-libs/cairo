@@ -83,6 +83,9 @@ pub fn build(
         }
         StarkNetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
         StarkNetConcreteLibfunc::Secp256(libfunc) => secp256::build(libfunc, builder),
+        StarkNetConcreteLibfunc::GetClassHashAt(_) => {
+            build_syscalls(builder, "GetClassHashAt", [1], [1])
+        }
     }
 }
 
