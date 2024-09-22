@@ -113,6 +113,107 @@ extern fn bounded_int_constrain<T, const BOUNDARY: felt252, impl H: ConstrainHel
     value: T
 ) -> Result<H::LowT, H::HighT> implicits(RangeCheck) nopanic;
 
+/// Returns the negation of the given `felt252` value.
+trait NegFelt252<const NUM: felt252> {
+    /// The negation of the given `felt252` value.
+    const VALUE: felt252;
+}
+
+/// Helper implementation for `NegFelt252`.
+mod neg_felt252 {
+    pub impl Impl<const INPUT: felt252, const OUTPUT: felt252> of super::NegFelt252<INPUT> {
+        const VALUE: felt252 = OUTPUT;
+    }
+}
+impl NegFelt2520 = neg_felt252::Impl<0, 0>;
+impl NegFelt2521 = neg_felt252::Impl<1, -1>;
+impl NegFelt252Minus1 = neg_felt252::Impl<-1, 1>;
+impl NegFelt2520x7e = neg_felt252::Impl<0x7e, -0x7e>;
+impl NegFelt252Minus0x7e = neg_felt252::Impl<-0x7e, 0x7e>;
+impl NegFelt2520x7f = neg_felt252::Impl<0x7f, -0x7f>;
+impl NegFelt252Minus0x7f = neg_felt252::Impl<-0x7f, 0x7f>;
+impl NegFelt2520x80 = neg_felt252::Impl<0x80, -0x80>;
+impl NegFelt252Minus0x80 = neg_felt252::Impl<-0x80, 0x80>;
+impl NegFelt2520x7ffe = neg_felt252::Impl<0x7ffe, -0x7ffe>;
+impl NegFelt252Minus0x7ffe = neg_felt252::Impl<-0x7ffe, 0x7ffe>;
+impl NegFelt2520x7fff = neg_felt252::Impl<0x7fff, -0x7fff>;
+impl NegFelt252Minus0x7fff = neg_felt252::Impl<-0x7fff, 0x7fff>;
+impl NegFelt2520x8000 = neg_felt252::Impl<0x8000, -0x8000>;
+impl NegFelt252Minus0x8000 = neg_felt252::Impl<-0x8000, 0x8000>;
+impl NegFelt2520x7ffffffe = neg_felt252::Impl<0x7ffffffe, -0x7ffffffe>;
+impl NegFelt252Minus0x7ffffffe = neg_felt252::Impl<-0x7ffffffe, 0x7ffffffe>;
+impl NegFelt2520x7fffffff = neg_felt252::Impl<0x7fffffff, -0x7fffffff>;
+impl NegFelt252Minus0x7fffffff = neg_felt252::Impl<-0x7fffffff, 0x7fffffff>;
+impl NegFelt2520x80000000 = neg_felt252::Impl<0x80000000, -0x80000000>;
+impl NegFelt252Minus0x80000000 = neg_felt252::Impl<-0x80000000, 0x80000000>;
+impl NegFelt2520x7ffffffffffffffe = neg_felt252::Impl<0x7ffffffffffffffe, -0x7ffffffffffffffe>;
+impl NegFelt252Minus0x7ffffffffffffffe = neg_felt252::Impl<-0x7ffffffffffffffe, 0x7ffffffffffffffe>;
+impl NegFelt2520x7fffffffffffffff = neg_felt252::Impl<0x7fffffffffffffff, -0x7fffffffffffffff>;
+impl NegFelt252Minus0x7fffffffffffffff = neg_felt252::Impl<-0x7fffffffffffffff, 0x7fffffffffffffff>;
+impl NegFelt2520x8000000000000000 = neg_felt252::Impl<0x8000000000000000, -0x8000000000000000>;
+impl NegFelt252Minus0x8000000000000000 = neg_felt252::Impl<-0x8000000000000000, 0x8000000000000000>;
+impl NegFelt2520x7ffffffffffffffffffffffffffffffe =
+    neg_felt252::Impl<0x7ffffffffffffffffffffffffffffffe, -0x7ffffffffffffffffffffffffffffffe>;
+impl NegFelt252Minus0x7ffffffffffffffffffffffffffffffe =
+    neg_felt252::Impl<-0x7ffffffffffffffffffffffffffffffe, 0x7ffffffffffffffffffffffffffffffe>;
+impl NegFelt2520x0x7fffffffffffffffffffffffffffffff =
+    neg_felt252::Impl<0x7fffffffffffffffffffffffffffffff, -0x7fffffffffffffffffffffffffffffff>;
+impl NegFelt252Minus0x7fffffffffffffffffffffffffffffff =
+    neg_felt252::Impl<-0x7fffffffffffffffffffffffffffffff, 0x7fffffffffffffffffffffffffffffff>;
+impl NegFelt2520x80000000000000000000000000000000 =
+    neg_felt252::Impl<0x80000000000000000000000000000000, -0x80000000000000000000000000000000>;
+impl NegFelt252Minus0x80000000000000000000000000000000 =
+    neg_felt252::Impl<-0x80000000000000000000000000000000, 0x80000000000000000000000000000000>;
+
+type MinusOne = BoundedInt<-1, -1>;
+
+impl MulMinus1<
+    const MIN: felt252,
+    const MAX: felt252,
+    impl NegMin: NegFelt252<MIN>,
+    impl NegMax: NegFelt252<MAX>,
+> of MulHelper<BoundedInt<MIN, MAX>, MinusOne> {
+    type Result = BoundedInt<NegMax::VALUE, NegMin::VALUE>;
+}
+
+mod minus_1 {
+    pub extern type Const<T, const VALUE: felt252>;
+    pub extern fn const_as_immediate<C>() -> super::BoundedInt::<-1, -1> nopanic;
+}
+mod nz_minus_1 {
+    pub extern type Const<T, C>;
+    pub extern fn const_as_immediate<C>() -> NonZero<super::MinusOne> nopanic;
+}
+
+/// A helper trait for negating a `BoundedInt` instance.
+pub trait NegateHelper<T> {
+    /// The result of negating the given value.
+    type Result;
+
+    /// Negates the given value.
+    fn negate(self: T) -> Self::Result;
+
+    /// Negates the given non-zero value.
+    fn negate_nz(self: NonZero<T>) -> NonZero<Self::Result>;
+}
+
+impl MulMinusOneNegateHelper<T, impl H: MulHelper<T, MinusOne>> of NegateHelper<T> {
+    type Result = H::Result;
+
+    fn negate(self: T) -> H::Result {
+        bounded_int_mul(self, minus_1::const_as_immediate::<minus_1::Const<MinusOne, -1>>())
+    }
+
+    fn negate_nz(self: NonZero<T>) -> NonZero<H::Result> {
+        bounded_int_mul(
+            self,
+            nz_minus_1::const_as_immediate::<
+                nz_minus_1::Const<NonZero<MinusOne>, minus_1::Const<MinusOne, -1>,>
+            >()
+        )
+    }
+}
+
 pub use {
     bounded_int_add as add, bounded_int_sub as sub, bounded_int_mul as mul,
     bounded_int_div_rem as div_rem, bounded_int_constrain as constrain
