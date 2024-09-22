@@ -12,6 +12,7 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::modules::get_u256_type;
+use crate::extensions::starknet::ContractAddressType;
 use crate::extensions::utils::fixed_size_array_ty;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
@@ -258,4 +259,23 @@ fn boxed_u32_fixed_array_ty(
 ) -> Result<ConcreteTypeId, SpecializationError> {
     let ty = context.get_concrete_type(Uint32Type::id(), &[])?;
     box_ty(context, fixed_size_array_ty(context, ty, size)?)
+}
+
+/// Libfunc for the get_class_hash_at system call.
+#[derive(Default)]
+pub struct GetClassHashAtLibfunc {}
+impl SyscallGenericLibfunc for GetClassHashAtLibfunc {
+    const STR_ID: &'static str = "get_class_hash_at_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![context.get_concrete_type(ContractAddressType::id(), &[])?])
+    }
+
+    fn success_output_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![context.get_concrete_type(ClassHashType::id(), &[])?])
+    }
 }

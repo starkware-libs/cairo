@@ -11,7 +11,7 @@ use storage::{
 };
 
 pub mod syscalls;
-use syscalls::{ReplaceClassLibfunc, SystemType};
+use syscalls::{GetClassHashAtLibfunc, ReplaceClassLibfunc, SystemType};
 
 pub mod emit_event;
 use emit_event::EmitEventLibfunc;
@@ -90,6 +90,7 @@ define_libfunc_hierarchy! {
          Sha256StateHandleDigest(Sha256StateHandleDigestLibfunc),
          LibraryCall(LibraryCallLibfunc),
          ReplaceClass(ReplaceClassLibfunc),
+         GetClassHashAt(GetClassHashAtLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),
          Secp256(Secp256Libfunc),

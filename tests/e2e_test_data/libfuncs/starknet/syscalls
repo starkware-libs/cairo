@@ -865,3 +865,76 @@ store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([11]
 return([6], [7], [11]); // 13
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt252, [3]: core::array::Span::<core::felt252>) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
+
+//! > ==========================================================================
+
+//! > class_hash_at_syscall libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(
+    address: starknet::contract_address::ContractAddress,
+) -> starknet::SyscallResult<starknet::class_hash::ClassHash> {
+    starknet::get_class_hash_at_syscall(address)
+}
+
+//! > casm
+[ap + 0] = 1448089108044191721802921138471284, ap++;
+[ap + -1] = [[fp + -4] + 0];
+[fp + -5] = [[fp + -4] + 1];
+[fp + -3] = [[fp + -4] + 2];
+%{ syscall_handler.syscall(syscall_ptr=memory[fp + -4]) %}
+[ap + 0] = [[fp + -4] + 4], ap++;
+jmp rel 11 if [ap + -1] != 0;
+[ap + 0] = [[fp + -4] + 3], ap++;
+[ap + 0] = [fp + -4] + 6, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[fp + -4] + 5], ap++;
+ret;
+[ap + 0] = [[fp + -4] + 3], ap++;
+[ap + 0] = [fp + -4] + 7, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [[fp + -4] + 5], ap++;
+[ap + 0] = [[fp + -4] + 6], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 11100})
+
+//! > sierra_code
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type ClassHash = ClassHash [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>, ClassHash, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type ContractAddress = ContractAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc get_class_hash_at_syscall = get_class_hash_at_syscall;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>, 0>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<System> = store_temp<System>;
+libfunc store_temp<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>>;
+libfunc enum_init<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>, 1>;
+
+get_class_hash_at_syscall([0], [1], [2]) { fallthrough([3], [4], [5]) 7([6], [7], [8]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>, 0>([5]) -> ([9]); // 2
+store_temp<GasBuiltin>([3]) -> ([3]); // 3
+store_temp<System>([4]) -> ([4]); // 4
+store_temp<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>>([9]) -> ([9]); // 5
+return([3], [4], [9]); // 6
+branch_align() -> (); // 7
+enum_init<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>, 1>([8]) -> ([10]); // 8
+store_temp<GasBuiltin>([6]) -> ([6]); // 9
+store_temp<System>([7]) -> ([7]); // 10
+store_temp<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>>([10]) -> ([10]); // 11
+return([6], [7], [10]); // 12
+
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress) -> (GasBuiltin, System, core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>);
