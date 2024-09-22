@@ -92,6 +92,15 @@ pub extern fn replace_class_syscall(
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
 
 
+/// Gets the class hash of the contract at the given address.
+/// `contract_address` - The address of the deployed contract.
+///
+/// Returns the class hash of the contract's originating code.
+pub extern fn get_class_hash_at_syscall(
+    contract_address: ContractAddress
+) -> SyscallResult<ClassHash> implicits(GasBuiltin, System) nopanic;
+
+
 /// Computes the keccak of the input.
 /// The system call does not add any padding and the input needs to be a multiple of 1088 bits
 /// (== 17 u64 word).

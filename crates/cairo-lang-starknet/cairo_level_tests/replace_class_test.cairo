@@ -1,5 +1,6 @@
 use starknet::syscalls::{deploy_syscall};
 use starknet::class_hash::ClassHash;
+use starknet::syscalls::get_class_hash_at_syscall;
 
 #[starknet::interface]
 trait IWithReplace<TContractState> {
@@ -85,4 +86,34 @@ fn test_cannot_replace_with_non_existing_class_hash() {
     // Replace its class hash to Class B.
     let mut contract0 = IWithReplaceDispatcher { contract_address: address0 };
     contract0.replace('not a valid class hash'.try_into().unwrap());
+}
+
+#[test]
+fn test_class_hash_at_syscall() {
+    let a_class_hash = contract_a::TEST_CLASS_HASH.try_into().unwrap();
+    // Deploy ContractA with 100 in the storage.
+    let (address0, _) = deploy_syscall(
+        class_hash: a_class_hash,
+        contract_address_salt: 0,
+        calldata: [100].span(),
+        deploy_from_zero: false
+    )
+        .unwrap();
+
+    let class_hash = get_class_hash_at_syscall(address0);
+
+    assert_eq!(get_class_hash_at_syscall(address0), Result::Ok(a_class_hash));
+    // Replace its class hash to Class B.
+    let mut contract0 = IWithReplaceDispatcher { contract_address: address0 };
+    let b_class_hash = contract_b::TEST_CLASS_HASH.try_into().unwrap();
+    assert_eq!(get_class_hash_at_syscall(address0), Result::Ok(b_class_hash));
+}
+
+#[test]
+fn test_class_hash_at_syscall_undeployed_contract() {
+    // Use an address that does not have a contract deployed.
+    let undeployed_contract_address = 123456; // This should be a valid but undeployed address.
+    // Try to get the class hash at the undeployed contract address, expecting a return value of 0.
+    let result = get_class_hash_at_syscall(undeployed_contract_address);
+    assert_eq!(result, Ok(0));
 }
