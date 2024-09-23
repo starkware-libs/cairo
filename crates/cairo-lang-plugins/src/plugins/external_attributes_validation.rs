@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 pub struct ExternalAttributesValidationPlugin;
 
 const DOC_ATTR: &str = "doc";
-const SUPPORTED_ARGS_ERROR_MESSAGE: &str = "hidden";
+const HIDDEN_ATTR: &str = "hidden";
 
 impl MacroPlugin for ExternalAttributesValidationPlugin {
     fn generate_code(
@@ -41,7 +41,7 @@ fn get_diagnostics<Item: QueryAttrs>(
         if args.is_empty() {
             diagnostics.push(PluginDiagnostic::error(
                 attr.stable_ptr(),
-                format!("Expected arguments. Supported args: {}", SUPPORTED_ARGS_ERROR_MESSAGE),
+                format!("Expected arguments. Supported args: {}", HIDDEN_ATTR),
             ));
             return;
         }
@@ -50,10 +50,7 @@ fn get_diagnostics<Item: QueryAttrs>(
                 let ast::Expr::Path(path) = value else {
                     diagnostics.push(PluginDiagnostic::error(
                         value,
-                        format!(
-                            "Expected identifier. Supported identifiers: {}",
-                            SUPPORTED_ARGS_ERROR_MESSAGE
-                        ),
+                        format!("Expected identifier. Supported identifiers: {}", HIDDEN_ATTR),
                     ));
                     return;
                 };
@@ -65,7 +62,7 @@ fn get_diagnostics<Item: QueryAttrs>(
                     ));
                     return;
                 };
-                if segment.ident(db).text(db) != "hidden" {
+                if segment.ident(db).text(db) != HIDDEN_ATTR {
                     diagnostics.push(PluginDiagnostic::error(
                         path,
                         "Wrong type of argument. Currently only #[doc(hidden)] is supported."
@@ -75,10 +72,7 @@ fn get_diagnostics<Item: QueryAttrs>(
             }
             _ => diagnostics.push(PluginDiagnostic::error(
                 &arg.arg,
-                format!(
-                    "This argument is not supported. Supported args: {}",
-                    SUPPORTED_ARGS_ERROR_MESSAGE
-                ),
+                format!("This argument is not supported. Supported args: {}", HIDDEN_ATTR),
             )),
         });
     });
