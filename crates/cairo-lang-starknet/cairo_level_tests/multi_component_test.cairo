@@ -1,6 +1,6 @@
 use super::utils::serialized;
-use cairo_level_tests::components::mintable::{MintTraitDispatcherTrait, MintTraitDispatcher};
-use cairo_level_tests::contracts::multi_component::{
+use crate::components::mintable::{MintTraitDispatcherTrait, MintTraitDispatcher};
+use crate::contracts::multi_component::{
     contract_with_4_components, GetSupplyDispatcher, GetSupplyDispatcherTrait
 };
 

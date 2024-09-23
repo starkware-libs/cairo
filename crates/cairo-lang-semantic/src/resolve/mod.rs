@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
     ModuleFileId, ModuleId, TraitId, TraitItemId,
 };
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::db::CrateSettings;
+use cairo_lang_filesystem::db::{CrateSettings, CORELIB_CRATE_NAME};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
@@ -993,12 +993,10 @@ impl<'db> Resolver<'db> {
             return ResolvedBase::Crate(self.owning_crate_id);
         }
         // If the first segment is a name of a crate, use the crate's root module as the base
-        // module.
-        let crate_id = CrateLongId::Real(ident).intern(self.db);
-        if self.db.crate_config(crate_id).is_some() {
-            return ResolvedBase::Crate(crate_id);
+        // module. Currently `core` is always considered as a dependency.
+        if self.settings.dependencies.contains_key(ident.as_str()) || ident == CORELIB_CRATE_NAME {
+            return ResolvedBase::Crate(CrateLongId::Real(ident).intern(self.db));
         }
-        // Last resort, use the `prelude` module as the base module.
         ResolvedBase::Module(self.prelude_submodule())
     }
 
