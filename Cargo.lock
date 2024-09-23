@@ -619,6 +619,7 @@ dependencies = [
  "serde_json",
  "smol_str",
  "test-log",
+ "toml",
 ]
 
 [[package]]

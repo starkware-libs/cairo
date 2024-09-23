@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -23,7 +24,7 @@ pub const CORELIB_CRATE_NAME: &str = "core";
 pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// A configuration per crate.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CrateConfiguration {
     /// The root directory of the crate.
     pub root: Directory,
@@ -37,7 +38,7 @@ impl CrateConfiguration {
 }
 
 /// Same as `CrateConfiguration` but without the root directory..
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CrateSettings {
     /// The crate's Cairo edition.
     pub edition: Edition,
@@ -243,7 +244,13 @@ fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
 fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration> {
     match crt.lookup_intern(db) {
         CrateLongId::Real(_) => db.crate_configs().get(&crt).cloned(),
-        CrateLongId::Virtual { name: _, config } => Some(config),
+        CrateLongId::Virtual { name: _, file_id, settings } => Some(CrateConfiguration {
+            root: Directory::Virtual {
+                files: BTreeMap::from([("lib.cairo".into(), file_id)]),
+                dirs: Default::default(),
+            },
+            settings: toml::from_str(&settings).expect("Failed to parse virtual crate settings."),
+        }),
     }
 }
 
