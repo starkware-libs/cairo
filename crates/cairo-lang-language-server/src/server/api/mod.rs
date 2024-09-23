@@ -1,7 +1,7 @@
 use lsp_server as server;
 use lsp_types::notification::{
-    DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
-    DidOpenTextDocument, DidSaveTextDocument, Notification,
+    Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
+    DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument, Notification,
 };
 use lsp_types::request::{
     CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
@@ -63,8 +63,7 @@ pub(crate) fn request<'a>(req: server::Request) -> Task<'a> {
 
 pub(crate) fn notification<'a>(notif: server::Notification) -> Task<'a> {
     match notif.method.as_str() {
-        // FIXME: support cancellation from client side (add issue)
-        // controller::Cancel::METHOD => local_notification_task::<controller::Cancel>(notif),
+        Cancel::METHOD => local_notification_task::<Cancel>(notif),
         DidChangeTextDocument::METHOD => local_notification_task::<DidChangeTextDocument>(notif),
         DidChangeConfiguration::METHOD => local_notification_task::<DidChangeConfiguration>(notif),
         DidChangeWatchedFiles::METHOD => local_notification_task::<DidChangeWatchedFiles>(notif),
@@ -73,15 +72,13 @@ pub(crate) fn notification<'a>(notif: server::Notification) -> Task<'a> {
         DidSaveTextDocument::METHOD => local_notification_task::<DidSaveTextDocument>(notif),
         method => {
             tracing::warn!("Received notification {method} which does not have a handler.");
+
             return Task::nothing();
         }
     }
     .unwrap_or_else(|err| {
         tracing::error!("Encountered error when routing notification: {err}");
-        // show_err_msg!(
-        //     "Ruff failed to handle a notification from the editor. Check the logs for more \
-        //      details."
-        // );
+
         Task::nothing()
     })
 }
@@ -190,7 +187,7 @@ pub(crate) struct Error {
 
 pub type LSPResult<T> = Result<T, Error>;
 
-/// A trait to convert result types into the server result type, [`super::Result`].
+/// A trait to convert result types into the server result type, [`LSPResult`].
 pub trait LSPResultConversionTrait<T> {
     fn with_failure_code(self, code: server::ErrorCode) -> Result<T, Error>;
 }

@@ -1,4 +1,4 @@
-use tower_lsp::lsp_types::Position;
+use lsp_types::Position;
 
 use super::cursors;
 

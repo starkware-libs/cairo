@@ -17,23 +17,18 @@ pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
     ///
     /// Returns `None` on failure, and errors are logged.
     fn file_for_uri(&self, uri: &Uri) -> Option<FileId> {
-        let url = uri
-            .to_string()
-            .parse::<Url>()
-            .inspect_err(|_| error!("invalid file uri: {uri:?}"))
-            .ok()?;
-        match url.scheme() {
-            "file" => url
-                .to_file_path()
-                .inspect_err(|()| error!("invalid file uri: {uri:?}"))
-                .ok()
-                .map(|path| FileId::new(self.upcast(), path)),
-            "vfs" => url
-                .host_str()
+        match uri.scheme().map(|s| s.as_str()) {
+            None | Some("file") => {
+                uri.path().as_str().parse().ok().map(|path| FileId::new(self.upcast(), path))
+            }
+            Some("vfs") => uri
+                .authority()
                 .or_else(|| {
                     error!("invalid vfs uri, missing host string: {uri:?}");
                     None
                 })?
+                .host()
+                .as_str()
                 .parse::<usize>()
                 .inspect_err(|e| {
                     error!("invalid vfs uri, host string is not a valid integer, {e}: {uri:?}")
@@ -51,8 +46,13 @@ pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
     /// Get the canonical [`Uri`] for a [`FileId`].
     fn uri_for_file(&self, file_id: FileId) -> Uri {
         let vf = match self.upcast().lookup_intern_file(file_id) {
-            // FIXME parse, I think it doesn't work
-            FileLongId::OnDisk(path) => return path.to_str().unwrap().parse().unwrap(),
+            FileLongId::OnDisk(path) => {
+                return Url::from_file_path(path.to_str().unwrap())
+                    .unwrap()
+                    .as_str()
+                    .parse()
+                    .unwrap();
+            }
             FileLongId::Virtual(vf) => vf,
             FileLongId::External(id) => self.upcast().ext_as_virtual(id),
         };

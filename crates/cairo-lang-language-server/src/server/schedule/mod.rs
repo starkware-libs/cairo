@@ -1,7 +1,7 @@
 use std::num::NonZeroUsize;
 
-mod task;
-mod thread;
+pub mod task;
+pub mod thread;
 
 pub use task::{BackgroundSchedule, Task};
 

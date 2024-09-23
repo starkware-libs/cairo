@@ -42,7 +42,7 @@ use std::collections::{HashMap, HashSet};
 use std::io;
 use std::num::NonZeroUsize;
 use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::SystemTime;
 
@@ -66,8 +66,11 @@ use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
 use lsp_server::{ErrorCode, Message};
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{PublishDiagnosticsParams, RegistrationParams, Uri};
+use lsp_types::{ClientCapabilities, PublishDiagnosticsParams, RegistrationParams, Uri};
 use salsa::Cancelled;
+use server::connection::ClientSender;
+use server::schedule::task::SyncTask;
+use server::schedule::thread::JoinHandle;
 use state::FileDiagnostics;
 use tracing::{debug, error, info, trace_span, warn};
 
@@ -136,7 +139,7 @@ pub fn start_with_tricks(tricks: Tricks) {
 
     match Backend::new(tricks) {
         Ok(backend) => {
-            if let Err(err) = backend.run() {
+            if let Err(err) = backend.run().map(|handle| handle.join()) {
                 error!("language server encountered an unrecoverable error: {err}")
             }
         }
@@ -148,12 +151,12 @@ pub fn start_with_tricks(tricks: Tricks) {
     info!("language server stopped");
 }
 
-// FIXME fix tests
-// /// Special function to run the language server in end-to-end tests.
-// #[cfg(feature = "testing")]
-// pub fn build_service_for_e2e_tests() -> (LspService<impl LanguageServer>, ClientSocket) {
-//     Backend::build_service(Tricks::default())
-// }
+/// Special function to run the language server in end-to-end tests.
+#[cfg(feature = "testing")]
+pub fn build_service_for_e2e_tests() -> (Box<dyn FnOnce() -> Backend + Send>, lsp_server::Connection)
+{
+    Backend::new_for_testing(Default::default())
+}
 
 /// Initialize logging infrastructure for the language server.
 ///
@@ -162,7 +165,7 @@ fn init_logging() -> Option<impl Drop> {
     use std::fs;
     use std::io::IsTerminal;
 
-    use tracing_chrome::{ChromeLayerBuilder, TraceStyle};
+    use tracing_chrome::ChromeLayerBuilder;
     use tracing_subscriber::filter::{EnvFilter, LevelFilter};
     use tracing_subscriber::fmt::format::FmtSpan;
     use tracing_subscriber::fmt::time::Uptime;
@@ -202,11 +205,8 @@ fn init_logging() -> Option<impl Drop> {
             "open that file with https://ui.perfetto.dev (or chrome://tracing) to analyze it"
         );
 
-        let (profile_layer, profile_layer_guard) = ChromeLayerBuilder::new()
-            .writer(profile_file)
-            .trace_style(TraceStyle::Async) // FIXME not sure if still correct
-            .include_args(true)
-            .build();
+        let (profile_layer, profile_layer_guard) =
+            ChromeLayerBuilder::new().writer(profile_file).include_args(true).build();
 
         guard = Some(profile_layer_guard);
         Some(profile_layer)
@@ -241,7 +241,7 @@ fn ensure_exists_in_db<'a>(
     new_db.set_file_overrides(Arc::new(new_overrides));
 }
 
-struct Backend {
+pub struct Backend {
     connection: Connection,
     state: State,
 }
@@ -250,21 +250,44 @@ impl Backend {
     fn new(tricks: Tricks) -> Result<Self> {
         let connection_initializer = ConnectionInitializer::stdio();
 
+        Self::new_inner(tricks, connection_initializer)
+    }
+
+    fn new_for_testing(
+        tricks: Tricks,
+    ) -> (Box<dyn FnOnce() -> Self + Send>, lsp_server::Connection) {
+        let (connection_initializer, client) = ConnectionInitializer::memory();
+
+        let init = Box::new(|| Self::new_inner(tricks, connection_initializer).unwrap());
+
+        (init, client)
+    }
+
+    fn new_inner(tricks: Tricks, connection_initializer: ConnectionInitializer) -> Result<Self> {
         let (id, init_params) = connection_initializer.initialize_start()?;
 
         let client_capabilities = init_params.capabilities;
         let server_capabilities = collect_server_capabilities(&client_capabilities);
 
         let connection = connection_initializer.initialize_finish(id, server_capabilities)?;
+        let state = Self::create_state(connection.make_sender(), client_capabilities, tricks);
 
-        let db = AnalysisDatabase::new(&tricks);
-        let notifier = Client::new(connection.make_sender()).notifier();
-        let scarb_toolchain = ScarbToolchain::new(notifier);
-
-        Ok(Self { connection, state: State::new(db, client_capabilities, scarb_toolchain, tricks) })
+        Ok(Self { connection, state })
     }
 
-    pub fn run(self) -> Result<()> {
+    fn create_state(
+        sender: ClientSender,
+        client_capabilities: ClientCapabilities,
+        tricks: Tricks,
+    ) -> State {
+        let db = AnalysisDatabase::new(&tricks);
+        let notifier = Client::new(sender).notifier();
+        let scarb_toolchain = ScarbToolchain::new(notifier);
+
+        State::new(db, client_capabilities, scarb_toolchain, tricks)
+    }
+
+    pub fn run(self) -> Result<JoinHandle<Result<()>>> {
         let four = NonZeroUsize::new(4).unwrap();
         // By default, we set the number of worker threads to `num_cpus`, with a maximum of 4.
         let worker_threads = std::thread::available_parallelism().unwrap_or(four).max(four);
@@ -273,8 +296,7 @@ impl Backend {
             Self::event_loop(&self.connection, self.state, worker_threads)?;
             self.connection.close()?;
             Ok(())
-        })?
-        .join()
+        })
     }
 
     fn event_loop(
@@ -291,13 +313,17 @@ impl Backend {
             info!("Configuration file watcher successfully registered");
             Task::nothing()
         };
-        // FIXME (IMPORTANT) should be blocking i.e. we should wait for response there
+
         scheduler.request::<lsp_types::request::RegisterCapability>(
             RegistrationParams { registrations: dynamic_registrations },
             response_handler,
         )?;
-        // FIXME load client config (99% sure it was there before but i removed it xD)
-        //  should be blocking i.e. we should wait for response there
+
+        scheduler.dispatch(Task::Sync(SyncTask {
+            func: Box::new(|state, _notifier, requester, _responder| {
+                Self::reload_config(state, requester).ok();
+            }),
+        }));
 
         for msg in connection.incoming() {
             if connection.handle_shutdown(&msg)? {
@@ -425,7 +451,7 @@ impl Backend {
 
         // After handling of all diagnostics, attempting to swap the database to reduce memory
         // consumption.
-        // FIXME ask pfigiela if it should be here (diags are mut anyways so)
+        // This should be removed from here when diags are background job.
         Backend::maybe_swap_database(state, notifier)
     }
 
@@ -541,19 +567,16 @@ impl Backend {
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
     #[tracing::instrument(level = "trace", skip_all)]
     fn maybe_swap_database(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
-        let Ok(mut last_replace) = state.last_replace.try_lock() else {
-            // Another thread is already swapping the database.
-            return Ok(());
-        };
-        if last_replace.elapsed().unwrap() <= state.db_replace_interval {
+        if state.last_replace.elapsed().unwrap() <= state.db_replace_interval {
             // Not enough time passed since last swap.
             return Ok(());
         }
-        // FIXME(pmagiera): swapped the order here due to borrow checker
-        *last_replace = SystemTime::now();
-        drop(last_replace);
 
-        Backend::swap_database(state, notifier)
+        let result = Backend::swap_database(state, notifier);
+
+        state.last_replace = SystemTime::now();
+
+        result
     }
 
     /// Perform database swap
@@ -600,7 +623,7 @@ impl Backend {
         for uri in open_files {
             let Some(file_id) = db.file_for_uri(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
-                Backend::detect_crate_for(scarb_toolchain, db, config, file_path, notifier);
+                Backend::detect_crate_for(scarb_toolchain, db, config, &file_path, notifier);
             }
             query_diags(db, file_id);
         }
@@ -624,33 +647,21 @@ impl Backend {
         scarb_toolchain: &ScarbToolchain,
         db: &mut AnalysisDatabase,
         config: &Config,
-        file_path: PathBuf,
+        file_path: &Path,
         notifier: &Notifier,
     ) {
-        match ProjectManifestPath::discover(&file_path) {
+        match ProjectManifestPath::discover(file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                let Ok(metadata) = std::thread::spawn({
-                    let scarb = scarb_toolchain.clone();
-                    move || {
-                        scarb
-                            .metadata(&manifest_path)
-                            .with_context(|| {
-                                format!(
-                                    "failed to refresh scarb workspace: {}",
-                                    manifest_path.display()
-                                )
-                            })
-                            .inspect_err(|e| {
-                                // TODO(mkaput): Send a notification to the language client.
-                                warn!("{e:?}");
-                            })
-                            .ok()
-                    }
-                })
-                .join() else {
-                    error!("scarb invoking thread panicked");
-                    return;
-                };
+                let metadata = scarb_toolchain
+                    .metadata(&manifest_path)
+                    .with_context(|| {
+                        format!("failed to refresh scarb workspace: {}", manifest_path.display())
+                    })
+                    .inspect_err(|e| {
+                        // TODO(mkaput): Send a notification to the language client.
+                        warn!("{e:?}");
+                    })
+                    .ok();
 
                 if let Some(metadata) = metadata {
                     update_crate_roots(&metadata, db);
@@ -662,7 +673,7 @@ impl Backend {
                 if let Err(result) = validate_corelib(db) {
                     if let Err(err) = notifier.notify::<CorelibVersionMismatch>(result.to_string())
                     {
-                        error!("failed to send corelib version missmatch notification: {err:#}");
+                        error!("failed to send corelib version mismatch notification: {err:#}");
                     }
                 }
             }
@@ -682,7 +693,7 @@ impl Backend {
             None => {
                 try_to_init_unmanaged_core(db, config, scarb_toolchain);
 
-                if let Err(err) = setup_project(&mut *db, file_path.as_path()) {
+                if let Err(err) = setup_project(&mut *db, file_path) {
                     let file_path_s = file_path.to_string_lossy();
                     error!("error loading file {file_path_s} as a single crate: {err}");
                 }
@@ -697,7 +708,7 @@ impl Backend {
         notifier: &Notifier,
         requester: &mut Requester<'_>,
     ) -> LSPResult<()> {
-        Backend::reload_config(state, notifier, requester)?;
+        Backend::reload_config(state, requester)?;
 
         for uri in state.open_files.iter() {
             let Some(file_id) = state.db.file_for_uri(uri) else { continue };
@@ -706,7 +717,7 @@ impl Backend {
                     &state.scarb_toolchain,
                     &mut state.db,
                     &state.config,
-                    file_path,
+                    &file_path,
                     notifier,
                 );
             }
@@ -716,13 +727,9 @@ impl Backend {
     }
 
     /// Reload the [`Config`] and all its dependencies.
-    fn reload_config(
-        state: &mut State,
-        notifier: &Notifier,
-        requester: &mut Requester<'_>,
-    ) -> LSPResult<()> {
-        state.config.reload(requester, &state.client_capabilities)?;
-
-        Backend::refresh_diagnostics(state, notifier)
+    fn reload_config(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
+        state.config.reload(requester, &state.client_capabilities, |state, notifier| {
+            Backend::refresh_diagnostics(state, notifier).ok();
+        })
     }
 }

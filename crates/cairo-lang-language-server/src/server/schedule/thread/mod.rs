@@ -65,7 +65,7 @@ impl Builder {
     }
 }
 
-pub(crate) struct JoinHandle<T = ()> {
+pub struct JoinHandle<T = ()> {
     // `inner` is an `Option` so that we can
     // take ownership of the contained `JoinHandle`.
     inner: Option<jod_thread::JoinHandle<T>>,

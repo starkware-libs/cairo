@@ -1,9 +1,9 @@
 use indoc::indoc;
+use lsp_server::Message;
+use lsp_types::lsp_request;
+use lsp_types::request::Request as _;
 use serde_json::json;
-use tower_lsp::lsp_types::lsp_request;
-use tower_lsp::lsp_types::request::Request as _;
 
-use crate::support::jsonrpc::Message;
 use crate::support::sandbox;
 
 /// The LS used to panic when some files in Salsa database were interned with a relative path.
@@ -48,7 +48,7 @@ fn relative_path_to_core() {
             .iter()
             .filter(|msg| {
                 let Message::Request(req) = msg else { return false };
-                req.method() == <lsp_request!("workspace/configuration")>::METHOD
+                req.method == <lsp_request!("workspace/configuration")>::METHOD
             })
             .count(),
         1

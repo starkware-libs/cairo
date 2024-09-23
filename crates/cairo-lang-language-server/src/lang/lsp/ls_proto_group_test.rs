@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;

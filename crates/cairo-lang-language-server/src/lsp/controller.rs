@@ -1,26 +1,23 @@
 use std::path::PathBuf;
 
-use anyhow::anyhow;
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
-use lsp_server::ErrorCode;
 use lsp_types::notification::{
-    DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
-    DidOpenTextDocument, DidSaveTextDocument, LogMessage,
+    Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
+    DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
 };
 use lsp_types::request::{
-    ApplyWorkspaceEdit, CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition,
-    HoverRequest, SemanticTokensFullRequest,
+    CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
+    SemanticTokensFullRequest,
 };
 use lsp_types::{
-    ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeActionParams, CodeActionResponse,
-    CompletionParams, CompletionResponse, DidChangeConfigurationParams,
-    DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams,
-    DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams,
-    ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse, Hover, HoverParams,
-    LogMessageParams, MessageType, SemanticTokensParams, SemanticTokensResult,
-    TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Uri,
+    CancelParams, CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
+    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
+    DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
+    DocumentFormattingParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
+    Hover, HoverParams, SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent,
+    TextDocumentPositionParams, TextEdit, Uri,
 };
 use serde_json::Value;
 use tracing::{error, warn};
@@ -33,10 +30,9 @@ use crate::lsp::ext::{
 use crate::server::api::traits::{
     BackgroundDocumentRequestHandler, SyncNotificationHandler, SyncRequestHandler,
 };
-use crate::server::api::{Error, LSPResult, LSPResultConversionTrait};
+use crate::server::api::{Error, LSPResult};
 use crate::server::client::{Notifier, Requester};
 use crate::server::commands::ServerCommands;
-use crate::server::schedule::Task;
 use crate::state::{State, StateSnapshot};
 use crate::{ide, lang, Backend};
 
@@ -69,36 +65,6 @@ impl SyncRequestHandler for ExecuteCommand {
             }
         }
 
-        let handler = |response: ApplyWorkspaceEditResponse| {
-            if response.applied {
-                Task::local(|_, notifier, _, _| {
-                    if let Err(err) = notifier.notify::<LogMessage>(LogMessageParams {
-                        typ: MessageType::INFO,
-                        message: "applied".to_string(),
-                    }) {
-                        error!("failed to send 'applied' notification to client: {err:#}");
-                    }
-                })
-            } else {
-                Task::local(|_, notifier, _, _| {
-                    if let Err(err) = notifier.notify::<LogMessage>(LogMessageParams {
-                        typ: MessageType::INFO,
-                        message: "rejected".to_string(),
-                    }) {
-                        error!("failed to send 'rejected' notification to client: {err:#}");
-                    }
-                })
-            }
-        };
-
-        // FIXME: why do we send it? (ask murek)
-        requester
-            .request::<ApplyWorkspaceEdit>(
-                ApplyWorkspaceEditParams { label: None, edit: Default::default() },
-                handler,
-            )
-            .with_failure_code(ErrorCode::RequestFailed)?;
-
         Ok(None)
     }
 }
@@ -122,6 +88,18 @@ impl BackgroundDocumentRequestHandler for Formatting {
         params: DocumentFormattingParams,
     ) -> LSPResult<Option<Vec<TextEdit>>> {
         Ok(ide::formatter::format(params, &snapshot.db))
+    }
+}
+
+impl SyncNotificationHandler for Cancel {
+    #[tracing::instrument(level = "trace", skip_all)]
+    fn run(
+        _state: &mut State,
+        _notifier: Notifier,
+        _requester: &mut Requester<'_>,
+        _params: CancelParams,
+    ) -> LSPResult<()> {
+        Ok(())
     }
 }
 
@@ -155,12 +133,12 @@ impl SyncNotificationHandler for DidChangeConfiguration {
     #[tracing::instrument(level = "debug", skip_all)]
     fn run(
         state: &mut State,
-        notifier: Notifier,
+        _notifier: Notifier,
         requester: &mut Requester<'_>,
         _params: DidChangeConfigurationParams,
     ) -> LSPResult<()> {
-        // FIXME it was this way but I think we shouldn't reload here, just read changes from params
-        Backend::reload_config(state, &notifier, requester)
+        // TODO it was this way but we shouldn't reload here, just read changes from params
+        Backend::reload_config(state, requester)
     }
 }
 
@@ -182,13 +160,11 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
 
         // Reload workspace if a config file has changed.
         for change in params.changes {
-            let changed_file_path =
-                change.uri.path().to_string().parse::<PathBuf>().unwrap_or_default();
-            let changed_file_name = changed_file_path.file_name().unwrap_or_default();
+            let changed_file_path = change.uri.path();
+            let changed_file_name = changed_file_path.segments().last().map(|str| str.as_str());
             // TODO(pmagiera): react to Scarb.lock. Keep in mind Scarb does save Scarb.lock on each
             //  metadata call, so it is easy to fall in a loop here.
-            if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
-            {
+            if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name) {
                 Backend::reload(state, &notifier, requester)?;
             }
         }
@@ -227,20 +203,14 @@ impl SyncNotificationHandler for DidOpenTextDocument {
 
         // Try to detect the crate for physical files.
         // The crate for virtual files is already known.
-        if uri
-            .scheme()
-            .ok_or_else(|| Error::new(anyhow!("Invalid URI scheme"), ErrorCode::InternalError))?
-            .as_str()
-            == "file"
-        {
-            // FIXME verify is path().as_str() works here, it was Url here before.
+        if !uri.scheme().is_some_and(|scheme| scheme.as_str() != "file") {
             let path = uri.path().as_str().parse::<PathBuf>().unwrap();
 
             Backend::detect_crate_for(
                 &state.scarb_toolchain,
                 &mut state.db,
                 &state.config,
-                path,
+                &path,
                 &notifier,
             );
         }

@@ -1,7 +1,7 @@
 use cairo_lang_language_server::lsp;
 use indoc::indoc;
+use lsp_types::{lsp_request, ExecuteCommandParams};
 use pretty_assertions::assert_eq;
-use tower_lsp::lsp_types::{lsp_request, ApplyWorkspaceEditResponse, ExecuteCommandParams};
 
 use crate::support::normalize::normalize;
 use crate::support::sandbox;
@@ -60,7 +60,7 @@ fn cairo_projects() {
                     },
                 }
                 ```
-            - `project1`: `["[ROOT]/project1/src/lib.cairo"]`
+            - `project1`: `["[ROOT_URL]/project1/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
                     edition: V2023_01,
@@ -73,7 +73,7 @@ fn cairo_projects() {
                     },
                 }
                 ```
-            - `project2`: `["[ROOT]/project2/src/lib.cairo"]`
+            - `project2`: `["[ROOT_URL]/project2/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
                     edition: V2023_01,
@@ -86,7 +86,7 @@ fn cairo_projects() {
                     },
                 }
                 ```
-            - `subproject`: `["[ROOT]/project2/subproject/src/lib.cairo"]`
+            - `subproject`: `["[ROOT_URL]/project2/subproject/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
                     edition: V2023_01,
@@ -119,11 +119,6 @@ fn test_reload() {
 
     let expected = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
-    ls.expect_request::<lsp_request!("workspace/applyEdit")>(|_| ApplyWorkspaceEditResponse {
-        applied: true,
-        failure_reason: None,
-        failed_change: None,
-    });
     ls.send_request::<lsp_request!("workspace/executeCommand")>(ExecuteCommandParams {
         command: "cairo.reload".into(),
         ..Default::default()

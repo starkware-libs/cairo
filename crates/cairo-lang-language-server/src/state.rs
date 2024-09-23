@@ -23,7 +23,7 @@ pub struct State {
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
     pub scarb_toolchain: ScarbToolchain,
-    pub last_replace: std::sync::Mutex<SystemTime>,
+    pub last_replace: SystemTime,
     pub db_replace_interval: Duration,
     pub tricks: Owned<Tricks>,
 }
@@ -55,10 +55,10 @@ impl State {
             file_diagnostics: Default::default(),
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
-            scarb_toolchain,
-            last_replace: std::sync::Mutex::new(SystemTime::now()),
-            db_replace_interval: env_config::db_replace_interval(),
             tricks: Owned::new(tricks.into()),
+            scarb_toolchain,
+            last_replace: SystemTime::now(),
+            db_replace_interval: env_config::db_replace_interval(),
         }
     }
 

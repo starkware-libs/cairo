@@ -53,7 +53,7 @@ pub struct BackgroundTaskBuilder<'s> {
 }
 
 pub struct SyncTask<'s> {
-    pub(super) func: LocalFn<'s>,
+    pub func: LocalFn<'s>,
 }
 
 impl<'s> Task<'s> {

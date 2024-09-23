@@ -3,29 +3,36 @@ use std::sync::{Arc, Weak};
 use lsp_server as lsp;
 use lsp_types::notification::Notification;
 use lsp_types::request::Request;
-use lsp_types::InitializeResult;
 
 type ConnectionSender = crossbeam::channel::Sender<lsp::Message>;
 type ConnectionReceiver = crossbeam::channel::Receiver<lsp::Message>;
 
 /// A builder for `Connection` that handles LSP initialization.
-pub(crate) struct ConnectionInitializer {
+pub struct ConnectionInitializer {
     connection: lsp::Connection,
-    threads: lsp::IoThreads,
+    /// None in tests, Some(_) otherwise
+    threads: Option<lsp::IoThreads>,
 }
 
 /// Handles inbound and outbound messages with the client.
-pub(crate) struct Connection {
+pub struct Connection {
     sender: Arc<ConnectionSender>,
     receiver: ConnectionReceiver,
-    threads: lsp::IoThreads,
+    /// None in tests, Some(_) otherwise
+    threads: Option<lsp::IoThreads>,
 }
 
 impl ConnectionInitializer {
     /// Create a new LSP server connection over stdin/stdout.
     pub fn stdio() -> Self {
         let (connection, threads) = lsp::Connection::stdio();
-        Self { connection, threads }
+        Self { connection, threads: Some(threads) }
+    }
+
+    /// Create a new LSP server connection in memory.
+    pub fn memory() -> (Self, lsp::Connection) {
+        let (server, client) = lsp::Connection::memory();
+        (Self { connection: server, threads: None }, client)
     }
 
     /// Starts the initialization process with the client by listening for an initialization
@@ -46,7 +53,7 @@ impl ConnectionInitializer {
         server_capabilities: lsp_types::ServerCapabilities,
     ) -> anyhow::Result<Connection> {
         let initialize_result =
-            InitializeResult { capabilities: server_capabilities, server_info: None };
+            lsp_types::InitializeResult { capabilities: server_capabilities, server_info: None };
         self.connection.initialize_finish(id, serde_json::to_value(initialize_result).unwrap())?;
         let Self { connection: lsp::Connection { sender, receiver }, threads } = self;
         Ok(Connection { sender: Arc::new(sender), receiver, threads })
@@ -109,7 +116,10 @@ impl Connection {
                 .expect("the client sender shouldn't have more than one strong reference"),
         );
         drop(self.receiver);
-        self.threads.join()?;
+
+        if let Some(threads) = self.threads {
+            threads.join()?;
+        }
         Ok(())
     }
 }
@@ -118,7 +128,7 @@ impl Connection {
 /// If the `Connection` that created this `ClientSender` is dropped, any `send` calls will throw
 /// an error.
 #[derive(Clone, Debug)]
-pub(crate) struct ClientSender {
+pub struct ClientSender {
     weak_sender: Weak<ConnectionSender>,
 }
 

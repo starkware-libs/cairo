@@ -1,5 +1,4 @@
 use lsp_types::lsp_request;
-use tower_lsp::lsp_types;
 
 use crate::support::sandbox;
 

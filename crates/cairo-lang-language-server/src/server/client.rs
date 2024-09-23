@@ -11,19 +11,19 @@ use crate::server::connection::ClientSender;
 
 type ResponseBuilder<'s> = Box<dyn FnOnce(lsp_server::Response) -> Task<'s>>;
 
-pub(crate) struct Client<'s> {
+pub struct Client<'s> {
     notifier: Notifier,
     responder: Responder,
     pub(super) requester: Requester<'s>,
 }
 
 #[derive(Clone)]
-pub(crate) struct Notifier(ClientSender);
+pub struct Notifier(ClientSender);
 
 #[derive(Clone)]
-pub(crate) struct Responder(ClientSender);
+pub struct Responder(ClientSender);
 
-pub(crate) struct Requester<'s> {
+pub struct Requester<'s> {
     sender: ClientSender,
     next_request_id: i32,
     response_handlers: FxHashMap<RequestId, ResponseBuilder<'s>>,
@@ -52,7 +52,7 @@ impl<'s> Client<'s> {
 }
 
 impl Notifier {
-    pub(crate) fn notify<N>(&self, params: N::Params) -> Result<()>
+    pub fn notify<N>(&self, params: N::Params) -> Result<()>
     where
         N: lsp_types::notification::Notification,
     {
@@ -65,7 +65,7 @@ impl Notifier {
 }
 
 impl Responder {
-    pub(crate) fn respond<R>(&self, id: RequestId, result: Result<R, api::Error>) -> Result<()>
+    pub fn respond<R>(&self, id: RequestId, result: Result<R, api::Error>) -> Result<()>
     where
         R: serde::Serialize,
     {
@@ -85,7 +85,7 @@ impl<'s> Requester<'s> {
     /// Sends a request of kind `R` to the client, with associated parameters.
     /// The task provided by `response_handler` will be dispatched as soon as the response
     /// comes back from the client.
-    pub(crate) fn request<R>(
+    pub fn request<R>(
         &mut self,
         params: R::Params,
         response_handler: impl Fn(R::Result) -> Task<'s> + 'static,
@@ -144,7 +144,7 @@ impl<'s> Requester<'s> {
         Ok(())
     }
 
-    pub(crate) fn pop_response_task(&mut self, response: lsp_server::Response) -> Task<'s> {
+    pub fn pop_response_task(&mut self, response: lsp_server::Response) -> Task<'s> {
         if let Some(handler) = self.response_handlers.remove(&response.id) {
             handler(response)
         } else {
