@@ -16,7 +16,8 @@ cairo_lang_test_utils::test_file_test!(
   "src/tests/test-data",
   {
     basic: "basic.txt",
-    submodule: "submodule.txt"
+    submodule: "submodule.txt",
+    trivia: "trivia.txt"
   },
   documentation_test_runner
 );
