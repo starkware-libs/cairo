@@ -1,17 +1,14 @@
-use std::collections::BTreeMap;
 use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, CrateSettings,
-    Edition, ExperimentalFeaturesConfig, ExternalFiles, FilesDatabase, FilesGroup,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateSettings, Edition,
+    ExperimentalFeaturesConfig, ExternalFiles, FilesDatabase, FilesGroup,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::{
-    CrateId, CrateLongId, Directory, FileKind, FileLongId, VirtualFile,
-};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::{ast, TypedStablePtr};
@@ -154,13 +151,8 @@ pub fn setup_test_crate_ex(
 
     CrateLongId::Virtual {
         name: "test".into(),
-        config: CrateConfiguration {
-            root: Directory::Virtual {
-                files: BTreeMap::from([("lib.cairo".into(), file_id)]),
-                dirs: Default::default(),
-            },
-            settings,
-        },
+        file_id,
+        settings: toml::to_string_pretty(&settings).unwrap(),
     }
     .intern(db)
 }
