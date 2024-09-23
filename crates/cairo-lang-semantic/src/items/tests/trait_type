@@ -716,8 +716,8 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error[E0002]: Method `unwrap` could not be called on type `core::integer::u32`.
-Candidate `OptionTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::option::Option::<?0>`.
-Candidate `ResultTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::result::Result::<?0, ?1>`.
+Candidate `core::option::OptionTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::option::Option::<?0>`.
+Candidate `core::result::ResultTrait::unwrap` inference failed with: Type mismatch: `core::integer::u32` and `core::result::Result::<?0, ?1>`.
  --> lib.cairo:8:11
         x.unwrap();
           ^****^
@@ -904,8 +904,8 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Type `core::integer::u32` could not be indexed.
-Candidate `Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<core::integer::u32, ?1>.
-Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<core::integer::u32, ?1>.
+Candidate `core::ops::index::Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<core::integer::u32, ?1>.
+Candidate `core::ops::index::IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<core::integer::u32, ?1>.
  --> lib.cairo:8:9
         x[0];
         ^**^
@@ -1969,25 +1969,25 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
+Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
  --> lib.cairo:20:43
         let _: Self::MyTraitType = (3_u16.my_into(), 3_u16.my_into());
                                           ^*****^
 
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
+Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
  --> lib.cairo:20:60
         let _: Self::MyTraitType = (3_u16.my_into(), 3_u16.my_into());
                                                            ^*****^
 
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
+Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
  --> lib.cairo:21:16
         (3_u16.my_into(), 3_u16.my_into())
                ^*****^
 
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
-Candidate `MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
+Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
  --> lib.cairo:21:33
         (3_u16.my_into(), 3_u16.my_into())
                                 ^*****^
