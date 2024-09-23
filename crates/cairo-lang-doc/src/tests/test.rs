@@ -104,8 +104,8 @@ fn document_struct_with_members(
     members.iter().for_each(|(_, semantic_member)| {
         let id = DocumentableItemId::from(semantic_member.id);
         let member_doc = db.get_item_documentation(id);
-        let memeber_signature = db.get_item_signature(id);
-        insert_doc_to_test_output(output, item_number, member_doc, memeber_signature);
+        let member_signature = db.get_item_signature(id);
+        insert_doc_to_test_output(output, item_number, member_doc, member_signature);
     });
 }
 

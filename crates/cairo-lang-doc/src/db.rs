@@ -133,7 +133,7 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
             )
         }
         SyntaxKind::ItemExternType => {
-            let [attribures, visibility, extern_keyword, keyword, name, generic_types, _] = &db
+            let [attributes, visibility, extern_keyword, keyword, name, generic_types, _] = &db
                 .get_children(syntax_node)
                 .iter()
                 .map(|node| node.clone().get_text_without_all_comment_trivia(db.upcast()))
@@ -143,7 +143,7 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
             };
             format!(
                 "{}\n{} {} {} {}{}",
-                attribures, visibility, extern_keyword, keyword, name, generic_types
+                attributes, visibility, extern_keyword, keyword, name, generic_types
             )
         }
         SyntaxKind::ItemTrait | SyntaxKind::ItemImpl => {
