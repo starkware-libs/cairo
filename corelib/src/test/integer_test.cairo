@@ -2131,10 +2131,6 @@ mod bounded_int {
         type LowT = BoundedInt<0, 0x7f>;
         type HighT = BoundedInt<0x80, 0xff>;
     }
-    impl I8BIConstrain of ConstrainHelper<i8, 0> {
-        type LowT = BoundedInt<-0x80, -1>;
-        type HighT = BoundedInt<0, 0x7f>;
-    }
     const U129_MAX: felt252 = U128_MAX + U128_UPPER;
     type u129 = BoundedInt<0, U129_MAX>;
     impl U129BIConstrain of ConstrainHelper<u129, U128_UPPER> {

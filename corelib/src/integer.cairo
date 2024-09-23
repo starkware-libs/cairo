@@ -1984,49 +1984,29 @@ impl I128PartialOrd of PartialOrd<i128> {
 }
 
 mod signed_div_rem {
-    use crate::internal::{
-        bounded_int, bounded_int::{BoundedInt, MulHelper, DivRemHelper, ConstrainHelper}
+    use crate::internal::bounded_int::{
+        BoundedInt, ConstrainHelper, DivRemHelper, NegateHelper, constrain, div_rem
     };
-
-    type MinusOne = BoundedInt<-1, -1>;
-    mod minus_1 {
-        pub extern type Const<T, const VALUE: felt252>;
-        pub extern fn const_as_immediate<C>() -> super::BoundedInt::<-1, -1> nopanic;
-    }
-    mod nz_minus_1 {
-        pub extern type Const<T, C>;
-        pub extern fn const_as_immediate<C>() -> NonZero<super::MinusOne> nopanic;
-    }
-    fn minus<T, impl H: MulHelper<T, MinusOne>>(a: T) -> H::Result {
-        bounded_int::mul(a, minus_1::const_as_immediate::<minus_1::Const<MinusOne, -1>>())
-    }
-    fn nz_minus<T, impl H: MulHelper<T, MinusOne>>(a: NonZero<T>) -> NonZero<H::Result> {
-        bounded_int::mul(
-            a,
-            nz_minus_1::const_as_immediate::<
-                nz_minus_1::Const<NonZero<MinusOne>, minus_1::Const<MinusOne, -1>,>
-            >()
-        )
-    }
+    use super::{upcast, downcast};
 
     impl DivRemImpl<
         T,
         impl CH: ConstrainHelper<T, 0>,
-        impl MH: MulHelper<CH::LowT, MinusOne>,
+        impl NH: NegateHelper<CH::LowT>,
         // Positive by Positive Div Rem (PPDR) Helper.
         impl PPDR: DivRemHelper<CH::HighT, CH::HighT>,
         // Negative by Positive Div Rem (NPDR) Helper.
-        impl NPDR: DivRemHelper<MH::Result, CH::HighT>,
+        impl NPDR: DivRemHelper<NH::Result, CH::HighT>,
         // Positive by Negative Div Rem (PNDR) Helper.
-        impl PNDR: DivRemHelper<CH::HighT, MH::Result>,
+        impl PNDR: DivRemHelper<CH::HighT, NH::Result>,
         // Negative by Negative Div Rem (NNDR) Helper.
-        impl NNDR: DivRemHelper<MH::Result, MH::Result>,
-        +MulHelper<NNDR::RemT, MinusOne>,
-        +MulHelper<NPDR::DivT, MinusOne>,
-        +MulHelper<NPDR::RemT, MinusOne>,
-        +MulHelper<PNDR::DivT, MinusOne>,
+        impl NNDR: DivRemHelper<NH::Result, NH::Result>,
+        +NegateHelper<NNDR::RemT>,
+        +NegateHelper<NPDR::DivT>,
+        +NegateHelper<NPDR::RemT>,
+        +NegateHelper<PNDR::DivT>,
         +Drop<T>,
-        +Drop<MH::Result>,
+        +Drop<NH::Result>,
         +Drop<CH::LowT>,
         +Drop<CH::HighT>,
         +Drop<PNDR::RemT>,
@@ -2034,33 +2014,33 @@ mod signed_div_rem {
         +Drop<NNDR::RemT>,
     > of DivRem<T> {
         fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T) {
-            match bounded_int::constrain::<T, 0>(lhs) {
+            match constrain::<T, 0>(lhs) {
                 Result::Ok(lhs_lt0) => {
-                    match bounded_int::constrain::<NonZero<T>, 0>(rhs) {
+                    match constrain::<NonZero<T>, 0>(rhs) {
                         Result::Ok(rhs_lt0) => {
-                            let (q, r) = bounded_int::div_rem(minus(lhs_lt0), nz_minus(rhs_lt0));
+                            let (q, r) = div_rem(lhs_lt0.negate(), rhs_lt0.negate_nz());
                             (
                                 // Catching the case for division of `i{8,16,32,64,128}::MIN` by
                                 // `-1`, which overflows.
-                                super::downcast(q).expect('attempt to divide with overflow'),
-                                super::upcast(minus(r))
+                                downcast(q).expect('attempt to divide with overflow'),
+                                upcast(r.negate())
                             )
                         },
                         Result::Err(rhs_ge0) => {
-                            let (q, r) = bounded_int::div_rem(minus(lhs_lt0), rhs_ge0);
-                            (super::upcast(minus(q)), super::upcast(minus(r)))
+                            let (q, r) = div_rem(lhs_lt0.negate(), rhs_ge0);
+                            (upcast(q.negate()), upcast(r.negate()))
                         },
                     }
                 },
                 Result::Err(lhs_ge0) => {
-                    match bounded_int::constrain::<NonZero<T>, 0>(rhs) {
+                    match constrain::<NonZero<T>, 0>(rhs) {
                         Result::Ok(rhs_lt0) => {
-                            let (q, r) = bounded_int::div_rem(lhs_ge0, nz_minus(rhs_lt0));
-                            (super::upcast(minus(q)), super::upcast(r))
+                            let (q, r) = div_rem(lhs_ge0, rhs_lt0.negate_nz());
+                            (upcast(q.negate()), upcast(r))
                         },
                         Result::Err(rhs_ge0) => {
-                            let (q, r) = bounded_int::div_rem(lhs_ge0, rhs_ge0);
-                            (super::upcast(q), super::upcast(r))
+                            let (q, r) = div_rem(lhs_ge0, rhs_ge0);
+                            (upcast(q), upcast(r))
                         },
                     }
                 },
@@ -2069,157 +2049,82 @@ mod signed_div_rem {
     }
 
     mod impls {
-        pub impl Constrain0<
-            T, const MIN: felt252, const MAX: felt252
-        > of super::ConstrainHelper<T, 0> {
-            type LowT = super::BoundedInt<MIN, -1>;
-            type HighT = super::BoundedInt<0, MAX>;
-        }
-        pub impl Minus<T, MinusT> of super::MulHelper<T, super::MinusOne> {
-            type Result = MinusT;
-        }
         pub impl DivRem<Lhs, Rhs, DivT, RemT> of super::DivRemHelper<Lhs, Rhs> {
             type DivT = DivT;
             type RemT = RemT;
         }
     }
-    impl I8C0 = impls::Constrain0<i8, -0x80, 0x7f>;
-    impl I8MH = impls::Minus<I8C0::LowT, BoundedInt<1, 0x80>>;
-    impl I8PPDR = impls::DivRem<I8C0::HighT, I8C0::HighT, BoundedInt<0, 0x7f>, BoundedInt<0, 0x7e>>;
-    impl I8NPDR =
-        impls::DivRem<I8MH::Result, I8C0::HighT, BoundedInt<0, 0x80>, BoundedInt<0, 0x7e>>;
-    impl I8PNDR =
-        impls::DivRem<I8C0::HighT, I8MH::Result, BoundedInt<0, 0x7f>, BoundedInt<0, 0x7f>>;
-    impl I8NNDR =
-        impls::DivRem<I8MH::Result, I8MH::Result, BoundedInt<0, 0x80>, BoundedInt<0, 0x7f>>;
-    impl I8MHUC0 = impls::Minus<BoundedInt<0, 0x7e>, BoundedInt<-0x7e, 0>>;
-    impl I8MHUC1 = impls::Minus<BoundedInt<0, 0x7f>, BoundedInt<-0x7f, 0>>;
-    impl I8MHUC2 = impls::Minus<BoundedInt<0, 0x80>, BoundedInt<-0x80, 0>>;
+    type i8_neg = ConstrainHelper::<i8>::LowT;
+    type i8_pos = ConstrainHelper::<i8>::HighT;
+    type minus_i8_neg = NegateHelper::<i8_neg>::Result;
+
+    impl I8PPDR = impls::DivRem<i8_pos, i8_pos, i8_pos, BoundedInt<0, 0x7e>>;
+    impl I8NPDR = impls::DivRem<minus_i8_neg, i8_pos, BoundedInt<0, 0x80>, BoundedInt<0, 0x7e>>;
+    impl I8PNDR = impls::DivRem<i8_pos, minus_i8_neg, i8_pos, i8_pos>;
+    impl I8NNDR = impls::DivRem<minus_i8_neg, minus_i8_neg, BoundedInt<0, 0x80>, i8_pos>;
     pub impl I8DivRem = DivRemImpl<i8>;
 
-    impl I16C0 = impls::Constrain0<i16, -0x8000, 0x7fff>;
-    impl I16MH = impls::Minus<I16C0::LowT, BoundedInt<1, 0x8000>>;
-    impl I16PPDR =
-        impls::DivRem<I16C0::HighT, I16C0::HighT, BoundedInt<0, 0x7fff>, BoundedInt<0, 0x7ffe>>;
+    type i16_neg = ConstrainHelper::<i16>::LowT;
+    type i16_pos = ConstrainHelper::<i16>::HighT;
+    type minus_i16_neg = NegateHelper::<i16_neg>::Result;
+
+    impl I16PPDR = impls::DivRem<i16_pos, i16_pos, i16_pos, BoundedInt<0, 0x7ffe>>;
     impl I16NPDR =
-        impls::DivRem<I16MH::Result, I16C0::HighT, BoundedInt<0, 0x8000>, BoundedInt<0, 0x7ffe>>;
-    impl I16PNDR =
-        impls::DivRem<I16C0::HighT, I16MH::Result, BoundedInt<0, 0x7fff>, BoundedInt<0, 0x7fff>>;
-    impl I16NNDR =
-        impls::DivRem<I16MH::Result, I16MH::Result, BoundedInt<0, 0x8000>, BoundedInt<0, 0x7fff>>;
-    impl I16MHUC0 = impls::Minus<BoundedInt<0, 0x7ffe>, BoundedInt<-0x7ffe, 0>>;
-    impl I16MHUC1 = impls::Minus<BoundedInt<0, 0x7fff>, BoundedInt<-0x7fff, 0>>;
-    impl I16MHUC2 = impls::Minus<BoundedInt<0, 0x8000>, BoundedInt<-0x8000, 0>>;
+        impls::DivRem<minus_i16_neg, i16_pos, BoundedInt<0, 0x8000>, BoundedInt<0, 0x7ffe>>;
+    impl I16PNDR = impls::DivRem<i16_pos, minus_i16_neg, i16_pos, i16_pos>;
+    impl I16NNDR = impls::DivRem<minus_i16_neg, minus_i16_neg, BoundedInt<0, 0x8000>, i16_pos>;
     pub impl I16DivRem = DivRemImpl<i16>;
 
-    impl I32C0 = impls::Constrain0<i32, -0x80000000, 0x7fffffff>;
-    impl I32MH = impls::Minus<I32C0::LowT, BoundedInt<1, 0x80000000>>;
-    impl I32PPDR =
-        impls::DivRem<
-            I32C0::HighT, I32C0::HighT, BoundedInt<0, 0x7fffffff>, BoundedInt<0, 0x7ffffffe>
-        >;
+    type i32_neg = ConstrainHelper::<i32>::LowT;
+    type i32_pos = ConstrainHelper::<i32>::HighT;
+    type minus_i32_neg = NegateHelper::<i32_neg>::Result;
+
+    impl I32PPDR = impls::DivRem<i32_pos, i32_pos, i32_pos, BoundedInt<0, 0x7ffffffe>>;
     impl I32NPDR =
-        impls::DivRem<
-            I32MH::Result, I32C0::HighT, BoundedInt<0, 0x80000000>, BoundedInt<0, 0x7ffffffe>
-        >;
-    impl I32PNDR =
-        impls::DivRem<
-            I32C0::HighT, I32MH::Result, BoundedInt<0, 0x7fffffff>, BoundedInt<0, 0x7fffffff>
-        >;
-    impl I32NNDR =
-        impls::DivRem<
-            I32MH::Result, I32MH::Result, BoundedInt<0, 0x80000000>, BoundedInt<0, 0x7fffffff>
-        >;
-    impl I32MHUC0 = impls::Minus<BoundedInt<0, 0x7ffffffe>, BoundedInt<-0x7ffffffe, 0>>;
-    impl I32MHUC1 = impls::Minus<BoundedInt<0, 0x7fffffff>, BoundedInt<-0x7fffffff, 0>>;
-    impl I32MHUC2 = impls::Minus<BoundedInt<0, 0x80000000>, BoundedInt<-0x80000000, 0>>;
+        impls::DivRem<minus_i32_neg, i32_pos, BoundedInt<0, 0x80000000>, BoundedInt<0, 0x7ffffffe>>;
+    impl I32PNDR = impls::DivRem<i32_pos, minus_i32_neg, i32_pos, i32_pos>;
+    impl I32NNDR = impls::DivRem<minus_i32_neg, minus_i32_neg, BoundedInt<0, 0x80000000>, i32_pos>;
     pub impl I32DivRem = DivRemImpl<i32>;
 
-    impl I64C0 = impls::Constrain0<i64, -0x8000000000000000, 0x7fffffffffffffff>;
-    impl I64MH = impls::Minus<I64C0::LowT, BoundedInt<1, 0x8000000000000000>>;
-    impl I64PPDR =
-        impls::DivRem<
-            I64C0::HighT,
-            I64C0::HighT,
-            BoundedInt<0, 0x7fffffffffffffff>,
-            BoundedInt<0, 0x7ffffffffffffffe>
-        >;
+    type i64_neg = ConstrainHelper::<i64>::LowT;
+    type i64_pos = ConstrainHelper::<i64>::HighT;
+    type minus_i64_neg = NegateHelper::<i64_neg>::Result;
+
+    impl I64PPDR = impls::DivRem<i64_pos, i64_pos, i64_pos, BoundedInt<0, 0x7ffffffffffffffe>>;
     impl I64NPDR =
         impls::DivRem<
-            I64MH::Result,
-            I64C0::HighT,
+            minus_i64_neg,
+            i64_pos,
             BoundedInt<0, 0x8000000000000000>,
             BoundedInt<0, 0x7ffffffffffffffe>
         >;
-    impl I64PNDR =
-        impls::DivRem<
-            I64C0::HighT,
-            I64MH::Result,
-            BoundedInt<0, 0x7fffffffffffffff>,
-            BoundedInt<0, 0x7fffffffffffffff>
-        >;
+    impl I64PNDR = impls::DivRem<i64_pos, minus_i64_neg, i64_pos, i64_pos>;
     impl I64NNDR =
-        impls::DivRem<
-            I64MH::Result,
-            I64MH::Result,
-            BoundedInt<0, 0x8000000000000000>,
-            BoundedInt<0, 0x7fffffffffffffff>
-        >;
-    impl I64MHUC0 =
-        impls::Minus<BoundedInt<0, 0x7ffffffffffffffe>, BoundedInt<-0x7ffffffffffffffe, 0>>;
-    impl I64MHUC1 =
-        impls::Minus<BoundedInt<0, 0x7fffffffffffffff>, BoundedInt<-0x7fffffffffffffff, 0>>;
-    impl I64MHUC2 =
-        impls::Minus<BoundedInt<0, 0x8000000000000000>, BoundedInt<-0x8000000000000000, 0>>;
+        impls::DivRem<minus_i64_neg, minus_i64_neg, BoundedInt<0, 0x8000000000000000>, i64_pos>;
     pub impl I64DivRem = DivRemImpl<i64>;
 
-    impl I128C0 =
-        impls::Constrain0<
-            i128, -0x80000000000000000000000000000000, 0x7fffffffffffffffffffffffffffffff
-        >;
-    impl I128MH = impls::Minus<I128C0::LowT, BoundedInt<1, 0x80000000000000000000000000000000>>;
+    type i128_neg = ConstrainHelper::<i128>::LowT;
+    type i128_pos = ConstrainHelper::<i128>::HighT;
+    type minus_i128_neg = NegateHelper::<i128_neg>::Result;
+
     impl I128PPDR =
         impls::DivRem<
-            I128C0::HighT,
-            I128C0::HighT,
-            BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>,
-            BoundedInt<0, 0x7ffffffffffffffffffffffffffffffe>
+            i128_pos, i128_pos, i128_pos, BoundedInt<0, 0x7ffffffffffffffffffffffffffffffe>
         >;
     impl I128NPDR =
         impls::DivRem<
-            I128MH::Result,
-            I128C0::HighT,
+            minus_i128_neg,
+            i128_pos,
             BoundedInt<0, 0x80000000000000000000000000000000>,
             BoundedInt<0, 0x7ffffffffffffffffffffffffffffffe>
         >;
-    impl I128PNDR =
-        impls::DivRem<
-            I128C0::HighT,
-            I128MH::Result,
-            BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>,
-            BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>
-        >;
+    impl I128PNDR = impls::DivRem<i128_pos, minus_i128_neg, i128_pos, i128_pos>;
     impl I128NNDR =
         impls::DivRem<
-            I128MH::Result,
-            I128MH::Result,
+            minus_i128_neg,
+            minus_i128_neg,
             BoundedInt<0, 0x80000000000000000000000000000000>,
-            BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>
-        >;
-    impl I128MHUC0 =
-        impls::Minus<
-            BoundedInt<0, 0x7ffffffffffffffffffffffffffffffe>,
-            BoundedInt<-0x7ffffffffffffffffffffffffffffffe, 0>
-        >;
-    impl I128MHUC1 =
-        impls::Minus<
-            BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>,
-            BoundedInt<-0x7fffffffffffffffffffffffffffffff, 0>
-        >;
-    impl I128MHUC2 =
-        impls::Minus<
-            BoundedInt<0, 0x80000000000000000000000000000000>,
-            BoundedInt<-0x80000000000000000000000000000000, 0>
+            i128_pos
         >;
     pub impl I128DivRem = DivRemImpl<i128>;
 
@@ -3124,45 +3029,55 @@ pub(crate) trait AbsAndSign<Signed, Unsigned> {
 
 impl I8ToU8 of AbsAndSign<i8, u8> {
     fn abs_and_sign(self: i8) -> (u8, bool) {
-        match i8_diff(self, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        match core::internal::bounded_int::constrain::<i8, 0>(self) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true
+            ),
+            Result::Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I16ToU16 of AbsAndSign<i16, u16> {
     fn abs_and_sign(self: i16) -> (u16, bool) {
-        match i16_diff(self, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        match core::internal::bounded_int::constrain::<i16, 0>(self) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true
+            ),
+            Result::Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I32ToU32 of AbsAndSign<i32, u32> {
     fn abs_and_sign(self: i32) -> (u32, bool) {
-        match i32_diff(self, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        match core::internal::bounded_int::constrain::<i32, 0>(self) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true
+            ),
+            Result::Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I64ToU64 of AbsAndSign<i64, u64> {
     fn abs_and_sign(self: i64) -> (u64, bool) {
-        match i64_diff(self, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        match core::internal::bounded_int::constrain::<i64, 0>(self) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true
+            ),
+            Result::Err(ge0) => (upcast(ge0), false),
         }
     }
 }
 
 impl I128ToU128 of AbsAndSign<i128, u128> {
     fn abs_and_sign(self: i128) -> (u128, bool) {
-        match i128_diff(self, 0) {
-            Result::Ok(v) => (v, false),
-            Result::Err(v) => (~v + 1, true),
+        match core::internal::bounded_int::constrain::<i128, 0>(self) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), true
+            ),
+            Result::Err(ge0) => (upcast(ge0), false),
         }
     }
 }
