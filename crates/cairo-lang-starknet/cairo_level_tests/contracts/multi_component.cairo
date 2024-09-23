@@ -6,10 +6,10 @@ pub trait GetSupply<TContractState> {
 #[starknet::contract]
 pub mod contract_with_4_components {
     use starknet::ContractAddress;
-    use cairo_level_tests::components::erc20::erc20 as erc20_comp;
-    use cairo_level_tests::components::ownable::ownable as ownable_comp;
-    use cairo_level_tests::components::mintable::mintable as mintable_comp;
-    use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
+    use crate::components::erc20::erc20 as erc20_comp;
+    use crate::components::ownable::ownable as ownable_comp;
+    use crate::components::mintable::mintable as mintable_comp;
+    use crate::components::upgradable::upgradable as upgradable_comp;
     #[storage]
     struct Storage {
         #[substorage(v0)]
