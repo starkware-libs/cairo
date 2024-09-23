@@ -9,7 +9,7 @@ cairo_level_tests/contracts/with_ownable_mini.cairo
 //! > generated_cairo_code
 #[starknet::contract]
 mod ownable_mini_contract {
-    use cairo_level_tests::components::ownable_mini;
+    use crate::components::ownable_mini;
     use starknet::ContractAddress;
     use starknet::storage::{
         StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
@@ -255,7 +255,7 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
-    use cairo_level_tests::components::ownable_mini;
+    use crate::components::ownable_mini;
     use starknet::ContractAddress;
     use starknet::storage::{
         StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,

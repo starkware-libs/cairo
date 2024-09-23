@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod ownable_erc20_contract {
-    use cairo_level_tests::components::erc20::erc20 as erc20_comp;
-    use cairo_level_tests::components::ownable::ownable as ownable_comp;
+    use crate::components::erc20::erc20 as erc20_comp;
+    use crate::components::ownable::ownable as ownable_comp;
     use starknet::ContractAddress;
     #[storage]
     struct Storage {
