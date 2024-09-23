@@ -384,7 +384,7 @@ impl<'db> Resolver<'db> {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 let identifier = generic_segment.ident(syntax_db);
                 // Identifier with generic args cannot be a local item.
-                if let Some(module_id) = self.determine_base_module(&identifier) {
+                if let ResolvedBase::Module(module_id) = self.determine_base(&identifier) {
                     ResolvedConcreteItem::Module(module_id)
                 } else {
                     // Crates do not have generics.
@@ -405,22 +405,16 @@ impl<'db> Resolver<'db> {
 
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
                     self.resolved_items.mark_concrete(db, segments.next().unwrap(), local_item)
-                } else if let Some(module_id) = self.determine_base_module(&identifier) {
-                    // This item lies inside a module.
-                    ResolvedConcreteItem::Module(module_id)
                 } else {
-                    // This identifier is a crate.
-                    let crate_ident = identifier.text(syntax_db);
-                    let crate_id = if crate_ident == CRATE_KW {
-                        self.owning_crate_id
-                    } else {
-                        CrateLongId::Real(crate_ident).intern(db)
-                    };
-                    self.resolved_items.mark_concrete(
-                        db,
-                        segments.next().unwrap(),
-                        ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id)),
-                    )
+                    match self.determine_base(&identifier) {
+                        // This item lies inside a module.
+                        ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
+                        ResolvedBase::Crate(crate_id) => self.resolved_items.mark_concrete(
+                            db,
+                            segments.next().unwrap(),
+                            ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id)),
+                        ),
+                    }
                 }
             }
         })
@@ -516,7 +510,7 @@ impl<'db> Resolver<'db> {
                 }
                 let identifier = generic_segment.ident(syntax_db);
                 // Identifier with generic args cannot be a local item.
-                if let Some(module_id) = self.determine_base_module(&identifier) {
+                if let ResolvedBase::Module(module_id) = self.determine_base(&identifier) {
                     ResolvedGenericItem::Module(module_id)
                 } else {
                     // Crates do not have generics.
@@ -526,22 +520,14 @@ impl<'db> Resolver<'db> {
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(syntax_db);
-                if let Some(module_id) = self.determine_base_module(&identifier) {
+                match self.determine_base(&identifier) {
                     // This item lies inside a module.
-                    ResolvedGenericItem::Module(module_id)
-                } else {
-                    // This identifier is a crate.
-                    let crate_ident = identifier.text(syntax_db);
-                    let crate_id = if crate_ident == CRATE_KW {
-                        self.owning_crate_id
-                    } else {
-                        CrateLongId::Real(crate_ident).intern(db)
-                    };
-                    self.resolved_items.mark_generic(
+                    ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
+                    ResolvedBase::Crate(crate_id) => self.resolved_items.mark_generic(
                         db,
                         segments.next().unwrap(),
                         ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)),
-                    )
+                    ),
                 }
             }
         })
@@ -992,25 +978,27 @@ impl<'db> Resolver<'db> {
 
     /// Determines the base module for the path resolving. Looks only in non-local scope (i.e.
     /// current module, or crates).
-    /// Returns Some(module) if the identifier is an item in a module. Otherwise, the path is fully
-    /// qualified, which means the identifier is a crate. In this case, returns None.
-    fn determine_base_module(&mut self, identifier: &ast::TerminalIdentifier) -> Option<ModuleId> {
+    fn determine_base(&mut self, identifier: &ast::TerminalIdentifier) -> ResolvedBase {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
 
         // If an item with this name is found inside the current module, use the current module.
         if let Ok(Some(_)) = self.db.module_item_by_name(self.module_file_id.0, ident.clone()) {
-            return Some(self.module_file_id.0);
+            return ResolvedBase::Module(self.module_file_id.0);
         }
 
         // If the first element is `crate`, use the crate's root module as the base module.
-        require(ident != CRATE_KW)?;
+        if ident == CRATE_KW {
+            return ResolvedBase::Crate(self.owning_crate_id);
+        }
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
         let crate_id = CrateLongId::Real(ident).intern(self.db);
-        require(self.db.crate_config(crate_id).is_none())?;
+        if self.db.crate_config(crate_id).is_some() {
+            return ResolvedBase::Crate(crate_id);
+        }
         // Last resort, use the `prelude` module as the base module.
-        Some(self.prelude_submodule())
+        ResolvedBase::Module(self.prelude_submodule())
     }
 
     /// Returns the crate's `prelude` submodule.
@@ -1584,6 +1572,14 @@ fn resolve_actual_self_segment(
 /// Extracts the edition of a crate.
 fn extract_edition(db: &dyn SemanticGroup, crate_id: CrateId) -> Edition {
     db.crate_config(crate_id).map(|config| config.settings.edition).unwrap_or_default()
+}
+
+/// The base module or crate for the path resolving.
+enum ResolvedBase {
+    /// The base module is a module.
+    Module(ModuleId),
+    /// The base module is a crate.
+    Crate(CrateId),
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
