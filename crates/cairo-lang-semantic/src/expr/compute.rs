@@ -164,7 +164,8 @@ impl<'ctx> ComputationContext<'ctx> {
     ) -> Self {
         let semantic_defs =
             environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
-        let owning_crate_id = resolver.owning_crate_id;
+        let cfg_set =
+            resolver.settings.cfg_set.clone().map(Arc::new).unwrap_or_else(|| db.cfg_set());
         Self {
             db,
             diagnostics,
@@ -175,10 +176,7 @@ impl<'ctx> ComputationContext<'ctx> {
             function_id,
             semantic_defs,
             inner_ctx: None,
-            cfg_set: db
-                .crate_config(owning_crate_id)
-                .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
-                .unwrap_or(db.cfg_set()),
+            cfg_set,
             are_closures_in_context: false,
         }
     }
@@ -406,7 +404,7 @@ fn compute_expr_inline_macro_semantic(
             cfg_set: &ctx.cfg_set,
             declared_derives: &ctx.db.declared_derives(),
             allowed_features: &ctx.resolver.data.feature_config.allowed_features,
-            edition: ctx.resolver.edition,
+            edition: ctx.resolver.settings.edition,
         },
     );
     let mut diag_added = None;

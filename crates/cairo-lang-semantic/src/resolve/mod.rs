@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
     ModuleFileId, ModuleId, TraitId, TraitItemId,
 };
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
@@ -202,7 +202,7 @@ pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,
     pub owning_crate_id: CrateId,
-    pub edition: Edition,
+    pub settings: CrateSettings,
 }
 impl Deref for Resolver<'_> {
     type Target = ResolverData;
@@ -256,7 +256,8 @@ impl<'db> Resolver<'db> {
 
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db.upcast());
-        Self { owning_crate_id, edition: extract_edition(db, owning_crate_id), db, data }
+        let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
+        Self { owning_crate_id, settings, db, data }
     }
 
     pub fn inference(&mut self) -> Inference<'_> {
@@ -1003,7 +1004,7 @@ impl<'db> Resolver<'db> {
 
     /// Returns the crate's `prelude` submodule.
     pub fn prelude_submodule(&self) -> ModuleId {
-        let prelude_submodule_name = self.edition.prelude_submodule_name();
+        let prelude_submodule_name = self.settings.edition.prelude_submodule_name();
         let core_prelude_submodule = core_submodule(self.db, "prelude");
         get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
             || {
@@ -1297,9 +1298,11 @@ impl<'db> Resolver<'db> {
     /// Should visibility checks not actually happen for lookups in this module.
     // TODO(orizi): Remove this check when performing a major Cairo update.
     pub fn ignore_visibility_checks(&self, module_id: ModuleId) -> bool {
-        let owning_crate = module_id.owning_crate(self.db.upcast());
-        extract_edition(self.db, owning_crate).ignore_visibility()
-            || self.edition.ignore_visibility() && owning_crate == self.db.core_crate()
+        let module_crate = module_id.owning_crate(self.db.upcast());
+        let module_edition =
+            self.db.crate_config(module_crate).map(|c| c.settings.edition).unwrap_or_default();
+        module_edition.ignore_visibility()
+            || self.settings.edition.ignore_visibility() && module_crate == self.db.core_crate()
     }
 
     /// Validates that an item is usable from the current module or adds a diagnostic.
@@ -1567,11 +1570,6 @@ fn resolve_actual_self_segment(
             Ok(ResolvedConcreteItem::Impl(impl_id.intern(db)))
         }
     }
-}
-
-/// Extracts the edition of a crate.
-fn extract_edition(db: &dyn SemanticGroup, crate_id: CrateId) -> Edition {
-    db.crate_config(crate_id).map(|config| config.settings.edition).unwrap_or_default()
 }
 
 /// The base module or crate for the path resolving.
