@@ -1931,9 +1931,11 @@ impl I128Neg of Neg<i128> {
 impl I128Mul of Mul<i128> {
     fn mul(lhs: i128, rhs: i128) -> i128 {
         let (lhs_u127, lhs_neg) = lhs.abs_and_sign();
-        let (rhs_u127, res_neg) = match i128_diff(rhs, 0) {
-            Result::Ok(v) => (v, lhs_neg),
-            Result::Err(v) => (~v + 1, !lhs_neg),
+        let (rhs_u127, res_neg) = match core::internal::bounded_int::constrain::<i128, 0>(rhs) {
+            Result::Ok(lt0) => (
+                upcast(core::internal::bounded_int::NegateHelper::negate(lt0)), !lhs_neg
+            ),
+            Result::Err(ge0) => (upcast(ge0), lhs_neg),
         };
         let res_as_u128 = lhs_u127 * rhs_u127;
         let res_as_felt252: felt252 = if res_neg {
