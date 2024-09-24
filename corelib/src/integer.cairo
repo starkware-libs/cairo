@@ -216,11 +216,6 @@ impl U128BitOr of crate::traits::BitOr<u128> {
         v
     }
 }
-impl U128BitNot of crate::traits::BitNot<u128> {
-    fn bitnot(a: u128) -> u128 {
-        crate::num::traits::Bounded::MAX - a
-    }
-}
 
 impl U128BitSize of crate::num::traits::BitSize<u128> {
     fn bits() -> usize {
@@ -347,11 +342,6 @@ impl U8DivRem of DivRem<u8> {
     }
 }
 
-impl U8BitNot of BitNot<u8> {
-    fn bitnot(a: u8) -> u8 {
-        crate::num::traits::Bounded::MAX - a
-    }
-}
 extern fn u8_bitwise(lhs: u8, rhs: u8) -> (u8, u8, u8) implicits(Bitwise) nopanic;
 impl U8BitAnd of BitAnd<u8> {
     #[inline]
@@ -502,11 +492,6 @@ impl U16DivRem of DivRem<u16> {
     }
 }
 
-impl U16BitNot of BitNot<u16> {
-    fn bitnot(a: u16) -> u16 {
-        crate::num::traits::Bounded::MAX - a
-    }
-}
 extern fn u16_bitwise(lhs: u16, rhs: u16) -> (u16, u16, u16) implicits(Bitwise) nopanic;
 impl U16BitAnd of BitAnd<u16> {
     #[inline]
@@ -657,11 +642,6 @@ impl U32DivRem of DivRem<u32> {
     }
 }
 
-impl U32BitNot of BitNot<u32> {
-    fn bitnot(a: u32) -> u32 {
-        crate::num::traits::Bounded::MAX - a
-    }
-}
 extern fn u32_bitwise(lhs: u32, rhs: u32) -> (u32, u32, u32) implicits(Bitwise) nopanic;
 impl U32BitAnd of BitAnd<u32> {
     #[inline]
@@ -812,11 +792,6 @@ impl U64DivRem of DivRem<u64> {
     }
 }
 
-impl U64BitNot of BitNot<u64> {
-    fn bitnot(a: u64) -> u64 {
-        crate::num::traits::Bounded::MAX - a
-    }
-}
 extern fn u64_bitwise(lhs: u64, rhs: u64) -> (u64, u64, u64) implicits(Bitwise) nopanic;
 impl U64BitAnd of BitAnd<u64> {
     #[inline]
@@ -3019,6 +2994,25 @@ impl U64SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TSa
 impl U128SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TSaturatingMul<u128>;
 impl U256SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TSaturatingMul<u256>;
 
+mod bitnot_impls {
+    use core::internal::bounded_int::{BoundedInt, SubHelper};
+    use super::upcast;
+
+    impl SubHelperImpl<T, const MAX: felt252> of SubHelper<BoundedInt<MAX, MAX>, T> {
+        type Result = BoundedInt<0, MAX>;
+    }
+
+    pub impl Impl<T, const MAX: felt252, const MAX_TYPED: BoundedInt<MAX, MAX>> of core::traits::BitNot<T> {
+        fn bitnot(a: T) -> T {
+            upcast::<BoundedInt<0, MAX>, T>(core::internal::bounded_int::sub(MAX_TYPED, a))
+        }
+    }
+}
+impl U8BitNot = bitnot_impls::Impl<u8, 0xff, 0xff>;
+impl U16BitNot = bitnot_impls::Impl<u16, 0xffff, 0xffff>;
+impl U32BitNot = bitnot_impls::Impl<u32, 0xffff_ffff, 0xffff_ffff>;
+impl U64BitNot = bitnot_impls::Impl<u64, 0xffff_ffff_ffff_ffff, 0xffff_ffff_ffff_ffff>;
+impl U128BitNot = bitnot_impls::Impl<u128, 0xffff_ffff_ffff_ffff_ffff_ffff_ffff_ffff, 0xffff_ffff_ffff_ffff_ffff_ffff_ffff_ffff>;
 
 /// Internal trait for easier finding of absolute values.
 pub(crate) trait AbsAndSign<Signed, Unsigned> {
