@@ -396,6 +396,13 @@ fn compute_expr_inline_macro_semantic(
     let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() else {
         return Err(ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into())));
     };
+    if matches!(syntax.arguments(syntax_db), ast::WrappedArgList::Missing(_)) {
+        return Ok(Expr::Missing(ExprMissing {
+            ty: TypeId::missing(ctx.db, skip_diagnostic()),
+            stable_ptr: ast::Expr::InlineMacro(syntax.clone()).stable_ptr(),
+            diag_added: skip_diagnostic(),
+        }));
+    }
 
     let result = macro_plugin.generate_code(
         syntax_db,

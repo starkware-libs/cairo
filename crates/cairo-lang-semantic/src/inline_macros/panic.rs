@@ -23,7 +23,7 @@ fn try_handle_simple_panic(
         [] => {
             // Trivial panic!() with no arguments case.
             builder.add_str(
-                "core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 0, 0, 0]);",
+                "core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 0, 0, 0])",
             );
             return true;
         }
@@ -60,7 +60,7 @@ fn try_handle_simple_panic(
         // Adding the empty remainder word.
         builder.add_str("0, ");
     }
-    builder.add_str(&format!("{remainder_size}]))"));
+    builder.add_str(&format!("{remainder_size}])"));
 
     true
 }
