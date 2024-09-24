@@ -180,3 +180,22 @@ error: Plugin diagnostic: Closing `}` without a matching `{`.
  --> lib.cairo:2:8
 panic!("bad_format(})")
        ^*************^
+
+//! > ==========================================================================
+
+//! > Test expansion of macro with inner parse errors.
+
+//! > test_runner_name
+test_expand_expr(expect_diagnostics: true)
+
+//! > expr_code
+array![format!]
+
+//! > expanded_code
+array![format!]
+
+//! > diagnostics
+error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> lib.cairo:2:15
+array![format!]
+              ^

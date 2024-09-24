@@ -26,6 +26,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils as utils;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
@@ -398,12 +399,20 @@ fn compute_expr_inline_macro_semantic(
     };
 
     // Skipping expanding an inline macro if it had a parser error.
-    if matches!(syntax.arguments(syntax_db), ast::WrappedArgList::Missing(_)) {
-        return Ok(Expr::Missing(ExprMissing {
-            ty: TypeId::missing(ctx.db, skip_diagnostic()),
-            stable_ptr: ast::Expr::InlineMacro(syntax.clone()).stable_ptr(),
-            diag_added: skip_diagnostic(),
-        }));
+    if syntax.as_syntax_node().descendants(syntax_db).any(|node| {
+        matches!(
+            node.kind(syntax_db),
+            SyntaxKind::ExprMissing
+                | SyntaxKind::WrappedArgListMissing
+                | SyntaxKind::StatementMissing
+                | SyntaxKind::ModuleItemMissing
+                | SyntaxKind::TraitItemMissing
+                | SyntaxKind::ImplItemMissing
+                | SyntaxKind::TokenMissing
+                | SyntaxKind::TokenSkipped
+        )
+    }) {
+        return Err(skip_diagnostic());
     }
 
     let result = macro_plugin.generate_code(
