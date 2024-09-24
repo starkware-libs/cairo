@@ -1,5 +1,6 @@
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::require;
 use itertools::Itertools;
@@ -14,7 +15,7 @@ pub trait InlineMacroCall {
     fn path(&self, db: &dyn SyntaxGroup) -> Self::PathNode;
 }
 
-impl InlineMacroCall for ast::ExprInlineMacro {
+impl InlineMacroCall for ast::LegacyExprInlineMacro {
     type PathNode = ast::ExprPath;
     type Result = InlinePluginResult;
 
@@ -27,7 +28,7 @@ impl InlineMacroCall for ast::ExprInlineMacro {
     }
 }
 
-impl InlineMacroCall for ast::ItemInlineMacro {
+impl InlineMacroCall for ast::LegacyItemInlineMacro {
     type PathNode = ast::TerminalIdentifier;
     type Result = PluginResult;
 
@@ -69,6 +70,10 @@ pub fn unsupported_bracket_diagnostic<CallAst: InlineMacroCall>(
             macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
         ),
     ))
+}
+
+pub fn not_legacy_macro_diagnostic(stable_ptr: SyntaxStablePtrId) -> PluginDiagnostic {
+    PluginDiagnostic::error(stable_ptr, "Macro can not be parsed as legacy macro.".to_string())
 }
 
 /// Extracts a single unnamed argument.

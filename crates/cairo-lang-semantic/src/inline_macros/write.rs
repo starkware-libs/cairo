@@ -5,8 +5,11 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
     PluginGeneratedFile,
 };
-use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
+use cairo_lang_defs::plugin_utils::{
+    not_legacy_macro_diagnostic, try_extract_unnamed_arg, unsupported_bracket_diagnostic,
+};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{try_extract_matches, OptionHelper};
@@ -154,8 +157,11 @@ impl FormattingInfo {
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
     ) -> Result<FormattingInfo, Vec<PluginDiagnostic>> {
+        let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
+            return Err(vec![not_legacy_macro_diagnostic(syntax.as_syntax_node().stable_ptr())]);
+        };
         let ast::WrappedArgList::ParenthesizedArgList(arguments) = syntax.arguments(db) else {
-            return Err(unsupported_bracket_diagnostic(db, syntax).diagnostics);
+            return Err(unsupported_bracket_diagnostic(db, &syntax).diagnostics);
         };
         let argument_list_elements = arguments.arguments(db).elements(db);
         let mut args_iter = argument_list_elements.iter();

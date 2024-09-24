@@ -146,8 +146,7 @@ fn validate_call() {
         0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, // calldata 6.
         0x54767f773cc172172c3afc5265bd0a76089c24cdef409635d27ac1a1fa96ca8, // calldata 7.
         0x65586264, // calldata 8.
-    ]
-        .span();
+    ].span();
     test_contract::__wrapper____validate__(serialized_args);
 }
 
@@ -437,8 +436,7 @@ fn validate_call() {
         0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, // calldata 0.
         0x4db5d32, // calldata 1.
         0x0, // calldata 2.
-    ]
-        .span();
+    ].span();
     test_contract::__wrapper____validate__(serialized_args);
 }
 

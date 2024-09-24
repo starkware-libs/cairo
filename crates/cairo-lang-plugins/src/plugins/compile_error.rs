@@ -1,6 +1,7 @@
 use cairo_lang_defs::extract_macro_single_unnamed_arg;
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginResult};
-use cairo_lang_defs::plugin_utils::PluginResultTrait;
+use cairo_lang_defs::plugin_utils::{not_legacy_macro_diagnostic, PluginResultTrait};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
@@ -18,6 +19,11 @@ impl MacroPlugin for CompileErrorPlugin {
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
         if let ast::ModuleItem::InlineMacro(inline_macro_ast) = item_ast {
+            let Some(inline_macro_ast) = inline_macro_ast.as_legacy_inline_macro(db) else {
+                return PluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+                    inline_macro_ast.as_syntax_node().stable_ptr(),
+                ));
+            };
             if inline_macro_ast.name(db).text(db) == "compile_error" {
                 let compilation_error_arg = extract_macro_single_unnamed_arg!(
                     db,

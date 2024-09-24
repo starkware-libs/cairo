@@ -2,8 +2,10 @@ use std::cmp::Ordering;
 use std::fmt;
 
 use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_parser::macro_helpers::token_tree_as_wrapped_arg_list;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
+use cairo_lang_syntax::node::ast::TokenTreeNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
@@ -790,6 +792,19 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode) {
+        if syntax_node.kind(self.db) == SyntaxKind::TokenTreeNode {
+            let as_wrapped_arg_list = token_tree_as_wrapped_arg_list(
+                TokenTreeNode::from_syntax_node(self.db, syntax_node.clone()),
+                self.db,
+            );
+            let file_id = syntax_node.stable_ptr().file_id(self.db);
+
+            if let Some(wrapped_arg_list) = as_wrapped_arg_list {
+                let new_syntax_node = SyntaxNode::new_root(self.db, file_id, wrapped_arg_list.0);
+                self.format_internal(&new_syntax_node);
+                return;
+            }
+        }
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
@@ -802,12 +817,25 @@ impl<'a> FormatterImpl<'a> {
         if syntax_node.force_no_space_before(self.db) {
             self.line_state.prevent_next_space = true;
         }
-        if self.should_ignore_node_format(syntax_node) {
-            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
-        } else if syntax_node.kind(self.db).is_terminal() {
-            self.format_terminal(syntax_node);
-        } else {
-            self.format_internal(syntax_node);
+
+        // TODO(Gil): Consider existing newlines in the text when later breaking the line if not
+        // trimming.
+        match self.should_ignore_node_format(syntax_node) {
+            IgnoreFormat::Yes => {
+                self.line_state
+                    .line_buffer
+                    .push_str(syntax_node.get_text(self.db).trim_matches(['\n', '\r'].as_ref()));
+            }
+            IgnoreFormat::JustTrim => {
+                self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim())
+            }
+            IgnoreFormat::No => {
+                if syntax_node.kind(self.db).is_terminal() {
+                    self.format_terminal(syntax_node);
+                } else {
+                    self.format_internal(syntax_node);
+                }
+            }
         }
         if syntax_node.force_no_space_after(self.db) {
             self.line_state.prevent_next_space = true;
@@ -917,9 +945,21 @@ impl<'a> FormatterImpl<'a> {
     }
 
     /// Gets a syntax node and returns if the node has an cairofmt::skip attribute.
-    pub fn should_ignore_node_format(&self, syntax_node: &SyntaxNode) -> bool {
-        syntax_node.has_attr(self.db, FMT_SKIP_ATTR)
+    fn should_ignore_node_format(&self, syntax_node: &SyntaxNode) -> IgnoreFormat {
+        if syntax_node.has_attr(self.db, FMT_SKIP_ATTR) {
+            IgnoreFormat::JustTrim
+        } else if syntax_node.kind(self.db) == SyntaxKind::TokenTreeNode {
+            IgnoreFormat::Yes
+        } else {
+            IgnoreFormat::No
+        }
     }
+}
+
+enum IgnoreFormat {
+    Yes,
+    JustTrim,
+    No,
 }
 
 /// Represents a sortable SyntaxNode.

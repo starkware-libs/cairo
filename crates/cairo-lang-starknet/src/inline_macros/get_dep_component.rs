@@ -4,6 +4,8 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin, PluginDiagnostic,
     PluginGeneratedFile,
 };
+use cairo_lang_defs::plugin_utils::{not_legacy_macro_diagnostic, PluginResultTrait};
+use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
@@ -49,8 +51,13 @@ fn get_dep_component_generate_code_helper(
     syntax: &ast::ExprInlineMacro,
     is_mut: bool,
 ) -> InlinePluginResult {
+    let Some(syntax) = syntax.as_legacy_inline_macro(db) else {
+        return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
+            syntax.as_syntax_node().stable_ptr(),
+        ));
+    };
     let [contract_arg, component_impl_arg] =
-        extract_macro_unnamed_args!(db, syntax, 2, ast::WrappedArgList::ParenthesizedArgList(_));
+        extract_macro_unnamed_args!(db, &syntax, 2, ast::WrappedArgList::ParenthesizedArgList(_));
 
     if is_mut {
         // `extract_macro_unnamed_args` above guarantees that we have `ParenthesizedArgList`.
@@ -75,7 +82,7 @@ fn get_dep_component_generate_code_helper(
             return InlinePluginResult { code: None, diagnostics };
         };
     }
-    let mut builder = PatchBuilder::new(db, syntax);
+    let mut builder = PatchBuilder::new(db, &syntax);
     let (let_part, maybe_mut, maybe_ref) =
         if is_mut { ("let mut", "_mut", "ref ") } else { ("let", "", "") };
     builder.add_modified(RewriteNode::interpolate_patched(
