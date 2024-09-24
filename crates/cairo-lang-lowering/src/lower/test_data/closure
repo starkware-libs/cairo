@@ -39,7 +39,7 @@ End:
   Return(v4, v5, v6)
 
 
-Generated Destruct::destruct lowering for source location:
+Generated core::traits::Destruct::destruct lowering for source location:
     || {
     ^^
 
@@ -62,7 +62,7 @@ End:
   Return(v5, v6, v7)
 
 
-Generated FnOnce::call lowering for source location:
+Generated core::ops::function::FnOnce::call lowering for source location:
     || {
     ^^
 
@@ -160,7 +160,7 @@ End:
   Return(v13)
 
 
-Generated PanicDestruct::panic_destruct lowering for source location:
+Generated core::traits::PanicDestruct::panic_destruct lowering for source location:
     || {
     ^^
 
@@ -183,7 +183,7 @@ End:
   Return(v3)
 
 
-Generated FnOnce::call lowering for source location:
+Generated core::ops::function::FnOnce::call lowering for source location:
     || {
     ^^
 
@@ -256,7 +256,7 @@ End:
   Return()
 
 
-Generated FnOnce::call lowering for source location:
+Generated core::ops::function::FnOnce::call lowering for source location:
     let c =  || a;
              ^^
 

@@ -534,7 +534,7 @@ error: Function not found.
     let _f: u32 = bar(a).unwrap();
                   ^*^
 
-error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: OptionTrait::unwrap and ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::option::OptionTrait::unwrap and core::result::ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:10:26
     let _f: u32 = bar(a).unwrap();
                          ^****^

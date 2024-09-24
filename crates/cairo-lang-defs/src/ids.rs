@@ -408,7 +408,7 @@ impl ImplTypeDefId {
 }
 impl TopLevelLanguageElementId for ImplTypeDefId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
+        format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db))
     }
 }
 
@@ -431,7 +431,7 @@ impl ImplConstantDefId {
 }
 impl TopLevelLanguageElementId for ImplConstantDefId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
+        format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db))
     }
 }
 
@@ -454,7 +454,7 @@ impl ImplImplDefId {
 }
 impl TopLevelLanguageElementId for ImplImplDefId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.impl_def_id(db).name(db), self.name(db))
+        format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db))
     }
 }
 
@@ -566,7 +566,7 @@ impl TraitTypeId {
 }
 impl TopLevelLanguageElementId for TraitTypeId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+        format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
     }
 }
 
@@ -588,7 +588,7 @@ impl TraitConstantId {
 }
 impl TopLevelLanguageElementId for TraitConstantId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+        format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
     }
 }
 
@@ -610,7 +610,7 @@ impl TraitImplId {
 }
 impl TopLevelLanguageElementId for TraitImplId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+        format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
     }
 }
 
@@ -632,26 +632,53 @@ impl TraitFunctionId {
 }
 impl TopLevelLanguageElementId for TraitFunctionId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.trait_id(db).name(db), self.name(db))
+        format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
     }
 }
 
 // --- Struct items ---
-// TODO(spapini): Override full_path for to include parents, for better debug.
-define_top_level_language_element_id!(
+define_named_language_element_id!(
     MemberId,
     MemberLongId,
     ast::Member,
     lookup_intern_member,
     intern_member
 );
-define_top_level_language_element_id!(
+impl MemberId {
+    pub fn struct_id(&self, db: &dyn DefsGroup) -> StructId {
+        let MemberLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let struct_ptr = ast::ItemStructPtr(ptr.untyped().nth_parent(db.upcast(), 2));
+        StructLongId(module_file_id, struct_ptr).intern(db)
+    }
+}
+
+impl TopLevelLanguageElementId for MemberId {
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.struct_id(db).full_path(db), self.name(db))
+    }
+}
+
+// --- Enum variants ---
+define_named_language_element_id!(
     VariantId,
     VariantLongId,
     ast::Variant,
     lookup_intern_variant,
     intern_variant
 );
+impl VariantId {
+    pub fn enum_id(&self, db: &dyn DefsGroup) -> EnumId {
+        let VariantLongId(module_file_id, ptr) = self.lookup_intern(db);
+        let struct_ptr = ast::ItemEnumPtr(ptr.untyped().nth_parent(db.upcast(), 2));
+        EnumLongId(module_file_id, struct_ptr).intern(db)
+    }
+}
+
+impl TopLevelLanguageElementId for VariantId {
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.enum_id(db).full_path(db), self.name(db))
+    }
+}
 
 define_language_element_id_as_enum! {
     /// Id for any variable definition.
