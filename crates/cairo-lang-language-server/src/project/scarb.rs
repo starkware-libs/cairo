@@ -3,7 +3,9 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{bail, ensure, Context, Result};
-use cairo_lang_filesystem::db::{CrateSettings, Edition, ExperimentalFeaturesConfig};
+use cairo_lang_filesystem::db::{
+    CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig,
+};
 use itertools::Itertools;
 use scarb_metadata::{Metadata, PackageMetadata};
 use tracing::{debug, error, warn};
@@ -90,7 +92,18 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                     .map(|cfg_set| cfg_set.union(&AnalysisDatabase::initial_cfg_set_for_deps()))
             };
 
-            let settings = CrateSettings { edition, version, cfg_set, experimental_features };
+            // TODO: Find the specific versions to add.
+            let dependencies = package
+                .map(|p| {
+                    p.dependencies
+                        .iter()
+                        .map(|d| (d.name.clone(), DependencySettings { version: None }))
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            let settings =
+                CrateSettings { edition, version, dependencies, cfg_set, experimental_features };
 
             let custom_main_file_stems = (file_stem != "lib").then_some(vec![file_stem.into()]);
 

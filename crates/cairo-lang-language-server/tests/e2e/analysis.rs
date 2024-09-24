@@ -1,5 +1,6 @@
 use cairo_lang_language_server::lsp;
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 use tower_lsp::lsp_types::{lsp_request, ApplyWorkspaceEditResponse, ExecuteCommandParams};
 
 use crate::support::normalize::normalize;
@@ -52,6 +53,7 @@ fn cairo_projects() {
                         },
                     ),
                     cfg_set: None,
+                    dependencies: {},
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: true,
                         coupons: true,
@@ -64,6 +66,7 @@ fn cairo_projects() {
                     edition: V2023_01,
                     version: None,
                     cfg_set: None,
+                    dependencies: {},
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: false,
                         coupons: false,
@@ -76,6 +79,7 @@ fn cairo_projects() {
                     edition: V2023_01,
                     version: None,
                     cfg_set: None,
+                    dependencies: {},
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: false,
                         coupons: false,
@@ -88,6 +92,7 @@ fn cairo_projects() {
                     edition: V2023_01,
                     version: None,
                     cfg_set: None,
+                    dependencies: {},
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: false,
                         coupons: false,
