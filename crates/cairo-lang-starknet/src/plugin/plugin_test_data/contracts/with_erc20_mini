@@ -9,7 +9,7 @@ cairo_level_tests/contracts/with_erc20_mini.cairo
 //! > generated_cairo_code
 #[starknet::contract]
 mod erc20_mini_contract {
-    use cairo_level_tests::components::erc20_mini;
+    use crate::components::erc20_mini;
     use starknet::ContractAddress;
     use starknet::storage::{StorageTraitMut, StorageTrait};
     #[storage]
@@ -233,7 +233,7 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
-    use cairo_level_tests::components::erc20_mini;
+    use crate::components::erc20_mini;
     use starknet::ContractAddress;
     use starknet::storage::{StorageTraitMut, StorageTrait};
     #[storage]

@@ -1,6 +1,6 @@
 #[starknet::contract]
 mod ownable_mini_contract {
-    use cairo_level_tests::components::ownable_mini;
+    use crate::components::ownable_mini;
     use starknet::ContractAddress;
     use starknet::storage::{
         StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
