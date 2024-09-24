@@ -62,12 +62,6 @@ fn try_handle_simple_panic(
     }
     builder.add_str(&format!("{remainder_size}]))"));
 
-    builder.add_str(&format!(
-        "core::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, 0, '{}', {}])",
-        format_str,
-        format_str.len()
-    ));
-
     true
 }
 
