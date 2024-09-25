@@ -10,7 +10,7 @@ use cairo_lang_semantic::{corelib, GenericArgumentId, TypeId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{try_extract_matches, Intern};
+use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern};
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
@@ -226,10 +226,19 @@ impl<'a> ConstFoldingContext<'a> {
                 self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
             }
             None
-        } else if self.wide_mul_fns.contains(&id) {
+        } else if self.wide_mul_fns.contains(&id)
+            || id == self.bounded_int_add
+            || id == self.bounded_int_sub
+        {
             let lhs = self.as_int(stmt.inputs[0].var_id)?;
             let rhs = self.as_int(stmt.inputs[1].var_id)?;
-            let value = lhs * rhs;
+            let value = if id == self.bounded_int_add {
+                lhs + rhs
+            } else if id == self.bounded_int_sub {
+                lhs - rhs
+            } else {
+                lhs * rhs
+            };
             let output = stmt.outputs[0];
             let ty = self.variables[output].ty;
             let value = ConstValue::Int(value, ty);
@@ -344,6 +353,24 @@ impl<'a> ConstFoldingContext<'a> {
             } else {
                 (None, FlatBlockEnd::Goto(info.arms[1].block_id, Default::default()))
             })
+        } else if id == self.bounded_int_constrain {
+            let input_var = info.inputs[0].var_id;
+            let value = self.as_int(input_var)?;
+            let semantic_id =
+                extract_matches!(info.function.lookup_intern(self.db), FunctionLongId::Semantic);
+            let generic_arg = semantic_id.get_concrete(self.db.upcast()).generic_args[1];
+            let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
+                .lookup_intern(self.db)
+                .into_int()
+                .unwrap();
+            let arm_idx = if value < &constrain_value { 0 } else { 1 };
+            let output = info.arms[arm_idx].var_ids[0];
+            let value = ConstValue::Int(value.clone(), self.variables[output].ty);
+            self.var_info.insert(output, VarInfo::Const(value.clone()));
+            Some((
+                Some(Statement::Const(StatementConst { value, output })),
+                FlatBlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
+            ))
         } else {
             None
         }
@@ -452,6 +479,12 @@ pub struct ConstFoldingLibfuncInfo {
     isub_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions to multiply integers.
     wide_mul_fns: OrderedHashSet<ExternFunctionId>,
+    /// The `bounded_int_add` libfunc.
+    bounded_int_add: ExternFunctionId,
+    /// The `bounded_int_sub` libfunc.
+    bounded_int_sub: ExternFunctionId,
+    /// The `bounded_int_constrain` libfunc.
+    bounded_int_constrain: ExternFunctionId,
     /// The storage access module.
     storage_access_module: ModuleId,
     /// Type ranges.
@@ -464,6 +497,7 @@ impl ConstFoldingLibfuncInfo {
         let box_module = core.submodule("box");
         let into_box = box_module.extern_function_id("into_box");
         let integer_module = core.submodule("integer");
+        let bounded_int_module = core.submodule("internal").submodule("bounded_int");
         let upcast = integer_module.extern_function_id("upcast");
         let downcast = integer_module.extern_function_id("downcast");
         let starknet_module = core.submodule("starknet");
@@ -471,7 +505,10 @@ impl ConstFoldingLibfuncInfo {
         let storage_base_address_from_felt252 =
             storage_access_module.extern_function_id("storage_base_address_from_felt252");
         let nz_fns = OrderedHashSet::<_>::from_iter(chain!(
-            [core.extern_function_id("felt252_is_zero")],
+            [
+                core.extern_function_id("felt252_is_zero"),
+                bounded_int_module.extern_function_id("bounded_int_is_zero")
+            ],
             ["u8", "u16", "u32", "u64", "u128", "u256", "i8", "i16", "i32", "i64", "i128"]
                 .map(|ty| integer_module.extern_function_id(format!("{ty}_is_zero")))
         ));
@@ -493,10 +530,14 @@ impl ConstFoldingLibfuncInfo {
             itypes
                 .map(|ty| integer_module.extern_function_id(format!("{ty}_overflowing_sub_impl"))),
         );
-        let wide_mul_fns = OrderedHashSet::<_>::from_iter(
+        let wide_mul_fns = OrderedHashSet::<_>::from_iter(chain!(
+            [bounded_int_module.extern_function_id("bounded_int_mul")],
             ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64"]
                 .map(|ty| integer_module.extern_function_id(format!("{ty}_wide_mul"))),
-        );
+        ));
+        let bounded_int_add = bounded_int_module.extern_function_id("bounded_int_add");
+        let bounded_int_sub = bounded_int_module.extern_function_id("bounded_int_sub");
+        let bounded_int_constrain = bounded_int_module.extern_function_id("bounded_int_constrain");
         let type_value_ranges = OrderedHashMap::from_iter(
             [
                 ("u8", TypeRange::closed(0, u8::MAX)),
@@ -527,6 +568,9 @@ impl ConstFoldingLibfuncInfo {
             iadd_fns,
             isub_fns,
             wide_mul_fns,
+            bounded_int_add,
+            bounded_int_sub,
+            bounded_int_constrain,
             storage_access_module: storage_access_module.id,
             type_value_ranges,
         }
