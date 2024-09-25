@@ -113,6 +113,8 @@ extern fn bounded_int_constrain<T, const BOUNDARY: felt252, impl H: ConstrainHel
     value: T
 ) -> Result<H::LowT, H::HighT> implicits(RangeCheck) nopanic;
 
+extern fn bounded_int_is_zero<T>(value: T) -> crate::zeroable::IsZeroResult<T> implicits() nopanic;
+
 /// Returns the negation of the given `felt252` value.
 trait NegFelt252<const NUM: felt252> {
     /// The negation of the given `felt252` value.
@@ -216,5 +218,6 @@ impl MulMinusOneNegateHelper<T, impl H: MulHelper<T, MinusOne>> of NegateHelper<
 
 pub use {
     bounded_int_add as add, bounded_int_sub as sub, bounded_int_mul as mul,
-    bounded_int_div_rem as div_rem, bounded_int_constrain as constrain
+    bounded_int_div_rem as div_rem, bounded_int_constrain as constrain,
+    bounded_int_is_zero as is_zero
 };
