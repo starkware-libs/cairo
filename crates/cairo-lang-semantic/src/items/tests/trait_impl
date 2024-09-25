@@ -1169,3 +1169,35 @@ trait MyTrait {
 impl MyImpl of MyTrait {}
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Trait impl of generic trait where the generic argument is a generic type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyImpl::<u32>::I::f()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait<T> {
+    fn f();
+}
+impl OtherImpl<T> of OtherTrait<T> {
+    fn f() {}
+}
+trait MyTrait<T> {
+    impl I: OtherTrait<T>;
+}
+
+impl MyImpl<T> of MyTrait<T> {
+    impl I = OtherImpl<T>;
+}
+
+//! > expected_diagnostics
