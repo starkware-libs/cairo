@@ -1962,7 +1962,7 @@ impl I128PartialOrd of PartialOrd<i128> {
 
 mod signed_div_rem {
     use crate::internal::bounded_int::{
-        BoundedInt, ConstrainHelper, DivRemHelper, NegateHelper, constrain, div_rem
+        BoundedInt, ConstrainHelper, DivRemHelper, NegateHelper, constrain, div_rem, is_zero,
     };
     use super::{upcast, downcast};
 
@@ -2105,10 +2105,9 @@ mod signed_div_rem {
         >;
     pub impl I128DivRem = DivRemImpl<i128>;
 
-    extern fn bounded_int_is_zero<T>(value: T) -> super::IsZeroResult<T> implicits() nopanic;
     pub impl TryIntoNonZero<T> of TryInto<T, NonZero<T>> {
         fn try_into(self: T) -> Option<NonZero<T>> {
-            match bounded_int_is_zero(self) {
+            match is_zero(self) {
                 super::IsZeroResult::Zero => Option::None,
                 super::IsZeroResult::NonZero(x) => Option::Some(x),
             }
