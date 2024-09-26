@@ -3629,15 +3629,13 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::zeroable::NonZero::<core::integer::i8>) <- NonZero(-5)
+  (v1: core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>) <- NonZero(-5)
 End:
-  Match(match core::internal::bounded_int::bounded_int_constrain::<core::zeroable::NonZero::<core::integer::i8>, 0, core::internal::bounded_int::NonZeroConstrainHelper::<core::integer::i8, 0, core::internal::bounded_int::constrain0::Impl::<core::integer::i8, -128, 127>>>(v0) {
-    Result::Ok(v1) => blk1,
-    Result::Err(v2) => blk2,
-  })
+  Goto(blk1, {})
 
 blk1:
 Statements:
-  (v3: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>) <- core::box::into_box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>(v1)
+  (v3: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>) <- NonZero(-5).into_box()
   (v4: core::result::Result::<core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>, core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>>) <- Result::Ok(v3)
 End:
   Goto(blk3, {v4 -> v5})
@@ -3714,11 +3712,9 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::zeroable::NonZero::<core::integer::i8>) <- NonZero(5)
+  (v2: core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>) <- NonZero(5)
 End:
-  Match(match core::internal::bounded_int::bounded_int_constrain::<core::zeroable::NonZero::<core::integer::i8>, 0, core::internal::bounded_int::NonZeroConstrainHelper::<core::integer::i8, 0, core::internal::bounded_int::constrain0::Impl::<core::integer::i8, -128, 127>>>(v0) {
-    Result::Ok(v1) => blk1,
-    Result::Err(v2) => blk2,
-  })
+  Goto(blk2, {})
 
 blk1:
 Statements:
@@ -3729,7 +3725,7 @@ End:
 
 blk2:
 Statements:
-  (v6: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>) <- core::box::into_box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>(v2)
+  (v6: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>) <- NonZero(5).into_box()
   (v7: core::result::Result::<core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>, core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>>) <- Result::Err(v6)
 End:
   Goto(blk3, {v7 -> v5})

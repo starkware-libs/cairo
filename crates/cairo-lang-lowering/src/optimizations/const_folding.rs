@@ -230,7 +230,7 @@ impl<'a> ConstFoldingContext<'a> {
             || id == self.bounded_int_add
             || id == self.bounded_int_sub
         {
-            let lhs = self.as_int(stmt.inputs[0].var_id)?;
+            let (lhs, nz_ty) = self.as_int_ex(stmt.inputs[0].var_id)?;
             let rhs = self.as_int(stmt.inputs[1].var_id)?;
             let value = if id == self.bounded_int_add {
                 lhs + rhs
@@ -240,8 +240,10 @@ impl<'a> ConstFoldingContext<'a> {
                 lhs * rhs
             };
             let output = stmt.outputs[0];
-            let ty = self.variables[output].ty;
-            let value = ConstValue::Int(value, ty);
+            let mut value = ConstValue::Int(value, self.variables[output].ty);
+            if nz_ty {
+                value = ConstValue::NonZero(Box::new(value));
+            }
             self.var_info.insert(output, VarInfo::Const(value.clone()));
             Some(Statement::Const(StatementConst { value, output }))
         } else if id == self.storage_base_address_from_felt252 {
@@ -355,7 +357,7 @@ impl<'a> ConstFoldingContext<'a> {
             })
         } else if id == self.bounded_int_constrain {
             let input_var = info.inputs[0].var_id;
-            let value = self.as_int(input_var)?;
+            let (value, nz_ty) = self.as_int_ex(input_var)?;
             let semantic_id =
                 extract_matches!(info.function.lookup_intern(self.db), FunctionLongId::Semantic);
             let generic_arg = semantic_id.get_concrete(self.db.upcast()).generic_args[1];
@@ -365,7 +367,10 @@ impl<'a> ConstFoldingContext<'a> {
                 .unwrap();
             let arm_idx = if value < &constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
-            let value = ConstValue::Int(value.clone(), self.variables[output].ty);
+            let mut value = ConstValue::Int(value.clone(), self.variables[output].ty);
+            if nz_ty {
+                value = ConstValue::NonZero(Box::new(value));
+            }
             self.var_info.insert(output, VarInfo::Const(value.clone()));
             Some((
                 Some(Statement::Const(StatementConst { value, output })),
@@ -381,9 +386,25 @@ impl<'a> ConstFoldingContext<'a> {
         try_extract_matches!(self.var_info.get(&var_id)?, VarInfo::Const)
     }
 
+    /// Return the const value as a int if it exists and is an integer, additionally, if it is of a
+    /// non-zero type.
+    fn as_int_ex(&self, var_id: VariableId) -> Option<(&BigInt, bool)> {
+        match self.as_const(var_id)? {
+            ConstValue::Int(value, _) => Some((value, false)),
+            ConstValue::NonZero(const_value) => {
+                if let ConstValue::Int(value, _) = const_value.as_ref() {
+                    Some((value, true))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
     /// Return the const value as a int if it exists and is an integer.
     fn as_int(&self, var_id: VariableId) -> Option<&BigInt> {
-        if let ConstValue::Int(value, _) = self.as_const(var_id)? { Some(value) } else { None }
+        Some(self.as_int_ex(var_id)?.0)
     }
 
     /// Replaces the inputs in place if they are in the var_info map.
