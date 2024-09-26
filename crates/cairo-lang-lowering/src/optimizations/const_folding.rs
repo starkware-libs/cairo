@@ -333,6 +333,16 @@ impl<'a> ConstFoldingContext<'a> {
                     FlatBlockEnd::Goto(arm.block_id, Default::default()),
                 )
             })
+        } else if self.eq_fns.contains(&id) {
+            let lhs = self.as_int(info.inputs[0].var_id)?;
+            let rhs = self.as_int(info.inputs[1].var_id)?;
+            Some((
+                None,
+                FlatBlockEnd::Goto(
+                    info.arms[if lhs == rhs { 1 } else { 0 }].block_id,
+                    Default::default(),
+                ),
+            ))
         } else if self.uadd_fns.contains(&id)
             || self.usub_fns.contains(&id)
             || self.iadd_fns.contains(&id)
@@ -514,6 +524,8 @@ pub struct ConstFoldingLibfuncInfo {
     storage_base_address_from_felt252: ExternFunctionId,
     /// The set of functions that check if a number is zero.
     nz_fns: OrderedHashSet<ExternFunctionId>,
+    /// The set of functions that check if a numbers are equal.
+    eq_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions to add unsigned ints.
     uadd_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions to subtract unsigned ints.
@@ -561,6 +573,9 @@ impl ConstFoldingLibfuncInfo {
         ));
         let utypes = ["u8", "u16", "u32", "u64", "u128"];
         let itypes = ["i8", "i16", "i32", "i64", "i128"];
+        let eq_fns = OrderedHashSet::<_>::from_iter(
+            chain!(utypes, itypes).map(|ty| integer_module.extern_function_id(format!("{ty}_eq"))),
+        );
         let uadd_fns = OrderedHashSet::<_>::from_iter(
             utypes.map(|ty| integer_module.extern_function_id(format!("{ty}_overflowing_add"))),
         );
@@ -614,6 +629,7 @@ impl ConstFoldingLibfuncInfo {
             downcast,
             storage_base_address_from_felt252,
             nz_fns,
+            eq_fns,
             uadd_fns,
             usub_fns,
             iadd_fns,
