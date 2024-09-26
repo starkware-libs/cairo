@@ -707,6 +707,7 @@ dependencies = [
  "itertools 0.12.1",
  "log",
  "num-bigint",
+ "num-integer",
  "num-traits 0.2.19",
  "pretty_assertions",
  "rust-analyzer-salsa",
