@@ -3332,7 +3332,7 @@ pub fn compute_statement_semantic(
         .resolver
         .data
         .feature_config
-        .override_with(extract_item_feature_config(syntax_db, &syntax, ctx.diagnostics));
+        .override_with(extract_item_feature_config(db, &syntax, ctx.diagnostics));
     let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let rhs_syntax = &let_syntax.rhs(syntax_db);

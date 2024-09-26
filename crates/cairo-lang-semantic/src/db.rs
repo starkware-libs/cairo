@@ -1532,6 +1532,10 @@ pub trait SemanticGroup:
     #[salsa::input]
     fn analyzer_plugins(&self) -> Vec<Arc<dyn AnalyzerPlugin>>;
 
+    /// Returns the set of `allow` that were declared as by a plugin.
+    /// An allow that is not in this set will be handled as an unknown allow.
+    fn declared_allows(&self) -> Arc<OrderedHashSet<String>>;
+
     // Helpers for language server.
     // ============================
     /// Returns all methods in a module that match the given type filter.
@@ -1672,6 +1676,12 @@ fn module_semantic_diagnostics(
     }
 
     Ok(diagnostics.build())
+}
+
+fn declared_allows(db: &dyn SemanticGroup) -> Arc<OrderedHashSet<String>> {
+    Arc::new(OrderedHashSet::from_iter(
+        db.analyzer_plugins().into_iter().flat_map(|plugin| plugin.declared_allows()),
+    ))
 }
 
 /// Adds diagnostics for unused items in a module.
