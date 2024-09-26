@@ -2777,9 +2777,16 @@ pub fn impl_impl_concrete_trait(
     db: &dyn SemanticGroup,
     impl_impl_id: ImplImplId,
 ) -> Maybe<ConcreteTraitId> {
+    let concrete_trait_impl = ConcreteTraitImplId::new(
+        db,
+        impl_impl_id.impl_id.concrete_trait(db)?,
+        impl_impl_id.trait_impl_id,
+    );
     let substitution = GenericSubstitution::from_impl(impl_impl_id.impl_id());
-    let impl_concrete_trait_id = db.trait_impl_concrete_trait(impl_impl_id.trait_impl_id())?;
-    SubstitutionRewriter { db, substitution: &substitution }.rewrite(impl_concrete_trait_id)
+
+    db.concrete_trait_impl_concrete_trait(concrete_trait_impl).and_then(|concrete_trait_id| {
+        SubstitutionRewriter { db, substitution: &substitution }.rewrite(concrete_trait_id)
+    })
 }
 
 // === Impl Function Declaration ===
