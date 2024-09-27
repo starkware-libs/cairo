@@ -203,19 +203,16 @@ pub fn extract_item_feature_config(
         ALLOW_ATTR,
         || SemanticDiagnosticKind::UnsupportedAllowAttrArguments,
         diagnostics,
-        |value| {
-            let allow_name = value.as_syntax_node().get_text_without_trivia(syntax_db);
-            match allow_name.as_str() {
-                "deprecated" => {
-                    config.allow_deprecated = true;
-                    true
-                }
-                "unused_imports" => {
-                    config.allow_unused_imports = true;
-                    true
-                }
-                _ => db.declared_allows().contains(allow_name.as_str()),
+        |value| match value.as_syntax_node().get_text_without_trivia(syntax_db).as_str() {
+            "deprecated" => {
+                config.allow_deprecated = true;
+                true
             }
+            "unused_imports" => {
+                config.allow_unused_imports = true;
+                true
+            }
+            other => db.declared_allows().contains(other),
         },
     );
     config
