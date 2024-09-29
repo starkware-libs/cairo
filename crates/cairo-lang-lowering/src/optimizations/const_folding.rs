@@ -235,24 +235,31 @@ impl<'a> ConstFoldingContext<'a> {
                 self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
             }
             None
-        } else if self.wide_mul_fns.contains(&id)
-            || id == self.bounded_int_add
-            || id == self.bounded_int_sub
-        {
-            let (lhs, nz_ty) = self.as_int_ex(stmt.inputs[0].var_id)?;
-            let rhs = self.as_int(stmt.inputs[1].var_id)?;
-            let value = if id == self.bounded_int_add {
-                lhs + rhs
-            } else if id == self.bounded_int_sub {
-                lhs - rhs
-            } else {
-                lhs * rhs
-            };
-            Some((self.propagate_const_and_get_statement(value, stmt.outputs[0], nz_ty), None))
-        } else if self.div_rem_fns.contains(&id) {
+        } else if self.wide_mul_fns.contains(&id) {
+            let lhs = self.as_int_ex(stmt.inputs[0].var_id);
+            let rhs = self.as_int(stmt.inputs[1].var_id);
+            let output = stmt.outputs[0];
+            if lhs.map(|(v, _)| v.is_zero()).unwrap_or_default()
+                || rhs.map(Zero::is_zero).unwrap_or_default()
+            {
+                return Some((self.propagate_zero_and_get_statement(output), None));
+            }
+            let (lhs, nz_ty) = lhs?;
+            Some((self.propagate_const_and_get_statement(lhs * rhs?, stmt.outputs[0], nz_ty), None))
+        } else if id == self.bounded_int_add || id == self.bounded_int_sub {
             let lhs = self.as_int(stmt.inputs[0].var_id)?;
             let rhs = self.as_int(stmt.inputs[1].var_id)?;
-            let (q, r) = lhs.div_rem(rhs);
+            let value = if id == self.bounded_int_add { lhs + rhs } else { lhs - rhs };
+            Some((self.propagate_const_and_get_statement(value, stmt.outputs[0], false), None))
+        } else if self.div_rem_fns.contains(&id) {
+            let lhs = self.as_int(stmt.inputs[0].var_id);
+            if lhs.map(Zero::is_zero).unwrap_or_default() {
+                let q = self.propagate_zero_and_get_statement(stmt.outputs[0]);
+                let r = self.propagate_zero_and_get_statement(stmt.outputs[1]);
+                return Some((q, Some(r)));
+            }
+            let rhs = self.as_int(stmt.inputs[1].var_id)?;
+            let (q, r) = lhs?.div_rem(rhs);
             let q_output = stmt.outputs[0];
             let q_value = ConstValue::Int(q, self.variables[q_output].ty);
             self.var_info.insert(q_output, VarInfo::Const(q_value.clone()));
@@ -312,6 +319,11 @@ impl<'a> ConstFoldingContext<'a> {
         StatementConst { value, output }
     }
 
+    /// Adds 0 const to `var_info` and return a const statement for it.
+    fn propagate_zero_and_get_statement(&mut self, output: VariableId) -> StatementConst {
+        self.propagate_const_and_get_statement(BigInt::zero(), output, false)
+    }
+
     /// Handles the end of an extern block.
     /// Returns None if no additional changes are required.
     /// If changes are required, returns a possible additional const-statement to the block, as well
@@ -354,15 +366,26 @@ impl<'a> ConstFoldingContext<'a> {
             ))
         } else if self.uadd_fns.contains(&id)
             || self.usub_fns.contains(&id)
+            || self.diff_fns.contains(&id)
             || self.iadd_fns.contains(&id)
             || self.isub_fns.contains(&id)
         {
-            let lhs = self.as_int(info.inputs[0].var_id)?;
-            let rhs = self.as_int(info.inputs[1].var_id)?;
+            let rhs = self.as_int(info.inputs[1].var_id);
+            if rhs.map(Zero::is_zero).unwrap_or_default() && !self.diff_fns.contains(&id) {
+                let arm = &info.arms[0];
+                self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[0]));
+                return Some((None, FlatBlockEnd::Goto(arm.block_id, Default::default())));
+            }
+            let lhs = self.as_int(info.inputs[0].var_id);
             let value = if self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id) {
-                lhs + rhs
+                if lhs.map(Zero::is_zero).unwrap_or_default() {
+                    let arm = &info.arms[0];
+                    self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[1]));
+                    return Some((None, FlatBlockEnd::Goto(arm.block_id, Default::default())));
+                }
+                lhs? + rhs?
             } else {
-                lhs - rhs
+                lhs? - rhs?
             };
             let ty = self.variables[info.arms[0].var_ids[0]].ty;
             let range = self.type_value_ranges.get(&ty)?;
@@ -534,6 +557,8 @@ pub struct ConstFoldingLibfuncInfo {
     uadd_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions to subtract unsigned ints.
     usub_fns: OrderedHashSet<ExternFunctionId>,
+    /// The set of functions to get the difference of signed ints.
+    diff_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions to add signed ints.
     iadd_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions to subtract signed ints.
@@ -583,11 +608,12 @@ impl ConstFoldingLibfuncInfo {
         let uadd_fns = OrderedHashSet::<_>::from_iter(
             utypes.map(|ty| integer_module.extern_function_id(format!("{ty}_overflowing_add"))),
         );
-        let usub_fns = OrderedHashSet::<_>::from_iter(chain!(
+        let usub_fns = OrderedHashSet::<_>::from_iter(
             utypes.map(|ty| integer_module.extern_function_id(format!("{ty}_overflowing_sub"))),
-            // Considering `i*_diff` as `usub` operations - as they act exactly the same.
+        );
+        let diff_fns = OrderedHashSet::<_>::from_iter(
             itypes.map(|ty| integer_module.extern_function_id(format!("{ty}_diff"))),
-        ));
+        );
         let iadd_fns = OrderedHashSet::<_>::from_iter(
             itypes
                 .map(|ty| integer_module.extern_function_id(format!("{ty}_overflowing_add_impl"))),
@@ -636,6 +662,7 @@ impl ConstFoldingLibfuncInfo {
             eq_fns,
             uadd_fns,
             usub_fns,
+            diff_fns,
             iadd_fns,
             isub_fns,
             wide_mul_fns,
