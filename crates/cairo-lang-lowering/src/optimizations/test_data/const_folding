@@ -239,7 +239,7 @@ Parameters: v0: core::integer::u8
 blk0 (root):
 Statements:
   (v1: core::integer::u8) <- 4
-  (v2: core::zeroable::NonZero::<core::integer::u8>) <- 4
+  (v2: core::zeroable::NonZero::<core::integer::u8>) <- NonZero(4)
 End:
   Goto(blk2, {})
 
@@ -477,7 +477,7 @@ Parameters: v0: core::integer::u256
 blk0 (root):
 Statements:
   (v1: core::integer::u256) <- { 4: core::integer::u128, 0: core::integer::u128 }
-  (v2: core::zeroable::NonZero::<core::integer::u256>) <- { 4: core::integer::u128, 0: core::integer::u128 }
+  (v2: core::zeroable::NonZero::<core::integer::u256>) <- NonZero({ 4: core::integer::u128, 0: core::integer::u128 })
 End:
   Goto(blk2, {})
 
@@ -719,7 +719,7 @@ blk0 (root):
 Statements:
   (v1: core::integer::u64) <- 1
   (v2: core::integer::u128) <- 1
-  (v3: core::zeroable::NonZero::<core::integer::u128>) <- 1
+  (v3: core::zeroable::NonZero::<core::integer::u128>) <- NonZero(1)
 End:
   Goto(blk2, {})
 
@@ -3285,7 +3285,7 @@ Parameters: v0: core::integer::i8
 blk0 (root):
 Statements:
   (v1: core::integer::i8) <- 4
-  (v2: core::zeroable::NonZero::<core::integer::i8>) <- 4
+  (v2: core::zeroable::NonZero::<core::integer::i8>) <- NonZero(4)
 End:
   Goto(blk2, {})
 
