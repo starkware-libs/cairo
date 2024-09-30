@@ -22,18 +22,23 @@ use itertools::Itertools;
 
 /// Salsa databases configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
-static SHARED_DB_WITH_GAS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
+static SHARED_DB_WITH_GAS_NO_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
     db.set_optimization_config(Arc::new(
-        OptimizationConfig::default().with_minimal_movable_functions(),
+        OptimizationConfig::default().with_skip_const_folding(true),
     ));
     Mutex::new(db)
 });
-static SHARED_DB_NO_GAS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
+static SHARED_DB_NO_GAS_NO_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
     db.set_optimization_config(Arc::new(
-        OptimizationConfig::default().with_minimal_movable_functions(),
+        OptimizationConfig::default().with_skip_const_folding(true),
     ));
+    Mutex::new(db)
+});
+static SHARED_DB_WITH_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
+    let mut db = RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
+    db.set_optimization_config(Arc::new(OptimizationConfig::default()));
     Mutex::new(db)
 });
 
@@ -58,7 +63,6 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         builtin_costs: "builtin_costs",
         casts: "casts",
         circuit: "circuit",
-        consts: "consts",
         coupon: "coupon",
         ec: "ec",
         enum_: "enum",
@@ -98,6 +102,15 @@ cairo_lang_test_utils::test_file_test_with_runner!(
 );
 
 cairo_lang_test_utils::test_file_test_with_runner!(
+    libfunc_e2e_withopts,
+    "e2e_test_data/libfuncs",
+    {
+        consts: "consts",
+    },
+    WithOptsE2ETestRunner
+);
+
+cairo_lang_test_utils::test_file_test_with_runner!(
     starknet_libfunc_e2e,
     "e2e_test_data/libfuncs/starknet",
     {
@@ -133,6 +146,21 @@ impl TestFileRunner for SmallE2ETestRunner {
 }
 
 #[derive(Default)]
+struct WithOptsE2ETestRunner;
+impl TestFileRunner for WithOptsE2ETestRunner {
+    fn run(
+        &mut self,
+        inputs: &OrderedHashMap<String, String>,
+        _args: &OrderedHashMap<String, String>,
+    ) -> TestRunnerResult {
+        run_e2e_test(
+            inputs,
+            E2eTestParams { skip_optimization_passes: false, ..Default::default() },
+        )
+    }
+}
+
+#[derive(Default)]
 struct SmallE2ETestRunnerSkipAddGas;
 impl TestFileRunner for SmallE2ETestRunnerSkipAddGas {
     fn run(
@@ -152,7 +180,14 @@ impl TestFileRunner for SmallE2ETestRunnerMetadataComputation {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(inputs, E2eTestParams { add_withdraw_gas: false, metadata_computation: true })
+        run_e2e_test(
+            inputs,
+            E2eTestParams {
+                add_withdraw_gas: false,
+                metadata_computation: true,
+                skip_optimization_passes: true,
+            },
+        )
     }
 }
 
@@ -165,12 +200,15 @@ struct E2eTestParams {
     /// Argument for `run_e2e_test` that controls whether to add metadata computation information
     /// to the test outputs.
     metadata_computation: bool,
+
+    /// Argument for `run_e2e_test` that controls whether to skip optimization passes.
+    skip_optimization_passes: bool,
 }
 
 /// Implements default for `E2eTestParams`.
 impl Default for E2eTestParams {
     fn default() -> Self {
-        Self { add_withdraw_gas: true, metadata_computation: false }
+        Self { add_withdraw_gas: true, metadata_computation: false, skip_optimization_passes: true }
     }
 }
 
@@ -179,8 +217,13 @@ fn run_e2e_test(
     inputs: &OrderedHashMap<String, String>,
     params: E2eTestParams,
 ) -> TestRunnerResult {
-    let mut locked_db =
-        test_lock(if params.add_withdraw_gas { &SHARED_DB_WITH_GAS } else { &SHARED_DB_NO_GAS });
+    let mut locked_db = test_lock(if !params.skip_optimization_passes {
+        &SHARED_DB_WITH_OPTS
+    } else if params.add_withdraw_gas {
+        &SHARED_DB_WITH_GAS_NO_OPTS
+    } else {
+        &SHARED_DB_NO_GAS_NO_OPTS
+    });
     // Parse code and create semantic model.
     let test_module = setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
     let db = locked_db.snapshot();
