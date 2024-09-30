@@ -48,30 +48,40 @@ pub enum TestEnum {
 // yup
 pub extern type S<T>;
 
-//! > Item #1
+//! > Item signature #1
 
-//! > Item #2
+//! > Item documentation #1
+
+//! > Item signature #2
 const a: u32 = 123;
+
+//! > Item documentation #2
 Const comment
 
-//! > Item #3
+//! > Item signature #3
 #[derive(Drop)]
 #[derive(Clone)]
 pub struct Pair<T, U> {
     first: T,
     second: U,
 }
+
+//! > Item documentation #3
 Test Pair
 
-//! > Item #4
+//! > Item signature #4
 first: T
+
+//! > Item documentation #4
 first field
 
-//! > Item #5
+//! > Item signature #5
 second: U
+
+//! > Item documentation #5
 second field
 
-//! > Item #6
+//! > Item signature #6
 #[derive(Clone)]
 #[derive(Drop)]
 struct Pair2<T, U> {
@@ -79,28 +89,42 @@ struct Pair2<T, U> {
     second: U,
 }
 
-//! > Item #7
+//! > Item documentation #6
+
+//! > Item signature #7
 pub first: T
+
+//! > Item documentation #7
 First field
 
-//! > Item #8
+//! > Item signature #8
 second: U
+
+//! > Item documentation #8
 Second field
 
-//! > Item #9
+//! > Item signature #9
 pub enum TestEnum {
     Var1,
     Var2
 }
 
-//! > Item #10
+//! > Item documentation #9
+
+//! > Item signature #10
 Var1
+
+//! > Item documentation #10
 First variant
 
-//! > Item #11
+//! > Item signature #11
 Var2
+
+//! > Item documentation #11
 Second variant
 
-//! > Item #12
+//! > Item signature #12
 pub extern type S<T>
+
+//! > Item documentation #12
 extern type comment

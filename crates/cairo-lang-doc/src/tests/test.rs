@@ -226,9 +226,10 @@ fn insert_doc_to_test_output(
     documentation: Option<String>,
     signature: String,
 ) {
+    output.insert("Item signature #".to_string() + &item_number.to_string(), signature);
     output.insert(
-        "Item #".to_string() + &item_number.to_string(),
-        format!("{}\n{}", signature, documentation.unwrap_or_default()),
+        "Item documentation #".to_string() + &item_number.to_string(),
+        documentation.unwrap_or_default(),
     );
     *item_number += 1;
 }
