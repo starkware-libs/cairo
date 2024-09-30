@@ -3,6 +3,7 @@ use std::fmt::Write;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, Severity};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
@@ -122,16 +123,31 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Returns the crate ids for which the diagnostics will be checked.
-    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateId> {
+    fn crates_of_interest(&self, db: &dyn FilesGroup) -> Vec<CrateId> {
         if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
     }
 
-    /// Checks if there are diagnostics and reports them to the provided callback as strings.
+    /// Checks if there are diagnostics.
     /// Returns `true` if diagnostics were found.
     pub fn check(&mut self, db: &dyn LoweringGroup) -> bool {
         let mut found_diagnostics = false;
+        found_diagnostics |= self.check_common(db.upcast());
+        found_diagnostics |= self.check_lowering_group(db);
+        found_diagnostics
+    }
 
-        let crates = self.crates_of_interest(db);
+    /// Checks if there are diagnostics.
+    /// Ignores all the diagnostics related to LoweringGroup.
+    /// Returns `true` if diagnostics were found.
+    pub fn check_without_lowering_group(&mut self, db: &dyn SemanticGroup) -> bool {
+        self.check_common(db)
+    }
+
+    /// Checks if there are diagnostics and reports them to the provided callback as strings.
+    fn check_common(&mut self, db: &dyn SemanticGroup) -> bool {
+        let mut found_diagnostics = false;
+
+        let crates = self.crates_of_interest(db.upcast());
         for crate_id in &crates {
             let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(*crate_id)) else {
                 found_diagnostics = true;
@@ -176,10 +192,22 @@ impl<'a> DiagnosticsReporter<'a> {
 
                 if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
                     found_diagnostics |=
-                        self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
+                        self.check_diag_group(db.elongate(), group, ignore_warnings_in_crate);
                 }
+            }
+        }
+        found_diagnostics
+    }
 
-                if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
+    /// Checks if there are any diagnostics related to LoweringGroup.
+    fn check_lowering_group(&mut self, db: &dyn LoweringGroup) -> bool {
+        let mut found_diagnostics = false;
+        let crates = self.crates_of_interest(db.upcast());
+        for crate_id in &crates {
+            let ignore_warnings_in_crate = self.ignore_warnings_crate_ids.contains(crate_id);
+            let modules = db.crate_modules(*crate_id);
+            for module_id in modules.iter() {
+                if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
                     found_diagnostics |=
                         self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
                 }
@@ -213,6 +241,16 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Returns `Err` if diagnostics were found.
     pub fn ensure(&mut self, db: &dyn LoweringGroup) -> Result<(), DiagnosticsError> {
         if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
+    }
+
+    /// Checks if there are diagnostics and reports them to the provided callback as strings.
+    /// Ignores all the diagnostics related to LoweringGroup.
+    /// Returns `Err` if diagnostics were found.
+    pub fn ensure_without_lowering_group(
+        &mut self,
+        db: &dyn SemanticGroup,
+    ) -> Result<(), DiagnosticsError> {
+        if self.check_common(db) { Err(DiagnosticsError) } else { Ok(()) }
     }
 
     /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
