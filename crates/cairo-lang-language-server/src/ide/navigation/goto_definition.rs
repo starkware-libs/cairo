@@ -9,11 +9,11 @@ use crate::lang::inspect::defs::find_definition;
 use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
 
 /// Get the definition location of a symbol at a given text document position.
-// #[tracing::instrument(
-//     level = "debug",
-//     skip_all,
-//     fields(uri = %params.text_document_position_params.text_document.uri)
-// )]
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(uri = %params.text_document_position_params.text_document.uri.as_str())
+)]
 pub fn goto_definition(
     params: GotoDefinitionParams,
     db: &AnalysisDatabase,

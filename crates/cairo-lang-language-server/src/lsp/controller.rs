@@ -104,7 +104,7 @@ impl SyncNotificationHandler for Cancel {
 }
 
 impl SyncNotificationHandler for DidChangeTextDocument {
-    // #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri.as_str()))]
     fn run(
         state: &mut State,
         notifier: Notifier,
@@ -174,7 +174,7 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
 }
 
 impl SyncNotificationHandler for DidCloseTextDocument {
-    // #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri.as_str()))]
     fn run(
         state: &mut State,
         notifier: Notifier,
@@ -192,7 +192,7 @@ impl SyncNotificationHandler for DidCloseTextDocument {
 }
 
 impl SyncNotificationHandler for DidOpenTextDocument {
-    // #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri.as_str()))]
     fn run(
         state: &mut State,
         notifier: Notifier,
@@ -227,7 +227,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
 }
 
 impl SyncNotificationHandler for DidSaveTextDocument {
-    // #[tracing::instrument(level = "debug", skip_all, fields(uri = ?%params.text_document.uri))]
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri.as_str()))]
     fn run(
         state: &mut State,
         _notifier: Notifier,

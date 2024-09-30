@@ -9,11 +9,11 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 
 /// Format a whole document.
-// #[tracing::instrument(
-//     level = "debug",
-//     skip_all,
-//     fields(uri = %params.text_document.uri)
-// )]
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(uri = %params.text_document.uri.as_str())
+)]
 pub fn format(params: DocumentFormattingParams, db: &AnalysisDatabase) -> Option<Vec<TextEdit>> {
     let file_uri = params.text_document.uri;
     let file = db.file_for_uri(&file_uri)?;

@@ -15,11 +15,11 @@ use crate::lang::lsp::{LsProtoGroup, ToCairo};
 mod completions;
 
 /// Compute completion items at a given cursor position.
-// #[tracing::instrument(
-//     level = "debug",
-//     skip_all,
-//     fields(uri = %params.text_document_position.text_document.uri)
-// )]
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(uri = %params.text_document_position.text_document.uri.as_str())
+)]
 pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<CompletionResponse> {
     let text_document_position = params.text_document_position;
     let file_id = db.file_for_uri(&text_document_position.text_document.uri)?;

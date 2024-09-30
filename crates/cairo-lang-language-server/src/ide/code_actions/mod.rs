@@ -14,11 +14,11 @@ mod rename_unused_variable;
 
 /// Compute commands for a given text document and range. These commands are typically code fixes to
 /// either fix problems or to beautify/refactor code.
-// #[tracing::instrument(
-//     level = "debug",
-//     skip_all,
-//     fields(uri = %params.text_document.uri)
-// )]
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(uri = %params.text_document.uri.as_str())
+)]
 pub fn code_actions(params: CodeActionParams, db: &AnalysisDatabase) -> Option<CodeActionResponse> {
     let mut actions = Vec::with_capacity(params.context.diagnostics.len());
     let file_id = db.file_for_uri(&params.text_document.uri)?;
