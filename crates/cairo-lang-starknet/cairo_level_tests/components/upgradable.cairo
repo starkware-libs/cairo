@@ -8,7 +8,7 @@ pub mod upgradable {
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use starknet::ClassHash;
     use starknet::syscalls::replace_class_syscall;
-    use cairo_level_tests::components::ownable::ownable as ownable_comp;
+    use crate::components::ownable::ownable as ownable_comp;
     use ownable_comp::OwnableHelperImpl;
     #[storage]
     pub struct Storage {

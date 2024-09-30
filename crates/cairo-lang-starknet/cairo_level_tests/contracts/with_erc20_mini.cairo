@@ -1,6 +1,6 @@
 #[starknet::contract]
 mod erc20_mini_contract {
-    use cairo_level_tests::components::erc20_mini;
+    use crate::components::erc20_mini;
     use starknet::ContractAddress;
     use starknet::storage::{StorageTraitMut, StorageTrait};
     #[storage]

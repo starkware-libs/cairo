@@ -53,6 +53,7 @@ use super::impl_alias::{
 };
 use super::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId,
+    ConcreteTraitImplId,
 };
 use super::type_aliases::{
     type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
@@ -2481,8 +2482,6 @@ pub fn priv_impl_impl_semantic_data(
     let mut resolver =
         Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
 
-    let trait_impl_id =
-        validate_impl_item_impl(db, &mut diagnostics, impl_impl_def_id, impl_impl_def_ast);
     let mut impl_data = if in_cycle {
         impl_alias_semantic_data_cycle_helper(
             db,
@@ -2496,32 +2495,14 @@ pub fn priv_impl_impl_semantic_data(
 
     diagnostics.extend(mem::take(&mut impl_data.diagnostics));
 
-    let trait_impl_concrete_trait = trait_impl_id
-        .and_then(|id| db.trait_impl_concrete_trait(id))
-        .and_then(|concrete_trait_id| {
-            let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
-            SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
-                .rewrite(concrete_trait_id)
-        });
-    let resolved_impl_concrete_trait =
-        impl_data.resolved_impl.and_then(|imp| imp.concrete_trait(db));
-    // used an IIFE to allow the use of the `?` operator.
-    let _ = (|| -> Result<(), DiagnosticAdded> {
-        if resolver
-            .inference()
-            .conform_traits(resolved_impl_concrete_trait?, trait_impl_concrete_trait?)
-            .is_err()
-        {
-            diagnostics.report(
-                impl_impl_def_ast,
-                TraitMismatch {
-                    expected_trt: trait_impl_concrete_trait?,
-                    actual_trt: resolved_impl_concrete_trait?,
-                },
-            );
-        }
-        Ok(())
-    })();
+    let trait_impl_id = validate_impl_item_impl(
+        db,
+        &mut diagnostics,
+        impl_impl_def_id,
+        impl_impl_def_ast,
+        &impl_data,
+        &mut resolver,
+    );
 
     Ok(ImplItemImplData { impl_data, trait_impl_id, diagnostics: diagnostics.build() })
 }
@@ -2563,6 +2544,8 @@ fn validate_impl_item_impl(
     diagnostics: &mut SemanticDiagnostics,
     impl_impl_def_id: ImplImplDefId,
     impl_impl_ast: &ast::ItemImplAlias,
+    impl_data: &ImplAliasData,
+    resolver: &mut Resolver<'_>,
 ) -> Maybe<TraitImplId> {
     let syntax_db = db.upcast();
     let defs_db = db.upcast();
@@ -2591,6 +2574,36 @@ fn validate_impl_item_impl(
             GenericsNotSupportedInItem { scope: "Impl".into(), item_kind: "impl".into() },
         );
     }
+
+    let concrete_trait_impl = ConcreteTraitImplId::new(db, concrete_trait_id, trait_impl_id);
+    let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
+
+    let concrete_trait_impl_concrete_trait =
+        db.concrete_trait_impl_concrete_trait(concrete_trait_impl).and_then(|concrete_trait_id| {
+            SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
+                .rewrite(concrete_trait_id)
+        });
+
+    let resolved_impl_concrete_trait =
+        impl_data.resolved_impl.and_then(|imp| imp.concrete_trait(db));
+    // used an IIFE to allow the use of the `?` operator.
+    let _ = (|| -> Result<(), DiagnosticAdded> {
+        if resolver
+            .inference()
+            .conform_traits(resolved_impl_concrete_trait?, concrete_trait_impl_concrete_trait?)
+            .is_err()
+        {
+            diagnostics.report(
+                impl_impl_ast,
+                TraitMismatch {
+                    expected_trt: concrete_trait_impl_concrete_trait?,
+                    actual_trt: resolved_impl_concrete_trait?,
+                },
+            );
+        }
+        Ok(())
+    })();
+
     Ok(trait_impl_id)
 }
 
@@ -2764,9 +2777,16 @@ pub fn impl_impl_concrete_trait(
     db: &dyn SemanticGroup,
     impl_impl_id: ImplImplId,
 ) -> Maybe<ConcreteTraitId> {
+    let concrete_trait_impl = ConcreteTraitImplId::new(
+        db,
+        impl_impl_id.impl_id.concrete_trait(db)?,
+        impl_impl_id.trait_impl_id,
+    );
     let substitution = GenericSubstitution::from_impl(impl_impl_id.impl_id());
-    let impl_concrete_trait_id = db.trait_impl_concrete_trait(impl_impl_id.trait_impl_id())?;
-    SubstitutionRewriter { db, substitution: &substitution }.rewrite(impl_concrete_trait_id)
+
+    db.concrete_trait_impl_concrete_trait(concrete_trait_impl).and_then(|concrete_trait_id| {
+        SubstitutionRewriter { db, substitution: &substitution }.rewrite(concrete_trait_id)
+    })
 }
 
 // === Impl Function Declaration ===

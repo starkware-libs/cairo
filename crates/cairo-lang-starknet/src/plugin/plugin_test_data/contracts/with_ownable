@@ -10,7 +10,7 @@ cairo_level_tests/contracts/with_ownable.cairo
 #[starknet::contract]
 mod ownable_balance {
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use cairo_level_tests::components::ownable::ownable as ownable_comp;
+    use crate::components::ownable::ownable as ownable_comp;
     use starknet::ContractAddress;
     #[storage]
     struct Storage {
@@ -282,7 +282,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 }
 
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use cairo_level_tests::components::ownable::ownable as ownable_comp;
+    use crate::components::ownable::ownable as ownable_comp;
     use starknet::ContractAddress;
     #[storage]
     struct Storage {

@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
     ModuleFileId, ModuleId, TraitId, TraitItemId,
 };
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::db::{CrateSettings, CORELIB_CRATE_NAME};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
@@ -202,7 +202,7 @@ pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     pub data: ResolverData,
     pub owning_crate_id: CrateId,
-    pub edition: Edition,
+    pub settings: CrateSettings,
 }
 impl Deref for Resolver<'_> {
     type Target = ResolverData;
@@ -256,7 +256,8 @@ impl<'db> Resolver<'db> {
 
     pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
         let owning_crate_id = data.module_file_id.0.owning_crate(db.upcast());
-        Self { owning_crate_id, edition: extract_edition(db, owning_crate_id), db, data }
+        let settings = db.crate_config(owning_crate_id).map(|c| c.settings).unwrap_or_default();
+        Self { owning_crate_id, settings, db, data }
     }
 
     pub fn inference(&mut self) -> Inference<'_> {
@@ -384,7 +385,7 @@ impl<'db> Resolver<'db> {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 let identifier = generic_segment.ident(syntax_db);
                 // Identifier with generic args cannot be a local item.
-                if let Some(module_id) = self.determine_base_module(&identifier) {
+                if let ResolvedBase::Module(module_id) = self.determine_base(&identifier) {
                     ResolvedConcreteItem::Module(module_id)
                 } else {
                     // Crates do not have generics.
@@ -405,22 +406,16 @@ impl<'db> Resolver<'db> {
 
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
                     self.resolved_items.mark_concrete(db, segments.next().unwrap(), local_item)
-                } else if let Some(module_id) = self.determine_base_module(&identifier) {
-                    // This item lies inside a module.
-                    ResolvedConcreteItem::Module(module_id)
                 } else {
-                    // This identifier is a crate.
-                    let crate_ident = identifier.text(syntax_db);
-                    let crate_id = if crate_ident == CRATE_KW {
-                        self.owning_crate_id
-                    } else {
-                        CrateLongId::Real(crate_ident).intern(db)
-                    };
-                    self.resolved_items.mark_concrete(
-                        db,
-                        segments.next().unwrap(),
-                        ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id)),
-                    )
+                    match self.determine_base(&identifier) {
+                        // This item lies inside a module.
+                        ResolvedBase::Module(module_id) => ResolvedConcreteItem::Module(module_id),
+                        ResolvedBase::Crate(crate_id) => self.resolved_items.mark_concrete(
+                            db,
+                            segments.next().unwrap(),
+                            ResolvedConcreteItem::Module(ModuleId::CrateRoot(crate_id)),
+                        ),
+                    }
                 }
             }
         })
@@ -516,7 +511,7 @@ impl<'db> Resolver<'db> {
                 }
                 let identifier = generic_segment.ident(syntax_db);
                 // Identifier with generic args cannot be a local item.
-                if let Some(module_id) = self.determine_base_module(&identifier) {
+                if let ResolvedBase::Module(module_id) = self.determine_base(&identifier) {
                     ResolvedGenericItem::Module(module_id)
                 } else {
                     // Crates do not have generics.
@@ -526,22 +521,14 @@ impl<'db> Resolver<'db> {
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(syntax_db);
-                if let Some(module_id) = self.determine_base_module(&identifier) {
+                match self.determine_base(&identifier) {
                     // This item lies inside a module.
-                    ResolvedGenericItem::Module(module_id)
-                } else {
-                    // This identifier is a crate.
-                    let crate_ident = identifier.text(syntax_db);
-                    let crate_id = if crate_ident == CRATE_KW {
-                        self.owning_crate_id
-                    } else {
-                        CrateLongId::Real(crate_ident).intern(db)
-                    };
-                    self.resolved_items.mark_generic(
+                    ResolvedBase::Module(module_id) => ResolvedGenericItem::Module(module_id),
+                    ResolvedBase::Crate(crate_id) => self.resolved_items.mark_generic(
                         db,
                         segments.next().unwrap(),
                         ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)),
-                    )
+                    ),
                 }
             }
         })
@@ -990,32 +977,32 @@ impl<'db> Resolver<'db> {
         None
     }
 
-    /// Determines the base module for the path resolving. Looks only in non-local scope (i.e.
-    /// current module, or crates).
-    /// Returns Some(module) if the identifier is an item in a module. Otherwise, the path is fully
-    /// qualified, which means the identifier is a crate. In this case, returns None.
-    fn determine_base_module(&mut self, identifier: &ast::TerminalIdentifier) -> Option<ModuleId> {
+    /// Determines the base module or crate for the path resolving. Looks only in non-local scope
+    /// (i.e. current module, or crates).
+    fn determine_base(&mut self, identifier: &ast::TerminalIdentifier) -> ResolvedBase {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
 
         // If an item with this name is found inside the current module, use the current module.
         if let Ok(Some(_)) = self.db.module_item_by_name(self.module_file_id.0, ident.clone()) {
-            return Some(self.module_file_id.0);
+            return ResolvedBase::Module(self.module_file_id.0);
         }
 
         // If the first element is `crate`, use the crate's root module as the base module.
-        require(ident != CRATE_KW)?;
+        if ident == CRATE_KW {
+            return ResolvedBase::Crate(self.owning_crate_id);
+        }
         // If the first segment is a name of a crate, use the crate's root module as the base
-        // module.
-        let crate_id = CrateLongId::Real(ident).intern(self.db);
-        require(self.db.crate_config(crate_id).is_none())?;
-        // Last resort, use the `prelude` module as the base module.
-        Some(self.prelude_submodule())
+        // module. Currently `core` is always considered as a dependency.
+        if self.settings.dependencies.contains_key(ident.as_str()) || ident == CORELIB_CRATE_NAME {
+            return ResolvedBase::Crate(CrateLongId::Real(ident).intern(self.db));
+        }
+        ResolvedBase::Module(self.prelude_submodule())
     }
 
     /// Returns the crate's `prelude` submodule.
     pub fn prelude_submodule(&self) -> ModuleId {
-        let prelude_submodule_name = self.edition.prelude_submodule_name();
+        let prelude_submodule_name = self.settings.edition.prelude_submodule_name();
         let core_prelude_submodule = core_submodule(self.db, "prelude");
         get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
             || {
@@ -1309,9 +1296,11 @@ impl<'db> Resolver<'db> {
     /// Should visibility checks not actually happen for lookups in this module.
     // TODO(orizi): Remove this check when performing a major Cairo update.
     pub fn ignore_visibility_checks(&self, module_id: ModuleId) -> bool {
-        let owning_crate = module_id.owning_crate(self.db.upcast());
-        extract_edition(self.db, owning_crate).ignore_visibility()
-            || self.edition.ignore_visibility() && owning_crate == self.db.core_crate()
+        let module_crate = module_id.owning_crate(self.db.upcast());
+        let module_edition =
+            self.db.crate_config(module_crate).map(|c| c.settings.edition).unwrap_or_default();
+        module_edition.ignore_visibility()
+            || self.settings.edition.ignore_visibility() && module_crate == self.db.core_crate()
     }
 
     /// Validates that an item is usable from the current module or adds a diagnostic.
@@ -1581,9 +1570,12 @@ fn resolve_actual_self_segment(
     }
 }
 
-/// Extracts the edition of a crate.
-fn extract_edition(db: &dyn SemanticGroup, crate_id: CrateId) -> Edition {
-    db.crate_config(crate_id).map(|config| config.settings.edition).unwrap_or_default()
+/// The base module or crate for the path resolving.
+enum ResolvedBase {
+    /// The base module is a module.
+    Module(ModuleId),
+    /// The base module is a crate.
+    Crate(CrateId),
 }
 
 /// The callbacks to be used by `resolve_path_inner`.

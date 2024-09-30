@@ -26,6 +26,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils as utils;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
@@ -164,7 +165,8 @@ impl<'ctx> ComputationContext<'ctx> {
     ) -> Self {
         let semantic_defs =
             environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
-        let owning_crate_id = resolver.owning_crate_id;
+        let cfg_set =
+            resolver.settings.cfg_set.clone().map(Arc::new).unwrap_or_else(|| db.cfg_set());
         Self {
             db,
             diagnostics,
@@ -175,10 +177,7 @@ impl<'ctx> ComputationContext<'ctx> {
             function_id,
             semantic_defs,
             inner_ctx: None,
-            cfg_set: db
-                .crate_config(owning_crate_id)
-                .and_then(|cfg| cfg.settings.cfg_set.map(Arc::new))
-                .unwrap_or(db.cfg_set()),
+            cfg_set,
             are_closures_in_context: false,
         }
     }
@@ -399,6 +398,23 @@ fn compute_expr_inline_macro_semantic(
         return Err(ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into())));
     };
 
+    // Skipping expanding an inline macro if it had a parser error.
+    if syntax.as_syntax_node().descendants(syntax_db).any(|node| {
+        matches!(
+            node.kind(syntax_db),
+            SyntaxKind::ExprMissing
+                | SyntaxKind::WrappedArgListMissing
+                | SyntaxKind::StatementMissing
+                | SyntaxKind::ModuleItemMissing
+                | SyntaxKind::TraitItemMissing
+                | SyntaxKind::ImplItemMissing
+                | SyntaxKind::TokenMissing
+                | SyntaxKind::TokenSkipped
+        )
+    }) {
+        return Err(skip_diagnostic());
+    }
+
     let result = macro_plugin.generate_code(
         syntax_db,
         syntax,
@@ -406,7 +422,7 @@ fn compute_expr_inline_macro_semantic(
             cfg_set: &ctx.cfg_set,
             declared_derives: &ctx.db.declared_derives(),
             allowed_features: &ctx.resolver.data.feature_config.allowed_features,
-            edition: ctx.resolver.edition,
+            edition: ctx.resolver.settings.edition,
         },
     );
     let mut diag_added = None;

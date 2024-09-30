@@ -18,6 +18,7 @@ fn test_serde() {
             global: CrateSettings {
                 edition: Default::default(),
                 version: Default::default(),
+                dependencies: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig::default(),
                 cfg_set: Default::default(),
             },
@@ -27,6 +28,7 @@ fn test_serde() {
                     CrateSettings {
                         edition: Edition::V2023_10,
                         version: Default::default(),
+                        dependencies: Default::default(),
                         experimental_features: ExperimentalFeaturesConfig::default(),
                         cfg_set: Default::default(),
                     },
@@ -36,6 +38,7 @@ fn test_serde() {
                     CrateSettings {
                         edition: Default::default(),
                         version: Default::default(),
+                        dependencies: Default::default(),
                         experimental_features: ExperimentalFeaturesConfig {
                             negative_impls: true,
                             coupons: false,
@@ -60,6 +63,8 @@ fn test_serde() {
             [config.global]
             edition = "2023_01"
 
+            [config.global.dependencies]
+
             [config.global.experimental_features]
             negative_impls = false
             coupons = false
@@ -67,12 +72,16 @@ fn test_serde() {
             [config.override.crate1]
             edition = "2023_10"
 
+            [config.override.crate1.dependencies]
+
             [config.override.crate1.experimental_features]
             negative_impls = false
             coupons = false
 
             [config.override.crate3]
             edition = "2023_01"
+
+            [config.override.crate3.dependencies]
 
             [config.override.crate3.experimental_features]
             negative_impls = true
@@ -98,6 +107,8 @@ fn test_serde_defaults() {
 
         [config.global]
         edition = "2023_01"
+
+        [config.global.dependencies]
 
         [config.global.experimental_features]
         negative_impls = false
