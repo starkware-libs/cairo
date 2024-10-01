@@ -331,10 +331,10 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
             return diagnostic_with_dup;
         }
         let files_db = db.upcast();
-        let mut indexed_dup_diagnostic = diagnostic_with_dup
-            .iter()
-            .enumerate()
-            .sorted_by_key(|(idx, diag)| (diag.location(db).user_location(files_db).span, *idx));
+        let mut indexed_dup_diagnostic =
+            diagnostic_with_dup.iter().enumerate().sorted_by_key(|(idx, diag)| {
+                (diag.location(db).user_location(files_db).span, diag.format(db), *idx)
+            });
         let mut prev_diagnostic_indexed = indexed_dup_diagnostic.next().unwrap();
         let mut diagnostic_without_dup = vec![prev_diagnostic_indexed];
 
