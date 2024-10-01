@@ -15,6 +15,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
     db: &T::DbType,
     diags: &mut Vec<Diagnostic>,
     diagnostics: &Diagnostics<T>,
+    processed_file_id: &FileId,
     trace_macro_diagnostics: bool,
 ) {
     for diagnostic in if trace_macro_diagnostics {
@@ -43,7 +44,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
             }
         }
 
-        let Some((range, _)) = get_mapped_range_and_add_mapping_note(
+        let Some((range, mapped_file_id)) = get_mapped_range_and_add_mapping_note(
             db,
             &diagnostic.location(db),
             trace_macro_diagnostics.then_some(&mut related_information),
@@ -51,6 +52,10 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
         ) else {
             continue;
         };
+
+        if mapped_file_id != *processed_file_id {
+            continue;
+        }
         diags.push(Diagnostic {
             range,
             message,
