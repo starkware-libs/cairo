@@ -182,7 +182,8 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
 }
 
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
-    let core_crate = CrateLongId::Real(CORELIB_CRATE_NAME.into()).intern(db);
+    let core_crate =
+        CrateLongId::Real { name: CORELIB_CRATE_NAME.into(), version: None }.intern(db);
     let version = Version::parse(CORELIB_VERSION).ok();
     db.set_crate_config(
         core_crate,
@@ -255,7 +256,7 @@ fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
 }
 fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration> {
     match crt.lookup_intern(db) {
-        CrateLongId::Real(_) => db.crate_configs().get(&crt).cloned(),
+        CrateLongId::Real { .. } => db.crate_configs().get(&crt).cloned(),
         CrateLongId::Virtual { name: _, file_id, settings } => Some(CrateConfiguration {
             root: Directory::Virtual {
                 files: BTreeMap::from([("lib.cairo".into(), file_id)]),
