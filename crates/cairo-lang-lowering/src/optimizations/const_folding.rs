@@ -6,7 +6,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, ModuleId, ModuleItemId};
 use cairo_lang_semantic::items::constant::ConstValue;
-use cairo_lang_semantic::{corelib, GenericArgumentId, TypeId};
+use cairo_lang_semantic::items::imp::ImplLookupContext;
+use cairo_lang_semantic::{corelib, GenericArgumentId, MatchArmSelector, TypeId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -21,8 +22,8 @@ use smol_str::SmolStr;
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId};
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement,
-    StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
+    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
+    Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
     StatementStructConstruct, StatementStructDestructure, VarUsage, Variable, VariableId,
 };
 
@@ -53,7 +54,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     let mut ctx = ConstFoldingContext {
         db,
         var_info: UnorderedHashMap::default(),
-        variables: &lowered.variables,
+        variables: &mut lowered.variables,
         libfunc_info: &libfunc_info,
     };
     let mut stack = vec![BlockId::root()];
@@ -107,7 +108,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                     for input in inputs.iter() {
                         let Some(info) = ctx.var_info.get(&input.var_id) else {
                             all_args.push(
-                                lowered.variables[input.var_id]
+                                ctx.variables[input.var_id]
                                     .copyable
                                     .is_ok()
                                     .then(|| VarInfo::Var(*input)),
@@ -121,7 +122,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                         all_args.push(Some(info.clone()));
                     }
                     if const_args.len() == inputs.len() {
-                        let value = ConstValue::Struct(const_args, lowered.variables[*output].ty);
+                        let value = ConstValue::Struct(const_args, ctx.variables[*output].ty);
                         ctx.var_info.insert(*output, VarInfo::Const(value));
                     } else if contains_info {
                         ctx.var_info.insert(*output, VarInfo::Struct(all_args));
@@ -211,7 +212,7 @@ struct ConstFoldingContext<'a> {
     /// The used database.
     db: &'a dyn LoweringGroup,
     /// The variables arena, mostly used to get the type of variables.
-    variables: &'a Arena<Variable>,
+    variables: &'a mut Arena<Variable>,
     /// The accumulated information about the const values of variables.
     var_info: UnorderedHashMap<VariableId, VarInfo>,
     /// The libfunc information.
@@ -356,12 +357,53 @@ impl<'a> ConstFoldingContext<'a> {
                 )
             })
         } else if self.eq_fns.contains(&id) {
-            let lhs = self.as_int(info.inputs[0].var_id)?;
-            let rhs = self.as_int(info.inputs[1].var_id)?;
+            let lhs = self.as_int(info.inputs[0].var_id);
+            let rhs = self.as_int(info.inputs[1].var_id);
+            if (lhs.map(Zero::is_zero).unwrap_or_default() && rhs.is_none())
+                || (rhs.map(Zero::is_zero).unwrap_or_default() && lhs.is_none())
+            {
+                let db = self.db.upcast();
+                let nz_input = info.inputs[if lhs.is_some() { 1 } else { 0 }];
+                let var = &self.variables[nz_input.var_id].clone();
+                let function = self.type_value_ranges.get(&var.ty)?.is_zero;
+                let unused_nz_var = Variable::new(
+                    self.db,
+                    ImplLookupContext::default(),
+                    corelib::core_nonzero_ty(db, var.ty),
+                    var.location,
+                );
+                let unused_nz_var = self.variables.alloc(unused_nz_var);
+                return Some((
+                    None,
+                    FlatBlockEnd::Match {
+                        info: MatchInfo::Extern(MatchExternInfo {
+                            function,
+                            inputs: vec![nz_input],
+                            arms: vec![
+                                MatchArm {
+                                    arm_selector: MatchArmSelector::VariantId(
+                                        corelib::jump_nz_zero_variant(db),
+                                    ),
+                                    block_id: info.arms[1].block_id,
+                                    var_ids: vec![],
+                                },
+                                MatchArm {
+                                    arm_selector: MatchArmSelector::VariantId(
+                                        corelib::jump_nz_nonzero_variant(db),
+                                    ),
+                                    block_id: info.arms[0].block_id,
+                                    var_ids: vec![unused_nz_var],
+                                },
+                            ],
+                            location: info.location,
+                        }),
+                    },
+                ));
+            }
             Some((
                 None,
                 FlatBlockEnd::Goto(
-                    info.arms[if lhs == rhs { 1 } else { 0 }].block_id,
+                    info.arms[if lhs? == rhs? { 1 } else { 0 }].block_id,
                     Default::default(),
                 ),
             ))
@@ -577,7 +619,7 @@ pub struct ConstFoldingLibfuncInfo {
     /// The storage access module.
     storage_access_module: ModuleId,
     /// Type ranges.
-    type_value_ranges: OrderedHashMap<TypeId, TypeRange>,
+    type_value_ranges: OrderedHashMap<TypeId, TypeInfo>,
 }
 impl ConstFoldingLibfuncInfo {
     fn new(db: &dyn LoweringGroup) -> Self {
@@ -637,20 +679,25 @@ impl ConstFoldingLibfuncInfo {
         let bounded_int_constrain = bounded_int_module.extern_function_id("bounded_int_constrain");
         let type_value_ranges = OrderedHashMap::from_iter(
             [
-                ("u8", TypeRange::closed(0, u8::MAX)),
-                ("u16", TypeRange::closed(0, u16::MAX)),
-                ("u32", TypeRange::closed(0, u32::MAX)),
-                ("u64", TypeRange::closed(0, u64::MAX)),
-                ("u128", TypeRange::closed(0, u128::MAX)),
-                ("u256", TypeRange::closed(0, BigInt::from(1) << 256)),
-                ("i8", TypeRange::closed(i8::MIN, i8::MAX)),
-                ("i16", TypeRange::closed(i16::MIN, i16::MAX)),
-                ("i32", TypeRange::closed(i32::MIN, i32::MAX)),
-                ("i64", TypeRange::closed(i64::MIN, i64::MAX)),
-                ("i128", TypeRange::closed(i128::MIN, i128::MAX)),
+                ("u8", BigInt::ZERO, u8::MAX.into()),
+                ("u16", BigInt::ZERO, u16::MAX.into()),
+                ("u32", BigInt::ZERO, u32::MAX.into()),
+                ("u64", BigInt::ZERO, u64::MAX.into()),
+                ("u128", BigInt::ZERO, u128::MAX.into()),
+                ("u256", BigInt::ZERO, BigInt::from(1) << 256),
+                ("i8", i8::MIN.into(), i8::MAX.into()),
+                ("i16", i16::MIN.into(), i16::MAX.into()),
+                ("i32", i32::MIN.into(), i32::MAX.into()),
+                ("i64", i64::MIN.into(), i64::MAX.into()),
+                ("i128", i128::MIN.into(), i128::MAX.into()),
             ]
-            .map(|(ty, range)| {
-                (corelib::get_core_ty_by_name(db.upcast(), ty.into(), vec![]), range)
+            .map(|(ty, min, max): (&str, BigInt, BigInt)| {
+                let info = TypeInfo {
+                    min,
+                    max,
+                    is_zero: integer_module.function_id(format!("{ty}_is_zero"), vec![]),
+                };
+                (corelib::get_core_ty_by_name(db.upcast(), ty.into(), vec![]), info)
             }),
         );
         Self {
@@ -686,14 +733,12 @@ impl std::ops::Deref for ConstFoldingContext<'_> {
 
 /// The range of a type for normalizations.
 #[derive(Debug, PartialEq, Eq)]
-struct TypeRange {
+struct TypeInfo {
     min: BigInt,
     max: BigInt,
+    is_zero: FunctionId,
 }
-impl TypeRange {
-    fn closed(min: impl Into<BigInt>, max: impl Into<BigInt>) -> Self {
-        Self { min: min.into(), max: max.into() }
-    }
+impl TypeInfo {
     /// Normalizes the value to the range.
     /// Assumes the value is within size of range of the range.
     fn normalized(&self, value: BigInt) -> NormalizedResult {

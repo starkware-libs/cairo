@@ -4368,3 +4368,84 @@ End:
   Return(v18)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Eq with 0 const fold.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(x: u8) -> bool {
+    x == 0
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u8
+blk0 (root):
+Statements:
+  (v3: core::integer::u8) <- 0
+End:
+  Match(match core::integer::u8_eq(v0, v3) {
+    bool::False => blk1,
+    bool::True => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::bool) <- bool::False(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::bool) <- bool::True(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > after
+Parameters: v0: core::integer::u8
+blk0 (root):
+Statements:
+  (v3: core::integer::u8) <- 0
+End:
+  Match(match core::integer::u8_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v13) => blk1,
+  })
+
+blk1:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::bool) <- bool::False(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::bool) <- bool::True(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > lowering_diagnostics
