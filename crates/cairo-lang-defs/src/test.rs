@@ -6,7 +6,7 @@ use cairo_lang_filesystem::db::{
     init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase,
     FilesGroup, FilesGroupEx,
 };
-use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -129,7 +129,7 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
     db: &mut T,
     content: &str,
 ) -> ModuleId {
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::unversioned(db, "test");
     let directory = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(directory)));
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
@@ -174,7 +174,7 @@ fn test_submodules() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::unversioned(db, "test");
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -257,7 +257,7 @@ fn test_plugin() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::unversioned(db, "test");
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -281,7 +281,7 @@ fn test_plugin_remove_original() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::unversioned(db, "test");
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -369,7 +369,7 @@ impl MacroPlugin for FooToBarPlugin {
 fn test_foo_to_bar() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::unversioned(db, "test");
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -395,7 +395,7 @@ fn test_foo_to_bar() {
 fn test_first_plugin_removes() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::unversioned(db, "test");
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -419,7 +419,7 @@ fn test_first_plugin_removes() {
 fn test_first_plugin_generates() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::unversioned(db, "test");
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -443,7 +443,7 @@ fn test_first_plugin_generates() {
 fn test_plugin_chain() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::unversioned(db, "test");
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -469,7 +469,7 @@ fn test_plugin_chain() {
 fn test_unknown_item_macro() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::unversioned(db, "test");
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 

@@ -3,7 +3,8 @@ use cairo_lang_defs::ids::{
     TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
+use cairo_lang_filesystem::db::CORELIB_CRATE_NAME;
+use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::Terminal;
@@ -63,7 +64,7 @@ pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId 
 }
 
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
-    CrateLongId::Real("core".into()).intern(db)
+    CrateId::unversioned(db, CORELIB_CRATE_NAME)
 }
 
 pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {

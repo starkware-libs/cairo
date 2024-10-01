@@ -11,6 +11,14 @@ use crate::db::SemanticGroup;
 pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send {
     /// Runs the plugin on a module.
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic>;
+    /// Allows this plugin supplies.
+    /// Any allow the plugin supplies without declaring here are likely to cause a
+    /// compilation error for unknown allow.
+    /// If the plugin checks for patterns that you want to allow in some places, for example
+    /// `#[allow(some_pattern)]` you will need to declare it here.
+    fn declared_allows(&self) -> Vec<String> {
+        Vec::new()
+    }
 }
 
 /// A suite of plugins.

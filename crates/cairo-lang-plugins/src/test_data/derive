@@ -412,7 +412,7 @@ struct UnsupportedTrait {}
 struct NonSimplePath {}
 
 #[derive(Clone)]
-extern type NotClonable;
+extern type NotCloneable;
 
 #[derive(Default)]
 enum NoDefaultValue {
@@ -442,7 +442,7 @@ struct UnsupportedTrait {}
 struct NonSimplePath {}
 
 #[derive(Clone)]
-extern type NotClonable;
+extern type NotCloneable;
 
 #[derive(Default)]
 enum NoDefaultValue {
