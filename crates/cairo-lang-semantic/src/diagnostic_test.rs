@@ -237,6 +237,10 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
         }
         diagnostics
     }
+
+    fn declared_allows(&self) -> Vec<String> {
+        vec!["u128_rename".to_string()]
+    }
 }
 
 #[test]
@@ -256,6 +260,7 @@ fn test_analyzer_diagnostics() {
             use core::integer::u128 as long_u128_rename;
             use u128 as short_u128_rename;
             use inner::long_u128_rename as additional_u128_rename;
+            #[allow(u128_rename)]
             use core::integer::u64 as long_u64_rename;
             use u64 as short_u64_rename;
             use inner::long_u64_rename as additional_u64_rename;
