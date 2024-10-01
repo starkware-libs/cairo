@@ -124,7 +124,11 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Returns the crate ids for which the diagnostics will be checked.
     fn crates_of_interest(&self, db: &dyn FilesGroup) -> Vec<CrateId> {
-        if self.crate_ids.is_empty() { db.crates() } else { self.crate_ids.clone() }
+        if self.crate_ids.is_empty() {
+            db.crates()
+        } else {
+            self.crate_ids.clone()
+        }
     }
 
     /// Checks if there are diagnostics.
@@ -207,7 +211,7 @@ impl<'a> DiagnosticsReporter<'a> {
             let ignore_warnings_in_crate = self.ignore_warnings_crate_ids.contains(crate_id);
             let modules = db.crate_modules(*crate_id);
             for module_id in modules.iter() {
-                if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
+                if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
                     found_diagnostics |=
                         self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
                 }
@@ -240,7 +244,11 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `Err` if diagnostics were found.
     pub fn ensure(&mut self, db: &dyn LoweringGroup) -> Result<(), DiagnosticsError> {
-        if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
+        if self.check(db) {
+            Err(DiagnosticsError)
+        } else {
+            Ok(())
+        }
     }
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
@@ -250,7 +258,11 @@ impl<'a> DiagnosticsReporter<'a> {
         &mut self,
         db: &dyn SemanticGroup,
     ) -> Result<(), DiagnosticsError> {
-        if self.check_common(db) { Err(DiagnosticsError) } else { Ok(()) }
+        if self.check_common(db) {
+            Err(DiagnosticsError)
+        } else {
+            Ok(())
+        }
     }
 
     /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
