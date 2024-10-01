@@ -36,7 +36,9 @@ pub struct Crate {
 impl Crate {
     /// Applies this crate to the [`AnalysisDatabase`].
     pub fn apply(&self, db: &mut AnalysisDatabase) {
-        let crate_id = CrateLongId::Real(self.name.clone()).intern(db);
+        let crate_id =
+            CrateLongId::Real { name: self.name.clone(), version: self.settings.version.clone() }
+                .intern(db);
 
         let crate_configuration = CrateConfiguration {
             root: Directory::Real(self.root.clone()),
@@ -53,7 +55,7 @@ impl Crate {
     ///
     /// Returns `None` if the crate is virtual or the crate configuration is missing.
     pub fn reconstruct(db: &AnalysisDatabase, crate_id: CrateId) -> Option<Self> {
-        let CrateLongId::Real(name) = crate_id.lookup_intern(db) else {
+        let CrateLongId::Real { name, .. } = crate_id.lookup_intern(db) else {
             return None;
         };
 

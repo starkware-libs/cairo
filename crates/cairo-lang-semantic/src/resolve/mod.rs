@@ -25,7 +25,7 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::QueryAttrs;
 use syntax::node::TypedStablePtr;
 
-use crate::corelib::{core_submodule, get_submodule};
+use crate::corelib::{core_crate, core_submodule, get_submodule};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -993,9 +993,15 @@ impl<'db> Resolver<'db> {
             return ResolvedBase::Crate(self.owning_crate_id);
         }
         // If the first segment is a name of a crate, use the crate's root module as the base
-        // module. Currently `core` is always considered as a dependency.
-        if self.settings.dependencies.contains_key(ident.as_str()) || ident == CORELIB_CRATE_NAME {
-            return ResolvedBase::Crate(CrateLongId::Real(ident).intern(self.db));
+        // module.
+        if let Some(dep) = self.settings.dependencies.get(ident.as_str()) {
+            return ResolvedBase::Crate(
+                CrateLongId::Real { name: ident, version: dep.version.clone() }.intern(self.db),
+            );
+        }
+        // If the first segment is `core` - and it was not overridden by a dependency - using it.
+        if ident == CORELIB_CRATE_NAME {
+            return ResolvedBase::Crate(core_crate(self.db));
         }
         ResolvedBase::Module(self.prelude_submodule())
     }

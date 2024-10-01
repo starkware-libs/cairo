@@ -10,7 +10,7 @@ use cairo_lang_filesystem::db::{
     init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase,
     FilesGroup, FilesGroupEx,
 };
-use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
@@ -120,7 +120,7 @@ pub fn test_expand_plugin_inner(
 
     let cairo_code = &inputs["cairo_code"];
 
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::unversioned(db, "test");
     let root = Directory::Real("test_src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
