@@ -744,7 +744,7 @@ pub(crate) fn lower_concrete_enum_match(
     )?;
     let mut arm_var_ids = vec![];
     let mut block_ids = vec![];
-    let varinats_block_builders = concrete_variants
+    let variants_block_builders = concrete_variants
         .iter()
         .map(|concrete_variant| {
             let PatternPath { arm_index, pattern_index } = variant_map
@@ -836,7 +836,7 @@ pub(crate) fn lower_concrete_enum_match(
         empty_match_info,
         location,
         arms,
-        varinats_block_builders,
+        variants_block_builders,
         match_type,
     )?;
 
@@ -887,7 +887,7 @@ pub(crate) fn lower_optimized_extern_match(
     let mut arm_var_ids = vec![];
     let mut block_ids = vec![];
 
-    let varinats_block_builders = concrete_variants
+    let variants_block_builders = concrete_variants
         .iter()
         .map(|concrete_variant| {
             let mut subscope = create_subscope(ctx, builder);
@@ -969,7 +969,7 @@ pub(crate) fn lower_optimized_extern_match(
         empty_match_info,
         location,
         match_arms,
-        varinats_block_builders,
+        variants_block_builders,
         match_type,
     )?;
     let match_info = MatchInfo::Extern(MatchExternInfo {
@@ -1000,10 +1000,10 @@ fn group_match_arms(
     empty_match_info: MatchInfo,
     location: LocationId,
     arms: &[MatchArmWrapper],
-    varinats_block_builders: Vec<MatchLeafBuilder>,
+    variants_block_builders: Vec<MatchLeafBuilder>,
     kind: MatchKind,
 ) -> LoweringResult<Vec<SealedBlockBuilder>> {
-    varinats_block_builders
+    variants_block_builders
         .into_iter()
         .sorted_by_key(|MatchLeafBuilder { arm_index, .. }| *arm_index)
         .group_by(|MatchLeafBuilder { arm_index, .. }| *arm_index)
