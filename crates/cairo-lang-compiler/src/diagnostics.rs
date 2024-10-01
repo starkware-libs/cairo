@@ -207,7 +207,7 @@ impl<'a> DiagnosticsReporter<'a> {
             let ignore_warnings_in_crate = self.ignore_warnings_crate_ids.contains(crate_id);
             let modules = db.crate_modules(*crate_id);
             for module_id in modules.iter() {
-                if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
+                if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
                     found_diagnostics |=
                         self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
                 }
