@@ -15,9 +15,6 @@ type BackgroundFnBuilder<'s> = Box<dyn FnOnce(&State) -> BackgroundFn + 's>;
 /// Describes how the task should be run.
 #[derive(Clone, Copy, Debug, Default)]
 pub enum BackgroundSchedule {
-    /// The task should be run on the background thread designated
-    /// for formatting actions. This is a high priority thread.
-    Fmt,
     /// The task should be run on the general high-priority background
     /// thread.
     LatencySensitive,
@@ -79,7 +76,7 @@ impl<'s> Task<'s> {
     {
         Self::local(move |_, _, _, responder| {
             if let Err(err) = responder.respond(id, result) {
-                error!("unable to send immediate response: {err}");
+                error!("unable to send immediate response: {err:?}");
             }
         })
     }

@@ -253,6 +253,7 @@ impl Backend {
         Self::new_inner(tricks, connection_initializer)
     }
 
+    #[cfg(feature = "testing")]
     fn new_for_testing(
         tricks: Tricks,
     ) -> (Box<dyn FnOnce() -> Self + Send>, lsp_server::Connection) {
@@ -287,7 +288,7 @@ impl Backend {
         State::new(db, client_capabilities, scarb_toolchain, tricks)
     }
 
-    pub fn run(self) -> Result<JoinHandle<Result<()>>> {
+    fn run(self) -> Result<JoinHandle<Result<()>>> {
         let four = NonZeroUsize::new(4).unwrap();
         // By default, we set the number of worker threads to `num_cpus`, with a maximum of 4.
         let worker_threads = std::thread::available_parallelism().unwrap_or(four).max(four);
@@ -297,6 +298,11 @@ impl Backend {
             self.connection.close()?;
             Ok(())
         })
+    }
+
+    #[cfg(feature = "testing")]
+    pub fn run_for_tests(self) -> Result<JoinHandle<Result<()>>> {
+        self.run()
     }
 
     fn event_loop(
@@ -310,7 +316,7 @@ impl Backend {
 
         // Register dynamic capabilities.
         let response_handler = |()| {
-            info!("Configuration file watcher successfully registered");
+            debug!("configuration file watcher successfully registered");
             Task::nothing()
         };
 
@@ -442,15 +448,11 @@ impl Backend {
 
             for file in removed_files {
                 trace_span!("publish_diagnostics").in_scope(|| {
-                    if let Err(err) =
-                        notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-                            uri: file,
-                            diagnostics: vec![],
-                            version: None,
-                        })
-                    {
-                        error!("Failed to send publish diagnostics notification: {err:#} ")
-                    }
+                    notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+                        uri: file,
+                        diagnostics: vec![],
+                        version: None,
+                    });
                 });
             }
         });
@@ -546,13 +548,11 @@ impl Backend {
         );
 
         trace_span!("publish_diagnostics").in_scope(|| {
-            if let Err(err) = notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
                 uri: file_uri,
                 diagnostics: diags,
                 version: None,
-            }) {
-                error!("Failed to send publish diagnostics notification: {err:#} ")
-            }
+            });
         })
     }
 
@@ -677,10 +677,7 @@ impl Backend {
                 }
 
                 if let Err(result) = validate_corelib(db) {
-                    if let Err(err) = notifier.notify::<CorelibVersionMismatch>(result.to_string())
-                    {
-                        error!("failed to send corelib version mismatch notification: {err:#}");
-                    }
+                    notifier.notify::<CorelibVersionMismatch>(result.to_string());
                 }
             }
 

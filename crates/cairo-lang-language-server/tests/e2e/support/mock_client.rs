@@ -53,7 +53,7 @@ impl MockClient {
             expect_request_handlers: Default::default(),
         };
 
-        std::thread::spawn(|| init().run());
+        std::thread::spawn(|| init().run_for_tests());
 
         this.initialize(capabilities);
 
@@ -106,7 +106,7 @@ impl MockClient {
         {
             match response_message {
                 Message::Notification(_) => {
-                    // This looks like a notification, skip it.
+                    // Skip notifications.
                 }
 
                 Message::Request(req) => {
@@ -127,18 +127,6 @@ impl MockClient {
                     let result = res.result.ok_or_else(|| res.error.unwrap());
 
                     assert_eq!(res_id, id);
-
-                    // TODO
-                    // fails due to the fact that in opposite to tower_lsp, lsp_server can reorder
-                    // responses when waiting for diagnostics messages are
-                    // consumed alongside meaningless notifications
-                    // actual response for "client/registerCapability" is consumed so next time we
-                    // enter this branch is with response for next request
-                    // assert!(
-                    //     !does_expect_requests || expect_request_handlers.is_empty(),
-                    //     "expected more requests to be received from the client while \
-                    //          processing the current server one: {expect_request_handlers:?}"
-                    // );
 
                     match result {
                         Ok(result) => return result,

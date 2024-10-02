@@ -55,9 +55,7 @@ impl ScarbToolchain {
                     } else {
                         error!("attempt to use scarb without SCARB env being set");
 
-                        if let Err(err) = self.notifier.notify::<ScarbPathMissing>(()) {
-                            error!("failed to send scarb path missing notification: {err:#}");
-                        };
+                        self.notifier.notify::<ScarbPathMissing>(());
                     }
                 }
                 path
@@ -116,7 +114,7 @@ impl ScarbToolchain {
         };
 
         if !self.is_silent {
-            self.notifier.notify::<ScarbResolvingStart>(())?;
+            self.notifier.notify::<ScarbResolvingStart>(());
         }
 
         let result = MetadataCommand::new()
@@ -127,7 +125,7 @@ impl ScarbToolchain {
             .context("failed to execute: scarb metadata");
 
         if !self.is_silent {
-            self.notifier.notify::<ScarbResolvingFinish>(())?;
+            self.notifier.notify::<ScarbResolvingFinish>(());
         }
 
         result

@@ -1,5 +1,7 @@
 use std::num::NonZeroUsize;
 
+use anyhow::Result;
+
 pub mod task;
 pub mod thread;
 
@@ -16,11 +18,11 @@ use crate::state::State;
 /// than some OS defaults (Windows, for example) and is also designated as
 /// high-priority.
 pub(crate) fn event_loop_thread(
-    func: impl FnOnce() -> anyhow::Result<()> + Send + 'static,
-) -> anyhow::Result<thread::JoinHandle<anyhow::Result<()>>> {
+    func: impl FnOnce() -> Result<()> + Send + 'static,
+) -> Result<thread::JoinHandle<Result<()>>> {
     // Override OS defaults to avoid stack overflows on platforms with low stack size defaults.
     const MAIN_THREAD_STACK_SIZE: usize = 2 * 1024 * 1024;
-    const MAIN_THREAD_NAME: &str = "cairo-ls:main";
+    const MAIN_THREAD_NAME: &str = "cairols:main";
     Ok(thread::Builder::new(ThreadPriority::LatencySensitive)
         .name(MAIN_THREAD_NAME.into())
         .stack_size(MAIN_THREAD_STACK_SIZE)
@@ -30,16 +32,13 @@ pub(crate) fn event_loop_thread(
 pub(crate) struct Scheduler<'s> {
     state: &'s mut State,
     client: Client<'s>,
-    fmt_pool: thread::Pool,
     background_pool: thread::Pool,
 }
 
 impl<'s> Scheduler<'s> {
     pub fn new(state: &'s mut State, worker_threads: NonZeroUsize, sender: ClientSender) -> Self {
-        const FMT_THREADS: usize = 1;
         Self {
             state,
-            fmt_pool: thread::Pool::new(NonZeroUsize::try_from(FMT_THREADS).unwrap()),
             background_pool: thread::Pool::new(worker_threads),
             client: Client::new(sender),
         }
@@ -52,7 +51,7 @@ impl<'s> Scheduler<'s> {
         &mut self,
         params: R::Params,
         response_handler: impl Fn(R::Result) -> Task<'s> + 'static,
-    ) -> anyhow::Result<()>
+    ) -> Result<()>
     where
         R: lsp_types::request::Request,
     {
@@ -66,7 +65,7 @@ impl<'s> Scheduler<'s> {
 
     /// Dispatches a `task` by either running it as a blocking function or
     /// executing it on a background thread pool.
-    pub(crate) fn dispatch(&mut self, task: task::Task<'s>) {
+    pub(crate) fn dispatch(&mut self, task: Task<'s>) {
         match task {
             Task::Sync(SyncTask { func }) => {
                 let notifier = self.client.notifier();
@@ -84,9 +83,6 @@ impl<'s> Scheduler<'s> {
                     }
                     BackgroundSchedule::LatencySensitive => {
                         self.background_pool.spawn(ThreadPriority::LatencySensitive, task)
-                    }
-                    BackgroundSchedule::Fmt => {
-                        self.fmt_pool.spawn(ThreadPriority::LatencySensitive, task);
                     }
                 }
             }

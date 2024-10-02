@@ -1,16 +1,18 @@
 use std::any::TypeId;
 
 use anyhow::Result;
-use lsp_server::{Notification, RequestId};
+use lsp_server::{Notification, RequestId, Response};
+use lsp_types::notification::Notification as NotificationTrait;
 use rustc_hash::FxHashMap;
 use serde_json::Value;
 use tracing::error;
 
 use super::api;
 use super::schedule::Task;
+use crate::server::api::LSPError;
 use crate::server::connection::ClientSender;
 
-type ResponseBuilder<'s> = Box<dyn FnOnce(lsp_server::Response) -> Task<'s>>;
+type ResponseBuilder<'s> = Box<dyn FnOnce(Response) -> Task<'s>>;
 
 pub struct Client<'s> {
     notifier: Notifier,
@@ -53,15 +55,15 @@ impl<'s> Client<'s> {
 }
 
 impl Notifier {
-    pub fn notify<N>(&self, params: N::Params) -> Result<()>
-    where
-        N: lsp_types::notification::Notification,
-    {
-        let method = N::METHOD.to_string();
+    pub fn notify<N: NotificationTrait>(&self, params: N::Params) {
+        let method = N::METHOD;
 
-        let message = lsp_server::Message::Notification(Notification::new(method, params));
+        let message =
+            lsp_server::Message::Notification(Notification::new(method.to_string(), params));
 
-        self.0.send(message)
+        if let Err(err) = self.0.send(message) {
+            error!("failed to send `{method}` notification: {err:?}")
+        }
     }
 }
 
@@ -72,9 +74,9 @@ impl Responder {
     {
         self.0.send(
             match result {
-                Ok(res) => lsp_server::Response::new_ok(id, res),
-                Err(api::LSPError { code, error }) => {
-                    lsp_server::Response::new_err(id, code as i32, format!("{error}"))
+                Ok(res) => Response::new_ok(id, res),
+                Err(LSPError { code, error }) => {
+                    Response::new_err(id, code as i32, format!("{error}"))
                 }
             }
             .into(),
@@ -141,7 +143,7 @@ impl<'s> Requester<'s> {
         Ok(())
     }
 
-    pub fn pop_response_task(&mut self, response: lsp_server::Response) -> Task<'s> {
+    pub fn pop_response_task(&mut self, response: Response) -> Task<'s> {
         if let Some(handler) = self.response_handlers.remove(&response.id) {
             handler(response)
         } else {

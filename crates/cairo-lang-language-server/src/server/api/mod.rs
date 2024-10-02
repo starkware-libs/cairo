@@ -38,7 +38,7 @@ pub(crate) fn request<'a>(request: Request) -> Task<'a> {
             background_request_task::<ExpandMacro>(request, BackgroundSchedule::Worker)
         }
         Formatting::METHOD => {
-            background_request_task::<Formatting>(request, BackgroundSchedule::Fmt)
+            background_request_task::<Formatting>(request, BackgroundSchedule::LatencySensitive)
         }
         GotoDefinition::METHOD => {
             background_request_task::<GotoDefinition>(request, BackgroundSchedule::LatencySensitive)
