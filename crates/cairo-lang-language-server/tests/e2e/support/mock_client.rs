@@ -63,7 +63,7 @@ impl MockClient {
     /// Performs the `initialize`/`initialized` handshake with the server synchronously.
     fn initialize(&mut self, capabilities: lsp_types::ClientCapabilities) {
         let workspace_folders = Some(vec![lsp_types::WorkspaceFolder {
-            uri: self.fixture.root_uri(),
+            uri: self.fixture.root_url(),
             name: "hello_world".to_string(),
         }]);
 
@@ -288,7 +288,7 @@ impl MockClient {
 impl MockClient {
     /// Returns a `TextDocumentIdentifier` for the given file.
     pub fn doc_id(&self, path: impl AsRef<Path>) -> lsp_types::TextDocumentIdentifier {
-        lsp_types::TextDocumentIdentifier { uri: self.fixture.file_uri(path) }
+        lsp_types::TextDocumentIdentifier { uri: self.fixture.file_url(path) }
     }
 
     /// Sends `textDocument/didOpen` notification to the server.
@@ -306,7 +306,7 @@ impl MockClient {
         self.send_notification::<lsp_notification!("textDocument/didOpen")>(
             lsp_types::DidOpenTextDocumentParams {
                 text_document: lsp_types::TextDocumentItem {
-                    uri: self.fixture.file_uri(&path),
+                    uri: self.fixture.file_url(&path),
                     language_id,
                     version: 0,
                     text: self.fixture.read_file(&path),
@@ -320,7 +320,7 @@ impl MockClient {
         &mut self,
         path: impl AsRef<Path>,
     ) -> lsp_types::PublishDiagnosticsParams {
-        let uri = self.fixture.file_uri(&path);
+        let uri = self.fixture.file_url(&path);
         self.wait_for_notification::<lsp_notification!("textDocument/publishDiagnostics")>(
             |params| params.uri == uri,
         )

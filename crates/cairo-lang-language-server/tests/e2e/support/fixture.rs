@@ -34,16 +34,16 @@ impl Fixture {
         self.t.path()
     }
 
-    pub fn root_uri(&self) -> Url {
-        self.t.path().to_str().unwrap().parse().unwrap()
+    pub fn root_url(&self) -> Url {
+        Url::from_directory_path(self.t.path()).unwrap()
     }
 
     pub fn file_absolute_path(&self, path: impl AsRef<Path>) -> PathBuf {
         self.t.child(path).path().to_owned()
     }
 
-    pub fn file_uri(&self, path: impl AsRef<Path>) -> Url {
-        format!("file://{}", self.file_absolute_path(path).to_str().unwrap()).parse().unwrap()
+    pub fn file_url(&self, path: impl AsRef<Path>) -> Url {
+        Url::from_file_path(self.file_absolute_path(path)).unwrap()
     }
 
     pub fn read_file(&self, path: impl AsRef<Path>) -> String {

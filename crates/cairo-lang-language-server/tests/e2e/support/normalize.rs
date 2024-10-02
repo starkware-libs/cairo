@@ -12,7 +12,7 @@ pub fn normalize(fixture: impl AsRef<Fixture>, data: impl ToString) -> String {
 /// Replace all well-known paths/urls for a fixture with placeholders.
 fn normalize_well_known_paths(fixture: &Fixture, data: String) -> String {
     let mut data = data
-        .replace(&fixture.root_uri().to_string(), "[ROOT_URL]")
+        .replace(&fixture.root_url().to_string(), "[ROOT_URL]")
         .replace(&normalize_path(fixture.root_path()), "[ROOT]");
 
     if let Ok(pwd) = std::env::current_dir() {
