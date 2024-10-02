@@ -47,27 +47,39 @@ mod inner_sub_module {
     }
 }
 
-//! > Item #1
+//! > Item signature #1
+
+//! > Item documentation #1
 This is a testing crate file. It's for the tests purposes only. 
 ```cairo
   let a = 5;
 ```
 This is also testing crate. After the code example. We don't take responsibility for compiling this file. So don't even try.
 
-//! > Item #2
+//! > Item signature #2
+
+//! > Item documentation #2
 This is a submodule regarding the module_level_comments. It's used to make sure crate / module level comments are parsed in a correct way. Testing purposes only! This one is just a prefix comment for a module. 
 ```rust
   let a = String::from("This also works fine");
 ```
 As mentioned above.
 
-//! > Item #3
+//! > Item signature #3
+
+//! > Item documentation #3
 This comment just proves that it won't be considered as a file-module comment. It just refers to the inner_sub_module
 
-//! > Item #4
+//! > Item signature #4
+fn hello()
+
+//! > Item documentation #4
 Hello function inside the inner module.
 
-//! > Item #5
+//! > Item signature #5
+fn main()
+
+//! > Item documentation #5
 Main function. Empty code example. 
 ```rust
 ```
