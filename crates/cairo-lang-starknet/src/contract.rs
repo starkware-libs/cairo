@@ -41,6 +41,7 @@ use crate::plugin::consts::{ABI_ATTR, ABI_ATTR_EMBED_V0_ARG};
 mod test;
 
 /// Represents a declaration of a contract.
+#[derive(Clone)]
 pub struct ContractDeclaration {
     /// The id of the module that defines the contract.
     pub submodule_id: SubmoduleId,
@@ -293,10 +294,9 @@ pub struct ContractInfo {
 /// Returns the list of functions in a given module.
 pub fn get_contracts_info<T: SierraIdReplacer>(
     db: &dyn SierraGenGroup,
-    main_crate_ids: Vec<CrateId>,
+    contracts: Vec<ContractDeclaration>,
     replacer: &T,
 ) -> Result<OrderedHashMap<Felt252, ContractInfo>, anyhow::Error> {
-    let contracts = find_contracts(db.upcast(), &main_crate_ids);
     let mut contracts_info = OrderedHashMap::default();
     for contract in contracts {
         let (class_hash, contract_info) = analyze_contract(db, &contract, replacer)?;

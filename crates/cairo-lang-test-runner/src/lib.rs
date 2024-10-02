@@ -71,6 +71,9 @@ impl TestRunner {
                 starknet,
                 add_statements_functions: config.run_profiler == RunProfilerConfig::Cairo,
                 add_statements_code_locations: false,
+                contract_declarations: None,
+                contract_crate_ids: None,
+                executable_crate_ids: None,
             },
         )?;
         Ok(Self { compiler, config })
@@ -262,7 +265,6 @@ impl TestCompiler {
         compile_test_prepared_db(
             &self.db,
             self.config.clone(),
-            self.main_crate_ids.clone(),
             self.test_crate_ids.clone(),
             diag_reporter,
         )
