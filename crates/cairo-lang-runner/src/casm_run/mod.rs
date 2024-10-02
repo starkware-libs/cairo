@@ -307,6 +307,12 @@ enum SyscallResult {
 }
 
 macro_rules! fail_syscall {
+    ([$reason1:expr, $reason2:expr]) => {
+        return Ok(SyscallResult::Failure(vec![
+            Felt252::from_bytes_be_slice($reason1),
+            Felt252::from_bytes_be_slice($reason2),
+        ]))
+    };
     ($reason:expr) => {
         return Ok(SyscallResult::Failure(vec![Felt252::from_bytes_be_slice($reason)]))
     };
@@ -1035,7 +1041,7 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Get the class hash of the contract.
         let Some(class_hash) = self.starknet_state.deployed_contracts.get(&contract_address) else {
-            fail_syscall!(b"CONTRACT_NOT_DEPLOYED");
+            fail_syscall!([b"CONTRACT_NOT_DEPLOYED", b"ENTRYPOINT_FAILED"]);
         };
 
         // Prepare runner for running the ctor.
@@ -1047,7 +1053,7 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Call the function.
         let Some(entry_point) = contract_info.externals.get(&selector) else {
-            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
+            fail_syscall!([b"ENTRYPOINT_NOT_FOUND", b"ENTRYPOINT_FAILED"]);
         };
 
         let old_addrs = self.starknet_state.open_caller_context((
@@ -1085,7 +1091,7 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Call the function.
         let Some(entry_point) = contract_info.externals.get(&selector) else {
-            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
+            fail_syscall!([b"ENTRYPOINT_NOT_FOUND", b"ENTRYPOINT_FAILED"]);
         };
         match self.call_entry_point(gas_counter, runner, entry_point, calldata, vm) {
             Ok((res_data_start, res_data_end)) => {
