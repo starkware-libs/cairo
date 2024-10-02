@@ -205,8 +205,8 @@ impl SyncNotificationHandler for DidOpenTextDocument {
             let Ok(path) = uri.to_file_path() else { return Ok(()) };
 
             Backend::detect_crate_for(
-                &state.scarb_toolchain,
                 &mut state.db,
+                &state.scarb_toolchain,
                 &state.config,
                 &path,
                 &notifier,

@@ -388,7 +388,8 @@ impl Backend {
                 .collect::<HashSet<FileId>>()
         });
 
-        let open_files_modules = Backend::get_files_modules(&state.db, open_files_ids.iter());
+        let open_files_modules =
+            Backend::get_files_modules(&state.db, open_files_ids.iter().copied());
 
         // Refresh open files modules first for better UX
         trace_span!("refresh_open_files_modules").in_scope(|| {
@@ -418,7 +419,8 @@ impl Backend {
             rest_of_files
         });
 
-        let rest_of_files_modules = Backend::get_files_modules(&state.db, rest_of_files.iter());
+        let rest_of_files_modules =
+            Backend::get_files_modules(&state.db, rest_of_files.iter().copied());
 
         // Refresh rest of files after, since they are not viewed currently
         trace_span!("refresh_other_files_modules").in_scope(|| {
@@ -557,14 +559,14 @@ impl Backend {
     }
 
     /// Gets the mapping of files to their respective modules.
-    fn get_files_modules<'a>(
+    fn get_files_modules(
         db: &AnalysisDatabase,
-        files_ids: impl Iterator<Item = &'a FileId>,
+        files_ids: impl Iterator<Item = FileId>,
     ) -> HashMap<FileId, Vec<ModuleId>> {
         let mut result = HashMap::default();
         for file_id in files_ids {
-            if let Ok(file_modules) = db.file_modules(*file_id) {
-                result.insert(*file_id, file_modules.iter().cloned().collect_vec());
+            if let Ok(file_modules) = db.file_modules(file_id) {
+                result.insert(file_id, file_modules.iter().cloned().collect_vec());
             }
         }
         result
@@ -629,7 +631,7 @@ impl Backend {
         for uri in open_files {
             let Some(file_id) = db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
-                Backend::detect_crate_for(scarb_toolchain, db, config, &file_path, notifier);
+                Backend::detect_crate_for(db, scarb_toolchain, config, &file_path, notifier);
             }
             query_diags(db, file_id);
         }
@@ -650,8 +652,8 @@ impl Backend {
     /// system.
     #[tracing::instrument(level = "trace", skip_all)]
     fn detect_crate_for(
-        scarb_toolchain: &ScarbToolchain,
         db: &mut AnalysisDatabase,
+        scarb_toolchain: &ScarbToolchain,
         config: &Config,
         file_path: &Path,
         notifier: &Notifier,
@@ -717,8 +719,8 @@ impl Backend {
             let Some(file_id) = state.db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = state.db.lookup_intern_file(file_id) {
                 Backend::detect_crate_for(
-                    &state.scarb_toolchain,
                     &mut state.db,
+                    &state.scarb_toolchain,
                     &state.config,
                     &file_path,
                     notifier,

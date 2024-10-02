@@ -64,7 +64,7 @@ pub(crate) fn request<'a>(request: Request) -> Task<'a> {
         }
     }
     .unwrap_or_else(|error| {
-        error!("encountered error when routing request with ID {id}: {error}");
+        error!("encountered error when routing request with ID {id}: {error:?}");
         let result: Result<(), LSPError> = Err(error);
         Task::immediate(id, result)
     })
