@@ -1,5 +1,6 @@
 use lsp_server::RequestId;
 use serde::Serialize;
+use tracing::error;
 
 use crate::server::api;
 use crate::server::client::{Notifier, Requester, Responder};
@@ -72,13 +73,13 @@ impl<'s> Task<'s> {
     }
     /// Creates a local task that immediately
     /// responds with the provided `request`.
-    pub(crate) fn immediate<R>(id: RequestId, result: Result<R, api::Error>) -> Self
+    pub(crate) fn immediate<R>(id: RequestId, result: Result<R, api::LSPError>) -> Self
     where
         R: Serialize + Send + 'static,
     {
         Self::local(move |_, _, _, responder| {
             if let Err(err) = responder.respond(id, result) {
-                tracing::error!("Unable to send immediate response: {err}");
+                error!("unable to send immediate response: {err}");
             }
         })
     }

@@ -144,7 +144,7 @@ pub fn collect_dynamic_registrations(
             "textDocument/didChange",
             TextDocumentChangeRegistrationOptions {
                 document_selector,
-                sync_kind: TextDocumentSyncKind::FULL,
+                sync_kind: 1, // TextDocumentSyncKind::FULL
             },
         ));
 

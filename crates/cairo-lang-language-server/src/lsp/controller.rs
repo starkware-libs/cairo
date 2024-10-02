@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
@@ -17,7 +15,7 @@ use lsp_types::{
     DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
     DocumentFormattingParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
     Hover, HoverParams, SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent,
-    TextDocumentPositionParams, TextEdit, Uri,
+    TextDocumentPositionParams, TextEdit, Url,
 };
 use serde_json::Value;
 use tracing::{error, warn};
@@ -30,7 +28,7 @@ use crate::lsp::ext::{
 use crate::server::api::traits::{
     BackgroundDocumentRequestHandler, SyncNotificationHandler, SyncRequestHandler,
 };
-use crate::server::api::{Error, LSPResult};
+use crate::server::api::{LSPError, LSPResult};
 use crate::server::client::{Notifier, Requester};
 use crate::server::commands::ServerCommands;
 use crate::state::{State, StateSnapshot};
@@ -42,7 +40,7 @@ impl BackgroundDocumentRequestHandler for CodeActionRequest {
         snapshot: StateSnapshot,
         _notifier: Notifier,
         params: CodeActionParams,
-    ) -> Result<Option<CodeActionResponse>, Error> {
+    ) -> Result<Option<CodeActionResponse>, LSPError> {
         Ok(ide::code_actions::code_actions(params, &snapshot.db))
     }
 }
@@ -104,7 +102,7 @@ impl SyncNotificationHandler for Cancel {
 }
 
 impl SyncNotificationHandler for DidChangeTextDocument {
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri.as_str()))]
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     fn run(
         state: &mut State,
         notifier: Notifier,
@@ -120,7 +118,7 @@ impl SyncNotificationHandler for DidChangeTextDocument {
             return Ok(());
         };
 
-        if let Some(file) = state.db.file_for_uri(&params.text_document.uri) {
+        if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
             state.db.override_file_content(file, Some(text.into()));
             Backend::refresh_diagnostics(state, &notifier)?;
         };
@@ -137,7 +135,6 @@ impl SyncNotificationHandler for DidChangeConfiguration {
         requester: &mut Requester<'_>,
         _params: DidChangeConfigurationParams,
     ) -> LSPResult<()> {
-        // TODO it was this way but we shouldn't reload here, just read changes from params
         Backend::reload_config(state, requester)
     }
 }
@@ -153,18 +150,19 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
         // Invalidate changed cairo files.
         for change in &params.changes {
             if is_cairo_file_path(&change.uri) {
-                let Some(file) = state.db.file_for_uri(&change.uri) else { continue };
+                let Some(file) = state.db.file_for_url(&change.uri) else { continue };
                 PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
             }
         }
 
         // Reload workspace if a config file has changed.
         for change in params.changes {
-            let changed_file_path = change.uri.path();
-            let changed_file_name = changed_file_path.segments().last().map(|str| str.as_str());
+            let changed_file_path = change.uri.to_file_path().unwrap_or_default();
+            let changed_file_name = changed_file_path.file_name().unwrap_or_default();
             // TODO(pmagiera): react to Scarb.lock. Keep in mind Scarb does save Scarb.lock on each
             //  metadata call, so it is easy to fall in a loop here.
-            if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name) {
+            if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
+            {
                 Backend::reload(state, &notifier, requester)?;
             }
         }
@@ -174,7 +172,7 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
 }
 
 impl SyncNotificationHandler for DidCloseTextDocument {
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri.as_str()))]
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     fn run(
         state: &mut State,
         notifier: Notifier,
@@ -182,7 +180,7 @@ impl SyncNotificationHandler for DidCloseTextDocument {
         params: DidCloseTextDocumentParams,
     ) -> LSPResult<()> {
         state.open_files.remove(&params.text_document.uri);
-        if let Some(file) = state.db.file_for_uri(&params.text_document.uri) {
+        if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
             state.db.override_file_content(file, None);
             Backend::refresh_diagnostics(state, &notifier)?;
         }
@@ -192,7 +190,7 @@ impl SyncNotificationHandler for DidCloseTextDocument {
 }
 
 impl SyncNotificationHandler for DidOpenTextDocument {
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri.as_str()))]
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     fn run(
         state: &mut State,
         notifier: Notifier,
@@ -203,8 +201,8 @@ impl SyncNotificationHandler for DidOpenTextDocument {
 
         // Try to detect the crate for physical files.
         // The crate for virtual files is already known.
-        if !uri.scheme().is_some_and(|scheme| scheme.as_str() != "file") {
-            let path = uri.path().as_str().parse::<PathBuf>().unwrap();
+        if uri.scheme() == "file" {
+            let Ok(path) = uri.to_file_path() else { return Ok(()) };
 
             Backend::detect_crate_for(
                 &state.scarb_toolchain,
@@ -215,7 +213,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
             );
         }
 
-        if let Some(file_id) = state.db.file_for_uri(&uri) {
+        if let Some(file_id) = state.db.file_for_url(&uri) {
             state.open_files.insert(uri);
             state.db.override_file_content(file_id, Some(params.text_document.text.into()));
 
@@ -227,14 +225,14 @@ impl SyncNotificationHandler for DidOpenTextDocument {
 }
 
 impl SyncNotificationHandler for DidSaveTextDocument {
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri.as_str()))]
+    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     fn run(
         state: &mut State,
         _notifier: Notifier,
         _requester: &mut Requester<'_>,
         params: DidSaveTextDocumentParams,
     ) -> LSPResult<()> {
-        if let Some(file) = state.db.file_for_uri(&params.text_document.uri) {
+        if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
             PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
             state.db.override_file_content(file, None);
         }
@@ -285,7 +283,7 @@ impl BackgroundDocumentRequestHandler for ProvideVirtualFile {
     ) -> LSPResult<ProvideVirtualFileResponse> {
         let content = snapshot
             .db
-            .file_for_uri(&params.uri)
+            .file_for_url(&params.uri)
             .and_then(|file_id| snapshot.db.file_content(file_id))
             .map(|content| content.to_string());
 
@@ -315,6 +313,6 @@ impl BackgroundDocumentRequestHandler for ExpandMacro {
     }
 }
 
-fn is_cairo_file_path(file_path: &Uri) -> bool {
-    file_path.path().as_str().ends_with(".cairo")
+fn is_cairo_file_path(file_path: &Url) -> bool {
+    file_path.path().ends_with(".cairo")
 }

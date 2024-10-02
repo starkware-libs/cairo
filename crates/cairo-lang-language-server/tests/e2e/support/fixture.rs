@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use assert_fs::prelude::*;
 use assert_fs::TempDir;
-use lsp_types::Uri;
+use lsp_types::Url;
 
 /// A temporary directory that is a context for testing the language server.
 pub struct Fixture {
@@ -34,7 +34,7 @@ impl Fixture {
         self.t.path()
     }
 
-    pub fn root_uri(&self) -> Uri {
+    pub fn root_uri(&self) -> Url {
         self.t.path().to_str().unwrap().parse().unwrap()
     }
 
@@ -42,7 +42,7 @@ impl Fixture {
         self.t.child(path).path().to_owned()
     }
 
-    pub fn file_uri(&self, path: impl AsRef<Path>) -> Uri {
+    pub fn file_uri(&self, path: impl AsRef<Path>) -> Url {
         format!("file://{}", self.file_absolute_path(path).to_str().unwrap()).parse().unwrap()
     }
 

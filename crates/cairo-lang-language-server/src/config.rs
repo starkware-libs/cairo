@@ -9,7 +9,7 @@ use serde_json::Value;
 use tracing::{debug, error, warn};
 
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
-use crate::server::api::{LSPResult, LSPResultConversionTrait};
+use crate::server::api::{LSPResult, LSPResultEx};
 use crate::server::client::{Notifier, Requester};
 use crate::server::schedule::Task;
 use crate::state::State;

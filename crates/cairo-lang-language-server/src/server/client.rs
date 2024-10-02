@@ -4,6 +4,7 @@ use anyhow::Result;
 use lsp_server::{Notification, RequestId};
 use rustc_hash::FxHashMap;
 use serde_json::Value;
+use tracing::error;
 
 use super::api;
 use super::schedule::Task;
@@ -65,14 +66,14 @@ impl Notifier {
 }
 
 impl Responder {
-    pub fn respond<R>(&self, id: RequestId, result: Result<R, api::Error>) -> Result<()>
+    pub fn respond<R>(&self, id: RequestId, result: Result<R, api::LSPError>) -> Result<()>
     where
         R: serde::Serialize,
     {
         self.0.send(
             match result {
                 Ok(res) => lsp_server::Response::new_ok(id, res),
-                Err(api::Error { code, error }) => {
+                Err(api::LSPError { code, error }) => {
                     lsp_server::Response::new_err(id, code as i32, format!("{error}"))
                 }
             }
@@ -100,17 +101,13 @@ impl<'s> Requester<'s> {
             Box::new(move |response: lsp_server::Response| {
                 match (response.error, response.result) {
                     (Some(err), _) => {
-                        tracing::error!(
-                            "Got an error from the client (code {}): {}",
-                            err.code,
-                            err.message
-                        );
+                        error!("got an error from the client (code {}): {}", err.code, err.message);
                         Task::nothing()
                     }
                     (None, Some(response)) => match serde_json::from_value(response) {
                         Ok(response) => response_handler(response),
                         Err(error) => {
-                            tracing::error!("Failed to deserialize response from server: {error}");
+                            error!("failed to deserialize response from server: {error}");
                             Task::nothing()
                         }
                     },
@@ -123,8 +120,8 @@ impl<'s> Requester<'s> {
                             // hit it if the concrete type is `()`, so the `unwrap()` is safe here.
                             response_handler(serde_json::from_value(Value::Null).unwrap());
                         } else {
-                            tracing::error!(
-                                "Server response was invalid: did not contain a result or error"
+                            error!(
+                                "server response was invalid: did not contain a result or error"
                             );
                         }
                         Task::nothing()
@@ -148,7 +145,7 @@ impl<'s> Requester<'s> {
         if let Some(handler) = self.response_handlers.remove(&response.id) {
             handler(response)
         } else {
-            tracing::error!("Received a response with ID {}, which was not expected", response.id);
+            error!("received a response with ID {}, which was not expected", response.id);
             Task::nothing()
         }
     }

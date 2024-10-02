@@ -66,7 +66,7 @@ use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
 use lsp_server::{ErrorCode, Message};
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{ClientCapabilities, PublishDiagnosticsParams, RegistrationParams, Uri};
+use lsp_types::{ClientCapabilities, PublishDiagnosticsParams, RegistrationParams, Url};
 use salsa::Cancelled;
 use server::connection::ClientSender;
 use server::schedule::task::SyncTask;
@@ -86,7 +86,7 @@ use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
 use crate::server::api;
-use crate::server::api::{Error, LSPResult};
+use crate::server::api::{LSPError, LSPResult};
 use crate::server::client::{Client, Notifier, Requester};
 use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::schedule::{event_loop_thread, Scheduler, Task};
@@ -227,12 +227,12 @@ fn init_logging() -> Option<impl Drop> {
 fn ensure_exists_in_db<'a>(
     new_db: &mut AnalysisDatabase,
     old_db: &AnalysisDatabase,
-    open_files: impl Iterator<Item = &'a Uri>,
+    open_files: impl Iterator<Item = &'a Url>,
 ) {
     let overrides = old_db.file_overrides();
     let mut new_overrides: OrderedHashMap<FileId, Arc<str>> = Default::default();
     for uri in open_files {
-        let Some(file_id) = old_db.file_for_uri(uri) else { continue };
+        let Some(file_id) = old_db.file_for_url(uri) else { continue };
         let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
         if let Some(content) = overrides.get(&file_id) {
             new_overrides.insert(new_file_id, content.clone());
@@ -353,10 +353,16 @@ impl Backend {
                 })
             {
                 debug!("LSP worker thread was cancelled");
-                Error::new(anyhow!("LSP worker thread was cancelled"), ErrorCode::ServerCancelled)
+                LSPError::new(
+                    anyhow!("LSP worker thread was cancelled"),
+                    ErrorCode::ServerCancelled,
+                )
             } else {
                 error!("caught panic in LSP worker thread");
-                Error::new(anyhow!("caught panic in LSP worker thread"), ErrorCode::InternalError)
+                LSPError::new(
+                    anyhow!("caught panic in LSP worker thread"),
+                    ErrorCode::InternalError,
+                )
             }
         })
     }
@@ -365,14 +371,14 @@ impl Backend {
     #[tracing::instrument(level = "debug", skip_all)]
     fn refresh_diagnostics(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
         // TODO: implement a pop queue of size 1 for diags
-        let mut files_with_set_diagnostics: HashSet<Uri> = HashSet::default();
+        let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
         let mut processed_modules: HashSet<ModuleId> = HashSet::default();
 
         let open_files_ids = trace_span!("get_open_files_ids").in_scope(|| {
             state
                 .open_files
                 .iter()
-                .filter_map(|uri| state.db.file_for_uri(uri))
+                .filter_map(|uri| state.db.file_for_url(uri))
                 .collect::<HashSet<FileId>>()
         });
 
@@ -461,11 +467,11 @@ impl Backend {
         file: &FileId,
         modules_ids: &Vec<ModuleId>,
         processed_modules: &mut HashSet<ModuleId>,
-        files_with_set_diagnostics: &mut HashSet<Uri>,
+        files_with_set_diagnostics: &mut HashSet<Url>,
         notifier: &Notifier,
     ) {
         let db = &state.db;
-        let file_uri = db.uri_for_file(*file);
+        let file_uri = db.url_for_file(*file);
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
         let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
 
@@ -612,7 +618,7 @@ impl Backend {
         db: &mut AnalysisDatabase,
         scarb_toolchain: &ScarbToolchain,
         config: &Config,
-        open_files: impl Iterator<Item = &'a Uri>,
+        open_files: impl Iterator<Item = &'a Url>,
         notifier: &Notifier,
     ) {
         let query_diags = |db: &AnalysisDatabase, file_id| {
@@ -621,7 +627,7 @@ impl Backend {
             let _ = db.file_lowering_diagnostics(file_id);
         };
         for uri in open_files {
-            let Some(file_id) = db.file_for_uri(uri) else { continue };
+            let Some(file_id) = db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
                 Backend::detect_crate_for(scarb_toolchain, db, config, &file_path, notifier);
             }
@@ -711,7 +717,7 @@ impl Backend {
         Backend::reload_config(state, requester)?;
 
         for uri in state.open_files.iter() {
-            let Some(file_id) = state.db.file_for_uri(uri) else { continue };
+            let Some(file_id) = state.db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = state.db.lookup_intern_file(file_id) {
                 Backend::detect_crate_for(
                     &state.scarb_toolchain,

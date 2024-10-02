@@ -12,7 +12,7 @@ mod render;
     fields(uri = %params.text_document_position_params.text_document.uri.as_str())
 )]
 pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
-    let file_id = db.file_for_uri(&params.text_document_position_params.text_document.uri)?;
+    let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri)?;
     let position = params.text_document_position_params.position.to_cairo();
     let identifier = db.find_identifier_at_position(file_id, position)?;
 

@@ -2,7 +2,7 @@
 
 use lsp_types::notification::Notification;
 use lsp_types::request::Request;
-use lsp_types::{TextDocumentPositionParams, Uri};
+use lsp_types::{TextDocumentPositionParams, Url};
 use serde::{Deserialize, Serialize};
 
 /// Provides content of virtual file from the database.
@@ -10,7 +10,7 @@ pub struct ProvideVirtualFile;
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct ProvideVirtualFileRequest {
-    pub uri: Uri,
+    pub uri: Url,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]

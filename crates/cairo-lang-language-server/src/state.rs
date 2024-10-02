@@ -7,7 +7,7 @@ use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_semantic::SemanticDiagnostic;
-use lsp_types::{ClientCapabilities, Uri};
+use lsp_types::{ClientCapabilities, Url};
 use salsa::ParallelDatabase;
 
 use crate::config::Config;
@@ -18,8 +18,8 @@ use crate::{env_config, Tricks};
 /// State of Language server.
 pub struct State {
     pub db: AnalysisDatabase,
-    pub open_files: Owned<HashSet<Uri>>,
-    pub file_diagnostics: Owned<HashMap<Uri, FileDiagnostics>>,
+    pub open_files: Owned<HashSet<Url>>,
+    pub file_diagnostics: Owned<HashMap<Url, FileDiagnostics>>,
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
     pub scarb_toolchain: ScarbToolchain,
@@ -76,7 +76,7 @@ impl State {
 /// Readonly snapshot of Language server state.
 pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,
-    pub _open_files: Snapshot<HashSet<Uri>>,
+    pub _open_files: Snapshot<HashSet<Url>>,
     pub _config: Snapshot<Config>,
     pub _client_capabilities: Snapshot<ClientCapabilities>,
     pub _tricks: Snapshot<Tricks>,

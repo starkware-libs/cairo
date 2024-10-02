@@ -1,17 +1,22 @@
 use std::sync::{Arc, Weak};
 
-use lsp_server as lsp;
-use lsp_types::notification::Notification;
-use lsp_types::request::Request;
+use anyhow::{bail, Result};
+use lsp_server::{
+    Connection as LSPConnection, IoThreads, Message, Notification, Request, RequestId, Response,
+};
+use lsp_types::notification::{Exit, Notification as NotificationTrait};
+use lsp_types::request::{Request as RequestTrait, Shutdown};
+use lsp_types::{InitializeResult, ServerCapabilities};
+use tracing::{error, info};
 
-type ConnectionSender = crossbeam::channel::Sender<lsp::Message>;
-type ConnectionReceiver = crossbeam::channel::Receiver<lsp::Message>;
+type ConnectionSender = crossbeam::channel::Sender<Message>;
+type ConnectionReceiver = crossbeam::channel::Receiver<Message>;
 
 /// A builder for `Connection` that handles LSP initialization.
 pub struct ConnectionInitializer {
-    connection: lsp::Connection,
+    connection: LSPConnection,
     /// None in tests, Some(_) otherwise
-    threads: Option<lsp::IoThreads>,
+    threads: Option<IoThreads>,
 }
 
 /// Handles inbound and outbound messages with the client.
@@ -19,28 +24,26 @@ pub struct Connection {
     sender: Arc<ConnectionSender>,
     receiver: ConnectionReceiver,
     /// None in tests, Some(_) otherwise
-    threads: Option<lsp::IoThreads>,
+    threads: Option<IoThreads>,
 }
 
 impl ConnectionInitializer {
     /// Create a new LSP server connection over stdin/stdout.
     pub fn stdio() -> Self {
-        let (connection, threads) = lsp::Connection::stdio();
+        let (connection, threads) = LSPConnection::stdio();
         Self { connection, threads: Some(threads) }
     }
 
     /// Create a new LSP server connection in memory.
-    pub fn memory() -> (Self, lsp::Connection) {
-        let (server, client) = lsp::Connection::memory();
+    pub fn memory() -> (Self, LSPConnection) {
+        let (server, client) = LSPConnection::memory();
         (Self { connection: server, threads: None }, client)
     }
 
     /// Starts the initialization process with the client by listening for an initialization
     /// request. Returns a request ID that should be passed into `initialize_finish` later,
     /// along with the initialization parameters that were provided.
-    pub fn initialize_start(
-        &self,
-    ) -> anyhow::Result<(lsp::RequestId, lsp_types::InitializeParams)> {
+    pub fn initialize_start(&self) -> Result<(RequestId, lsp_types::InitializeParams)> {
         let (id, params) = self.connection.initialize_start()?;
         Ok((id, serde_json::from_value(params)?))
     }
@@ -49,13 +52,13 @@ impl ConnectionInitializer {
     /// returning an initialized `Connection`.
     pub fn initialize_finish(
         self,
-        id: lsp::RequestId,
-        server_capabilities: lsp_types::ServerCapabilities,
-    ) -> anyhow::Result<Connection> {
+        id: RequestId,
+        server_capabilities: ServerCapabilities,
+    ) -> Result<Connection> {
         let initialize_result =
-            lsp_types::InitializeResult { capabilities: server_capabilities, server_info: None };
+            InitializeResult { capabilities: server_capabilities, server_info: None };
         self.connection.initialize_finish(id, serde_json::to_value(initialize_result).unwrap())?;
-        let Self { connection: lsp::Connection { sender, receiver }, threads } = self;
+        let Self { connection: LSPConnection { sender, receiver }, threads } = self;
         Ok(Connection { sender: Arc::new(sender), receiver, threads })
     }
 }
@@ -67,38 +70,34 @@ impl Connection {
     }
 
     /// An iterator over incoming messages from the client.
-    pub fn incoming(&self) -> crossbeam::channel::Iter<'_, lsp::Message> {
+    pub fn incoming(&self) -> crossbeam::channel::Iter<'_, Message> {
         self.receiver.iter()
     }
 
-    /// Check and respond to any incoming shutdown requests; returns`true` if the server should be
+    /// Check and respond to any incoming shutdown requests; returns `true` if the server should be
     /// shutdown.
-    pub fn handle_shutdown(&self, message: &lsp::Message) -> anyhow::Result<bool> {
+    pub fn handle_shutdown(&self, message: &Message) -> Result<bool> {
         match message {
-            lsp::Message::Request(lsp::Request { id, method, .. })
-                if method == lsp_types::request::Shutdown::METHOD =>
-            {
-                self.sender.send(lsp::Response::new_ok(id.clone(), ()).into())?;
-                tracing::info!("Shutdown request received. Waiting for an exit notification...");
+            Message::Request(Request { id, method, .. }) if method == Shutdown::METHOD => {
+                self.sender.send(Response::new_ok(id.clone(), ()).into())?;
+                info!("shutdown request received, waiting for an exit notification...");
                 match self.receiver.recv_timeout(std::time::Duration::from_secs(30))? {
-                    lsp::Message::Notification(lsp::Notification { method, .. })
-                        if method == lsp_types::notification::Exit::METHOD =>
+                    Message::Notification(Notification { method, .. })
+                        if method == Exit::METHOD =>
                     {
-                        tracing::info!("Exit notification received. Server shutting down...");
+                        info!("exit notification received, server shutting down...");
                         Ok(true)
                     }
-                    message => anyhow::bail!(
-                        "Server received unexpected message {message:?} while waiting for exit \
+                    message => bail!(
+                        "server received unexpected message {message:?} while waiting for exit \
                          notification"
                     ),
                 }
             }
-            lsp::Message::Notification(lsp::Notification { method, .. })
-                if method == lsp_types::notification::Exit::METHOD =>
-            {
-                tracing::error!(
-                    "Server received an exit notification before a shutdown request was sent. \
-                     Exiting..."
+            Message::Notification(Notification { method, .. }) if method == Exit::METHOD => {
+                error!(
+                    "server received an exit notification before a shutdown request was sent, \
+                     exiting..."
                 );
                 Ok(true)
             }
@@ -110,7 +109,7 @@ impl Connection {
     /// This is guaranteed to be nearly immediate since
     /// we close the only active channels to these threads prior
     /// to joining them.
-    pub fn close(self) -> anyhow::Result<()> {
+    pub fn close(self) -> Result<()> {
         drop(
             Arc::into_inner(self.sender)
                 .expect("the client sender shouldn't have more than one strong reference"),
@@ -134,9 +133,9 @@ pub struct ClientSender {
 
 // note: additional wrapper functions for senders may be implemented as needed.
 impl ClientSender {
-    pub(crate) fn send(&self, msg: lsp::Message) -> anyhow::Result<()> {
+    pub(crate) fn send(&self, msg: Message) -> Result<()> {
         let Some(sender) = self.weak_sender.upgrade() else {
-            anyhow::bail!("The connection with the client has been closed");
+            bail!("the connection with the client has been closed");
         };
 
         Ok(sender.send(msg)?)

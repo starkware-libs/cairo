@@ -16,27 +16,27 @@ use crate::lang::lsp::LsProtoGroup;
 )]
 pub fn format(params: DocumentFormattingParams, db: &AnalysisDatabase) -> Option<Vec<TextEdit>> {
     let file_uri = params.text_document.uri;
-    let file = db.file_for_uri(&file_uri)?;
+    let file = db.file_for_url(&file_uri)?;
 
     let Ok(node) = db.file_syntax(file) else {
-        error!("formatting failed: file '{}' does not exist", *file_uri);
+        error!("formatting failed: file '{file_uri}' does not exist");
         return None;
     };
 
     if db.file_syntax_diagnostics(file).check_error_free().is_err() {
-        error!("formatting failed: cannot properly parse '{}' exist", *file_uri);
+        error!("formatting failed: cannot properly parse '{file_uri}' exist");
         return None;
     }
 
     let new_text = get_formatted_file(db.upcast(), &node, FormatterConfig::default());
 
     let Some(file_summary) = db.file_summary(file) else {
-        error!("formatting failed: cannot get summary for file '{}'", *file_uri);
+        error!("formatting failed: cannot get summary for file '{file_uri}'");
         return None;
     };
 
     let Ok(old_line_count) = file_summary.line_count().try_into() else {
-        error!("formatting failed: line count out of bound in file '{}'", *file_uri);
+        error!("formatting failed: line count out of bound in file '{file_uri}'");
         return None;
     };
 
