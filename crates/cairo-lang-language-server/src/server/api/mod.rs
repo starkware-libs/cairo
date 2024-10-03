@@ -132,7 +132,6 @@ fn local_notification_task<'a, N: traits::SyncNotificationHandler>(
     Ok(Task::local(move |session, notifier, requester, _| {
         if let Err(err) = N::run(session, notifier, requester, params) {
             error!("an error occurred while running {id}: {err}");
-            // show_err_msg!("Ruff encountered a problem. Check the logs for more details.");
         }
     }))
 }
@@ -162,7 +161,6 @@ fn cast_request<R: RequestTrait>(request: Request) -> Result<(RequestId, R::Para
 fn respond<R: RequestTrait>(id: RequestId, result: LSPResult<R::Result>, responder: &Responder) {
     if let Err(err) = &result {
         error!("an error occurred with result ID {id}: {err}");
-        // show_err_msg!("Ruff encountered a problem. Check the logs for more details.");
     }
     if let Err(err) = responder.respond(id, result) {
         error!("failed to send response: {err}");
