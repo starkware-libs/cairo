@@ -44,8 +44,8 @@ pub struct DiagnosticsReporter<'a> {
     crate_ids: Vec<CrateId>,
     /// If true, compilation will not fail due to warnings.
     allow_warnings: bool,
-    /// If the diagnostics from lowering group should be included.
-    include_lowering_diagnostics: bool,
+    /// If true, will ignore diagnostics from LoweringGroup during the ensure function.
+    skip_lowering_diagnostics: bool,
 }
 
 impl DiagnosticsReporter<'static> {
@@ -56,13 +56,13 @@ impl DiagnosticsReporter<'static> {
             crate_ids: vec![],
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
-            include_lowering_diagnostics: true,
+            skip_lowering_diagnostics: false,
         }
     }
 
     /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
     pub fn stderr() -> Self {
-        Self::callback(|diagnostic| eprint!("{diagnostic}"), true)
+        Self::callback(|diagnostic| eprint!("{diagnostic}"))
     }
 }
 
@@ -71,10 +71,7 @@ impl<'a> DiagnosticsReporter<'a> {
     //   impl<F> DiagnosticCallback for F where F: FnMut(Severity,String)
     //   and `new` could accept regular functions without need for this separate method.
     /// Create a reporter which calls `callback` for each diagnostic.
-    pub fn callback(
-        callback: impl FnMut(FormattedDiagnosticEntry) + 'a,
-        include_lowering_diagnostics: bool,
-    ) -> Self {
+    pub fn callback(callback: impl FnMut(FormattedDiagnosticEntry) + 'a) -> Self {
         struct Func<F>(F);
 
         impl<F> DiagnosticCallback for Func<F>
@@ -86,27 +83,24 @@ impl<'a> DiagnosticsReporter<'a> {
             }
         }
 
-        Self::new(Func(callback), include_lowering_diagnostics)
+        Self::new(Func(callback))
     }
 
     /// Create a reporter which appends all diagnostics to provided string.
     pub fn write_to_string(string: &'a mut String) -> Self {
-        Self::callback(
-            |diagnostic| {
-                write!(string, "{diagnostic}").unwrap();
-            },
-            true,
-        )
+        Self::callback(|diagnostic| {
+            write!(string, "{diagnostic}").unwrap();
+        })
     }
 
     /// Create a reporter which calls [`DiagnosticCallback::on_diagnostic`].
-    fn new(callback: impl DiagnosticCallback + 'a, include_lowering_diagnostics: bool) -> Self {
+    fn new(callback: impl DiagnosticCallback + 'a) -> Self {
         Self {
             callback: Some(Box::new(callback)),
             crate_ids: vec![],
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
-            include_lowering_diagnostics,
+            skip_lowering_diagnostics: false,
         }
     }
 
@@ -188,11 +182,14 @@ impl<'a> DiagnosticsReporter<'a> {
                     found_diagnostics |=
                         self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
                 }
-                if self.include_lowering_diagnostics {
-                    if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
-                        found_diagnostics |=
-                            self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
-                    }
+
+                if self.skip_lowering_diagnostics {
+                    continue;
+                }
+
+                if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
+                    found_diagnostics |=
+                        self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
                 }
             }
         }
@@ -253,6 +250,11 @@ impl<'a> DiagnosticsReporter<'a> {
                 }
             });
         }
+    }
+
+    pub fn skip_lowering_diagnostics(mut self) -> Self {
+        self.skip_lowering_diagnostics = true;
+        self
     }
 }
 
