@@ -54,7 +54,6 @@ impl ScarbToolchain {
                         warn!("attempt to use scarb without SCARB env being set");
                     } else {
                         error!("attempt to use scarb without SCARB env being set");
-
                         self.notifier.notify::<ScarbPathMissing>(());
                     }
                 }

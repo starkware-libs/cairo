@@ -52,7 +52,6 @@ pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
         let mut url = Url::parse("vfs://").unwrap();
         url.set_host(Some(&file_id.as_intern_id().to_string())).unwrap();
         url.path_segments_mut().unwrap().push(&format!("{}.cairo", vf.name));
-
         url
     }
 }
