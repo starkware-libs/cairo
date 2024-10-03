@@ -38,7 +38,6 @@
 //! }
 //! ```
 
-use std::collections::{HashMap, HashSet};
 use std::io;
 use std::num::NonZeroUsize;
 use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
@@ -50,33 +49,24 @@ use anyhow::{anyhow, Context, Result};
 use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use itertools::Itertools;
+use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_server::{ErrorCode, Message};
-use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{
-    ClientCapabilities, PublishDiagnosticsParams, Registration, RegistrationParams, Url,
-};
+use lsp_types::{ClientCapabilities, Registration, RegistrationParams, Url};
 use salsa::Cancelled;
 use server::connection::ClientSender;
-use state::FileDiagnostics;
-use tracing::{debug, error, info, trace_span, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::config::Config;
+use crate::diagnostics::{Diagnostics, StateSnapshotForDiagnostics};
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
@@ -88,11 +78,13 @@ use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
 use crate::server::client::{Client, Notifier, Requester};
 use crate::server::connection::{Connection, ConnectionInitializer};
-use crate::server::schedule::{event_loop_thread, JoinHandle, Scheduler, SyncTask, Task};
+use crate::server::schedule::task::BackgroundSchedule;
+use crate::server::schedule::{event_loop_thread, JoinHandle, Scheduler, Task};
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
 
 mod config;
+mod diagnostics;
 mod env_config;
 mod ide;
 mod lang;
@@ -245,6 +237,12 @@ fn ensure_exists_in_db<'a>(
     new_db.set_file_overrides(Arc::new(new_overrides));
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum UnwindErrorKind {
+    Canceled,
+    Other,
+}
+
 #[cfg(not(feature = "testing"))]
 struct Backend {
     connection: Connection,
@@ -303,7 +301,7 @@ impl Backend {
         let Self { mut state, connection } = self;
 
         event_loop_thread(move || {
-            let scheduler = Self::initial_setup(&mut state, &connection);
+            let scheduler = Self::initial_setup(&mut state, &connection)?;
 
             let result = Self::event_loop(&connection, scheduler);
 
@@ -320,7 +318,10 @@ impl Backend {
         self.run()
     }
 
-    fn initial_setup<'a>(state: &'a mut State, connection: &'_ Connection) -> Scheduler<'a> {
+    fn initial_setup<'a>(
+        state: &'a mut State,
+        connection: &'_ Connection,
+    ) -> Result<Scheduler<'a>> {
         let four = NonZeroUsize::new(4).unwrap();
         let worker_threads = std::thread::available_parallelism().unwrap_or(four).max(four);
 
@@ -339,13 +340,28 @@ impl Backend {
 
         // Reloading config has to be done as a sync task to access mutable state that is borrowed
         // by scheduler.
-        scheduler.dispatch(Task::Sync(SyncTask {
-            func: Box::new(|state, _notifier, requester, _responder| {
-                Self::reload_config(state, requester).ok();
-            }),
-        }));
+        scheduler.local(|state, _notifier, requester, _responder| {
+            Self::reload_config(state, requester).ok();
+        });
+
+        let (diags_sender, diags_handle) = Diagnostics::handler()?;
 
         scheduler
+            .background(BackgroundSchedule::Worker, |notifier, _responder| diags_handle(notifier));
+
+        // Important: swap should occur before using snapshots in diagnostics.
+        scheduler
+            .sync_task_post_hook(|state, notifier| Self::maybe_swap_database(state, &notifier));
+        scheduler.sync_task_post_hook(move |state, _notifier| {
+            // try_send() instead of send() because if there is something on queue we don't want to
+            // push new ones. This case can happen because not every local task trigerrs
+            // cancellation. We should check here if salsa revision changed but it is
+            // currently private in salsa. In case DB have not changed currently sended
+            // snapshots are still valid so there is no need to send them again.
+            diags_sender.try_send(StateSnapshotForDiagnostics::from_state(state)).ok();
+        });
+
+        Ok(scheduler)
     }
 
     fn register_dynamic_capabilities(
@@ -386,7 +402,7 @@ impl Backend {
     }
 
     /// Catches panics and returns Err.
-    fn catch_panics<T>(f: impl FnOnce() -> T) -> LSPResult<T> {
+    fn catch_cancellation<T>(f: impl FnOnce() -> T) -> Result<T, UnwindErrorKind> {
         catch_unwind(AssertUnwindSafe(f)).map_err(|err| {
             // Salsa is broken and sometimes when cancelled throws regular assert instead of
             // [`Cancelled`]. Catch this case too.
@@ -397,12 +413,23 @@ impl Backend {
                     )
                 })
             {
+                UnwindErrorKind::Canceled
+            } else {
+                UnwindErrorKind::Other
+            }
+        })
+    }
+
+    fn catch_panics<T>(f: impl FnOnce() -> T) -> LSPResult<T> {
+        Self::catch_cancellation(f).map_err(|kind| match kind {
+            UnwindErrorKind::Canceled => {
                 debug!("LSP worker thread was cancelled");
                 LSPError::new(
                     anyhow!("LSP worker thread was cancelled"),
                     ErrorCode::ServerCancelled,
                 )
-            } else {
+            }
+            UnwindErrorKind::Other => {
                 error!("caught panic in LSP worker thread");
                 LSPError::new(
                     anyhow!("caught panic in LSP worker thread"),
@@ -412,218 +439,17 @@ impl Backend {
         })
     }
 
-    /// Refresh diagnostics and send diffs to the client.
-    #[tracing::instrument(level = "debug", skip_all)]
-    fn refresh_diagnostics(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
-        // TODO(#6318): implement a pop queue of size 1 for diags
-        let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
-        let mut processed_modules: HashSet<ModuleId> = HashSet::default();
-
-        let open_files_ids = trace_span!("get_open_files_ids").in_scope(|| {
-            state
-                .open_files
-                .iter()
-                .filter_map(|uri| state.db.file_for_url(uri))
-                .collect::<HashSet<FileId>>()
-        });
-
-        let open_files_modules =
-            Backend::get_files_modules(&state.db, open_files_ids.iter().copied());
-
-        // Refresh open files modules first for better UX
-        trace_span!("refresh_open_files_modules").in_scope(|| {
-            for (file, file_modules_ids) in open_files_modules {
-                Backend::refresh_file_diagnostics(
-                    state,
-                    &file,
-                    &file_modules_ids,
-                    &mut processed_modules,
-                    &mut files_with_set_diagnostics,
-                    notifier,
-                );
-            }
-        });
-
-        let rest_of_files = trace_span!("get_rest_of_files").in_scope(|| {
-            let mut rest_of_files: HashSet<FileId> = HashSet::default();
-            for crate_id in state.db.crates() {
-                for module_id in state.db.crate_modules(crate_id).iter() {
-                    if let Ok(module_files) = state.db.module_files(*module_id) {
-                        let unprocessed_files =
-                            module_files.iter().filter(|file| !open_files_ids.contains(file));
-                        rest_of_files.extend(unprocessed_files);
-                    }
-                }
-            }
-            rest_of_files
-        });
-
-        let rest_of_files_modules =
-            Backend::get_files_modules(&state.db, rest_of_files.iter().copied());
-
-        // Refresh rest of files after, since they are not viewed currently
-        trace_span!("refresh_other_files_modules").in_scope(|| {
-            for (file, file_modules_ids) in rest_of_files_modules {
-                Backend::refresh_file_diagnostics(
-                    state,
-                    &file,
-                    &file_modules_ids,
-                    &mut processed_modules,
-                    &mut files_with_set_diagnostics,
-                    notifier,
-                );
-            }
-        });
-
-        // Clear old diagnostics
-        trace_span!("clear_old_diagnostics").in_scope(|| {
-            let mut removed_files = Vec::new();
-
-            state.file_diagnostics.retain(|uri, _| {
-                let retain = files_with_set_diagnostics.contains(uri);
-                if !retain {
-                    removed_files.push(uri.clone());
-                }
-                retain
-            });
-
-            for file in removed_files {
-                trace_span!("publish_diagnostics").in_scope(|| {
-                    notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-                        uri: file,
-                        diagnostics: vec![],
-                        version: None,
-                    });
-                });
-            }
-        });
-
-        // After handling of all diagnostics, attempting to swap the database to reduce memory
-        // consumption.
-        // This should be an independent cronjob when diagnostics are run as a background task.
-        Backend::maybe_swap_database(state, notifier)
-    }
-
-    /// Refresh diagnostics for a single file.
-    fn refresh_file_diagnostics(
-        state: &mut State,
-        file: &FileId,
-        modules_ids: &Vec<ModuleId>,
-        processed_modules: &mut HashSet<ModuleId>,
-        files_with_set_diagnostics: &mut HashSet<Url>,
-        notifier: &Notifier,
-    ) {
-        let db = &state.db;
-        let file_uri = db.url_for_file(*file);
-        let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
-        let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
-
-        macro_rules! diags {
-            ($db:ident. $query:ident($file_id:expr), $f:expr) => {
-                trace_span!(stringify!($query)).in_scope(|| {
-                    catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
-                        .map($f)
-                        .inspect_err(|_| {
-                            error!("caught panic when computing diagnostics for file {file_uri:?}");
-                        })
-                        .unwrap_or_default()
-                })
-            };
-        }
-
-        for module_id in modules_ids {
-            if !processed_modules.contains(module_id) {
-                semantic_file_diagnostics.extend(
-                    diags!(db.module_semantic_diagnostics(*module_id), Result::unwrap_or_default)
-                        .get_all(),
-                );
-                lowering_file_diagnostics.extend(
-                    diags!(db.module_lowering_diagnostics(*module_id), Result::unwrap_or_default)
-                        .get_all(),
-                );
-
-                processed_modules.insert(*module_id);
-            }
-        }
-
-        let parser_file_diagnostics = diags!(db.file_syntax_diagnostics(*file), |r| r);
-
-        let new_file_diagnostics = FileDiagnostics {
-            parser: parser_file_diagnostics,
-            semantic: Diagnostics::from_iter(semantic_file_diagnostics),
-            lowering: Diagnostics::from_iter(lowering_file_diagnostics),
-        };
-
-        if !new_file_diagnostics.is_empty() {
-            files_with_set_diagnostics.insert(file_uri.clone());
-        }
-
-        // Since we are using Arcs, this comparison should be efficient.
-        if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file_uri) {
-            if old_file_diagnostics == &new_file_diagnostics {
-                return;
-            }
-
-            state.file_diagnostics.insert(file_uri.clone(), new_file_diagnostics.clone());
-        };
-
-        let mut diags = Vec::new();
-        let trace_macro_diagnostics = state.config.trace_macro_diagnostics;
-        map_cairo_diagnostics_to_lsp(
-            (*db).upcast(),
-            &mut diags,
-            &new_file_diagnostics.parser,
-            trace_macro_diagnostics,
-        );
-        map_cairo_diagnostics_to_lsp(
-            (*db).upcast(),
-            &mut diags,
-            &new_file_diagnostics.semantic,
-            trace_macro_diagnostics,
-        );
-        map_cairo_diagnostics_to_lsp(
-            (*db).upcast(),
-            &mut diags,
-            &new_file_diagnostics.lowering,
-            trace_macro_diagnostics,
-        );
-
-        trace_span!("publish_diagnostics").in_scope(|| {
-            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-                uri: file_uri,
-                diagnostics: diags,
-                version: None,
-            });
-        })
-    }
-
-    /// Gets the mapping of files to their respective modules.
-    fn get_files_modules(
-        db: &AnalysisDatabase,
-        files_ids: impl Iterator<Item = FileId>,
-    ) -> HashMap<FileId, Vec<ModuleId>> {
-        let mut result = HashMap::default();
-        for file_id in files_ids {
-            if let Ok(file_modules) = db.file_modules(file_id) {
-                result.insert(file_id, file_modules.iter().cloned().collect_vec());
-            }
-        }
-        result
-    }
-
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
     #[tracing::instrument(level = "trace", skip_all)]
-    fn maybe_swap_database(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
+    fn maybe_swap_database(state: &mut State, notifier: &Notifier) {
         if state.last_replace.elapsed().unwrap() <= state.db_replace_interval {
             // Not enough time passed since last swap.
-            return Ok(());
+            return;
         }
 
-        let result = Backend::swap_database(state, notifier);
+        Backend::swap_database(state, notifier).ok();
 
         state.last_replace = SystemTime::now();
-
-        result
     }
 
     /// Perform database swap
@@ -767,13 +593,11 @@ impl Backend {
             }
         }
 
-        Backend::refresh_diagnostics(state, notifier)
+        Ok(())
     }
 
     /// Reload the [`Config`] and all its dependencies.
     fn reload_config(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
-        state.config.reload(requester, &state.client_capabilities, |state, notifier| {
-            Backend::refresh_diagnostics(state, notifier).ok();
-        })
+        state.config.reload(requester, &state.client_capabilities)
     }
 }

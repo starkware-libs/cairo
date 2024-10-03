@@ -1,12 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use cairo_lang_diagnostics::Diagnostics;
-use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
-use cairo_lang_parser::ParserDiagnostic;
-use cairo_lang_semantic::SemanticDiagnostic;
 use lsp_types::{ClientCapabilities, Url};
 use salsa::ParallelDatabase;
 
@@ -19,7 +15,6 @@ use crate::{env_config, Tricks};
 pub struct State {
     pub db: AnalysisDatabase,
     pub open_files: Owned<HashSet<Url>>,
-    pub file_diagnostics: Owned<HashMap<Url, FileDiagnostics>>,
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
     pub scarb_toolchain: ScarbToolchain,
@@ -27,20 +22,6 @@ pub struct State {
     pub db_replace_interval: Duration,
     pub tricks: Owned<Tricks>,
 }
-
-#[derive(Clone, Default, PartialEq, Eq)]
-pub struct FileDiagnostics {
-    pub parser: Diagnostics<ParserDiagnostic>,
-    pub semantic: Diagnostics<SemanticDiagnostic>,
-    pub lowering: Diagnostics<LoweringDiagnostic>,
-}
-
-impl FileDiagnostics {
-    pub fn is_empty(&self) -> bool {
-        self.semantic.is_empty() && self.lowering.is_empty() && self.parser.is_empty()
-    }
-}
-impl std::panic::UnwindSafe for FileDiagnostics {}
 
 impl State {
     pub fn new(
@@ -52,7 +33,6 @@ impl State {
         Self {
             db,
             open_files: Default::default(),
-            file_diagnostics: Default::default(),
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
             tricks: Owned::new(tricks.into()),
@@ -87,6 +67,10 @@ impl<T: ?Sized> Owned<T> {
     pub fn new(inner: Arc<T>) -> Self {
         Self(inner)
     }
+
+    pub fn snapshot(&self) -> Snapshot<T> {
+        Snapshot(self.0.clone())
+    }
 }
 
 impl<T: ?Sized> Deref for Owned<T> {
@@ -108,5 +92,11 @@ impl<T: ?Sized> Deref for Snapshot<T> {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl<T: Clone> Snapshot<T> {
+    pub fn owned(self) -> T {
+        Arc::unwrap_or_clone(self.0)
     }
 }
