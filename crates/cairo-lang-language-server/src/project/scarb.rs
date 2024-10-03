@@ -1,13 +1,14 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 
 use anyhow::{bail, ensure, Context, Result};
 use cairo_lang_filesystem::db::{
-    CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig,
+    CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig, CORELIB_CRATE_NAME,
 };
 use itertools::Itertools;
-use scarb_metadata::{Metadata, PackageMetadata};
+use scarb_metadata::{CompilationUnitComponentMetadata, Metadata, PackageMetadata};
+use smol_str::{SmolStr, ToSmolStr};
 use tracing::{debug, error, warn};
 
 use crate::lang::db::AnalysisDatabase;
@@ -22,6 +23,8 @@ use crate::project::crate_data::Crate;
 /// Technically, it is possible for `scarb metadata` to omit `core` if working on a `no-core`
 /// package, but in reality enabling `no-core` makes sense only for the `core` package itself. To
 /// leave a trace of unreal cases, this function will log a warning if `core` is missing.
+///
+/// Package ID is used as a discriminator for all crates except `core`.
 // FIXME(mkaput): Currently this logic is feeding all compilation units of the single package at
 //  once. Often packages declare several targets (lib, starknet-contract, test), which currently
 //  causes overriding of the crate within single call of this function. This is an UX problem, for
@@ -92,15 +95,55 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                     .map(|cfg_set| cfg_set.union(&AnalysisDatabase::initial_cfg_set_for_deps()))
             };
 
-            // TODO: Find the specific versions to add.
-            let dependencies = package
-                .map(|p| {
-                    p.dependencies
-                        .iter()
-                        .map(|d| (d.name.clone(), DependencySettings { discriminator: None }))
-                        .collect()
-                })
-                .unwrap_or_default();
+            let dependencies = {
+                let direct_dependencies = package
+                    .map(|p| p.dependencies.iter().map(|dep| &*dep.name).collect::<HashSet<_>>())
+                    .unwrap_or_default();
+
+                compilation_unit
+                    .components
+                    .iter()
+                    .filter(|component_as_dependency| {
+                        direct_dependencies.contains(&*component_as_dependency.name) || {
+                            // This is a hacky way of accommodating integration test components,
+                            // which need to depend on the tested package.
+                            if let Some(package) = metadata
+                                .packages
+                                .iter()
+                                .find(|package| package.id == component_as_dependency.package)
+                            {
+                                package.targets.iter().filter(|target| target.kind == "test").any(
+                                    |target| {
+                                        let group_name = target
+                                            .params
+                                            .get("group-id")
+                                            .and_then(|g| g.as_str())
+                                            .unwrap_or(&target.name);
+                                        group_name == component.name
+                                    },
+                                )
+                            } else {
+                                false
+                            }
+                        }
+                    })
+                    .map(|component| {
+                        let settings = DependencySettings {
+                            discriminator: component_discriminator(component),
+                        };
+                        (component.name.clone(), settings)
+                    })
+                    .chain([
+                        // Add the component itself to dependencies.
+                        (
+                            crate_name.into(),
+                            DependencySettings {
+                                discriminator: component_discriminator(component),
+                            },
+                        ),
+                    ])
+                    .collect()
+            };
 
             let settings =
                 CrateSettings { edition, version, dependencies, cfg_set, experimental_features };
@@ -109,6 +152,7 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
 
             let cr = Crate {
                 name: crate_name.into(),
+                discriminator: component_discriminator(component),
                 root: root.into(),
                 custom_main_file_stems,
                 settings,
@@ -157,14 +201,16 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
         // All crates within a group should have the same settings and root.
         let settings = first_crate.settings.clone();
         let root = first_crate.root.clone();
-        // The name doesn't really matter, so we take the first crate's name.
+        // Name and discriminator don't really matter, so we take the first crate's ones.
         let name = first_crate.name.clone();
+        let discriminator = first_crate.discriminator.clone();
 
         let custom_main_file_stems =
             crs.into_iter().flat_map(|cr| cr.custom_main_file_stems.unwrap()).collect();
 
         crates.push(Crate {
             name,
+            discriminator,
             root,
             custom_main_file_stems: Some(custom_main_file_stems),
             settings,
@@ -269,4 +315,11 @@ fn scarb_package_experimental_features(
         negative_impls: contains("negative_impls"),
         coupons: contains("coupons"),
     }
+}
+
+/// Get crate discriminator from component metadata.
+///
+/// This function properly handles the fact that the `core` crate cannot have a discriminator.
+fn component_discriminator(component: &CompilationUnitComponentMetadata) -> Option<SmolStr> {
+    (component.name != CORELIB_CRATE_NAME).then(|| component.package.to_smolstr())
 }
