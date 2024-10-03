@@ -12,7 +12,7 @@ use crate::lang::lsp::LsProtoGroup;
 #[tracing::instrument(
     level = "debug",
     skip_all,
-    fields(uri = %params.text_document.uri.as_str())
+    fields(uri = %params.text_document.uri)
 )]
 pub fn format(params: DocumentFormattingParams, db: &AnalysisDatabase) -> Option<Vec<TextEdit>> {
     let file_uri = params.text_document.uri;

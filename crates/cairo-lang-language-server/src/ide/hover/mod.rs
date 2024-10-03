@@ -9,7 +9,7 @@ mod render;
 #[tracing::instrument(
     level = "debug",
     skip_all,
-    fields(uri = %params.text_document_position_params.text_document.uri.as_str())
+    fields(uri = %params.text_document_position_params.text_document.uri)
 )]
 pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
     let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri)?;

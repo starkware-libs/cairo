@@ -20,7 +20,7 @@ mod token_kind;
 #[tracing::instrument(
     level = "debug",
     skip_all,
-    fields(uri = %params.text_document.uri.as_str())
+    fields(uri = %params.text_document.uri)
 )]
 pub fn semantic_highlight_full(
     params: SemanticTokensParams,

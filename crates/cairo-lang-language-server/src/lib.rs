@@ -376,7 +376,7 @@ impl Backend {
     /// Refresh diagnostics and send diffs to the client.
     #[tracing::instrument(level = "debug", skip_all)]
     fn refresh_diagnostics(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
-        // TODO: implement a pop queue of size 1 for diags
+        // TODO(#6318): implement a pop queue of size 1 for diags
         let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
         let mut processed_modules: HashSet<ModuleId> = HashSet::default();
 
@@ -461,7 +461,7 @@ impl Backend {
 
         // After handling of all diagnostics, attempting to swap the database to reduce memory
         // consumption.
-        // This should be removed from here when diags are background job.
+        // This should be an independent cronjob when diagnostics are run as a background task.
         Backend::maybe_swap_database(state, notifier)
     }
 

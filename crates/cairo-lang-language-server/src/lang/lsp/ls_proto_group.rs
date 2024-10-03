@@ -10,7 +10,7 @@ use tracing::error;
 mod test;
 
 pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
-    /// Get a [`FileId`] from an [`Uri`].
+    /// Get a [`FileId`] from an [`Url`].
     ///
     /// Returns `None` on failure, and errors are logged.
     fn file_for_url(&self, uri: &Url) -> Option<FileId> {
@@ -40,7 +40,7 @@ pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
         }
     }
 
-    /// Get the canonical [`Uri`] for a [`FileId`].
+    /// Get the canonical [`Url`] for a [`FileId`].
     fn url_for_file(&self, file_id: FileId) -> Url {
         let vf = match self.upcast().lookup_intern_file(file_id) {
             FileLongId::OnDisk(path) => return Url::from_file_path(path).unwrap(),

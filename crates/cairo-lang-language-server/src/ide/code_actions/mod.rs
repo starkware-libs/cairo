@@ -17,7 +17,7 @@ mod rename_unused_variable;
 #[tracing::instrument(
     level = "debug",
     skip_all,
-    fields(uri = %params.text_document.uri.as_str())
+    fields(uri = %params.text_document.uri)
 )]
 pub fn code_actions(params: CodeActionParams, db: &AnalysisDatabase) -> Option<CodeActionResponse> {
     let mut actions = Vec::with_capacity(params.context.diagnostics.len());

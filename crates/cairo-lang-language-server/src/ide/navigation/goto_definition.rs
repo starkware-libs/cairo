@@ -12,7 +12,7 @@ use crate::lang::lsp::{LsProtoGroup, ToCairo, ToLsp};
 #[tracing::instrument(
     level = "debug",
     skip_all,
-    fields(uri = %params.text_document_position_params.text_document.uri.as_str())
+    fields(uri = %params.text_document_position_params.text_document.uri)
 )]
 pub fn goto_definition(
     params: GotoDefinitionParams,

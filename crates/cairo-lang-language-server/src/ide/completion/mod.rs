@@ -18,7 +18,7 @@ mod completions;
 #[tracing::instrument(
     level = "debug",
     skip_all,
-    fields(uri = %params.text_document_position.text_document.uri.as_str())
+    fields(uri = %params.text_document_position.text_document.uri)
 )]
 pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<CompletionResponse> {
     let text_document_position = params.text_document_position;

@@ -1,3 +1,3 @@
 pub(crate) mod capabilities;
-pub mod controller;
+mod controller;
 pub mod ext;
