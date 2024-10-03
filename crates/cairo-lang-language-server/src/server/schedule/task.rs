@@ -30,19 +30,19 @@ pub enum BackgroundSchedule {
 /// the two is that background threads only have a read-only snapshot of the session,
 /// while local tasks have exclusive access and can modify it as they please. Keep in mind that
 /// local tasks will **block** the main event loop, so only use local tasks if you **need**
-/// mutable state access or you need the absolute lowest latency possible.
+/// mutable state access, or you need the absolute lowest latency possible.
 pub enum Task<'s> {
     Background(BackgroundTaskBuilder<'s>),
     Sync(SyncTask<'s>),
 }
 
 // The reason why this isn't just a 'static background closure
-// is because we need to take a snapshot of the session before sending
-// this task to the background, and the inner closure can't take the session
+// is because we need to take a snapshot of the state before sending
+// this task to the background. The inner closure can't take the state
 // as an immutable reference since it's used mutably elsewhere. So instead,
-// a background task is built using an outer closure that borrows the session to take a snapshot,
+// a background task is built using an outer closure that borrows the state to take a snapshot,
 // that the inner closure can capture. This builder closure has a lifetime linked to the scheduler.
-// When the task is dispatched, the scheduler runs the synchronous builder, which takes the session
+// When the task is dispatched, the scheduler runs the synchronous builder, which takes the state
 // as a reference, to create the inner 'static closure. That closure is then moved to a background
 // task pool.
 pub struct BackgroundTaskBuilder<'s> {
@@ -62,14 +62,15 @@ impl<'s> Task<'s> {
     ) -> Self {
         Self::Background(BackgroundTaskBuilder { schedule, builder: Box::new(func) })
     }
+
     /// Creates a new local task.
     pub(crate) fn local(
         func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
     ) -> Self {
         Self::Sync(SyncTask { func: Box::new(func) })
     }
-    /// Creates a local task that immediately
-    /// responds with the provided `request`.
+
+    /// Creates a local task that immediately responds with the provided `request`.
     pub(crate) fn immediate<R>(id: RequestId, result: Result<R, api::LSPError>) -> Self
     where
         R: Serialize + Send + 'static,

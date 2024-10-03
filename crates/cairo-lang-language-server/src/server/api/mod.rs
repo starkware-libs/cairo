@@ -12,15 +12,14 @@ use lsp_types::request::{
 };
 use tracing::{error, warn};
 
+use super::client::Responder;
+use super::schedule::BackgroundSchedule;
 use crate::lsp::ext::{ExpandMacro, ProvideVirtualFile, ViewAnalyzedCrates};
 use crate::server::schedule::Task;
+use crate::state::State;
 use crate::Backend;
 
 pub mod traits;
-
-use super::client::Responder;
-use super::schedule::BackgroundSchedule;
-use crate::state::State;
 
 pub(crate) fn request<'a>(request: Request) -> Task<'a> {
     let id = request.id.clone();

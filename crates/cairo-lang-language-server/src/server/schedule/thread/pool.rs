@@ -6,7 +6,7 @@
 // +------------------------------------------------------------+
 //! [`Pool`] implements a basic custom thread pool
 //! inspired by the [`threadpool` crate](http://docs.rs/threadpool).
-//! When you spawn a task you specify a thread priority
+//! When you spawn a task, you specify a thread priority
 //! so the pool can schedule it to run on a thread with that priority.
 //! rust-analyzer uses this to prioritize work based on latency requirements.
 //!
@@ -14,8 +14,6 @@
 //! the threading utilities in [`crate::server::schedule::thread`].
 
 use std::num::NonZeroUsize;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
 
 use crossbeam::channel::{Receiver, Sender};
 
@@ -31,7 +29,6 @@ pub(crate) struct Pool {
     // before we join the worker threads!
     job_sender: Sender<Job>,
     _handles: Vec<JoinHandle>,
-    _extant_tasks: Arc<AtomicUsize>,
 }
 
 struct Job {
@@ -49,7 +46,6 @@ impl Pool {
 
         // Channel buffer capacity is between 2 and 4, depending on the pool size.
         let (job_sender, job_receiver) = crossbeam::channel::bounded(std::cmp::min(threads * 2, 4));
-        let extant_tasks = Arc::new(AtomicUsize::new(0));
 
         let mut handles = Vec::with_capacity(threads);
         for i in 0..threads {
@@ -57,7 +53,6 @@ impl Pool {
                 .stack_size(STACK_SIZE)
                 .name(format!("cairo-ls:worker:{i}"))
                 .spawn({
-                    let extant_tasks = Arc::clone(&extant_tasks);
                     let job_receiver: Receiver<Job> = job_receiver.clone();
                     move || {
                         let mut current_priority = INITIAL_PRIORITY;
@@ -66,9 +61,7 @@ impl Pool {
                                 job.requested_priority.apply_to_current_thread();
                                 current_priority = job.requested_priority;
                             }
-                            extant_tasks.fetch_add(1, Ordering::SeqCst);
                             (job.f)();
-                            extant_tasks.fetch_sub(1, Ordering::SeqCst);
                         }
                     }
                 })
@@ -77,7 +70,7 @@ impl Pool {
             handles.push(handle);
         }
 
-        Pool { _handles: handles, _extant_tasks: extant_tasks, job_sender }
+        Pool { _handles: handles, job_sender }
     }
 
     pub(crate) fn spawn<F>(&self, priority: ThreadPriority, f: F)

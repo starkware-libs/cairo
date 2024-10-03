@@ -16,7 +16,7 @@
 //! To maintain this invariant, we panic when it is clear that
 //! old scheduling APIs have been used.
 //!
-//! Moreover, we also want to ensure that every thread has an priority set explicitly
+//! Moreover, we also want to ensure that every thread has a priority set explicitly
 //! to force a decision about its importance to the system.
 //! Thus, [`ThreadPriority`] has no default value
 //! and every entry point to creating a thread requires a [`ThreadPriority`] upfront.
@@ -61,7 +61,7 @@ impl Builder {
             f()
         })?;
 
-        Ok(JoinHandle { inner: Some(inner_handle), allow_leak: false })
+        Ok(JoinHandle { inner: Some(inner_handle) })
     }
 }
 
@@ -69,24 +69,11 @@ pub struct JoinHandle<T = ()> {
     // `inner` is an `Option` so that we can
     // take ownership of the contained `JoinHandle`.
     inner: Option<jod_thread::JoinHandle<T>>,
-    allow_leak: bool,
 }
 
 impl<T> JoinHandle<T> {
     pub(crate) fn join(mut self) -> T {
         self.inner.take().unwrap().join()
-    }
-}
-
-impl<T> Drop for JoinHandle<T> {
-    fn drop(&mut self) {
-        if !self.allow_leak {
-            return;
-        }
-
-        if let Some(join_handle) = self.inner.take() {
-            join_handle.detach();
-        }
     }
 }
 

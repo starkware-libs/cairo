@@ -7,7 +7,6 @@ use rustc_hash::FxHashMap;
 use serde_json::Value;
 use tracing::error;
 
-use super::api;
 use super::schedule::Task;
 use crate::server::api::LSPError;
 use crate::server::connection::ClientSender;
@@ -68,7 +67,7 @@ impl Notifier {
 }
 
 impl Responder {
-    pub fn respond<R>(&self, id: RequestId, result: Result<R, api::LSPError>) -> Result<()>
+    pub fn respond<R>(&self, id: RequestId, result: Result<R, LSPError>) -> Result<()>
     where
         R: serde::Serialize,
     {

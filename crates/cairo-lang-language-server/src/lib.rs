@@ -66,7 +66,9 @@ use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
 use lsp_server::{ErrorCode, Message};
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{ClientCapabilities, PublishDiagnosticsParams, RegistrationParams, Url};
+use lsp_types::{
+    ClientCapabilities, PublishDiagnosticsParams, Registration, RegistrationParams, Url,
+};
 use salsa::Cancelled;
 use server::connection::ClientSender;
 use server::schedule::task::SyncTask;
@@ -137,18 +139,23 @@ pub fn start_with_tricks(tricks: Tricks) {
     info!("language server starting");
     env_config::report_to_logs();
 
-    match Backend::new(tricks) {
+    let exit_code = match Backend::new(tricks) {
         Ok(backend) => {
             if let Err(err) = backend.run().map(|handle| handle.join()) {
-                error!("language server encountered an unrecoverable error: {err}")
+                error!("language server encountered an unrecoverable error: {err}");
+                1
+            } else {
+                0
             }
         }
         Err(err) => {
-            error!("language server failed during initialization: {err}")
+            error!("language server failed during initialization: {err}");
+            1
         }
-    }
+    };
 
     info!("language server stopped");
+    std::process::exit(exit_code);
 }
 
 /// Special function to run the language server in end-to-end tests.
@@ -241,6 +248,13 @@ fn ensure_exists_in_db<'a>(
     new_db.set_file_overrides(Arc::new(new_overrides));
 }
 
+#[cfg(not(feature = "testing"))]
+struct Backend {
+    connection: Connection,
+    state: State,
+}
+
+#[cfg(feature = "testing")]
 pub struct Backend {
     connection: Connection,
     state: State,
@@ -289,14 +303,18 @@ impl Backend {
     }
 
     fn run(self) -> Result<JoinHandle<Result<()>>> {
-        let four = NonZeroUsize::new(4).unwrap();
-        // By default, we set the number of worker threads to `num_cpus`, with a maximum of 4.
-        let worker_threads = std::thread::available_parallelism().unwrap_or(four).max(four);
+        let Self { mut state, connection } = self;
 
         event_loop_thread(move || {
-            Self::event_loop(&self.connection, self.state, worker_threads)?;
-            self.connection.close()?;
-            Ok(())
+            let scheduler = Self::initial_setup(&mut state, &connection);
+
+            let result = Self::event_loop(&connection, scheduler);
+
+            if let Err(err) = connection.close() {
+                error!("failed to close connection to the language server: {err:?}");
+            }
+
+            result
         })
     }
 
@@ -305,32 +323,50 @@ impl Backend {
         self.run()
     }
 
-    fn event_loop(
-        connection: &Connection,
-        mut state: State,
-        worker_threads: NonZeroUsize,
-    ) -> Result<()> {
+    fn initial_setup<'a>(state: &'a mut State, connection: &'_ Connection) -> Scheduler<'a> {
+        let four = NonZeroUsize::new(4).unwrap();
+        // By default, we set the number of worker threads to `num_cpus`, with a maximum of 4.
+        let worker_threads = std::thread::available_parallelism().unwrap_or(four).max(four);
         let dynamic_registrations = collect_dynamic_registrations(&state.client_capabilities);
 
-        let mut scheduler = Scheduler::new(&mut state, worker_threads, connection.make_sender());
+        let mut scheduler = Scheduler::new(state, worker_threads, connection.make_sender());
 
-        // Register dynamic capabilities.
-        let response_handler = |()| {
-            debug!("configuration file watcher successfully registered");
-            Task::nothing()
-        };
+        if let Err(error) =
+            Self::register_dynamic_capabilities(&mut scheduler, dynamic_registrations)
+        {
+            error!(
+                "failed to register dynamic capabilities, some features may not work properly: \
+                 {error:?}"
+            )
+        }
 
-        scheduler.request::<lsp_types::request::RegisterCapability>(
-            RegistrationParams { registrations: dynamic_registrations },
-            response_handler,
-        )?;
-
+        // Reloading config has to be done as a sync task to access mutable state that is borrowed
+        // by scheduler.
         scheduler.dispatch(Task::Sync(SyncTask {
             func: Box::new(|state, _notifier, requester, _responder| {
                 Self::reload_config(state, requester).ok();
             }),
         }));
 
+        scheduler
+    }
+
+    fn register_dynamic_capabilities(
+        scheduler: &mut Scheduler<'_>,
+        registrations: Vec<Registration>,
+    ) -> Result<()> {
+        let response_handler = |()| {
+            debug!("configuration file watcher successfully registered");
+            Task::nothing()
+        };
+
+        scheduler.request::<lsp_types::request::RegisterCapability>(
+            RegistrationParams { registrations },
+            response_handler,
+        )
+    }
+
+    fn event_loop(connection: &Connection, mut scheduler: Scheduler<'_>) -> Result<()> {
         for msg in connection.incoming() {
             if connection.handle_shutdown(&msg)? {
                 break;

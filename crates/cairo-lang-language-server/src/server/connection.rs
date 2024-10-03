@@ -34,6 +34,7 @@ impl ConnectionInitializer {
         Self { connection, threads: Some(threads) }
     }
 
+    #[cfg(feature = "testing")]
     /// Create a new LSP server connection in memory.
     pub fn memory() -> (Self, LSPConnection) {
         let (server, client) = LSPConnection::memory();
