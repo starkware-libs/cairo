@@ -120,7 +120,7 @@ pub fn test_expand_plugin_inner(
 
     let cairo_code = &inputs["cairo_code"];
 
-    let crate_id = CrateId::unversioned(db, "test");
+    let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("test_src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 

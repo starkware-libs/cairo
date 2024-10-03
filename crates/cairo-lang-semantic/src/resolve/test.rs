@@ -58,7 +58,7 @@ fn test_resolve_path_super() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
 
-    let crate_id = CrateId::unversioned(db, "test");
+    let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 

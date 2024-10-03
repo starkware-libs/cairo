@@ -8,7 +8,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_utils::{Intern, LookupIntern};
-use smol_str::SmolStr;
+use smol_str::{SmolStr, ToSmolStr};
 
 use crate::lang::db::AnalysisDatabase;
 
@@ -36,9 +36,11 @@ pub struct Crate {
 impl Crate {
     /// Applies this crate to the [`AnalysisDatabase`].
     pub fn apply(&self, db: &mut AnalysisDatabase) {
-        let crate_id =
-            CrateLongId::Real { name: self.name.clone(), version: self.settings.version.clone() }
-                .intern(db);
+        let crate_id = CrateLongId::Real {
+            name: self.name.clone(),
+            discriminator: self.settings.version.as_ref().map(ToSmolStr::to_smolstr),
+        }
+        .intern(db);
 
         let crate_configuration = CrateConfiguration {
             root: Directory::Real(self.root.clone()),

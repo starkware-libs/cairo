@@ -4,10 +4,9 @@ use std::sync::Arc;
 
 use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
 use path_clean::PathClean;
-use semver::Version;
 use smol_str::SmolStr;
 
-use crate::db::FilesGroup;
+use crate::db::{FilesGroup, CORELIB_CRATE_NAME};
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
@@ -16,7 +15,7 @@ pub const CAIRO_FILE_EXTENSION: &str = "cairo";
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum CrateLongId {
     /// A crate that appears in crate_roots(), and on the filesystem.
-    Real { name: SmolStr, version: Option<Version> },
+    Real { name: SmolStr, discriminator: Option<SmolStr> },
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
     Virtual { name: SmolStr, file_id: FileId, settings: String },
 }
@@ -29,12 +28,17 @@ impl CrateLongId {
 }
 define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate, intern_crate);
 impl CrateId {
-    /// Gets the crate id for a crate by name, without a version.
-    pub fn unversioned(
+    /// Gets the crate id for a real crate by name, without a discriminator.
+    pub fn plain(
         db: &(impl cairo_lang_utils::Upcast<dyn FilesGroup> + ?Sized),
         name: &str,
     ) -> Self {
-        CrateLongId::Real { name: name.into(), version: None }.intern(db)
+        CrateLongId::Real { name: name.into(), discriminator: None }.intern(db)
+    }
+
+    /// Gets the crate id for `core`.
+    pub fn core(db: &(impl cairo_lang_utils::Upcast<dyn FilesGroup> + ?Sized)) -> Self {
+        CrateLongId::Real { name: CORELIB_CRATE_NAME.into(), discriminator: None }.intern(db)
     }
 
     pub fn name(&self, db: &dyn FilesGroup) -> SmolStr {

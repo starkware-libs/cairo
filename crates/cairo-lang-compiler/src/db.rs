@@ -10,7 +10,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{CrateLongId, FlagId, VirtualFile};
+use cairo_lang_filesystem::ids::{CrateId, FlagId, VirtualFile};
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_project::ProjectConfig;
@@ -20,7 +20,7 @@ use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Upcast;
 
 use crate::project::{update_crate_root, update_crate_roots_from_project_config};
 use crate::InliningStrategy;
@@ -182,10 +182,8 @@ impl RootDatabaseBuilder {
 }
 
 /// Validates that the corelib version matches the expected one.
-pub fn validate_corelib(db: &dyn FilesGroup) -> Result<()> {
-    let core_crate =
-        CrateLongId::Real { name: CORELIB_CRATE_NAME.into(), version: None }.intern(db);
-    let Some(config) = db.crate_config(core_crate) else {
+pub fn validate_corelib(db: &(dyn FilesGroup + 'static)) -> Result<()> {
+    let Some(config) = db.crate_config(CrateId::core(db)) else {
         return Ok(());
     };
     let Some(found) = config.settings.version else {

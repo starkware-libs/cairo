@@ -14,8 +14,8 @@ use crate::test_utils::FilesDatabaseForTesting;
 fn test_filesystem() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let crt = CrateId::unversioned(&db, "my_crate");
-    let crt2 = CrateId::unversioned(&db, "my_crate2");
+    let crt = CrateId::plain(&db, "my_crate");
+    let crt2 = CrateId::plain(&db, "my_crate2");
     let directory = Directory::Real("src".into());
     let file_id = directory.file(&db, "child.cairo".into());
     let config = CrateConfiguration::default_for_root(directory);
