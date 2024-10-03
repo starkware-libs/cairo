@@ -666,7 +666,6 @@ dependencies = [
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
- "url",
 ]
 
 [[package]]

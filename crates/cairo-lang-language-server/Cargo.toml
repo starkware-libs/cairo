@@ -42,7 +42,6 @@ tempfile = "3"
 tracing = "0.1"
 tracing-chrome = "0.7.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-url = "2.5.2"
 
 [target.'cfg(target_vendor = "apple")'.dependencies]
 libc = "0.2.155"
