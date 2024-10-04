@@ -20,6 +20,9 @@ fn test_compiled_serialization() {
             starknet: true,
             add_statements_functions: false,
             add_statements_code_locations: false,
+            contract_declarations: None,
+            contract_crate_ids: None,
+            executable_crate_ids: None,
         },
     )
     .unwrap();
