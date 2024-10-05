@@ -2,9 +2,9 @@ use std::fmt;
 
 use lsp_server::ErrorCode;
 
-pub(crate) struct LSPError {
-    pub(crate) code: ErrorCode,
-    pub(crate) error: anyhow::Error,
+pub struct LSPError {
+    pub code: ErrorCode,
+    pub error: anyhow::Error,
 }
 
 pub type LSPResult<T> = Result<T, LSPError>;
@@ -21,7 +21,7 @@ impl<T, E: Into<anyhow::Error>> LSPResultEx<T> for Result<T, E> {
 }
 
 impl LSPError {
-    pub(crate) fn new(error: anyhow::Error, code: ErrorCode) -> Self {
+    pub fn new(error: anyhow::Error, code: ErrorCode) -> Self {
         Self { code, error }
     }
 }

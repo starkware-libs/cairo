@@ -1,24 +1,27 @@
 use std::num::NonZeroUsize;
 
 use anyhow::Result;
+use task::BackgroundTaskBuilder;
+use thread::ThreadPriority;
 
-pub(crate) mod task;
-pub(crate) mod thread;
-
-use self::task::{BackgroundTaskBuilder, SyncTask};
-use self::thread::ThreadPriority;
-use super::client::Client;
+use crate::server::client::Client;
 use crate::server::connection::ClientSender;
-use crate::server::schedule::task::{BackgroundSchedule, Task};
 use crate::state::State;
+
+mod task;
+mod thread;
+
+pub(super) use task::BackgroundSchedule;
+pub(crate) use task::{SyncTask, Task};
+pub(crate) use thread::JoinHandle;
 
 /// The event loop thread is actually a secondary thread that we spawn from the
 /// _actual_ main thread. This secondary thread has a larger stack size
 /// than some OS defaults (Windows, for example) and is also designated as
-/// high-priority.
+/// high priority.
 pub fn event_loop_thread(
     func: impl FnOnce() -> Result<()> + Send + 'static,
-) -> Result<thread::JoinHandle<Result<()>>> {
+) -> Result<JoinHandle<Result<()>>> {
     // Override OS defaults to avoid stack overflows on platforms with low stack size defaults.
     const MAIN_THREAD_STACK_SIZE: usize = 2 * 1024 * 1024;
     const MAIN_THREAD_NAME: &str = "cairols:main";

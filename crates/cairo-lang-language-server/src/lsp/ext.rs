@@ -6,15 +6,15 @@ use lsp_types::{TextDocumentPositionParams, Url};
 use serde::{Deserialize, Serialize};
 
 /// Provides content of virtual file from the database.
-pub struct ProvideVirtualFile;
+pub(crate) struct ProvideVirtualFile;
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ProvideVirtualFileRequest {
+pub(crate) struct ProvideVirtualFileRequest {
     pub uri: Url,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ProvideVirtualFileResponse {
+pub(crate) struct ProvideVirtualFileResponse {
     pub content: Option<String>,
 }
 

@@ -19,7 +19,7 @@ use crossbeam::channel::{Receiver, Sender};
 
 use super::{Builder, JoinHandle, ThreadPriority};
 
-pub(crate) struct Pool {
+pub struct Pool {
     // `_handles` is never read: the field is present
     // only for its `Drop` impl.
 
@@ -37,7 +37,7 @@ struct Job {
 }
 
 impl Pool {
-    pub(crate) fn new(threads: NonZeroUsize) -> Pool {
+    pub fn new(threads: NonZeroUsize) -> Pool {
         // Override OS defaults to avoid stack overflows on platforms with low stack size defaults.
         const STACK_SIZE: usize = 2 * 1024 * 1024;
         const INITIAL_PRIORITY: ThreadPriority = ThreadPriority::Worker;
@@ -73,7 +73,7 @@ impl Pool {
         Pool { _handles: handles, job_sender }
     }
 
-    pub(crate) fn spawn<F>(&self, priority: ThreadPriority, f: F)
+    pub fn spawn<F>(&self, priority: ThreadPriority, f: F)
     where
         F: FnOnce() + Send + 'static,
     {

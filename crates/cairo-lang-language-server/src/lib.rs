@@ -71,8 +71,6 @@ use lsp_types::{
 };
 use salsa::Cancelled;
 use server::connection::ClientSender;
-use server::schedule::task::SyncTask;
-use server::schedule::thread::JoinHandle;
 use state::FileDiagnostics;
 use tracing::{debug, error, info, trace_span, warn};
 
@@ -90,8 +88,7 @@ use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
 use crate::server::client::{Client, Notifier, Requester};
 use crate::server::connection::{Connection, ConnectionInitializer};
-use crate::server::schedule::task::Task;
-use crate::server::schedule::{event_loop_thread, Scheduler};
+use crate::server::schedule::{event_loop_thread, JoinHandle, Scheduler, SyncTask, Task};
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
 

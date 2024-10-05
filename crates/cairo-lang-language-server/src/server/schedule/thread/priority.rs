@@ -8,7 +8,7 @@
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 // Please maintain order from least to most priority for the derived `Ord` impl.
-pub(crate) enum ThreadPriority {
+pub enum ThreadPriority {
     /// Any thread which does work that isn't in a critical path.
     Worker,
 
@@ -22,12 +22,12 @@ impl ThreadPriority {
     // we only want consumers to set thread priority
     // during thread creation.
 
-    pub(crate) fn apply_to_current_thread(self) {
+    pub fn apply_to_current_thread(self) {
         let class = thread_priority_to_qos_class(self);
         set_current_thread_qos_class(class);
     }
 
-    pub(crate) fn assert_is_used_on_current_thread(self) {
+    pub fn assert_is_used_on_current_thread(self) {
         if IS_QOS_AVAILABLE {
             let class = thread_priority_to_qos_class(self);
             assert_eq!(get_current_thread_qos_class(), Some(class));
@@ -59,7 +59,7 @@ mod imp {
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     // Please maintain order from least to most priority for the derived `Ord` impl.
-    pub(super) enum QoSClass {
+    pub enum QoSClass {
         // Documentation adapted from https://github.com/apple-oss-distributions/libpthread/blob/67e155c94093be9a204b69637d198eceff2c7c46/include/sys/qos.h#L55
         /// TLDR: invisible maintenance tasks
         ///
@@ -161,9 +161,9 @@ mod imp {
         UserInteractive,
     }
 
-    pub(super) const IS_QOS_AVAILABLE: bool = true;
+    pub const IS_QOS_AVAILABLE: bool = true;
 
-    pub(super) fn set_current_thread_qos_class(class: QoSClass) {
+    pub fn set_current_thread_qos_class(class: QoSClass) {
         let c = match class {
             QoSClass::UserInteractive => libc::qos_class_t::QOS_CLASS_USER_INTERACTIVE,
             QoSClass::UserInitiated => libc::qos_class_t::QOS_CLASS_USER_INITIATED,
@@ -210,7 +210,7 @@ mod imp {
         }
     }
 
-    pub(super) fn get_current_thread_qos_class() -> Option<QoSClass> {
+    pub fn get_current_thread_qos_class() -> Option<QoSClass> {
         #[allow(unsafe_code)]
         let current_thread = unsafe { libc::pthread_self() };
         let mut qos_class_raw = libc::qos_class_t::QOS_CLASS_UNSPECIFIED;
@@ -253,7 +253,7 @@ mod imp {
         }
     }
 
-    pub(super) fn thread_priority_to_qos_class(priority: ThreadPriority) -> QoSClass {
+    pub fn thread_priority_to_qos_class(priority: ThreadPriority) -> QoSClass {
         match priority {
             ThreadPriority::Worker => QoSClass::Utility,
             ThreadPriority::LatencySensitive => QoSClass::UserInitiated,
@@ -267,19 +267,19 @@ mod imp {
     use super::ThreadPriority;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-    pub(super) enum QoSClass {
+    pub enum QoSClass {
         Default,
     }
 
-    pub(super) const IS_QOS_AVAILABLE: bool = false;
+    pub const IS_QOS_AVAILABLE: bool = false;
 
-    pub(super) fn set_current_thread_qos_class(_: QoSClass) {}
+    pub fn set_current_thread_qos_class(_: QoSClass) {}
 
-    pub(super) fn get_current_thread_qos_class() -> Option<QoSClass> {
+    pub fn get_current_thread_qos_class() -> Option<QoSClass> {
         None
     }
 
-    pub(super) fn thread_priority_to_qos_class(_: ThreadPriority) -> QoSClass {
+    pub fn thread_priority_to_qos_class(_: ThreadPriority) -> QoSClass {
         QoSClass::Default
     }
 }

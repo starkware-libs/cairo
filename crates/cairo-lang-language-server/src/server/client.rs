@@ -9,7 +9,7 @@ use tracing::error;
 
 use crate::lsp::result::LSPError;
 use crate::server::connection::ClientSender;
-use crate::server::schedule::task::Task;
+use crate::server::schedule::Task;
 
 type ResponseBuilder<'s> = Box<dyn FnOnce(Response) -> Task<'s>>;
 

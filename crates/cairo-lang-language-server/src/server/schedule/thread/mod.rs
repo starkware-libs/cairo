@@ -32,25 +32,25 @@ mod priority;
 pub(super) use pool::Pool;
 pub(super) use priority::ThreadPriority;
 
-pub(super) struct Builder {
+pub struct Builder {
     priority: ThreadPriority,
     inner: jod_thread::Builder,
 }
 
 impl Builder {
-    pub(super) fn new(priority: ThreadPriority) -> Builder {
+    pub fn new(priority: ThreadPriority) -> Builder {
         Builder { priority, inner: jod_thread::Builder::new() }
     }
 
-    pub(super) fn name(self, name: String) -> Builder {
+    pub fn name(self, name: String) -> Builder {
         Builder { inner: self.inner.name(name), ..self }
     }
 
-    pub(super) fn stack_size(self, size: usize) -> Builder {
+    pub fn stack_size(self, size: usize) -> Builder {
         Builder { inner: self.inner.stack_size(size), ..self }
     }
 
-    pub(super) fn spawn<F, T>(self, f: F) -> std::io::Result<JoinHandle<T>>
+    pub fn spawn<F, T>(self, f: F) -> std::io::Result<JoinHandle<T>>
     where
         F: FnOnce() -> T,
         F: Send + 'static,
@@ -72,7 +72,7 @@ pub struct JoinHandle<T = ()> {
 }
 
 impl<T> JoinHandle<T> {
-    pub(crate) fn join(mut self) -> T {
+    pub fn join(mut self) -> T {
         self.inner.take().unwrap().join()
     }
 }

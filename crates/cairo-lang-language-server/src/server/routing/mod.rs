@@ -13,7 +13,7 @@ use tracing::{error, warn};
 use super::client::Responder;
 use crate::lsp::ext::{ExpandMacro, ProvideVirtualFile, ViewAnalyzedCrates};
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
-use crate::server::schedule::task::{BackgroundSchedule, Task};
+use crate::server::schedule::{BackgroundSchedule, Task};
 use crate::state::State;
 use crate::Backend;
 

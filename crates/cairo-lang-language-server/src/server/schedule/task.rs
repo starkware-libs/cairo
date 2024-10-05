@@ -46,8 +46,8 @@ pub enum Task<'s> {
 // as a reference, to create the inner 'static closure. That closure is then moved to a background
 // task pool.
 pub struct BackgroundTaskBuilder<'s> {
-    pub(super) schedule: BackgroundSchedule,
-    pub(super) builder: BackgroundFnBuilder<'s>,
+    pub schedule: BackgroundSchedule,
+    pub builder: BackgroundFnBuilder<'s>,
 }
 
 pub struct SyncTask<'s> {
@@ -56,7 +56,7 @@ pub struct SyncTask<'s> {
 
 impl<'s> Task<'s> {
     /// Creates a new background task.
-    pub(crate) fn background(
+    pub fn background(
         schedule: BackgroundSchedule,
         func: impl FnOnce(&State) -> Box<dyn FnOnce(Notifier, Responder) + Send + 'static> + 's,
     ) -> Self {
@@ -64,14 +64,14 @@ impl<'s> Task<'s> {
     }
 
     /// Creates a new local task.
-    pub(crate) fn local(
+    pub fn local(
         func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
     ) -> Self {
         Self::Sync(SyncTask { func: Box::new(func) })
     }
 
     /// Creates a local task that immediately responds with the provided `request`.
-    pub(crate) fn immediate<R>(id: RequestId, result: Result<R, LSPError>) -> Self
+    pub fn immediate<R>(id: RequestId, result: Result<R, LSPError>) -> Self
     where
         R: Serialize + Send + 'static,
     {
@@ -83,7 +83,7 @@ impl<'s> Task<'s> {
     }
 
     /// Creates a local task that does nothing.
-    pub(crate) fn nothing() -> Self {
+    pub fn nothing() -> Self {
         Self::local(move |_, _, _, _| {})
     }
 }
