@@ -84,14 +84,14 @@ use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
 use crate::lsp::ext::CorelibVersionMismatch;
+use crate::lsp::result::{LSPError, LSPResult};
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
-use crate::server::api;
-use crate::server::api::{LSPError, LSPResult};
 use crate::server::client::{Client, Notifier, Requester};
 use crate::server::connection::{Connection, ConnectionInitializer};
-use crate::server::schedule::{event_loop_thread, Scheduler, Task};
+use crate::server::schedule::task::Task;
+use crate::server::schedule::{event_loop_thread, Scheduler};
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
 
@@ -372,8 +372,8 @@ impl Backend {
                 break;
             }
             let task = match msg {
-                Message::Request(req) => api::request(req),
-                Message::Notification(notification) => api::notification(notification),
+                Message::Request(req) => server::request(req),
+                Message::Notification(notification) => server::notification(notification),
                 Message::Response(response) => scheduler.response(response),
             };
             scheduler.dispatch(task);

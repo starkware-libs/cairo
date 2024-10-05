@@ -7,9 +7,9 @@ use rustc_hash::FxHashMap;
 use serde_json::Value;
 use tracing::error;
 
-use super::schedule::Task;
-use crate::server::api::LSPError;
+use crate::lsp::result::LSPError;
 use crate::server::connection::ClientSender;
+use crate::server::schedule::task::Task;
 
 type ResponseBuilder<'s> = Box<dyn FnOnce(Response) -> Task<'s>>;
 

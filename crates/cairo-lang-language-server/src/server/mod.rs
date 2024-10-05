@@ -1,5 +1,7 @@
-pub mod api;
-pub mod client;
-pub mod commands;
-pub mod connection;
-pub mod schedule;
+pub(crate) mod client;
+pub(crate) mod commands;
+pub(crate) mod connection;
+pub(crate) mod schedule;
+
+mod routing;
+pub use routing::{notification, request};

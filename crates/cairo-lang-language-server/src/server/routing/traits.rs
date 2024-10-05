@@ -1,5 +1,3 @@
-//! A stateful LSP implementation that calls into the LS API.
-
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
@@ -27,7 +25,7 @@ use crate::lsp::ext::{
     ExpandMacro, ProvideVirtualFile, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
     ViewAnalyzedCrates,
 };
-use crate::server::api::{LSPError, LSPResult};
+use crate::lsp::result::{LSPError, LSPResult};
 use crate::server::client::{Notifier, Requester};
 use crate::server::commands::ServerCommands;
 use crate::state::{State, StateSnapshot};

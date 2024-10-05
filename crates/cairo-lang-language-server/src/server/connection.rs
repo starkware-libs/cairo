@@ -132,9 +132,8 @@ pub struct ClientSender {
     weak_sender: Weak<ConnectionSender>,
 }
 
-// note: additional wrapper functions for senders may be implemented as needed.
 impl ClientSender {
-    pub(crate) fn send(&self, msg: Message) -> Result<()> {
+    pub fn send(&self, msg: Message) -> Result<()> {
         let Some(sender) = self.weak_sender.upgrade() else {
             bail!("the connection with the client has been closed");
         };

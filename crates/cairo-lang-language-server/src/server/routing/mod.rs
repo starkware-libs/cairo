@@ -1,5 +1,3 @@
-use std::fmt;
-
 use lsp_server::{ErrorCode, ExtractError, Notification, Request, RequestId};
 use lsp_types::notification::{
     Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
@@ -13,15 +11,15 @@ use lsp_types::request::{
 use tracing::{error, warn};
 
 use super::client::Responder;
-use super::schedule::BackgroundSchedule;
 use crate::lsp::ext::{ExpandMacro, ProvideVirtualFile, ViewAnalyzedCrates};
-use crate::server::schedule::Task;
+use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
+use crate::server::schedule::task::{BackgroundSchedule, Task};
 use crate::state::State;
 use crate::Backend;
 
-pub mod traits;
+mod traits;
 
-pub(crate) fn request<'a>(request: Request) -> Task<'a> {
+pub fn request<'a>(request: Request) -> Task<'a> {
     let id = request.id.clone();
 
     match request.method.as_str() {
@@ -69,7 +67,7 @@ pub(crate) fn request<'a>(request: Request) -> Task<'a> {
     })
 }
 
-pub(crate) fn notification<'a>(notification: Notification) -> Task<'a> {
+pub fn notification<'a>(notification: Notification) -> Task<'a> {
     match notification.method.as_str() {
         Cancel::METHOD => local_notification_task::<Cancel>(notification),
         DidChangeTextDocument::METHOD => {
@@ -190,42 +188,4 @@ fn cast_notification<N: NotificationTrait>(
             })
             .with_failure_code(ErrorCode::InternalError)?,
     ))
-}
-
-pub(crate) struct LSPError {
-    pub(crate) code: ErrorCode,
-    pub(crate) error: anyhow::Error,
-}
-
-pub type LSPResult<T> = Result<T, LSPError>;
-
-/// A trait to convert result types into the lsp_server result type, [`LSPResult`].
-pub trait LSPResultEx<T> {
-    fn with_failure_code(self, code: ErrorCode) -> Result<T, LSPError>;
-}
-
-impl<T, E: Into<anyhow::Error>> LSPResultEx<T> for Result<T, E> {
-    fn with_failure_code(self, code: ErrorCode) -> Result<T, LSPError> {
-        self.map_err(|error| LSPError::new(error.into(), code))
-    }
-}
-
-impl LSPError {
-    pub(crate) fn new(error: anyhow::Error, code: ErrorCode) -> Self {
-        Self { code, error }
-    }
-}
-
-// Right now, we treat the error code as invisible data that won't
-// be printed.
-impl fmt::Debug for LSPError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.error.fmt(f)
-    }
-}
-
-impl fmt::Display for LSPError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.error.fmt(f)
-    }
 }

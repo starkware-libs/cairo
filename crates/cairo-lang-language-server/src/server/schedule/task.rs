@@ -2,7 +2,7 @@ use lsp_server::RequestId;
 use serde::Serialize;
 use tracing::error;
 
-use crate::server::api;
+use crate::lsp::result::LSPError;
 use crate::server::client::{Notifier, Requester, Responder};
 use crate::state::State;
 
@@ -40,7 +40,7 @@ pub enum Task<'s> {
 // is because we need to take a snapshot of the state before sending
 // this task to the background. The inner closure can't take the state
 // as an immutable reference since it's used mutably elsewhere. So instead,
-// a background task is built using an outer closure that borrows the state to take a snapshot,
+// a background task is built using an outer closure that borrows the state to take a snapshot
 // that the inner closure can capture. This builder closure has a lifetime linked to the scheduler.
 // When the task is dispatched, the scheduler runs the synchronous builder, which takes the state
 // as a reference, to create the inner 'static closure. That closure is then moved to a background
@@ -71,7 +71,7 @@ impl<'s> Task<'s> {
     }
 
     /// Creates a local task that immediately responds with the provided `request`.
-    pub(crate) fn immediate<R>(id: RequestId, result: Result<R, api::LSPError>) -> Self
+    pub(crate) fn immediate<R>(id: RequestId, result: Result<R, LSPError>) -> Self
     where
         R: Serialize + Send + 'static,
     {
