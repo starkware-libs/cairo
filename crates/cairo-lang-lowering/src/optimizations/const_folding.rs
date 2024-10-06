@@ -252,13 +252,7 @@ impl<'a> ConstFoldingContext<'a> {
             } else {
                 lhs * rhs
             };
-            let output = stmt.outputs[0];
-            let mut value = ConstValue::Int(value, self.variables[output].ty);
-            if nz_ty {
-                value = ConstValue::NonZero(Box::new(value));
-            }
-            self.var_info.insert(output, VarInfo::Const(value.clone()));
-            Some(StatementConst { value, output })
+            Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], nz_ty))
         } else if self.div_rem_fns.contains(&id) {
             let lhs = self.as_int(stmt.inputs[0].var_id)?;
             let rhs = self.as_int(stmt.inputs[1].var_id)?;
@@ -303,6 +297,21 @@ impl<'a> ConstFoldingContext<'a> {
         } else {
             None
         }
+    }
+
+    /// Adds `value` as a const to `var_info` and return a const statement for it.
+    fn propagate_const_and_get_statement(
+        &mut self,
+        value: BigInt,
+        output: VariableId,
+        nz_ty: bool,
+    ) -> StatementConst {
+        let mut value = ConstValue::Int(value, self.variables[output].ty);
+        if nz_ty {
+            value = ConstValue::NonZero(Box::new(value));
+        }
+        self.var_info.insert(output, VarInfo::Const(value.clone()));
+        StatementConst { value, output }
     }
 
     /// Handles the end of an extern block.
@@ -403,13 +412,8 @@ impl<'a> ConstFoldingContext<'a> {
                 .unwrap();
             let arm_idx = if value < &constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
-            let mut value = ConstValue::Int(value.clone(), self.variables[output].ty);
-            if nz_ty {
-                value = ConstValue::NonZero(Box::new(value));
-            }
-            self.var_info.insert(output, VarInfo::Const(value.clone()));
             Some((
-                Some(StatementConst { value, output }),
+                Some(self.propagate_const_and_get_statement(value.clone(), output, nz_ty)),
                 FlatBlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
             ))
         } else {
