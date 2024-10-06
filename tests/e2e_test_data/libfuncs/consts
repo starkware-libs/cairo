@@ -1,7 +1,7 @@
 //! > const felt252
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 const V: felt252 = 100;
@@ -45,7 +45,7 @@ test::foo@3() -> (Box<felt252>);
 //! > const u8
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 const V: u8 = 100;
@@ -89,7 +89,7 @@ test::foo@3() -> (Box<u8>);
 //! > const i16
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 const V: i16 = -1000;
@@ -133,7 +133,7 @@ test::foo@3() -> (Box<i16>);
 //! > const u256
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 const V1: u256 = 0x2000000000000000000000000000000010;
@@ -200,7 +200,7 @@ test::foo2@8() -> (Box<core::integer::u256>);
 //! > const bool
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 fn bar() -> bool { false }
@@ -246,7 +246,7 @@ test::foo@4() -> (Box<core::bool>);
 //! > const complex
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 enum ThreeOptions {
@@ -307,7 +307,7 @@ test::foo@3() -> (Box<test::ThreeOptions>);
 //! > const complex with padding
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 enum ThreeOptions {
@@ -366,7 +366,7 @@ test::foo@3() -> (Box<test::ThreeOptions>);
 //! > const several complex enums
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 enum ThreeOptions {
@@ -453,7 +453,7 @@ test::foo@3() -> (Box<test::ThreeOptionsPair>);
 //! > const and builtin costs
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 fn foo() -> (Box<felt252>, BuiltinCosts) {
@@ -499,7 +499,7 @@ test::foo@0() -> (Tuple<Box<felt252>, BuiltinCosts>);
 //! > const segmentation
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 extern type Const<T, const VALUE: T>;
@@ -582,7 +582,7 @@ test::foo@0() -> (Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>, 
 //! > const felt252 span
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 fn foo() -> @Array<felt252> {
@@ -632,7 +632,7 @@ test::foo: OrderedHashMap({Const: 500})
 //! > const felt252 quad span
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 fn foo() -> @Array<(felt252, felt252, felt252, felt252)> {
@@ -701,7 +701,7 @@ test::foo: OrderedHashMap({Const: 500})
 //! > const NonZero<felt252>
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 const V: NonZero<felt252> = 100;
@@ -747,7 +747,7 @@ test::foo: OrderedHashMap({Const: 300})
 //! > const NonZero<u8>
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 const V: NonZero<u8> = 100;
@@ -793,7 +793,7 @@ test::foo: OrderedHashMap({Const: 300})
 //! > const NonZero<u256> 0 low.
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 const V: NonZero<u256> = 0x2000000000000000000000000000000000;
@@ -844,7 +844,7 @@ test::foo: OrderedHashMap({Const: 300})
 //! > const NonZero<u256> 0 high.
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 const V: NonZero<u256> = 16;
@@ -895,7 +895,7 @@ test::foo: OrderedHashMap({Const: 300})
 //! > const NonZero<u512> 0 high.
 
 //! > test_runner_name
-SmallE2ETestRunner
+WithOptsE2ETestRunner
 
 //! > cairo
 use core::integer::u512;

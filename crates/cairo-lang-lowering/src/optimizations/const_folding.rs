@@ -44,7 +44,7 @@ enum VarInfo {
 /// Performs constant folding on the lowered program.
 /// The optimization works better when the blocks are topologically sorted.
 pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
-    if lowered.blocks.is_empty() {
+    if db.optimization_config().skip_const_folding || lowered.blocks.is_empty() {
         return;
     }
     let libfunc_info = priv_const_folding_info(db);
