@@ -3741,3 +3741,163 @@ End:
   Return(v5)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Eq const fold.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> bool {
+    1_u8 == 1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 1
+  (v3: core::integer::u8) <- 1
+End:
+  Match(match core::integer::u8_eq(v0, v3) {
+    bool::False => blk1,
+    bool::True => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::bool) <- bool::False(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::bool) <- bool::True(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 1
+  (v3: core::integer::u8) <- 1
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::bool) <- bool::False(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::bool) <- bool::True(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Non eq const fold.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> bool {
+    2_u8 == 1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 2
+  (v3: core::integer::u8) <- 1
+End:
+  Match(match core::integer::u8_eq(v0, v3) {
+    bool::False => blk1,
+    bool::True => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::bool) <- bool::False(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::bool) <- bool::True(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::u8) <- 2
+  (v3: core::integer::u8) <- 1
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::bool) <- bool::False(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::bool) <- bool::True(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > lowering_diagnostics
