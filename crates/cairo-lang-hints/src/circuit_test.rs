@@ -2,7 +2,7 @@ use num_bigint::BigUint;
 use num_integer::Integer;
 use test_case::test_case;
 
-use crate::casm_run::circuit::invert_or_nullify;
+use crate::circuit::invert_or_nullify;
 
 #[test_case(
     0_u32,

@@ -644,6 +644,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-lang-hints"
+version = "2.8.2"
+dependencies = [
+ "cairo-lang-casm",
+ "cairo-lang-sierra",
+ "cairo-lang-utils",
+ "cairo-vm",
+ "itertools 0.12.1",
+ "num-bigint",
+ "num-integer",
+ "num-traits 0.2.19",
+ "rand",
+ "starknet-types-core",
+ "test-case",
+]
+
+[[package]]
 name = "cairo-lang-language-server"
 version = "2.8.2"
 dependencies = [
@@ -790,6 +807,7 @@ dependencies = [
  "ark-secp256r1",
  "cairo-lang-casm",
  "cairo-lang-compiler",
+ "cairo-lang-hints",
  "cairo-lang-lowering",
  "cairo-lang-semantic",
  "cairo-lang-sierra",
@@ -1095,6 +1113,7 @@ dependencies = [
  "anyhow",
  "cairo-lang-compiler",
  "cairo-lang-filesystem",
+ "cairo-lang-hints",
  "cairo-lang-runner",
  "cairo-lang-sierra",
  "cairo-lang-sierra-generator",
@@ -1157,6 +1176,7 @@ dependencies = [
  "anyhow",
  "cairo-lang-compiler",
  "cairo-lang-diagnostics",
+ "cairo-lang-hints",
  "cairo-lang-runner",
  "cairo-lang-sierra-generator",
  "cairo-lang-starknet",

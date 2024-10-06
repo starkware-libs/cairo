@@ -33,6 +33,7 @@ members = [
     "crates/cairo-lang-eq-solver",
     "crates/cairo-lang-filesystem",
     "crates/cairo-lang-formatter",
+    "crates/cairo-lang-hints",
     "crates/cairo-lang-language-server",
     "crates/cairo-lang-lowering",
     "crates/cairo-lang-parser",

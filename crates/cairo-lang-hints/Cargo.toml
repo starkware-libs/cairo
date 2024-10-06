@@ -1,0 +1,22 @@
+[package]
+name = "cairo-lang-hints"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Hints required for the execution of sierra libfuncs."
+
+[dependencies]
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.8.2" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.2" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.8.2" }
+cairo-vm.workspace = true
+num-bigint = { workspace = true, default-features = true }
+itertools = { workspace = true, default-features = true }
+num-integer.workspace = true
+num-traits = { workspace = true, default-features = true }
+rand.workspace = true
+starknet-types-core.workspace = true
+
+[dev-dependencies]
+test-case.workspace = true

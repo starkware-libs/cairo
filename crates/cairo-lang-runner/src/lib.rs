@@ -51,7 +51,6 @@ use crate::casm_run::{RunFunctionContext, RunFunctionResult};
 
 pub mod casm_run;
 pub mod profiling;
-pub mod short_string;
 
 const MAX_STACK_TRACE_DEPTH_DEFAULT: usize = 100;
 
