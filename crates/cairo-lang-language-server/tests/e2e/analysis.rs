@@ -48,7 +48,7 @@ fn cairo_projects() {
                         Version {
                             major: 2,
                             minor: 8,
-                            patch: 2,
+                            patch: 4,
                         },
                     ),
                     cfg_set: None,
