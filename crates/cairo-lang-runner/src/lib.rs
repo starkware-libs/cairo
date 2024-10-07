@@ -316,7 +316,7 @@ impl SierraCasmRunner {
         // function).
         // The value is the weight of the stack trace so far, not including the pending weight being
         // tracked at the time.
-        let mut stack_trace_weights = UnorderedHashMap::default();
+        let mut stack_trace_weights = OrderedHashMap::default();
         let mut end_of_program_reached = false;
         // The total weight of each Sierra statement.
         // Note the header and footer (CASM instructions added for running the program by the
