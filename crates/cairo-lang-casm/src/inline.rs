@@ -239,7 +239,6 @@ macro_rules! is_inc_ap {
     };
 }
 
-#[allow(dead_code)]
 #[derive(Default)]
 pub struct CasmContext {
     pub current_code_offset: usize,
