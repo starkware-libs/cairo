@@ -1,4 +1,4 @@
-use tower_lsp::lsp_types::ClientCapabilities;
+use lsp_types::ClientCapabilities;
 
 macro_rules! try_or_default {
     ($expr:expr) => {

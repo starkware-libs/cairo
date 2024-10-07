@@ -1,8 +1,8 @@
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_utils::Upcast;
+use lsp_types::Url;
 use salsa::InternKey;
-use tower_lsp::lsp_types::Url;
 use tracing::error;
 
 #[cfg(test)]
@@ -23,18 +23,18 @@ pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
             "vfs" => uri
                 .host_str()
                 .or_else(|| {
-                    error!("invalid vfs url, missing host string: {uri}");
+                    error!("invalid vfs url, missing host string: {uri:?}");
                     None
                 })?
                 .parse::<usize>()
                 .inspect_err(|e| {
-                    error!("invalid vfs url, host string is not a valid integer, {e}: {uri}")
+                    error!("invalid vfs url, host string is not a valid integer, {e}: {uri:?}")
                 })
                 .ok()
                 .map(Into::into)
                 .map(FileId::from_intern_id),
             _ => {
-                error!("invalid url, scheme is not supported by this language server: {uri}");
+                error!("invalid url, scheme is not supported by this language server: {uri:?}");
                 None
             }
         }

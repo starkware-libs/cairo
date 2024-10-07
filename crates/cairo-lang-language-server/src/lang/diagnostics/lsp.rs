@@ -2,7 +2,7 @@ use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, S
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::{
+use lsp_types::{
     Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Range,
 };
 use tracing::error;

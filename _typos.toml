@@ -2,6 +2,8 @@
 # Don't correct the shorthand for ByteArray.
 ba = "ba"
 compilability = "compilability"
+# jod_thread crate in LS
+jod = "jod"
 
 [files]
 extend-exclude = [

@@ -1,7 +1,7 @@
 use cairo_lang_language_server::lsp;
 use indoc::indoc;
+use lsp_types::{lsp_request, ExecuteCommandParams};
 use pretty_assertions::assert_eq;
-use tower_lsp::lsp_types::{lsp_request, ApplyWorkspaceEditResponse, ExecuteCommandParams};
 
 use crate::support::normalize::normalize;
 use crate::support::sandbox;
@@ -119,11 +119,6 @@ fn test_reload() {
 
     let expected = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
-    ls.expect_request::<lsp_request!("workspace/applyEdit")>(|_| ApplyWorkspaceEditResponse {
-        applied: true,
-        failure_reason: None,
-        failed_change: None,
-    });
     ls.send_request::<lsp_request!("workspace/executeCommand")>(ExecuteCommandParams {
         command: "cairo.reload".into(),
         ..Default::default()

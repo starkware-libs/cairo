@@ -2,7 +2,7 @@ use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextPosition, TextSpan};
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location};
+use lsp_types::{GotoDefinitionParams, GotoDefinitionResponse, Location};
 
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::inspect::defs::find_definition;
