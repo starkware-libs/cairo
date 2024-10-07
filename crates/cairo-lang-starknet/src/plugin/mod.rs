@@ -18,7 +18,7 @@ pub mod events;
 mod starknet_module;
 mod storage;
 pub(crate) mod storage_interfaces;
-mod utils;
+pub(crate) mod utils;
 
 use dispatcher::handle_trait;
 
@@ -85,7 +85,7 @@ impl MacroPlugin for StarkNetPlugin {
     }
 
     fn declared_derives(&self) -> Vec<String> {
-        vec!["starknet::Event".to_string(), "starknet::Store".to_string()]
+        vec![EVENT_TRAIT.to_string(), STORE_TRAIT.to_string()]
     }
 
     fn phantom_type_attributes(&self) -> Vec<String> {
