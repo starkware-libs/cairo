@@ -344,19 +344,12 @@ impl Backend {
         self.with_state_mut(|state| state.snapshot()).await
     }
 
-<<<<<<< HEAD
     /// Locks and produces db snapshot.
     #[tracing::instrument(level = "trace", skip_all)]
     async fn db_snapshot(&self) -> salsa::Snapshot<AnalysisDatabase> {
         self.with_state_mut(|state| state.db.snapshot()).await
     }
 
-||||||| 14b1d8c15
-    // TODO(spapini): Consider managing vfs in a different way, using the
-    // client.send_notification::<UpdateVirtualFile> call.
-
-=======
->>>>>>> origin/dev-v2.8.4
     /// Refresh diagnostics and send diffs to client.
     #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_diagnostics(&self) -> LSPResult<()> {
