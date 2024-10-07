@@ -9,7 +9,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{LookupIntern, extract_matches};
-use itertools::{Itertools, zip_eq};
+use itertools::zip_eq;
 
 use crate::db::SemanticGroup;
 use crate::expr::inference::{
@@ -58,11 +58,9 @@ impl GenericSubstitution {
     }
     pub fn new(generic_params: &[GenericParam], generic_args: &[GenericArgumentId]) -> Self {
         GenericSubstitution {
-            param_to_arg: zip_eq(
-                generic_params.iter().map(|param| param.id()),
-                generic_args.iter().copied(),
-            )
-            .collect(),
+            param_to_arg: zip_eq(generic_params, generic_args)
+                .map(|(param, arg)| (param.id(), *arg))
+                .collect(),
             self_impl: None,
         }
     }
@@ -91,7 +89,10 @@ impl DerefMut for GenericSubstitution {
 #[allow(clippy::derived_hash_with_manual_eq)]
 impl std::hash::Hash for GenericSubstitution {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.param_to_arg.iter().collect_vec().hash(state);
+        self.param_to_arg.len().hash(state);
+        for e in self.param_to_arg.iter() {
+            e.hash(state);
+        }
     }
 }
 
