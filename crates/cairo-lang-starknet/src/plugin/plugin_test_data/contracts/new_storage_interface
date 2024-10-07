@@ -3014,6 +3014,11 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
+warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
+ --> lib.cairo:52:1
+#[starknet::sub_pointers(QueryableEnumVariants)]
+^**********************************************^
+
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:75:28
         legacy_map_balace: LegacyMap<usize, usize>,
