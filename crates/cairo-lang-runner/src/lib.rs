@@ -199,7 +199,6 @@ pub struct SierraCasmRunner {
     type_sizes: TypeSizeMap,
     /// The casm program matching the Sierra code.
     casm_program: CairoProgram,
-    #[allow(dead_code)]
     /// Mapping from class_hash to contract info.
     starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     /// Whether to run the profiler when running using this runner.

@@ -96,16 +96,12 @@ impl DiagnosticEntry for LoweringDiagnostic {
         &self.location.notes
     }
 
-    #[allow(unreachable_patterns, clippy::single_match)]
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        match &self.kind {
-            LoweringDiagnosticKind::Unreachable { last_statement_ptr } => {
-                return self
-                    .location
-                    .stable_location
-                    .diagnostic_location_until(db.upcast(), *last_statement_ptr);
-            }
-            _ => {}
+        if let LoweringDiagnosticKind::Unreachable { last_statement_ptr } = &self.kind {
+            return self
+                .location
+                .stable_location
+                .diagnostic_location_until(db.upcast(), *last_statement_ptr);
         }
         self.location.stable_location.diagnostic_location(db.upcast())
     }

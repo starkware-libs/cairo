@@ -2,8 +2,6 @@
 
 pub mod annotations;
 pub mod circuit;
-// TODO(ilya): Reduce the size of CompilationError.
-#[allow(clippy::result_large_err)]
 pub mod compiler;
 pub mod environment;
 pub mod invocations;
