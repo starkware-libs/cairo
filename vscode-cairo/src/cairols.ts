@@ -95,22 +95,29 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
   client.onNotification(
     new lc.NotificationType<string>("cairo/corelib-version-mismatch"),
     async (errorMessage) => {
-      const reloadWindow = "Reload window";
+      const restart = "Restart CairoLS";
       const cleanScarbCache = "Clean Scarb cache and reload";
 
       const selectedValue = await vscode.window.showErrorMessage(
         errorMessage,
-        reloadWindow,
+        restart,
         cleanScarbCache,
       );
 
+      const restartLS = async () => {
+        const client = weakClient.deref();
+        if (client) {
+          await client.restart();
+        }
+      };
+
       switch (selectedValue) {
-        case reloadWindow:
-          await vscode.commands.executeCommand("workbench.action.reloadWindow");
+        case restart:
+          await restartLS();
           break;
         case cleanScarbCache:
           await scarb?.cacheClean(ctx);
-          await vscode.commands.executeCommand("workbench.action.reloadWindow");
+          await restartLS();
           break;
       }
     },

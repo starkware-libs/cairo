@@ -4,8 +4,6 @@ import { Context } from "./context";
 import { expandMacro, vfsProvide, viewAnalyzedCrates } from "./lspRequests";
 
 export const registerVfsProvider = (client: lc.LanguageClient, ctx: Context) => {
-  const eventEmitter = new vscode.EventEmitter<vscode.Uri>();
-
   const vfsProvider: vscode.TextDocumentContentProvider = {
     async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
       const res = await client.sendRequest(vfsProvide, {
@@ -14,12 +12,7 @@ export const registerVfsProvider = (client: lc.LanguageClient, ctx: Context) => 
 
       return res.content ?? "";
     },
-    onDidChange: eventEmitter.event,
   };
-
-  client.onNotification("vfs/update", (param) => {
-    eventEmitter.fire(param.uri);
-  });
 
   ctx.extension.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider("vfs", vfsProvider),
