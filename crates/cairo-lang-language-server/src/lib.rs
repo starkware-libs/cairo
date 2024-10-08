@@ -43,6 +43,7 @@ use std::io;
 use std::num::NonZeroUsize;
 use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
 use std::path::{Path, PathBuf};
+use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::SystemTime;
 
@@ -121,8 +122,8 @@ pub struct Tricks {
 /// See [the top-level documentation][lib] documentation for usage examples.
 ///
 /// [lib]: crate#running-vanilla
-pub fn start() {
-    start_with_tricks(Tricks::default());
+pub fn start() -> ExitCode {
+    start_with_tricks(Tricks::default())
 }
 
 /// Starts the language server with customizations.
@@ -130,7 +131,7 @@ pub fn start() {
 /// See [the top-level documentation][lib] documentation for usage examples.
 ///
 /// [lib]: crate#running-with-customizations
-pub fn start_with_tricks(tricks: Tricks) {
+pub fn start_with_tricks(tricks: Tricks) -> ExitCode {
     let _log_guard = init_logging();
 
     info!("language server starting");
@@ -140,19 +141,19 @@ pub fn start_with_tricks(tricks: Tricks) {
         Ok(backend) => {
             if let Err(err) = backend.run().map(|handle| handle.join()) {
                 error!("language server encountered an unrecoverable error: {err}");
-                1
+                ExitCode::from(1)
             } else {
-                0
+                ExitCode::from(0)
             }
         }
         Err(err) => {
             error!("language server failed during initialization: {err}");
-            1
+            ExitCode::from(1)
         }
     };
 
     info!("language server stopped");
-    std::process::exit(exit_code);
+    exit_code
 }
 
 /// Special function to run the language server in end-to-end tests.
