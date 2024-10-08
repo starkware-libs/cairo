@@ -97,7 +97,7 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                 .map(|p| {
                     p.dependencies
                         .iter()
-                        .map(|d| (d.name.clone(), DependencySettings { version: None }))
+                        .map(|d| (d.name.clone(), DependencySettings { discriminator: None }))
                         .collect()
                 })
                 .unwrap_or_default();

@@ -87,7 +87,7 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
     db: &mut T,
     content: &str,
 ) -> CrateId {
-    let crate_id = CrateId::unversioned(db, "test");
+    let crate_id = CrateId::plain(db, "test");
     let directory = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(directory)));
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
