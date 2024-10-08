@@ -1,3 +1,10 @@
+// +-----------------------------------------------------+
+// | Code adopted from:                                  |
+// | Repository: https://github.com/astral-sh/ruff       |
+// | File: `crates/ruff_server/src/server/connection.rs` |
+// | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69    |
+// +-----------------------------------------------------+
+
 use std::sync::{Arc, Weak};
 
 use anyhow::{bail, Result};

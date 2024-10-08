@@ -322,8 +322,8 @@ impl Backend {
 
     fn initial_setup<'a>(state: &'a mut State, connection: &'_ Connection) -> Scheduler<'a> {
         let four = NonZeroUsize::new(4).unwrap();
-        // By default, we set the number of worker threads to `num_cpus`, with a maximum of 4.
         let worker_threads = std::thread::available_parallelism().unwrap_or(four).max(four);
+
         let dynamic_registrations = collect_dynamic_registrations(&state.client_capabilities);
 
         let mut scheduler = Scheduler::new(state, worker_threads, connection.make_sender());
@@ -363,6 +363,12 @@ impl Backend {
         )
     }
 
+    // +--------------------------------------------------+
+    // | Function code adopted from:                      |
+    // | Repository: https://github.com/astral-sh/ruff    |
+    // | File: `crates/ruff_server/src/server.rs`         |
+    // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69 |
+    // +--------------------------------------------------+
     fn event_loop(connection: &Connection, mut scheduler: Scheduler<'_>) -> Result<()> {
         for msg in connection.incoming() {
             if connection.handle_shutdown(&msg)? {

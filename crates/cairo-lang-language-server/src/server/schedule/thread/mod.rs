@@ -1,5 +1,14 @@
 // +------------------------------------------------------------+
 // | Code adopted from:                                         |
+// | Repository: https://github.com/astral-sh/ruff              |
+// | File: `crates/ruff_server/src/server/schedule/thread.rs`   |
+// | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69           |
+// +------------------------------------------------------------+
+
+// ==============================================================
+
+// +------------------------------------------------------------+
+// | Code adopted from:                                         |
 // | Repository: https://github.com/rust-lang/rust-analyzer.git |
 // | File: `crates/stdx/src/thread.rs`                          |
 // | Commit: 03b3cb6be9f21c082f4206b35c7fe7f291c94eaa           |

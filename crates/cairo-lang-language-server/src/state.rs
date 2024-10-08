@@ -63,23 +63,13 @@ impl State {
     }
 
     pub fn snapshot(&self) -> StateSnapshot {
-        StateSnapshot {
-            db: self.db.snapshot(),
-            _open_files: self.open_files.snapshot(),
-            _config: self.config.snapshot(),
-            _client_capabilities: self.client_capabilities.snapshot(),
-            _tricks: self.tricks.snapshot(),
-        }
+        StateSnapshot { db: self.db.snapshot() }
     }
 }
 
 /// Readonly snapshot of Language server state.
 pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,
-    pub _open_files: Snapshot<HashSet<Url>>,
-    pub _config: Snapshot<Config>,
-    pub _client_capabilities: Snapshot<ClientCapabilities>,
-    pub _tricks: Snapshot<Tricks>,
 }
 
 impl std::panic::UnwindSafe for StateSnapshot {}
@@ -96,10 +86,6 @@ pub struct Snapshot<T: ?Sized>(Arc<T>);
 impl<T: ?Sized> Owned<T> {
     pub fn new(inner: Arc<T>) -> Self {
         Self(inner)
-    }
-
-    pub fn snapshot(&self) -> Snapshot<T> {
-        Snapshot(self.0.clone())
     }
 }
 
