@@ -41,16 +41,24 @@ impl TraitTestImpl of TraitTest {
 pub mod test_module {
     //! Test module used to check if the documentation is being attached to the nodes correctly.
     /// Just a function outside the test_module.
-    pub fn inner_test_module_function() {
+    pub fn inner_test_module_function() -> () {
         //! Just a function inside the test_module.
         println!("inside inner test module inner function");
     }
 }
 
 /// Point struct representing a point in a 2d space.
+/// Example usage:
+/// ```
+///   fn new_Point() {
+///     Point {x: 12, y: 14}
+///   }
+/// ```
+#[derive(Drop)]
+#[derive(Copy)]
 struct Point {
     /// X coordinate.
-    x: u32,
+    pub x: u32,
     /// Y coordinate.
     y: u32
 }
@@ -63,44 +71,97 @@ enum Answer {
     No
 }
 
-//! > Item #1
+//! > Item signature #1
+
+//! > Item documentation #1
 This comment refers to the crate.
 
-//! > Item #2
+//! > Item signature #2
+fn main()
+
+//! > Item documentation #2
 Main function comment outside. Main function comment inside.
 
-//! > Item #3
+//! > Item signature #3
+trait TraitTest
+
+//! > Item documentation #3
 Trait containing abc function.
 
-//! > Item #4
+//! > Item signature #4
+fn abc() -> u32
+
+//! > Item documentation #4
 abc function returning u32. Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
-//! > Item #5
+//! > Item signature #5
+impl TraitTestImpl of TraitTest
+
+//! > Item documentation #5
 Implementation of TraitTest's abc function.
 
-//! > Item #6
+//! > Item signature #6
+fn abc() -> u32
+
+//! > Item documentation #6
 Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
-//! > Item #7
+//! > Item signature #7
+
+//! > Item documentation #7
 Test module used to check if the documentation is being attached to the nodes correctly. Test module used to check if the documentation is being attached to the nodes correctly.
 
-//! > Item #8
+//! > Item signature #8
+pub fn inner_test_module_function() -> ()
+
+//! > Item documentation #8
 Just a function outside the test_module. Just a function inside the test_module.
 
-//! > Item #9
-Point struct representing a point in a 2d space.
+//! > Item signature #9
+#[derive(Drop)]
+#[derive(Copy)]
+struct Point {
+    pub x: u32,
+    y: u32
+}
 
-//! > Item #10
+//! > Item documentation #9
+Point struct representing a point in a 2d space. Example usage: 
+```cairo
+  fn new_Point() {
+    Point {x: 12, y: 14}
+  }
+```
+
+//! > Item signature #10
+pub x: u32
+
+//! > Item documentation #10
 X coordinate.
 
-//! > Item #11
+//! > Item signature #11
+y: u32
+
+//! > Item documentation #11
 Y coordinate.
 
-//! > Item #12
+//! > Item signature #12
+enum Answer {
+    Yes,
+    No
+}
+
+//! > Item documentation #12
 Answer Enum representing an answer to a yes/no question.
 
-//! > Item #13
+//! > Item signature #13
+Yes
+
+//! > Item documentation #13
 Yes answer variant.
 
-//! > Item #14
+//! > Item signature #14
+No
+
+//! > Item documentation #14
 No answer variant.

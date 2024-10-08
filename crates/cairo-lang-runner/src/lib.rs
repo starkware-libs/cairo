@@ -316,7 +316,7 @@ impl SierraCasmRunner {
         // function).
         // The value is the weight of the stack trace so far, not including the pending weight being
         // tracked at the time.
-        let mut stack_trace_weights = UnorderedHashMap::default();
+        let mut stack_trace_weights = OrderedHashMap::default();
         let mut end_of_program_reached = false;
         // The total weight of each Sierra statement.
         // Note the header and footer (CASM instructions added for running the program by the
@@ -330,7 +330,10 @@ impl SierraCasmRunner {
             }
             let real_pc: usize = step.pc.sub(real_pc_0);
             // Skip the footer.
-            if real_pc == bytecode_len {
+            // Also if pc is greater or equal the bytecode length it means that it is the outside
+            // ret used for e.g. getting pointer to builtins costs table, const segments
+            // etc.
+            if real_pc >= bytecode_len {
                 continue;
             }
 

@@ -1,0 +1,130 @@
+//! > Documentation with a lot of trivia
+
+//! > test_runner_name
+documentation_test_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+/// Const comment
+const a: u32 = 123;
+
+/// Test Pair
+#[derive(Drop)]
+#[derive(Clone)]
+pub struct Pair<T, U> //     T: Display + Debug,
+//     U: Display + Debug,
+{
+    /// first field
+    first: T,
+    /// second field
+    second: U,
+}
+#[derive(Clone)] // Some comment3.
+/// A second struct defining a pair.
+#[derive(Drop)] // Some comment2.
+/// As above.
+struct Pair2<T, U> //     T: Display + Debug,
+//     U: Display + Debug,
+{
+    // This one is a little useless comment.
+    /// First field
+    pub first: T,
+    // Don't use the struct. The code is bad.
+    /// Second field
+    second: U,
+}
+
+pub enum TestEnum {
+    /// First variant
+    Var1,
+    /// Second variant
+    Var2
+}
+
+/// extern type comment
+// yup
+pub extern type S<T>;
+
+//! > Item signature #1
+
+//! > Item documentation #1
+
+//! > Item signature #2
+const a: u32 = 123;
+
+//! > Item documentation #2
+Const comment
+
+//! > Item signature #3
+#[derive(Drop)]
+#[derive(Clone)]
+pub struct Pair<T, U> {
+    first: T,
+    second: U,
+}
+
+//! > Item documentation #3
+Test Pair
+
+//! > Item signature #4
+first: T
+
+//! > Item documentation #4
+first field
+
+//! > Item signature #5
+second: U
+
+//! > Item documentation #5
+second field
+
+//! > Item signature #6
+#[derive(Clone)]
+#[derive(Drop)]
+struct Pair2<T, U> {
+    pub first: T,
+    second: U,
+}
+
+//! > Item documentation #6
+
+//! > Item signature #7
+pub first: T
+
+//! > Item documentation #7
+First field
+
+//! > Item signature #8
+second: U
+
+//! > Item documentation #8
+Second field
+
+//! > Item signature #9
+pub enum TestEnum {
+    Var1,
+    Var2
+}
+
+//! > Item documentation #9
+
+//! > Item signature #10
+Var1
+
+//! > Item documentation #10
+First variant
+
+//! > Item signature #11
+Var2
+
+//! > Item documentation #11
+Second variant
+
+//! > Item signature #12
+pub extern type S<T>
+
+//! > Item documentation #12
+extern type comment

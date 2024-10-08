@@ -15,7 +15,6 @@ use defs::diagnostic_utils::StableLocation;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
 use semantic::corelib::{core_module, get_ty_by_name};
-use semantic::expr::inference::InferenceError;
 use semantic::types::wrap_in_snapshots;
 use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
@@ -63,26 +62,12 @@ impl<'db> VariableAllocator<'db> {
 
     /// Allocates a new variable in the context's variable arena according to the context.
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
-        let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty);
-        self.variables.alloc(Variable {
-            copyable: ty_info
-                .clone()
-                .map_err(InferenceError::Reported)
-                .and_then(|info| info.copyable),
-            droppable: ty_info
-                .clone()
-                .map_err(InferenceError::Reported)
-                .and_then(|info| info.droppable),
-            destruct_impl: ty_info
-                .clone()
-                .map_err(InferenceError::Reported)
-                .and_then(|info| info.destruct_impl),
-            panic_destruct_impl: ty_info
-                .map_err(InferenceError::Reported)
-                .and_then(|info| info.panic_destruct_impl),
-            ty: req.ty,
-            location: req.location,
-        })
+        self.variables.alloc(Variable::new(
+            self.db,
+            self.lookup_context.clone(),
+            req.ty,
+            req.location,
+        ))
     }
 
     /// Retrieves the LocationId of a stable syntax pointer in the current function file.

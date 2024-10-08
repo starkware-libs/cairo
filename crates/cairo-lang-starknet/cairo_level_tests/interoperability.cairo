@@ -108,7 +108,7 @@ fn test_class_hash_not_found() {
 }
 
 #[test]
-#[should_panic(expected: ('CONTRACT_NOT_DEPLOYED',))]
+#[should_panic(expected: ('CONTRACT_NOT_DEPLOYED', 'ENTRYPOINT_FAILED',))]
 fn test_contract_not_deployed() {
     let mut contract = IContractDispatcher { contract_address: 5.try_into().unwrap() };
     contract.foo(10);
