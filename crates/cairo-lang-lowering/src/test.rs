@@ -12,17 +12,17 @@ use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, LookupIntern, Upcast};
+use cairo_lang_utils::{LookupIntern, Upcast, extract_matches};
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module_ex;
 
+use crate::FlatLowered;
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::fmt::LoweredFormatter;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
 use crate::test_utils::LoweringDatabaseForTesting;
-use crate::FlatLowered;
 
 cairo_lang_test_utils::test_file_test!(
     lowering,
@@ -133,9 +133,7 @@ fn test_location_and_diagnostics() {
         )
         .lookup_intern(db);
 
-    assert_eq!(
-        format!("{:?}", location.debug(db)),
-        indoc::indoc! {"
+    assert_eq!(format!("{:?}", location.debug(db)), indoc::indoc! {"
 lib.cairo:1:1
 fn test_func() { let mut a = 5; {
 ^*******************************^
@@ -143,8 +141,7 @@ note: this error originates in auto-generated withdraw_gas logic.
 note: Adding destructor for:
   --> lib.cairo:2:1
 a = a * 3
-^*******^"}
-    );
+^*******^"});
 
     let mut builder = DiagnosticsBuilder::default();
 
@@ -153,9 +150,7 @@ a = a * 3
         kind: LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
     });
 
-    assert_eq!(
-        builder.build().format(db),
-        indoc::indoc! {"
+    assert_eq!(builder.build().format(db), indoc::indoc! {"
 error: Cannot inline a function that might call itself.
  --> lib.cairo:1:1
 fn test_func() { let mut a = 5; {
@@ -166,8 +161,7 @@ note: Adding destructor for:
 a = a * 3
 ^*******^
 
-"}
-    );
+"});
 }
 
 #[test]

@@ -7,8 +7,8 @@ use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use thiserror::Error;
 
 use crate::db::RootDatabase;

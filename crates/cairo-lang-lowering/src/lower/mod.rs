@@ -4,21 +4,21 @@ use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
-use cairo_lang_semantic::corelib::{unwrap_error_propagation_type, ErrorPropagationType};
+use cairo_lang_semantic::corelib::{ErrorPropagationType, unwrap_error_propagation_type};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::{GeneratedImplItems, GeneratedImplLongId, ImplLongId};
 use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{
-    corelib, ConcreteFunction, ConcreteTraitLongId, ExprVar, LocalVariable, VarId,
+    ConcreteFunction, ConcreteTraitLongId, ExprVar, LocalVariable, VarId, corelib,
 };
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches, try_extract_matches};
 use defs::ids::TopLevelLanguageElementId;
-use itertools::{chain, izip, zip_eq, Itertools};
+use itertools::{Itertools, chain, izip, zip_eq};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
 use refs::ClosureInfo;
@@ -26,7 +26,7 @@ use semantic::corelib::{
     core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
     never_ty, unit_ty,
 };
-use semantic::items::constant::{value_as_const_value, ConstValue};
+use semantic::items::constant::{ConstValue, value_as_const_value};
 use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
@@ -37,8 +37,8 @@ use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use self::block_builder::SealedBlockBuilder;
 use self::context::{
-    lowering_flow_error_to_sealed_block, EncapsulatingLoweringContext, LoweredExpr,
-    LoweredExprExternEnum, LoweringContext, LoweringFlowError,
+    EncapsulatingLoweringContext, LoweredExpr, LoweredExprExternEnum, LoweringContext,
+    LoweringFlowError, lowering_flow_error_to_sealed_block,
 };
 use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::logical_op::lower_logical_op;
@@ -49,14 +49,14 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
 use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
 use crate::ids::{
-    parameter_as_member_path, FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId,
-    GeneratedFunction, GeneratedFunctionKey, LocationId, SemanticFunctionIdEx, Signature,
+    FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction,
+    GeneratedFunctionKey, LocationId, SemanticFunctionIdEx, Signature, parameter_as_member_path,
 };
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::lower::generators::StructDestructure;
 use crate::lower::lower_match::{
-    lower_concrete_enum_match, lower_expr_match_tuple, lower_optimized_extern_match,
-    MatchArmWrapper, TupleInfo,
+    MatchArmWrapper, TupleInfo, lower_concrete_enum_match, lower_expr_match_tuple,
+    lower_optimized_extern_match,
 };
 use crate::{
     BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
@@ -580,10 +580,9 @@ fn lower_expr_block(
                 let end_stmt =
                     &ctx.function_body.arenas.statements[*expr_block.statements.last().unwrap()];
                 // Emit diagnostic for the rest of the statements with unreachable.
-                ctx.diagnostics.report(
-                    start_stmt.stable_ptr().untyped(),
-                    Unreachable { last_statement_ptr: end_stmt.into() },
-                );
+                ctx.diagnostics.report(start_stmt.stable_ptr().untyped(), Unreachable {
+                    last_statement_ptr: end_stmt.into(),
+                });
             }
         }
         return Err(err);

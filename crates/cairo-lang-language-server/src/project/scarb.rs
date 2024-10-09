@@ -2,9 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 
-use anyhow::{bail, ensure, Context, Result};
+use anyhow::{Context, Result, bail, ensure};
 use cairo_lang_filesystem::db::{
-    CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig, CORELIB_CRATE_NAME,
+    CORELIB_CRATE_NAME, CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig,
 };
 use itertools::Itertools;
 use scarb_metadata::{CompilationUnitComponentMetadata, Metadata, PackageMetadata};
@@ -135,12 +135,9 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                     })
                     .chain([
                         // Add the component itself to dependencies.
-                        (
-                            crate_name.into(),
-                            DependencySettings {
-                                discriminator: component_discriminator(component),
-                            },
-                        ),
+                        (crate_name.into(), DependencySettings {
+                            discriminator: component_discriminator(component),
+                        }),
                     ])
                     .collect()
             };

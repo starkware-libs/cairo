@@ -2,9 +2,9 @@ use core::borrow::Borrow;
 use core::hash::{BuildHasher, Hash};
 use core::ops::Sub;
 #[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
-#[cfg(feature = "std")]
 use std::collections::HashSet;
+#[cfg(feature = "std")]
+use std::collections::hash_map::RandomState;
 
 #[cfg(not(feature = "std"))]
 use hashbrown::HashSet;

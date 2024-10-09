@@ -1,10 +1,10 @@
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Intern;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
-use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
+use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics};
 
 pub fn get_diagnostics(
     inputs: &OrderedHashMap<String, String>,

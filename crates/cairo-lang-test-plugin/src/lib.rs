@@ -1,7 +1,7 @@
 use std::default::Default;
 use std::sync::Arc;
 
-use anyhow::{ensure, Result};
+use anyhow::{Result, ensure};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::get_sierra_program_for_functions;
@@ -24,19 +24,19 @@ use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::DebugReplacer;
 use cairo_lang_sierra_generator::statements_locations::StatementsLocations;
 use cairo_lang_starknet::contract::{
-    find_contracts, get_contract_abi_functions, get_contracts_info, ContractDeclaration,
-    ContractInfo,
+    ContractDeclaration, ContractInfo, find_contracts, get_contract_abi_functions,
+    get_contracts_info,
 };
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet_classes::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_utils::ordered_hash_map::{
-    deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
+    OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 pub use plugin::TestPlugin;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
-pub use test_config::{try_extract_test_config, TestConfig};
+pub use test_config::{TestConfig, try_extract_test_config};
 
 mod inline_macros;
 pub mod plugin;

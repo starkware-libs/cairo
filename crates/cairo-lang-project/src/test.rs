@@ -23,38 +23,30 @@ fn test_serde() {
                 cfg_set: Default::default(),
             },
             override_map: [
-                (
-                    "crate1".into(),
-                    CrateSettings {
-                        edition: Edition::V2023_10,
-                        version: Default::default(),
-                        dependencies: Default::default(),
-                        experimental_features: ExperimentalFeaturesConfig::default(),
-                        cfg_set: Default::default(),
+                ("crate1".into(), CrateSettings {
+                    edition: Edition::V2023_10,
+                    version: Default::default(),
+                    dependencies: Default::default(),
+                    experimental_features: ExperimentalFeaturesConfig::default(),
+                    cfg_set: Default::default(),
+                }),
+                ("crate3".into(), CrateSettings {
+                    edition: Default::default(),
+                    version: Default::default(),
+                    dependencies: Default::default(),
+                    experimental_features: ExperimentalFeaturesConfig {
+                        negative_impls: true,
+                        coupons: false,
                     },
-                ),
-                (
-                    "crate3".into(),
-                    CrateSettings {
-                        edition: Default::default(),
-                        version: Default::default(),
-                        dependencies: Default::default(),
-                        experimental_features: ExperimentalFeaturesConfig {
-                            negative_impls: true,
-                            coupons: false,
-                        },
-                        cfg_set: Default::default(),
-                    },
-                ),
+                    cfg_set: Default::default(),
+                }),
             ]
             .into_iter()
             .collect(),
         },
     };
     let serialized = toml::to_string(&config).unwrap();
-    assert_eq!(
-        serialized,
-        indoc! { r#"
+    assert_eq!(serialized, indoc! { r#"
             [crate_roots]
             crate1 = "dir1"
             crate2 = "dir2"
@@ -86,8 +78,7 @@ fn test_serde() {
             [config.override.crate3.experimental_features]
             negative_impls = true
             coupons = false
-        "# }
-    );
+        "# });
     assert_eq!(config, toml::from_str(&serialized).unwrap());
 }
 

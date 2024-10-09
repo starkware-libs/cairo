@@ -6,9 +6,9 @@ use num_bigint::{BigInt, ToBigInt};
 use num_traits::{One, Signed};
 use starknet_types_core::felt::Felt as Felt252;
 
-use super::non_zero::{nonzero_ty, NonZeroType};
+use super::non_zero::{NonZeroType, nonzero_ty};
 use super::range_check::RangeCheckType;
-use super::utils::{reinterpret_cast_signature, Range};
+use super::utils::{Range, reinterpret_cast_signature};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -18,8 +18,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_single_type, args_as_two_types, ConcreteType, NamedLibfunc, NamedType,
-    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
+    ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
+    SpecializationError, args_as_single_type, args_as_two_types,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;

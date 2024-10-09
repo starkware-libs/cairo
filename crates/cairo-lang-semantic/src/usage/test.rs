@@ -8,10 +8,10 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::Usages;
+use crate::Expr;
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
-use crate::test_utils::{setup_test_function, SemanticDatabaseForTesting};
-use crate::Expr;
+use crate::test_utils::{SemanticDatabaseForTesting, setup_test_function};
 
 cairo_lang_test_utils::test_file_test!(
     usage,

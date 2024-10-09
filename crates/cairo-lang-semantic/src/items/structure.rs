@@ -12,17 +12,17 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use super::attribute::SemanticQueryAttrs;
-use super::generics::{semantic_generic_params, GenericParamsData};
+use super::generics::{GenericParamsData, semantic_generic_params};
 use super::visibility::Visibility;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{add_type_based_diagnostics, resolve_type, ConcreteStructId};
-use crate::{semantic, GenericParam, SemanticDiagnostic};
+use crate::types::{ConcreteStructId, add_type_based_diagnostics, resolve_type};
+use crate::{GenericParam, SemanticDiagnostic, semantic};
 
 #[cfg(test)]
 #[path = "structure_test.rs"]

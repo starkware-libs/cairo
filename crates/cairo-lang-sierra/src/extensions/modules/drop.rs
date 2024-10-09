@@ -2,7 +2,7 @@ use crate::extensions::lib_func::{
     LibfuncSignature, ParamSignature, SierraApChange, SignatureOnlyGenericLibfunc,
     SignatureSpecializationContext,
 };
-use crate::extensions::{args_as_single_type, SpecializationError};
+use crate::extensions::{SpecializationError, args_as_single_type};
 use crate::program::GenericArg;
 
 /// Libfunc for ignoring a plain old data object.

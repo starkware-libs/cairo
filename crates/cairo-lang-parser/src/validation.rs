@@ -10,8 +10,8 @@ use num_traits::Num;
 use smol_str::SmolStr;
 use unescaper::unescape;
 
-use crate::diagnostic::ParserDiagnosticKind;
 use crate::ParserDiagnostic;
+use crate::diagnostic::ParserDiagnosticKind;
 
 /// Validate that the numeric literal is valid, after it is consumed by the parser.
 ///

@@ -15,14 +15,14 @@ use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::{
-    try_get_function_with_body_id, SierraProgramWithDebug,
+    SierraProgramWithDebug, try_get_function_with_body_id,
 };
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 use crate::db::RootDatabase;
 use crate::diagnostics::DiagnosticsReporter;
-use crate::project::{get_main_crate_ids_from_project, setup_project, ProjectConfig};
+use crate::project::{ProjectConfig, get_main_crate_ids_from_project, setup_project};
 
 pub mod db;
 pub mod diagnostics;

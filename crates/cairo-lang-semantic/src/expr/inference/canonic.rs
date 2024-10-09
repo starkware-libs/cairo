@@ -3,8 +3,8 @@ use cairo_lang_defs::ids::{
     ImplFunctionId, ImplImplDefId, LocalVarId, MemberId, ParamId, StructId, TraitConstantId,
     TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::{
     ConstVar, ImplVar, ImplVarId, Inference, InferenceId, InferenceVar, LocalConstVarId,
@@ -29,11 +29,11 @@ use crate::types::{
     ImplTypeId,
 };
 use crate::{
-    add_basic_rewrites, ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId,
-    ConcreteImplLongId, ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
-    ConcreteVariant, ExprId, ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId,
-    GenericArgumentId, GenericParam, MatchArmSelector, Parameter, Signature, TypeId, TypeLongId,
-    ValueSelectorArm,
+    ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
+    ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
+    ExprId, ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId, GenericArgumentId,
+    GenericParam, MatchArmSelector, Parameter, Signature, TypeId, TypeLongId, ValueSelectorArm,
+    add_basic_rewrites,
 };
 
 /// A canonical representation of a concrete trait that needs to be solved.

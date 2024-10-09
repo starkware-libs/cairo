@@ -3,10 +3,10 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, Terminal};
+use cairo_lang_syntax::node::{Terminal, ast};
 
-use crate::diagnostic::SemanticDiagnosticKind;
 use crate::SemanticDiagnostic;
+use crate::diagnostic::SemanticDiagnosticKind;
 
 /// Visibility of an item.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

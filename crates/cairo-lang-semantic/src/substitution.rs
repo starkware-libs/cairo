@@ -8,8 +8,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, LookupIntern};
-use itertools::{zip_eq, Itertools};
+use cairo_lang_utils::{LookupIntern, extract_matches};
+use itertools::{Itertools, zip_eq};
 
 use crate::db::SemanticGroup;
 use crate::expr::inference::{

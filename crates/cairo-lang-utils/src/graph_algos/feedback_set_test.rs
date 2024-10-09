@@ -6,7 +6,7 @@ use test_log::test;
 
 use crate::graph_algos::feedback_set::calc_feedback_set;
 use crate::graph_algos::graph_node::GraphNode;
-use crate::graph_algos::strongly_connected_components::{compute_scc, ComputeScc};
+use crate::graph_algos::strongly_connected_components::{ComputeScc, compute_scc};
 
 // A node in the graph
 #[derive(PartialEq, Eq, Hash, Clone)]

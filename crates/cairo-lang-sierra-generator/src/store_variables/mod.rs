@@ -11,12 +11,12 @@ use cairo_lang_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, 
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, LookupIntern};
+use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::zip_eq;
-use sierra::extensions::function_call::{CouponCallLibfunc, FunctionCallLibfunc};
 use sierra::extensions::NamedLibfunc;
+use sierra::extensions::function_call::{CouponCallLibfunc, FunctionCallLibfunc};
 use state::{
-    merge_optional_states, DeferredVariableInfo, DeferredVariableKind, VarState, VariablesState,
+    DeferredVariableInfo, DeferredVariableKind, VarState, VariablesState, merge_optional_states,
 };
 
 use crate::db::SierraGenGroup;
@@ -354,10 +354,9 @@ impl<'a> AddStoreVariableStatements<'a> {
                         // TODO(orizi): This is an ugly fix for case of literals. Fix properly.
                         if *dup {
                             self.dup(var, var_on_stack, ty);
-                            state.variables.insert(
-                                var.clone(),
-                                VarState::Deferred { info: deferred_info.clone() },
-                            );
+                            state.variables.insert(var.clone(), VarState::Deferred {
+                                info: deferred_info.clone(),
+                            });
                             self.store_temp(&mut state.known_stack, var_on_stack, var_on_stack, ty);
                         } else {
                             self.store_temp(&mut state.known_stack, var, var_on_stack, ty);
@@ -520,11 +519,10 @@ impl<'a> AddStoreVariableStatements<'a> {
         dup_var: &sierra::ids::VarId,
         ty: &sierra::ids::ConcreteTypeId,
     ) {
-        self.result.push(simple_statement(
-            dup_libfunc_id(self.db, ty.clone()),
-            &[var.clone()],
-            &[var.clone(), dup_var.clone()],
-        ));
+        self.result.push(simple_statement(dup_libfunc_id(self.db, ty.clone()), &[var.clone()], &[
+            var.clone(),
+            dup_var.clone(),
+        ]));
     }
 
     /// Adds a call to the rename() libfunc, renaming `src` to `dst`.

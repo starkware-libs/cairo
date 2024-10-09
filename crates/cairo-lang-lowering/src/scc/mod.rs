@@ -1,9 +1,9 @@
 use cairo_lang_utils::graph_algos::graph_node::GraphNode;
 use cairo_lang_utils::graph_algos::strongly_connected_components::compute_scc;
 
+use crate::DependencyType;
 use crate::db::LoweringGroup;
 use crate::ids::FunctionWithBodyId;
-use crate::DependencyType;
 
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_scc].
 pub fn function_with_body_scc(

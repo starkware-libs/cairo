@@ -6,18 +6,18 @@
 
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::ConcreteFunction;
 use cairo_lang_semantic::corelib::{core_module, get_ty_by_name, unit_ty};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
-use cairo_lang_semantic::ConcreteFunction;
-use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
-use itertools::{chain, zip_eq, Itertools};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
+use itertools::{Itertools, chain, zip_eq};
 use semantic::corelib::{destruct_trait_fn, panic_destruct_trait_fn};
 use semantic::{TypeId, TypeLongId};
 
+use crate::borrow_check::Demand;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::{AuxCombine, DemandReporter};
-use crate::borrow_check::Demand;
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};

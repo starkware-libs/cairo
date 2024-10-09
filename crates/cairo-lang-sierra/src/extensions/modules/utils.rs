@@ -8,9 +8,9 @@ use starknet_types_core::felt::CAIRO_PRIME_BIGINT;
 
 use super::bounded_int::BoundedIntType;
 use super::bytes31::Bytes31Type;
-use super::int::signed::{Sint16Type, Sint32Type, Sint64Type, Sint8Type};
+use super::int::signed::{Sint8Type, Sint16Type, Sint32Type, Sint64Type};
 use super::int::signed128::Sint128Type;
-use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
+use super::int::unsigned::{Uint8Type, Uint16Type, Uint32Type, Uint64Type};
 use super::int::unsigned128::Uint128Type;
 use super::structure::StructType;
 use crate::extensions::felt252::Felt252Type;

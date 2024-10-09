@@ -1,7 +1,7 @@
 use super::enm::EnumType;
 use super::felt252::Felt252Type;
 use super::gas::GasBuiltinType;
-use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
+use super::int::unsigned::{Uint8Type, Uint16Type, Uint32Type, Uint64Type};
 use super::int::unsigned128::Uint128Type;
 use super::nullable::NullableType;
 use super::range_check::RangeCheckType;
@@ -18,7 +18,7 @@ use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{
-    args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
+    NamedType, OutputVarReferenceInfo, SpecializationError, args_as_single_type,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -124,13 +124,10 @@ impl SignatureOnlyGenericLibfunc for Felt252DictNewLibfunc {
         let segment_arena_ty = context.get_concrete_type(SegmentArenaType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature::new(segment_arena_ty.clone()).with_allow_add_const()],
-            vec![
-                OutputVarInfo::new_builtin(segment_arena_ty, 0),
-                OutputVarInfo {
-                    ty: context.get_wrapped_concrete_type(Felt252DictType::id(), ty)?,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                },
-            ],
+            vec![OutputVarInfo::new_builtin(segment_arena_ty, 0), OutputVarInfo {
+                ty: context.get_wrapped_concrete_type(Felt252DictType::id(), ty)?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
             SierraApChange::Known { new_vars_only: false },
         ))
     }

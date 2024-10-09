@@ -6,8 +6,8 @@ use crate::extensions::lib_func::{
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
-    args_as_single_value, NamedLibfunc, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
-    SpecializationError,
+    NamedLibfunc, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
+    args_as_single_value,
 };
 use crate::ids::GenericTypeId;
 use crate::program::GenericArg;

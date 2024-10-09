@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextWidth;
-use cairo_lang_utils::{define_short_id, LookupIntern};
+use cairo_lang_utils::{LookupIntern, define_short_id};
 
+use super::SyntaxNode;
 use super::db::SyntaxGroup;
 use super::green::GreenNode;
 use super::kind::SyntaxKind;
-use super::SyntaxNode;
 use crate::node::stable_ptr::SyntaxStablePtr;
 
 define_short_id!(GreenId, Arc::<GreenNode>, SyntaxGroup, lookup_intern_green, intern_green);

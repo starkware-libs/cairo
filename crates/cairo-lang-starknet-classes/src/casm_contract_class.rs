@@ -3,6 +3,7 @@ use std::sync::LazyLock;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
+use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
@@ -17,22 +18,21 @@ use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::snapshot::SnapshotType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::structure::StructType;
-use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
 use cairo_lang_sierra_to_casm::compiler::{
     CairoProgramDebugInfo, CompilationError, SierraToCasmConfig,
 };
 use cairo_lang_sierra_to_casm::metadata::{
-    calc_metadata, MetadataComputationConfig, MetadataError,
+    MetadataComputationConfig, MetadataError, calc_metadata,
 };
-use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
+use cairo_lang_utils::bigint::{BigUintAsHex, deserialize_big_uint, serialize_big_uint};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::Signed;
@@ -43,14 +43,14 @@ use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::compiler_version::{
-    current_compiler_version_id, current_sierra_version_id, VersionId,
-    CONTRACT_SEGMENTATION_MINOR_VERSION,
+    CONTRACT_SEGMENTATION_MINOR_VERSION, VersionId, current_compiler_version_id,
+    current_sierra_version_id,
 };
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::contract_segmentation::{
-    compute_bytecode_segment_lengths, NestedIntList, SegmentationError,
+    NestedIntList, SegmentationError, compute_bytecode_segment_lengths,
 };
-use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
+use crate::felt252_serde::{Felt252SerdeError, sierra_from_felt252s};
 use crate::keccak::starknet_keccak;
 
 #[cfg(test)]

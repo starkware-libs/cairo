@@ -15,8 +15,8 @@ use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError,
 use crate::ids::LocationId;
 use crate::lower::context::VarRequest;
 use crate::lower::lower_match::{
-    lower_concrete_enum_match, lower_expr_match_tuple, lower_optimized_extern_match,
-    MatchArmWrapper, TupleInfo,
+    MatchArmWrapper, TupleInfo, lower_concrete_enum_match, lower_expr_match_tuple,
+    lower_optimized_extern_match,
 };
 use crate::lower::{
     create_subscope_with_bound_refs, lower_block, lower_expr, lower_expr_to_var_usage,

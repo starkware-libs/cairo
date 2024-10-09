@@ -3,12 +3,12 @@
 
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
-use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 use itertools::chain;
 use semantic::items::constant::ConstValue;
 
-use super::context::VarRequest;
 use super::VariableId;
+use super::context::VarRequest;
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 use crate::objects::{

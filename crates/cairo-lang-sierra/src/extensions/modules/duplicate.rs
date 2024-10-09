@@ -2,7 +2,7 @@ use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureOnlyGenericLibfunc,
     SignatureSpecializationContext,
 };
-use crate::extensions::{args_as_single_type, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{OutputVarReferenceInfo, SpecializationError, args_as_single_type};
 use crate::program::GenericArg;
 
 /// Libfunc for duplicating an object.

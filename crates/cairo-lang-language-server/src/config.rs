@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use serde_json::Value;
-use tower_lsp::lsp_types::{ClientCapabilities, ConfigurationItem};
 use tower_lsp::Client;
+use tower_lsp::lsp_types::{ClientCapabilities, ConfigurationItem};
 use tracing::{debug, error, warn};
 
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;

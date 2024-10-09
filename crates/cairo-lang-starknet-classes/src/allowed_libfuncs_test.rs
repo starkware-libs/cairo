@@ -1,11 +1,11 @@
 use std::collections::{BTreeSet, HashSet};
 
-use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::GenericLibfunc;
+use cairo_lang_sierra::extensions::core::CoreLibfunc;
 
 use super::{
-    lookup_allowed_libfuncs_list, ListSelector, BUILTIN_ALL_LIBFUNCS_LIST,
-    BUILTIN_AUDITED_LIBFUNCS_LIST, BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST,
+    BUILTIN_ALL_LIBFUNCS_LIST, BUILTIN_AUDITED_LIBFUNCS_LIST, BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST,
+    ListSelector, lookup_allowed_libfuncs_list,
 };
 
 #[test]

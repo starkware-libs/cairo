@@ -7,7 +7,7 @@ use std::hash::Hash;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 pub use expr::Expr;
-use good_lp::{default_solver, variable, variables, Expression, Solution, SolverModel};
+use good_lp::{Expression, Solution, SolverModel, default_solver, variable, variables};
 
 /// Solving a set of equations and returning the values of the symbols contained in them.
 /// # Arguments

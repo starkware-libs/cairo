@@ -4,7 +4,7 @@ use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
-use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
+use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
@@ -221,10 +221,10 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     fn calc_tracking_info_for_statement(&mut self, idx: StatementIdx) -> Result<(), ApChangeError> {
         for (ap_change, target) in self.get_branches(idx)? {
             if matches!(ap_change, ApChange::EnableApTracking) {
-                self.tracking_info.insert(
-                    target,
-                    ApTrackingInfo { base: ApTrackingBase::EnableStatement(idx), ap_change: 0 },
-                );
+                self.tracking_info.insert(target, ApTrackingInfo {
+                    base: ApTrackingBase::EnableStatement(idx),
+                    ap_change: 0,
+                });
                 continue;
             }
             let Some(mut base_info) = self.tracking_info.get(&idx).cloned() else {
@@ -362,10 +362,10 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
     let ap_tracked_topological_ordering = helper.tracked_ap_change_topological_order()?;
     // Setting tracking info for function entry points.
     for f in &program.funcs {
-        helper.tracking_info.insert(
-            f.entry_point,
-            ApTrackingInfo { base: ApTrackingBase::FunctionStart(f.id.clone()), ap_change: 0 },
-        );
+        helper.tracking_info.insert(f.entry_point, ApTrackingInfo {
+            base: ApTrackingBase::FunctionStart(f.id.clone()),
+            ap_change: 0,
+        });
     }
     for idx in ap_tracked_topological_ordering.iter().rev() {
         helper.calc_tracking_info_for_statement(*idx)?;

@@ -9,7 +9,7 @@ use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
 use cairo_lang_semantic::resolve::Resolver;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{CodeAction, CodeActionKind, Range, TextEdit, Url, WorkspaceEdit};
 use tracing::debug;
@@ -88,13 +88,10 @@ fn missing_traits_actions(
                     title: format!("Import {}", trait_path),
                     kind: Some(CodeActionKind::QUICKFIX),
                     edit: Some(WorkspaceEdit {
-                        changes: Some(HashMap::from_iter([(
-                            uri.clone(),
-                            vec![TextEdit {
-                                range: Range::new(module_start_position, module_start_position),
-                                new_text: format!("use {};\n", trait_path),
-                            }],
-                        )])),
+                        changes: Some(HashMap::from_iter([(uri.clone(), vec![TextEdit {
+                            range: Range::new(module_start_position, module_start_position),
+                            new_text: format!("use {};\n", trait_path),
+                        }])])),
                         document_changes: None,
                         change_annotations: None,
                     }),

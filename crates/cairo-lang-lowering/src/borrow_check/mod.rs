@@ -8,7 +8,7 @@ use cairo_lang_semantic::corelib::{destruct_trait_fn, panic_destruct_trait_fn};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
-use itertools::{zip_eq, Itertools};
+use itertools::{Itertools, zip_eq};
 
 use self::analysis::{Analyzer, StatementLocation};
 pub use self::demand::Demand;

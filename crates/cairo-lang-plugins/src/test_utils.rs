@@ -1,8 +1,8 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
-use cairo_lang_diagnostics::{format_diagnostics, DiagnosticLocation, Severity};
+use cairo_lang_diagnostics::{DiagnosticLocation, Severity, format_diagnostics};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 /// Returns the expanded code for `module_id` after running all plugins and extends `diagnostics`

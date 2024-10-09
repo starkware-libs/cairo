@@ -2,15 +2,15 @@ use num_traits::Zero;
 use starknet_types_core::felt::Felt as Felt252;
 
 use super::range_check::RangeCheckType;
-use super::utils::{reinterpret_cast_signature, Range};
+use super::utils::{Range, reinterpret_cast_signature};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureOnlyGenericLibfunc, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
-    args_as_two_types, NamedLibfunc, NamedType, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibfunc, SpecializationError,
+    NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
+    SpecializationError, args_as_two_types,
 };
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
@@ -133,13 +133,10 @@ impl NamedLibfunc for DowncastLibfunc {
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
-                    vars: vec![
-                        rc_output_info.clone(),
-                        OutputVarInfo {
-                            ty: to_ty,
-                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                        },
-                    ],
+                    vars: vec![rc_output_info.clone(), OutputVarInfo {
+                        ty: to_ty,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Failure.

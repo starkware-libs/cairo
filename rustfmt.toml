@@ -7,7 +7,7 @@ max_width = 100
 
 # Unstable features below
 unstable_features = true
-version = "Two"
+style_edition = "2024"
 comment_width = 100
 format_code_in_doc_comments = true
 format_macro_bodies = true
@@ -23,11 +23,11 @@ wrap_comments = true
 #     "rust-analyzer.rustfmt.overrideCommand": [
 #         "rustup",
 #         "run",
-#         "nightly-2024-09-04",
+#         "nightly-2024-09-21",
 #         "--",
 #         "rustfmt",
 #         "--edition",
 #         "2021",
 #         "--"
 #     ]
-# and run "rustup toolchain install nightly-2024-09-04".
+# and run "rustup toolchain install nightly-2024-09-21".

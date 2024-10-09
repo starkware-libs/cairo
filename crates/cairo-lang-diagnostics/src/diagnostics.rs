@@ -3,7 +3,7 @@ use std::hash::Hash;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::db::{get_originating_location, FilesGroup};
+use cairo_lang_filesystem::db::{FilesGroup, get_originating_location};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Upcast;

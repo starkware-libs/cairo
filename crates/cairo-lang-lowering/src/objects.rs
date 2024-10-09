@@ -19,10 +19,10 @@ use id_arena::{Arena, Id};
 
 pub mod blocks;
 pub use blocks::BlockId;
+use semantic::MatchArmSelector;
 use semantic::expr::inference::InferenceError;
 use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplId;
-use semantic::MatchArmSelector;
 
 use self::blocks::FlatBlocks;
 use crate::db::LoweringGroup;

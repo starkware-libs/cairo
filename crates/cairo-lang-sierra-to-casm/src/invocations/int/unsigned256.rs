@@ -5,8 +5,8 @@ use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
 use num_bigint::BigInt;
 
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CompiledInvocation,
-    CompiledInvocationBuilder, CostValidationInfo, InvocationError,
+    BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
+    InvocationError, add_input_variables, get_non_fallthrough_statement_id,
 };
 
 /// Builds instructions for Sierra u256 operations.
@@ -172,12 +172,9 @@ fn build_u256_divmod(
         casm_builder,
         [(
             "Fallthrough",
-            &[
-                &[range_check],
-                &[quotient0, quotient1],
-                &[remainder0, remainder1],
-                &[quotient0, divisor0, q0d0_high, q0d0_low],
-            ],
+            &[&[range_check], &[quotient0, quotient1], &[remainder0, remainder1], &[
+                quotient0, divisor0, q0d0_high, q0d0_low,
+            ]],
             None,
         )],
         CostValidationInfo {
