@@ -1237,3 +1237,43 @@ fn bar2<impl M: MyTrait<u32>>() {
 }
 
 //! > expected_diagnostics
+//! > ==========================================================================
+//! > Infering a Trait impl with generic param of a generic impl argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait InnerTrait<R> {
+    type X;
+    fn foo() -> Self::X;
+}
+
+trait MyTrait<Y> {
+    impl MyImpl: InnerTrait<Y>;
+}
+impl MyImpl<T, impl I: InnerTrait<T>> of MyTrait<T> {}
+
+
+mod MyMod {
+    impl MyIn<T> of super::InnerTrait<T> {
+        type X = u16;
+        fn foo() -> u16 {
+            5
+        }
+    }
+    fn bar<F, impl A: super::MyTrait<F>>(_x: F) -> A::MyImpl::X {
+        A::MyImpl::foo()
+    }
+    fn bar2() -> u16 {
+        bar(2_u32)
+    }
+}
+
+//! > expected_diagnostics

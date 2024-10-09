@@ -488,6 +488,6 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
             lookup_context.clone(),
         );
 
-        ImplImplId::new(impl_id, concrete_trait_impl.trait_impl(self.db), self.db)
+        ImplImplId::new(impl_id, concrete_trait_impl, self.db)
     }
 }
