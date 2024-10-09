@@ -38,7 +38,10 @@ use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     ImplLookupContext, UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitImplId,
+    ConcreteTraitImplLongId,
+};
 use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
@@ -792,7 +795,15 @@ impl<'db> Inference<'db> {
                 self.conform_impl(
                     inner_impl_id,
                     self.db
-                        .impl_impl_concrete_implized(ImplImplId::new(impl_id, trait_impl, self.db))
+                        .impl_impl_concrete_implized(ImplImplId::new(
+                            impl_id,
+                            ConcreteTraitImplId::new(
+                                self.db,
+                                impl_id.concrete_trait(self.db).map_err(|_| ErrorSet)?,
+                                trait_impl,
+                            ),
+                            self.db,
+                        ))
                         .map_err(|_| ErrorSet)?,
                 )?;
             }
@@ -1269,7 +1280,7 @@ impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
             ImplLongId::ImplImpl(impl_impl_id) => {
                 let impl_impl_id_rewrite_result = self.internal_rewrite(impl_impl_id)?;
                 let impl_id = impl_impl_id.impl_id();
-                let trait_impl = impl_impl_id.trait_impl_id();
+                let concrete_trait_impl = impl_impl_id.concrete_trait_impl_id();
                 return Ok(match impl_id.lookup_intern(self.db) {
                     ImplLongId::GenericParameter(_)
                     | ImplLongId::TraitImpl(_)
@@ -1282,7 +1293,9 @@ impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
                     }
                     ImplLongId::Concrete(_) => {
                         if let Ok(ty) = self.db.impl_impl_concrete_implized(ImplImplId::new(
-                            impl_id, trait_impl, self.db,
+                            impl_id,
+                            concrete_trait_impl,
+                            self.db,
                         )) {
                             *value = self.rewrite(ty).no_err().lookup_intern(self.db);
                             RewriteResult::Modified
@@ -1291,7 +1304,9 @@ impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
                         }
                     }
                     ImplLongId::ImplVar(var) => {
-                        *value = self.rewritten_impl_impl(var, trait_impl).lookup_intern(self.db);
+                        *value = self
+                            .rewritten_impl_impl(var, concrete_trait_impl)
+                            .lookup_intern(self.db);
                         return Ok(RewriteResult::Modified);
                     }
                 });

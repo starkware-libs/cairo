@@ -48,7 +48,7 @@ use crate::items::imp::{
 use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
-    ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
+    ConcreteTraitImplId, ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
 use crate::items::{TraitOrImplContext, visibility};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -865,7 +865,15 @@ impl<'db> Resolver<'db> {
                         Ok(ResolvedConcreteItem::Constant(constant))
                     }
                     TraitItemId::Impl(trait_impl_id) => {
-                        let impl_impl_id = ImplImplId::new(*impl_id, trait_impl_id, self.db);
+                        let impl_impl_id = ImplImplId::new(
+                            *impl_id,
+                            ConcreteTraitImplId::new(
+                                self.db,
+                                impl_id.concrete_trait(self.db)?,
+                                trait_impl_id,
+                            ),
+                            self.db,
+                        );
                         let imp = self
                             .inference()
                             .reduce_impl_impl(impl_impl_id)

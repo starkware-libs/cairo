@@ -27,7 +27,10 @@ use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitImplId,
+    ConcreteTraitImplLongId,
+};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeId,
@@ -342,6 +345,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteExternTypeLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitLongId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ConcreteTraitImplId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ConcreteTraitImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionLongId, $($exclude)*);
@@ -576,7 +581,16 @@ impl<'a> SemanticRewriter<ImplLongId, DiagnosticAdded> for SubstitutionRewriter<
                         trait_impl_id.trait_id(self.db.upcast()),
                         self_impl.concrete_trait(self.db)?.trait_id(self.db)
                     );
-                    let impl_impl_id = ImplImplId::new(*self_impl, *trait_impl_id, self.db);
+
+                    let impl_impl_id = ImplImplId::new(
+                        *self_impl,
+                        ConcreteTraitImplId::new(
+                            self.db,
+                            self_impl.concrete_trait(self.db)?,
+                            *trait_impl_id,
+                        ),
+                        self.db,
+                    );
                     *value =
                         self.db.impl_impl_concrete_implized(impl_impl_id)?.lookup_intern(self.db);
 
