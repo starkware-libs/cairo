@@ -38,12 +38,22 @@ impl CrateConfiguration {
     }
 }
 
-/// Same as `CrateConfiguration` but without the root directory..
+/// Same as `CrateConfiguration` but without the root directory.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CrateSettings {
     /// The crate's Cairo edition.
     pub edition: Edition,
     /// The crate's version.
+    ///
+    /// ## [CrateSettings.version] vs. [DependencySettings.discriminator]
+    ///
+    /// Cairo uses semantic versioning for crates.
+    /// The version field is an optional piece of metadata that can be attached to a crate
+    /// and is used in various lints and can be used as a context in diagnostics.
+    ///
+    /// On the other hand, the discriminator is a unique identifier that allows including multiple
+    /// copies of a crate in a single compilation unit.
+    /// It is free-form and never reaches the user.
     pub version: Option<Version>,
     /// The `#[cfg(...)]` configuration.
     pub cfg_set: Option<CfgSet>,
