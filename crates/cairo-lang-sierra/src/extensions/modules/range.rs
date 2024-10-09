@@ -1,7 +1,7 @@
 use super::bounded_int::BoundedIntType;
-use super::int::signed::{Sint16Type, Sint32Type, Sint64Type, Sint8Type};
+use super::int::signed::{Sint8Type, Sint16Type, Sint32Type, Sint64Type};
 use super::int::signed128::Sint128Type;
-use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
+use super::int::unsigned::{Uint8Type, Uint16Type, Uint32Type, Uint64Type};
 use super::int::unsigned128::Uint128Type;
 use super::range_check::RangeCheckType;
 use super::utils::Range;
@@ -15,7 +15,7 @@ use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{
-    args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
+    NamedType, OutputVarReferenceInfo, SpecializationError, args_as_single_type,
 };
 use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
@@ -119,13 +119,10 @@ impl SignatureOnlyGenericLibfunc for IntRangeTryNewLibfunc {
                 },
                 // Failure.
                 BranchSignature {
-                    vars: vec![
-                        OutputVarInfo::new_builtin(range_check_type, 0),
-                        OutputVarInfo {
-                            ty: range_ty,
-                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                        },
-                    ],
+                    vars: vec![OutputVarInfo::new_builtin(range_check_type, 0), OutputVarInfo {
+                        ty: range_ty,
+                        ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],

@@ -13,7 +13,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::compiler;
-use cairo_lang_sierra_to_casm::metadata::{calc_metadata, MetadataComputationConfig};
+use cairo_lang_sierra_to_casm::metadata::{MetadataComputationConfig, calc_metadata};
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::test_lock;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -153,10 +153,10 @@ impl TestFileRunner for WithOptsE2ETestRunner {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(
-            inputs,
-            E2eTestParams { skip_optimization_passes: false, ..Default::default() },
-        )
+        run_e2e_test(inputs, E2eTestParams {
+            skip_optimization_passes: false,
+            ..Default::default()
+        })
     }
 }
 
@@ -180,14 +180,11 @@ impl TestFileRunner for SmallE2ETestRunnerMetadataComputation {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(
-            inputs,
-            E2eTestParams {
-                add_withdraw_gas: false,
-                metadata_computation: true,
-                skip_optimization_passes: true,
-            },
-        )
+        run_e2e_test(inputs, E2eTestParams {
+            add_withdraw_gas: false,
+            metadata_computation: true,
+            skip_optimization_passes: true,
+        })
     }
 }
 

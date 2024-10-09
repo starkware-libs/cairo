@@ -48,7 +48,7 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 
@@ -844,10 +844,14 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
         Uint256Concrete::SquareRoot(_) => {
             vec![ConstCost { steps: 30, holes: 0, range_checks: 7, range_checks96: 0 }]
         }
-        Uint256Concrete::InvModN(_) => vec![
-            ConstCost { steps: 40, holes: 0, range_checks: 9, range_checks96: 0 },
-            ConstCost { steps: 25, holes: 0, range_checks: 7, range_checks96: 0 },
-        ],
+        Uint256Concrete::InvModN(_) => {
+            vec![ConstCost { steps: 40, holes: 0, range_checks: 9, range_checks96: 0 }, ConstCost {
+                steps: 25,
+                holes: 0,
+                range_checks: 7,
+                range_checks96: 0,
+            }]
+        }
     }
 }
 

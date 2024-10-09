@@ -1,20 +1,20 @@
 use std::fmt::{Debug, Display};
 use std::fs;
-use std::io::{stdin, Read};
+use std::io::{Read, stdin};
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use cairo_lang_diagnostics::FormattedDiagnosticEntry;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile, CAIRO_FILE_EXTENSION};
-use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
+use cairo_lang_filesystem::ids::{CAIRO_FILE_EXTENSION, FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_parser::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics};
 use cairo_lang_utils::Intern;
-use diffy::{create_patch, PatchFormatter};
-use ignore::types::TypesBuilder;
+use diffy::{PatchFormatter, create_patch};
 use ignore::WalkBuilder;
+use ignore::types::TypesBuilder;
 use thiserror::Error;
 
-use crate::{get_formatted_file, FormatterConfig, CAIRO_FMT_IGNORE};
+use crate::{CAIRO_FMT_IGNORE, FormatterConfig, get_formatted_file};
 
 /// A struct encapsulating the changes made by the formatter in a single file.
 ///

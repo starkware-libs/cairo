@@ -2,13 +2,13 @@ use bimap::BiMap;
 use num_bigint::BigInt;
 use test_case::test_case;
 
-use super::core::{CoreLibfunc, CoreType};
-use super::lib_func::{SierraApChange, SignatureSpecializationContext, SpecializationContext};
-use super::types::TypeInfo;
 use super::SpecializationError::{
     self, IndexOutOfRange, MissingFunction, UnsupportedGenericArg, UnsupportedId,
     WrongNumberOfGenericArgs,
 };
+use super::core::{CoreLibfunc, CoreType};
+use super::lib_func::{SierraApChange, SignatureSpecializationContext, SpecializationContext};
+use super::types::TypeInfo;
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::{GenericLibfunc, GenericType};
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};

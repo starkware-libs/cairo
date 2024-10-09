@@ -11,7 +11,7 @@ use super::fmt::ExprFormatter;
 use super::pattern::Pattern;
 use crate::db::SemanticGroup;
 use crate::items::constant::ConstValueId;
-use crate::{semantic, ConcreteStructId, FunctionId, TypeId};
+use crate::{ConcreteStructId, FunctionId, TypeId, semantic};
 
 pub type PatternId = Id<Pattern>;
 pub type ExprId = Id<Expr>;

@@ -9,10 +9,10 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use itertools::{zip_eq, Itertools};
+use itertools::{Itertools, zip_eq};
+use lowering::borrow_check::Demand;
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::{AuxCombine, DemandReporter};
-use lowering::borrow_check::Demand;
 use lowering::{FlatLowered, VarUsage};
 
 /// Represents the location where a drop statement for a variable should be added.
@@ -219,10 +219,10 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
             if self.local_vars.contains(dst) {
                 assert!(
                     info.vars
-                        .insert(
-                            SierraGenVar::UninitializedLocal(*dst),
-                            UseLocation { statement_location, idx }
-                        )
+                        .insert(SierraGenVar::UninitializedLocal(*dst), UseLocation {
+                            statement_location,
+                            idx
+                        })
                         .is_none(),
                     "Variable introduced multiple times."
                 );
@@ -290,10 +290,10 @@ impl<'a> VariableLifetimeContext<'a> {
             if self.local_vars.contains(var_id) {
                 assert!(
                     info.vars
-                        .insert(
-                            SierraGenVar::UninitializedLocal(*var_id),
-                            UseLocation { statement_location, idx }
-                        )
+                        .insert(SierraGenVar::UninitializedLocal(*var_id), UseLocation {
+                            statement_location,
+                            idx
+                        })
                         .is_none(),
                     "Variable introduced multiple times."
                 );

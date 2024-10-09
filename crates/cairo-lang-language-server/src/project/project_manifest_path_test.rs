@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
-use assert_fs::prelude::*;
 use assert_fs::TempDir;
+use assert_fs::prelude::*;
 use cairo_lang_project::PROJECT_FILE_NAME;
 
 use super::ProjectManifestPath;

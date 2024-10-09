@@ -10,7 +10,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::{ImplLongId, ImplLookupContext};
-use cairo_lang_semantic::types::{get_impl_at_context, ConcreteEnumLongId, ConcreteStructLongId};
+use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId, get_impl_at_context};
 use cairo_lang_semantic::{
     ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, Signature,
     TypeId, TypeLongId,
@@ -22,9 +22,9 @@ use cairo_lang_starknet_classes::abi::{
 };
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{require, try_extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, require, try_extract_matches};
 use itertools::zip_eq;
 use smol_str::SmolStr;
 use thiserror::Error;
@@ -298,10 +298,10 @@ impl<'a> AbiBuilder<'a> {
         let mut items = Vec::new();
         for function in self.db.trait_functions(trait_id).unwrap_or_default().values() {
             let f = self.trait_function_as_abi(*function, storage_type)?;
-            self.add_entry_point(
-                function.name(self.db.upcast()).into(),
-                EntryPointInfo { source, inputs: f.inputs.clone() },
-            )?;
+            self.add_entry_point(function.name(self.db.upcast()).into(), EntryPointInfo {
+                source,
+                inputs: f.inputs.clone(),
+            })?;
             items.push(Item::Function(f));
         }
 

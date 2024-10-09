@@ -6,7 +6,7 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::{self as semantic, corelib, ConcreteTypeId, TypeId, TypeLongId};
+use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId, corelib};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -16,21 +16,21 @@ use itertools::Itertools;
 use num_traits::ToPrimitive;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
-use crate::borrow_check::{borrow_check, PotentialDestructCalls};
+use crate::borrow_check::{PotentialDestructCalls, borrow_check};
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
 use crate::ids::{FunctionId, FunctionLongId};
 use crate::inline::get_inline_diagnostics;
-use crate::lower::{lower_semantic_function, MultiLowering};
+use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::optimizations::config::OptimizationConfig;
 use crate::optimizations::scrub_units::scrub_units;
 use crate::optimizations::strategy::{OptimizationStrategy, OptimizationStrategyId};
 use crate::panic::lower_panics;
 use crate::utils::InliningStrategy;
 use crate::{
-    ids, BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement,
+    BlockId, DependencyType, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement, ids,
 };
 
 // Salsa database interface.

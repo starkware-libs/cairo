@@ -8,11 +8,11 @@ use num_bigint::BigInt;
 use starknet_types_core::felt::Felt as Felt252;
 
 use super::{
-    get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
-    InvocationError,
+    CompiledInvocation, CompiledInvocationBuilder, InvocationError,
+    get_non_fallthrough_statement_id,
 };
 use crate::invocations::misc::validate_under_limit;
-use crate::invocations::{add_input_variables, BuiltinInfo, CostValidationInfo};
+use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 
 /// Builds a libfunc that tries to convert a numeric value in the felt252 range to `out_range`.
 ///

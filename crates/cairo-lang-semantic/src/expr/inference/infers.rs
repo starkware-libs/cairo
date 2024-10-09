@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::{extract_matches, require, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches, require};
 use itertools::Itertools;
 
 use super::canonic::ResultNoErrEx;

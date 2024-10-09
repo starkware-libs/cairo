@@ -6,9 +6,9 @@ use cairo_lang_semantic::corelib::panic_destruct_trait_fn;
 use cairo_lang_semantic::items::functions::ImplGenericFunctionId;
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
-use cairo_lang_syntax::node::{ast, TypedStablePtr};
+use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::{
-    define_short_id, extract_matches, try_extract_matches, Intern, LookupIntern,
+    Intern, LookupIntern, define_short_id, extract_matches, try_extract_matches,
 };
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{ExternFunctionId, FreeFunctionId};
@@ -18,9 +18,9 @@ use semantic::{ExprVar, Mutability};
 use smol_str::SmolStr;
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
+use crate::Location;
 use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
-use crate::Location;
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FunctionWithBodyLongId {

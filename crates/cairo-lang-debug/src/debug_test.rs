@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_utils::{define_short_id, Intern, Upcast};
+use cairo_lang_utils::{Intern, Upcast, define_short_id};
 use test_log::test;
 
 use crate::debug as cairo_lang_debug;

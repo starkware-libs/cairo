@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use crate::node::db::SyntaxGroup;
 use crate::node::SyntaxNode;
+use crate::node::db::SyntaxGroup;
 
 /// `WalkEvent` describes tree walking process.
 #[derive(Debug, Copy, Clone)]

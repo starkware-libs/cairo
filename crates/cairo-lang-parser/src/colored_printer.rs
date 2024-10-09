@@ -1,7 +1,7 @@
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::SyntaxNode;
 use colored::{ColoredString, Colorize};
 use smol_str::SmolStr;
 

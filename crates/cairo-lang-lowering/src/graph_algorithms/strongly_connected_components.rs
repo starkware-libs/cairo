@@ -4,9 +4,9 @@ use cairo_lang_utils::graph_algos::strongly_connected_components::compute_scc;
 use super::concrete_function_node::{
     ConcreteFunctionWithBodyNode, ConcreteFunctionWithBodyPostPanicNode,
 };
+use crate::DependencyType;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::DependencyType;
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::concrete_function_with_body_scc_representative].

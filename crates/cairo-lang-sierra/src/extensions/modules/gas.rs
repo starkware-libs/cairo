@@ -58,24 +58,18 @@ impl NoGenericArgsGenericLibfunc for WithdrawGasLibfunc {
             branch_signatures: vec![
                 // Success:
                 BranchSignature {
-                    vars: vec![
-                        rc_output_info.clone(),
-                        OutputVarInfo {
-                            ty: gas_builtin_type.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-                        },
-                    ],
+                    vars: vec![rc_output_info.clone(), OutputVarInfo {
+                        ty: gas_builtin_type.clone(),
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Failure:
                 BranchSignature {
-                    vars: vec![
-                        rc_output_info,
-                        OutputVarInfo {
-                            ty: gas_builtin_type,
-                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                        },
-                    ],
+                    vars: vec![rc_output_info, OutputVarInfo {
+                        ty: gas_builtin_type,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
@@ -291,24 +285,18 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
             branch_signatures: vec![
                 // Success:
                 BranchSignature {
-                    vars: vec![
-                        rc_output_info.clone(),
-                        OutputVarInfo {
-                            ty: gas_builtin_type.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-                        },
-                    ],
+                    vars: vec![rc_output_info.clone(), OutputVarInfo {
+                        ty: gas_builtin_type.clone(),
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Failure:
                 BranchSignature {
-                    vars: vec![
-                        rc_output_info,
-                        OutputVarInfo {
-                            ty: gas_builtin_type,
-                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                        },
-                    ],
+                    vars: vec![rc_output_info, OutputVarInfo {
+                        ty: gas_builtin_type,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],

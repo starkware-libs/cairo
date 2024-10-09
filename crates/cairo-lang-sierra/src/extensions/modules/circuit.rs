@@ -9,7 +9,7 @@ use num_traits::{One, Signed, ToPrimitive, Zero};
 
 use super::range_check::RangeCheck96Type;
 use super::structure::StructType;
-use super::utils::{reinterpret_cast_signature, Range};
+use super::utils::{Range, reinterpret_cast_signature};
 use crate::extensions::bounded_int::bounded_int_ty;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -19,9 +19,9 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
-    args_as_single_type, args_as_single_value, args_as_two_types, extract_type_generic_args,
     ConcreteType, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
+    args_as_single_type, args_as_single_value, args_as_two_types, extract_type_generic_args,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -555,16 +555,13 @@ impl SignatureAndTypeGenericLibfunc for AddCircuitInputLibFuncWrapped {
 
         let u96_guarantee_ty = context.get_concrete_type(U96Guarantee::id(), &[])?;
 
-        let val_ty = context.get_concrete_type(
-            StructType::id(),
-            &[
-                GenericArg::UserType(UserTypeId::from_string("Tuple")),
-                GenericArg::Type(u96_guarantee_ty.clone()),
-                GenericArg::Type(u96_guarantee_ty.clone()),
-                GenericArg::Type(u96_guarantee_ty.clone()),
-                GenericArg::Type(u96_guarantee_ty),
-            ],
-        )?;
+        let val_ty = context.get_concrete_type(StructType::id(), &[
+            GenericArg::UserType(UserTypeId::from_string("Tuple")),
+            GenericArg::Type(u96_guarantee_ty.clone()),
+            GenericArg::Type(u96_guarantee_ty.clone()),
+            GenericArg::Type(u96_guarantee_ty.clone()),
+            GenericArg::Type(u96_guarantee_ty),
+        ])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(circuit_input_accumulator_ty.clone()),
@@ -632,16 +629,13 @@ fn get_u384_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
     let u96_ty = get_u96_type(context)?;
-    context.get_concrete_type(
-        StructType::id(),
-        &[
-            GenericArg::UserType(UserTypeId::from_string("core::circuit::u384")),
-            GenericArg::Type(u96_ty.clone()),
-            GenericArg::Type(u96_ty.clone()),
-            GenericArg::Type(u96_ty.clone()),
-            GenericArg::Type(u96_ty),
-        ],
-    )
+    context.get_concrete_type(StructType::id(), &[
+        GenericArg::UserType(UserTypeId::from_string("core::circuit::u384")),
+        GenericArg::Type(u96_ty.clone()),
+        GenericArg::Type(u96_ty.clone()),
+        GenericArg::Type(u96_ty.clone()),
+        GenericArg::Type(u96_ty),
+    ])
 }
 
 pub type GetCircuitDescriptorLibFunc =
@@ -692,10 +686,9 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                         OutputVarInfo {
-                            ty: context.get_concrete_type(
-                                CircuitOutputs::id(),
-                                &[GenericArg::Type(ty.clone())],
-                            )?,
+                            ty: context.get_concrete_type(CircuitOutputs::id(), &[
+                                GenericArg::Type(ty.clone()),
+                            ])?,
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                     ],
@@ -711,10 +704,9 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                         OutputVarInfo {
-                            ty: context.get_concrete_type(
-                                CircuitPartialOutputs::id(),
-                                &[GenericArg::Type(ty)],
-                            )?,
+                            ty: context.get_concrete_type(CircuitPartialOutputs::id(), &[
+                                GenericArg::Type(ty),
+                            ])?,
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                         OutputVarInfo {
@@ -997,16 +989,13 @@ impl NoGenericArgsGenericLibfunc for TryIntoCircuitModulusLibFunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let u96_ty = get_u96_type(context)?;
-        let value_type = context.get_concrete_type(
-            StructType::id(),
-            &[
-                GenericArg::UserType(UserTypeId::from_string("Tuple")),
-                GenericArg::Type(u96_ty.clone()),
-                GenericArg::Type(u96_ty.clone()),
-                GenericArg::Type(u96_ty.clone()),
-                GenericArg::Type(u96_ty),
-            ],
-        )?;
+        let value_type = context.get_concrete_type(StructType::id(), &[
+            GenericArg::UserType(UserTypeId::from_string("Tuple")),
+            GenericArg::Type(u96_ty.clone()),
+            GenericArg::Type(u96_ty.clone()),
+            GenericArg::Type(u96_ty.clone()),
+            GenericArg::Type(u96_ty),
+        ])?;
 
         Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(value_type)],

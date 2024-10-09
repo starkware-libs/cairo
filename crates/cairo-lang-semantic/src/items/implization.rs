@@ -1,8 +1,8 @@
 use cairo_lang_defs::ids::{ImplDefId, TraitTypeId};
 use cairo_lang_diagnostics::Maybe;
 
-use crate::db::SemanticGroup;
 use crate::TypeId;
+use crate::db::SemanticGroup;
 
 /// Query implementation of [crate::db::SemanticGroup::trait_type_implized_by_context].
 pub fn trait_type_implized_by_context(

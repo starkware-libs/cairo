@@ -9,6 +9,7 @@ use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_lowering::FlatLowered;
 use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
@@ -19,12 +20,11 @@ use cairo_lang_lowering::ids::{
 };
 use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
-use cairo_lang_lowering::FlatLowered;
+use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
     ImplGenericFunctionWithBodyId,
 };
-use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};

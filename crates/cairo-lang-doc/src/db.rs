@@ -5,11 +5,11 @@ use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, Tra
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_utils::Upcast;
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;

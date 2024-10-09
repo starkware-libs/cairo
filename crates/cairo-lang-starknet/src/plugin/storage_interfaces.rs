@@ -7,7 +7,7 @@ use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::ast::OptionArgListParenthesized;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 
 use super::starknet_module::backwards_compatible_storage;
@@ -456,10 +456,10 @@ pub fn handle_storage_interface_struct<'a>(
     // Run for both StorageNode and StorageTrait
     let (origin, storage_interface_types) =
         if let Some(attr) = struct_ast.find_attr(db, STORAGE_NODE_ATTR) {
-            (
-                attr.as_syntax_node(),
-                vec![StorageInterfaceType::StorageTrait, StorageInterfaceType::StorageNode],
-            )
+            (attr.as_syntax_node(), vec![
+                StorageInterfaceType::StorageTrait,
+                StorageInterfaceType::StorageNode,
+            ])
         } else if let Some(attr) = struct_ast.find_attr(db, STORAGE_ATTR) {
             (attr.as_syntax_node(), vec![StorageInterfaceType::StorageTrait])
         } else if let Some(arg) = has_derive(struct_ast, db, STORE_TRAIT) {

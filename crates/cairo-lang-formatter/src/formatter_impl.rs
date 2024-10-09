@@ -5,7 +5,7 @@ use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ast::MaybeModuleBody;

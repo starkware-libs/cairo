@@ -7,9 +7,9 @@ use indoc::indoc;
 use test_case::test_case;
 
 use super::{generate_equations, get_reverse_topological_ordering};
+use crate::CostError;
 use crate::core_libfunc_cost_expr::CostExprMap;
 use crate::cost_expr::{CostExpr, Var};
-use crate::CostError;
 
 /// Returns a cost expression for a statement future variable.
 fn future_statement_cost(idx: usize) -> CostExpr {

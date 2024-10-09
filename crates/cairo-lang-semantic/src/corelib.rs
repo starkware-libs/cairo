@@ -4,11 +4,11 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_syntax::node::Terminal;
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::Terminal;
 use cairo_lang_utils::{
-    extract_matches, require, try_extract_matches, Intern, LookupIntern, OptionFrom,
+    Intern, LookupIntern, OptionFrom, extract_matches, require, try_extract_matches,
 };
 use num_bigint::BigInt;
 use num_traits::{Num, Signed, ToPrimitive, Zero};
@@ -29,9 +29,8 @@ use crate::items::us::SemanticUseEx;
 use crate::resolve::ResolvedGenericItem;
 use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId};
 use crate::{
-    semantic, ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteTypeId,
-    ConcreteVariant, Expr, ExprId, ExprTuple, FunctionId, FunctionLongId, GenericArgumentId,
-    TypeId, TypeLongId,
+    ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteTypeId, ConcreteVariant, Expr,
+    ExprId, ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId, semantic,
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
@@ -78,49 +77,36 @@ pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeI
     let size_ty = core_felt252_ty(db);
     let lower_id = ConstValue::Int(min, size_ty).intern(db);
     let upper_id = ConstValue::Int(max, size_ty).intern(db);
-    try_get_ty_by_name(
-        db,
-        bounded_int,
-        "BoundedInt".into(),
-        vec![GenericArgumentId::Constant(lower_id), GenericArgumentId::Constant(upper_id)],
-    )
+    try_get_ty_by_name(db, bounded_int, "BoundedInt".into(), vec![
+        GenericArgumentId::Constant(lower_id),
+        GenericArgumentId::Constant(upper_id),
+    ])
     .expect("could not find")
 }
 
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
-    get_ty_by_name(
-        db,
-        core_submodule(db, "zeroable"),
-        "NonZero".into(),
-        vec![GenericArgumentId::Type(inner_type)],
-    )
+    get_ty_by_name(db, core_submodule(db, "zeroable"), "NonZero".into(), vec![
+        GenericArgumentId::Type(inner_type),
+    ])
 }
 
 pub fn core_result_ty(db: &dyn SemanticGroup, ok_type: TypeId, err_type: TypeId) -> TypeId {
-    get_ty_by_name(
-        db,
-        core_submodule(db, "result"),
-        "Result".into(),
-        vec![GenericArgumentId::Type(ok_type), GenericArgumentId::Type(err_type)],
-    )
+    get_ty_by_name(db, core_submodule(db, "result"), "Result".into(), vec![
+        GenericArgumentId::Type(ok_type),
+        GenericArgumentId::Type(err_type),
+    ])
 }
 
 pub fn core_option_ty(db: &dyn SemanticGroup, some_type: TypeId) -> TypeId {
-    get_ty_by_name(
-        db,
-        core_submodule(db, "option"),
-        "Option".into(),
-        vec![GenericArgumentId::Type(some_type)],
-    )
+    get_ty_by_name(db, core_submodule(db, "option"), "Option".into(), vec![
+        GenericArgumentId::Type(some_type),
+    ])
 }
 
 pub fn core_box_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
-    get_ty_by_name(
-        db,
-        core_submodule(db, "box"),
-        "Box".into(),
-        vec![GenericArgumentId::Type(inner_type)],
-    )
+    get_ty_by_name(db, core_submodule(db, "box"), "Box".into(), vec![GenericArgumentId::Type(
+        inner_type,
+    )])
 }
 
 pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -557,12 +543,10 @@ pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId {
 pub fn core_downcast(db: &dyn SemanticGroup, input: TypeId, output: TypeId) -> FunctionId {
     let internal = core_submodule(db, "integer");
 
-    get_function_id(
-        db,
-        internal,
-        "downcast".into(),
-        vec![GenericArgumentId::Type(input), GenericArgumentId::Type(output)],
-    )
+    get_function_id(db, internal, "downcast".into(), vec![
+        GenericArgumentId::Type(input),
+        GenericArgumentId::Type(output),
+    ])
 }
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id(

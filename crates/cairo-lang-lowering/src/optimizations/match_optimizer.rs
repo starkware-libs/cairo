@@ -6,12 +6,12 @@ use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::{zip_eq, Itertools};
+use itertools::{Itertools, zip_eq};
 
 use super::var_renamer::VarRenamer;
+use crate::borrow_check::Demand;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::EmptyDemandReporter;
-use crate::borrow_check::Demand;
 use crate::utils::RebuilderEx;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,

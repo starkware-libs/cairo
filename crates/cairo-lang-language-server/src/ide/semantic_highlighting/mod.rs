@@ -2,9 +2,9 @@ use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use tower_lsp::lsp_types::*;
 use tracing::error;
 

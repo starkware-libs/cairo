@@ -9,10 +9,10 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use cairo_lang_utils::{extract_matches, try_extract_matches, Intern, LookupIntern};
-use syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches, try_extract_matches};
 use syntax::node::TypedStablePtr;
+use syntax::node::db::SyntaxGroup;
 
 use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
@@ -21,12 +21,12 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
-use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::lookup_item::LookupItemEx;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::types::{resolve_type, TypeHead};
+use crate::types::{TypeHead, resolve_type};
 use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId, TypeLongId};
 
 /// Generic argument.

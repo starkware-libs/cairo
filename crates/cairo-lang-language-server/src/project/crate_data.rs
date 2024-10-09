@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CrateConfiguration, CrateSettings, FilesGroup, FilesGroupEx,
-    CORELIB_CRATE_NAME,
+    AsFilesGroupMut, CORELIB_CRATE_NAME, CrateConfiguration, CrateSettings, FilesGroup,
+    FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_utils::{Intern, LookupIntern};

@@ -1,6 +1,6 @@
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use tower_lsp::lsp_types::{lsp_request, CompletionParams, TextDocumentPositionParams};
+use tower_lsp::lsp_types::{CompletionParams, TextDocumentPositionParams, lsp_request};
 
 use crate::support::cursor::peek_caret;
 use crate::support::{cursors, sandbox};

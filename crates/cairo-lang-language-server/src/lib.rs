@@ -40,7 +40,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::io;
-use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
+use std::panic::{AssertUnwindSafe, RefUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -57,9 +57,9 @@ use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_project::ProjectConfig;
+use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
@@ -71,7 +71,7 @@ use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::request::Request;
 use tower_lsp::lsp_types::{TextDocumentPositionParams, Url};
 use tower_lsp::{Client, ClientSocket, LanguageServer, LspService, Server};
-use tracing::{debug, error, info, trace_span, warn, Instrument};
+use tracing::{Instrument, debug, error, info, trace_span, warn};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
@@ -80,9 +80,9 @@ use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
     CorelibVersionMismatch, ProvideVirtualFileRequest, ProvideVirtualFileResponse,
 };
+use crate::project::ProjectManifestPath;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
-use crate::project::ProjectManifestPath;
 use crate::server::notifier::Notifier;
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
@@ -166,9 +166,9 @@ fn init_logging() -> Option<impl Drop> {
 
     use tracing_chrome::{ChromeLayerBuilder, TraceStyle};
     use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+    use tracing_subscriber::fmt::Layer;
     use tracing_subscriber::fmt::format::FmtSpan;
     use tracing_subscriber::fmt::time::Uptime;
-    use tracing_subscriber::fmt::Layer;
     use tracing_subscriber::prelude::*;
 
     let mut guard = None;

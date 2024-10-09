@@ -2,7 +2,7 @@ use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
 
 use super::signed::{build_sint_from_felt252, build_sint_overflowing_operation};
 use super::{
-    build_128bit_diff, build_const, CompiledInvocation, CompiledInvocationBuilder, InvocationError,
+    CompiledInvocation, CompiledInvocationBuilder, InvocationError, build_128bit_diff, build_const,
 };
 use crate::invocations::misc;
 

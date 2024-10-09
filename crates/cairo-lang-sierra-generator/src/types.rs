@@ -9,12 +9,12 @@ use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
-use cairo_lang_utils::{try_extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, try_extract_matches};
 use itertools::chain;
 use num_traits::ToPrimitive;
 use semantic::items::imp::ImplLookupContext;
 
-use crate::db::{sierra_concrete_long_id, SierraGenGroup, SierraGeneratorTypeLongId};
+use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId, sierra_concrete_long_id};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 
 /// See [SierraGenGroup::get_concrete_type_id] for documentation.

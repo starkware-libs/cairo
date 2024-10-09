@@ -6,7 +6,7 @@ use cairo_lang_sierra::program::{GenStatement, Program, StatementIdx};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{require, LookupIntern};
+use cairo_lang_utils::{LookupIntern, require};
 use itertools::Itertools;
 use smol_str::SmolStr;
 

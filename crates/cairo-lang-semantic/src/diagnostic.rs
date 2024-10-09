@@ -8,8 +8,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    error_code, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder,
-    ErrorCode, Severity,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
+    error_code,
 };
 use cairo_lang_syntax as syntax;
 use itertools::Itertools;
@@ -22,7 +22,7 @@ use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
 use crate::resolve::ResolvedConcreteItem;
 use crate::types::peel_snapshots;
-use crate::{semantic, ConcreteTraitId};
+use crate::{ConcreteTraitId, semantic};
 
 #[cfg(test)]
 #[path = "diagnostic_test.rs"]

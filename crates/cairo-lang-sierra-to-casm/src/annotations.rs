@@ -13,15 +13,14 @@ use crate::environment::ap_tracking::update_ap_tracking;
 use crate::environment::frame_state::FrameStateError;
 use crate::environment::gas_wallet::{GasWallet, GasWalletError};
 use crate::environment::{
-    validate_environment_equality, validate_final_environment, ApTracking, ApTrackingBase,
-    Environment, EnvironmentError,
+    ApTracking, ApTrackingBase, Environment, EnvironmentError, validate_environment_equality,
+    validate_final_environment,
 };
 use crate::invocations::{ApTrackingChange, BranchChanges};
 use crate::metadata::Metadata;
 use crate::references::{
-    build_function_parameters_refs, check_types_match, IntroductionPoint,
-    OutputReferenceValueIntroductionPoint, ReferenceExpression, ReferenceValue, ReferencesError,
-    StatementRefs,
+    IntroductionPoint, OutputReferenceValueIntroductionPoint, ReferenceExpression, ReferenceValue,
+    ReferencesError, StatementRefs, build_function_parameters_refs, check_types_match,
 };
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -151,21 +150,18 @@ impl ProgramAnnotations {
     ) -> Result<Self, AnnotationError> {
         let mut annotations = ProgramAnnotations::new(n_statements, backwards_jump_indices);
         for func in functions {
-            annotations.set_or_assert(
-                func.entry_point,
-                StatementAnnotations {
-                    refs: build_function_parameters_refs(func, type_sizes).map_err(|error| {
-                        AnnotationError::ReferencesError { statement_idx: func.entry_point, error }
-                    })?,
-                    function_id: func.id.clone(),
-                    convergence_allowed: false,
-                    environment: Environment::new(if gas_usage_check {
-                        GasWallet::Value(metadata.gas_info.function_costs[&func.id].clone())
-                    } else {
-                        GasWallet::Disabled
-                    }),
-                },
-            )?
+            annotations.set_or_assert(func.entry_point, StatementAnnotations {
+                refs: build_function_parameters_refs(func, type_sizes).map_err(|error| {
+                    AnnotationError::ReferencesError { statement_idx: func.entry_point, error }
+                })?,
+                function_id: func.id.clone(),
+                convergence_allowed: false,
+                environment: Environment::new(if gas_usage_check {
+                    GasWallet::Value(metadata.gas_info.function_costs[&func.id].clone())
+                } else {
+                    GasWallet::Disabled
+                }),
+            })?
         }
 
         Ok(annotations)
@@ -271,16 +267,13 @@ impl ProgramAnnotations {
         let mut updated = if self.backwards_jump_indices.contains(&statement_idx) {
             existing.clone()
         } else {
-            std::mem::replace(
-                existing,
-                StatementAnnotations {
-                    refs: Default::default(),
-                    function_id: existing.function_id.clone(),
-                    // Merging with this data is no longer allowed.
-                    convergence_allowed: false,
-                    environment: existing.environment.clone(),
-                },
-            )
+            std::mem::replace(existing, StatementAnnotations {
+                refs: Default::default(),
+                function_id: existing.function_id.clone(),
+                // Merging with this data is no longer allowed.
+                convergence_allowed: false,
+                environment: existing.environment.clone(),
+            })
         };
         let refs = std::mem::take(&mut updated.refs);
         let (statement_refs, taken_refs) = take_args(refs, ref_ids).map_err(|error| {
@@ -398,28 +391,25 @@ impl ProgramAnnotations {
             }
         };
 
-        self.set_or_assert(
-            destination_statement_idx,
-            StatementAnnotations {
-                refs,
-                function_id: annotations.function_id,
-                convergence_allowed: !must_set,
-                environment: Environment {
-                    ap_tracking,
-                    stack_size,
-                    frame_state: annotations.environment.frame_state,
-                    gas_wallet: annotations
-                        .environment
-                        .gas_wallet
-                        .update(branch_changes.gas_change)
-                        .map_err(|error| AnnotationError::GasWalletError {
-                            source_statement_idx,
-                            destination_statement_idx,
-                            error,
-                        })?,
-                },
+        self.set_or_assert(destination_statement_idx, StatementAnnotations {
+            refs,
+            function_id: annotations.function_id,
+            convergence_allowed: !must_set,
+            environment: Environment {
+                ap_tracking,
+                stack_size,
+                frame_state: annotations.environment.frame_state,
+                gas_wallet: annotations
+                    .environment
+                    .gas_wallet
+                    .update(branch_changes.gas_change)
+                    .map_err(|error| AnnotationError::GasWalletError {
+                        source_statement_idx,
+                        destination_statement_idx,
+                        error,
+                    })?,
             },
-        )
+        })
     }
 
     /// Validates the ap change and return types in a return statement.

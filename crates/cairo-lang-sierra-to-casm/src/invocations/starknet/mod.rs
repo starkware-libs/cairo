@@ -12,7 +12,7 @@ use self::storage::{
 use super::misc::{build_identity, build_single_cell_const, build_unsigned_try_from_felt252};
 use super::{CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo, InvocationError,
+    CostValidationInfo, InvocationError, add_input_variables, get_non_fallthrough_statement_id,
 };
 
 mod testing;
@@ -175,11 +175,10 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
             ("Fallthrough", &success_vars, None),
             (
                 "Failure",
-                &[
-                    &updated_gas_builtin,
-                    &failure_final_system[..],
-                    &[response_vars[0], response_vars[1]],
-                ],
+                &[&updated_gas_builtin, &failure_final_system[..], &[
+                    response_vars[0],
+                    response_vars[1],
+                ]],
                 Some(failure_handle_statement_id),
             ),
         ],

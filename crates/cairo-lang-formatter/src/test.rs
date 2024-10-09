@@ -2,13 +2,13 @@ use std::fs;
 use std::path::PathBuf;
 
 use cairo_lang_filesystem::db::{ExternalFiles, FilesDatabase, FilesGroup};
-use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
+use cairo_lang_parser::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics_from_file};
 use cairo_lang_syntax::node::db::SyntaxDatabase;
 use cairo_lang_utils::Upcast;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
-use crate::{get_formatted_file, FormatterConfig};
+use crate::{FormatterConfig, get_formatted_file};
 
 #[salsa::database(SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]

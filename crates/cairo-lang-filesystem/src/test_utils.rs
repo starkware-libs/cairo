@@ -1,6 +1,6 @@
 use cairo_lang_utils::Upcast;
 
-use crate::db::{init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup};
+use crate::db::{AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_files_group};
 
 // Test salsa database.
 #[salsa::database(FilesDatabase)]

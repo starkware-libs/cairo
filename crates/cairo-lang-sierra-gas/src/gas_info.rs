@@ -1,13 +1,13 @@
 use std::fmt::Display;
 
+use cairo_lang_sierra::extensions::NamedLibfunc;
 use cairo_lang_sierra::extensions::branch_align::BranchAlignLibfunc;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
-use cairo_lang_sierra::extensions::NamedLibfunc;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_utils::collection_arithmetics::sub_maps;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 
 /// Gas information for a Sierra program.
 #[derive(Debug, Default, Eq, PartialEq)]

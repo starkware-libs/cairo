@@ -1,5 +1,5 @@
 use cairo_lang_sierra as sierra;
-use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
+use cairo_lang_utils::bigint::{BigUintAsHex, deserialize_big_uint, serialize_big_uint};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
@@ -7,10 +7,10 @@ use serde_json::Value;
 use thiserror::Error;
 
 use crate::abi::Contract;
-use crate::allowed_libfuncs::{lookup_allowed_libfuncs_list, AllowedLibfuncsError, ListSelector};
-use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id, VersionId};
+use crate::allowed_libfuncs::{AllowedLibfuncsError, ListSelector, lookup_allowed_libfuncs_list};
+use crate::compiler_version::{VersionId, current_compiler_version_id, current_sierra_version_id};
 use crate::felt252_serde::{
-    sierra_from_felt252s, sierra_to_felt252s, version_id_from_felt252s, Felt252SerdeError,
+    Felt252SerdeError, sierra_from_felt252s, sierra_to_felt252s, version_id_from_felt252s,
 };
 
 #[cfg(test)]

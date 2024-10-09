@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_sierra::program;
-use cairo_lang_utils::{extract_matches, LookupIntern};
+use cairo_lang_utils::{LookupIntern, extract_matches};
 
 use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra::{self, PushValue};

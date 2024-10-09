@@ -1,11 +1,11 @@
-use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
 use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup,
+    AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_files_group,
 };
 use cairo_lang_filesystem::ids::VirtualFile;
-use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
+use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};

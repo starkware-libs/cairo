@@ -6,7 +6,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
-use cairo_lang_utils::{define_short_id, write_comma_separated, LookupIntern};
+use cairo_lang_utils::{LookupIntern, define_short_id, write_comma_separated};
 
 use crate::db::SierraGenGroup;
 

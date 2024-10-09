@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use smol_str::SmolStr;
 
 use crate::node::db::SyntaxGroup;
-use crate::node::{ast, Terminal, TypedSyntaxNode};
+use crate::node::{Terminal, TypedSyntaxNode, ast};
 
 /// Easier to digest representation of an [ast::Attribute].
 #[derive(Clone, Debug, PartialEq, Eq)]

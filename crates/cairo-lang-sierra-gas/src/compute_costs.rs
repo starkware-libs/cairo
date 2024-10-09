@@ -12,9 +12,9 @@ use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 
+use crate::CostError;
 use crate::gas_info::GasInfo;
 use crate::objects::{BranchCost, BranchCostSign, ConstCost, PreCost, WithdrawGasBranchInfo};
-use crate::CostError;
 
 type VariableValues = OrderedHashMap<(StatementIdx, CostTokenType), i64>;
 

@@ -1,8 +1,8 @@
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use tower_lsp::lsp_types::{
-    lsp_request, ClientCapabilities, Hover, HoverClientCapabilities, HoverContents, HoverParams,
-    MarkupContent, MarkupKind, TextDocumentClientCapabilities, TextDocumentPositionParams,
+    ClientCapabilities, Hover, HoverClientCapabilities, HoverContents, HoverParams, MarkupContent,
+    MarkupKind, TextDocumentClientCapabilities, TextDocumentPositionParams, lsp_request,
 };
 
 use crate::support::cursor::{peek_caret, peek_selection};

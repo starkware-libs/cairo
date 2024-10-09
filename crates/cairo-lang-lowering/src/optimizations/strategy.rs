@@ -1,7 +1,8 @@
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 
 use super::gas_redeposit::gas_redeposit;
+use crate::FlatLowered;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
@@ -15,7 +16,6 @@ use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
 use crate::optimizations::split_structs::split_structs;
 use crate::reorganize_blocks::reorganize_blocks;
-use crate::FlatLowered;
 
 /// Enum of the optimization phases that can be used in a strategy.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

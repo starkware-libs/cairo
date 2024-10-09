@@ -8,7 +8,7 @@ use itertools::Itertools;
 use lowering::ids::ConcreteFunctionWithBodyId;
 
 use super::find_variable_lifetime;
-use crate::local_variables::{analyze_ap_changes, AnalyzeApChangesResult};
+use crate::local_variables::{AnalyzeApChangesResult, analyze_ap_changes};
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(

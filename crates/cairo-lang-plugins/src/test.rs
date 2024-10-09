@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase,
-    FilesGroup, FilesGroupEx,
+    AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_files_group,
 };
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserDatabase;
