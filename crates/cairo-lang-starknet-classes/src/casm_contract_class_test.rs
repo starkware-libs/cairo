@@ -8,7 +8,7 @@ use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
 
 use crate::allowed_libfuncs::{
-    lookup_allowed_libfuncs_list, ListSelector, BUILTIN_AUDITED_LIBFUNCS_LIST,
+    BUILTIN_AUDITED_LIBFUNCS_LIST, ListSelector, lookup_allowed_libfuncs_list,
 };
 use crate::casm_contract_class::{BigUintAsHex, CasmContractClass, StarknetSierraCompilationError};
 use crate::contract_class::ContractClass;

@@ -1,7 +1,7 @@
 use cairo_lang_language_server::lsp;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use tower_lsp::lsp_types::{lsp_request, ApplyWorkspaceEditResponse, ExecuteCommandParams};
+use tower_lsp::lsp_types::{ApplyWorkspaceEditResponse, ExecuteCommandParams, lsp_request};
 
 use crate::support::normalize::normalize;
 use crate::support::sandbox;
@@ -36,9 +36,7 @@ fn cairo_projects() {
 
     let output = ls.send_request::<lsp::ext::ViewAnalyzedCrates>(());
 
-    assert_eq!(
-        normalize(&ls, output),
-        indoc! {r#"
+    assert_eq!(normalize(&ls, output), indoc! {r#"
             # Analyzed Crates
 
             - `core`: `["[CAIRO_SOURCE]/corelib/src/lib.cairo"]`
@@ -99,8 +97,7 @@ fn cairo_projects() {
                     },
                 }
                 ```
-        "#}
-    );
+        "#});
 }
 
 #[test]

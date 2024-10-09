@@ -6,7 +6,7 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
 use cairo_lang_syntax::node::ast::{Arg, WrappedArgList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use num_bigint::BigUint;
 

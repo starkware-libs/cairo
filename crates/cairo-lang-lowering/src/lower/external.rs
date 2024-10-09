@@ -1,8 +1,8 @@
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::LookupIntern;
 
-use super::context::LoweringContext;
 use super::LoweredExpr;
+use super::context::LoweringContext;
 use crate::ids::LocationId;
 use crate::{VarUsage, VariableId};
 

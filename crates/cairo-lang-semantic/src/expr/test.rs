@@ -3,7 +3,7 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, NamedLanguageElemen
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, Upcast};
+use cairo_lang_utils::{Upcast, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 
@@ -11,7 +11,7 @@ use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
 use crate::semantic;
 use crate::test_utils::{
-    setup_test_expr, setup_test_function, test_function_diagnostics, SemanticDatabaseForTesting,
+    SemanticDatabaseForTesting, setup_test_expr, setup_test_function, test_function_diagnostics,
 };
 
 cairo_lang_test_utils::test_file_test!(
@@ -226,16 +226,13 @@ fn test_expr_call_failures() {
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     // Check expr.
-    assert_eq!(
-        diagnostics,
-        indoc! { "
+    assert_eq!(diagnostics, indoc! { "
             error: Function not found.
              --> lib.cairo:2:1
             foo()
             ^*^
 
-        "}
-    );
+        "});
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");
     assert_eq!(
         format!(

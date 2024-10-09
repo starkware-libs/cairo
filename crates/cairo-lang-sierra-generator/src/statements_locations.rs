@@ -6,8 +6,8 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
 use crate::statements_code_locations::{

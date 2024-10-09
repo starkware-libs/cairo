@@ -2,7 +2,7 @@
 use proc_macro::TokenStream;
 use quote::__private::{Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 /// Derives a SemanticObject implementation for structs and enums.
 pub fn derive_semantic_object(input: TokenStream) -> TokenStream {

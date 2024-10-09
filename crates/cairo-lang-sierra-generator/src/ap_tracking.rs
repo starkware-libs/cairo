@@ -5,7 +5,7 @@ use cairo_lang_lowering::{
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::{izip, Itertools};
+use itertools::{Itertools, izip};
 
 /// Information about where AP tracking should be enabled/disabled.
 #[derive(Default)]

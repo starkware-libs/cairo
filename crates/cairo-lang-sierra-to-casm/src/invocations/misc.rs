@@ -9,10 +9,10 @@ use num_bigint::{BigInt, ToBigInt};
 use starknet_types_core::felt::Felt as Felt252;
 
 use super::{
-    get_non_fallthrough_statement_id, CompiledInvocation, CompiledInvocationBuilder,
-    InvocationError,
+    CompiledInvocation, CompiledInvocationBuilder, InvocationError,
+    get_non_fallthrough_statement_id,
 };
-use crate::invocations::{add_input_variables, BuiltinInfo, CostValidationInfo};
+use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 use crate::references::ReferenceExpression;
 use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntry};
 

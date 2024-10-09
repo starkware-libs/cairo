@@ -14,10 +14,10 @@ use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::{ast, TypedStablePtr};
+use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{require, LookupIntern, Upcast};
+use cairo_lang_utils::{LookupIntern, Upcast, require};
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -41,7 +41,7 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::{ImplTypeId, TypeSizeInformation};
 use crate::{
-    corelib, items, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
+    FunctionId, Parameter, SemanticDiagnostic, TypeId, corelib, items, lsp_helpers, semantic, types,
 };
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a

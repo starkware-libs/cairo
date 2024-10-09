@@ -12,7 +12,7 @@ use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
+use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;

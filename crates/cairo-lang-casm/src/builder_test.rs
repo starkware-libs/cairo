@@ -41,12 +41,9 @@ fn test_ap_change_fixes() {
     );
     assert_eq!(state.ap_change, 2);
     assert_eq!(state.steps, 1);
-    assert_eq!(
-        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
-        indoc! {"
+    assert_eq!(join(instructions.iter().map(|inst| format!("{inst};\n")), ""), indoc! {"
             ap += 2;
-        "}
-    );
+        "});
     assert!(awaiting_relocations.is_empty());
 }
 
@@ -62,13 +59,10 @@ fn test_awaiting_relocations() {
     assert_eq!(state.ap_change, 5);
     assert_eq!(state.steps, 2);
     assert_eq!(awaiting_relocations, [1]);
-    assert_eq!(
-        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
-        indoc! {"
+    assert_eq!(join(instructions.iter().map(|inst| format!("{inst};\n")), ""), indoc! {"
             ap += 5;
             jmp rel 0;
-        "}
-    );
+        "});
 }
 
 #[test]
@@ -84,13 +78,10 @@ fn test_noop_branch() {
     assert!(awaiting_relocations.is_empty());
     assert_eq!(state.ap_change, 3);
     assert_eq!(state.steps, 2);
-    assert_eq!(
-        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
-        indoc! {"
+    assert_eq!(join(instructions.iter().map(|inst| format!("{inst};\n")), ""), indoc! {"
             ap += 3;
             jmp rel 2;
-        "}
-    );
+        "});
 }
 
 #[test]
@@ -109,14 +100,11 @@ fn test_allocations() {
     assert!(awaiting_relocations.is_empty());
     assert_eq!(state.ap_change, 3);
     assert_eq!(state.steps, 3);
-    assert_eq!(
-        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
-        indoc! {"
+    assert_eq!(join(instructions.iter().map(|inst| format!("{inst};\n")), ""), indoc! {"
             [ap + 0] = [ap + 1], ap++;
             [ap + 0] = [ap + 1], ap++;
             [ap + 0] = [ap + -2], ap++;
-        "}
-    );
+        "});
 }
 
 #[test]
@@ -150,13 +138,10 @@ fn test_aligned_branch_intersect() {
     assert_eq!(state.ap_change, 1);
     assert_eq!(state.allocated, 1);
     assert_eq!(state.steps, 2);
-    assert_eq!(
-        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
-        indoc! {"
+    assert_eq!(join(instructions.iter().map(|inst| format!("{inst};\n")), ""), indoc! {"
             jmp rel 4 if [ap + 7] != 0, ap++;
             jmp rel 2;
-        "}
-    );
+        "});
 }
 
 #[test]
@@ -198,17 +183,14 @@ fn test_calculation_loop() {
         builder.build(["Fallthrough"]);
     assert!(awaiting_relocations.is_empty());
     assert_eq!(state.get_adjusted(b), CellExpression::from_res_operand(res!([ap - 1])));
-    assert_eq!(
-        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
-        indoc! {"
+    assert_eq!(join(instructions.iter().map(|inst| format!("{inst};\n")), ""), indoc! {"
             [ap + 0] = 1, ap++;
             [ap + 0] = 10, ap++;
             [ap + 0] = 1, ap++;
             [ap + -2] = [ap + 0] + 1, ap++;
             [ap + 0] = [ap + -4] + [ap + -2], ap++;
             jmp rel -3 if [ap + -2] != 0;
-        "}
-    );
+        "});
 }
 
 #[test]
@@ -245,9 +227,7 @@ fn test_call_ret() {
     let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
         builder.build(["Fallthrough"]);
     assert!(awaiting_relocations.is_empty());
-    assert_eq!(
-        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
-        indoc! {"
+    assert_eq!(join(instructions.iter().map(|inst| format!("{inst};\n")), ""), indoc! {"
             [ap + 0] = 1, ap++;
             [ap + 0] = 10, ap++;
             [ap + 0] = 1, ap++;
@@ -263,8 +243,7 @@ fn test_call_ret() {
             jmp rel 4;
             call rel -8;
             ret;
-        "}
-    );
+        "});
 }
 
 #[test]
@@ -290,9 +269,7 @@ fn test_local_fib() {
     let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
         builder.build(["Fallthrough"]);
     assert!(awaiting_relocations.is_empty());
-    assert_eq!(
-        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
-        indoc! {"
+    assert_eq!(join(instructions.iter().map(|inst| format!("{inst};\n")), ""), indoc! {"
             [fp + 0] = 144, ap++;
             [ap + 0] = 1, ap++;
             [ap + 0] = 10, ap++;
@@ -301,8 +278,7 @@ fn test_local_fib() {
             [ap + 0] = [ap + -4] + [ap + -2], ap++;
             jmp rel -3 if [ap + -2] != 0;
             [fp + 0] = [ap + -1];
-        "}
-    );
+        "});
 }
 
 #[test]
@@ -321,16 +297,13 @@ fn test_array_access() {
     let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
         builder.build(["Fallthrough"]);
     assert!(awaiting_relocations.is_empty());
-    assert_eq!(
-        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
-        indoc! {"
+    assert_eq!(join(instructions.iter().map(|inst| format!("{inst};\n")), ""), indoc! {"
             [ap + 0] = 0, ap++;
             [ap + 0] = 1, ap++;
             %{ memory[ap + 0] = segments.add() %}
             [ap + -2] = [[ap + 0] + 0], ap++;
             [ap + -2] = [[ap + -1] + 1];
-        "}
-    );
+        "});
 }
 
 #[test]
@@ -346,12 +319,9 @@ fn test_fail() {
     let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
         builder.build(["Fallthrough"]);
     assert!(awaiting_relocations.is_empty());
-    assert_eq!(
-        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
-        indoc! {"
+    assert_eq!(join(instructions.iter().map(|inst| format!("{inst};\n")), ""), indoc! {"
             [ap + 0] = 3, ap++;
             jmp rel 4 if [ap + -1] != 0;
             [fp + -1] = [fp + -1] + 1;
-        "}
-    );
+        "});
 }

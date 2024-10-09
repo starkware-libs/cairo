@@ -6,7 +6,7 @@ use crate::extensions::lib_func::{
     SpecializationContext,
 };
 use crate::extensions::{
-    args_as_single_user_func, NamedLibfunc, OutputVarReferenceInfo, SpecializationError,
+    NamedLibfunc, OutputVarReferenceInfo, SpecializationError, args_as_single_user_func,
 };
 use crate::program::{Function, FunctionSignature, GenericArg};
 

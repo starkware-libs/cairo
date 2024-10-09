@@ -9,8 +9,8 @@ use cairo_lang_syntax::attribute::consts::STARKNET_INTERFACE_ATTR;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
@@ -66,11 +66,9 @@ fn add_abi_diagnostics(
     let Some(contract) = module_contract(db, module_id) else {
         return;
     };
-    let Ok(abi_builder) = AbiBuilder::from_submodule(
-        db,
-        contract.submodule_id,
-        BuilderConfig { account_contract_validations: true },
-    ) else {
+    let Ok(abi_builder) = AbiBuilder::from_submodule(db, contract.submodule_id, BuilderConfig {
+        account_contract_validations: true,
+    }) else {
         return;
     };
     for err in abi_builder.errors() {

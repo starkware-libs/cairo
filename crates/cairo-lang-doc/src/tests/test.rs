@@ -7,7 +7,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::test_utils::{set_file_content, setup_test_module, TestDatabase};
+use super::test_utils::{TestDatabase, set_file_content, setup_test_module};
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 

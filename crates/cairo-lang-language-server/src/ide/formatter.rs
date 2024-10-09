@@ -1,5 +1,5 @@
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
+use cairo_lang_formatter::{FormatterConfig, get_formatted_file};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::{DocumentFormattingParams, Position, Range, TextEdit};

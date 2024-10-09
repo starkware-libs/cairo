@@ -1,26 +1,26 @@
 use std::sync::{LazyLock, Mutex};
 
-use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateSettings, Edition,
-    ExperimentalFeaturesConfig, ExternalFiles, FilesDatabase, FilesGroup,
+    AsFilesGroupMut, CrateSettings, Edition, ExperimentalFeaturesConfig, ExternalFiles,
+    FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_syntax::node::{ast, TypedStablePtr};
+use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, Intern, LookupIntern, OptionFrom, Upcast};
+use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, Upcast, extract_matches};
 
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::inline_macros::get_default_plugin_suite;
 use crate::items::functions::GenericFunctionId;
-use crate::{semantic, ConcreteFunctionWithBodyId, SemanticDiagnostic};
+use crate::{ConcreteFunctionWithBodyId, SemanticDiagnostic, semantic};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SemanticDatabaseForTesting {

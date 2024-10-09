@@ -8,8 +8,8 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::chain;
 
-use crate::db::LoweringGroup;
 use crate::VariableId;
+use crate::db::LoweringGroup;
 
 //  Information about members captured by the closure and their types.
 #[derive(Clone, Debug)]

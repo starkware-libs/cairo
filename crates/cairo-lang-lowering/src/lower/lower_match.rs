@@ -4,11 +4,11 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{try_extract_matches, LookupIntern};
-use itertools::{zip_eq, Itertools};
+use cairo_lang_utils::{LookupIntern, try_extract_matches};
+use itertools::{Itertools, zip_eq};
 use num_traits::ToPrimitive;
 use semantic::corelib::{core_felt252_ty, unit_ty};
 use semantic::items::enm::SemanticEnumEx;
@@ -20,8 +20,8 @@ use semantic::{
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{
-    lowering_flow_error_to_sealed_block, LoweredExpr, LoweredExprExternEnum, LoweringContext,
-    LoweringFlowError, LoweringResult,
+    LoweredExpr, LoweredExprExternEnum, LoweringContext, LoweringFlowError, LoweringResult,
+    lowering_flow_error_to_sealed_block,
 };
 use super::{
     alloc_empty_block, call_loop_func, generators, lower_expr_block, lower_expr_literal,

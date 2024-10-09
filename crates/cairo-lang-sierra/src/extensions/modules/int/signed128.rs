@@ -5,8 +5,8 @@ use super::{
     IntType,
 };
 use crate::define_libfunc_hierarchy;
-use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::NamedType;
+use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::ids::GenericTypeId;
 
 /// Type for i128.

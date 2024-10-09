@@ -12,7 +12,7 @@ use cairo_lang_defs::ids::{
     TopLevelLanguageElementId, TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{
-    skip_diagnostic, DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
+    DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption, skip_diagnostic,
 };
 use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -22,9 +22,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{
-    define_short_id, extract_matches, try_extract_matches, Intern, LookupIntern,
+    Intern, LookupIntern, define_short_id, extract_matches, try_extract_matches,
 };
-use itertools::{chain, izip, Itertools};
+use itertools::{Itertools, chain, izip};
 use smol_str::SmolStr;
 use syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use syntax::node::ast::{self, GenericArg, ImplItem, MaybeImplBody, OptionReturnTypeClause};
@@ -34,41 +34,40 @@ use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 
 use super::constant::{
-    constant_semantic_data_cycle_helper, constant_semantic_data_helper, ConstValue, ConstValueId,
-    ConstantData, ImplConstantId,
+    ConstValue, ConstValueId, ConstantData, ImplConstantId, constant_semantic_data_cycle_helper,
+    constant_semantic_data_helper,
 };
 use super::enm::SemanticEnumEx;
-use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
+use super::function_with_body::{FunctionBody, FunctionBodyData, get_inline_config};
 use super::functions::{
-    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, GenericFunctionId,
-    ImplGenericFunctionId, InlineConfiguration,
+    FunctionDeclarationData, GenericFunctionId, ImplGenericFunctionId, InlineConfiguration,
+    forbid_inline_always_with_impl_generic_param,
 };
 use super::generics::{
-    generic_params_to_args, semantic_generic_params, GenericArgumentHead, GenericParamImpl,
-    GenericParamsData,
+    GenericArgumentHead, GenericParamImpl, GenericParamsData, generic_params_to_args,
+    semantic_generic_params,
 };
 use super::impl_alias::{
-    impl_alias_generic_params_data_helper, impl_alias_semantic_data_cycle_helper,
-    impl_alias_semantic_data_helper, ImplAliasData,
+    ImplAliasData, impl_alias_generic_params_data_helper, impl_alias_semantic_data_cycle_helper,
+    impl_alias_semantic_data_helper,
 };
 use super::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId,
     ConcreteTraitImplId,
 };
 use super::type_aliases::{
-    type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
-    type_alias_semantic_data_helper, TypeAliasData,
+    TypeAliasData, type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
+    type_alias_semantic_data_helper,
 };
-use super::{resolve_trait_path, TraitOrImplContext};
+use super::{TraitOrImplContext, resolve_trait_path};
 use crate::corelib::{
-    concrete_destruct_trait, concrete_drop_trait, copy_trait, core_submodule, deref_trait,
-    destruct_trait, drop_trait, fn_once_trait, get_core_trait, panic_destruct_trait,
-    CoreTraitContext,
+    CoreTraitContext, concrete_destruct_trait, concrete_drop_trait, copy_trait, core_submodule,
+    deref_trait, destruct_trait, drop_trait, fn_once_trait, get_core_trait, panic_destruct_trait,
 };
-use crate::db::{get_resolver_data_options, SemanticGroup};
+use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
+use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
@@ -79,11 +78,11 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{add_type_based_diagnostics, get_impl_at_context, resolve_type, ImplTypeId};
+use crate::types::{ImplTypeId, add_type_based_diagnostics, get_impl_at_context, resolve_type};
 use crate::{
-    semantic, semantic_object_for_id, Arenas, ConcreteFunction, ConcreteTraitId,
-    ConcreteTraitLongId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability,
-    SemanticDiagnostic, TypeId, TypeLongId,
+    Arenas, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId, FunctionId, FunctionLongId,
+    GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId, semantic,
+    semantic_object_for_id,
 };
 
 #[cfg(test)]
@@ -800,10 +799,10 @@ fn handle_deref_impl(
                     )
                 })
                 .join(" -> ");
-            diagnostics.report(
-                impl_def_id.stable_ptr(db.upcast()),
-                SemanticDiagnosticKind::DerefCycle { deref_chain },
-            );
+            diagnostics
+                .report(impl_def_id.stable_ptr(db.upcast()), SemanticDiagnosticKind::DerefCycle {
+                    deref_chain,
+                });
             return;
         }
     }
@@ -2075,25 +2074,22 @@ fn validate_impl_item_type(
     let trait_id = concrete_trait_id.trait_id(db);
     let type_name = impl_type_def_id.name(defs_db);
     let trait_type_id = db.trait_type_by_name(trait_id, type_name.clone())?.ok_or_else(|| {
-        diagnostics.report(
-            impl_type_ast,
-            ImplItemNotInTrait {
-                impl_def_id,
-                impl_item_name: type_name,
-                trait_id,
-                item_kind: "type".into(),
-            },
-        )
+        diagnostics.report(impl_type_ast, ImplItemNotInTrait {
+            impl_def_id,
+            impl_item_name: type_name,
+            trait_id,
+            item_kind: "type".into(),
+        })
     })?;
 
     // TODO(yuval): add validations for generic parameters, then remove this.
     // Generic parameters are not yet supported, make sure there are none.
     let generic_params_node = impl_type_ast.generic_params(syntax_db);
     if !generic_params_node.is_empty(syntax_db) {
-        diagnostics.report(
-            &generic_params_node,
-            GenericsNotSupportedInItem { scope: "Impl".into(), item_kind: "type".into() },
-        );
+        diagnostics.report(&generic_params_node, GenericsNotSupportedInItem {
+            scope: "Impl".into(),
+            item_kind: "type".into(),
+        });
     }
 
     Ok(trait_type_id)
@@ -2280,15 +2276,12 @@ fn validate_impl_item_constant(
 
     let trait_constant_id =
         db.trait_constant_by_name(trait_id, constant_name.clone())?.ok_or_else(|| {
-            diagnostics.report(
-                impl_constant_ast,
-                ImplItemNotInTrait {
-                    impl_def_id,
-                    impl_item_name: constant_name,
-                    trait_id,
-                    item_kind: "const".into(),
-                },
-            )
+            diagnostics.report(impl_constant_ast, ImplItemNotInTrait {
+                impl_def_id,
+                impl_item_name: constant_name,
+                trait_id,
+                item_kind: "const".into(),
+            })
         })?;
     let concrete_trait_constant =
         ConcreteTraitConstantId::new(db, concrete_trait_id, trait_constant_id);
@@ -2554,25 +2547,22 @@ fn validate_impl_item_impl(
     let trait_id = concrete_trait_id.trait_id(db);
     let impl_name = impl_impl_def_id.name(defs_db);
     let trait_impl_id = db.trait_impl_by_name(trait_id, impl_name.clone())?.ok_or_else(|| {
-        diagnostics.report(
-            impl_impl_ast,
-            ImplItemNotInTrait {
-                impl_def_id,
-                impl_item_name: impl_name,
-                trait_id,
-                item_kind: "impl".into(),
-            },
-        )
+        diagnostics.report(impl_impl_ast, ImplItemNotInTrait {
+            impl_def_id,
+            impl_item_name: impl_name,
+            trait_id,
+            item_kind: "impl".into(),
+        })
     })?;
 
     // TODO(TomerStarkware): add validations for generic parameters, then remove this.
     // Generic parameters are not yet supported, make sure there are none.
     let generic_params_node = impl_impl_ast.generic_params(syntax_db);
     if !generic_params_node.is_empty(syntax_db) {
-        diagnostics.report(
-            &generic_params_node,
-            GenericsNotSupportedInItem { scope: "Impl".into(), item_kind: "impl".into() },
-        );
+        diagnostics.report(&generic_params_node, GenericsNotSupportedInItem {
+            scope: "Impl".into(),
+            item_kind: "impl".into(),
+        });
     }
 
     let concrete_trait_impl = ConcreteTraitImplId::new(db, concrete_trait_id, trait_impl_id);
@@ -2593,13 +2583,10 @@ fn validate_impl_item_impl(
             .conform_traits(resolved_impl_concrete_trait?, concrete_trait_impl_concrete_trait?)
             .is_err()
         {
-            diagnostics.report(
-                impl_impl_ast,
-                TraitMismatch {
-                    expected_trt: concrete_trait_impl_concrete_trait?,
-                    actual_trt: resolved_impl_concrete_trait?,
-                },
-            );
+            diagnostics.report(impl_impl_ast, TraitMismatch {
+                expected_trt: concrete_trait_impl_concrete_trait?,
+                actual_trt: resolved_impl_concrete_trait?,
+            });
         }
         Ok(())
     })();
@@ -3041,15 +3028,12 @@ fn validate_impl_function_signature(
     let function_name = impl_function_id.name(defs_db);
     let trait_function_id =
         db.trait_function_by_name(trait_id, function_name.clone())?.ok_or_else(|| {
-            diagnostics.report(
-                impl_function_syntax,
-                ImplItemNotInTrait {
-                    impl_def_id,
-                    impl_item_name: function_name,
-                    trait_id,
-                    item_kind: "function".into(),
-                },
-            )
+            diagnostics.report(impl_function_syntax, ImplItemNotInTrait {
+                impl_def_id,
+                impl_item_name: function_name,
+                trait_id,
+                item_kind: "function".into(),
+            })
         })?;
     let concrete_trait_function =
         ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, trait_function_id);
@@ -3075,16 +3059,13 @@ fn validate_impl_function_signature(
         .rewrite(concrete_trait_signature)?;
 
     if signature.params.len() != concrete_trait_signature.params.len() {
-        diagnostics.report(
-            &signature_syntax.parameters(syntax_db),
-            WrongNumberOfParameters {
-                impl_def_id,
-                impl_function_id,
-                trait_id,
-                expected: concrete_trait_signature.params.len(),
-                actual: signature.params.len(),
-            },
-        );
+        diagnostics.report(&signature_syntax.parameters(syntax_db), WrongNumberOfParameters {
+            impl_def_id,
+            impl_function_id,
+            trait_id,
+            expected: concrete_trait_signature.params.len(),
+            actual: signature.params.len(),
+        });
     }
     let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
     let concrete_trait_signature =
@@ -3162,16 +3143,13 @@ fn validate_impl_function_signature(
             }
         }
         .stable_ptr();
-        diagnostics.report(
-            location_ptr,
-            WrongReturnTypeForImpl {
-                impl_def_id,
-                impl_function_id,
-                trait_id,
-                expected_ty,
-                actual_ty,
-            },
-        );
+        diagnostics.report(location_ptr, WrongReturnTypeForImpl {
+            impl_def_id,
+            impl_function_id,
+            trait_id,
+            expected_ty,
+            actual_ty,
+        });
     }
     Ok(trait_function_id)
 }

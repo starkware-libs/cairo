@@ -1,8 +1,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use assert_fs::prelude::*;
 use assert_fs::TempDir;
+use assert_fs::prelude::*;
 use tower_lsp::lsp_types::Url;
 
 /// A temporary directory that is a context for testing the language server.

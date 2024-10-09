@@ -4,14 +4,14 @@ use cairo_lang_defs::ids::{LookupItemId, ModuleFileId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 
-use super::generics::{semantic_generic_params, GenericParamsData};
+use super::generics::{GenericParamsData, semantic_generic_params};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::TypeAliasCycle;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;

@@ -11,8 +11,8 @@ use num_bigint::BigInt;
 use super::{add_input_variables, build_const, build_small_diff, build_small_wide_mul};
 use crate::invocations::range_reduction::build_felt252_range_reduction;
 use crate::invocations::{
-    misc, BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
-    InvocationError,
+    BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
+    InvocationError, misc,
 };
 
 /// Handles a signed integer conversion from felt252.

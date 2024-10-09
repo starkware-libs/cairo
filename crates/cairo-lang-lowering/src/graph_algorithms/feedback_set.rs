@@ -5,9 +5,9 @@ use cairo_lang_utils::graph_algos::feedback_set::calc_feedback_set;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use super::concrete_function_node::ConcreteFunctionWithBodyNode;
+use crate::DependencyType;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::DependencyType;
 
 /// Query implementation of [crate::db::LoweringGroup::function_with_body_feedback_set].
 pub fn function_with_body_feedback_set(

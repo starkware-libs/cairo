@@ -1,11 +1,11 @@
+use cairo_lang_syntax::node::Terminal;
 use cairo_lang_syntax::node::ast::Modifier;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::Terminal;
 use smol_str::SmolStr;
 
+use crate::Mutability;
 use crate::diagnostic::SemanticDiagnosticKind::RedundantModifier;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::Mutability;
 
 /// Returns the mutability of a variable, given the list of modifiers in the AST.
 pub fn compute_mutability(
@@ -25,22 +25,16 @@ pub fn compute_mutability(
             }
             Mutability::Mutable | Mutability::Reference => match modifier {
                 Modifier::Ref(terminal) => {
-                    diagnostics.report(
-                        terminal,
-                        RedundantModifier {
-                            current_modifier: terminal.text(syntax_db),
-                            previous_modifier: get_relevant_modifier(&mutability),
-                        },
-                    );
+                    diagnostics.report(terminal, RedundantModifier {
+                        current_modifier: terminal.text(syntax_db),
+                        previous_modifier: get_relevant_modifier(&mutability),
+                    });
                 }
                 Modifier::Mut(terminal) => {
-                    diagnostics.report(
-                        terminal,
-                        RedundantModifier {
-                            current_modifier: terminal.text(syntax_db),
-                            previous_modifier: get_relevant_modifier(&mutability),
-                        },
-                    );
+                    diagnostics.report(terminal, RedundantModifier {
+                        current_modifier: terminal.text(syntax_db),
+                        previous_modifier: get_relevant_modifier(&mutability),
+                    });
                 }
             },
         }

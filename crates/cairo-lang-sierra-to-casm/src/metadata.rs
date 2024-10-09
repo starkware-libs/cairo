@@ -3,12 +3,12 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
 use cairo_lang_sierra_ap_change::compute::calc_ap_changes as linear_calc_ap_changes;
-use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
+use cairo_lang_sierra_ap_change::{ApChangeError, calc_ap_changes};
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_gas::objects::ConstCost;
 use cairo_lang_sierra_gas::{
-    calc_gas_postcost_info, calc_gas_precost_info, compute_postcost_info, compute_precost_info,
-    CostError,
+    CostError, calc_gas_postcost_info, calc_gas_precost_info, compute_postcost_info,
+    compute_precost_info,
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use thiserror::Error;

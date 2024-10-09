@@ -1,17 +1,17 @@
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Result};
-use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
+use anyhow::{Result, anyhow, bail};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup,
-    FilesGroupEx, CORELIB_CRATE_NAME, CORELIB_VERSION,
+    AsFilesGroupMut, CORELIB_CRATE_NAME, CORELIB_VERSION, ExternalFiles, FilesDatabase, FilesGroup,
+    FilesGroupEx, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagId, VirtualFile};
-use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
+use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
@@ -19,11 +19,11 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use crate::project::{update_crate_root, update_crate_roots_from_project_config};
 use crate::InliningStrategy;
+use crate::project::{update_crate_root, update_crate_roots_from_project_config};
 
 #[salsa::database(
     DefsDatabase,

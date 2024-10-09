@@ -2,7 +2,7 @@ use cairo_lang_defs::extract_macro_single_unnamed_arg;
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginResult};
 use cairo_lang_defs::plugin_utils::PluginResultTrait;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 
 /// Plugin that allows writing item level `compile_error!` causing a diagnostic.
 /// Useful for testing that `cfg` attributes are valid.

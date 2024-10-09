@@ -8,8 +8,8 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern, OptionFrom};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, try_extract_matches};
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::Zero;
@@ -23,16 +23,16 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{
-    compute_expr_semantic, ComputationContext, ContextFunction, Environment,
+    ComputationContext, ContextFunction, Environment, compute_expr_semantic,
 };
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
-use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
+use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {

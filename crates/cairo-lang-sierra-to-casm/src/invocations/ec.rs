@@ -10,7 +10,7 @@ use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CostValidationInfo,
+    BuiltinInfo, CostValidationInfo, add_input_variables, get_non_fallthrough_statement_id,
 };
 
 /// Returns the Beta value of the Starkware elliptic curve.

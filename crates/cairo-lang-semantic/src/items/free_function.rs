@@ -6,25 +6,25 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Intern;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
-use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
+use super::function_with_body::{FunctionBody, FunctionBodyData, get_inline_config};
 use super::functions::{
-    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, GenericFunctionId,
-    InlineConfiguration,
+    FunctionDeclarationData, GenericFunctionId, InlineConfiguration,
+    forbid_inline_always_with_impl_generic_param,
 };
-use super::generics::{semantic_generic_params, GenericParamsData};
+use super::generics::{GenericParamsData, semantic_generic_params};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
-use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
 use crate::expr::inference::InferenceId;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, Arenas, FunctionLongId, SemanticDiagnostic, TypeId};
+use crate::{Arenas, FunctionLongId, SemanticDiagnostic, TypeId, semantic};
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]

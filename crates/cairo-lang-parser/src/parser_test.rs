@@ -10,7 +10,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use crate::colored_printer::print_colored;
 use crate::printer::{print_partial_tree, print_tree};
 use crate::test_utils::{create_virtual_file, get_diagnostics};
-use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
+use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics};
 
 /// Tests a partial parser tree of a given Cairo code, according to the configuration.
 ///

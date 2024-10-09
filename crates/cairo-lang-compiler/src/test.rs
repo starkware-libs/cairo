@@ -7,7 +7,7 @@ use indoc::indoc;
 use smol_str::SmolStr;
 
 use crate::db::RootDatabase;
-use crate::{compile_prepared_db_program_artifact, CompilerConfig};
+use crate::{CompilerConfig, compile_prepared_db_program_artifact};
 
 #[derive(Debug, Default)]
 pub struct MockExecutablePlugin {}

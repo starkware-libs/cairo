@@ -1,6 +1,7 @@
 use std::ops::{Shl, Shr};
 use std::sync::LazyLock;
 
+use cairo_lang_sierra::extensions::NamedLibfunc;
 use cairo_lang_sierra::extensions::circuit::{
     CircuitFailureGuaranteeVerifyLibFunc, U96LimbsLessThanGuaranteeVerifyLibfunc,
     U96SingleLimbLessThanGuaranteeVerifyLibfunc,
@@ -14,7 +15,6 @@ use cairo_lang_sierra::extensions::starknet::storage::{
     StorageBaseAddressFromFelt252Libfunc,
 };
 use cairo_lang_sierra::extensions::try_from_felt252::TryFromFelt252;
-use cairo_lang_sierra::extensions::NamedLibfunc;
 use cairo_lang_sierra::ids::{
     ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
     VarId,

@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{LocalVarId, StatementItemId};
 pub use cairo_lang_defs::ids::{ParamId, VarId};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, TypedStablePtr};
+use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use smol_str::SmolStr;
 
 pub use super::expr::objects::*;

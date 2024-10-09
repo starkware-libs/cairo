@@ -2,11 +2,11 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
 use cairo_lang_semantic::resolve::{
-    ResolvedConcreteItem, ResolvedGenericItem, CRATE_KW, SELF_TYPE_KW, SUPER_KW,
+    CRATE_KW, ResolvedConcreteItem, ResolvedGenericItem, SELF_TYPE_KW, SUPER_KW,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::grandparent_kind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::SemanticTokenType;
 

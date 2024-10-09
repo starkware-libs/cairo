@@ -1,8 +1,8 @@
 use cairo_lang_sierra as sierra;
+use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, OutputVarInfo, SierraApChange,
 };
-use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 

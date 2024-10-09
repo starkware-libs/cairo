@@ -2,10 +2,10 @@ use std::collections::VecDeque;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty};
 use cairo_lang_semantic::GenericArgumentId;
+use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty};
 use cairo_lang_utils::{Intern, Upcast};
-use itertools::{chain, zip_eq, Itertools};
+use itertools::{Itertools, chain, zip_eq};
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 
 use crate::blocks::FlatBlocksBuilder;
@@ -228,16 +228,13 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 input: VarUsage { var_id: inner_ok_value, location },
                 outputs: inner_ok_values.clone(),
             })],
-            end: FlatBlockEnd::Goto(
-                block_continuation,
-                VarRemapping {
-                    remapping: zip_eq(
-                        original_outputs,
-                        inner_ok_values.into_iter().map(|var_id| VarUsage { var_id, location }),
-                    )
-                    .collect(),
-                },
-            ),
+            end: FlatBlockEnd::Goto(block_continuation, VarRemapping {
+                remapping: zip_eq(
+                    original_outputs,
+                    inner_ok_values.into_iter().map(|var_id| VarUsage { var_id, location }),
+                )
+                .collect(),
+            }),
         });
 
         // Prepare Err() match arm block.

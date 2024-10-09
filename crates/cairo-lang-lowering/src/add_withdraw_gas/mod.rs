@@ -123,12 +123,9 @@ fn create_panic_block(
     Ok(FlatBlock {
         statements: vec![
             Statement::Call(StatementCall {
-                function: get_function_id(
-                    db.upcast(),
-                    array_module,
-                    "array_new".into(),
-                    vec![GenericArgumentId::Type(core_felt252_ty(db.upcast()))],
-                )
+                function: get_function_id(db.upcast(), array_module, "array_new".into(), vec![
+                    GenericArgumentId::Type(core_felt252_ty(db.upcast())),
+                ])
                 .lowered(db),
                 inputs: vec![],
                 with_coupon: false,
@@ -143,12 +140,9 @@ fn create_panic_block(
                 output: out_of_gas_err_var,
             }),
             Statement::Call(StatementCall {
-                function: get_function_id(
-                    db.upcast(),
-                    array_module,
-                    "array_append".into(),
-                    vec![GenericArgumentId::Type(core_felt252_ty(db.upcast()))],
-                )
+                function: get_function_id(db.upcast(), array_module, "array_append".into(), vec![
+                    GenericArgumentId::Type(core_felt252_ty(db.upcast())),
+                ])
                 .lowered(db),
                 inputs: vec![new_array_var, out_of_gas_err_var]
                     .into_iter()

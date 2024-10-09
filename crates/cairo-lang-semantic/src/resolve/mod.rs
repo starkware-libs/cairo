@@ -7,39 +7,39 @@ use cairo_lang_defs::ids::{
     ModuleFileId, ModuleId, TraitId, TraitItemId,
 };
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::db::{CrateSettings, CORELIB_CRATE_NAME};
+use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{extract_matches, require, try_extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches, require, try_extract_matches};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
+use syntax::node::TypedStablePtr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::QueryAttrs;
-use syntax::node::TypedStablePtr;
 
 use crate::corelib::{core_submodule, get_submodule};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{
-    compute_expr_semantic, get_statement_item_by_name, ComputationContext, ContextFunction,
-    Environment,
+    ComputationContext, ContextFunction, Environment, compute_expr_semantic,
+    get_statement_item_by_name,
 };
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
-use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ImplConstantId};
+use crate::items::constant::{ConstValue, ImplConstantId, resolve_const_expr_and_evaluate};
 use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::{extract_feature_config, FeatureConfig, FeatureKind};
+use crate::items::feature_kind::{FeatureConfig, FeatureKind, extract_feature_config};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
@@ -50,9 +50,9 @@ use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
     ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
-use crate::items::{visibility, TraitOrImplContext};
+use crate::items::{TraitOrImplContext, visibility};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{are_coupons_enabled, resolve_type, ImplTypeId};
+use crate::types::{ImplTypeId, are_coupons_enabled, resolve_type};
 use crate::{
     ConcreteFunction, ConcreteTypeId, ExprId, FunctionId, FunctionLongId, GenericArgumentId,
     GenericParam, Member, Mutability, TypeId, TypeLongId,
@@ -1000,10 +1000,10 @@ impl<'db> Resolver<'db> {
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = self.db.enum_variants(*enum_id)?;
                 let variant_id = variants.get(&ident).ok_or_else(|| {
-                    diagnostics.report(
-                        identifier,
-                        NoSuchVariant { enum_id: *enum_id, variant_name: ident },
-                    )
+                    diagnostics.report(identifier, NoSuchVariant {
+                        enum_id: *enum_id,
+                        variant_name: ident,
+                    })
                 })?;
                 let variant = self.db.variant_semantic(*enum_id, *variant_id)?;
                 Ok(ResolvedGenericItem::Variant(variant))
@@ -1266,13 +1266,10 @@ impl<'db> Resolver<'db> {
                         return Err(diagnostics.report(arg_syntax, PositionalGenericAfterNamed));
                     }
                     let generic_param = generic_params.get(idx).ok_or_else(|| {
-                        diagnostics.report(
-                            arg_syntax,
-                            TooManyGenericArguments {
-                                expected: generic_params.len(),
-                                actual: generic_args_syntax.len(),
-                            },
-                        )
+                        diagnostics.report(arg_syntax, TooManyGenericArguments {
+                            expected: generic_params.len(),
+                            actual: generic_args_syntax.len(),
+                        })
                     })?;
                     assert_eq!(
                         arg_syntax_per_param
@@ -1360,13 +1357,10 @@ impl<'db> Resolver<'db> {
                     .inference()
                     .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
                 {
-                    let diag_added = diagnostics.report(
-                        generic_arg_syntax,
-                        TraitMismatch {
-                            expected_trt: expected_concrete_trait,
-                            actual_trt: impl_def_concrete_trait,
-                        },
-                    );
+                    let diag_added = diagnostics.report(generic_arg_syntax, TraitMismatch {
+                        expected_trt: expected_concrete_trait,
+                        actual_trt: impl_def_concrete_trait,
+                    });
                     self.inference().consume_reported_error(err_set, diag_added);
                 }
                 GenericArgumentId::Impl(resolved_impl)
@@ -1411,27 +1405,27 @@ impl<'db> Resolver<'db> {
             FeatureKind::Unstable { feature, note }
                 if !self.data.feature_config.allowed_features.contains(feature) =>
             {
-                diagnostics.report(
-                    identifier,
-                    UnstableFeature { feature_name: feature.clone(), note: note.clone() },
-                );
+                diagnostics.report(identifier, UnstableFeature {
+                    feature_name: feature.clone(),
+                    note: note.clone(),
+                });
             }
             FeatureKind::Deprecated { feature, note }
                 if !self.data.feature_config.allow_deprecated
                     && !self.data.feature_config.allowed_features.contains(feature) =>
             {
-                diagnostics.report(
-                    identifier,
-                    DeprecatedFeature { feature_name: feature.clone(), note: note.clone() },
-                );
+                diagnostics.report(identifier, DeprecatedFeature {
+                    feature_name: feature.clone(),
+                    note: note.clone(),
+                });
             }
             FeatureKind::Internal { feature, note }
                 if !self.data.feature_config.allowed_features.contains(feature) =>
             {
-                diagnostics.report(
-                    identifier,
-                    InternalFeature { feature_name: feature.clone(), note: note.clone() },
-                );
+                diagnostics.report(identifier, InternalFeature {
+                    feature_name: feature.clone(),
+                    note: note.clone(),
+                });
             }
             _ => {}
         }

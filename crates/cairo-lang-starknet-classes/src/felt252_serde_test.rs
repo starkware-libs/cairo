@@ -1,8 +1,8 @@
 use std::fs::read_to_string;
 
-use cairo_lang_sierra::extensions::core::CoreLibfunc;
-use cairo_lang_sierra::extensions::GenericLibfunc;
 use cairo_lang_sierra::ProgramParser;
+use cairo_lang_sierra::extensions::GenericLibfunc;
+use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use test_case::test_case;

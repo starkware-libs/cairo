@@ -1,8 +1,8 @@
 use std::fmt;
 
 use tokio::runtime::Handle;
-use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::Client;
+use tower_lsp::lsp_types::notification::Notification;
 
 /// A minimal interface for sending notifications to the language client synchronously.
 ///

@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use super::signed128::Sint128Type;
-use super::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
+use super::unsigned::{Uint8Type, Uint16Type, Uint32Type, Uint64Type};
 use super::{
     IntConstLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntMulTraits,
     IntOperationConcreteLibfunc, IntOperator, IntToFelt252Libfunc, IntTraits, IntType,
@@ -103,10 +103,10 @@ impl<TSintTraits: SintTraits> GenericLibfunc for SintOperationLibfunc<TSintTrait
             branch_signatures: vec![
                 // In range.
                 BranchSignature {
-                    vars: vec![
-                        rc_output_info.clone(),
-                        OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
-                    ],
+                    vars: vec![rc_output_info.clone(), OutputVarInfo {
+                        ty,
+                        ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Below range.
@@ -168,21 +168,18 @@ impl<TSintTraits: SintTraits> NoGenericArgsGenericLibfunc for SintDiffLibfunc<TS
             branch_signatures: vec![
                 // Positive.
                 BranchSignature {
-                    vars: vec![
-                        rc_output_info.clone(),
-                        OutputVarInfo {
-                            ty: unsigned_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-                        },
-                    ],
+                    vars: vec![rc_output_info.clone(), OutputVarInfo {
+                        ty: unsigned_ty.clone(),
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Negative.
                 BranchSignature {
-                    vars: vec![
-                        rc_output_info,
-                        OutputVarInfo { ty: unsigned_ty, ref_info: wrapping_result_ref_info },
-                    ],
+                    vars: vec![rc_output_info, OutputVarInfo {
+                        ty: unsigned_ty,
+                        ref_info: wrapping_result_ref_info,
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],

@@ -12,15 +12,15 @@ use cairo_lang_defs::ids::{
     LookupItemId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId, TraitId,
     TraitImplId, TraitTypeId, VarId, VariantId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
+use cairo_lang_diagnostics::{DiagnosticAdded, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
-use cairo_lang_utils::{define_short_id, extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, define_short_id, extract_matches};
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
-use self::solver::{enrich_lookup_context, Ambiguity, SolutionSet};
-use crate::corelib::{core_felt252_ty, get_core_trait, numeric_literal_trait, CoreTraitContext};
+use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
+use crate::corelib::{CoreTraitContext, core_felt252_ty, get_core_trait, numeric_literal_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -45,11 +45,11 @@ use crate::types::{
     ImplTypeId,
 };
 use crate::{
-    add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id, ConcreteEnumId,
-    ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId, ConcreteStructId,
-    ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant, FunctionId,
-    FunctionLongId, GenericArgumentId, GenericParam, LocalVariable, MatchArmSelector, Member,
-    Parameter, SemanticObject, Signature, TypeId, TypeLongId, ValueSelectorArm,
+    ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
+    ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
+    FunctionId, FunctionLongId, GenericArgumentId, GenericParam, LocalVariable, MatchArmSelector,
+    Member, Parameter, SemanticObject, Signature, TypeId, TypeLongId, ValueSelectorArm,
+    add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id,
 };
 
 pub mod canonic;
@@ -377,26 +377,23 @@ impl InferenceData {
                 .impl_vars_trait_item_mappings
                 .iter()
                 .map(|(k, mappings)| {
-                    (
-                        *k,
-                        ImplVarTraitItemMappings {
-                            types: mappings
-                                .types
-                                .iter()
-                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                                .collect(),
-                            constants: mappings
-                                .constants
-                                .iter()
-                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                                .collect(),
-                            impls: mappings
-                                .impls
-                                .iter()
-                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                                .collect(),
-                        },
-                    )
+                    (*k, ImplVarTraitItemMappings {
+                        types: mappings
+                            .types
+                            .iter()
+                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                            .collect(),
+                        constants: mappings
+                            .constants
+                            .iter()
+                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                            .collect(),
+                        impls: mappings
+                            .impls
+                            .iter()
+                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                            .collect(),
+                    })
                 })
                 .collect(),
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),

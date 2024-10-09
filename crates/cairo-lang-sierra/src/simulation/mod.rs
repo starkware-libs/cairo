@@ -5,7 +5,7 @@ use itertools::izip;
 use thiserror::Error;
 
 use self::value::CoreValue;
-use crate::edit_state::{put_results, take_args, EditStateError};
+use crate::edit_state::{EditStateError, put_results, take_args};
 use crate::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use crate::ids::{FunctionId, VarId};
 use crate::program::{Program, Statement, StatementIdx};

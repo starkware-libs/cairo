@@ -24,9 +24,9 @@ use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError}
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
-    calc_metadata, calc_metadata_ap_change_only, Metadata, MetadataComputationConfig, MetadataError,
+    Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
 };
-use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
+use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -43,7 +43,7 @@ pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::chain;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
-use profiling::{user_function_idx_by_sierra_statement_idx, ProfilingInfo};
+use profiling::{ProfilingInfo, user_function_idx_by_sierra_statement_idx};
 use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 

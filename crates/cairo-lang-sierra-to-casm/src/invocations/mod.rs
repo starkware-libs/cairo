@@ -13,20 +13,20 @@ use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
-    core_libfunc_ap_change, InvocationApChangeInfoProvider,
+    InvocationApChangeInfoProvider, core_libfunc_ap_change,
 };
-use cairo_lang_sierra_gas::core_libfunc_cost::{core_libfunc_cost, InvocationCostInfoProvider};
+use cairo_lang_sierra_gas::core_libfunc_cost::{InvocationCostInfoProvider, core_libfunc_cost};
 use cairo_lang_sierra_gas::objects::ConstCost;
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::{chain, zip_eq, Itertools};
+use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use thiserror::Error;
 
 use crate::circuit::CircuitsInfo;
-use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
+use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::metadata::Metadata;
 use crate::references::{
     OutputReferenceValue, OutputReferenceValueIntroductionPoint, ReferenceExpression,

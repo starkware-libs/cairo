@@ -1,10 +1,10 @@
 use std::vec;
 
+use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::secp256::{
     Secp256ConcreteLibfunc, Secp256OpConcreteLibfunc,
 };
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
-use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
 use crate::objects::ConstCost;
 
@@ -23,10 +23,12 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::ClassHashTryFromFelt252(_)
         | StarkNetConcreteLibfunc::ContractAddressTryFromFelt252(_)
         | StarkNetConcreteLibfunc::StorageAddressTryFromFelt252(_) => {
-            vec![
-                ConstCost { steps: 7, holes: 0, range_checks: 3, range_checks96: 0 },
-                ConstCost { steps: 9, holes: 0, range_checks: 3, range_checks96: 0 },
-            ]
+            vec![ConstCost { steps: 7, holes: 0, range_checks: 3, range_checks96: 0 }, ConstCost {
+                steps: 9,
+                holes: 0,
+                range_checks: 3,
+                range_checks96: 0,
+            }]
         }
         StarkNetConcreteLibfunc::ClassHashToFelt252(_)
         | StarkNetConcreteLibfunc::ContractAddressToFelt252(_)

@@ -20,13 +20,13 @@ use super::felt252_dict::{
 use super::function_call::CouponCallLibfunc;
 use super::gas::BuiltinCostsType;
 use super::int::signed::{
-    Sint16Libfunc, Sint16Type, Sint32Libfunc, Sint32Type, Sint64Libfunc, Sint64Type, Sint8Libfunc,
-    Sint8Type,
+    Sint8Libfunc, Sint8Type, Sint16Libfunc, Sint16Type, Sint32Libfunc, Sint32Type, Sint64Libfunc,
+    Sint64Type,
 };
 use super::int::signed128::{Sint128Libfunc, Sint128Type};
 use super::int::unsigned::{
-    Uint16Libfunc, Uint16Type, Uint32Libfunc, Uint32Type, Uint64Libfunc, Uint64Type, Uint8Libfunc,
-    Uint8Type,
+    Uint8Libfunc, Uint8Type, Uint16Libfunc, Uint16Type, Uint32Libfunc, Uint32Type, Uint64Libfunc,
+    Uint64Type,
 };
 use super::int::unsigned128::{U128MulGuaranteeType, Uint128Libfunc, Uint128Type};
 use super::int::unsigned256::Uint256Libfunc;

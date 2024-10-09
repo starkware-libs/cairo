@@ -9,7 +9,7 @@ use smol_str::SmolStr;
 
 use super::fmt::ExprFormatter;
 use crate::db::SemanticGroup;
-use crate::{semantic, ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVariable, PatternId};
+use crate::{ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVariable, PatternId, semantic};
 
 /// Semantic representation of a Pattern.
 ///

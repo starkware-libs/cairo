@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_semantic::corelib;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Intern;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId};

@@ -11,8 +11,8 @@ use super::{
 };
 use crate::db::SemanticGroup;
 use crate::items::imp::{
-    find_candidates_at_context, find_closure_generated_candidate, ImplId, ImplLookupContext,
-    UninferredImpl,
+    ImplId, ImplLookupContext, UninferredImpl, find_candidates_at_context,
+    find_closure_generated_candidate,
 };
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, GenericArgumentId, TypeId, TypeLongId};

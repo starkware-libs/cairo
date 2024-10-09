@@ -8,9 +8,9 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::UpcastMut;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::UpcastMut;
 use lowering::fmt::LoweredFormatter;
 use lowering::ids::ConcreteFunctionWithBodyId;
 

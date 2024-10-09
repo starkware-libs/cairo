@@ -2,9 +2,9 @@ use cairo_lang_utils::graph_algos::graph_node::GraphNode;
 use cairo_lang_utils::graph_algos::strongly_connected_components::ComputeScc;
 
 use super::strongly_connected_components::concrete_function_with_body_scc;
+use crate::DependencyType;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::DependencyType;
 
 /// A node to use in graph-algorithms.
 #[derive(Clone)]

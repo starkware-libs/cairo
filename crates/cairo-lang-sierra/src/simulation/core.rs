@@ -6,8 +6,8 @@ use num_integer::Integer;
 use num_traits::{One, ToPrimitive, Zero};
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt as NonZeroFelt252};
 
-use super::value::CoreValue;
 use super::LibfuncSimulationError;
+use super::value::CoreValue;
 use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc;
@@ -21,7 +21,7 @@ use crate::extensions::felt252_dict::Felt252DictConcreteLibfunc;
 use crate::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
 use crate::extensions::gas::GasConcreteLibfunc;
 use crate::extensions::int::unsigned::{
-    Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
+    Uint8Concrete, Uint16Concrete, Uint32Concrete, Uint64Concrete,
 };
 use crate::extensions::int::unsigned128::Uint128Concrete;
 use crate::extensions::int::{IntConstConcreteLibfunc, IntOperator};

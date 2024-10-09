@@ -16,7 +16,7 @@ use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
 use crate::substitution::SemanticRewriter;
-use crate::types::{peel_snapshots, ImplTypeId};
+use crate::types::{ImplTypeId, peel_snapshots};
 use crate::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
     FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
