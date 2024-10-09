@@ -158,9 +158,9 @@ pub fn start_with_tricks(tricks: Tricks) -> ExitCode {
 
 /// Special function to run the language server in end-to-end tests.
 #[cfg(feature = "testing")]
-pub fn build_service_for_e2e_tests() -> (Box<dyn FnOnce() -> Backend + Send>, lsp_server::Connection)
-{
-    Backend::new_for_testing(Default::default())
+pub fn build_service_for_e2e_tests()
+-> (Box<dyn FnOnce() -> BackendForTesting + Send>, lsp_server::Connection) {
+    BackendForTesting::new_for_testing(Default::default())
 }
 
 /// Initialize logging infrastructure for the language server.
@@ -246,16 +246,43 @@ fn ensure_exists_in_db<'a>(
     new_db.set_file_overrides(Arc::new(new_overrides));
 }
 
-#[cfg(not(feature = "testing"))]
 struct Backend {
     connection: Connection,
     state: State,
 }
 
 #[cfg(feature = "testing")]
-pub struct Backend {
-    connection: Connection,
-    state: State,
+pub struct BackendForTesting(Backend);
+
+#[cfg(feature = "testing")]
+impl BackendForTesting {
+    fn new_for_testing(
+        tricks: Tricks,
+    ) -> (Box<dyn FnOnce() -> BackendForTesting + Send>, lsp_server::Connection) {
+        let (connection_initializer, client) = ConnectionInitializer::memory();
+
+        let init = Box::new(|| {
+            BackendForTesting(Backend::new_inner(tricks, connection_initializer).unwrap())
+        });
+
+        (init, client)
+    }
+
+    pub fn run_for_tests(self) -> Result<JoinHandle<Result<()>>> {
+        let Backend { mut state, connection } = self.0;
+
+        event_loop_thread(move || {
+            let scheduler = Backend::initial_setup(&mut state, &connection);
+
+            let result = Backend::event_loop(&connection, scheduler);
+
+            if let Err(err) = connection.close() {
+                error!("failed to close connection to the language server: {err:?}");
+            }
+
+            result
+        })
+    }
 }
 
 impl Backend {
@@ -263,17 +290,6 @@ impl Backend {
         let connection_initializer = ConnectionInitializer::stdio();
 
         Self::new_inner(tricks, connection_initializer)
-    }
-
-    #[cfg(feature = "testing")]
-    fn new_for_testing(
-        tricks: Tricks,
-    ) -> (Box<dyn FnOnce() -> Self + Send>, lsp_server::Connection) {
-        let (connection_initializer, client) = ConnectionInitializer::memory();
-
-        let init = Box::new(|| Self::new_inner(tricks, connection_initializer).unwrap());
-
-        (init, client)
     }
 
     fn new_inner(tricks: Tricks, connection_initializer: ConnectionInitializer) -> Result<Self> {
@@ -316,11 +332,6 @@ impl Backend {
         })
     }
 
-    #[cfg(feature = "testing")]
-    pub fn run_for_tests(self) -> Result<JoinHandle<Result<()>>> {
-        self.run()
-    }
-
     fn initial_setup<'a>(state: &'a mut State, connection: &'_ Connection) -> Scheduler<'a> {
         let four = NonZeroUsize::new(4).unwrap();
         let worker_threads = std::thread::available_parallelism().unwrap_or(four).max(four);
@@ -329,6 +340,10 @@ impl Backend {
 
         let mut scheduler = Scheduler::new(state, worker_threads, connection.make_sender());
 
+        // The dynamic registration and config-reload happen here instead of as a reaction to
+        // `initialized` notification as it is more convenient implementation-wise.
+        // Ideally, we would wait for responses to these requests here instead of in the event loop,
+        // but we did not find a suitable way to do that.
         if let Err(error) =
             Self::register_dynamic_capabilities(&mut scheduler, dynamic_registrations)
         {
