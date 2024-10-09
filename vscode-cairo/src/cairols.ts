@@ -1,16 +1,11 @@
 import * as vscode from "vscode";
+import * as lc from "vscode-languageclient/node";
 import { SemanticTokensFeature } from "vscode-languageclient/lib/common/semanticTokens";
 
-import * as lc from "vscode-languageclient/node";
 import { Context } from "./context";
 import { Scarb } from "./scarb";
 import { isScarbProject } from "./scarbProject";
 import { StandaloneLS } from "./standalonels";
-import {
-  registerMacroExpandProvider,
-  registerVfsProvider,
-  registerViewAnalyzedCratesProvider,
-} from "./textDocumentProviders";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
@@ -25,19 +20,44 @@ function notifyScarbMissing(ctx: Context) {
   ctx.log.error(errorMessage);
 }
 
-export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
-  // TODO(mkaput): Support multi-root workspaces.
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+interface ScarbResolvingParams {
+  manifestDir: string;
+}
+interface CorelibVersionMismatchParams {
+  errorMessage: string;
+  manifestDir: string;
+}
 
-  const scarb = await findScarbForWorkspaceFolder(workspaceFolder, ctx);
+export async function setupLanguageClient(
+  ctx: Context,
+  clientWorkspaceFolder: vscode.WorkspaceFolder,
+): Promise<lc.LanguageClient> {
+  const scarb = await findScarbForWorkspaceFolder(clientWorkspaceFolder, ctx);
+  const isMatchingWorkspace = (manifestDir: string) => {
+    return manifestDir == clientWorkspaceFolder.uri.path;
+  };
 
-  const serverOptions = await getServerOptions(workspaceFolder, scarb, ctx);
+  const serverOptions = await getServerOptions(clientWorkspaceFolder, scarb, ctx);
 
   const client = new lc.LanguageClient(
-    "cairoLanguageServer",
-    "Cairo Language Server",
+    `Cairo Language Server (${clientWorkspaceFolder.name})`,
     serverOptions,
-    {},
+    {
+      documentSelector: [
+        {
+          scheme: "file",
+          language: "cairo",
+          pattern: `${clientWorkspaceFolder.uri.fsPath}/**/*`,
+        },
+        {
+          scheme: "vfs",
+          language: "cairo",
+          pattern: `/[${clientWorkspaceFolder.name}]/*`,
+        },
+      ],
+      workspaceFolder: clientWorkspaceFolder,
+      diagnosticCollectionName: `[${clientWorkspaceFolder.name}]`,
+    },
   );
 
   // Notify the server when the client configuration changes.
@@ -62,16 +82,20 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
 
   client.registerFeature(new SemanticTokensFeature(client));
 
-  registerVfsProvider(client, ctx);
-  registerMacroExpandProvider(client, ctx);
-  registerViewAnalyzedCratesProvider(client, ctx);
+  client.onNotification(
+    "scarb/could-not-find-scarb-executable",
+    ({ manifestDir }: ScarbResolvingParams) =>
+      isMatchingWorkspace(manifestDir) && notifyScarbMissing(ctx),
+  );
 
-  client.onNotification("scarb/could-not-find-scarb-executable", () => notifyScarbMissing(ctx));
+  client.onNotification("scarb/resolving-start", ({ manifestDir }: ScarbResolvingParams) => {
+    if (!isMatchingWorkspace(manifestDir)) {
+      return;
+    }
 
-  client.onNotification("scarb/resolving-start", () => {
     vscode.window.withProgress(
       {
-        title: "Scarb is resolving the project...",
+        title: `[${clientWorkspaceFolder.name}]: Scarb is resolving the project...`,
         location: vscode.ProgressLocation.Notification,
         cancellable: false,
       },
@@ -86,8 +110,12 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
   });
 
   client.onNotification(
-    new lc.NotificationType<string>("cairo/corelib-version-mismatch"),
-    async (errorMessage) => {
+    new lc.NotificationType<CorelibVersionMismatchParams>("cairo/corelib-version-mismatch"),
+    async ({ errorMessage, manifestDir }: CorelibVersionMismatchParams) => {
+      if (!isMatchingWorkspace(manifestDir)) {
+        return;
+      }
+
       const restart = "Restart CairoLS";
       const cleanScarbCache = "Clean Scarb cache and reload";
 
@@ -142,7 +170,7 @@ async function findScarbForWorkspaceFolder(
 }
 
 async function getServerOptions(
-  workspaceFolder: vscode.WorkspaceFolder | undefined,
+  workspaceFolder: vscode.WorkspaceFolder,
   scarb: Scarb | undefined,
   ctx: Context,
 ): Promise<lc.ServerOptions> {
@@ -163,7 +191,7 @@ async function getServerOptions(
     throw new Error("failed to start CairoLS");
   }
 
-  setupEnv(run, ctx);
+  setupEnv(workspaceFolder, run, ctx);
 
   ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
 
@@ -216,7 +244,11 @@ async function determineLanguageServerExecutableProvider(
   }
 }
 
-function setupEnv(serverExecutable: lc.Executable, ctx: Context) {
+function setupEnv(
+  workspaceFolder: vscode.WorkspaceFolder,
+  serverExecutable: lc.Executable,
+  ctx: Context,
+) {
   const logEnv = {
     CAIRO_LS_LOG: buildEnvFilter(ctx),
     RUST_BACKTRACE: "1",
@@ -229,6 +261,7 @@ function setupEnv(serverExecutable: lc.Executable, ctx: Context) {
     // Inherit env from parent process.
     ...process.env,
     ...(serverExecutable.options.env ?? {}),
+    ...{ CAIRO_LS_WORKSPACE_FOLDER: workspaceFolder.uri.fsPath },
     ...logEnv,
     ...extraEnv,
   };

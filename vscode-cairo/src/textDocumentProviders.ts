@@ -1,16 +1,17 @@
-import * as lc from "vscode-languageclient/node";
 import * as vscode from "vscode";
 import { Context } from "./context";
 import { expandMacro, vfsProvide, viewAnalyzedCrates } from "./lspRequests";
+import { getClientForFile } from "./client";
 
-export const registerVfsProvider = (client: lc.LanguageClient, ctx: Context) => {
+export const registerVfsProvider = (ctx: Context) => {
   const vfsProvider: vscode.TextDocumentContentProvider = {
     async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
-      const res = await client.sendRequest(vfsProvide, {
+      const client = getClientForFile(uri);
+      const res = await client?.sendRequest(vfsProvide, {
         uri: uri.toString(),
       });
 
-      return res.content ?? "";
+      return res?.content ?? "";
     },
   };
 
@@ -19,7 +20,7 @@ export const registerVfsProvider = (client: lc.LanguageClient, ctx: Context) => 
   );
 };
 
-export const registerMacroExpandProvider = (client: lc.LanguageClient, ctx: Context) => {
+export const registerMacroExpandProvider = (ctx: Context) => {
   const uri = vscode.Uri.parse("cairo-expand-macro://expandMacro/[EXPANSION].cairo");
   const eventEmitter = new vscode.EventEmitter<vscode.Uri>();
 
@@ -27,10 +28,10 @@ export const registerMacroExpandProvider = (client: lc.LanguageClient, ctx: Cont
     async provideTextDocumentContent(): Promise<string> {
       const editor = vscode.window.activeTextEditor;
       if (!editor) return "";
-
       const position = editor.selection.active;
+      const client = getClientForFile(uri);
 
-      const expanded = await client.sendRequest(expandMacro, {
+      const expanded = await client?.sendRequest(expandMacro, {
         textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(editor.document),
         position,
       });
@@ -55,14 +56,17 @@ export const registerMacroExpandProvider = (client: lc.LanguageClient, ctx: Cont
   );
 };
 
-export const registerViewAnalyzedCratesProvider = (client: lc.LanguageClient, ctx: Context) => {
+export const registerViewAnalyzedCratesProvider = (ctx: Context) => {
   const uri = vscode.Uri.parse(
     "cairo-view-analyzed-crates://viewAnalyzedCrates/[ANALYZED_CRATES].txt",
   );
   const eventEmitter = new vscode.EventEmitter<vscode.Uri>();
 
   const tdcp: vscode.TextDocumentContentProvider = {
-    provideTextDocumentContent: () => client.sendRequest(viewAnalyzedCrates),
+    provideTextDocumentContent: () => {
+      const client = getClientForFile(uri);
+      return client?.sendRequest(viewAnalyzedCrates);
+    },
     onDidChange: eventEmitter.event,
   };
 

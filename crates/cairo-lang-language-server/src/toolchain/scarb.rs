@@ -3,6 +3,7 @@ use std::sync::{Arc, OnceLock};
 
 use anyhow::{bail, Context, Result};
 use scarb_metadata::{Metadata, MetadataCommand};
+use serde::{Deserialize, Serialize};
 use tower_lsp::lsp_types::notification::Notification;
 use tracing::{error, warn};
 
@@ -46,7 +47,7 @@ impl ScarbToolchain {
     ///
     /// This method may send notifications to the language client if there are any actionable issues
     /// with the found `scarb` installation or if it could not be found.
-    fn discover(&self) -> Option<&Path> {
+    fn discover(&self, manifest_dir: String) -> Option<&Path> {
         self.scarb_path_cell
             .get_or_init(|| {
                 let path = env_config::scarb_path();
@@ -58,7 +59,9 @@ impl ScarbToolchain {
                         warn!("attempt to use scarb without SCARB env being set");
                     } else {
                         error!("attempt to use scarb without SCARB env being set");
-                        self.notifier.send_notification::<ScarbPathMissing>(());
+                        self.notifier.send_notification::<ScarbPathMissing>(ScarbResolvingParams {
+                            manifest_dir,
+                        });
                     }
                 }
                 path
@@ -112,12 +115,21 @@ impl ScarbToolchain {
     /// the progress of the operation or any actionable issues.
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn metadata(&self, manifest: &Path) -> Result<Metadata> {
-        let Some(scarb_path) = self.discover() else {
+        let manifest_dir = manifest
+            .parent()
+            .expect("No parent of the manifest")
+            .to_str()
+            .expect("Path is not correct UTF-8")
+            .to_string();
+
+        let Some(scarb_path) = self.discover(manifest_dir.clone()) else {
             bail!("could not find scarb executable");
         };
 
         if !self.is_silent {
-            self.notifier.send_notification::<ScarbResolvingStart>(());
+            self.notifier.send_notification::<ScarbResolvingStart>(ScarbResolvingParams {
+                manifest_dir: manifest_dir.clone(),
+            });
         }
 
         let result = MetadataCommand::new()
@@ -128,18 +140,25 @@ impl ScarbToolchain {
             .context("failed to execute: scarb metadata");
 
         if !self.is_silent {
-            self.notifier.send_notification::<ScarbResolvingFinish>(());
+            self.notifier
+                .send_notification::<ScarbResolvingFinish>(ScarbResolvingParams { manifest_dir });
         }
 
         result
     }
 }
 
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ScarbResolvingParams {
+    /// Folder in which the `Scarb.toml` is located
+    manifest_dir: String,
+}
 #[derive(Debug)]
 struct ScarbPathMissing {}
 
 impl Notification for ScarbPathMissing {
-    type Params = ();
+    type Params = ScarbResolvingParams;
     const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
 }
 
@@ -147,7 +166,7 @@ impl Notification for ScarbPathMissing {
 struct ScarbResolvingStart {}
 
 impl Notification for ScarbResolvingStart {
-    type Params = ();
+    type Params = ScarbResolvingParams;
     const METHOD: &'static str = "scarb/resolving-start";
 }
 
@@ -155,6 +174,6 @@ impl Notification for ScarbResolvingStart {
 struct ScarbResolvingFinish {}
 
 impl Notification for ScarbResolvingFinish {
-    type Params = ();
+    type Params = ScarbResolvingParams;
     const METHOD: &'static str = "scarb/resolving-finish";
 }

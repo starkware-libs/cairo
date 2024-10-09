@@ -46,7 +46,14 @@ impl Request for ExpandMacro {
 #[derive(Debug)]
 pub struct CorelibVersionMismatch;
 
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CorelibVersionMismatchParams {
+    pub error_message: String,
+    pub manifest_dir: String,
+}
+
 impl Notification for CorelibVersionMismatch {
-    type Params = String;
+    type Params = CorelibVersionMismatchParams;
     const METHOD: &'static str = "cairo/corelib-version-mismatch";
 }
