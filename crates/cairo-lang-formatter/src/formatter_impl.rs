@@ -1,14 +1,25 @@
 use std::cmp::Ordering;
 use std::fmt;
 
+use a::b::c::e; // Comment
+use a::b::c::f;
+use a::b::{c, d};
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
+use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
 use syntax::node::helpers::QueryAttrs;
 use syntax::node::kind::SyntaxKind;
+use z::{
+    a,
+    b, /* some commentb.
+        * ,  // some commentc. */
+    c,
+    d, // commentd
+};
 
 use crate::FormatterConfig;
 
@@ -427,7 +438,11 @@ impl LineBuilder {
             let mut comment_only_added_indent = if let BreakLinePointIndentation::IndentedWithTail =
                 break_line_point_properties.break_indentation
             {
-                if i == n_break_points - 1 { tab_size } else { 0 }
+                if i == n_break_points - 1 {
+                    tab_size
+                } else {
+                    0
+                }
             } else {
                 0
             };
@@ -791,6 +806,7 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode) {
+        // USE FORMAT! THES SAME AS PRINT BT RETURN STRING TO ME.
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
@@ -826,41 +842,11 @@ impl<'a> FormatterImpl<'a> {
         // TODO(ilya): consider not copying here.
         let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();
-
         if self.config.sort_module_level_items {
-            let mut start_idx = 0;
-            while start_idx < children.len() {
-                let kind = children[start_idx].as_sort_kind(self.db);
-                let mut end_idx = start_idx + 1;
-                // Find the end of the current section.
-                while end_idx < children.len() {
-                    if kind != children[end_idx].as_sort_kind(self.db) {
-                        break;
-                    }
-                    end_idx += 1;
-                }
-                // Sort within this section if it's `Module` or `UseItem`.
-                match kind {
-                    SortKind::Module => {
-                        children[start_idx..end_idx].sort_by_key(|node| {
-                            ast::ItemModule::from_syntax_node(self.db, node.clone())
-                                .name(self.db)
-                                .text(self.db)
-                        });
-                    }
-                    SortKind::UseItem => {
-                        children[start_idx..end_idx].sort_by_key(|node| {
-                            ast::ItemUse::from_syntax_node(self.db, node.clone())
-                                .use_path(self.db)
-                                .as_syntax_node()
-                                .get_text_without_trivia(self.db)
-                        });
-                    }
-                    SortKind::Immovable => {}
-                }
-
-                // Move past the sorted section.
-                start_idx = end_idx;
+            if let SyntaxKind::UsePathList = syntax_node.kind(self.db) {
+                self.sort_inner_use_path(&mut children);
+            } else {
+                self.sort_items_sections(&mut children);
             }
         }
         for (i, child) in children.iter().enumerate() {
@@ -876,6 +862,98 @@ impl<'a> FormatterImpl<'a> {
                 }
             }
             self.empty_lines_allowance = allowed_empty_between;
+        }
+    }
+
+    /// Sorting function for `UsePathMulti` children.
+    fn sort_inner_use_path(&self, children: &mut Vec<SyntaxNode>) {
+        // Collect pairs of UsePathLeaf/UsePathSingle with the following comma (if present).
+        let mut leaf_and_comma_pairs: Vec<(SyntaxNode, Option<SyntaxNode>)> = vec![];
+        let mut iter = children.iter().cloned().peekable();
+
+        while let Some(node) = iter.next() {
+            if matches!(node.kind(self.db), SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle) {
+                let next = iter.peek();
+                // If the next node is a comma, pair it with the current node.
+                if let Some(next_node) = next {
+                    if next_node.kind(self.db) == SyntaxKind::TokenComma {
+                        leaf_and_comma_pairs.push((node, Some(iter.next().unwrap())));
+                    } else {
+                        // No comma follows, just push the current node.
+                        leaf_and_comma_pairs.push((node, None));
+                    }
+                } else {
+                    leaf_and_comma_pairs.push((node, None));
+                }
+            }
+        }
+
+        // Sort the pairs by the identifier of the first element (the UsePathLeaf/UsePathSingle).
+        leaf_and_comma_pairs.sort_by_key(|(node, _)| {
+            match node.kind(self.db) {
+                SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle => {
+                    let path_segment =
+                        ast::UsePathLeaf::from_syntax_node(self.db, node.clone()).ident(self.db);
+                    match path_segment {
+                        PathSegment::Simple(simple_segment) => {
+                            simple_segment.as_syntax_node().get_text_without_trivia(self.db)
+                        }
+                        PathSegment::WithGenericArgs(_) => {
+                            "".to_string() // Return empty for nodes with generic arguments.
+                        }
+                    }
+                }
+                _ => unreachable!("Only UsePathLeaf and UsePathSingle are expected"),
+            }
+        });
+
+        // Rebuild the children vector with the sorted pairs.
+        *children = leaf_and_comma_pairs
+            .into_iter()
+            .flat_map(|(leaf_or_single, comma)| {
+                let mut nodes = vec![leaf_or_single];
+                if let Some(comma_node) = comma {
+                    nodes.push(comma_node);
+                }
+                nodes
+            })
+            .collect();
+    }
+    /// Sorting function for module-level items.
+    fn sort_items_sections(&self, children: &mut [SyntaxNode]) {
+        let mut start_idx = 0;
+        while start_idx < children.len() {
+            let kind = children[start_idx].as_sort_kind(self.db);
+            let mut end_idx = start_idx + 1;
+            // Find the end of the current section.
+            while end_idx < children.len() {
+                if kind != children[end_idx].as_sort_kind(self.db) {
+                    break;
+                }
+                end_idx += 1;
+            }
+            // Sort within this section if it's `Module` or `UseItem`.
+            match kind {
+                SortKind::Module => {
+                    children[start_idx..end_idx].sort_by_key(|node| {
+                        ast::ItemModule::from_syntax_node(self.db, node.clone())
+                            .name(self.db)
+                            .text(self.db)
+                    });
+                }
+                SortKind::UseItem => {
+                    children[start_idx..end_idx].sort_by_key(|node| {
+                        ast::ItemUse::from_syntax_node(self.db, node.clone())
+                            .use_path(self.db)
+                            .as_syntax_node()
+                            .get_text_without_trivia(self.db)
+                    });
+                }
+                SortKind::Immovable => {}
+            }
+
+            // Move past the sorted section.
+            start_idx = end_idx;
         }
     }
     /// Formats a terminal node and appends the formatted string to the result.
