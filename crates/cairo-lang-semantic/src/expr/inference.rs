@@ -1269,7 +1269,6 @@ impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
             ImplLongId::ImplImpl(impl_impl_id) => {
                 let impl_impl_id_rewrite_result = self.internal_rewrite(impl_impl_id)?;
                 let impl_id = impl_impl_id.impl_id();
-                let trait_impl = impl_impl_id.trait_impl_id();
                 return Ok(match impl_id.lookup_intern(self.db) {
                     ImplLongId::GenericParameter(_)
                     | ImplLongId::TraitImpl(_)
@@ -1281,9 +1280,7 @@ impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
                         impl_impl_id_rewrite_result
                     }
                     ImplLongId::Concrete(_) => {
-                        if let Ok(ty) = self.db.impl_impl_concrete_implized(ImplImplId::new(
-                            impl_id, trait_impl, self.db,
-                        )) {
+                        if let Ok(ty) = self.db.impl_impl_concrete_implized(*impl_impl_id) {
                             *value = self.rewrite(ty).no_err().lookup_intern(self.db);
                             RewriteResult::Modified
                         } else {
@@ -1291,8 +1288,16 @@ impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
                         }
                     }
                     ImplLongId::ImplVar(var) => {
-                        *value = self.rewritten_impl_impl(var, trait_impl).lookup_intern(self.db);
-                        return Ok(RewriteResult::Modified);
+                        if let Ok(concrete_trait_impl) =
+                            impl_impl_id.concrete_trait_impl_id(self.db)
+                        {
+                            *value = self
+                                .rewritten_impl_impl(var, concrete_trait_impl)
+                                .lookup_intern(self.db);
+                            return Ok(RewriteResult::Modified);
+                        } else {
+                            impl_impl_id_rewrite_result
+                        }
                     }
                 });
             }
