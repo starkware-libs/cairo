@@ -7,7 +7,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use cairo_lang_filesystem::span::TextWidth;
-use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 use smol_str::SmolStr;
 
 use super::element_list::ElementList;
@@ -237,18 +237,18 @@ impl From<&Trivium> for SyntaxStablePtrId {
     }
 }
 impl Trivium {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [Trivium].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::TokenSingleLineComment => true,
-            SyntaxKind::TokenSingleLineDocComment => true,
-            SyntaxKind::TokenSingleLineInnerComment => true,
-            SyntaxKind::TokenWhitespace => true,
-            SyntaxKind::TokenNewline => true,
-            SyntaxKind::TokenSkipped => true,
-            SyntaxKind::TriviumSkippedNode => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::TokenSingleLineComment
+                | SyntaxKind::TokenSingleLineDocComment
+                | SyntaxKind::TokenSingleLineInnerComment
+                | SyntaxKind::TokenWhitespace
+                | SyntaxKind::TokenNewline
+                | SyntaxKind::TokenSkipped
+                | SyntaxKind::TriviumSkippedNode
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -644,36 +644,36 @@ impl From<&Expr> for SyntaxStablePtrId {
     }
 }
 impl Expr {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [Expr].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::ExprPath => true,
-            SyntaxKind::TerminalLiteralNumber => true,
-            SyntaxKind::TerminalShortString => true,
-            SyntaxKind::TerminalString => true,
-            SyntaxKind::TerminalFalse => true,
-            SyntaxKind::TerminalTrue => true,
-            SyntaxKind::ExprParenthesized => true,
-            SyntaxKind::ExprUnary => true,
-            SyntaxKind::ExprBinary => true,
-            SyntaxKind::ExprListParenthesized => true,
-            SyntaxKind::ExprFunctionCall => true,
-            SyntaxKind::ExprStructCtorCall => true,
-            SyntaxKind::ExprBlock => true,
-            SyntaxKind::ExprMatch => true,
-            SyntaxKind::ExprIf => true,
-            SyntaxKind::ExprLoop => true,
-            SyntaxKind::ExprWhile => true,
-            SyntaxKind::ExprFor => true,
-            SyntaxKind::ExprClosure => true,
-            SyntaxKind::ExprErrorPropagate => true,
-            SyntaxKind::ExprFieldInitShorthand => true,
-            SyntaxKind::ExprIndexed => true,
-            SyntaxKind::ExprInlineMacro => true,
-            SyntaxKind::ExprFixedSizeArray => true,
-            SyntaxKind::ExprMissing => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::ExprPath
+                | SyntaxKind::TerminalLiteralNumber
+                | SyntaxKind::TerminalShortString
+                | SyntaxKind::TerminalString
+                | SyntaxKind::TerminalFalse
+                | SyntaxKind::TerminalTrue
+                | SyntaxKind::ExprParenthesized
+                | SyntaxKind::ExprUnary
+                | SyntaxKind::ExprBinary
+                | SyntaxKind::ExprListParenthesized
+                | SyntaxKind::ExprFunctionCall
+                | SyntaxKind::ExprStructCtorCall
+                | SyntaxKind::ExprBlock
+                | SyntaxKind::ExprMatch
+                | SyntaxKind::ExprIf
+                | SyntaxKind::ExprLoop
+                | SyntaxKind::ExprWhile
+                | SyntaxKind::ExprFor
+                | SyntaxKind::ExprClosure
+                | SyntaxKind::ExprErrorPropagate
+                | SyntaxKind::ExprFieldInitShorthand
+                | SyntaxKind::ExprIndexed
+                | SyntaxKind::ExprInlineMacro
+                | SyntaxKind::ExprFixedSizeArray
+                | SyntaxKind::ExprMissing
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -955,14 +955,14 @@ impl From<&ArgClause> for SyntaxStablePtrId {
     }
 }
 impl ArgClause {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [ArgClause].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::ArgClauseUnnamed => true,
-            SyntaxKind::ArgClauseNamed => true,
-            SyntaxKind::ArgClauseFieldInitShorthand => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::ArgClauseUnnamed
+                | SyntaxKind::ArgClauseNamed
+                | SyntaxKind::ArgClauseFieldInitShorthand
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1576,13 +1576,9 @@ impl From<&PathSegment> for SyntaxStablePtrId {
     }
 }
 impl PathSegment {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [PathSegment].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::PathSegmentWithGenericArgs => true,
-            SyntaxKind::PathSegmentSimple => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::PathSegmentWithGenericArgs | SyntaxKind::PathSegmentSimple)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1752,13 +1748,9 @@ impl From<&OptionTerminalColonColon> for SyntaxStablePtrId {
     }
 }
 impl OptionTerminalColonColon {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionTerminalColonColon].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionTerminalColonColonEmpty => true,
-            SyntaxKind::TerminalColonColon => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionTerminalColonColonEmpty | SyntaxKind::TerminalColonColon)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2341,16 +2333,16 @@ impl From<&UnaryOperator> for SyntaxStablePtrId {
     }
 }
 impl UnaryOperator {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [UnaryOperator].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::TerminalNot => true,
-            SyntaxKind::TerminalBitNot => true,
-            SyntaxKind::TerminalMinus => true,
-            SyntaxKind::TerminalAt => true,
-            SyntaxKind::TerminalMul => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::TerminalNot
+                | SyntaxKind::TerminalBitNot
+                | SyntaxKind::TerminalMinus
+                | SyntaxKind::TerminalAt
+                | SyntaxKind::TerminalMul
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2850,36 +2842,36 @@ impl From<&BinaryOperator> for SyntaxStablePtrId {
     }
 }
 impl BinaryOperator {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [BinaryOperator].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::TerminalDot => true,
-            SyntaxKind::TerminalNot => true,
-            SyntaxKind::TerminalMul => true,
-            SyntaxKind::TerminalMulEq => true,
-            SyntaxKind::TerminalDiv => true,
-            SyntaxKind::TerminalDivEq => true,
-            SyntaxKind::TerminalMod => true,
-            SyntaxKind::TerminalModEq => true,
-            SyntaxKind::TerminalPlus => true,
-            SyntaxKind::TerminalPlusEq => true,
-            SyntaxKind::TerminalMinus => true,
-            SyntaxKind::TerminalMinusEq => true,
-            SyntaxKind::TerminalEqEq => true,
-            SyntaxKind::TerminalNeq => true,
-            SyntaxKind::TerminalEq => true,
-            SyntaxKind::TerminalAnd => true,
-            SyntaxKind::TerminalAndAnd => true,
-            SyntaxKind::TerminalOr => true,
-            SyntaxKind::TerminalOrOr => true,
-            SyntaxKind::TerminalXor => true,
-            SyntaxKind::TerminalLE => true,
-            SyntaxKind::TerminalGE => true,
-            SyntaxKind::TerminalLT => true,
-            SyntaxKind::TerminalGT => true,
-            SyntaxKind::TerminalDotDot => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::TerminalDot
+                | SyntaxKind::TerminalNot
+                | SyntaxKind::TerminalMul
+                | SyntaxKind::TerminalMulEq
+                | SyntaxKind::TerminalDiv
+                | SyntaxKind::TerminalDivEq
+                | SyntaxKind::TerminalMod
+                | SyntaxKind::TerminalModEq
+                | SyntaxKind::TerminalPlus
+                | SyntaxKind::TerminalPlusEq
+                | SyntaxKind::TerminalMinus
+                | SyntaxKind::TerminalMinusEq
+                | SyntaxKind::TerminalEqEq
+                | SyntaxKind::TerminalNeq
+                | SyntaxKind::TerminalEq
+                | SyntaxKind::TerminalAnd
+                | SyntaxKind::TerminalAndAnd
+                | SyntaxKind::TerminalOr
+                | SyntaxKind::TerminalOrOr
+                | SyntaxKind::TerminalXor
+                | SyntaxKind::TerminalLE
+                | SyntaxKind::TerminalGE
+                | SyntaxKind::TerminalLT
+                | SyntaxKind::TerminalGT
+                | SyntaxKind::TerminalDotDot
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3254,13 +3246,12 @@ impl From<&OptionArgListParenthesized> for SyntaxStablePtrId {
     }
 }
 impl OptionArgListParenthesized {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionArgListParenthesized].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionArgListParenthesizedEmpty => true,
-            SyntaxKind::ArgListParenthesized => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::OptionArgListParenthesizedEmpty | SyntaxKind::ArgListParenthesized
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4116,13 +4107,9 @@ impl From<&Condition> for SyntaxStablePtrId {
     }
 }
 impl Condition {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [Condition].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::ConditionLet => true,
-            SyntaxKind::ConditionExpr => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::ConditionLet | SyntaxKind::ConditionExpr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4388,13 +4375,9 @@ impl From<&BlockOrIf> for SyntaxStablePtrId {
     }
 }
 impl BlockOrIf {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [BlockOrIf].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::ExprBlock => true,
-            SyntaxKind::ExprIf => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::ExprBlock | SyntaxKind::ExprIf)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4889,13 +4872,9 @@ impl From<&OptionElseClause> for SyntaxStablePtrId {
     }
 }
 impl OptionElseClause {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionElseClause].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionElseClauseEmpty => true,
-            SyntaxKind::ElseClause => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionElseClauseEmpty | SyntaxKind::ElseClause)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5548,13 +5527,9 @@ impl From<&OptionFixedSizeArraySize> for SyntaxStablePtrId {
     }
 }
 impl OptionFixedSizeArraySize {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionFixedSizeArraySize].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionFixedSizeArraySizeEmpty => true,
-            SyntaxKind::FixedSizeArraySize => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionFixedSizeArraySizeEmpty | SyntaxKind::FixedSizeArraySize)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5819,13 +5794,9 @@ impl From<&ClosureParamWrapper> for SyntaxStablePtrId {
     }
 }
 impl ClosureParamWrapper {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [ClosureParamWrapper].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::TerminalOrOr => true,
-            SyntaxKind::ClosureParamWrapperNAry => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::TerminalOrOr | SyntaxKind::ClosureParamWrapperNAry)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6100,13 +6071,9 @@ impl From<&OptionStructArgExpr> for SyntaxStablePtrId {
     }
 }
 impl OptionStructArgExpr {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionStructArgExpr].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionStructArgExprEmpty => true,
-            SyntaxKind::StructArgExpr => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionStructArgExprEmpty | SyntaxKind::StructArgExpr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6456,13 +6423,9 @@ impl From<&StructArg> for SyntaxStablePtrId {
     }
 }
 impl StructArg {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [StructArg].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::StructArgSingle => true,
-            SyntaxKind::StructArgTail => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::StructArgSingle | SyntaxKind::StructArgTail)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6870,15 +6833,15 @@ impl From<&WrappedArgList> for SyntaxStablePtrId {
     }
 }
 impl WrappedArgList {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [WrappedArgList].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::ArgListBracketed => true,
-            SyntaxKind::ArgListParenthesized => true,
-            SyntaxKind::ArgListBraced => true,
-            SyntaxKind::WrappedArgListMissing => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::ArgListBracketed
+                | SyntaxKind::ArgListParenthesized
+                | SyntaxKind::ArgListBraced
+                | SyntaxKind::WrappedArgListMissing
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7172,23 +7135,23 @@ impl From<&Pattern> for SyntaxStablePtrId {
     }
 }
 impl Pattern {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [Pattern].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::TerminalUnderscore => true,
-            SyntaxKind::TerminalLiteralNumber => true,
-            SyntaxKind::TerminalFalse => true,
-            SyntaxKind::TerminalTrue => true,
-            SyntaxKind::TerminalShortString => true,
-            SyntaxKind::TerminalString => true,
-            SyntaxKind::PatternIdentifier => true,
-            SyntaxKind::PatternStruct => true,
-            SyntaxKind::PatternTuple => true,
-            SyntaxKind::PatternEnum => true,
-            SyntaxKind::PatternFixedSizeArray => true,
-            SyntaxKind::ExprPath => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::TerminalUnderscore
+                | SyntaxKind::TerminalLiteralNumber
+                | SyntaxKind::TerminalFalse
+                | SyntaxKind::TerminalTrue
+                | SyntaxKind::TerminalShortString
+                | SyntaxKind::TerminalString
+                | SyntaxKind::PatternIdentifier
+                | SyntaxKind::PatternStruct
+                | SyntaxKind::PatternTuple
+                | SyntaxKind::PatternEnum
+                | SyntaxKind::PatternFixedSizeArray
+                | SyntaxKind::ExprPath
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7978,14 +7941,14 @@ impl From<&PatternStructParam> for SyntaxStablePtrId {
     }
 }
 impl PatternStructParam {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [PatternStructParam].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::PatternIdentifier => true,
-            SyntaxKind::PatternStructParamWithExpr => true,
-            SyntaxKind::TerminalDotDot => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::PatternIdentifier
+                | SyntaxKind::PatternStructParamWithExpr
+                | SyntaxKind::TerminalDotDot
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8371,13 +8334,12 @@ impl From<&OptionPatternEnumInnerPattern> for SyntaxStablePtrId {
     }
 }
 impl OptionPatternEnumInnerPattern {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionPatternEnumInnerPattern].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionPatternEnumInnerPatternEmpty => true,
-            SyntaxKind::PatternEnumInnerPattern => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::OptionPatternEnumInnerPatternEmpty | SyntaxKind::PatternEnumInnerPattern
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8627,13 +8589,9 @@ impl From<&OptionTypeClause> for SyntaxStablePtrId {
     }
 }
 impl OptionTypeClause {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionTypeClause].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionTypeClauseEmpty => true,
-            SyntaxKind::TypeClause => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionTypeClauseEmpty | SyntaxKind::TypeClause)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8883,13 +8841,9 @@ impl From<&OptionReturnTypeClause> for SyntaxStablePtrId {
     }
 }
 impl OptionReturnTypeClause {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionReturnTypeClause].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionReturnTypeClauseEmpty => true,
-            SyntaxKind::ReturnTypeClause => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionReturnTypeClauseEmpty | SyntaxKind::ReturnTypeClause)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9114,18 +9068,18 @@ impl From<&Statement> for SyntaxStablePtrId {
     }
 }
 impl Statement {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [Statement].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::StatementLet => true,
-            SyntaxKind::StatementExpr => true,
-            SyntaxKind::StatementContinue => true,
-            SyntaxKind::StatementReturn => true,
-            SyntaxKind::StatementBreak => true,
-            SyntaxKind::StatementItem => true,
-            SyntaxKind::StatementMissing => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::StatementLet
+                | SyntaxKind::StatementExpr
+                | SyntaxKind::StatementContinue
+                | SyntaxKind::StatementReturn
+                | SyntaxKind::StatementBreak
+                | SyntaxKind::StatementItem
+                | SyntaxKind::StatementMissing
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9487,13 +9441,9 @@ impl From<&OptionTerminalSemicolon> for SyntaxStablePtrId {
     }
 }
 impl OptionTerminalSemicolon {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionTerminalSemicolon].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionTerminalSemicolonEmpty => true,
-            SyntaxKind::TerminalSemicolon => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionTerminalSemicolonEmpty | SyntaxKind::TerminalSemicolon)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9935,13 +9885,9 @@ impl From<&OptionExprClause> for SyntaxStablePtrId {
     }
 }
 impl OptionExprClause {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionExprClause].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionExprClauseEmpty => true,
-            SyntaxKind::ExprClause => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionExprClauseEmpty | SyntaxKind::ExprClause)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10566,13 +10512,9 @@ impl From<&Modifier> for SyntaxStablePtrId {
     }
 }
 impl Modifier {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [Modifier].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::TerminalRef => true,
-            SyntaxKind::TerminalMut => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::TerminalRef | SyntaxKind::TerminalMut)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10952,13 +10894,9 @@ impl From<&OptionImplicitsClause> for SyntaxStablePtrId {
     }
 }
 impl OptionImplicitsClause {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionImplicitsClause].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionImplicitsClauseEmpty => true,
-            SyntaxKind::ImplicitsClause => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionImplicitsClauseEmpty | SyntaxKind::ImplicitsClause)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -11117,13 +11055,9 @@ impl From<&OptionTerminalNoPanic> for SyntaxStablePtrId {
     }
 }
 impl OptionTerminalNoPanic {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionTerminalNoPanic].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionTerminalNoPanicEmpty => true,
-            SyntaxKind::TerminalNoPanic => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionTerminalNoPanicEmpty | SyntaxKind::TerminalNoPanic)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -12001,26 +11935,26 @@ impl From<&ModuleItem> for SyntaxStablePtrId {
     }
 }
 impl ModuleItem {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [ModuleItem].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::ItemConstant => true,
-            SyntaxKind::ItemModule => true,
-            SyntaxKind::ItemUse => true,
-            SyntaxKind::FunctionWithBody => true,
-            SyntaxKind::ItemExternFunction => true,
-            SyntaxKind::ItemExternType => true,
-            SyntaxKind::ItemTrait => true,
-            SyntaxKind::ItemImpl => true,
-            SyntaxKind::ItemImplAlias => true,
-            SyntaxKind::ItemStruct => true,
-            SyntaxKind::ItemEnum => true,
-            SyntaxKind::ItemTypeAlias => true,
-            SyntaxKind::ItemInlineMacro => true,
-            SyntaxKind::ItemHeaderDoc => true,
-            SyntaxKind::ModuleItemMissing => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::ItemConstant
+                | SyntaxKind::ItemModule
+                | SyntaxKind::ItemUse
+                | SyntaxKind::FunctionWithBody
+                | SyntaxKind::ItemExternFunction
+                | SyntaxKind::ItemExternType
+                | SyntaxKind::ItemTrait
+                | SyntaxKind::ItemImpl
+                | SyntaxKind::ItemImplAlias
+                | SyntaxKind::ItemStruct
+                | SyntaxKind::ItemEnum
+                | SyntaxKind::ItemTypeAlias
+                | SyntaxKind::ItemInlineMacro
+                | SyntaxKind::ItemHeaderDoc
+                | SyntaxKind::ModuleItemMissing
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -12608,13 +12542,13 @@ impl From<&OptionVisibilityPubArgumentClause> for SyntaxStablePtrId {
     }
 }
 impl OptionVisibilityPubArgumentClause {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionVisibilityPubArgumentClause].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionVisibilityPubArgumentClauseEmpty => true,
-            SyntaxKind::VisibilityPubArgumentClause => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::OptionVisibilityPubArgumentClauseEmpty
+                | SyntaxKind::VisibilityPubArgumentClause
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -12863,13 +12797,9 @@ impl From<&Visibility> for SyntaxStablePtrId {
     }
 }
 impl Visibility {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [Visibility].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::VisibilityDefault => true,
-            SyntaxKind::VisibilityPub => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::VisibilityDefault | SyntaxKind::VisibilityPub)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -13071,13 +13001,9 @@ impl From<&MaybeModuleBody> for SyntaxStablePtrId {
     }
 }
 impl MaybeModuleBody {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [MaybeModuleBody].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::ModuleBody => true,
-            SyntaxKind::TerminalSemicolon => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::ModuleBody | SyntaxKind::TerminalSemicolon)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14027,13 +13953,9 @@ impl From<&MaybeTraitBody> for SyntaxStablePtrId {
     }
 }
 impl MaybeTraitBody {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [MaybeTraitBody].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::TraitBody => true,
-            SyntaxKind::TerminalSemicolon => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::TraitBody | SyntaxKind::TerminalSemicolon)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14324,16 +14246,16 @@ impl From<&TraitItem> for SyntaxStablePtrId {
     }
 }
 impl TraitItem {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [TraitItem].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::TraitItemFunction => true,
-            SyntaxKind::TraitItemType => true,
-            SyntaxKind::TraitItemConstant => true,
-            SyntaxKind::TraitItemImpl => true,
-            SyntaxKind::TraitItemMissing => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::TraitItemFunction
+                | SyntaxKind::TraitItemType
+                | SyntaxKind::TraitItemConstant
+                | SyntaxKind::TraitItemImpl
+                | SyntaxKind::TraitItemMissing
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14973,13 +14895,9 @@ impl From<&MaybeTraitFunctionBody> for SyntaxStablePtrId {
     }
 }
 impl MaybeTraitFunctionBody {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [MaybeTraitFunctionBody].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::ExprBlock => true,
-            SyntaxKind::TerminalSemicolon => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::ExprBlock | SyntaxKind::TerminalSemicolon)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -15401,13 +15319,9 @@ impl From<&MaybeImplBody> for SyntaxStablePtrId {
     }
 }
 impl MaybeImplBody {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [MaybeImplBody].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::ImplBody => true,
-            SyntaxKind::TerminalSemicolon => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::ImplBody | SyntaxKind::TerminalSemicolon)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -15793,23 +15707,23 @@ impl From<&ImplItem> for SyntaxStablePtrId {
     }
 }
 impl ImplItem {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [ImplItem].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::FunctionWithBody => true,
-            SyntaxKind::ItemTypeAlias => true,
-            SyntaxKind::ItemConstant => true,
-            SyntaxKind::ItemImplAlias => true,
-            SyntaxKind::ItemModule => true,
-            SyntaxKind::ItemUse => true,
-            SyntaxKind::ItemExternFunction => true,
-            SyntaxKind::ItemExternType => true,
-            SyntaxKind::ItemTrait => true,
-            SyntaxKind::ItemStruct => true,
-            SyntaxKind::ItemEnum => true,
-            SyntaxKind::ImplItemMissing => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::FunctionWithBody
+                | SyntaxKind::ItemTypeAlias
+                | SyntaxKind::ItemConstant
+                | SyntaxKind::ItemImplAlias
+                | SyntaxKind::ItemModule
+                | SyntaxKind::ItemUse
+                | SyntaxKind::ItemExternFunction
+                | SyntaxKind::ItemExternType
+                | SyntaxKind::ItemTrait
+                | SyntaxKind::ItemStruct
+                | SyntaxKind::ItemEnum
+                | SyntaxKind::ImplItemMissing
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -16688,14 +16602,12 @@ impl From<&UsePath> for SyntaxStablePtrId {
     }
 }
 impl UsePath {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [UsePath].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::UsePathLeaf => true,
-            SyntaxKind::UsePathSingle => true,
-            SyntaxKind::UsePathMulti => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle | SyntaxKind::UsePathMulti
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -17282,13 +17194,9 @@ impl From<&OptionAliasClause> for SyntaxStablePtrId {
     }
 }
 impl OptionAliasClause {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionAliasClause].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionAliasClauseEmpty => true,
-            SyntaxKind::AliasClause => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::OptionAliasClauseEmpty | SyntaxKind::AliasClause)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -17444,13 +17352,9 @@ impl From<&GenericArg> for SyntaxStablePtrId {
     }
 }
 impl GenericArg {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [GenericArg].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::GenericArgUnnamed => true,
-            SyntaxKind::GenericArgNamed => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::GenericArgUnnamed | SyntaxKind::GenericArgNamed)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -17716,13 +17620,9 @@ impl From<&GenericArgValue> for SyntaxStablePtrId {
     }
 }
 impl GenericArgValue {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [GenericArgValue].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::GenericArgValueExpr => true,
-            SyntaxKind::TerminalUnderscore => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::GenericArgValueExpr | SyntaxKind::TerminalUnderscore)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -18086,13 +17986,12 @@ impl From<&OptionWrappedGenericParamList> for SyntaxStablePtrId {
     }
 }
 impl OptionWrappedGenericParamList {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [OptionWrappedGenericParamList].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::OptionWrappedGenericParamListEmpty => true,
-            SyntaxKind::WrappedGenericParamList => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::OptionWrappedGenericParamListEmpty | SyntaxKind::WrappedGenericParamList
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -18488,16 +18387,16 @@ impl From<&GenericParam> for SyntaxStablePtrId {
     }
 }
 impl GenericParam {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [GenericParam].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::GenericParamType => true,
-            SyntaxKind::GenericParamConst => true,
-            SyntaxKind::GenericParamImplNamed => true,
-            SyntaxKind::GenericParamImplAnonymous => true,
-            SyntaxKind::GenericParamNegativeImpl => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::GenericParamType
+                | SyntaxKind::GenericParamConst
+                | SyntaxKind::GenericParamImplNamed
+                | SyntaxKind::GenericParamImplAnonymous
+                | SyntaxKind::GenericParamNegativeImpl
+        )
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -19165,13 +19064,9 @@ impl From<&SkippedNode> for SyntaxStablePtrId {
     }
 }
 impl SkippedNode {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [SkippedNode].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::AttributeList => true,
-            SyntaxKind::VisibilityPub => true,
-            _ => false,
-        }
+        matches!(kind, SyntaxKind::AttributeList | SyntaxKind::VisibilityPub)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34799,88 +34694,88 @@ impl From<&TokenNode> for SyntaxStablePtrId {
     }
 }
 impl TokenNode {
-    #[allow(clippy::match_like_matches_macro)]
+    /// Checks if a kind of a variant of [TokenNode].
     pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::TerminalIdentifier => true,
-            SyntaxKind::TerminalLiteralNumber => true,
-            SyntaxKind::TerminalShortString => true,
-            SyntaxKind::TerminalString => true,
-            SyntaxKind::TerminalAs => true,
-            SyntaxKind::TerminalConst => true,
-            SyntaxKind::TerminalElse => true,
-            SyntaxKind::TerminalEnum => true,
-            SyntaxKind::TerminalExtern => true,
-            SyntaxKind::TerminalFalse => true,
-            SyntaxKind::TerminalFunction => true,
-            SyntaxKind::TerminalIf => true,
-            SyntaxKind::TerminalWhile => true,
-            SyntaxKind::TerminalFor => true,
-            SyntaxKind::TerminalLoop => true,
-            SyntaxKind::TerminalImpl => true,
-            SyntaxKind::TerminalImplicits => true,
-            SyntaxKind::TerminalLet => true,
-            SyntaxKind::TerminalMatch => true,
-            SyntaxKind::TerminalModule => true,
-            SyntaxKind::TerminalMut => true,
-            SyntaxKind::TerminalNoPanic => true,
-            SyntaxKind::TerminalOf => true,
-            SyntaxKind::TerminalRef => true,
-            SyntaxKind::TerminalContinue => true,
-            SyntaxKind::TerminalReturn => true,
-            SyntaxKind::TerminalBreak => true,
-            SyntaxKind::TerminalStruct => true,
-            SyntaxKind::TerminalTrait => true,
-            SyntaxKind::TerminalTrue => true,
-            SyntaxKind::TerminalType => true,
-            SyntaxKind::TerminalUse => true,
-            SyntaxKind::TerminalPub => true,
-            SyntaxKind::TerminalAnd => true,
-            SyntaxKind::TerminalAndAnd => true,
-            SyntaxKind::TerminalArrow => true,
-            SyntaxKind::TerminalAt => true,
-            SyntaxKind::TerminalBadCharacters => true,
-            SyntaxKind::TerminalColon => true,
-            SyntaxKind::TerminalColonColon => true,
-            SyntaxKind::TerminalComma => true,
-            SyntaxKind::TerminalDiv => true,
-            SyntaxKind::TerminalDivEq => true,
-            SyntaxKind::TerminalDot => true,
-            SyntaxKind::TerminalDotDot => true,
-            SyntaxKind::TerminalEndOfFile => true,
-            SyntaxKind::TerminalEq => true,
-            SyntaxKind::TerminalEqEq => true,
-            SyntaxKind::TerminalGE => true,
-            SyntaxKind::TerminalGT => true,
-            SyntaxKind::TerminalHash => true,
-            SyntaxKind::TerminalLBrace => true,
-            SyntaxKind::TerminalLBrack => true,
-            SyntaxKind::TerminalLE => true,
-            SyntaxKind::TerminalLParen => true,
-            SyntaxKind::TerminalLT => true,
-            SyntaxKind::TerminalMatchArrow => true,
-            SyntaxKind::TerminalMinus => true,
-            SyntaxKind::TerminalMinusEq => true,
-            SyntaxKind::TerminalMod => true,
-            SyntaxKind::TerminalModEq => true,
-            SyntaxKind::TerminalMul => true,
-            SyntaxKind::TerminalMulEq => true,
-            SyntaxKind::TerminalNeq => true,
-            SyntaxKind::TerminalNot => true,
-            SyntaxKind::TerminalBitNot => true,
-            SyntaxKind::TerminalOr => true,
-            SyntaxKind::TerminalOrOr => true,
-            SyntaxKind::TerminalPlus => true,
-            SyntaxKind::TerminalPlusEq => true,
-            SyntaxKind::TerminalQuestionMark => true,
-            SyntaxKind::TerminalRBrace => true,
-            SyntaxKind::TerminalRBrack => true,
-            SyntaxKind::TerminalRParen => true,
-            SyntaxKind::TerminalSemicolon => true,
-            SyntaxKind::TerminalUnderscore => true,
-            SyntaxKind::TerminalXor => true,
-            SyntaxKind::TerminalEmpty => true,
-            _ => false,
-        }
+        matches!(
+            kind,
+            SyntaxKind::TerminalIdentifier
+                | SyntaxKind::TerminalLiteralNumber
+                | SyntaxKind::TerminalShortString
+                | SyntaxKind::TerminalString
+                | SyntaxKind::TerminalAs
+                | SyntaxKind::TerminalConst
+                | SyntaxKind::TerminalElse
+                | SyntaxKind::TerminalEnum
+                | SyntaxKind::TerminalExtern
+                | SyntaxKind::TerminalFalse
+                | SyntaxKind::TerminalFunction
+                | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalWhile
+                | SyntaxKind::TerminalFor
+                | SyntaxKind::TerminalLoop
+                | SyntaxKind::TerminalImpl
+                | SyntaxKind::TerminalImplicits
+                | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalMatch
+                | SyntaxKind::TerminalModule
+                | SyntaxKind::TerminalMut
+                | SyntaxKind::TerminalNoPanic
+                | SyntaxKind::TerminalOf
+                | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalContinue
+                | SyntaxKind::TerminalReturn
+                | SyntaxKind::TerminalBreak
+                | SyntaxKind::TerminalStruct
+                | SyntaxKind::TerminalTrait
+                | SyntaxKind::TerminalTrue
+                | SyntaxKind::TerminalType
+                | SyntaxKind::TerminalUse
+                | SyntaxKind::TerminalPub
+                | SyntaxKind::TerminalAnd
+                | SyntaxKind::TerminalAndAnd
+                | SyntaxKind::TerminalArrow
+                | SyntaxKind::TerminalAt
+                | SyntaxKind::TerminalBadCharacters
+                | SyntaxKind::TerminalColon
+                | SyntaxKind::TerminalColonColon
+                | SyntaxKind::TerminalComma
+                | SyntaxKind::TerminalDiv
+                | SyntaxKind::TerminalDivEq
+                | SyntaxKind::TerminalDot
+                | SyntaxKind::TerminalDotDot
+                | SyntaxKind::TerminalEndOfFile
+                | SyntaxKind::TerminalEq
+                | SyntaxKind::TerminalEqEq
+                | SyntaxKind::TerminalGE
+                | SyntaxKind::TerminalGT
+                | SyntaxKind::TerminalHash
+                | SyntaxKind::TerminalLBrace
+                | SyntaxKind::TerminalLBrack
+                | SyntaxKind::TerminalLE
+                | SyntaxKind::TerminalLParen
+                | SyntaxKind::TerminalLT
+                | SyntaxKind::TerminalMatchArrow
+                | SyntaxKind::TerminalMinus
+                | SyntaxKind::TerminalMinusEq
+                | SyntaxKind::TerminalMod
+                | SyntaxKind::TerminalModEq
+                | SyntaxKind::TerminalMul
+                | SyntaxKind::TerminalMulEq
+                | SyntaxKind::TerminalNeq
+                | SyntaxKind::TerminalNot
+                | SyntaxKind::TerminalBitNot
+                | SyntaxKind::TerminalOr
+                | SyntaxKind::TerminalOrOr
+                | SyntaxKind::TerminalPlus
+                | SyntaxKind::TerminalPlusEq
+                | SyntaxKind::TerminalQuestionMark
+                | SyntaxKind::TerminalRBrace
+                | SyntaxKind::TerminalRBrack
+                | SyntaxKind::TerminalRParen
+                | SyntaxKind::TerminalSemicolon
+                | SyntaxKind::TerminalUnderscore
+                | SyntaxKind::TerminalXor
+                | SyntaxKind::TerminalEmpty
+        )
     }
 }

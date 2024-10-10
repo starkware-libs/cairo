@@ -3,13 +3,13 @@
 mod test;
 
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{
     TokenNewline, TokenSingleLineComment, TokenSingleLineDocComment, TokenSingleLineInnerComment,
     TokenWhitespace, TriviumGreen,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::Token;
 use cairo_lang_utils::require;
 use smol_str::SmolStr;
 
@@ -124,8 +124,8 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    /// Token matchers.
-    /// =================================================================================
+    // Token matchers.
+    // =================================================================================
 
     /// Takes a number. May be decimal, hex, oct or bin.
     fn take_token_literal_number(&mut self) -> TokenKind {

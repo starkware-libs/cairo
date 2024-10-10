@@ -10,8 +10,8 @@ use num_bigint::BigInt;
 use super::{bounded, build_const, build_small_diff, build_small_wide_mul};
 use crate::invocations::range_reduction::build_felt252_range_reduction;
 use crate::invocations::{
-    add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, BuiltinInfo,
-    CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo, InvocationError,
+    BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
+    InvocationError, add_input_variables, bitwise, get_non_fallthrough_statement_id, misc,
 };
 
 /// Handles a small uint overflowing add operation.

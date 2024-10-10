@@ -1,7 +1,7 @@
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use test_log::test;
 
-use crate::edit_state::{put_results, take_args, EditStateError};
+use crate::edit_state::{EditStateError, put_results, take_args};
 use crate::ids::VarId;
 
 pub type State = OrderedHashMap<VarId, i64>;

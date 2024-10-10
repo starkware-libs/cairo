@@ -330,7 +330,7 @@ pub enum DeprecatedHint {
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
-impl<'a> Display for DerefOrImmediateFormatter<'a> {
+impl Display for DerefOrImmediateFormatter<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self.0 {
             DerefOrImmediate::Deref(d) => write!(f, "memory{d}"),
@@ -340,7 +340,7 @@ impl<'a> Display for DerefOrImmediateFormatter<'a> {
 }
 
 struct ResOperandAsIntegerFormatter<'a>(&'a ResOperand);
-impl<'a> Display for ResOperandAsIntegerFormatter<'a> {
+impl Display for ResOperandAsIntegerFormatter<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self.0 {
             ResOperand::Deref(d) => write!(f, "memory{d}"),
@@ -360,7 +360,7 @@ impl<'a> Display for ResOperandAsIntegerFormatter<'a> {
 }
 
 struct ResOperandAsAddressFormatter<'a>(&'a ResOperand);
-impl<'a> Display for ResOperandAsAddressFormatter<'a> {
+impl Display for ResOperandAsAddressFormatter<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self.0 {
             ResOperand::Deref(d) => write!(f, "memory{d}"),

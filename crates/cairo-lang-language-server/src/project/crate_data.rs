@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CrateConfiguration, CrateSettings, FilesGroup, FilesGroupEx,
-    CORELIB_CRATE_NAME,
+    AsFilesGroupMut, CORELIB_CRATE_NAME, CrateConfiguration, CrateSettings, FilesGroup,
+    FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_utils::{Intern, LookupIntern};
@@ -17,6 +17,11 @@ use crate::lang::db::AnalysisDatabase;
 pub struct Crate {
     /// Crate name.
     pub name: SmolStr,
+
+    /// Globally unique crate ID used for differentiating between crates with the same name.
+    ///
+    /// `None` is reserved for the core crate.
+    pub discriminator: Option<SmolStr>,
 
     /// The root directory of the crate.
     ///
@@ -36,9 +41,16 @@ pub struct Crate {
 impl Crate {
     /// Applies this crate to the [`AnalysisDatabase`].
     pub fn apply(&self, db: &mut AnalysisDatabase) {
-        let crate_id =
-            CrateLongId::Real { name: self.name.clone(), version: self.settings.version.clone() }
-                .intern(db);
+        assert!(
+            (self.name == CORELIB_CRATE_NAME) ^ self.discriminator.is_some(),
+            "invariant violation: only the `core` crate should have no discriminator"
+        );
+
+        let crate_id = CrateLongId::Real {
+            name: self.name.clone(),
+            discriminator: self.discriminator.clone(),
+        }
+        .intern(db);
 
         let crate_configuration = CrateConfiguration {
             root: Directory::Real(self.root.clone()),
@@ -55,7 +67,7 @@ impl Crate {
     ///
     /// Returns `None` if the crate is virtual or the crate configuration is missing.
     pub fn reconstruct(db: &AnalysisDatabase, crate_id: CrateId) -> Option<Self> {
-        let CrateLongId::Real { name, .. } = crate_id.lookup_intern(db) else {
+        let CrateLongId::Real { name, discriminator } = crate_id.lookup_intern(db) else {
             return None;
         };
 
@@ -67,7 +79,7 @@ impl Crate {
 
         let custom_main_file_stems = extract_custom_file_stems(db, crate_id);
 
-        Some(Self { name, root, custom_main_file_stems, settings })
+        Some(Self { name, discriminator, root, custom_main_file_stems, settings })
     }
 
     /// States whether this is the `core` crate.

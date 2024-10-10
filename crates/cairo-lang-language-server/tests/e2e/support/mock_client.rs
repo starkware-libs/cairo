@@ -7,12 +7,12 @@ use std::{fmt, future, mem, process};
 
 use cairo_lang_language_server::build_service_for_e2e_tests;
 use futures::channel::mpsc;
-use futures::{join, stream, FutureExt, SinkExt, StreamExt, TryFutureExt};
+use futures::{FutureExt, SinkExt, StreamExt, TryFutureExt, join, stream};
 use lsp_types::request::Request as LspRequest;
 use lsp_types::{lsp_notification, lsp_request};
 use serde_json::Value;
 use tokio::time::timeout;
-use tower_lsp::{jsonrpc, lsp_types, ClientSocket, LanguageServer, LspService};
+use tower_lsp::{ClientSocket, LanguageServer, LspService, jsonrpc, lsp_types};
 use tower_service::Service;
 
 use crate::support::fixture::Fixture;

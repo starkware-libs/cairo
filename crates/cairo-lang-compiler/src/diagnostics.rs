@@ -7,8 +7,8 @@ use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -25,7 +25,7 @@ trait DiagnosticCallback {
     fn on_diagnostic(&mut self, diagnostic: FormattedDiagnosticEntry);
 }
 
-impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
+impl DiagnosticCallback for Option<Box<dyn DiagnosticCallback + '_>> {
     fn on_diagnostic(&mut self, diagnostic: FormattedDiagnosticEntry) {
         if let Some(callback) = self {
             callback.on_diagnostic(diagnostic)

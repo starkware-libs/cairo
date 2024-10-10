@@ -94,11 +94,8 @@ fn test_instruction_with_hint() {
         hints: vec![CoreHint::AllocSegment { dst }.into()],
     };
 
-    assert_eq!(
-        abs_jmp_insn.to_string(),
-        indoc! {"
+    assert_eq!(abs_jmp_insn.to_string(), indoc! {"
             %{ memory[ap + 5] = segments.add() %}
             jmp abs 3"
-        }
-    );
+    });
 }

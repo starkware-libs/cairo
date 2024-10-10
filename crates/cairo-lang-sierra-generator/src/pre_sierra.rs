@@ -6,7 +6,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
-use cairo_lang_utils::{define_short_id, write_comma_separated, LookupIntern};
+use cairo_lang_utils::{LookupIntern, define_short_id, write_comma_separated};
 
 use crate::db::SierraGenGroup;
 
@@ -25,7 +25,7 @@ pub struct LabelIdWithDb<'db> {
     db: &'db dyn SierraGenGroup,
     label_id: LabelId,
 }
-impl<'db> std::fmt::Display for LabelIdWithDb<'db> {
+impl std::fmt::Display for LabelIdWithDb<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let LabelLongId { parent, id } = self.label_id.lookup_intern(self.db);
         let parent = parent.function_id(self.db.upcast()).unwrap();
@@ -95,7 +95,7 @@ struct StatementWithDb<'db> {
     db: &'db dyn SierraGenGroup,
     statement: Statement,
 }
-impl<'db> std::fmt::Display for StatementWithDb<'db> {
+impl std::fmt::Display for StatementWithDb<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.statement {
             Statement::Sierra(value) => {

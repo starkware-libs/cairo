@@ -12,15 +12,15 @@ use cairo_lang_defs::ids::{
     LookupItemId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId, TraitId,
     TraitImplId, TraitTypeId, VarId, VariantId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
+use cairo_lang_diagnostics::{DiagnosticAdded, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
-use cairo_lang_utils::{define_short_id, extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, define_short_id, extract_matches};
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
-use self::solver::{enrich_lookup_context, Ambiguity, SolutionSet};
-use crate::corelib::{core_felt252_ty, get_core_trait, numeric_literal_trait, CoreTraitContext};
+use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
+use crate::corelib::{CoreTraitContext, core_felt252_ty, get_core_trait, numeric_literal_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -45,11 +45,11 @@ use crate::types::{
     ImplTypeId,
 };
 use crate::{
-    add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id, ConcreteEnumId,
-    ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId, ConcreteStructId,
-    ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant, FunctionId,
-    FunctionLongId, GenericArgumentId, GenericParam, LocalVariable, MatchArmSelector, Member,
-    Parameter, SemanticObject, Signature, TypeId, TypeLongId, ValueSelectorArm,
+    ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
+    ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
+    FunctionId, FunctionLongId, GenericArgumentId, GenericParam, LocalVariable, MatchArmSelector,
+    Member, Parameter, SemanticObject, Signature, TypeId, TypeLongId, ValueSelectorArm,
+    add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id,
 };
 
 pub mod canonic;
@@ -377,26 +377,23 @@ impl InferenceData {
                 .impl_vars_trait_item_mappings
                 .iter()
                 .map(|(k, mappings)| {
-                    (
-                        *k,
-                        ImplVarTraitItemMappings {
-                            types: mappings
-                                .types
-                                .iter()
-                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                                .collect(),
-                            constants: mappings
-                                .constants
-                                .iter()
-                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                                .collect(),
-                            impls: mappings
-                                .impls
-                                .iter()
-                                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                                .collect(),
-                        },
-                    )
+                    (*k, ImplVarTraitItemMappings {
+                        types: mappings
+                            .types
+                            .iter()
+                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                            .collect(),
+                        constants: mappings
+                            .constants
+                            .iter()
+                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                            .collect(),
+                        impls: mappings
+                            .impls
+                            .iter()
+                            .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
+                            .collect(),
+                    })
                 })
                 .collect(),
             type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),
@@ -459,7 +456,7 @@ impl DerefMut for Inference<'_> {
     }
 }
 
-impl<'db> std::fmt::Debug for Inference<'db> {
+impl std::fmt::Debug for Inference<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let x = self.data.debug(self.db.elongate());
         write!(f, "{x:?}")
@@ -1116,7 +1113,7 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for Inference<'a> {
 add_basic_rewrites!(<'a>, Inference<'a>, NoError, @exclude TypeLongId TypeId ImplLongId ImplId ConstValue);
 add_expr_rewrites!(<'a>, Inference<'a>, NoError, @exclude);
 add_rewrite!(<'a>, Inference<'a>, NoError, Ambiguity);
-impl<'a> SemanticRewriter<TypeId, NoError> for Inference<'a> {
+impl SemanticRewriter<TypeId, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, NoError> {
         if value.is_var_free(self.db) {
             return Ok(RewriteResult::NoChange);
@@ -1124,7 +1121,7 @@ impl<'a> SemanticRewriter<TypeId, NoError> for Inference<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
+impl SemanticRewriter<ImplId, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         if value.is_var_free(self.db) {
             return Ok(RewriteResult::NoChange);
@@ -1132,7 +1129,7 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
+impl SemanticRewriter<TypeLongId, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         match value {
             TypeLongId::Var(var) => {
@@ -1200,7 +1197,7 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
+impl SemanticRewriter<ConstValue, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
         match value {
             ConstValue::Var(var, _) => {
@@ -1253,7 +1250,7 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
+impl SemanticRewriter<ImplLongId, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplLongId) -> Result<RewriteResult, NoError> {
         match value {
             ImplLongId::ImplVar(var) => {
@@ -1331,7 +1328,7 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for InferenceIdReplacer<'a> {
 add_basic_rewrites!(<'a>, InferenceIdReplacer<'a>, NoError, @exclude InferenceId);
 add_expr_rewrites!(<'a>, InferenceIdReplacer<'a>, NoError, @exclude);
 add_rewrite!(<'a>, InferenceIdReplacer<'a>, NoError, Ambiguity);
-impl<'a> SemanticRewriter<InferenceId, NoError> for InferenceIdReplacer<'a> {
+impl SemanticRewriter<InferenceId, NoError> for InferenceIdReplacer<'_> {
     fn internal_rewrite(&mut self, value: &mut InferenceId) -> Result<RewriteResult, NoError> {
         if value == &self.from_inference_id {
             *value = self.to_inference_id;

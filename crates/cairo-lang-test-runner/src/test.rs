@@ -5,23 +5,21 @@ use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
 
-use crate::{filter_test_cases, format_for_panic, TestCompilation, TestCompiler};
+use crate::{TestCompilation, TestCompiler, filter_test_cases, format_for_panic};
 
 #[test]
 fn test_compiled_serialization() {
     use std::path::PathBuf;
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test_data");
 
-    let compiler = TestCompiler::try_new(
-        &path,
-        true,
-        false,
-        TestsCompilationConfig {
-            starknet: true,
-            add_statements_functions: false,
-            add_statements_code_locations: false,
-        },
-    )
+    let compiler = TestCompiler::try_new(&path, true, false, TestsCompilationConfig {
+        starknet: true,
+        add_statements_functions: false,
+        add_statements_code_locations: false,
+        contract_declarations: None,
+        contract_crate_ids: None,
+        executable_crate_ids: None,
+    })
     .unwrap();
     let compiled = compiler.build().unwrap();
     let serialized = serde_json::to_string_pretty(&compiled).unwrap();
@@ -228,10 +226,11 @@ fn test_format_for_panic() {
 
 /// Return a named test ([String], [TestConfig]) from a test name and its ignored status.
 fn to_named_test(test: &(&str, bool)) -> (String, TestConfig) {
-    (
-        String::from(test.0),
-        TestConfig { available_gas: None, expectation: TestExpectation::Success, ignored: test.1 },
-    )
+    (String::from(test.0), TestConfig {
+        available_gas: None,
+        expectation: TestExpectation::Success,
+        ignored: test.1,
+    })
 }
 
 /// Return a [TestCompilation] from a list of test names and their ignored status.

@@ -31,8 +31,8 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, require, Intern, LookupIntern, OptionFrom};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, require};
 use smol_str::SmolStr;
 
 use crate::db::DefsGroup;

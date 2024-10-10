@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_semantic::corelib;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::Intern;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
 use crate::db::LoweringGroup;
 use crate::ids::{FunctionId, FunctionLongId};
@@ -24,6 +24,8 @@ pub struct OptimizationConfig {
     pub inline_small_functions_threshold: usize,
     /// Determines whether inlining is disabled.
     pub inlining_strategy: InliningStrategy,
+    /// Should const folding be skipped.
+    pub skip_const_folding: bool,
 }
 
 impl OptimizationConfig {
@@ -44,9 +46,14 @@ impl OptimizationConfig {
         self.inline_small_functions_threshold = inline_small_functions_threshold;
         self
     }
-    /// Sets the `inlining_strategy` flag
+    /// Sets the `inlining_strategy` flag.
     pub fn with_inlining_strategy(mut self, inlining_strategy: InliningStrategy) -> Self {
         self.inlining_strategy = inlining_strategy;
+        self
+    }
+    /// Sets the `skip_const_folding` flag.
+    pub fn with_skip_const_folding(mut self, skip_const_folding: bool) -> Self {
+        self.skip_const_folding = skip_const_folding;
         self
     }
 }
@@ -57,6 +64,7 @@ impl Default for OptimizationConfig {
             moveable_functions: vec![],
             inline_small_functions_threshold: DEFAULT_INLINE_SMALL_FUNCTIONS_THRESHOLD,
             inlining_strategy: InliningStrategy::Default,
+            skip_const_folding: false,
         }
     }
 }

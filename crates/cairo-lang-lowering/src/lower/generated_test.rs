@@ -7,7 +7,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;

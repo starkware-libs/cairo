@@ -8,20 +8,20 @@ use core::borrow::Borrow;
 use core::hash::{BuildHasher, Hash};
 use core::ops::Index;
 #[cfg(feature = "std")]
+use std::collections::HashMap;
+#[cfg(feature = "std")]
 pub use std::collections::hash_map::Entry;
 #[cfg(feature = "std")]
 use std::collections::hash_map::OccupiedEntry;
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
 #[cfg(feature = "std")]
-use std::collections::HashMap;
-#[cfg(feature = "std")]
 use std::vec;
 
 #[cfg(not(feature = "std"))]
-pub use hashbrown::hash_map::Entry;
-#[cfg(not(feature = "std"))]
 use hashbrown::HashMap;
+#[cfg(not(feature = "std"))]
+pub use hashbrown::hash_map::Entry;
 use itertools::Itertools;
 
 /// A hash map that does not care about the order of insertion.

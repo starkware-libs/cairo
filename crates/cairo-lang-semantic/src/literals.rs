@@ -4,7 +4,7 @@ use cairo_lang_utils::{require, try_extract_matches};
 use id_arena::Arena;
 use num_bigint::BigInt;
 
-use crate::corelib::{get_core_trait, CoreTraitContext};
+use crate::corelib::{CoreTraitContext, get_core_trait};
 use crate::db::SemanticGroup;
 use crate::items::functions::GenericFunctionId;
 use crate::{Expr, ExprFunctionCall, ExprFunctionCallArg};

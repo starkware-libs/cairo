@@ -15,11 +15,11 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::element_list::ElementList;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 use salsa::InternKey;
 
 use crate::ids::*;
@@ -656,16 +656,13 @@ fn priv_module_sub_files(
                     .as_intern_id(),
                 )
                 .intern(db);
-                files.insert(
-                    generated_file_id,
-                    VirtualFile {
-                        parent: Some(file_id),
-                        name: generated.name,
-                        content: generated.content.into(),
-                        code_mappings: generated.code_mappings.into(),
-                        kind: FileKind::Module,
-                    },
-                );
+                files.insert(generated_file_id, VirtualFile {
+                    parent: Some(file_id),
+                    name: generated.name,
+                    content: generated.content.into(),
+                    code_mappings: generated.code_mappings.into(),
+                    kind: FileKind::Module,
+                });
                 aux_data.push(generated.aux_data);
             }
             if remove_original_item {

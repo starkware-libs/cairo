@@ -12,7 +12,7 @@ use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{
-    args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
+    ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError, args_as_single_type,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;

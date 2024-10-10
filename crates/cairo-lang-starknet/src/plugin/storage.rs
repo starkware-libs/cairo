@@ -2,11 +2,11 @@ use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use indoc::formatdoc;
 
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
-use super::starknet_module::{backwards_compatible_storage, StarknetModuleKind};
+use super::starknet_module::{StarknetModuleKind, backwards_compatible_storage};
 use super::storage_interfaces::handle_storage_interface_struct;
 use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, FLAT_ATTR, STORAGE_STRUCT_NAME};
 use crate::plugin::SUBSTORAGE_ATTR;

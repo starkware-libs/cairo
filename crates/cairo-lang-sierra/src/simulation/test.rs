@@ -2,20 +2,20 @@ use bimap::BiMap;
 use num_bigint::BigInt;
 use test_case::test_case;
 
-use super::value::CoreValue::{
-    self, Array, GasBuiltin, RangeCheck, Uint128, Uint32, Uninitialized,
-};
 use super::LibfuncSimulationError::{
     self, FunctionSimulationError, WrongArgType, WrongNumberOfArgs,
 };
-use super::{core, SimulationError};
+use super::value::CoreValue::{
+    self, Array, GasBuiltin, RangeCheck, Uint32, Uint128, Uninitialized,
+};
+use super::{SimulationError, core};
+use crate::extensions::GenericLibfunc;
 use crate::extensions::core::CoreLibfunc;
 use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::GenericLibfunc;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, Function, FunctionSignature, GenericArg, StatementIdx};
 use crate::test_utils::build_bijective_mapping;

@@ -28,10 +28,8 @@ fn test_serialization() {
 
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
 
-    assert_eq!(
-        &serialized,
-        indoc! {
-            r#"
+    assert_eq!(&serialized, indoc! {
+    r#"
         {
           "sierra_program": [],
           "sierra_program_debug_info": null,
@@ -47,8 +45,7 @@ fn test_serialization() {
             "CONSTRUCTOR": []
           },
           "abi": null
-        }"#}
-    );
+        }"#});
 
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
 }

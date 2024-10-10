@@ -3,14 +3,14 @@ use std::sync::OnceLock;
 use std::{fs, path};
 
 use anyhow::Context;
-use cairo_lang_filesystem::db::{init_dev_corelib, CORELIB_CRATE_NAME};
+use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, init_dev_corelib};
 use indoc::indoc;
 use tempfile::tempdir;
 use tracing::{error, warn};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
-use crate::toolchain::scarb::{ScarbToolchain, SCARB_TOML};
+use crate::toolchain::scarb::{SCARB_TOML, ScarbToolchain};
 
 /// Try to find a Cairo `core` crate (see [`find_unmanaged_core`]) and initialize it in the
 /// provided database.
@@ -96,14 +96,11 @@ fn find_scarb_managed_core(scarb: &ScarbToolchain) -> Option<PathBuf> {
             .ok()?;
 
         let scarb_toml = workspace.path().join(SCARB_TOML);
-        fs::write(
-            &scarb_toml,
-            indoc! {r#"
+        fs::write(&scarb_toml, indoc! {r#"
                 [package]
                 name = "cairols_unmanaged_core_lookup"
                 version = "1.0.0"
-            "#},
-        )
+            "#})
         .context("failed to write Scarb.toml")
         .inspect_err(|e| warn!("{e:?}"))
         .ok()?;

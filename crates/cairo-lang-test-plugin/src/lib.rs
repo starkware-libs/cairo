@@ -1,12 +1,13 @@
 use std::default::Default;
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Result, ensure};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::get_sierra_program_for_functions;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -23,18 +24,19 @@ use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::DebugReplacer;
 use cairo_lang_sierra_generator::statements_locations::StatementsLocations;
 use cairo_lang_starknet::contract::{
-    find_contracts, get_contract_abi_functions, get_contracts_info, ContractInfo,
+    ContractDeclaration, ContractInfo, find_contracts, get_contract_abi_functions,
+    get_contracts_info,
 };
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet_classes::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_utils::ordered_hash_map::{
-    deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
+    OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 pub use plugin::TestPlugin;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
-pub use test_config::{try_extract_test_config, TestConfig};
+pub use test_config::{TestConfig, try_extract_test_config};
 
 mod inline_macros;
 pub mod plugin;
@@ -51,6 +53,19 @@ const STATIC_GAS_ARG: &str = "static";
 pub struct TestsCompilationConfig {
     /// Adds the starknet contracts to the compiled tests.
     pub starknet: bool,
+
+    /// Contracts to compile.
+    /// If defined, only this contacts will be available in tests.
+    /// If not, all contracts from `contract_crate_ids` will be compiled.
+    pub contract_declarations: Option<Vec<ContractDeclaration>>,
+
+    /// Crates to be searched for contracts.
+    /// If not defined, all crates will be searched.
+    pub contract_crate_ids: Option<Vec<CrateId>>,
+
+    /// Crates to be searched for executable attributes.
+    /// If not defined, test crates will be searched.
+    pub executable_crate_ids: Option<Vec<CrateId>>,
 
     /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
     /// [Annotations] in [DebugInfo] in the compiled tests.
@@ -75,12 +90,27 @@ pub struct TestsCompilationConfig {
 pub fn compile_test_prepared_db(
     db: &RootDatabase,
     tests_compilation_config: TestsCompilationConfig,
-    main_crate_ids: Vec<CrateId>,
     test_crate_ids: Vec<CrateId>,
     diagnostics_reporter: DiagnosticsReporter<'_>,
 ) -> Result<TestCompilation> {
+    ensure!(
+        tests_compilation_config.starknet
+            || tests_compilation_config.contract_declarations.is_none(),
+        "Contract declarations can be provided only when starknet is enabled."
+    );
+    ensure!(
+        tests_compilation_config.starknet || tests_compilation_config.contract_crate_ids.is_none(),
+        "Contract crate ids can be provided only when starknet is enabled."
+    );
+
+    let contracts = tests_compilation_config.contract_declarations.unwrap_or_else(|| {
+        find_contracts(
+            db,
+            &tests_compilation_config.contract_crate_ids.unwrap_or_else(|| db.crates()),
+        )
+    });
     let all_entry_points = if tests_compilation_config.starknet {
-        find_contracts(db, &main_crate_ids)
+        contracts
             .iter()
             .flat_map(|contract| {
                 chain!(
@@ -96,7 +126,10 @@ pub fn compile_test_prepared_db(
         vec![]
     };
 
-    let executable_functions = find_executable_function_ids(db, main_crate_ids.clone());
+    let executable_functions = find_executable_function_ids(
+        db,
+        tests_compilation_config.executable_crate_ids.unwrap_or_else(|| test_crate_ids.clone()),
+    );
     let all_tests = find_all_tests(db, test_crate_ids.clone());
 
     let func_ids = chain!(
@@ -157,7 +190,7 @@ pub fn compile_test_prepared_db(
             )
         })
         .collect_vec();
-    let contracts_info = get_contracts_info(db, main_crate_ids.clone(), &replacer)?;
+    let contracts_info = get_contracts_info(db, contracts, &replacer)?;
     let sierra_program = ProgramArtifact::stripped(sierra_program).with_debug_info(DebugInfo {
         executables,
         annotations,

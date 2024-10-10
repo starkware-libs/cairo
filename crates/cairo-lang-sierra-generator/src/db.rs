@@ -79,7 +79,6 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
 
     /// Returns if the semantic id has a circular definition.
     #[salsa::invoke(crate::types::is_self_referential)]
-    #[salsa::cycle(crate::types::is_self_referential_cycle)]
     fn is_self_referential(&self, type_id: semantic::TypeId) -> Maybe<bool>;
 
     /// Returns the semantic type ids the type is directly dependent on.
@@ -88,6 +87,10 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     /// reference to it.
     #[salsa::invoke(crate::types::type_dependencies)]
     fn type_dependencies(&self, type_id: semantic::TypeId) -> Maybe<Arc<[semantic::TypeId]>>;
+
+    #[salsa::invoke(crate::types::has_in_deps)]
+    #[salsa::cycle(crate::types::has_in_deps_cycle)]
+    fn has_in_deps(&self, type_id: semantic::TypeId, needle: semantic::TypeId) -> Maybe<bool>;
 
     /// Returns the [cairo_lang_sierra::program::FunctionSignature] object for the given function
     /// id.

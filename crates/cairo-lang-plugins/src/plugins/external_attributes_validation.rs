@@ -2,7 +2,7 @@ use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 
 #[derive(Debug, Default)]
 #[non_exhaustive]

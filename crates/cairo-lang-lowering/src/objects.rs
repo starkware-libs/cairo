@@ -10,6 +10,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::items::imp::ImplLookupContext;
+use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
@@ -17,10 +19,10 @@ use id_arena::{Arena, Id};
 
 pub mod blocks;
 pub use blocks::BlockId;
+use semantic::MatchArmSelector;
 use semantic::expr::inference::InferenceError;
 use semantic::items::constant::ConstValue;
 use semantic::items::imp::ImplId;
-use semantic::MatchArmSelector;
 
 use self::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
@@ -219,6 +221,26 @@ pub struct Variable {
     pub ty: semantic::TypeId,
     /// Location of the variable.
     pub location: LocationId,
+}
+impl Variable {
+    pub fn new(
+        db: &dyn LoweringGroup,
+        ctx: ImplLookupContext,
+        ty: semantic::TypeId,
+        location: LocationId,
+    ) -> Self {
+        let TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl } =
+            match db.type_info(ctx, ty) {
+                Ok(info) => info,
+                Err(diag_added) => TypeInfo {
+                    droppable: Err(InferenceError::Reported(diag_added)),
+                    copyable: Err(InferenceError::Reported(diag_added)),
+                    destruct_impl: Err(InferenceError::Reported(diag_added)),
+                    panic_destruct_impl: Err(InferenceError::Reported(diag_added)),
+                },
+            };
+        Self { copyable, droppable, destruct_impl, panic_destruct_impl, ty, location }
+    }
 }
 
 /// Lowered statement.

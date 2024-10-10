@@ -11,8 +11,8 @@ use unescaper::unescape;
 use super::{
     TerminalFalse, TerminalLiteralNumber, TerminalShortString, TerminalString, TerminalTrue,
 };
-use crate::node::db::SyntaxGroup;
 use crate::node::Terminal;
+use crate::node::db::SyntaxGroup;
 
 impl TerminalTrue {
     #[inline(always)]

@@ -9,9 +9,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigInt;
 
 use super::misc::get_pointer_after_program_code;
-use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError, misc};
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CostValidationInfo,
+    BuiltinInfo, CostValidationInfo, add_input_variables, get_non_fallthrough_statement_id,
 };
 use crate::references::ReferenceExpression;
 use crate::relocations::InstructionsWithRelocations;

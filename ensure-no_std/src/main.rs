@@ -18,7 +18,7 @@ pub extern "C" fn _start() -> ! {
 // NOTE: this should be initialized before use
 static ALLOC: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 use cairo_lang_casm;
-#[allow(unused_imports)]
+#[expect(unused_imports)]
 use cairo_lang_utils;

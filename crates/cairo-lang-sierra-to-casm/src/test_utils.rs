@@ -13,9 +13,6 @@ pub fn read_sierra_example_file(name: &str) -> String {
 
 /// Removes all comments and empty lines from the given program.
 pub fn strip_comments_and_linebreaks(program: &str) -> String {
-    return program
-        .split('\n')
-        .filter(|line| !(line.is_empty() || line.starts_with("//")))
-        .join("\n")
-        + "\n";
+    program.split('\n').filter(|line| !(line.is_empty() || line.starts_with("//"))).join("\n")
+        + "\n"
 }

@@ -1,9 +1,9 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
-use crate::db::{get_direct_callees, LoweringGroup};
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId};
 use crate::DependencyType;
+use crate::db::{LoweringGroup, get_direct_callees};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionWithBodyId};
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::function_with_body_direct_callees].

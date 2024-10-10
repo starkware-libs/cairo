@@ -8,17 +8,17 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::Intern;
 
 use crate::block_generator::generate_function_statements;
 use crate::db::SierraGenGroup;
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::lifetime::{find_variable_lifetime, SierraGenVar};
-use crate::local_variables::{analyze_ap_changes, AnalyzeApChangesResult};
+use crate::lifetime::{SierraGenVar, find_variable_lifetime};
+use crate::local_variables::{AnalyzeApChangesResult, analyze_ap_changes};
 use crate::pre_sierra;
-use crate::store_variables::{add_store_statements, LibfuncInfo, LocalVariables};
+use crate::store_variables::{LibfuncInfo, LocalVariables, add_store_statements};
 use crate::utils::{
     alloc_local_libfunc_id, disable_ap_tracking_libfunc_id, finalize_locals_libfunc_id,
     get_concrete_libfunc_id, get_libfunc_signature, revoke_ap_tracking_libfunc_id,
@@ -104,11 +104,8 @@ fn get_function_code(
     // Revoking ap tracking as the first non-local command for unknown ap-change function, to allow
     // proper ap-equation solving. TODO(orizi): Fix the solver to not require this constraint.
     if !known_ap_change && context.get_ap_tracking() {
-        context.push_statement(simple_basic_statement(
-            disable_ap_tracking_libfunc_id(db),
-            &[],
-            &[],
-        ));
+        context
+            .push_statement(simple_basic_statement(disable_ap_tracking_libfunc_id(db), &[], &[]));
         context.set_ap_tracking(false);
     }
 

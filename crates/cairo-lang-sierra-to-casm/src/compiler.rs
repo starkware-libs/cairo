@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{
@@ -10,13 +11,12 @@ use cairo_lang_sierra::extensions::core::{
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
-use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{
     BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
 };
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
+use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -30,11 +30,11 @@ use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotatio
 use crate::circuit::CircuitsInfo;
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
-    check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
+    BranchChanges, InvocationError, ProgramInfo, check_references_on_stack, compile_invocation,
 };
 use crate::metadata::Metadata;
-use crate::references::{check_types_match, ReferenceValue, ReferencesError};
-use crate::relocations::{relocate_instructions, RelocationEntry};
+use crate::references::{ReferenceValue, ReferencesError, check_types_match};
+use crate::relocations::{RelocationEntry, relocate_instructions};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]

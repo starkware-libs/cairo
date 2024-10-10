@@ -11,7 +11,7 @@ use cairo_lang_casm::operand::{
 };
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
-use cairo_lang_utils::byte_array::{BYTES_IN_WORD, BYTE_ARRAY_MAGIC};
+use cairo_lang_utils::byte_array::{BYTE_ARRAY_MAGIC, BYTES_IN_WORD};
 use cairo_lang_utils::extract_matches;
 use cairo_vm::hint_processor::hint_processor_definition::{
     HintProcessor, HintProcessorLogic, HintReference,
@@ -620,13 +620,13 @@ impl<'a> MemBuffer<'a> {
     }
 }
 
-impl<'a> VMWrapper for MemBuffer<'a> {
+impl VMWrapper for MemBuffer<'_> {
     fn vm(&mut self) -> &mut VirtualMachine {
         self.vm.vm()
     }
 }
 
-impl<'a> CairoHintProcessor<'a> {
+impl CairoHintProcessor<'_> {
     /// Executes a syscall.
     fn execute_syscall(
         &mut self,

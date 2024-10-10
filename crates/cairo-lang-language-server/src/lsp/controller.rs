@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroupEx, PrivRawFileContentQuery};
 use serde_json::Value;
+use tower_lsp::LanguageServer;
 use tower_lsp::jsonrpc::Result as LSPResult;
 use tower_lsp::lsp_types::{
     CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
@@ -12,7 +13,6 @@ use tower_lsp::lsp_types::{
     SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent, TextEdit, Url,
     WorkspaceEdit,
 };
-use tower_lsp::LanguageServer;
 use tracing::{error, warn};
 
 use crate::lang::lsp::LsProtoGroup;
@@ -21,7 +21,7 @@ use crate::lsp::capabilities::server::{
 };
 use crate::server::commands::ServerCommands;
 use crate::state::Owned;
-use crate::{ide, Backend};
+use crate::{Backend, ide};
 
 /// TODO: Remove when we move to sync world.
 /// This is macro because of lifetimes problems with `self`.

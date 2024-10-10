@@ -1,7 +1,7 @@
 use std::fmt::Write;
 use std::io::{BufReader, Read, Seek};
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use anyhow::Context;
 use cairo_lang_starknet_classes::allowed_libfuncs::{AllowedLibfuncsError, ListSelector};
@@ -11,7 +11,7 @@ use cairo_lang_starknet_classes::casm_contract_class::{
 use cairo_lang_starknet_classes::compiler_version::VersionId;
 use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPoints};
 use cairo_lang_utils::bigint::BigUintAsHex;
-use clap::{arg, Parser};
+use clap::{Parser, arg};
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -484,10 +484,9 @@ async fn retrieve_block_class_hashes(
     class_hashes_bar: &ProgressBar,
 ) {
     if let Ok(response) = client
-        .post::<_, GetStateUpdateResponse>(
-            "starknet_getStateUpdate",
-            GetStateUpdateRequest { block_id: BlockId { block_number } },
-        )
+        .post::<_, GetStateUpdateResponse>("starknet_getStateUpdate", GetStateUpdateRequest {
+            block_id: BlockId { block_number },
+        })
         .await
     {
         class_hashes_bar.inc_length(response.state_diff.declared_classes.len() as u64);
@@ -541,13 +540,10 @@ async fn retrieve_class_from_class_hash(
     classes_tx: &async_channel::Sender<ContractClassInfo>,
 ) {
     if let Ok(response) = client
-        .post::<_, GetStateClassResponse>(
-            "starknet_getClass",
-            GetStateClassRequest {
-                block_id: "latest".to_string(),
-                class_hash: class_hashes.class_hash.clone(),
-            },
-        )
+        .post::<_, GetStateClassResponse>("starknet_getClass", GetStateClassRequest {
+            block_id: "latest".to_string(),
+            class_hash: class_hashes.class_hash.clone(),
+        })
         .await
     {
         classes_tx

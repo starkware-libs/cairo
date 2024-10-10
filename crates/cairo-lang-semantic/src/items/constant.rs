@@ -5,13 +5,13 @@ use cairo_lang_defs::ids::{
     ConstantId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
     NamedLanguageElementId, TraitConstantId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe, ToMaybe, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{
-    define_short_id, extract_matches, try_extract_matches, Intern, LookupIntern,
+    Intern, LookupIntern, define_short_id, extract_matches, try_extract_matches,
 };
 use id_arena::Arena;
 use itertools::Itertools;
@@ -22,13 +22,13 @@ use smol_str::SmolStr;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::ImplId;
 use crate::corelib::{
-    core_box_ty, core_felt252_ty, core_nonzero_ty, get_core_trait, get_core_ty_by_name,
-    try_extract_nz_wrapped_type, validate_literal, CoreTraitContext, LiteralError,
+    CoreTraitContext, LiteralError, core_box_ty, core_felt252_ty, core_nonzero_ty, get_core_trait,
+    get_core_ty_by_name, try_extract_nz_wrapped_type, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{
-    compute_expr_semantic, ComputationContext, ContextFunction, Environment, ExprAndId,
+    ComputationContext, ContextFunction, Environment, ExprAndId, compute_expr_semantic,
 };
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
@@ -36,9 +36,9 @@ use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::types::resolve_type;
 use crate::{
-    semantic_object_for_id, ConcreteTypeId, ConcreteVariant, Expr, ExprBlock, ExprConstant,
-    ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor, FunctionId,
-    GenericParam, SemanticDiagnostic, TypeId, TypeLongId,
+    ConcreteTypeId, ConcreteVariant, Expr, ExprBlock, ExprConstant, ExprFunctionCall,
+    ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor, FunctionId, GenericParam,
+    SemanticDiagnostic, TypeId, TypeLongId, semantic_object_for_id,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]

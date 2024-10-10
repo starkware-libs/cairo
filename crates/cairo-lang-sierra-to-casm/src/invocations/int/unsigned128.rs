@@ -1,16 +1,16 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
-use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::int::IntOperator;
+use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
 use num_traits::{Num, One};
 
 use super::{bounded, build_128bit_diff, build_const};
 use crate::invocations::{
-    add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, BuiltinInfo,
-    CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo, InvocationError,
+    BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
+    InvocationError, add_input_variables, bitwise, get_non_fallthrough_statement_id, misc,
 };
 
 /// Builds instructions for Sierra u128 operations.

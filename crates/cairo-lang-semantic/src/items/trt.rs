@@ -12,34 +12,34 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, define_short_id, try_extract_matches};
 use smol_str::SmolStr;
 
-use super::function_with_body::{get_implicit_precedence, get_inline_config, FunctionBodyData};
+use super::TraitOrImplContext;
+use super::function_with_body::{FunctionBodyData, get_implicit_precedence, get_inline_config};
 use super::functions::{
     FunctionDeclarationData, GenericFunctionId, ImplicitPrecedence, InlineConfiguration,
 };
 use super::generics::{
-    generic_params_to_args, semantic_generic_params, semantic_generic_params_ex, GenericParamsData,
+    GenericParamsData, generic_params_to_args, semantic_generic_params, semantic_generic_params_ex,
 };
 use super::imp::{GenericsHeadFilter, TraitFilter};
-use super::TraitOrImplContext;
-use crate::db::{get_resolver_data_options, SemanticGroup};
+use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::compute::{compute_root_expr, ComputationContext, ContextFunction, Environment};
-use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
 use crate::expr::inference::InferenceId;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
-    semantic, semantic_object_for_id, Arenas, FunctionBody, FunctionLongId, GenericArgumentId,
-    GenericParam, Mutability, SemanticDiagnostic, TypeId,
+    Arenas, FunctionBody, FunctionLongId, GenericArgumentId, GenericParam, Mutability,
+    SemanticDiagnostic, TypeId, semantic, semantic_object_for_id,
 };
 
 #[cfg(test)]
@@ -848,10 +848,10 @@ pub fn priv_trait_type_generic_params_data(
     // TODO(yuval): support generics in impls (including validation), then remove this.
     // Generic parameters are not yet supported, make sure there are none.
     if !generic_params_node.is_empty(syntax_db) {
-        diagnostics.report(
-            &generic_params_node,
-            GenericsNotSupportedInItem { scope: "Trait".into(), item_kind: "type".into() },
-        );
+        diagnostics.report(&generic_params_node, GenericsNotSupportedInItem {
+            scope: "Trait".into(),
+            item_kind: "type".into(),
+        });
     }
 
     let resolver_data = Arc::new(resolver.data);

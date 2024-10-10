@@ -2,12 +2,14 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroupEx, CORELIB_CRATE_NAME};
+use cairo_lang_filesystem::db::{
+    CORELIB_CRATE_NAME, CrateConfiguration, CrateSettings, FilesGroupEx,
+};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 pub use cairo_lang_project::*;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Intern;
-use smol_str::SmolStr;
+use smol_str::{SmolStr, ToSmolStr};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ProjectError {
@@ -42,7 +44,7 @@ pub fn setup_single_file_project(
     let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
     if file_stem == "lib" {
         let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
-        let crate_id = CrateId::unversioned(db, crate_name);
+        let crate_id = CrateId::plain(db, crate_name);
         db.set_crate_config(
             crate_id,
             Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf()))),
@@ -50,7 +52,7 @@ pub fn setup_single_file_project(
         Ok(crate_id)
     } else {
         // If file_stem is not lib, create a fake lib file.
-        let crate_id = CrateId::unversioned(db, file_stem);
+        let crate_id = CrateId::plain(db, file_stem);
         db.set_crate_config(
             crate_id,
             Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf()))),
@@ -81,10 +83,7 @@ pub fn update_crate_root(
     crate_name: SmolStr,
     root: Directory,
 ) {
-    let crate_settings = config.content.crates_config.get(&crate_name);
-    let version =
-        if crate_name == CORELIB_CRATE_NAME { None } else { crate_settings.version.clone() };
-    let crate_id = CrateLongId::Real { name: crate_name, version }.intern(db);
+    let (crate_id, crate_settings) = get_crate_id_and_settings(db, crate_name, config);
     db.set_crate_config(
         crate_id,
         Some(CrateConfiguration { root, settings: crate_settings.clone() }),
@@ -136,11 +135,21 @@ pub fn get_main_crate_ids_from_project(
         .content
         .crate_roots
         .keys()
-        .map(|name| {
-            let crate_settings = config.content.crates_config.get(name);
-            let version =
-                if name == CORELIB_CRATE_NAME { None } else { crate_settings.version.clone() };
-            CrateLongId::Real { name: name.clone(), version }.intern(db)
-        })
+        .map(|name| get_crate_id_and_settings(db, name.clone(), config).0)
         .collect()
+}
+
+fn get_crate_id_and_settings<'a>(
+    db: &mut dyn SemanticGroup,
+    name: SmolStr,
+    config: &'a ProjectConfig,
+) -> (CrateId, &'a CrateSettings) {
+    let crate_settings = config.content.crates_config.get(&name);
+    let discriminator = if name == CORELIB_CRATE_NAME {
+        None
+    } else {
+        crate_settings.version.as_ref().map(ToSmolStr::to_smolstr)
+    };
+    let crate_id = CrateLongId::Real { name, discriminator }.intern(db);
+    (crate_id, crate_settings)
 }

@@ -22,7 +22,7 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
+    ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError, args_as_single_type,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};

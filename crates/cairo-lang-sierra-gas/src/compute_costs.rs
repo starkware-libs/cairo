@@ -12,9 +12,9 @@ use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 
+use crate::CostError;
 use crate::gas_info::GasInfo;
 use crate::objects::{BranchCost, BranchCostSign, ConstCost, PreCost, WithdrawGasBranchInfo};
-use crate::CostError;
 
 type VariableValues = OrderedHashMap<(StatementIdx, CostTokenType), i64>;
 
@@ -410,7 +410,7 @@ struct CostContext<'a, CostType: CostTypeTrait> {
     /// A partial map from StatementIdx to a requested lower bound on the wallet value.
     target_values: UnorderedHashMap<StatementIdx, CostType>,
 }
-impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
+impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
     /// Returns the cost of a libfunc for every output branch.
     fn get_cost(&self, libfunc_id: &ConcreteLibfuncId) -> Vec<BranchCost> {
         (self.get_cost_fn)(libfunc_id)
@@ -782,7 +782,7 @@ pub struct PostcostContext<'a> {
     pub precost_gas_info: &'a GasInfo,
 }
 
-impl<'a, CostType: PostCostTypeEx> SpecificCostContextTrait<CostType> for PostcostContext<'a> {
+impl<CostType: PostCostTypeEx> SpecificCostContextTrait<CostType> for PostcostContext<'_> {
     fn to_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64> {
         if cost == CostType::default() { Default::default() } else { Self::to_full_cost_map(cost) }
     }
@@ -860,7 +860,7 @@ impl<'a, CostType: PostCostTypeEx> SpecificCostContextTrait<CostType> for Postco
     }
 }
 
-impl<'a> PostcostContext<'a> {
+impl PostcostContext<'_> {
     /// Computes the cost of the withdraw_gas libfunc.
     fn compute_withdraw_gas_cost(
         &self,

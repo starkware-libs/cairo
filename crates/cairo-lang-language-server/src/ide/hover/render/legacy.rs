@@ -1,9 +1,9 @@
 use cairo_lang_defs::ids::{FunctionWithBodyId, LookupItemId};
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_semantic::Mutability;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::lookup_item::LookupItemEx;
-use cairo_lang_semantic::Mutability;
 use cairo_lang_syntax::node::ast::{Expr, Pattern, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -11,7 +11,7 @@ use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
-use crate::ide::hover::render::markdown::{fenced_code_block, RULE};
+use crate::ide::hover::render::markdown::{RULE, fenced_code_block};
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 
 /// Legacy hover rendering backported from Cairo 2.6.3 codebase.

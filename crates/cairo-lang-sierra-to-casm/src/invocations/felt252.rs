@@ -9,7 +9,7 @@ use num_bigint::BigInt;
 
 use super::misc::build_is_zero;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{add_input_variables, CostValidationInfo};
+use crate::invocations::{CostValidationInfo, add_input_variables};
 use crate::references::ReferenceExpression;
 
 #[cfg(test)]

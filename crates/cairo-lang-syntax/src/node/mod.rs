@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
-use cairo_lang_utils::{require, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, require};
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -363,7 +363,7 @@ pub struct NodeTextFormatter<'a> {
     /// The syntax db.
     pub db: &'a dyn SyntaxGroup,
 }
-impl<'a> Display for NodeTextFormatter<'a> {
+impl Display for NodeTextFormatter<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.node.green_node(self.db).as_ref().details {
             green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,

@@ -1,9 +1,9 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles,
-    FilesDatabase, FilesGroup, FilesGroupEx,
+    AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
@@ -87,7 +87,7 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
     db: &mut T,
     content: &str,
 ) -> CrateId {
-    let crate_id = CrateId::unversioned(db, "test");
+    let crate_id = CrateId::plain(db, "test");
     let directory = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(directory)));
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();

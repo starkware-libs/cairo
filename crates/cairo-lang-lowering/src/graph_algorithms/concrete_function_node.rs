@@ -2,9 +2,9 @@ use cairo_lang_utils::graph_algos::graph_node::GraphNode;
 use cairo_lang_utils::graph_algos::strongly_connected_components::ComputeScc;
 
 use super::strongly_connected_components::concrete_function_with_body_scc;
+use crate::DependencyType;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::DependencyType;
 
 /// A node to use in graph-algorithms.
 #[derive(Clone)]
@@ -13,7 +13,7 @@ pub struct ConcreteFunctionWithBodyNode<'a> {
     pub db: &'a dyn LoweringGroup,
     pub dependency_type: DependencyType,
 }
-impl<'a> GraphNode for ConcreteFunctionWithBodyNode<'a> {
+impl GraphNode for ConcreteFunctionWithBodyNode<'_> {
     type NodeId = ConcreteFunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {
@@ -37,7 +37,7 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyNode<'a> {
         self.function_id
     }
 }
-impl<'a> ComputeScc for ConcreteFunctionWithBodyNode<'a> {
+impl ComputeScc for ConcreteFunctionWithBodyNode<'_> {
     fn compute_scc(&self) -> Vec<Self::NodeId> {
         concrete_function_with_body_scc(self.db, self.function_id, self.dependency_type)
     }
@@ -49,7 +49,7 @@ pub struct ConcreteFunctionWithBodyPostPanicNode<'a> {
     pub db: &'a dyn LoweringGroup,
     pub dependency_type: DependencyType,
 }
-impl<'a> GraphNode for ConcreteFunctionWithBodyPostPanicNode<'a> {
+impl GraphNode for ConcreteFunctionWithBodyPostPanicNode<'_> {
     type NodeId = ConcreteFunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {
@@ -75,7 +75,7 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyPostPanicNode<'a> {
         self.function_id
     }
 }
-impl<'a> ComputeScc for ConcreteFunctionWithBodyPostPanicNode<'a> {
+impl ComputeScc for ConcreteFunctionWithBodyPostPanicNode<'_> {
     fn compute_scc(&self) -> Vec<Self::NodeId> {
         concrete_function_with_body_scc(self.db, self.function_id, self.dependency_type)
     }

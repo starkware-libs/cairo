@@ -14,11 +14,11 @@ use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, Statement
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_type_size::TypeSizeMap;
-use itertools::{zip_eq, Itertools};
+use itertools::{Itertools, zip_eq};
 
-use super::{compile_invocation, CompiledInvocation, ProgramInfo};
-use crate::environment::gas_wallet::GasWallet;
+use super::{CompiledInvocation, ProgramInfo, compile_invocation};
 use crate::environment::Environment;
+use crate::environment::gas_wallet::GasWallet;
 use crate::metadata::Metadata;
 use crate::references::{IntroductionPoint, ReferenceExpression, ReferenceValue};
 use crate::relocations::RelocationEntry;

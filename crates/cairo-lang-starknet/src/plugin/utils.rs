@@ -4,7 +4,7 @@ use cairo_lang_syntax::attribute::structured::{
 };
 use cairo_lang_syntax::node::ast::{self, Attribute, Modifier, OptionTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{is_single_arg_attr, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{QueryAttrs, is_single_arg_attr};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 

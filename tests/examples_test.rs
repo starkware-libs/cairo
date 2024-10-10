@@ -10,7 +10,7 @@ use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagId};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_runner::{token_gas_cost, Arg, RunResultValue, SierraCasmRunner};
+use cairo_lang_runner::{Arg, RunResultValue, SierraCasmRunner, token_gas_cost};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
@@ -18,7 +18,7 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, calc_metadata_ap_change_only};
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
-use cairo_lang_utils::{extract_matches, Upcast};
+use cairo_lang_utils::{Upcast, extract_matches};
 use itertools::Itertools;
 use rstest::{fixture, rstest};
 use starknet_types_core::felt::Felt as Felt252;
@@ -40,7 +40,7 @@ fn example_dir_data() -> ExampleDirData {
 }
 
 #[rstest]
-#[allow(unused_variables)]
+#[expect(unused_variables)]
 fn lowering_test(example_dir_data: &ExampleDirData) {}
 
 /// Returns the path of the relevant test file.

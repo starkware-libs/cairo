@@ -6,8 +6,8 @@ use cairo_lang_semantic::usage::{MemberPath, Usage};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{require, Intern, LookupIntern};
-use itertools::{chain, izip, zip_eq, Itertools};
+use cairo_lang_utils::{Intern, LookupIntern, require};
+use itertools::{Itertools, chain, izip, zip_eq};
 use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
@@ -488,7 +488,7 @@ struct BlockStructRecomposer<'a, 'b, 'c> {
     ctx: &'a mut LoweringContext<'b, 'c>,
     location: LocationId,
 }
-impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
+impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
     fn deconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId,

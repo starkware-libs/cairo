@@ -8,7 +8,7 @@ use cairo_lang_semantic::corelib::{destruct_trait_fn, panic_destruct_trait_fn};
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
-use itertools::{zip_eq, Itertools};
+use itertools::{Itertools, zip_eq};
 
 use self::analysis::{Analyzer, StatementLocation};
 pub use self::demand::Demand;
@@ -82,7 +82,7 @@ impl DropPosition {
     }
 }
 
-impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
+impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
     // Note that for in BorrowChecker `IntroducePosition` is used to pass the cause of
     // the drop.
     type IntroducePosition = (Option<DropPosition>, BlockId);
@@ -163,7 +163,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
     }
 }
 
-impl<'a> Analyzer<'_> for BorrowChecker<'a> {
+impl Analyzer<'_> for BorrowChecker<'_> {
     type Info = BorrowCheckerDemand;
 
     fn visit_stmt(

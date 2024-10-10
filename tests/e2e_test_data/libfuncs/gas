@@ -24,7 +24,8 @@ fn bar() {
 }
 
 //! > casm
-jmp rel 10 if [fp + -3] != 0;
+[fp + -3] = [ap + 0] + 0, ap++;
+jmp rel 10 if [ap + -1] != 0;
 call rel 13;
 call rel 11;
 call rel 9;
@@ -36,7 +37,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 800})
+test::foo: OrderedHashMap({Const: 900})
 test::bar: OrderedHashMap({})
 
 //! > sierra_code
@@ -44,7 +45,11 @@ type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
+libfunc felt252_sub = felt252_sub;
+libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc function_call<user@test::bar> = function_call<user@test::bar>;
@@ -52,22 +57,25 @@ libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc redeposit_gas = redeposit_gas;
 
-felt252_is_zero([1]) { fallthrough() 7([2]) }; // 0
-branch_align() -> (); // 1
-function_call<user@test::bar>() -> (); // 2
-function_call<user@test::bar>() -> (); // 3
-function_call<user@test::bar>() -> (); // 4
-store_temp<GasBuiltin>([0]) -> ([0]); // 5
-return([0]); // 6
-branch_align() -> (); // 7
-drop<NonZero<felt252>>([2]) -> (); // 8
-redeposit_gas([0]) -> ([3]); // 9
-store_temp<GasBuiltin>([3]) -> ([3]); // 10
-return([3]); // 11
-return(); // 12
+const_as_immediate<Const<felt252, 0>>() -> ([2]); // 0
+felt252_sub([1], [2]) -> ([3]); // 1
+store_temp<felt252>([3]) -> ([3]); // 2
+felt252_is_zero([3]) { fallthrough() 10([4]) }; // 3
+branch_align() -> (); // 4
+function_call<user@test::bar>() -> (); // 5
+function_call<user@test::bar>() -> (); // 6
+function_call<user@test::bar>() -> (); // 7
+store_temp<GasBuiltin>([0]) -> ([0]); // 8
+return([0]); // 9
+branch_align() -> (); // 10
+drop<NonZero<felt252>>([4]) -> (); // 11
+redeposit_gas([0]) -> ([5]); // 12
+store_temp<GasBuiltin>([5]) -> ([5]); // 13
+return([5]); // 14
+return(); // 15
 
 test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin);
-test::bar@12() -> ();
+test::bar@15() -> ();
 
 //! > ==========================================================================
 
@@ -93,7 +101,8 @@ fn foo(x: felt252) {
 }
 
 //! > casm
-jmp rel 28 if [fp + -3] != 0;
+[fp + -3] = [ap + 0] + 0, ap++;
+jmp rel 28 if [ap + -1] != 0;
 ap += 3;
 [ap + 0] = 1, ap++;
 [ap + 0] = 2, ap++;
@@ -125,7 +134,7 @@ call rel 16;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Bitwise: 2, Pedersen: 1, Const: 1730})
+test::foo: OrderedHashMap({Bitwise: 2, Pedersen: 1, Const: 1830})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -138,7 +147,11 @@ type Const<u128, 2> = Const<u128, 2> [storable: false, drop: false, dup: false, 
 type Const<u128, 1> = Const<u128, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
 type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
+libfunc felt252_sub = felt252_sub;
+libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc const_as_immediate<Const<u128, 1>> = const_as_immediate<Const<u128, 1>>;
@@ -147,7 +160,6 @@ libfunc store_temp<u128> = store_temp<u128>;
 libfunc bitwise = bitwise;
 libfunc drop<u128> = drop<u128>;
 libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
-libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc pedersen = pedersen;
 libfunc drop<felt252> = drop<felt252>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
@@ -156,41 +168,44 @@ libfunc store_temp<Pedersen> = store_temp<Pedersen>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc redeposit_gas = redeposit_gas;
 
-felt252_is_zero([3]) { fallthrough() 28([4]) }; // 0
-branch_align() -> (); // 1
-const_as_immediate<Const<u128, 1>>() -> ([5]); // 2
-const_as_immediate<Const<u128, 2>>() -> ([6]); // 3
-store_temp<u128>([5]) -> ([5]); // 4
-store_temp<u128>([6]) -> ([6]); // 5
-bitwise([1], [5], [6]) -> ([7], [8], [9], [10]); // 6
-drop<u128>([8]) -> (); // 7
-drop<u128>([9]) -> (); // 8
-drop<u128>([10]) -> (); // 9
-const_as_immediate<Const<u128, 1>>() -> ([11]); // 10
-const_as_immediate<Const<u128, 2>>() -> ([12]); // 11
-store_temp<u128>([11]) -> ([11]); // 12
-store_temp<u128>([12]) -> ([12]); // 13
-bitwise([7], [11], [12]) -> ([13], [14], [15], [16]); // 14
-drop<u128>([14]) -> (); // 15
-drop<u128>([15]) -> (); // 16
-drop<u128>([16]) -> (); // 17
-const_as_immediate<Const<felt252, 1>>() -> ([17]); // 18
-const_as_immediate<Const<felt252, 1>>() -> ([18]); // 19
-store_temp<felt252>([17]) -> ([17]); // 20
-store_temp<felt252>([18]) -> ([18]); // 21
-pedersen([2], [17], [18]) -> ([19], [20]); // 22
-drop<felt252>([20]) -> (); // 23
-store_temp<GasBuiltin>([0]) -> ([0]); // 24
-store_temp<Bitwise>([13]) -> ([13]); // 25
-store_temp<Pedersen>([19]) -> ([19]); // 26
-return([0], [13], [19]); // 27
-branch_align() -> (); // 28
-drop<NonZero<felt252>>([4]) -> (); // 29
-redeposit_gas([0]) -> ([21]); // 30
-store_temp<GasBuiltin>([21]) -> ([21]); // 31
-store_temp<Bitwise>([1]) -> ([1]); // 32
-store_temp<Pedersen>([2]) -> ([2]); // 33
-return([21], [1], [2]); // 34
+const_as_immediate<Const<felt252, 0>>() -> ([4]); // 0
+felt252_sub([3], [4]) -> ([5]); // 1
+store_temp<felt252>([5]) -> ([5]); // 2
+felt252_is_zero([5]) { fallthrough() 31([6]) }; // 3
+branch_align() -> (); // 4
+const_as_immediate<Const<u128, 1>>() -> ([7]); // 5
+const_as_immediate<Const<u128, 2>>() -> ([8]); // 6
+store_temp<u128>([7]) -> ([7]); // 7
+store_temp<u128>([8]) -> ([8]); // 8
+bitwise([1], [7], [8]) -> ([9], [10], [11], [12]); // 9
+drop<u128>([10]) -> (); // 10
+drop<u128>([11]) -> (); // 11
+drop<u128>([12]) -> (); // 12
+const_as_immediate<Const<u128, 1>>() -> ([13]); // 13
+const_as_immediate<Const<u128, 2>>() -> ([14]); // 14
+store_temp<u128>([13]) -> ([13]); // 15
+store_temp<u128>([14]) -> ([14]); // 16
+bitwise([9], [13], [14]) -> ([15], [16], [17], [18]); // 17
+drop<u128>([16]) -> (); // 18
+drop<u128>([17]) -> (); // 19
+drop<u128>([18]) -> (); // 20
+const_as_immediate<Const<felt252, 1>>() -> ([19]); // 21
+const_as_immediate<Const<felt252, 1>>() -> ([20]); // 22
+store_temp<felt252>([19]) -> ([19]); // 23
+store_temp<felt252>([20]) -> ([20]); // 24
+pedersen([2], [19], [20]) -> ([21], [22]); // 25
+drop<felt252>([22]) -> (); // 26
+store_temp<GasBuiltin>([0]) -> ([0]); // 27
+store_temp<Bitwise>([15]) -> ([15]); // 28
+store_temp<Pedersen>([21]) -> ([21]); // 29
+return([0], [15], [21]); // 30
+branch_align() -> (); // 31
+drop<NonZero<felt252>>([6]) -> (); // 32
+redeposit_gas([0]) -> ([23]); // 33
+store_temp<GasBuiltin>([23]) -> ([23]); // 34
+store_temp<Bitwise>([1]) -> ([1]); // 35
+store_temp<Pedersen>([2]) -> ([2]); // 36
+return([23], [1], [2]); // 37
 
 test::foo@0([0]: GasBuiltin, [1]: Bitwise, [2]: Pedersen, [3]: felt252) -> (GasBuiltin, Bitwise, Pedersen);
 

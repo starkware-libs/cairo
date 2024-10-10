@@ -11,7 +11,7 @@ use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::range_reduction::build_felt252_range_reduction;
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CostValidationInfo,
+    BuiltinInfo, CostValidationInfo, add_input_variables, get_non_fallthrough_statement_id,
 };
 use crate::references::ReferenceExpression;
 

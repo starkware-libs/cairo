@@ -6,8 +6,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_single_type, args_as_single_user_func, ConcreteType, NamedLibfunc, NamedType,
-    OutputVarReferenceInfo, SpecializationError,
+    ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SpecializationError,
+    args_as_single_type, args_as_single_user_func,
 };
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::GenericArg;
@@ -135,11 +135,9 @@ impl NamedLibfunc for CouponRefundLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
-        Ok(LibfuncSignature::new_non_branch(
-            vec![coupon_ty],
-            vec![],
-            SierraApChange::Known { new_vars_only: true },
-        ))
+        Ok(LibfuncSignature::new_non_branch(vec![coupon_ty], vec![], SierraApChange::Known {
+            new_vars_only: true,
+        }))
     }
 
     fn specialize(

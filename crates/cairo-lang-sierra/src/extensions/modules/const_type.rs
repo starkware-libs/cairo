@@ -16,8 +16,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_single_type, extract_type_generic_args, ConcreteType, NamedLibfunc, NamedType,
-    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
+    ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
+    SpecializationError, args_as_single_type, extract_type_generic_args,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId, UserTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};

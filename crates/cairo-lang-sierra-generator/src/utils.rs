@@ -12,7 +12,7 @@ use cairo_lang_sierra::extensions::{
 };
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program::{self, GenericArg};
-use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
 use semantic::items::constant::ConstValue;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;

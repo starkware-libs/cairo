@@ -8,8 +8,8 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::{define_short_id, try_extract_matches, Intern, LookupIntern, OptionFrom};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, try_extract_matches};
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::Zero;
@@ -23,16 +23,16 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{
-    compute_expr_semantic, ComputationContext, ContextFunction, Environment,
+    ComputationContext, ContextFunction, Environment, compute_expr_semantic,
 };
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
-use crate::items::constant::{resolve_const_expr_and_evaluate, ConstValue, ConstValueId};
+use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, semantic_object_for_id, ConcreteTraitId, FunctionId, GenericArgumentId};
+use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {
@@ -476,14 +476,26 @@ impl DebugWithDb<dyn SemanticGroup> for ImplTypeId {
 }
 
 // TODO(spapini): add a query wrapper.
-/// Resolves a type given a module and a path.
+/// Resolves a type given a module and a path. Used for resolving from non-statement context.
 pub fn resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, resolver, ty_syntax)
+    maybe_resolve_type(db, diagnostics, resolver, ty_syntax, None)
+        .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
+}
+/// Resolves a type given a module and a path. `statement_env` should be provided if called from
+/// statement context.
+pub fn resolve_type_with_environment(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    resolver: &mut Resolver<'_>,
+    ty_syntax: &ast::Expr,
+    statement_env: Option<&mut Environment>,
+) -> TypeId {
+    maybe_resolve_type(db, diagnostics, resolver, ty_syntax, statement_env)
         .unwrap_or_else(|diag_added| TypeId::missing(db, diag_added))
 }
 pub fn maybe_resolve_type(
@@ -491,39 +503,69 @@ pub fn maybe_resolve_type(
     diagnostics: &mut SemanticDiagnostics,
     resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
+    mut statement_env: Option<&mut Environment>,
 ) -> Maybe<TypeId> {
     let syntax_db = db.upcast();
     Ok(match ty_syntax {
         ast::Expr::Path(path) => {
-            match resolver.resolve_concrete_path(diagnostics, path, NotFoundItemType::Type)? {
+            match resolver.resolve_concrete_path_ex(
+                diagnostics,
+                path,
+                NotFoundItemType::Type,
+                statement_env,
+            )? {
                 ResolvedConcreteItem::Type(ty) => ty,
                 _ => {
                     return Err(diagnostics.report(path, NotAType));
                 }
             }
         }
-        ast::Expr::Parenthesized(expr_syntax) => {
-            resolve_type(db, diagnostics, resolver, &expr_syntax.expr(syntax_db))
-        }
+        ast::Expr::Parenthesized(expr_syntax) => resolve_type_with_environment(
+            db,
+            diagnostics,
+            resolver,
+            &expr_syntax.expr(syntax_db),
+            statement_env,
+        ),
         ast::Expr::Tuple(tuple_syntax) => {
             let sub_tys = tuple_syntax
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
-                .map(|subexpr_syntax| resolve_type(db, diagnostics, resolver, &subexpr_syntax))
+                .map(|subexpr_syntax| {
+                    resolve_type_with_environment(
+                        db,
+                        diagnostics,
+                        resolver,
+                        &subexpr_syntax,
+                        statement_env.as_deref_mut(),
+                    )
+                })
                 .collect();
             TypeLongId::Tuple(sub_tys).intern(db)
         }
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::At(_)) =>
         {
-            let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
+            let ty = resolve_type_with_environment(
+                db,
+                diagnostics,
+                resolver,
+                &unary_syntax.expr(syntax_db),
+                statement_env,
+            );
             TypeLongId::Snapshot(ty).intern(db)
         }
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::Desnap(_)) =>
         {
-            let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
+            let ty = resolve_type_with_environment(
+                db,
+                diagnostics,
+                resolver,
+                &unary_syntax.expr(syntax_db),
+                statement_env,
+            );
             if let Some(desnapped_ty) =
                 try_extract_matches!(ty.lookup_intern(db), TypeLongId::Snapshot)
             {
@@ -536,7 +578,7 @@ pub fn maybe_resolve_type(
             let [ty] = &array_syntax.exprs(syntax_db).elements(syntax_db)[..] else {
                 return Err(diagnostics.report(ty_syntax, FixedSizeArrayTypeNonSingleType));
             };
-            let ty = resolve_type(db, diagnostics, resolver, ty);
+            let ty = resolve_type_with_environment(db, diagnostics, resolver, ty, statement_env);
             let size = match extract_fixed_size_array_size(db, diagnostics, array_syntax, resolver)?
             {
                 Some(size) => size,
