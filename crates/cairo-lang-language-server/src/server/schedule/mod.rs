@@ -5,18 +5,16 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69  |
 // +---------------------------------------------------+
 
-use std::num::NonZeroUsize;
-
 use anyhow::Result;
 use task::BackgroundTaskBuilder;
-use thread::ThreadPriority;
 
-use crate::server::client::Client;
+use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::ClientSender;
 use crate::state::State;
+use crate::thread::ThreadPriority;
 
-mod task;
-mod thread;
+pub(crate) mod task;
+pub(crate) mod thread;
 
 pub(super) use task::BackgroundSchedule;
 pub(crate) use task::{SyncTask, Task};
@@ -38,19 +36,34 @@ pub fn event_loop_thread(
         .spawn(func)?)
 }
 
+pub type PostHook = dyn Fn(&mut State, Notifier);
+
 pub struct Scheduler<'s> {
     state: &'s mut State,
     client: Client<'s>,
-    background_pool: thread::Pool,
+    background_pool: thread::SharedPool,
+    sync_task_post_hooks: Vec<Box<PostHook>>,
 }
 
 impl<'s> Scheduler<'s> {
-    pub fn new(state: &'s mut State, worker_threads: NonZeroUsize, sender: ClientSender) -> Self {
+    pub fn new(
+        state: &'s mut State,
+        background_pool: thread::SharedPool,
+        sender: ClientSender,
+    ) -> Self {
         Self {
             state,
-            background_pool: thread::Pool::new(worker_threads),
+            background_pool,
             client: Client::new(sender),
+            sync_task_post_hooks: Default::default(),
         }
+    }
+
+    // Executes after every local `task`. Meaning this will happen after every possible state
+    // change.
+    #[inline]
+    pub(crate) fn sync_task_post_hook(&mut self, func: impl Fn(&mut State, Notifier) + 'static) {
+        self.sync_task_post_hooks.push(Box::new(func));
     }
 
     /// Immediately sends a request of kind `R` to the client, with associated parameters.
@@ -79,7 +92,11 @@ impl<'s> Scheduler<'s> {
             Task::Sync(SyncTask { func }) => {
                 let notifier = self.client.notifier();
                 let responder = self.client.responder();
-                func(self.state, notifier, &mut self.client.requester, responder);
+                func(self.state, notifier.clone(), &mut self.client.requester, responder);
+
+                for hook in &self.sync_task_post_hooks {
+                    hook(self.state, notifier.clone());
+                }
             }
             Task::Background(BackgroundTaskBuilder { schedule, builder: func }) => {
                 let static_func = func(self.state);
@@ -96,5 +113,22 @@ impl<'s> Scheduler<'s> {
                 }
             }
         }
+    }
+
+    // Dispatches a local `task`.
+    pub(crate) fn local(
+        &mut self,
+        func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
+    ) {
+        self.dispatch(Task::local(func));
+    }
+
+    // Dispatches a background `task`.
+    pub(crate) fn background(
+        &mut self,
+        schedule: BackgroundSchedule,
+        func: impl FnOnce(Notifier, Responder) + Send + 'static,
+    ) {
+        self.dispatch(Task::background(schedule, |_state| Box::new(func)));
     }
 }

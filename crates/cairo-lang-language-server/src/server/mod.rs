@@ -1,6 +1,7 @@
 pub(crate) mod client;
 pub(crate) mod commands;
 pub(crate) mod connection;
+pub(crate) mod panic;
 pub(crate) mod schedule;
 
 mod routing;

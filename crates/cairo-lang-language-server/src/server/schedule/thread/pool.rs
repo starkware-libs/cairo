@@ -23,21 +23,37 @@
 //! the threading utilities in [`crate::server::schedule::thread`].
 
 use std::num::NonZeroUsize;
+use std::ops::Deref;
+use std::sync::Arc;
 
 use crossbeam::channel::{Receiver, Sender};
 
 use super::{Builder, JoinHandle, ThreadPriority};
 
-pub struct Pool {
-    // `_handles` is never read: the field is present
-    // only for its `Drop` impl.
+#[derive(Clone)]
+pub struct SharedPool(Arc<Pool>);
 
+impl Deref for SharedPool {
+    type Target = Pool;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl SharedPool {
+    pub fn new(threads: NonZeroUsize) -> Self {
+        Self(Arc::new(Pool::new(threads)))
+    }
+}
+
+pub struct Pool {
     // The worker threads exit once the channel closes;
     // make sure to keep `job_sender` above `handles`
     // so that the channel is actually closed
     // before we join the worker threads!
     job_sender: Sender<Job>,
-    _handles: Vec<JoinHandle>,
+    handles: Vec<JoinHandle>,
 }
 
 struct Job {
@@ -79,7 +95,7 @@ impl Pool {
             handles.push(handle);
         }
 
-        Pool { _handles: handles, job_sender }
+        Pool { handles, job_sender }
     }
 
     pub fn spawn<F>(&self, priority: ThreadPriority, f: F)
@@ -95,5 +111,9 @@ impl Pool {
 
         let job = Job { requested_priority: priority, f };
         self.job_sender.send(job).unwrap();
+    }
+
+    pub fn size(&self) -> usize {
+        self.handles.len()
     }
 }
