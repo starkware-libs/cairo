@@ -369,6 +369,20 @@ fn test_saturating_add_signed_integers() {
 }
 
 #[test]
+fn test_saturating_add_signed_negative_integers() {
+    assert_eq!(Bounded::<i8>::MIN.saturating_add(-1), Bounded::<i8>::MIN);
+    assert_eq!((-1_i8).saturating_add(-2), -3);
+    assert_eq!(Bounded::<i16>::MIN.saturating_add(-1), Bounded::<i16>::MIN);
+    assert_eq!((-1_i16).saturating_add(-2), -3);
+    assert_eq!(Bounded::<i32>::MIN.saturating_add(-1), Bounded::<i32>::MIN);
+    assert_eq!((-1_i32).saturating_add(-2), -3);
+    assert_eq!(Bounded::<i64>::MIN.saturating_add(-1), Bounded::<i64>::MIN);
+    assert_eq!((-1_i64).saturating_add(-2), -3);
+    assert_eq!(Bounded::<i128>::MIN.saturating_add(-1), Bounded::<i128>::MIN);
+    assert_eq!((-1_i128).saturating_add(-2), -3);
+}
+
+#[test]
 fn test_saturating_sub_unsigned_integers() {
     assert_eq!(3_u8.saturating_sub(2), 1);
     assert_eq!(0_u8.saturating_sub(1), 0);
@@ -396,6 +410,20 @@ fn test_saturating_sub_signed_integers() {
     assert_eq!(Bounded::<i64>::MIN.saturating_sub(1), Bounded::<i64>::MIN);
     assert_eq!(3_i128.saturating_sub(2), 1);
     assert_eq!(Bounded::<i128>::MIN.saturating_sub(1), Bounded::<i128>::MIN);
+}
+
+#[test]
+fn test_saturating_sub_signed_negative_integers() {
+    assert_eq!(1_i8.saturating_sub(-2), 3);
+    assert_eq!(Bounded::<i8>::MAX.saturating_sub(-1), Bounded::<i8>::MAX);
+    assert_eq!(1_i16.saturating_sub(-2), 3);
+    assert_eq!(Bounded::<i16>::MAX.saturating_sub(-1), Bounded::<i16>::MAX);
+    assert_eq!(1_i32.saturating_sub(-2), 3);
+    assert_eq!(Bounded::<i32>::MAX.saturating_sub(-1), Bounded::<i32>::MAX);
+    assert_eq!(1_i64.saturating_sub(-2), 3);
+    assert_eq!(Bounded::<i64>::MAX.saturating_sub(-1), Bounded::<i64>::MAX);
+    assert_eq!(1_i128.saturating_sub(-2), 3);
+    assert_eq!(Bounded::<i128>::MAX.saturating_sub(-1), Bounded::<i128>::MAX);
 }
 
 #[test]
