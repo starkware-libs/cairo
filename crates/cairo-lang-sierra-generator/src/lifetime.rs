@@ -160,7 +160,7 @@ impl AuxCombine for ReturnState {
 
 type SierraDemand = Demand<SierraGenVar, UseLocation, ReturnState>;
 
-impl<'a> DemandReporter<SierraGenVar, ReturnState> for VariableLifetimeContext<'a> {
+impl DemandReporter<SierraGenVar, ReturnState> for VariableLifetimeContext<'_> {
     type IntroducePosition = DropLocation;
     type UsePosition = UseLocation;
 
@@ -178,7 +178,7 @@ impl<'a> DemandReporter<SierraGenVar, ReturnState> for VariableLifetimeContext<'
     }
 }
 
-impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
+impl Analyzer<'_> for VariableLifetimeContext<'_> {
     type Info = SierraDemand;
 
     fn visit_stmt(
@@ -275,7 +275,7 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         info
     }
 }
-impl<'a> VariableLifetimeContext<'a> {
+impl VariableLifetimeContext<'_> {
     /// A wrapper for info.variables_introduced that adds demand for uninitialized locals.
     /// Note that this function is not called for the parameters of the analyzed function.
     fn introduce(

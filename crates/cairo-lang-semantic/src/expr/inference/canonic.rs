@@ -191,7 +191,7 @@ add_basic_rewrites!(
     @exclude TypeLongId TypeId ImplLongId ImplId ConstValue
 );
 
-impl<'a> SemanticRewriter<TypeId, NoError> for Canonicalizer<'a> {
+impl SemanticRewriter<TypeId, NoError> for Canonicalizer<'_> {
     fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, NoError> {
         if value.is_var_free(self.db) {
             return Ok(RewriteResult::NoChange);
@@ -199,7 +199,7 @@ impl<'a> SemanticRewriter<TypeId, NoError> for Canonicalizer<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
+impl SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'_> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         let TypeLongId::Var(var) = value else {
             return value.default_rewrite(self);
@@ -215,7 +215,7 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
         Ok(RewriteResult::Modified)
     }
 }
-impl<'a> SemanticRewriter<ConstValue, NoError> for Canonicalizer<'a> {
+impl SemanticRewriter<ConstValue, NoError> for Canonicalizer<'_> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
         let ConstValue::Var(var, mut ty) = value else {
             return value.default_rewrite(self);
@@ -235,7 +235,7 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Canonicalizer<'a> {
         Ok(RewriteResult::Modified)
     }
 }
-impl<'a> SemanticRewriter<ImplId, NoError> for Canonicalizer<'a> {
+impl SemanticRewriter<ImplId, NoError> for Canonicalizer<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         if value.is_var_free(self.db) {
             return Ok(RewriteResult::NoChange);
@@ -243,7 +243,7 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Canonicalizer<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ImplLongId, NoError> for Canonicalizer<'a> {
+impl SemanticRewriter<ImplLongId, NoError> for Canonicalizer<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplLongId) -> Result<RewriteResult, NoError> {
         let ImplLongId::ImplVar(var_id) = value else {
             if value.is_var_free(self.db) {
@@ -287,7 +287,7 @@ impl<'a, 'db> Embedder<'a, 'db> {
     }
 }
 
-impl<'a, 'b> HasDb<&'a dyn SemanticGroup> for Embedder<'a, 'b> {
+impl<'a> HasDb<&'a dyn SemanticGroup> for Embedder<'a, '_> {
     fn get_db(&self) -> &'a dyn SemanticGroup {
         self.inference.db
     }
@@ -300,7 +300,7 @@ add_basic_rewrites!(
     @exclude TypeLongId TypeId ConstValue ImplLongId ImplId
 );
 
-impl<'a, 'b> SemanticRewriter<TypeId, NoError> for Embedder<'a, 'b> {
+impl SemanticRewriter<TypeId, NoError> for Embedder<'_, '_> {
     fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, NoError> {
         if value.is_var_free(self.get_db()) {
             return Ok(RewriteResult::NoChange);
@@ -308,7 +308,7 @@ impl<'a, 'b> SemanticRewriter<TypeId, NoError> for Embedder<'a, 'b> {
         value.default_rewrite(self)
     }
 }
-impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
+impl SemanticRewriter<TypeLongId, NoError> for Embedder<'_, '_> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         let TypeLongId::Var(var) = value else {
             return value.default_rewrite(self);
@@ -325,7 +325,7 @@ impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
         Ok(RewriteResult::Modified)
     }
 }
-impl<'a, 'b> SemanticRewriter<ConstValue, NoError> for Embedder<'a, 'b> {
+impl SemanticRewriter<ConstValue, NoError> for Embedder<'_, '_> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
         let ConstValue::Var(var, mut ty) = value else {
             return value.default_rewrite(self);
@@ -343,7 +343,7 @@ impl<'a, 'b> SemanticRewriter<ConstValue, NoError> for Embedder<'a, 'b> {
         Ok(RewriteResult::Modified)
     }
 }
-impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
+impl SemanticRewriter<ImplId, NoError> for Embedder<'_, '_> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         if value.is_var_free(self.get_db()) {
             return Ok(RewriteResult::NoChange);
@@ -351,7 +351,7 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
         value.default_rewrite(self)
     }
 }
-impl<'a, 'b> SemanticRewriter<ImplLongId, NoError> for Embedder<'a, 'b> {
+impl SemanticRewriter<ImplLongId, NoError> for Embedder<'_, '_> {
     fn internal_rewrite(&mut self, value: &mut ImplLongId) -> Result<RewriteResult, NoError> {
         let ImplLongId::ImplVar(var_id) = value else {
             if value.is_var_free(self.get_db()) {
@@ -406,7 +406,7 @@ add_basic_rewrites!(
     @exclude TypeLongId TypeId ImplLongId ImplId ConstValue
 );
 
-impl<'db> SemanticRewriter<TypeId, MapperError> for Mapper<'db> {
+impl SemanticRewriter<TypeId, MapperError> for Mapper<'_> {
     fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, MapperError> {
         if value.is_var_free(self.db) {
             return Ok(RewriteResult::NoChange);
@@ -414,7 +414,7 @@ impl<'db> SemanticRewriter<TypeId, MapperError> for Mapper<'db> {
         value.default_rewrite(self)
     }
 }
-impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
+impl SemanticRewriter<TypeLongId, MapperError> for Mapper<'_> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, MapperError> {
         let TypeLongId::Var(var) = value else {
             return value.default_rewrite(self);
@@ -429,7 +429,7 @@ impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
         Ok(RewriteResult::Modified)
     }
 }
-impl<'db> SemanticRewriter<ConstValue, MapperError> for Mapper<'db> {
+impl SemanticRewriter<ConstValue, MapperError> for Mapper<'_> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, MapperError> {
         let ConstValue::Var(var, mut ty) = value else {
             return value.default_rewrite(self);
@@ -446,7 +446,7 @@ impl<'db> SemanticRewriter<ConstValue, MapperError> for Mapper<'db> {
         Ok(RewriteResult::Modified)
     }
 }
-impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
+impl SemanticRewriter<ImplId, MapperError> for Mapper<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, MapperError> {
         if value.is_var_free(self.db) {
             return Ok(RewriteResult::NoChange);
@@ -454,7 +454,7 @@ impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
         value.default_rewrite(self)
     }
 }
-impl<'db> SemanticRewriter<ImplLongId, MapperError> for Mapper<'db> {
+impl SemanticRewriter<ImplLongId, MapperError> for Mapper<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplLongId) -> Result<RewriteResult, MapperError> {
         let ImplLongId::ImplVar(var_id) = value else {
             return value.default_rewrite(self);

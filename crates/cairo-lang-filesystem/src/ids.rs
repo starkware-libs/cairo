@@ -135,11 +135,11 @@ impl VirtualFile {
 }
 
 define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file, intern_file);
-impl<'b> FileId {
+impl FileId {
     pub fn new(db: &dyn FilesGroup, path: PathBuf) -> FileId {
         FileLongId::OnDisk(path.clean()).intern(db)
     }
-    pub fn file_name(self, db: &'b dyn FilesGroup) -> String {
+    pub fn file_name(self, db: &dyn FilesGroup) -> String {
         match self.lookup_intern(db) {
             FileLongId::OnDisk(path) => {
                 path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()

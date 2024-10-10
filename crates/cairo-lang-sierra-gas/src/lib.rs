@@ -68,9 +68,9 @@ struct InvocationCostInfoProviderForEqGen<
     ap_change_var_value: ApChangeVarValue,
 }
 
-impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usize>
+impl<TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usize>
     InvocationCostInfoProvider
-    for InvocationCostInfoProviderForEqGen<'a, TokenUsages, ApChangeVarValue>
+    for InvocationCostInfoProviderForEqGen<'_, TokenUsages, ApChangeVarValue>
 {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self.type_sizes[ty].into_or_panic()

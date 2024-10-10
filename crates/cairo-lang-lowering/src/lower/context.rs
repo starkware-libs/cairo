@@ -75,7 +75,7 @@ impl<'db> VariableAllocator<'db> {
         LocationId::from_stable_location(self.db, StableLocation::new(stable_ptr))
     }
 }
-impl<'db> Index<VariableId> for VariableAllocator<'db> {
+impl Index<VariableId> for VariableAllocator<'_> {
     type Output = Variable;
 
     fn index(&self, index: VariableId) -> &Self::Output {
@@ -165,19 +165,19 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         })
     }
 }
-impl<'a, 'db> Deref for LoweringContext<'a, 'db> {
+impl<'db> Deref for LoweringContext<'_, 'db> {
     type Target = EncapsulatingLoweringContext<'db>;
 
     fn deref(&self) -> &Self::Target {
         self.encapsulating_ctx.as_ref().unwrap()
     }
 }
-impl<'a, 'db> DerefMut for LoweringContext<'a, 'db> {
+impl DerefMut for LoweringContext<'_, '_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.encapsulating_ctx.as_mut().unwrap()
     }
 }
-impl<'a, 'db> LoweringContext<'a, 'db> {
+impl LoweringContext<'_, '_> {
     /// Allocates a new variable in the context's variable arena according to the context.
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
         self.variables.new_var(req)

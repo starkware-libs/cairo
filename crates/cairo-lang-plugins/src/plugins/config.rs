@@ -66,7 +66,7 @@ pub struct ItemsInCfg<'a, Item: QueryAttrs> {
     iterator: <Vec<Item> as IntoIterator>::IntoIter,
 }
 
-impl<'a, Item: QueryAttrs> Iterator for ItemsInCfg<'a, Item> {
+impl<Item: QueryAttrs> Iterator for ItemsInCfg<'_, Item> {
     type Item = Item;
 
     fn next(&mut self) -> Option<Self::Item> {

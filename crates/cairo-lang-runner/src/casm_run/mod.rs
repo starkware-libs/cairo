@@ -620,13 +620,13 @@ impl<'a> MemBuffer<'a> {
     }
 }
 
-impl<'a> VMWrapper for MemBuffer<'a> {
+impl VMWrapper for MemBuffer<'_> {
     fn vm(&mut self) -> &mut VirtualMachine {
         self.vm.vm()
     }
 }
 
-impl<'a> CairoHintProcessor<'a> {
+impl CairoHintProcessor<'_> {
     /// Executes a syscall.
     fn execute_syscall(
         &mut self,

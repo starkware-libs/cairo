@@ -52,7 +52,7 @@ pub struct FileDiffColoredDisplay<'a> {
     diff: &'a FileDiff,
 }
 
-impl<'a> Display for FileDiffColoredDisplay<'a> {
+impl Display for FileDiffColoredDisplay<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let patch = create_patch(&self.diff.original, &self.diff.formatted);
         let patch_formatter = PatchFormatter::new().with_color();
@@ -61,7 +61,7 @@ impl<'a> Display for FileDiffColoredDisplay<'a> {
     }
 }
 
-impl<'a> Debug for FileDiffColoredDisplay<'a> {
+impl Debug for FileDiffColoredDisplay<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "FileDiffColoredDisplay({:?})", self.diff)
     }

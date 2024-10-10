@@ -50,7 +50,7 @@ impl<'a> Preorder<'a> {
     }
 }
 
-impl<'a> Iterator for Preorder<'a> {
+impl Iterator for Preorder<'_> {
     type Item = WalkEvent<SyntaxNode>;
 
     fn next(&mut self) -> Option<Self::Item> {

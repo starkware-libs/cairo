@@ -71,7 +71,7 @@ impl<'a> ApproxCasmInlineWeight<'a> {
     }
 }
 
-impl<'a> InlineWeight for ApproxCasmInlineWeight<'a> {
+impl InlineWeight for ApproxCasmInlineWeight<'_> {
     fn calling_weight(&self, _lowered: &FlatLowered) -> isize {
         0
     }

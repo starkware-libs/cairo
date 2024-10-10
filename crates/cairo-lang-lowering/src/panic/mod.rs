@@ -138,7 +138,7 @@ struct PanicLoweringContext<'a> {
     flat_blocks: FlatBlocksBuilder,
     panic_info: PanicSignatureInfo,
 }
-impl<'a> PanicLoweringContext<'a> {
+impl PanicLoweringContext<'_> {
     pub fn db(&self) -> &dyn LoweringGroup {
         self.variables.db
     }

@@ -11,7 +11,7 @@ struct ColoredPrinter<'a> {
     verbose: bool,
     result: String,
 }
-impl<'a> ColoredPrinter<'a> {
+impl ColoredPrinter<'_> {
     fn print(&mut self, syntax_node: &SyntaxNode) {
         let node = syntax_node.green_node(self.db);
         match &node.details {

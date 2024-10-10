@@ -67,7 +67,7 @@ struct PanicDeconstructionEntry {
     impl_id: ImplId,
 }
 
-impl<'a> DestructAdder<'a> {
+impl DestructAdder<'_> {
     /// Checks if the statement introduces a panic variable and sets the panic state accordingly.
     fn set_post_stmt_destruct(
         &mut self,
@@ -117,7 +117,7 @@ impl<'a> DestructAdder<'a> {
     }
 }
 
-impl<'a> DemandReporter<VariableId, PanicState> for DestructAdder<'a> {
+impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
     type IntroducePosition = StatementLocation;
     type UsePosition = ();
 
@@ -200,7 +200,7 @@ pub enum PanicLocation {
     PanicMatch { match_block_id: BlockId, target_block_id: BlockId },
 }
 
-impl<'a> Analyzer<'_> for DestructAdder<'a> {
+impl Analyzer<'_> for DestructAdder<'_> {
     type Info = DestructAdderDemand;
 
     fn visit_stmt(

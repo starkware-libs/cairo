@@ -111,7 +111,7 @@ pub fn const_folding(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
                                 ctx.variables[input.var_id]
                                     .copyable
                                     .is_ok()
-                                    .then(|| VarInfo::Var(*input)),
+                                    .then_some(VarInfo::Var(*input)),
                             );
                             continue;
                         };
@@ -219,7 +219,7 @@ struct ConstFoldingContext<'a> {
     libfunc_info: &'a ConstFoldingLibfuncInfo,
 }
 
-impl<'a> ConstFoldingContext<'a> {
+impl ConstFoldingContext<'_> {
     /// Handles a statement call.
     ///
     /// Returns None if no additional changes are required.

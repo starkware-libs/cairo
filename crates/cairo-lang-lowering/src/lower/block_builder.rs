@@ -488,7 +488,7 @@ struct BlockStructRecomposer<'a, 'b, 'c> {
     ctx: &'a mut LoweringContext<'b, 'c>,
     location: LocationId,
 }
-impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
+impl StructRecomposer for BlockStructRecomposer<'_, '_, '_> {
     fn deconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId,

@@ -139,11 +139,11 @@ struct AnalysisInfo {
     demand: LoweredDemand,
     known_ap_change: bool,
 }
-impl<'a> DemandReporter<VariableId> for FindLocalsContext<'a> {
+impl DemandReporter<VariableId> for FindLocalsContext<'_> {
     type UsePosition = ();
     type IntroducePosition = ();
 }
-impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
+impl Analyzer<'_> for FindLocalsContext<'_> {
     type Info = Maybe<AnalysisInfo>;
 
     fn visit_stmt(
