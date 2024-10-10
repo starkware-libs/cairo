@@ -82,7 +82,7 @@ impl DropPosition {
     }
 }
 
-impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
+impl DemandReporter<VariableId, PanicState> for BorrowChecker<'_> {
     // Note that for in BorrowChecker `IntroducePosition` is used to pass the cause of
     // the drop.
     type IntroducePosition = (Option<DropPosition>, BlockId);
@@ -163,7 +163,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
     }
 }
 
-impl<'a> Analyzer<'_> for BorrowChecker<'a> {
+impl Analyzer<'_> for BorrowChecker<'_> {
     type Info = BorrowCheckerDemand;
 
     fn visit_stmt(

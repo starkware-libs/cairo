@@ -309,7 +309,7 @@ type VarCells = [Var];
 /// The configuration for all Sierra variables returned from a libfunc.
 type AllVars<'a> = [&'a VarCells];
 
-impl<'a> InvocationApChangeInfoProvider for CompiledInvocationBuilder<'a> {
+impl InvocationApChangeInfoProvider for CompiledInvocationBuilder<'_> {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self.program_info.type_sizes[ty] as usize
     }
@@ -325,7 +325,7 @@ impl<'a> InvocationApChangeInfoProvider for CompiledInvocationBuilder<'a> {
     }
 }
 
-impl<'a> InvocationCostInfoProvider for CompiledInvocationBuilder<'a> {
+impl InvocationCostInfoProvider for CompiledInvocationBuilder<'_> {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self.program_info.type_sizes[ty] as usize
     }

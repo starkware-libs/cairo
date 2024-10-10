@@ -339,7 +339,7 @@ pub struct NodeTextFormatter<'a> {
     /// The syntax db.
     pub db: &'a dyn SyntaxGroup,
 }
-impl<'a> Display for NodeTextFormatter<'a> {
+impl Display for NodeTextFormatter<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.node.green_node(self.db).as_ref().details {
             green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,

@@ -124,8 +124,8 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    /// Token matchers.
-    /// =================================================================================
+    // Token matchers.
+    // =================================================================================
 
     /// Takes a number. May be decimal, hex, oct or bin.
     fn take_token_literal_number(&mut self) -> TokenKind {

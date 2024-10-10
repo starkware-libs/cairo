@@ -25,7 +25,7 @@ struct FunctionWithBodyNode<'a> {
     dependency_type: DependencyType,
     db: &'a dyn LoweringGroup,
 }
-impl<'a> GraphNode for FunctionWithBodyNode<'a> {
+impl GraphNode for FunctionWithBodyNode<'_> {
     type NodeId = FunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {

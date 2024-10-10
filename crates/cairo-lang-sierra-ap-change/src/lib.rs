@@ -68,8 +68,8 @@ struct InvocationApChangeInfoProviderForEqGen<'a, TokenUsages: Fn(CostTokenType)
     token_usages: TokenUsages,
 }
 
-impl<'a, TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
-    for InvocationApChangeInfoProviderForEqGen<'a, TokenUsages>
+impl<TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
+    for InvocationApChangeInfoProviderForEqGen<'_, TokenUsages>
 {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self.type_sizes[ty].into_or_panic()

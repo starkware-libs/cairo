@@ -456,7 +456,7 @@ impl DerefMut for Inference<'_> {
     }
 }
 
-impl<'db> std::fmt::Debug for Inference<'db> {
+impl std::fmt::Debug for Inference<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let x = self.data.debug(self.db.elongate());
         write!(f, "{x:?}")
@@ -1113,7 +1113,7 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for Inference<'a> {
 add_basic_rewrites!(<'a>, Inference<'a>, NoError, @exclude TypeLongId TypeId ImplLongId ImplId ConstValue);
 add_expr_rewrites!(<'a>, Inference<'a>, NoError, @exclude);
 add_rewrite!(<'a>, Inference<'a>, NoError, Ambiguity);
-impl<'a> SemanticRewriter<TypeId, NoError> for Inference<'a> {
+impl SemanticRewriter<TypeId, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut TypeId) -> Result<RewriteResult, NoError> {
         if value.is_var_free(self.db) {
             return Ok(RewriteResult::NoChange);
@@ -1121,7 +1121,7 @@ impl<'a> SemanticRewriter<TypeId, NoError> for Inference<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
+impl SemanticRewriter<ImplId, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Result<RewriteResult, NoError> {
         if value.is_var_free(self.db) {
             return Ok(RewriteResult::NoChange);
@@ -1129,7 +1129,7 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
+impl SemanticRewriter<TypeLongId, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Result<RewriteResult, NoError> {
         match value {
             TypeLongId::Var(var) => {
@@ -1197,7 +1197,7 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
+impl SemanticRewriter<ConstValue, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Result<RewriteResult, NoError> {
         match value {
             ConstValue::Var(var, _) => {
@@ -1250,7 +1250,7 @@ impl<'a> SemanticRewriter<ConstValue, NoError> for Inference<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ImplLongId, NoError> for Inference<'a> {
+impl SemanticRewriter<ImplLongId, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplLongId) -> Result<RewriteResult, NoError> {
         match value {
             ImplLongId::ImplVar(var) => {
@@ -1328,7 +1328,7 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for InferenceIdReplacer<'a> {
 add_basic_rewrites!(<'a>, InferenceIdReplacer<'a>, NoError, @exclude InferenceId);
 add_expr_rewrites!(<'a>, InferenceIdReplacer<'a>, NoError, @exclude);
 add_rewrite!(<'a>, InferenceIdReplacer<'a>, NoError, Ambiguity);
-impl<'a> SemanticRewriter<InferenceId, NoError> for InferenceIdReplacer<'a> {
+impl SemanticRewriter<InferenceId, NoError> for InferenceIdReplacer<'_> {
     fn internal_rewrite(&mut self, value: &mut InferenceId) -> Result<RewriteResult, NoError> {
         if value == &self.from_inference_id {
             *value = self.to_inference_id;

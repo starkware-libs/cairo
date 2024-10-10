@@ -25,7 +25,7 @@ trait DiagnosticCallback {
     fn on_diagnostic(&mut self, diagnostic: FormattedDiagnosticEntry);
 }
 
-impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
+impl DiagnosticCallback for Option<Box<dyn DiagnosticCallback + '_>> {
     fn on_diagnostic(&mut self, diagnostic: FormattedDiagnosticEntry) {
         if let Some(callback) = self {
             callback.on_diagnostic(diagnostic)

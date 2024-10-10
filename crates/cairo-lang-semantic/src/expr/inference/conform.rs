@@ -68,7 +68,7 @@ pub trait InferenceConform {
     fn function_contains_var(&mut self, function_id: FunctionId, var: InferenceVar) -> bool;
 }
 
-impl<'db> InferenceConform for Inference<'db> {
+impl InferenceConform for Inference<'_> {
     /// Conforms ty0 to ty1. Should be called when ty0 should be coerced to ty1. Not symmetric.
     /// Returns the reduced type for ty0, or an error if the type is no coercible.
     fn conform_ty(&mut self, ty0: TypeId, ty1: TypeId) -> InferenceResult<TypeId> {

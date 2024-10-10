@@ -113,7 +113,7 @@ pub trait InferenceEmbeddings {
     ) -> ImplImplId;
 }
 
-impl<'db> InferenceEmbeddings for Inference<'db> {
+impl InferenceEmbeddings for Inference<'_> {
     /// Infers all the variables required to make an uninferred impl provide a concrete trait.
     fn infer_impl(
         &mut self,

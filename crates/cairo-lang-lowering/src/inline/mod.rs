@@ -180,7 +180,7 @@ pub struct Mapper<'a, 'b> {
     block_id_offset: BlockId,
 }
 
-impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
+impl Rebuilder for Mapper<'_, '_> {
     /// Maps a var id from the original lowering representation to the equivalent id in the
     /// new lowering representation.
     /// If the variable wasn't assigned an id yet, a new id is assigned.
