@@ -40,6 +40,7 @@ impl TupleStructureStorePacking of starknet::storage_access::StorePacking<
 
 #[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
 enum Efg {
+    #[default]
     E: (),
     F: (),
     G: u256
@@ -88,6 +89,7 @@ struct Vecs {
 #[derive(Copy, Drop, Debug, Serde, PartialEq, starknet::Store)]
 #[starknet::sub_pointers(QueryableEnumVariants)]
 enum QueryableEnum {
+    #[default]
     A: (),
     B: u128,
     C: u256,

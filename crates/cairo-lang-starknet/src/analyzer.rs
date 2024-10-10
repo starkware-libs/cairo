@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_defs::ids::{EnumId, ModuleId, StructId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
@@ -17,8 +17,11 @@ use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
 use crate::contract::module_contract;
 use crate::plugin::consts::{
     COMPONENT_ATTR, CONTRACT_ATTR, EMBEDDABLE_ATTR, FLAT_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR,
-    STORAGE_STRUCT_NAME, SUBSTORAGE_ATTR,
+    STORAGE_STRUCT_NAME, STORE_TRAIT, SUBSTORAGE_ATTR,
 };
+use crate::plugin::utils::has_derive;
+
+const ALLOW_NO_DEFAULT_VARIANT_ATTR: &str = "starknet::store_no_default_variant";
 
 /// Plugin to add diagnostics for contracts for bad ABI generation.
 #[derive(Default, Debug)]
@@ -89,41 +92,69 @@ pub struct StorageAnalyzer;
 impl AnalyzerPlugin for StorageAnalyzer {
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
         let mut diagnostics = vec![];
-        let Ok(module_structs) = db.module_structs(module_id) else {
-            return vec![];
-        };
 
-        // Analyze all the members of the struct.
-        for (id, item) in module_structs.iter() {
-            if !item.has_attr(db.upcast(), STORAGE_NODE_ATTR)
-                && !item.has_attr(db.upcast(), STORAGE_ATTR)
-                && (item.name(db.upcast()).text(db.upcast()) != STORAGE_STRUCT_NAME
-                    || (!module_id.has_attr(db, CONTRACT_ATTR).unwrap_or_default()
-                        && !module_id.has_attr(db, COMPONENT_ATTR).unwrap_or_default()))
-            {
-                continue;
+        let syntax_db = db.upcast();
+
+        // Analyze all the structs in the module.
+        if let Ok(module_structs) = db.module_structs(module_id) {
+            for (id, item) in module_structs.iter() {
+                // Only run the analysis on storage structs or structs with the storage attribute.
+                if item.has_attr(syntax_db, STORAGE_NODE_ATTR)
+                    || item.has_attr(syntax_db, STORAGE_ATTR)
+                    || (item.name(syntax_db).text(syntax_db) == STORAGE_STRUCT_NAME
+                        && (module_id.has_attr(db, CONTRACT_ATTR).unwrap_or_default()
+                            || module_id.has_attr(db, COMPONENT_ATTR).unwrap_or_default()))
+                {
+                    add_storage_struct_diags(db, *id, &mut diagnostics);
+                }
             }
-            let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
-            let Ok(members) = db.struct_members(*id) else { continue };
-            for (member_name, member) in members.iter() {
-                member_analyze(
-                    db,
-                    member,
-                    member_name.clone(),
-                    paths_data,
-                    &mut vec![],
-                    member
-                        .id
-                        .stable_ptr(db.upcast())
-                        .lookup(db.upcast())
-                        .name(db.upcast())
-                        .stable_ptr()
-                        .untyped(),
-                    &mut diagnostics,
-                );
+        }
+        // Analyze all the enums in the module.
+        if let Ok(module_enums) = db.module_enums(module_id) {
+            for (id, item) in module_enums.iter() {
+                if has_derive(item, syntax_db, STORE_TRAIT).is_some()
+                    && !item.has_attr_with_arg(syntax_db, "allow", ALLOW_NO_DEFAULT_VARIANT_ATTR)
+                {
+                    add_derive_store_enum_diags(db, *id, &mut diagnostics);
+                }
             }
         }
         diagnostics
+    }
+
+    fn declared_allows(&self) -> Vec<String> {
+        vec![ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string()]
+    }
+}
+
+/// Adds diagnostics for a storage struct.
+///
+/// Specifically finds cases where there are multiple paths to the same location in storage.
+fn add_storage_struct_diags(
+    db: &dyn SemanticGroup,
+    id: StructId,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) {
+    let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
+    let Ok(members) = db.struct_members(id) else {
+        return;
+    };
+    for (member_name, member) in members.iter() {
+        member_analyze(
+            db,
+            member,
+            member_name.clone(),
+            paths_data,
+            &mut vec![],
+            member
+                .id
+                .stable_ptr(db.upcast())
+                .lookup(db.upcast())
+                .name(db.upcast())
+                .stable_ptr()
+                .untyped(),
+            diagnostics,
+        );
     }
 }
 
@@ -206,4 +237,26 @@ fn member_analyze(
         );
     }
     user_data_path.pop();
+}
+
+/// Adds diagnostics for a enum deriving `starknet::Store`.
+///
+/// Specifically finds cases missing a `#[default]` variant.
+fn add_derive_store_enum_diags(
+    db: &dyn SemanticGroup,
+    id: EnumId,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) {
+    let Ok(variants) = db.enum_variants(id) else { return };
+    if !variants.iter().any(|(_, variant_id)| {
+        variant_id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr(db.upcast(), "default")
+    }) {
+        diagnostics.push(PluginDiagnostic::warning(
+            id.stable_ptr(db.upcast()).untyped(),
+            format!(
+                "Enum with `#[derive({STORE_TRAIT})] has no default variant. Either add one, or \
+                 add `#[allow({ALLOW_NO_DEFAULT_VARIANT_ATTR})]`"
+            ),
+        ));
+    }
 }
