@@ -14,6 +14,21 @@ fn test_u96() {
 }
 
 #[test]
+fn test_u384() {
+    let a: u384 =
+        0x1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB;
+    assert_eq!(
+        a,
+        u384 {
+            limb0: 0xb153ffffb9feffffffffaaab,
+            limb1: 0x6730d2a0f6b0f6241eabfffe,
+            limb2: 0x434bacd764774b84f38512bf,
+            limb3: 0x1a0111ea397fe69a4b1ba7b6
+        }
+    );
+}
+
+#[test]
 fn test_try_into_u96() {
     assert_eq!(0x123_felt252.try_into(), Option::<u96>::Some(0x123));
     assert_eq!(0x1000000000000000000000000_felt252.try_into(), Option::<u96>::None);
