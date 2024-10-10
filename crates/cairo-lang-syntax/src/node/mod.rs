@@ -289,6 +289,30 @@ impl SyntaxNode {
     pub fn preorder<'db>(&self, db: &'db dyn SyntaxGroup) -> Preorder<'db> {
         Preorder::new(self.clone(), db)
     }
+
+    /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
+    pub fn get_node_tree_leaves<'db>(&self, db: &'db dyn SyntaxGroup) -> Vec<Self> {
+        let mut leaves: Vec<Self> = Vec::default();
+        Self::travers_node_tree_for_leaves(db, &mut leaves, &self);
+        leaves
+    }
+
+    /// Recursively traverses the SyntaxTree starting from the passed Node.
+    /// Colletcs all the leaves of the tree inside the `leaves` vector.
+    fn travers_node_tree_for_leaves(
+        db: &dyn SyntaxGroup,
+        leaves: &mut Vec<SyntaxNode>,
+        node: &SyntaxNode,
+    ) {
+        let children = db.get_children(node.clone());
+        if children.len() == 0 {
+            leaves.push(node.clone());
+        } else {
+            for child in children.into_iter() {
+                Self::travers_node_tree_for_leaves(db, leaves, child);
+            }
+        }
+    }
 }
 
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under

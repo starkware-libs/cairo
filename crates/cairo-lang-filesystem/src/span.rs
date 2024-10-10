@@ -1,6 +1,8 @@
 use std::iter::Sum;
 use std::ops::{Add, Range, Sub};
 
+use serde::{Deserialize, Serialize};
+
 use crate::db::FilesGroup;
 use crate::ids::FileId;
 
@@ -10,7 +12,9 @@ mod test;
 
 /// Byte length of an utf8 string.
 // This wrapper type is used to avoid confusion with non-utf8 sizes.
-#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 pub struct TextWidth(u32);
 impl TextWidth {
     pub fn from_char(c: char) -> Self {
@@ -45,7 +49,9 @@ impl Sum for TextWidth {
 }
 
 /// Byte offset inside a utf8 string.
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 pub struct TextOffset(TextWidth);
 impl TextOffset {
     pub fn add_width(self, width: TextWidth) -> Self {
@@ -67,7 +73,9 @@ impl Sub for TextOffset {
 }
 
 /// A range of text offsets that form a span (like text selection).
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
+)]
 pub struct TextSpan {
     pub start: TextOffset,
     pub end: TextOffset,
