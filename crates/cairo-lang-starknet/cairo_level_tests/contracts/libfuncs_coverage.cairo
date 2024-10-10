@@ -494,8 +494,7 @@ extern fn i64_const<const VALUE: i64>() -> i64 nopanic;
 extern fn i128_const<const VALUE: i128>() -> i128 nopanic;
 extern fn bytes31_const<const VALUE: felt252>() -> bytes31 nopanic;
 use starknet::storage_access::storage_base_address_const;
-use starknet::contract_address::contract_address_const;
-use starknet::class_hash::class_hash_const;
+use starknet::const_value;
 
 fn consts_libfuncs(libfuncs: ConstsLibfuncs) {
     match libfuncs {
@@ -512,8 +511,10 @@ fn consts_libfuncs(libfuncs: ConstsLibfuncs) {
         ConstsLibfuncs::I128 => use_and_panic(i128_const::<0>()),
         ConstsLibfuncs::Byte31 => use_and_panic(bytes31_const::<0>()),
         ConstsLibfuncs::StorageBase => use_and_panic(storage_base_address_const::<0>()),
-        ConstsLibfuncs::ClassHash => use_and_panic(class_hash_const::<0>()),
-        ConstsLibfuncs::ContractAddress => use_and_panic(contract_address_const::<0>()),
+        ConstsLibfuncs::ClassHash => use_and_panic(const_value::<0, starknet::ClassHash>()),
+        ConstsLibfuncs::ContractAddress => use_and_panic(
+            const_value::<0, starknet::ContractAddress>()
+        ),
     }
 }
 

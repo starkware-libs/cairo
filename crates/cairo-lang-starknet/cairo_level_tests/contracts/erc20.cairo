@@ -23,7 +23,7 @@ pub trait IERC20<TContractState> {
 pub mod erc_20 {
     use core::num::traits::Zero;
     use starknet::get_caller_address;
-    use starknet::contract_address_const;
+    use starknet::const_value;
     use starknet::ContractAddress;
     use starknet::storage::{
         Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
@@ -77,9 +77,7 @@ pub mod erc_20 {
         self
             .emit(
                 Event::Transfer(
-                    Transfer {
-                        from: contract_address_const::<0>(), to: recipient, value: initial_supply
-                    }
+                    Transfer { from: const_value::<0>(), to: recipient, value: initial_supply }
                 )
             );
     }
