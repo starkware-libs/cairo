@@ -1899,7 +1899,7 @@ fn compute_expr_indexed_semantic(
 /// call and Index operator differs in the diagnostics they emit. The function returns the
 /// function_id to call, the trait containing the function, the self argument, with snapshots added
 /// if needed, and the mutability of the self argument.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn compute_method_function_call_data(
     ctx: &mut ComputationContext<'_>,
     candidate_traits: &[TraitId],
