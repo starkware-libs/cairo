@@ -26,7 +26,13 @@ pub(crate) mod overflow_based {
         fn saturating_add(self: T, other: T) -> T {
             let (result, overflow) = self.overflowing_add(other);
             match overflow {
-                true => crate::num::traits::Bounded::MAX,
+                true => {
+                    if other < 0 {
+                        crate::num::traits::Bounded::MIN
+                    } else {
+                        crate::num::traits::Bounded::MAX
+                    }
+                },
                 false => result,
             }
         }
@@ -38,7 +44,13 @@ pub(crate) mod overflow_based {
         fn saturating_sub(self: T, other: T) -> T {
             let (result, overflow) = self.overflowing_sub(other);
             match overflow {
-                true => crate::num::traits::Bounded::MIN,
+                true => {
+                    if other < 0 {
+                        crate::num::traits::Bounded::MAX
+                    } else {
+                        crate::num::traits::Bounded::MIN
+                    }
+                },
                 false => result,
             }
         }
