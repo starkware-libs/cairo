@@ -291,9 +291,9 @@ impl SyntaxNode {
     }
 
     /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
-    pub fn get_node_tree_leaves<'db>(&self, db: &'db dyn SyntaxGroup) -> Vec<Self> {
+    pub fn get_node_tree_leaves(&self, db: &dyn SyntaxGroup) -> Vec<Self> {
         let mut leaves: Vec<Self> = Vec::default();
-        Self::travers_node_tree_for_leaves(db, &mut leaves, &self);
+        Self::travers_node_tree_for_leaves(db, &mut leaves, self);
         leaves
     }
 
@@ -308,7 +308,7 @@ impl SyntaxNode {
         if children.len() == 0 {
             leaves.push(node.clone());
         } else {
-            for child in children.into_iter() {
+            for child in children.iter() {
                 Self::travers_node_tree_for_leaves(db, leaves, child);
             }
         }
