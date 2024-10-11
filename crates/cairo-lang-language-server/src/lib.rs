@@ -87,7 +87,7 @@ use crate::lsp::result::{LSPError, LSPResult};
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
-use crate::server::client::{Client, Notifier, Requester};
+use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::schedule::{event_loop_thread, JoinHandle, Scheduler, SyncTask, Task};
 use crate::state::State;
@@ -328,24 +328,14 @@ impl Backend {
         let four = NonZeroUsize::new(4).unwrap();
         let worker_threads = thread::available_parallelism().unwrap_or(four).max(four);
 
-        let dynamic_registrations = collect_dynamic_registrations(&state.client_capabilities);
-
         let mut scheduler = Scheduler::new(state, worker_threads, connection.make_sender());
 
-        if let Err(error) =
-            Self::register_dynamic_capabilities(&mut scheduler, dynamic_registrations)
-        {
-            error!(
-                "failed to register dynamic capabilities, some features may not work properly: \
-                 {error:?}"
-            )
-        }
+        scheduler
+            .dispatch(Task::Sync(SyncTask { func: Box::new(Self::register_dynamic_capabilities) }));
 
-        // Reloading config has to be done as a sync task to access mutable state that is borrowed
-        // by scheduler.
         scheduler.dispatch(Task::Sync(SyncTask {
             func: Box::new(|state, _notifier, requester, _responder| {
-                Self::reload_config(state, requester).ok();
+                let _ = Self::reload_config(state, requester);
             }),
         }));
 
@@ -353,18 +343,27 @@ impl Backend {
     }
 
     fn register_dynamic_capabilities(
-        scheduler: &mut Scheduler<'_>,
-        registrations: Vec<Registration>,
-    ) -> Result<()> {
-        let response_handler = |()| {
-            debug!("configuration file watcher successfully registered");
-            Task::nothing()
-        };
+        state: &mut State,
+        _notifier: Notifier,
+        requester: &mut Requester<'_>,
+        _responder: Responder,
+    ) {
+        let registrations = collect_dynamic_registrations(&state.client_capabilities);
 
-        scheduler.request::<lsp_types::request::RegisterCapability>(
-            RegistrationParams { registrations },
-            response_handler,
-        )
+        let _ = requester
+            .request::<lsp_types::request::RegisterCapability>(
+                RegistrationParams { registrations },
+                |()| {
+                    debug!("configuration file watcher successfully registered");
+                    Task::nothing()
+                },
+            )
+            .inspect_err(|e| {
+                error!(
+                    "failed to register dynamic capabilities, some features may not work \
+                     properly: {e:?}"
+                )
+            });
     }
 
     // +--------------------------------------------------+
