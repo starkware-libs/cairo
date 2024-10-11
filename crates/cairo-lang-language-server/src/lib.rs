@@ -39,13 +39,13 @@
 //! ```
 
 use std::collections::{HashMap, HashSet};
-use std::io;
 use std::num::NonZeroUsize;
 use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::SystemTime;
+use std::{io, thread};
 
 use anyhow::{anyhow, Context, Result};
 use cairo_lang_compiler::db::validate_corelib;
@@ -262,7 +262,7 @@ impl BackendForTesting {
         let (connection_initializer, client) = ConnectionInitializer::memory();
 
         let init = Box::new(|| {
-            BackendForTesting(Backend::new_inner(tricks, connection_initializer).unwrap())
+            BackendForTesting(Backend::initialize(tricks, connection_initializer).unwrap())
         });
 
         (init, client)
@@ -277,10 +277,13 @@ impl Backend {
     fn new(tricks: Tricks) -> Result<Self> {
         let connection_initializer = ConnectionInitializer::stdio();
 
-        Self::new_inner(tricks, connection_initializer)
+        Self::initialize(tricks, connection_initializer)
     }
 
-    fn new_inner(tricks: Tricks, connection_initializer: ConnectionInitializer) -> Result<Self> {
+    /// Initializes the connection and crate a ready to run [`Backend`] instance.
+    ///
+    /// As part of the initialization flow, this function exchanges client and server capabilities.
+    fn initialize(tricks: Tricks, connection_initializer: ConnectionInitializer) -> Result<Self> {
         let (id, init_params) = connection_initializer.initialize_start()?;
 
         let client_capabilities = init_params.capabilities;
@@ -304,6 +307,7 @@ impl Backend {
         State::new(db, client_capabilities, scarb_toolchain, tricks)
     }
 
+    /// Runs the main event loop thread and wait for its completion.
     fn run(self) -> Result<JoinHandle<Result<()>>> {
         let Self { mut state, connection } = self;
 
@@ -322,16 +326,12 @@ impl Backend {
 
     fn initial_setup<'a>(state: &'a mut State, connection: &'_ Connection) -> Scheduler<'a> {
         let four = NonZeroUsize::new(4).unwrap();
-        let worker_threads = std::thread::available_parallelism().unwrap_or(four).max(four);
+        let worker_threads = thread::available_parallelism().unwrap_or(four).max(four);
 
         let dynamic_registrations = collect_dynamic_registrations(&state.client_capabilities);
 
         let mut scheduler = Scheduler::new(state, worker_threads, connection.make_sender());
 
-        // The dynamic registration and config-reload happen here instead of as a reaction to
-        // `initialized` notification as it is more convenient implementation-wise.
-        // Ideally, we would wait for responses to these requests here instead of in the event loop,
-        // but we did not find a suitable way to do that.
         if let Err(error) =
             Self::register_dynamic_capabilities(&mut scheduler, dynamic_registrations)
         {
