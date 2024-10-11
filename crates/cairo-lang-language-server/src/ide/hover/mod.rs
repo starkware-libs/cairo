@@ -3,7 +3,10 @@ use tower_lsp::lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, Mar
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
+mod range;
 mod render;
+
+pub use self::render::Literal;
 
 /// Get hover information at a given text document position.
 #[tracing::instrument(
@@ -14,11 +17,21 @@ mod render;
 pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
     let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri)?;
     let position = params.text_document_position_params.position.to_cairo();
-    let identifier = db.find_identifier_at_position(file_id, position)?;
 
-    render::definition(db, &identifier, file_id).or_else(|| render::legacy(db, &identifier))
+    if let Some(hover) =
+        db.find_literal_at_position(file_id, position).map(|literal| literal.render(db, file_id))
+    {
+        return hover;
+    }
 
-    // TODO(mkaput): If client only supports plaintext, strip markdown formatting here like RA.
+    if let Some(hover) = db
+        .find_identifier_at_position(file_id, position)
+        .map(|ref id| render::definition(db, &id, file_id).or_else(|| render::legacy(db, &id)))
+    {
+        return hover;
+    }
+
+    return None;
 }
 
 /// Convenience shortcut for building hover contents from markdown block.

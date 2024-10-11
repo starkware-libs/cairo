@@ -2,10 +2,14 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextPosition;
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::ast::TerminalIdentifier;
+use cairo_lang_syntax::node::ast::{
+    TerminalIdentifier, TerminalLiteralNumber, TerminalShortString, TerminalString,
+};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
+
+use crate::ide::hover::Literal;
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// Language server-specific extensions to the syntax group of the Cairo compiler.
@@ -50,6 +54,29 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
             let col = position.col.checked_sub(1)?;
             find(TextPosition { col, ..position })
         })
+    }
+
+    /// Finds any terminal that represents a literal:
+    /// [`TerminalLiteralNumber`], [`TerminalString`] or [`TerminalShortString`]
+    /// at the given [`TextPosition`] in file.
+    fn find_literal_at_position(&self, file: FileId, position: TextPosition) -> Option<Literal> {
+        let db = self.upcast();
+        let syntax_db = db.upcast();
+
+        let node = self.find_syntax_node_at_position(file, position)?;
+
+        match node.kind(syntax_db) {
+            SyntaxKind::TokenLiteralNumber => Some(Literal::Number(
+                TerminalLiteralNumber::from_syntax_node(syntax_db, node.parent()?),
+            )),
+            SyntaxKind::TokenString => {
+                Some(Literal::String(TerminalString::from_syntax_node(syntax_db, node.parent()?)))
+            }
+            SyntaxKind::TokenShortString => Some(Literal::ShortString(
+                TerminalShortString::from_syntax_node(syntax_db, node.parent()?),
+            )),
+            _ => None,
+        }
     }
 
     /// Traverse tree in root direction.
