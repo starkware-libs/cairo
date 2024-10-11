@@ -39,13 +39,12 @@
 //! ```
 
 use std::collections::{HashMap, HashSet};
-use std::num::NonZeroUsize;
+use std::io;
 use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::SystemTime;
-use std::{io, thread};
 
 use anyhow::{anyhow, Context, Result};
 use cairo_lang_compiler::db::validate_corelib;
@@ -67,9 +66,7 @@ use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
 use lsp_server::{ErrorCode, Message};
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{
-    ClientCapabilities, PublishDiagnosticsParams, Registration, RegistrationParams, Url,
-};
+use lsp_types::{ClientCapabilities, PublishDiagnosticsParams, RegistrationParams, Url};
 use salsa::Cancelled;
 use server::connection::ClientSender;
 use state::FileDiagnostics;
@@ -89,7 +86,9 @@ use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::project::ProjectManifestPath;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
-use crate::server::schedule::{event_loop_thread, JoinHandle, Scheduler, SyncTask, Task};
+use crate::server::schedule::{
+    bounded_available_parallelism, event_loop_thread, JoinHandle, Scheduler, SyncTask, Task,
+};
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
 
@@ -309,10 +308,16 @@ impl Backend {
 
     /// Runs the main event loop thread and wait for its completion.
     fn run(self) -> Result<JoinHandle<Result<()>>> {
-        let Self { mut state, connection } = self;
-
         event_loop_thread(move || {
-            let scheduler = Self::initial_setup(&mut state, &connection);
+            let Self { mut state, connection } = self;
+
+            let mut scheduler = Scheduler::new(
+                &mut state,
+                bounded_available_parallelism(4),
+                connection.make_sender(),
+            );
+
+            Self::dispatch_setup_tasks(&mut scheduler);
 
             let result = Self::event_loop(&connection, scheduler);
 
@@ -324,12 +329,7 @@ impl Backend {
         })
     }
 
-    fn initial_setup<'a>(state: &'a mut State, connection: &'_ Connection) -> Scheduler<'a> {
-        let four = NonZeroUsize::new(4).unwrap();
-        let worker_threads = thread::available_parallelism().unwrap_or(four).max(four);
-
-        let mut scheduler = Scheduler::new(state, worker_threads, connection.make_sender());
-
+    fn dispatch_setup_tasks(scheduler: &mut Scheduler<'_>) {
         scheduler
             .dispatch(Task::Sync(SyncTask { func: Box::new(Self::register_dynamic_capabilities) }));
 
@@ -338,8 +338,6 @@ impl Backend {
                 let _ = Self::reload_config(state, requester);
             }),
         }));
-
-        scheduler
     }
 
     fn register_dynamic_capabilities(

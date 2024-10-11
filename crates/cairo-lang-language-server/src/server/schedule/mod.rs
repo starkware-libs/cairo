@@ -98,3 +98,13 @@ impl<'s> Scheduler<'s> {
         }
     }
 }
+
+/// Returns an estimate of the default amount of parallelism a program should use,
+/// capping or falling-back to a hardcoded _bound_.
+///
+/// ## Panics
+/// This function panics if `bound` is zero.
+pub fn bounded_available_parallelism(bound: usize) -> NonZeroUsize {
+    let bound = NonZeroUsize::new(bound).unwrap();
+    std::thread::available_parallelism().unwrap_or(bound).max(bound)
+}
