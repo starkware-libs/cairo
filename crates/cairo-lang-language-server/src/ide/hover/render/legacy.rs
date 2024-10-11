@@ -92,6 +92,9 @@ fn get_expr_hint(
             s.retain(|c| c != '"');
             s
         }
+        cairo_lang_semantic::Expr::Literal(_) | cairo_lang_semantic::Expr::StringLiteral(_) => {
+            return None;
+        }
         _ => semantic_expr.ty().format(db),
     };
     // Format the hover text.
