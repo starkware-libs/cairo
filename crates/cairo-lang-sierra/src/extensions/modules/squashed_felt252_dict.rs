@@ -1,8 +1,8 @@
+use crate::extensions::SpecializationError;
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
-use crate::extensions::SpecializationError;
 use crate::ids::GenericTypeId;
 
 /// Type representing a static squashed dictionary from a felt252 to any type of size one.

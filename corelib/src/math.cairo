@@ -2,6 +2,7 @@
 use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 #[allow(unused_imports)]
 use crate::traits::{Into, TryInto};
+#[allow(unused_imports)]
 use crate::option::OptionTrait;
 use crate::integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
 use crate::RangeCheck;
@@ -22,21 +23,23 @@ pub fn egcd<
     +Add<T>,
     +Mul<T>,
     +DivRem<T>,
-    +Zeroable<T>,
-    +Oneable<T>,
+    +core::num::traits::Zero<T>,
+    +core::num::traits::One<T>,
     +TryInto<T, NonZero<T>>,
 >(
     a: NonZero<T>, b: NonZero<T>
 ) -> (T, T, T, bool) {
     let (q, r) = DivRem::<T>::div_rem(a.into(), b);
 
-    if r.is_zero() {
-        return (b.into(), Zeroable::zero(), Oneable::one(), false);
-    }
+    let r = if let Option::Some(r) = r.try_into() {
+        r
+    } else {
+        return (b.into(), core::num::traits::Zero::zero(), core::num::traits::One::one(), false);
+    };
 
     // `sign` (1 for true, -1 for false) is the sign of `g` in the current iteration.
     // 0 is considered negative for this purpose.
-    let (g, s, t, sign) = egcd(b, r.try_into().unwrap());
+    let (g, s, t, sign) = egcd(b, r);
     // We know that `a = q*b + r` and that `s*b - t*r = sign*g`.
     // So `t*a - (s + q*t)*b = t*r - s*b = sign*g`.
     // Thus we pick `new_s = t`, `new_t = s + q*t`, `new_sign = !sign`.
@@ -55,14 +58,14 @@ pub fn inv_mod<
     +Sub<T>,
     +Mul<T>,
     +DivRem<T>,
-    +Zeroable<T>,
-    +Oneable<T>,
+    +core::num::traits::Zero<T>,
+    +core::num::traits::One<T>,
     +TryInto<T, NonZero<T>>,
 >(
     a: NonZero<T>, n: NonZero<T>
 ) -> Option<T> {
-    if Oneable::<T>::is_one(n.into()) {
-        return Option::Some(Zeroable::zero());
+    if core::num::traits::One::<T>::is_one(@n.into()) {
+        return Option::Some(core::num::traits::Zero::zero());
     }
     let (g, s, _, sub_direction) = egcd(a, n);
     if g.is_one() {

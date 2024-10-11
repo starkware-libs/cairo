@@ -8,7 +8,7 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, TypedStablePtr};
+use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -18,8 +18,8 @@ use crate::items::us::SemanticUseEx;
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::ResolvedGenericItem;
 use crate::test_utils::{
-    get_crate_semantic_diagnostics, setup_test_crate, test_expr_diagnostics,
-    SemanticDatabaseForTesting,
+    SemanticDatabaseForTesting, get_crate_semantic_diagnostics, setup_test_crate,
+    test_expr_diagnostics,
 };
 
 cairo_lang_test_utils::test_file_test!(
@@ -139,22 +139,17 @@ fn test_inline_module_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
     db.set_macro_plugins(vec![Arc::new(AddInlineModuleDummyPlugin)]);
-    let crate_id = setup_test_crate(
-        db,
-        indoc! {"
+    let crate_id = setup_test_crate(db, indoc! {"
             mod a {
                 #[test_change_return_type]
                 fn bad() -> u128 {
                     return 5_felt252;
                 }
             }
-       "},
-    );
+       "});
 
     // Verify we get diagnostics both for the original and the generated code.
-    assert_eq!(
-        get_crate_semantic_diagnostics(db, crate_id).format(db),
-        indoc! {r#"
+    assert_eq!(get_crate_semantic_diagnostics(db, crate_id).format(db), indoc! {r#"
             error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:4:16
                     return 5_felt252;
@@ -165,17 +160,14 @@ fn test_inline_module_diagnostics() {
                     return 5_felt252;
                            ^*******^
 
-            "#},
-    );
+            "#},);
 }
 
 #[test]
 fn test_inline_inline_module_diagnostics() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let crate_id = setup_test_crate(
-        db,
-        indoc! {"
+    let crate_id = setup_test_crate(db, indoc! {"
             mod a {
                 fn bad_a() -> u128 {
                     return 1_felt252;
@@ -195,8 +187,7 @@ fn test_inline_inline_module_diagnostics() {
             fn foo() {
                 b::c::bad_c();
             }
-       "},
-    );
+       "});
 
     assert_eq!(
         get_crate_semantic_diagnostics(db, crate_id).format(db),
@@ -237,6 +228,10 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
         }
         diagnostics
     }
+
+    fn declared_allows(&self) -> Vec<String> {
+        vec!["u128_rename".to_string()]
+    }
 }
 
 #[test]
@@ -244,9 +239,7 @@ fn test_analyzer_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
     db.set_analyzer_plugins(vec![Arc::new(NoU128RenameAnalyzerPlugin)]);
-    let crate_id = setup_test_crate(
-        db,
-        indoc! {"
+    let crate_id = setup_test_crate(db, indoc! {"
             mod inner {
                 use core::integer::u128 as long_u128_rename;
                 use u128 as short_u128_rename;
@@ -256,15 +249,13 @@ fn test_analyzer_diagnostics() {
             use core::integer::u128 as long_u128_rename;
             use u128 as short_u128_rename;
             use inner::long_u128_rename as additional_u128_rename;
+            #[allow(u128_rename)]
             use core::integer::u64 as long_u64_rename;
             use u64 as short_u64_rename;
             use inner::long_u64_rename as additional_u64_rename;
-       "},
-    );
+       "});
 
-    assert_eq!(
-        get_crate_semantic_diagnostics(db, crate_id).format(db),
-        indoc! {r#"
+    assert_eq!(get_crate_semantic_diagnostics(db, crate_id).format(db), indoc! {r#"
         error: Plugin diagnostic: Use items for u128 disallowed.
          --> lib.cairo:7:20
         use core::integer::u128 as long_u128_rename;
@@ -290,6 +281,5 @@ fn test_analyzer_diagnostics() {
             use u128 as short_u128_rename;
                 ^***********************^
 
-    "#},
-    );
+    "#},);
 }

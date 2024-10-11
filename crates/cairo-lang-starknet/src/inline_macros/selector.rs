@@ -5,7 +5,7 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 
 /// Macro for expanding a selector to a string literal.
 #[derive(Debug, Default)]

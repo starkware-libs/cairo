@@ -1566,6 +1566,201 @@ enum SignedIntegerResult<T> {
 }
 impl SignedIntegerResultDrop<T, +Drop<T>> of Drop<SignedIntegerResult<T>>;
 
+/// Impls for signed int addition and subtraction.
+mod signed_int_impls {
+    use super::SignedIntegerResult;
+
+    /// Helper trait for calling the libfuncs per signed int type.
+    trait SignedIntegerHelper<T> {
+        /// The wrapper for the addition libfunc.
+        fn add(lhs: T, rhs: T) -> SignedIntegerResult<T> nopanic;
+        /// The wrapper for the subtraction libfunc.
+        fn sub(lhs: T, rhs: T) -> SignedIntegerResult<T> nopanic;
+    }
+
+    impl SignedIntegerHelperI8 of SignedIntegerHelper<i8> {
+        fn add(lhs: i8, rhs: i8) -> SignedIntegerResult<i8> nopanic {
+            super::i8_overflowing_add_impl(lhs, rhs)
+        }
+        fn sub(lhs: i8, rhs: i8) -> SignedIntegerResult<i8> nopanic {
+            super::i8_overflowing_sub_impl(lhs, rhs)
+        }
+    }
+    impl SignedIntegerHelperI16 of SignedIntegerHelper<i16> {
+        fn add(lhs: i16, rhs: i16) -> SignedIntegerResult<i16> nopanic {
+            super::i16_overflowing_add_impl(lhs, rhs)
+        }
+        fn sub(lhs: i16, rhs: i16) -> SignedIntegerResult<i16> nopanic {
+            super::i16_overflowing_sub_impl(lhs, rhs)
+        }
+    }
+    impl SignedIntegerHelperI32 of SignedIntegerHelper<i32> {
+        fn add(lhs: i32, rhs: i32) -> SignedIntegerResult<i32> nopanic {
+            super::i32_overflowing_add_impl(lhs, rhs)
+        }
+        fn sub(lhs: i32, rhs: i32) -> SignedIntegerResult<i32> nopanic {
+            super::i32_overflowing_sub_impl(lhs, rhs)
+        }
+    }
+    impl SignedIntegerHelperI64 of SignedIntegerHelper<i64> {
+        fn add(lhs: i64, rhs: i64) -> SignedIntegerResult<i64> nopanic {
+            super::i64_overflowing_add_impl(lhs, rhs)
+        }
+        fn sub(lhs: i64, rhs: i64) -> SignedIntegerResult<i64> nopanic {
+            super::i64_overflowing_sub_impl(lhs, rhs)
+        }
+    }
+    impl SignedIntegerHelperI128 of SignedIntegerHelper<i128> {
+        fn add(lhs: i128, rhs: i128) -> SignedIntegerResult<i128> nopanic {
+            super::i128_overflowing_add_impl(lhs, rhs)
+        }
+        fn sub(lhs: i128, rhs: i128) -> SignedIntegerResult<i128> nopanic {
+            super::i128_overflowing_sub_impl(lhs, rhs)
+        }
+    }
+    /// Impl for `CheckedAdd` based on `SignedIntegerHelper`.
+    pub impl CheckedAddImpl<
+        T, impl H: SignedIntegerHelper<T>, +Drop<T>
+    > of crate::num::traits::CheckedAdd<T> {
+        fn checked_add(self: T, v: T) -> Option<T> {
+            as_checked(H::add(self, v))
+        }
+    }
+    /// Impl for `CheckedSub` based on `SignedIntegerHelper`.
+    pub impl CheckedSubImpl<
+        T, impl H: SignedIntegerHelper<T>, +Drop<T>
+    > of crate::num::traits::CheckedSub<T> {
+        fn checked_sub(self: T, v: T) -> Option<T> {
+            as_checked(H::sub(self, v))
+        }
+    }
+    /// Converts `SignedIntegerResult` to an `Option::Some` if in range and to `Option::None`
+    /// otherwise.
+    fn as_checked<T, +Drop<T>>(result: SignedIntegerResult<T>) -> Option<T> {
+        match result {
+            SignedIntegerResult::InRange(result) => Option::Some(result),
+            SignedIntegerResult::Underflow(_) | SignedIntegerResult::Overflow(_) => Option::None,
+        }
+    }
+    /// Impl for `SaturatingAdd` based on `SignedIntegerHelper`.
+    pub impl SaturatingAddImpl<
+        T, impl H: SignedIntegerHelper<T>, +Drop<T>, +crate::num::traits::Bounded<T>
+    > of crate::num::traits::SaturatingAdd<T> {
+        fn saturating_add(self: T, other: T) -> T {
+            as_saturating(H::add(self, other))
+        }
+    }
+    /// Impl for `SaturatingSub` based on `SignedIntegerHelper`.
+    pub impl SaturatingSubImpl<
+        T, impl H: SignedIntegerHelper<T>, +Drop<T>, +crate::num::traits::Bounded<T>
+    > of crate::num::traits::SaturatingSub<T> {
+        fn saturating_sub(self: T, other: T) -> T {
+            as_saturating(H::sub(self, other))
+        }
+    }
+    /// Converts `SignedIntegerResult` to a saturated value.
+    fn as_saturating<T, +Drop<T>, impl B: crate::num::traits::Bounded<T>>(
+        result: SignedIntegerResult<T>
+    ) -> T {
+        match result {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => B::MIN,
+            SignedIntegerResult::Overflow(_) => B::MAX,
+        }
+    }
+    /// Impl for `OverflowingAdd` based on `SignedIntegerHelper`.
+    pub impl OverflowingAddImpl<
+        T, impl H: SignedIntegerHelper<T>, +Drop<T>
+    > of crate::num::traits::OverflowingAdd<T> {
+        fn overflowing_add(self: T, v: T) -> (T, bool) {
+            as_overflowing(H::add(self, v))
+        }
+    }
+    /// Impl for `OverflowingSub` based on `SignedIntegerHelper`.
+    pub impl OverflowingSubImpl<
+        T, impl H: SignedIntegerHelper<T>, +Drop<T>
+    > of crate::num::traits::OverflowingSub<T> {
+        fn overflowing_sub(self: T, v: T) -> (T, bool) {
+            as_overflowing(H::sub(self, v))
+        }
+    }
+    /// Converts `SignedIntegerResult` to a tuple of the result and a boolean indicating overflow.
+    fn as_overflowing<T>(result: SignedIntegerResult<T>) -> (T, bool) {
+        match result {
+            SignedIntegerResult::InRange(result) => (result, false),
+            SignedIntegerResult::Underflow(result) |
+            SignedIntegerResult::Overflow(result) => (result, true),
+        }
+    }
+    /// Impl for `WrappingAdd` based on `SignedIntegerHelper`.
+    pub impl WrappingAddImpl<
+        T, impl H: SignedIntegerHelper<T>, +Drop<T>
+    > of crate::num::traits::WrappingAdd<T> {
+        fn wrapping_add(self: T, v: T) -> T {
+            as_wrapping(H::add(self, v))
+        }
+    }
+    /// Impl for `WrappingSub` based on `SignedIntegerHelper`.
+    pub impl WrappingSubImpl<
+        T, impl H: SignedIntegerHelper<T>, +Drop<T>
+    > of crate::num::traits::WrappingSub<T> {
+        fn wrapping_sub(self: T, v: T) -> T {
+            as_wrapping(H::sub(self, v))
+        }
+    }
+    /// Converts `SignedIntegerResult` to a wrapping value.
+    fn as_wrapping<T>(result: SignedIntegerResult<T>) -> T {
+        match result {
+            SignedIntegerResult::InRange(result) | SignedIntegerResult::Underflow(result) |
+            SignedIntegerResult::Overflow(result) => result,
+        }
+    }
+}
+impl I8CheckedAdd = signed_int_impls::CheckedAddImpl<i8>;
+impl I8CheckedSub = signed_int_impls::CheckedSubImpl<i8>;
+impl I8SaturatingAdd = signed_int_impls::SaturatingAddImpl<i8>;
+impl I8SaturatingSub = signed_int_impls::SaturatingSubImpl<i8>;
+impl I8OverflowingAdd = signed_int_impls::OverflowingAddImpl<i8>;
+impl I8OverflowingSub = signed_int_impls::OverflowingSubImpl<i8>;
+impl I8WrappingAdd = signed_int_impls::WrappingAddImpl<i8>;
+impl I8WrappingSub = signed_int_impls::WrappingSubImpl<i8>;
+
+impl I16CheckedAdd = signed_int_impls::CheckedAddImpl<i16>;
+impl I16CheckedSub = signed_int_impls::CheckedSubImpl<i16>;
+impl I16SaturatingAdd = signed_int_impls::SaturatingAddImpl<i16>;
+impl I16SaturatingSub = signed_int_impls::SaturatingSubImpl<i16>;
+impl I16OverflowingAdd = signed_int_impls::OverflowingAddImpl<i16>;
+impl I16OverflowingSub = signed_int_impls::OverflowingSubImpl<i16>;
+impl I16WrappingAdd = signed_int_impls::WrappingAddImpl<i16>;
+impl I16WrappingSub = signed_int_impls::WrappingSubImpl<i16>;
+
+impl I32CheckedAdd = signed_int_impls::CheckedAddImpl<i32>;
+impl I32CheckedSub = signed_int_impls::CheckedSubImpl<i32>;
+impl I32SaturatingAdd = signed_int_impls::SaturatingAddImpl<i32>;
+impl I32SaturatingSub = signed_int_impls::SaturatingSubImpl<i32>;
+impl I32OverflowingAdd = signed_int_impls::OverflowingAddImpl<i32>;
+impl I32OverflowingSub = signed_int_impls::OverflowingSubImpl<i32>;
+impl I32WrappingAdd = signed_int_impls::WrappingAddImpl<i32>;
+impl I32WrappingSub = signed_int_impls::WrappingSubImpl<i32>;
+
+impl I64CheckedAdd = signed_int_impls::CheckedAddImpl<i64>;
+impl I64CheckedSub = signed_int_impls::CheckedSubImpl<i64>;
+impl I64SaturatingAdd = signed_int_impls::SaturatingAddImpl<i64>;
+impl I64SaturatingSub = signed_int_impls::SaturatingSubImpl<i64>;
+impl I64OverflowingAdd = signed_int_impls::OverflowingAddImpl<i64>;
+impl I64OverflowingSub = signed_int_impls::OverflowingSubImpl<i64>;
+impl I64WrappingAdd = signed_int_impls::WrappingAddImpl<i64>;
+impl I64WrappingSub = signed_int_impls::WrappingSubImpl<i64>;
+
+impl I128CheckedAdd = signed_int_impls::CheckedAddImpl<i128>;
+impl I128CheckedSub = signed_int_impls::CheckedSubImpl<i128>;
+impl I128SaturatingAdd = signed_int_impls::SaturatingAddImpl<i128>;
+impl I128SaturatingSub = signed_int_impls::SaturatingSubImpl<i128>;
+impl I128OverflowingAdd = signed_int_impls::OverflowingAddImpl<i128>;
+impl I128OverflowingSub = signed_int_impls::OverflowingSubImpl<i128>;
+impl I128WrappingAdd = signed_int_impls::WrappingAddImpl<i128>;
+impl I128WrappingSub = signed_int_impls::WrappingSubImpl<i128>;
+
 #[derive(Copy, Drop)]
 pub extern type i8;
 impl NumericLiterali8 of NumericLiteral<i8>;
@@ -2631,56 +2826,6 @@ impl U256OverflowingAdd of crate::num::traits::OverflowingAdd<u256> {
     }
 }
 
-impl I8OverflowingAdd of crate::num::traits::OverflowingAdd<i8> {
-    fn overflowing_add(self: i8, v: i8) -> (i8, bool) {
-        match i8_overflowing_add_impl(self, v) {
-            SignedIntegerResult::InRange(x) => (x, false),
-            SignedIntegerResult::Underflow(x) => (x, true),
-            SignedIntegerResult::Overflow(x) => (x, true),
-        }
-    }
-}
-
-impl I16OverflowingAdd of crate::num::traits::OverflowingAdd<i16> {
-    fn overflowing_add(self: i16, v: i16) -> (i16, bool) {
-        match i16_overflowing_add_impl(self, v) {
-            SignedIntegerResult::InRange(x) => (x, false),
-            SignedIntegerResult::Underflow(x) => (x, true),
-            SignedIntegerResult::Overflow(x) => (x, true),
-        }
-    }
-}
-
-impl I32OverflowingAdd of crate::num::traits::OverflowingAdd<i32> {
-    fn overflowing_add(self: i32, v: i32) -> (i32, bool) {
-        match i32_overflowing_add_impl(self, v) {
-            SignedIntegerResult::InRange(x) => (x, false),
-            SignedIntegerResult::Underflow(x) => (x, true),
-            SignedIntegerResult::Overflow(x) => (x, true),
-        }
-    }
-}
-
-impl I64OverflowingAdd of crate::num::traits::OverflowingAdd<i64> {
-    fn overflowing_add(self: i64, v: i64) -> (i64, bool) {
-        match i64_overflowing_add_impl(self, v) {
-            SignedIntegerResult::InRange(x) => (x, false),
-            SignedIntegerResult::Underflow(x) => (x, true),
-            SignedIntegerResult::Overflow(x) => (x, true),
-        }
-    }
-}
-
-impl I128OverflowingAdd of crate::num::traits::OverflowingAdd<i128> {
-    fn overflowing_add(self: i128, v: i128) -> (i128, bool) {
-        match i128_overflowing_add_impl(self, v) {
-            SignedIntegerResult::InRange(x) => (x, false),
-            SignedIntegerResult::Underflow(x) => (x, true),
-            SignedIntegerResult::Overflow(x) => (x, true),
-        }
-    }
-}
-
 // OverflowingSub implementations
 impl U8OverflowingSub of crate::num::traits::OverflowingSub<u8> {
     fn overflowing_sub(self: u8, v: u8) -> (u8, bool) {
@@ -2730,56 +2875,6 @@ impl U128OverflowingSub of crate::num::traits::OverflowingSub<u128> {
 impl U256OverflowingSub of crate::num::traits::OverflowingSub<u256> {
     fn overflowing_sub(self: u256, v: u256) -> (u256, bool) {
         u256_overflowing_sub(self, v)
-    }
-}
-
-impl I8OverflowingSub of crate::num::traits::OverflowingSub<i8> {
-    fn overflowing_sub(self: i8, v: i8) -> (i8, bool) {
-        match i8_overflowing_sub_impl(self, v) {
-            SignedIntegerResult::InRange(x) => (x, false),
-            SignedIntegerResult::Underflow(x) => (x, true),
-            SignedIntegerResult::Overflow(x) => (x, true),
-        }
-    }
-}
-
-impl I16OverflowingSub of crate::num::traits::OverflowingSub<i16> {
-    fn overflowing_sub(self: i16, v: i16) -> (i16, bool) {
-        match i16_overflowing_sub_impl(self, v) {
-            SignedIntegerResult::InRange(x) => (x, false),
-            SignedIntegerResult::Underflow(x) => (x, true),
-            SignedIntegerResult::Overflow(x) => (x, true),
-        }
-    }
-}
-
-impl I32OverflowingSub of crate::num::traits::OverflowingSub<i32> {
-    fn overflowing_sub(self: i32, v: i32) -> (i32, bool) {
-        match i32_overflowing_sub_impl(self, v) {
-            SignedIntegerResult::InRange(x) => (x, false),
-            SignedIntegerResult::Underflow(x) => (x, true),
-            SignedIntegerResult::Overflow(x) => (x, true),
-        }
-    }
-}
-
-impl I64OverflowingSub of crate::num::traits::OverflowingSub<i64> {
-    fn overflowing_sub(self: i64, v: i64) -> (i64, bool) {
-        match i64_overflowing_sub_impl(self, v) {
-            SignedIntegerResult::InRange(x) => (x, false),
-            SignedIntegerResult::Underflow(x) => (x, true),
-            SignedIntegerResult::Overflow(x) => (x, true),
-        }
-    }
-}
-
-impl I128OverflowingSub of crate::num::traits::OverflowingSub<i128> {
-    fn overflowing_sub(self: i128, v: i128) -> (i128, bool) {
-        match i128_overflowing_sub_impl(self, v) {
-            SignedIntegerResult::InRange(x) => (x, false),
-            SignedIntegerResult::Underflow(x) => (x, true),
-            SignedIntegerResult::Overflow(x) => (x, true),
-        }
     }
 }
 
@@ -2839,11 +2934,6 @@ impl U32WrappingAdd = crate::num::traits::ops::wrapping::overflow_based::TWrappi
 impl U64WrappingAdd = crate::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u64>;
 impl U128WrappingAdd = crate::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u128>;
 impl U256WrappingAdd = crate::num::traits::ops::wrapping::overflow_based::TWrappingAdd<u256>;
-impl I8WrappingAdd = crate::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i8>;
-impl I16WrappingAdd = crate::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i16>;
-impl I32WrappingAdd = crate::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i32>;
-impl I64WrappingAdd = crate::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i64>;
-impl I128WrappingAdd = crate::num::traits::ops::wrapping::overflow_based::TWrappingAdd<i128>;
 
 /// WrappingSub implementations
 impl U8WrappingSub = crate::num::traits::ops::wrapping::overflow_based::TWrappingSub<u8>;
@@ -2852,11 +2942,6 @@ impl U32WrappingSub = crate::num::traits::ops::wrapping::overflow_based::TWrappi
 impl U64WrappingSub = crate::num::traits::ops::wrapping::overflow_based::TWrappingSub<u64>;
 impl U128WrappingSub = crate::num::traits::ops::wrapping::overflow_based::TWrappingSub<u128>;
 impl U256WrappingSub = crate::num::traits::ops::wrapping::overflow_based::TWrappingSub<u256>;
-impl I8WrappingSub = crate::num::traits::ops::wrapping::overflow_based::TWrappingSub<i8>;
-impl I16WrappingSub = crate::num::traits::ops::wrapping::overflow_based::TWrappingSub<i16>;
-impl I32WrappingSub = crate::num::traits::ops::wrapping::overflow_based::TWrappingSub<i32>;
-impl I64WrappingSub = crate::num::traits::ops::wrapping::overflow_based::TWrappingSub<i64>;
-impl I128WrappingSub = crate::num::traits::ops::wrapping::overflow_based::TWrappingSub<i128>;
 
 /// WrappingMul implementations
 impl U8WrappingMul = crate::num::traits::ops::wrapping::overflow_based::TWrappingMul<u8>;
@@ -2903,12 +2988,6 @@ impl U256CheckedAdd of crate::num::traits::CheckedAdd<u256> {
     }
 }
 
-impl I8CheckedAdd = crate::num::traits::ops::checked::overflow_based::TCheckedAdd<i8>;
-impl I16CheckedAdd = crate::num::traits::ops::checked::overflow_based::TCheckedAdd<i16>;
-impl I32CheckedAdd = crate::num::traits::ops::checked::overflow_based::TCheckedAdd<i32>;
-impl I64CheckedAdd = crate::num::traits::ops::checked::overflow_based::TCheckedAdd<i64>;
-impl I128CheckedAdd = crate::num::traits::ops::checked::overflow_based::TCheckedAdd<i128>;
-
 // CheckedSub implementations
 impl U8CheckedSub of crate::num::traits::CheckedSub<u8> {
     fn checked_sub(self: u8, v: u8) -> Option<u8> {
@@ -2946,12 +3025,6 @@ impl U256CheckedSub of crate::num::traits::CheckedSub<u256> {
     }
 }
 
-impl I8CheckedSub = crate::num::traits::ops::checked::overflow_based::TCheckedSub<i8>;
-impl I16CheckedSub = crate::num::traits::ops::checked::overflow_based::TCheckedSub<i16>;
-impl I32CheckedSub = crate::num::traits::ops::checked::overflow_based::TCheckedSub<i32>;
-impl I64CheckedSub = crate::num::traits::ops::checked::overflow_based::TCheckedSub<i64>;
-impl I128CheckedSub = crate::num::traits::ops::checked::overflow_based::TCheckedSub<i128>;
-
 // CheckedMul implementations
 impl U8CheckedMul = crate::num::traits::ops::checked::overflow_based::TCheckedMul<u8>;
 impl U16CheckedMul = crate::num::traits::ops::checked::overflow_based::TCheckedMul<u16>;
@@ -2968,11 +3041,6 @@ impl U32SaturatingAdd = crate::num::traits::ops::saturating::overflow_based::TSa
 impl U64SaturatingAdd = crate::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u64>;
 impl U128SaturatingAdd = crate::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u128>;
 impl U256SaturatingAdd = crate::num::traits::ops::saturating::overflow_based::TSaturatingAdd<u256>;
-impl I8SaturatingAdd = crate::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i8>;
-impl I16SaturatingAdd = crate::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i16>;
-impl I32SaturatingAdd = crate::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i32>;
-impl I64SaturatingAdd = crate::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i64>;
-impl I128SaturatingAdd = crate::num::traits::ops::saturating::overflow_based::TSaturatingAdd<i128>;
 
 // SaturatingSub implementations
 impl U8SaturatingSub = crate::num::traits::ops::saturating::overflow_based::TSaturatingSub<u8>;
@@ -2981,11 +3049,6 @@ impl U32SaturatingSub = crate::num::traits::ops::saturating::overflow_based::TSa
 impl U64SaturatingSub = crate::num::traits::ops::saturating::overflow_based::TSaturatingSub<u64>;
 impl U128SaturatingSub = crate::num::traits::ops::saturating::overflow_based::TSaturatingSub<u128>;
 impl U256SaturatingSub = crate::num::traits::ops::saturating::overflow_based::TSaturatingSub<u256>;
-impl I8SaturatingSub = crate::num::traits::ops::saturating::overflow_based::TSaturatingSub<i8>;
-impl I16SaturatingSub = crate::num::traits::ops::saturating::overflow_based::TSaturatingSub<i16>;
-impl I32SaturatingSub = crate::num::traits::ops::saturating::overflow_based::TSaturatingSub<i32>;
-impl I64SaturatingSub = crate::num::traits::ops::saturating::overflow_based::TSaturatingSub<i64>;
-impl I128SaturatingSub = crate::num::traits::ops::saturating::overflow_based::TSaturatingSub<i128>;
 
 // SaturatingMul implementations
 impl U8SaturatingMul = crate::num::traits::ops::saturating::overflow_based::TSaturatingMul<u8>;

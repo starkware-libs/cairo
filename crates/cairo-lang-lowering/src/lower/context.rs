@@ -8,14 +8,13 @@ use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::usage::Usages;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::Intern;
 use defs::diagnostic_utils::StableLocation;
 use id_arena::Arena;
-use itertools::{zip_eq, Itertools};
+use itertools::{Itertools, zip_eq};
 use semantic::corelib::{core_module, get_ty_by_name};
-use semantic::expr::inference::InferenceError;
 use semantic::types::wrap_in_snapshots;
 use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
@@ -63,26 +62,12 @@ impl<'db> VariableAllocator<'db> {
 
     /// Allocates a new variable in the context's variable arena according to the context.
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
-        let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty);
-        self.variables.alloc(Variable {
-            copyable: ty_info
-                .clone()
-                .map_err(InferenceError::Reported)
-                .and_then(|info| info.copyable),
-            droppable: ty_info
-                .clone()
-                .map_err(InferenceError::Reported)
-                .and_then(|info| info.droppable),
-            destruct_impl: ty_info
-                .clone()
-                .map_err(InferenceError::Reported)
-                .and_then(|info| info.destruct_impl),
-            panic_destruct_impl: ty_info
-                .map_err(InferenceError::Reported)
-                .and_then(|info| info.panic_destruct_impl),
-            ty: req.ty,
-            location: req.location,
-        })
+        self.variables.alloc(Variable::new(
+            self.db,
+            self.lookup_context.clone(),
+            req.ty,
+            req.location,
+        ))
     }
 
     /// Retrieves the LocationId of a stable syntax pointer in the current function file.
@@ -90,7 +75,7 @@ impl<'db> VariableAllocator<'db> {
         LocationId::from_stable_location(self.db, StableLocation::new(stable_ptr))
     }
 }
-impl<'db> Index<VariableId> for VariableAllocator<'db> {
+impl Index<VariableId> for VariableAllocator<'_> {
     type Output = Variable;
 
     fn index(&self, index: VariableId) -> &Self::Output {
@@ -180,19 +165,19 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         })
     }
 }
-impl<'a, 'db> Deref for LoweringContext<'a, 'db> {
+impl<'db> Deref for LoweringContext<'_, 'db> {
     type Target = EncapsulatingLoweringContext<'db>;
 
     fn deref(&self) -> &Self::Target {
         self.encapsulating_ctx.as_ref().unwrap()
     }
 }
-impl<'a, 'db> DerefMut for LoweringContext<'a, 'db> {
+impl DerefMut for LoweringContext<'_, '_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.encapsulating_ctx.as_mut().unwrap()
     }
 }
-impl<'a, 'db> LoweringContext<'a, 'db> {
+impl LoweringContext<'_, '_> {
     /// Allocates a new variable in the context's variable arena according to the context.
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
         self.variables.new_var(req)

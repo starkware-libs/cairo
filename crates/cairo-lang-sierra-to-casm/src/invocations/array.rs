@@ -6,7 +6,7 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, BuiltinInfo, CostValidationInfo,
+    BuiltinInfo, CostValidationInfo, add_input_variables, get_non_fallthrough_statement_id,
 };
 
 /// Builds instructions for Sierra array operations.

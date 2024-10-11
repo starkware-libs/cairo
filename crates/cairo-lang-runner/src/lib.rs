@@ -24,9 +24,9 @@ use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError}
 use cairo_lang_sierra_ap_change::ApChangeError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
-    calc_metadata, calc_metadata_ap_change_only, Metadata, MetadataComputationConfig, MetadataError,
+    Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
 };
-use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
+use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -43,7 +43,7 @@ pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::chain;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
-use profiling::{user_function_idx_by_sierra_statement_idx, ProfilingInfo};
+use profiling::{ProfilingInfo, user_function_idx_by_sierra_statement_idx};
 use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
@@ -199,7 +199,6 @@ pub struct SierraCasmRunner {
     type_sizes: TypeSizeMap,
     /// The casm program matching the Sierra code.
     casm_program: CairoProgram,
-    #[allow(dead_code)]
     /// Mapping from class_hash to contract info.
     starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     /// Whether to run the profiler when running using this runner.
@@ -316,7 +315,7 @@ impl SierraCasmRunner {
         // function).
         // The value is the weight of the stack trace so far, not including the pending weight being
         // tracked at the time.
-        let mut stack_trace_weights = UnorderedHashMap::default();
+        let mut stack_trace_weights = OrderedHashMap::default();
         let mut end_of_program_reached = false;
         // The total weight of each Sierra statement.
         // Note the header and footer (CASM instructions added for running the program by the
@@ -330,7 +329,10 @@ impl SierraCasmRunner {
             }
             let real_pc: usize = step.pc.sub(real_pc_0);
             // Skip the footer.
-            if real_pc == bytecode_len {
+            // Also if pc is greater or equal the bytecode length it means that it is the outside
+            // ret used for e.g. getting pointer to builtins costs table, const segments
+            // etc.
+            if real_pc >= bytecode_len {
                 continue;
             }
 

@@ -219,10 +219,9 @@ Type: `hello::Rectangle`
 hello
 ```
 ```cairo
+#[derive(Copy, Drop)]
 struct Rectangle {
-    /// Width of the rectangle.
     width: u64,
-    /// Height of the rectangle.
     height: u64,
 }
 ```
@@ -304,10 +303,9 @@ Calculate the area of the rectangle.
 hello
 ```
 ```cairo
+#[derive(Copy, Drop)]
 struct Rectangle {
-    /// Width of the rectangle.
     width: u64,
-    /// Height of the rectangle.
     height: u64,
 }
 ```
@@ -339,10 +337,9 @@ Implementing the `RectangleTrait` for the `Rectangle` struct.
 hello
 ```
 ```cairo
+#[derive(Copy, Drop)]
 struct Rectangle {
-    /// Width of the rectangle.
     width: u64,
-    /// Height of the rectangle.
     height: u64,
 }
 ```
@@ -369,10 +366,9 @@ self: @hello::Rectangle
 hello
 ```
 ```cairo
+#[derive(Copy, Drop)]
 struct Rectangle {
-    /// Width of the rectangle.
     width: u64,
-    /// Height of the rectangle.
     height: u64,
 }
 ```
@@ -389,10 +385,9 @@ Width of the rectangle.
 hello
 ```
 ```cairo
+#[derive(Copy, Drop)]
 struct Rectangle {
-    /// Width of the rectangle.
     width: u64,
-    /// Height of the rectangle.
     height: u64,
 }
 ```
@@ -419,10 +414,9 @@ self: @hello::Rectangle
 hello
 ```
 ```cairo
+#[derive(Copy, Drop)]
 struct Rectangle {
-    /// Width of the rectangle.
     width: u64,
-    /// Height of the rectangle.
     height: u64,
 }
 ```
@@ -439,10 +433,9 @@ Height of the rectangle.
 hello
 ```
 ```cairo
+#[derive(Copy, Drop)]
 struct Rectangle {
-    /// Width of the rectangle.
     width: u64,
-    /// Height of the rectangle.
     height: u64,
 }
 ```
@@ -459,10 +452,9 @@ Rectangle struct.
 hello
 ```
 ```cairo
+#[derive(Copy, Drop)]
 struct Rectangle {
-    /// Width of the rectangle.
     width: u64,
-    /// Height of the rectangle.
     height: u64,
 }
 ```

@@ -6,7 +6,7 @@ pub mod consts;
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, Terminal};
+use cairo_lang_syntax::node::{Terminal, ast};
 use consts::*;
 
 pub mod aux_data;
@@ -18,7 +18,7 @@ pub mod events;
 mod starknet_module;
 mod storage;
 pub(crate) mod storage_interfaces;
-mod utils;
+pub(crate) mod utils;
 
 use dispatcher::handle_trait;
 
@@ -85,7 +85,7 @@ impl MacroPlugin for StarkNetPlugin {
     }
 
     fn declared_derives(&self) -> Vec<String> {
-        vec!["starknet::Event".to_string(), "starknet::Store".to_string()]
+        vec![EVENT_TRAIT.to_string(), STORE_TRAIT.to_string()]
     }
 
     fn phantom_type_attributes(&self) -> Vec<String> {

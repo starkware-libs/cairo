@@ -4,11 +4,11 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedStablePtr;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{try_extract_matches, LookupIntern};
-use itertools::{zip_eq, Itertools};
+use cairo_lang_utils::{LookupIntern, try_extract_matches};
+use itertools::{Itertools, zip_eq};
 use num_traits::ToPrimitive;
 use semantic::corelib::{core_felt252_ty, unit_ty};
 use semantic::items::enm::SemanticEnumEx;
@@ -20,8 +20,8 @@ use semantic::{
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{
-    lowering_flow_error_to_sealed_block, LoweredExpr, LoweredExprExternEnum, LoweringContext,
-    LoweringFlowError, LoweringResult,
+    LoweredExpr, LoweredExprExternEnum, LoweringContext, LoweringFlowError, LoweringResult,
+    lowering_flow_error_to_sealed_block,
 };
 use super::{
     alloc_empty_block, call_loop_func, generators, lower_expr_block, lower_expr_literal,
@@ -744,7 +744,7 @@ pub(crate) fn lower_concrete_enum_match(
     )?;
     let mut arm_var_ids = vec![];
     let mut block_ids = vec![];
-    let varinats_block_builders = concrete_variants
+    let variants_block_builders = concrete_variants
         .iter()
         .map(|concrete_variant| {
             let PatternPath { arm_index, pattern_index } = variant_map
@@ -836,7 +836,7 @@ pub(crate) fn lower_concrete_enum_match(
         empty_match_info,
         location,
         arms,
-        varinats_block_builders,
+        variants_block_builders,
         match_type,
     )?;
 
@@ -887,7 +887,7 @@ pub(crate) fn lower_optimized_extern_match(
     let mut arm_var_ids = vec![];
     let mut block_ids = vec![];
 
-    let varinats_block_builders = concrete_variants
+    let variants_block_builders = concrete_variants
         .iter()
         .map(|concrete_variant| {
             let mut subscope = create_subscope(ctx, builder);
@@ -969,7 +969,7 @@ pub(crate) fn lower_optimized_extern_match(
         empty_match_info,
         location,
         match_arms,
-        varinats_block_builders,
+        variants_block_builders,
         match_type,
     )?;
     let match_info = MatchInfo::Extern(MatchExternInfo {
@@ -1000,10 +1000,10 @@ fn group_match_arms(
     empty_match_info: MatchInfo,
     location: LocationId,
     arms: &[MatchArmWrapper],
-    varinats_block_builders: Vec<MatchLeafBuilder>,
+    variants_block_builders: Vec<MatchLeafBuilder>,
     kind: MatchKind,
 ) -> LoweringResult<Vec<SealedBlockBuilder>> {
-    varinats_block_builders
+    variants_block_builders
         .into_iter()
         .sorted_by_key(|MatchLeafBuilder { arm_index, .. }| *arm_index)
         .group_by(|MatchLeafBuilder { arm_index, .. }| *arm_index)

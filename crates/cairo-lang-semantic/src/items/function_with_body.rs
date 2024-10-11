@@ -5,9 +5,9 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::consts::{IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
-use cairo_lang_syntax::node::{ast, TypedStablePtr};
+use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{try_extract_matches, Upcast};
+use cairo_lang_utils::{Upcast, try_extract_matches};
 use itertools::Itertools;
 
 use super::functions::InlineConfiguration;
@@ -17,7 +17,7 @@ use crate::diagnostic::{
 };
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
-use crate::{semantic, Arenas, ExprId, PatternId, SemanticDiagnostic, TypeId};
+use crate::{Arenas, ExprId, PatternId, SemanticDiagnostic, TypeId, semantic};
 
 // === Declaration ===
 

@@ -14,10 +14,10 @@ use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::{ast, TypedStablePtr};
+use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{require, LookupIntern, Upcast};
+use cairo_lang_utils::{LookupIntern, Upcast, require};
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -41,7 +41,7 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::{ImplTypeId, TypeSizeInformation};
 use crate::{
-    corelib, items, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
+    FunctionId, Parameter, SemanticDiagnostic, TypeId, corelib, items, lsp_helpers, semantic, types,
 };
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
@@ -1532,6 +1532,10 @@ pub trait SemanticGroup:
     #[salsa::input]
     fn analyzer_plugins(&self) -> Vec<Arc<dyn AnalyzerPlugin>>;
 
+    /// Returns the set of `allow` that were declared as by a plugin.
+    /// An allow that is not in this set will be handled as an unknown allow.
+    fn declared_allows(&self) -> Arc<OrderedHashSet<String>>;
+
     // Helpers for language server.
     // ============================
     /// Returns all methods in a module that match the given type filter.
@@ -1672,6 +1676,12 @@ fn module_semantic_diagnostics(
     }
 
     Ok(diagnostics.build())
+}
+
+fn declared_allows(db: &dyn SemanticGroup) -> Arc<OrderedHashSet<String>> {
+    Arc::new(OrderedHashSet::from_iter(
+        db.analyzer_plugins().into_iter().flat_map(|plugin| plugin.declared_allows()),
+    ))
 }
 
 /// Adds diagnostics for unused items in a module.

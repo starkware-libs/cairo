@@ -4,9 +4,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_utils::{LookupIntern, Upcast};
 use semver::Version;
 use serde::{Deserialize, Serialize};
+use smol_str::SmolStr;
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
@@ -37,12 +38,22 @@ impl CrateConfiguration {
     }
 }
 
-/// Same as `CrateConfiguration` but without the root directory..
+/// Same as `CrateConfiguration` but without the root directory.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CrateSettings {
     /// The crate's Cairo edition.
     pub edition: Edition,
     /// The crate's version.
+    ///
+    /// ## [CrateSettings.version] vs. [DependencySettings.discriminator]
+    ///
+    /// Cairo uses semantic versioning for crates.
+    /// The version field is an optional piece of metadata that can be attached to a crate
+    /// and is used in various lints and can be used as a context in diagnostics.
+    ///
+    /// On the other hand, the discriminator is a unique identifier that allows including multiple
+    /// copies of a crate in a single compilation unit.
+    /// It is free-form and never reaches the user.
     pub version: Option<Version>,
     /// The `#[cfg(...)]` configuration.
     pub cfg_set: Option<CfgSet>,
@@ -104,8 +115,11 @@ impl Edition {
 /// The settings for a dependency.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DependencySettings {
-    /// The version of the dependency.
-    pub version: Option<Version>,
+    /// A unique string allowing identifying different copies of the same dependency
+    /// in the compilation unit.
+    ///
+    /// Usually such copies differ by their versions or sources (or both).
+    pub discriminator: Option<SmolStr>,
 }
 
 /// Configuration per crate.
@@ -182,15 +196,13 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
 }
 
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathBuf) {
-    let core_crate = CrateLongId::Real(CORELIB_CRATE_NAME.into()).intern(db);
-    let version = Version::parse(CORELIB_VERSION).ok();
     db.set_crate_config(
-        core_crate,
+        CrateId::core(db),
         Some(CrateConfiguration {
             root: Directory::Real(core_lib_dir),
             settings: CrateSettings {
                 edition: Edition::V2024_07,
-                version: version.clone(),
+                version: Version::parse(CORELIB_VERSION).ok(),
                 cfg_set: Default::default(),
                 dependencies: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig {
@@ -255,7 +267,7 @@ fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
 }
 fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration> {
     match crt.lookup_intern(db) {
-        CrateLongId::Real(_) => db.crate_configs().get(&crt).cloned(),
+        CrateLongId::Real { .. } => db.crate_configs().get(&crt).cloned(),
         CrateLongId::Virtual { name: _, file_id, settings } => Some(CrateConfiguration {
             root: Directory::Virtual {
                 files: BTreeMap::from([("lib.cairo".into(), file_id)]),

@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, TraitFunctionId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::{extract_matches, require, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, extract_matches, require};
 use itertools::Itertools;
 
 use super::canonic::ResultNoErrEx;
@@ -113,7 +113,7 @@ pub trait InferenceEmbeddings {
     ) -> ImplImplId;
 }
 
-impl<'db> InferenceEmbeddings for Inference<'db> {
+impl InferenceEmbeddings for Inference<'_> {
     /// Infers all the variables required to make an uninferred impl provide a concrete trait.
     fn infer_impl(
         &mut self,

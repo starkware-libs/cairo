@@ -32,37 +32,36 @@ Parameters: v0: core::RangeCheck, v1: core::integer::u256
 blk0 (root):
 Statements:
   (v2: core::integer::u128, v3: core::integer::u128) <- struct_destructure(v1)
-  (v4: core::integer::u128) <- 0
 End:
-  Match(match core::integer::u128_eq(v3, v4) {
-    bool::False => blk1,
-    bool::True => blk2,
+  Match(match core::integer::u128_is_zero(v3) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v4) => blk4,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk5, {v0 -> v5})
+  Match(match core::integer::downcast::<core::integer::u128, core::integer::u64>(v0, v2) {
+    Option::Some(v5, v6) => blk2,
+    Option::None(v7) => blk3,
+  })
 
 blk2:
 Statements:
+  (v8: (core::integer::u64,)) <- struct_construct(v6)
+  (v9: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v8)
 End:
-  Match(match core::integer::downcast::<core::integer::u128, core::integer::u64>(v0, v2) {
-    Option::Some(v6, v7) => blk3,
-    Option::None(v8) => blk4,
-  })
+  Return(v5, v9)
 
 blk3:
 Statements:
-  (v9: (core::integer::u64,)) <- struct_construct(v7)
-  (v10: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v6, v10)
+  Goto(blk5, {v7 -> v10})
 
 blk4:
 Statements:
 End:
-  Goto(blk5, {v8 -> v5})
+  Goto(blk5, {v0 -> v10})
 
 blk5:
 Statements:
@@ -73,7 +72,7 @@ Statements:
   (v15: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v14, v13)
   (v16: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v15)
 End:
-  Return(v5, v16)
+  Return(v10, v16)
 
 //! > lowering
 Main:

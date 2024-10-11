@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use lsp_types::notification::Notification;
 use scarb_metadata::{Metadata, MetadataCommand};
 use tracing::{error, warn};

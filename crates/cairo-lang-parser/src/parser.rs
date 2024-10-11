@@ -8,16 +8,16 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
-use cairo_lang_utils::{extract_matches, require, LookupIntern};
+use cairo_lang_utils::{LookupIntern, extract_matches, require};
 use syntax::node::green::{GreenNode, GreenNodeDetails};
 use syntax::node::ids::GreenId;
 
+use crate::ParserDiagnostic;
 use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
 use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
 use crate::validation::{validate_literal_number, validate_short_string, validate_string};
-use crate::ParserDiagnostic;
 
 #[cfg(test)]
 #[path = "parser_test.rs"]

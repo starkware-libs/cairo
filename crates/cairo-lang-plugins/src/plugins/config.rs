@@ -10,7 +10,7 @@ use cairo_lang_syntax::attribute::structured::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::try_extract_matches;
 
 /// Plugin that enables ignoring modules not involved in the current config.
@@ -66,7 +66,7 @@ pub struct ItemsInCfg<'a, Item: QueryAttrs> {
     iterator: <Vec<Item> as IntoIterator>::IntoIter,
 }
 
-impl<'a, Item: QueryAttrs> Iterator for ItemsInCfg<'a, Item> {
+impl<Item: QueryAttrs> Iterator for ItemsInCfg<'_, Item> {
     type Item = Item;
 
     fn next(&mut self) -> Option<Self::Item> {

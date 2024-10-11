@@ -2,7 +2,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx};
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 use itertools::chain;
@@ -11,9 +11,9 @@ use super::consts::{
     CONSTRUCTOR_MODULE, EXTERNAL_MODULE, GENERIC_CONTRACT_STATE_NAME, L1_HANDLER_MODULE,
 };
 use super::entry_point::{
-    handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
+    EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData, handle_entry_point,
 };
-use super::utils::{forbid_attributes_in_impl, GenericParamExtract};
+use super::utils::{GenericParamExtract, forbid_attributes_in_impl};
 
 /// Handles an embeddable impl, generating entry point wrappers and modules pointing to them.
 pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> PluginResult {
@@ -166,14 +166,11 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         "
         ),
         &[
-            (
-                "visibility".to_string(),
-                RewriteNode::Trimmed {
-                    node: item_impl.visibility(db).as_syntax_node(),
-                    trim_left: true,
-                    trim_right: false,
-                },
-            ),
+            ("visibility".to_string(), RewriteNode::Trimmed {
+                node: item_impl.visibility(db).as_syntax_node(),
+                trim_left: true,
+                trim_right: false,
+            }),
             ("impl_name".to_string(), impl_name),
             (
                 "generated_wrapper_functions".to_string(),

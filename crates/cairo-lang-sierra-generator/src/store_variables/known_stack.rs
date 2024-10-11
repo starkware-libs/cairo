@@ -111,7 +111,6 @@ impl KnownStack {
     ///
     /// For example, merging the stacks [0, 1, 2, 3, 4] and [1, 9, 3, 4] (where the last element in
     /// the top) will yield [3, 4] (1 will not be included because of the hole).
-    #[allow(dead_code)]
     pub fn merge_with(&self, other: &Self) -> Self {
         // Choose the new offset to be the maximum of the input offsets. This is somewhat arbitrary.
         let new_offset = max(self.offset, other.offset);

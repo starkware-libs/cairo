@@ -36,7 +36,7 @@ use crate::lsp::result::{LSPError, LSPResult};
 use crate::server::client::{Notifier, Requester};
 use crate::server::commands::ServerCommands;
 use crate::state::{State, StateSnapshot};
-use crate::{ide, lang, Backend};
+use crate::{Backend, ide, lang};
 
 /// A request handler that needs mutable access to the session.
 /// This will block the main message receiver loop, meaning that no

@@ -1,21 +1,21 @@
 use std::sync::Arc;
 
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Upcast;
 use test_log::test;
 
 use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};
 use crate::db::{CrateConfiguration, FilesGroupEx};
 use crate::flag::Flag;
-use crate::ids::{CrateLongId, Directory, FlagId};
+use crate::ids::{CrateId, Directory, FlagId};
 use crate::test_utils::FilesDatabaseForTesting;
 
 #[test]
 fn test_filesystem() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let crt = CrateLongId::Real("my_crate".into()).intern(&db);
-    let crt2 = CrateLongId::Real("my_crate2".into()).intern(&db);
+    let crt = CrateId::plain(&db, "my_crate");
+    let crt2 = CrateId::plain(&db, "my_crate2");
     let directory = Directory::Real("src".into());
     let file_id = directory.file(&db, "child.cairo".into());
     let config = CrateConfiguration::default_for_root(directory);

@@ -9,12 +9,12 @@ use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
-use cairo_lang_utils::{try_extract_matches, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, try_extract_matches};
 use itertools::chain;
 use num_traits::ToPrimitive;
 use semantic::items::imp::ImplLookupContext;
 
-use crate::db::{sierra_concrete_long_id, SierraGenGroup, SierraGeneratorTypeLongId};
+use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId, sierra_concrete_long_id};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 
 /// See [SierraGenGroup::get_concrete_type_id] for documentation.
@@ -162,20 +162,8 @@ pub fn get_concrete_long_type_id(
 }
 
 /// See [SierraGenGroup::is_self_referential] for documentation.
-pub fn is_self_referential_cycle(
-    _db: &dyn SierraGenGroup,
-    _cycle: &salsa::Cycle,
-    _type_id: &semantic::TypeId,
-) -> Maybe<bool> {
-    Ok(true)
-}
-
-/// See [SierraGenGroup::is_self_referential] for documentation.
 pub fn is_self_referential(db: &dyn SierraGenGroup, type_id: semantic::TypeId) -> Maybe<bool> {
-    for ty in db.type_dependencies(type_id)?.iter() {
-        db.is_self_referential(*ty)?;
-    }
-    Ok(false)
+    db.has_in_deps(type_id, type_id)
 }
 
 /// See [SierraGenGroup::type_dependencies] for documentation.
@@ -222,4 +210,32 @@ pub fn type_dependencies(
         }
     }
     .into())
+}
+
+/// See [SierraGenGroup::has_in_deps] for documentation.
+pub fn has_in_deps(
+    db: &dyn SierraGenGroup,
+    type_id: semantic::TypeId,
+    needle: semantic::TypeId,
+) -> Maybe<bool> {
+    let deps = type_dependencies(db, type_id)?;
+    if deps.contains(&needle) {
+        return Ok(true);
+    }
+    for dep in deps.iter() {
+        if db.has_in_deps(*dep, needle)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+/// See [SierraGenGroup::has_in_deps] for documentation.
+pub fn has_in_deps_cycle(
+    _db: &dyn SierraGenGroup,
+    _cycle: &salsa::Cycle,
+    _type_id: &semantic::TypeId,
+    _needle: &semantic::TypeId,
+) -> Maybe<bool> {
+    Ok(false)
 }

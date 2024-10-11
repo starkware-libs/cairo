@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
-use cairo_lang_utils::{require, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, require};
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -203,6 +203,45 @@ impl SyntaxNode {
         buffer
     }
 
+    /// Returns all the text of the item without comments trivia.
+    /// It traverses all the syntax tree of the node.
+    pub fn get_text_without_all_comment_trivia(&self, db: &dyn SyntaxGroup) -> String {
+        let mut buffer = String::new();
+
+        match &self.green_node(db).as_ref().details {
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Node { .. } => {
+                for child in db.get_children(self.clone()).iter() {
+                    let kind = child.kind(db);
+
+                    if matches!(kind, SyntaxKind::Trivia) {
+                        ast::Trivia::from_syntax_node(db, child.clone())
+                            .elements(db)
+                            .iter()
+                            .for_each(|element| {
+                                if !matches!(
+                                    element,
+                                    ast::Trivium::SingleLineComment(_)
+                                        | ast::Trivium::SingleLineDocComment(_)
+                                        | ast::Trivium::SingleLineInnerComment(_)
+                                ) {
+                                    buffer.push_str(
+                                        &element
+                                            .as_syntax_node()
+                                            .get_text_without_all_comment_trivia(db),
+                                    );
+                                }
+                            });
+                    } else {
+                        buffer
+                            .push_str(&SyntaxNode::get_text_without_all_comment_trivia(child, db));
+                    }
+                }
+            }
+        }
+        buffer
+    }
+
     /// Returns all the text under the syntax node, without the outmost trivia (the leading trivia
     /// of the first token and the trailing trivia of the last token).
     ///
@@ -300,7 +339,7 @@ pub struct NodeTextFormatter<'a> {
     /// The syntax db.
     pub db: &'a dyn SyntaxGroup,
 }
-impl<'a> Display for NodeTextFormatter<'a> {
+impl Display for NodeTextFormatter<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.node.green_node(self.db).as_ref().details {
             green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,

@@ -76,6 +76,14 @@ pub(crate) impl Felt252Zeroable = zero_based::ZeroableImpl<felt252>;
 /// This type guarantees that the wrapped value is never zero.
 #[derive(Copy, Drop)]
 pub extern type NonZero<T>;
+impl NonZeroNeg<T, +Neg<T>, +TryInto<T, NonZero<T>>> of Neg<NonZero<T>> {
+    fn neg(a: NonZero<T>) -> NonZero<T> {
+        // TODO(orizi): Optimize using bounded integers.
+        let value: T = a.into();
+        let negated: T = -value;
+        negated.try_into().unwrap()
+    }
+}
 
 /// Represents the result of checking whether a value is zero.
 pub(crate) enum IsZeroResult<T> {

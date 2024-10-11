@@ -5,13 +5,13 @@ use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant
 use cairo_lang_syntax::node::ast::OptionTypeClause;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{extract_matches, require, try_extract_matches};
 use indoc::{formatdoc, indoc};
 use itertools::chain;
 
-use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use super::StarknetModuleKind;
+use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use crate::plugin::consts::{
     COMPONENT_STATE_NAME, EMBEDDABLE_AS_ATTR, EVENT_TYPE_NAME, GENERIC_COMPONENT_STATE_NAME,
     GENERIC_CONTRACT_STATE_NAME, HAS_COMPONENT_TRAIT, STORAGE_STRUCT_NAME,
@@ -315,10 +315,9 @@ fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -
     let last_without_generics = RewriteNode::new_trimmed(last.identifier_ast(db).as_syntax_node());
 
     RewriteNode::interspersed(
-        chain!(
-            prefix.iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())),
-            [last_without_generics]
-        ),
+        chain!(prefix.iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())), [
+            last_without_generics
+        ]),
         RewriteNode::text("::"),
     )
 }

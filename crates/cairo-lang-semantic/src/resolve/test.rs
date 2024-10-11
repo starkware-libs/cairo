@@ -2,23 +2,21 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::db::{AsFilesGroupMut, CrateConfiguration, FilesGroupEx};
-use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
-use cairo_lang_utils::{extract_matches, Intern};
+use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
+use cairo_lang_utils::{Intern, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
-use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
+use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 
 #[test]
 fn test_resolve_path() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let test_module = setup_test_module(
-        db,
-        indoc! {"
+    let test_module = setup_test_module(db, indoc! {"
             use core::Box;
             extern type S<T>;
             extern fn bar<T>(value: S::<felt252>) -> S::<()> nopanic;
@@ -27,8 +25,7 @@ fn test_resolve_path() {
                 bar::<(felt252,Q)>(value);
                 let _c = b;
             }
-        "},
-    )
+        "})
     .unwrap();
     let module_id = test_module.module_id;
 
@@ -58,31 +55,23 @@ fn test_resolve_path_super() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
 
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
-    set_file_content(
-        db,
-        "src/lib.cairo",
-        indoc! {"
+    set_file_content(db, "src/lib.cairo", indoc! {"
         mod inner1;
         mod inner2;
         struct OuterStruct {}
-    "},
-    );
+    "});
     set_file_content(db, "src/inner1.cairo", "struct InnerStruct1 {}");
-    set_file_content(
-        db,
-        "src/inner2.cairo",
-        indoc! {"
+    set_file_content(db, "src/inner2.cairo", indoc! {"
             struct InnerStruct2 {
                 a: super::inner1::InnerStruct1,
                 b: super::OuterStruct,
             }
-        "},
-    );
+        "});
     let test_module = ModuleId::CrateRoot(crate_id);
     let inner2_module_id = ModuleId::Submodule(extract_matches!(
         db.module_item_by_name(test_module, "inner2".into()).unwrap().unwrap(),
@@ -108,9 +97,7 @@ fn test_resolve_path_super() {
 fn test_resolve_path_trait_impl() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let test_module = setup_test_module(
-        db,
-        indoc! {"
+    let test_module = setup_test_module(db, indoc! {"
             trait MyTrait {
                 fn foo() -> felt252;
             }
@@ -124,8 +111,7 @@ fn test_resolve_path_trait_impl() {
             fn main() -> felt252 {
                 MyTrait::foo() + 1
             }
-        "},
-    )
+        "})
     .unwrap();
     let module_id = test_module.module_id;
 

@@ -1,10 +1,12 @@
+use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::{grandparent_kind, parent_kind};
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 
 use crate::formatter_impl::{
-    BreakLinePointIndentation, BreakLinePointProperties, BreakLinePointsPositions, SyntaxNodeFormat,
+    BreakLinePointIndentation, BreakLinePointProperties, BreakLinePointsPositions, SortKind,
+    SyntaxNodeFormat,
 };
 
 impl SyntaxNodeFormat for SyntaxNode {
@@ -718,6 +720,21 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
         } else {
             false
+        }
+    }
+    // Merge the `as_sort_kind` method here
+    fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind {
+        match self.kind(db) {
+            SyntaxKind::ItemModule => {
+                let item_module = ast::ItemModule::from_syntax_node(db, self.clone());
+                if matches!(item_module.body(db), MaybeModuleBody::None(_)) {
+                    SortKind::Module
+                } else {
+                    SortKind::Immovable
+                }
+            }
+            SyntaxKind::ItemUse => SortKind::UseItem,
+            _ => SortKind::Immovable,
         }
     }
 }

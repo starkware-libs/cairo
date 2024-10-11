@@ -8,8 +8,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{extract_matches, LookupIntern};
-use itertools::{zip_eq, Itertools};
+use cairo_lang_utils::{LookupIntern, extract_matches};
+use itertools::zip_eq;
 
 use crate::db::SemanticGroup;
 use crate::expr::inference::{
@@ -58,11 +58,9 @@ impl GenericSubstitution {
     }
     pub fn new(generic_params: &[GenericParam], generic_args: &[GenericArgumentId]) -> Self {
         GenericSubstitution {
-            param_to_arg: zip_eq(
-                generic_params.iter().map(|param| param.id()),
-                generic_args.iter().copied(),
-            )
-            .collect(),
+            param_to_arg: zip_eq(generic_params, generic_args)
+                .map(|(param, arg)| (param.id(), *arg))
+                .collect(),
             self_impl: None,
         }
     }
@@ -91,7 +89,10 @@ impl DerefMut for GenericSubstitution {
 #[allow(clippy::derived_hash_with_manual_eq)]
 impl std::hash::Hash for GenericSubstitution {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.param_to_arg.iter().collect_vec().hash(state);
+        self.param_to_arg.len().hash(state);
+        for e in self.param_to_arg.iter() {
+            e.hash(state);
+        }
     }
 }
 
@@ -444,7 +445,7 @@ add_basic_rewrites!(
     @exclude TypeId TypeLongId ImplId ImplLongId ConstValue GenericFunctionId
 );
 
-impl<'a> SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'a> {
+impl SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'_> {
     fn internal_rewrite(&mut self, value: &mut TypeId) -> Maybe<RewriteResult> {
         if value.is_fully_concrete(self.db) {
             return Ok(RewriteResult::NoChange);
@@ -453,7 +454,7 @@ impl<'a> SemanticRewriter<TypeId, DiagnosticAdded> for SubstitutionRewriter<'a> 
     }
 }
 
-impl<'a> SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'a> {
+impl SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplId) -> Maybe<RewriteResult> {
         if value.is_fully_concrete(self.db) {
             return Ok(RewriteResult::NoChange);
@@ -462,7 +463,7 @@ impl<'a> SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'a> 
     }
 }
 
-impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'a> {
+impl SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'_> {
     fn internal_rewrite(&mut self, value: &mut TypeLongId) -> Maybe<RewriteResult> {
         match value {
             TypeLongId::GenericParameter(generic_param) => {
@@ -501,7 +502,7 @@ impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<'a> {
+impl SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<'_> {
     fn internal_rewrite(&mut self, value: &mut ConstValue) -> Maybe<RewriteResult> {
         match value {
             ConstValue::Generic(param_id) => {
@@ -547,7 +548,7 @@ impl<'a> SemanticRewriter<ConstValue, DiagnosticAdded> for SubstitutionRewriter<
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ImplLongId, DiagnosticAdded> for SubstitutionRewriter<'a> {
+impl SemanticRewriter<ImplLongId, DiagnosticAdded> for SubstitutionRewriter<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplLongId) -> Maybe<RewriteResult> {
         match value {
             ImplLongId::GenericParameter(generic_param) => {
@@ -588,7 +589,7 @@ impl<'a> SemanticRewriter<ImplLongId, DiagnosticAdded> for SubstitutionRewriter<
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<GenericFunctionId, DiagnosticAdded> for SubstitutionRewriter<'a> {
+impl SemanticRewriter<GenericFunctionId, DiagnosticAdded> for SubstitutionRewriter<'_> {
     fn internal_rewrite(&mut self, value: &mut GenericFunctionId) -> Maybe<RewriteResult> {
         if let GenericFunctionId::Trait(id) = value {
             if let Some(self_impl) = &self.substitution.self_impl {

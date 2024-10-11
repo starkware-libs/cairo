@@ -1,7 +1,7 @@
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::SyntaxNode;
 use colored::{ColoredString, Colorize};
 use smol_str::SmolStr;
 
@@ -11,7 +11,7 @@ struct ColoredPrinter<'a> {
     verbose: bool,
     result: String,
 }
-impl<'a> ColoredPrinter<'a> {
+impl ColoredPrinter<'_> {
     fn print(&mut self, syntax_node: &SyntaxNode) {
         let node = syntax_node.green_node(self.db);
         match &node.details {

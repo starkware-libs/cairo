@@ -2,23 +2,23 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::{get_location_marks, Maybe};
+use cairo_lang_diagnostics::{Maybe, get_location_marks};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
+use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
 use cairo_lang_sierra::program::{self, DeclaredTypeInfo, StatementIdx};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{try_extract_matches, LookupIntern};
-use itertools::{chain, Itertools};
+use cairo_lang_utils::{LookupIntern, try_extract_matches};
+use itertools::{Itertools, chain};
 
-use crate::db::{sierra_concrete_long_id, SierraGenGroup};
+use crate::db::{SierraGenGroup, sierra_concrete_long_id};
 use crate::extra_sierra_info::type_has_const_size;
 use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
-use crate::resolve_labels::{resolve_labels_and_extract_locations, LabelReplacer};
+use crate::resolve_labels::{LabelReplacer, resolve_labels_and_extract_locations};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::statements_locations::StatementsLocations;
 

@@ -6,7 +6,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::{LookupIntern, Upcast};
-use itertools::{chain, zip_eq, Itertools};
+use itertools::{Itertools, chain, zip_eq};
 use semantic::TypeId;
 
 use crate::blocks::Blocks;

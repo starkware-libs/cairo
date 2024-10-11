@@ -7,7 +7,7 @@
 
 use std::sync::{Arc, Weak};
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use lsp_server::{
     Connection as LSPConnection, IoThreads, Message, Notification, Request, RequestId, Response,
 };

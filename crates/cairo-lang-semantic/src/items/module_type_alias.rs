@@ -6,8 +6,8 @@ use cairo_lang_proc_macros::DebugWithDb;
 
 use super::generics::GenericParamsData;
 use super::type_aliases::{
-    type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
-    type_alias_semantic_data_helper, TypeAliasData,
+    TypeAliasData, type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
+    type_alias_semantic_data_helper,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;

@@ -7,8 +7,8 @@ use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -25,7 +25,7 @@ trait DiagnosticCallback {
     fn on_diagnostic(&mut self, diagnostic: FormattedDiagnosticEntry);
 }
 
-impl<'a> DiagnosticCallback for Option<Box<dyn DiagnosticCallback + 'a>> {
+impl DiagnosticCallback for Option<Box<dyn DiagnosticCallback + '_>> {
     fn on_diagnostic(&mut self, diagnostic: FormattedDiagnosticEntry) {
         if let Some(callback) = self {
             callback.on_diagnostic(diagnostic)
@@ -44,6 +44,8 @@ pub struct DiagnosticsReporter<'a> {
     crate_ids: Vec<CrateId>,
     /// If true, compilation will not fail due to warnings.
     allow_warnings: bool,
+    /// If true, will ignore diagnostics from LoweringGroup during the ensure function.
+    skip_lowering_diagnostics: bool,
 }
 
 impl DiagnosticsReporter<'static> {
@@ -54,6 +56,7 @@ impl DiagnosticsReporter<'static> {
             crate_ids: vec![],
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
+            skip_lowering_diagnostics: false,
         }
     }
 
@@ -97,6 +100,7 @@ impl<'a> DiagnosticsReporter<'a> {
             crate_ids: vec![],
             ignore_warnings_crate_ids: vec![],
             allow_warnings: false,
+            skip_lowering_diagnostics: false,
         }
     }
 
@@ -179,6 +183,10 @@ impl<'a> DiagnosticsReporter<'a> {
                         self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
                 }
 
+                if self.skip_lowering_diagnostics {
+                    continue;
+                }
+
                 if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
                     found_diagnostics |=
                         self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
@@ -242,6 +250,11 @@ impl<'a> DiagnosticsReporter<'a> {
                 }
             });
         }
+    }
+
+    pub fn skip_lowering_diagnostics(mut self) -> Self {
+        self.skip_lowering_diagnostics = true;
+        self
     }
 }
 

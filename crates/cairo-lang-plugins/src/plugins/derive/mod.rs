@@ -10,8 +10,8 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
-use itertools::{chain, Itertools};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use itertools::{Itertools, chain};
 use smol_str::SmolStr;
 
 mod clone;
@@ -36,34 +36,30 @@ impl MacroPlugin for DerivePlugin {
         item_ast: ast::ModuleItem,
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
-        generate_derive_code_for_type(
-            db,
-            metadata,
-            match item_ast {
-                ast::ModuleItem::Struct(struct_ast) => DeriveInfo::new(
-                    db,
-                    struct_ast.name(db),
-                    struct_ast.attributes(db),
-                    struct_ast.generic_params(db),
-                    TypeVariantInfo::Struct(extract_members(db, struct_ast.members(db))),
-                ),
-                ast::ModuleItem::Enum(enum_ast) => DeriveInfo::new(
-                    db,
-                    enum_ast.name(db),
-                    enum_ast.attributes(db),
-                    enum_ast.generic_params(db),
-                    TypeVariantInfo::Enum(extract_variants(db, enum_ast.variants(db))),
-                ),
-                ast::ModuleItem::ExternType(extern_type_ast) => DeriveInfo::new(
-                    db,
-                    extern_type_ast.name(db),
-                    extern_type_ast.attributes(db),
-                    extern_type_ast.generic_params(db),
-                    TypeVariantInfo::Extern,
-                ),
-                _ => return PluginResult::default(),
-            },
-        )
+        generate_derive_code_for_type(db, metadata, match item_ast {
+            ast::ModuleItem::Struct(struct_ast) => DeriveInfo::new(
+                db,
+                struct_ast.name(db),
+                struct_ast.attributes(db),
+                struct_ast.generic_params(db),
+                TypeVariantInfo::Struct(extract_members(db, struct_ast.members(db))),
+            ),
+            ast::ModuleItem::Enum(enum_ast) => DeriveInfo::new(
+                db,
+                enum_ast.name(db),
+                enum_ast.attributes(db),
+                enum_ast.generic_params(db),
+                TypeVariantInfo::Enum(extract_variants(db, enum_ast.variants(db))),
+            ),
+            ast::ModuleItem::ExternType(extern_type_ast) => DeriveInfo::new(
+                db,
+                extern_type_ast.name(db),
+                extern_type_ast.attributes(db),
+                extern_type_ast.generic_params(db),
+                TypeVariantInfo::Extern,
+            ),
+            _ => return PluginResult::default(),
+        })
     }
 
     fn declared_attributes(&self) -> Vec<String> {
@@ -305,11 +301,9 @@ fn generate_derive_code_for_type(
 fn get_empty_impl(derived_trait: &str, info: &DeriveInfo) -> String {
     format!(
         "{};\n",
-        info.format_impl_header(
-            "core::traits",
-            derived_trait,
-            &[&format!("core::traits::{derived_trait}")]
-        )
+        info.format_impl_header("core::traits", derived_trait, &[&format!(
+            "core::traits::{derived_trait}"
+        )])
     )
 }
 

@@ -14,7 +14,8 @@ use cairo_lang_runner::{ProfilingInfoCollectionConfig, SierraCasmRunner, Starkne
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
-use cairo_lang_starknet::contract::get_contracts_info;
+use cairo_lang_starknet::contract::{find_contracts, get_contracts_info};
+use cairo_lang_utils::Upcast;
 use clap::Parser;
 
 /// Compiles a Cairo project and runs the function `main`.
@@ -75,7 +76,8 @@ fn main() -> anyhow::Result<()> {
         anyhow::bail!("Program requires gas counter, please provide `--available-gas` argument.");
     }
 
-    let contracts_info = get_contracts_info(db, main_crate_ids, &replacer)?;
+    let contracts = find_contracts((*db).upcast(), &main_crate_ids);
+    let contracts_info = get_contracts_info(db, contracts, &replacer)?;
     let sierra_program = replacer.apply(&sierra_program);
 
     let runner = SierraCasmRunner::new(
@@ -99,6 +101,7 @@ fn main() -> anyhow::Result<()> {
             Some(db),
             sierra_program,
             debug_info.statements_locations.get_statements_functions_map_for_tests(db),
+            Default::default(),
         );
         match result.profiling_info {
             Some(raw_profiling_info) => {

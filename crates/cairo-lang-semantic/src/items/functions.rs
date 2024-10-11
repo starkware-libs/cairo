@@ -13,11 +13,11 @@ use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::{
-    define_short_id, require, try_extract_matches, Intern, LookupIntern, OptionFrom,
+    Intern, LookupIntern, OptionFrom, define_short_id, require, try_extract_matches,
 };
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 use smol_str::SmolStr;
 use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
@@ -35,8 +35,8 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
-    semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, ConcreteTraitLongId,
-    GenericParam, SemanticDiagnostic, TypeId,
+    ConcreteImplId, ConcreteImplLongId, ConcreteTraitLongId, GenericParam, SemanticDiagnostic,
+    TypeId, semantic, semantic_object_for_id,
 };
 
 /// A generic function of an impl.

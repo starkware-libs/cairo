@@ -3,19 +3,19 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     ImplAliasId, ImplDefId, LanguageElementId, LookupItemId, ModuleFileId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe, skip_diagnostic};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::try_extract_matches;
 
-use super::generics::{semantic_generic_params, GenericParamsData};
+use super::generics::{GenericParamsData, semantic_generic_params};
 use super::imp::ImplId;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{GenericParam, SemanticDiagnostic};
@@ -268,6 +268,7 @@ pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -
         &mut diagnostics,
         &impl_path_syntax,
         NotFoundItemType::Impl,
+        None,
     ) {
         Ok(ResolvedGenericItem::Impl(imp)) => Ok(imp),
         Ok(ResolvedGenericItem::GenericImplAlias(impl_alias)) => db.impl_alias_impl_def(impl_alias),

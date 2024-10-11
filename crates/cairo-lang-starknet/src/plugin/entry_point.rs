@@ -16,7 +16,7 @@ use super::consts::{
     IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE,
     RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
 };
-use super::utils::{has_v0_attribute, maybe_strip_underscore, AstPathExtract, ParamEx};
+use super::utils::{AstPathExtract, ParamEx, has_v0_attribute, maybe_strip_underscore};
 
 /// Kind of an entry point. Determined by the entry point's attributes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

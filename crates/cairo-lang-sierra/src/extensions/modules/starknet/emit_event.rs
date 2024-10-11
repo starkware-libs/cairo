@@ -1,7 +1,7 @@
 use super::felt252_span_ty;
 use super::syscalls::SyscallGenericLibfunc;
-use crate::extensions::lib_func::SignatureSpecializationContext;
 use crate::extensions::SpecializationError;
+use crate::extensions::lib_func::SignatureSpecializationContext;
 
 /// Libfunc for an emit event system call.
 #[derive(Default)]

@@ -2,7 +2,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::vec::IntoIter;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
@@ -26,8 +26,8 @@ use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
 use cairo_lang_test_plugin::{
-    compile_test_prepared_db, test_plugin_suite, TestCompilation, TestCompilationMetadata,
-    TestConfig, TestsCompilationConfig,
+    TestCompilation, TestCompilationMetadata, TestConfig, TestsCompilationConfig,
+    compile_test_prepared_db, test_plugin_suite,
 };
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -71,6 +71,9 @@ impl TestRunner {
                 starknet,
                 add_statements_functions: config.run_profiler == RunProfilerConfig::Cairo,
                 add_statements_code_locations: false,
+                contract_declarations: None,
+                contract_crate_ids: None,
+                executable_crate_ids: None,
             },
         )?;
         Ok(Self { compiler, config })
@@ -262,7 +265,6 @@ impl TestCompiler {
         compile_test_prepared_db(
             &self.db,
             self.config.clone(),
-            self.main_crate_ids.clone(),
             self.test_crate_ids.clone(),
             diag_reporter,
         )
@@ -542,6 +544,7 @@ fn update_summary(
             Some(*db),
             sierra_program.clone(),
             statements_functions.clone(),
+            Default::default(),
         );
         let processed_profiling_info =
             profiling_processor.process_ex(&profiling_info, profiling_params);

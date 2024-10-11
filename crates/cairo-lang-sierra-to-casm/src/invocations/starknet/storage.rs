@@ -6,7 +6,7 @@ use starknet_types_core::felt::Felt as Felt252;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::validate_under_limit;
-use crate::invocations::{add_input_variables, BuiltinInfo, CostValidationInfo};
+use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 
 /// Handles the storage_address_from_base_and_offset libfunc.
 pub fn build_storage_address_from_base_and_offset(

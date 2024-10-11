@@ -2,11 +2,11 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 use path_clean::PathClean;
 use smol_str::SmolStr;
 
-use crate::db::FilesGroup;
+use crate::db::{CORELIB_CRATE_NAME, FilesGroup};
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
@@ -15,20 +15,32 @@ pub const CAIRO_FILE_EXTENSION: &str = "cairo";
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum CrateLongId {
     /// A crate that appears in crate_roots(), and on the filesystem.
-    Real(SmolStr),
+    Real { name: SmolStr, discriminator: Option<SmolStr> },
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
     Virtual { name: SmolStr, file_id: FileId, settings: String },
 }
 impl CrateLongId {
     pub fn name(&self) -> SmolStr {
         match self {
-            CrateLongId::Real(name) => name.clone(),
-            CrateLongId::Virtual { name, .. } => name.clone(),
+            CrateLongId::Real { name, .. } | CrateLongId::Virtual { name, .. } => name.clone(),
         }
     }
 }
 define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate, intern_crate);
 impl CrateId {
+    /// Gets the crate id for a real crate by name, without a discriminator.
+    pub fn plain(
+        db: &(impl cairo_lang_utils::Upcast<dyn FilesGroup> + ?Sized),
+        name: &str,
+    ) -> Self {
+        CrateLongId::Real { name: name.into(), discriminator: None }.intern(db)
+    }
+
+    /// Gets the crate id for `core`.
+    pub fn core(db: &(impl cairo_lang_utils::Upcast<dyn FilesGroup> + ?Sized)) -> Self {
+        CrateLongId::Real { name: CORELIB_CRATE_NAME.into(), discriminator: None }.intern(db)
+    }
+
     pub fn name(&self, db: &dyn FilesGroup) -> SmolStr {
         self.lookup_intern(db).name()
     }
@@ -123,11 +135,11 @@ impl VirtualFile {
 }
 
 define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file, intern_file);
-impl<'b> FileId {
+impl FileId {
     pub fn new(db: &dyn FilesGroup, path: PathBuf) -> FileId {
         FileLongId::OnDisk(path.clean()).intern(db)
     }
-    pub fn file_name(self, db: &'b dyn FilesGroup) -> String {
+    pub fn file_name(self, db: &dyn FilesGroup) -> String {
         match self.lookup_intern(db) {
             FileLongId::OnDisk(path) => {
                 path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()

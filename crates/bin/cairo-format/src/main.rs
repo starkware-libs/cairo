@@ -102,7 +102,7 @@ fn format_file_in_place(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path)
     }
 }
 
-impl<'t> ParallelVisitor for PathFormatter<'t> {
+impl ParallelVisitor for PathFormatter<'_> {
     fn visit(&mut self, dir_entry_res: Result<DirEntry, Error>) -> WalkState {
         let dir_entry = if let Ok(dir_entry) = dir_entry_res {
             dir_entry

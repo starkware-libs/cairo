@@ -1201,3 +1201,39 @@ impl MyImpl<T> of MyTrait<T> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Passing a Trait impl with generic param type as a generic impl argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait OtherTrait<T> {
+    fn f();
+}
+impl OtherImpl<T> of OtherTrait<T> {
+    fn f() {}
+}
+trait MyTrait<T> {
+    impl I: OtherTrait<T>;
+}
+
+impl MyImpl<T> of MyTrait<T> {
+    impl I = OtherImpl<T>;
+}
+fn bar<impl O: OtherTrait<u32>>() {
+    O::f();
+}
+fn bar2<impl M: MyTrait<u32>>() {
+    bar::<M::I>()
+}
+
+//! > expected_diagnostics

@@ -11,9 +11,9 @@ use test_case::test_case;
 
 use super::format_for_debug;
 use crate::casm_run::contract_address::calculate_contract_address;
-use crate::casm_run::{run_function, RunFunctionResult};
+use crate::casm_run::{RunFunctionResult, run_function};
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
-use crate::{build_hints_dict, CairoHintProcessor, StarknetState};
+use crate::{CairoHintProcessor, StarknetState, build_hints_dict};
 
 #[test_case(
     casm! {

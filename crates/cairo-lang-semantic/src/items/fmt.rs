@@ -33,7 +33,11 @@ impl<Db: ?Sized + Upcast<dyn SemanticGroup + 'static>> DebugWithDb<Db> for Const
                 inner.fmt(f, db)?;
                 write!(f, ")")
             }
-            ConstValue::NonZero(value) => value.fmt(f, db),
+            ConstValue::NonZero(value) => {
+                write!(f, "NonZero(")?;
+                value.fmt(f, db)?;
+                write!(f, ")")
+            }
             ConstValue::Boxed(value) => {
                 value.fmt(f, db)?;
                 write!(f, ".into_box()")

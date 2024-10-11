@@ -40,13 +40,13 @@
 
 use std::collections::{HashMap, HashSet};
 use std::io;
-use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
+use std::panic::{AssertUnwindSafe, RefUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
@@ -58,9 +58,9 @@ use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_project::ProjectConfig;
+use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
@@ -81,13 +81,13 @@ use crate::lsp::capabilities::server::{
 };
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::lsp::result::{LSPError, LSPResult};
+use crate::project::ProjectManifestPath;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
-use crate::project::ProjectManifestPath;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::schedule::{
-    bounded_available_parallelism, event_loop_thread, JoinHandle, Scheduler, SyncTask, Task,
+    JoinHandle, Scheduler, SyncTask, Task, bounded_available_parallelism, event_loop_thread,
 };
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
@@ -171,9 +171,9 @@ fn init_logging() -> Option<impl Drop> {
 
     use tracing_chrome::ChromeLayerBuilder;
     use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+    use tracing_subscriber::fmt::Layer;
     use tracing_subscriber::fmt::format::FmtSpan;
     use tracing_subscriber::fmt::time::Uptime;
-    use tracing_subscriber::fmt::Layer;
     use tracing_subscriber::prelude::*;
 
     let mut guard = None;
@@ -574,18 +574,21 @@ impl Backend {
             (*db).upcast(),
             &mut diags,
             &new_file_diagnostics.parser,
+            file,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
             &mut diags,
             &new_file_diagnostics.semantic,
+            file,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
             &mut diags,
             &new_file_diagnostics.lowering,
+            file,
             trace_macro_diagnostics,
         );
 

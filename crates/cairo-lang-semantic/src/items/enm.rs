@@ -6,24 +6,24 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::enumerate;
 use smol_str::SmolStr;
 
 use super::attribute::SemanticQueryAttrs;
-use super::generics::{semantic_generic_params, GenericParamsData};
+use super::generics::{GenericParamsData, semantic_generic_params};
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
-use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{add_type_based_diagnostics, resolve_type};
-use crate::{semantic, ConcreteEnumId, SemanticDiagnostic};
+use crate::{ConcreteEnumId, SemanticDiagnostic, semantic};
 
 #[cfg(test)]
 #[path = "enm_test.rs"]

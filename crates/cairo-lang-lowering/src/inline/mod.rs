@@ -9,9 +9,9 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::items::functions::InlineConfiguration;
+use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::LookupIntern;
 use itertools::{izip, zip_eq};
 use statements_weights::InlineWeight;
 
@@ -180,7 +180,7 @@ pub struct Mapper<'a, 'b> {
     block_id_offset: BlockId,
 }
 
-impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
+impl Rebuilder for Mapper<'_, '_> {
     /// Maps a var id from the original lowering representation to the equivalent id in the
     /// new lowering representation.
     /// If the variable wasn't assigned an id yet, a new id is assigned.

@@ -15,10 +15,10 @@ use smol_str::SmolStr;
 use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
 use super::visibility::Visibility;
-use crate::db::{get_resolver_data_options, SemanticGroup};
+use crate::SemanticDiagnostic;
+use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::resolve::ResolvedGenericItem;
-use crate::SemanticDiagnostic;
 
 /// Information per item in a module.
 #[derive(Clone, Debug, PartialEq, Eq)]

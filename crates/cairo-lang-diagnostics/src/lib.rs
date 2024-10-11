@@ -2,9 +2,9 @@
 //! source files.
 
 pub use diagnostics::{
-    format_diagnostics, skip_diagnostic, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation,
-    DiagnosticNote, Diagnostics, DiagnosticsBuilder, FormattedDiagnosticEntry, Maybe, Severity,
-    ToMaybe, ToOption,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, Diagnostics,
+    DiagnosticsBuilder, FormattedDiagnosticEntry, Maybe, Severity, ToMaybe, ToOption,
+    format_diagnostics, skip_diagnostic,
 };
 pub use error_code::{ErrorCode, OptionErrorCodeExt};
 pub use location_marks::get_location_marks;

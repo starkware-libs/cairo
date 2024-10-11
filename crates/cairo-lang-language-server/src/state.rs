@@ -13,7 +13,7 @@ use salsa::ParallelDatabase;
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::toolchain::scarb::ScarbToolchain;
-use crate::{env_config, Tricks};
+use crate::{Tricks, env_config};
 
 /// State of Language server.
 pub struct State {

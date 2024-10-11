@@ -98,6 +98,7 @@ pub struct ContractState {}
 hello
 ```
 ```cairo
+#[derive(Drop, Copy)]
 pub struct StorageStorageBaseMut {
     pub value: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
 }

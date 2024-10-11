@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase,
-    FilesGroup, FilesGroupEx,
+    AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_files_group,
 };
-use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
@@ -120,7 +120,7 @@ pub fn test_expand_plugin_inner(
 
     let cairo_code = &inputs["cairo_code"];
 
-    let crate_id = CrateLongId::Real("test".into()).intern(db);
+    let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("test_src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
