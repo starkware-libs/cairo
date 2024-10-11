@@ -269,19 +269,7 @@ impl BackendForTesting {
     }
 
     pub fn run_for_tests(self) -> Result<JoinHandle<Result<()>>> {
-        let Backend { mut state, connection } = self.0;
-
-        event_loop_thread(move || {
-            let scheduler = Backend::initial_setup(&mut state, &connection);
-
-            let result = Backend::event_loop(&connection, scheduler);
-
-            if let Err(err) = connection.close() {
-                error!("failed to close connection to the language server: {err:?}");
-            }
-
-            result
-        })
+        self.0.run()
     }
 }
 
