@@ -1,16 +1,14 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_doc::db::DocGroup;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
-use cairo_lang_utils::Upcast;
 use tower_lsp::lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
-use crate::ide::hover::render::markdown::{RULE, fenced_code_block};
+use crate::ide::hover::range::HoverRange;
+use crate::ide::hover::render::markdown::{fenced_code_block, RULE};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::inspect::defs::{MemberDef, SymbolDef};
-use crate::lang::lsp::ToLsp;
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
 #[tracing::instrument(level = "trace", skip_all)]
@@ -58,12 +56,5 @@ pub fn definition(
         }
     };
 
-    Some(Hover {
-        contents: markdown_contents(md),
-        range: identifier
-            .as_syntax_node()
-            .span_without_trivia(db.upcast())
-            .position_in_file(db.upcast(), file_id)
-            .map(|p| p.to_lsp()),
-    })
+    Some(Hover { contents: markdown_contents(md), range: identifier.range(db, file_id) })
 }

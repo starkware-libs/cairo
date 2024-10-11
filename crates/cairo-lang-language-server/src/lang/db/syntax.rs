@@ -2,10 +2,14 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextPosition;
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::ast::TerminalIdentifier;
+use cairo_lang_syntax::node::ast::{
+    TerminalIdentifier, TerminalLiteralNumber, TerminalShortString, TerminalString,
+};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
+
+use crate::ide::hover::HoverTarget;
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.
 /// Language server-specific extensions to the syntax group of the Cairo compiler.
@@ -42,6 +46,43 @@ pub trait LsSyntaxGroup: Upcast<dyn ParserGroup> {
                 Some(TerminalIdentifier::from_syntax_node(syntax_db, node.parent()?))
             } else {
                 None
+            }
+        };
+
+        find(position).or_else(|| {
+            // Try searching one character to the left.
+            let col = position.col.checked_sub(1)?;
+            find(TextPosition { col, ..position })
+        })
+    }
+
+    // TODO: add doc
+    // This function is meant to replace `find_identifier_at_position`
+    fn find_hover_target_at_position(
+        &self,
+        file: FileId,
+        position: TextPosition,
+    ) -> Option<HoverTarget> {
+        let db = self.upcast();
+        let syntax_db = db.upcast();
+
+        let find = |position: TextPosition| {
+            let node = self.find_syntax_node_at_position(file, position)?;
+
+            match node.kind(syntax_db) {
+                SyntaxKind::TokenIdentifier => Some(HoverTarget::Identifier(
+                    TerminalIdentifier::from_syntax_node(syntax_db, node.parent()?),
+                )),
+                SyntaxKind::TokenLiteralNumber => Some(HoverTarget::Number(
+                    TerminalLiteralNumber::from_syntax_node(syntax_db, node.parent()?),
+                )),
+                SyntaxKind::TokenString => Some(HoverTarget::String(
+                    TerminalString::from_syntax_node(syntax_db, node.parent()?),
+                )),
+                SyntaxKind::TokenShortString => Some(HoverTarget::ShortString(
+                    TerminalShortString::from_syntax_node(syntax_db, node.parent()?),
+                )),
+                _ => None,
             }
         };
 
