@@ -1,6 +1,6 @@
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use tower_lsp::lsp_types::{CodeAction, Command};
+use lsp_types::{CodeAction, Command};
 
 use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 

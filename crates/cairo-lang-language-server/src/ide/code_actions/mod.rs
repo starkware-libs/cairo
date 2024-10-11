@@ -1,5 +1,5 @@
 use cairo_lang_syntax::node::SyntaxNode;
-use tower_lsp::lsp_types::{
+use lsp_types::{
     CodeAction, CodeActionOrCommand, CodeActionParams, CodeActionResponse, Diagnostic,
     NumberOrString,
 };

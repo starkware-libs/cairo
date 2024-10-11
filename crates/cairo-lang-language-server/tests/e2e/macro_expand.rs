@@ -1,7 +1,7 @@
 use cairo_lang_language_server::lsp::ext::ExpandMacro;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use tower_lsp::lsp_types::{TextDocumentIdentifier, TextDocumentPositionParams};
+use lsp_types::{TextDocumentIdentifier, TextDocumentPositionParams};
 
 use crate::support::cursor::peek_caret;
 use crate::support::{cursors, sandbox};

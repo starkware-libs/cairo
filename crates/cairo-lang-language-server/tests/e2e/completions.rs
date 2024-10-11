@@ -1,6 +1,6 @@
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use tower_lsp::lsp_types::{CompletionParams, TextDocumentPositionParams, lsp_request};
+use lsp_types::{CompletionParams, TextDocumentPositionParams, lsp_request};
 
 use crate::support::cursor::peek_caret;
 use crate::support::{cursors, sandbox};
@@ -56,8 +56,8 @@ fn test_completions_text_edits(
             ls.send_request::<lsp_request!("textDocument/completion")>(completion_params);
         if let Some(completions) = caret_completions {
             let completion_items = match completions {
-                tower_lsp::lsp_types::CompletionResponse::Array(items) => items,
-                tower_lsp::lsp_types::CompletionResponse::List(list) => list.items,
+                lsp_types::CompletionResponse::Array(items) => items,
+                lsp_types::CompletionResponse::List(list) => list.items,
             };
             for completion in completion_items {
                 if let Some(text_edit) = completion.additional_text_edits {

@@ -2,12 +2,12 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use anyhow::{Context, Result, bail};
+use lsp_types::notification::Notification;
 use scarb_metadata::{Metadata, MetadataCommand};
-use tower_lsp::lsp_types::notification::Notification;
 use tracing::{error, warn};
 
 use crate::env_config;
-use crate::server::notifier::Notifier;
+use crate::server::client::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
 
@@ -34,12 +34,8 @@ pub struct ScarbToolchain {
 
 impl ScarbToolchain {
     /// Constructs a new [`ScarbToolchain`].
-    pub fn new(notifier: &Notifier) -> Self {
-        ScarbToolchain {
-            scarb_path_cell: Default::default(),
-            notifier: notifier.clone(),
-            is_silent: false,
-        }
+    pub fn new(notifier: Notifier) -> Self {
+        ScarbToolchain { scarb_path_cell: Default::default(), notifier, is_silent: false }
     }
 
     /// Finds the path to the `scarb` executable to use.
@@ -58,7 +54,7 @@ impl ScarbToolchain {
                         warn!("attempt to use scarb without SCARB env being set");
                     } else {
                         error!("attempt to use scarb without SCARB env being set");
-                        self.notifier.send_notification::<ScarbPathMissing>(());
+                        self.notifier.notify::<ScarbPathMissing>(());
                     }
                 }
                 path
@@ -117,7 +113,7 @@ impl ScarbToolchain {
         };
 
         if !self.is_silent {
-            self.notifier.send_notification::<ScarbResolvingStart>(());
+            self.notifier.notify::<ScarbResolvingStart>(());
         }
 
         let result = MetadataCommand::new()
@@ -128,7 +124,7 @@ impl ScarbToolchain {
             .context("failed to execute: scarb metadata");
 
         if !self.is_silent {
-            self.notifier.send_notification::<ScarbResolvingFinish>(());
+            self.notifier.notify::<ScarbResolvingFinish>(());
         }
 
         result

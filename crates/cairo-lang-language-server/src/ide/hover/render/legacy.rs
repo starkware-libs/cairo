@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ast::{Expr, Pattern, TerminalIdentifier};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::Hover;
+use lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
 use crate::ide::hover::render::markdown::{RULE, fenced_code_block};

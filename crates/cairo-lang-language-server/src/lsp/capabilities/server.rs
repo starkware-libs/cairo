@@ -13,12 +13,7 @@
 
 use std::ops::Not;
 
-use missing_lsp_types::{
-    CodeActionRegistrationOptions, DefinitionRegistrationOptions,
-    DocumentFormattingRegistrationOptions,
-};
-use serde::Serialize;
-use tower_lsp::lsp_types::{
+use lsp_types::{
     ClientCapabilities, CodeActionProviderCapability, CompletionOptions,
     CompletionRegistrationOptions, DefinitionOptions, DidChangeWatchedFilesRegistrationOptions,
     DocumentFilter, ExecuteCommandOptions, ExecuteCommandRegistrationOptions, FileSystemWatcher,
@@ -29,6 +24,11 @@ use tower_lsp::lsp_types::{
     TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
     TextDocumentSyncSaveOptions,
 };
+use missing_lsp_types::{
+    CodeActionRegistrationOptions, DefinitionRegistrationOptions,
+    DocumentFormattingRegistrationOptions,
+};
+use serde::Serialize;
 
 use crate::ide::semantic_highlighting::SemanticTokenKind;
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
@@ -257,11 +257,11 @@ fn create_registration(method: &str, registration_options: impl Serialize) -> Re
 }
 
 mod missing_lsp_types {
-    use serde::{Deserialize, Serialize};
-    use tower_lsp::lsp_types::{
+    use lsp_types::{
         CodeActionOptions, DefinitionOptions, DocumentFormattingOptions,
         TextDocumentRegistrationOptions,
     };
+    use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
     #[serde(rename_all = "camelCase")]

@@ -2,7 +2,7 @@ use std::cmp::min;
 use std::str::Chars;
 
 use itertools::{Itertools, MultiPeek};
-use tower_lsp::lsp_types::{Position, Range};
+use lsp_types::{Position, Range};
 
 #[path = "cursor_test.rs"]
 mod test;
