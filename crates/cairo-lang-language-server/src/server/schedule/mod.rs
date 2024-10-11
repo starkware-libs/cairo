@@ -53,20 +53,6 @@ impl<'s> Scheduler<'s> {
         }
     }
 
-    /// Immediately sends a request of kind `R` to the client, with associated parameters.
-    /// The task provided by `response_handler` will be dispatched as soon as the response
-    /// comes back from the client.
-    pub fn request<R>(
-        &mut self,
-        params: R::Params,
-        response_handler: impl Fn(R::Result) -> Task<'s> + 'static,
-    ) -> Result<()>
-    where
-        R: lsp_types::request::Request,
-    {
-        self.client.requester.request::<R>(params, response_handler)
-    }
-
     /// Creates a task to handle a response from the client.
     pub fn response(&mut self, response: lsp_server::Response) -> Task<'s> {
         self.client.requester.pop_response_task(response)
