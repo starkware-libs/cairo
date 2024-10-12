@@ -267,7 +267,7 @@ pub impl AddInputResultImpl<C> of AddInputResultTrait<C> {
             AddInputResult::More(accumulator) => add_circuit_input(
                 accumulator, value.into_circuit_input_value()
             ),
-            AddInputResult::Done(_) => panic!("All inputs have been filled"),
+            AddInputResult::Done(_) => panic_with_felt252('All inputs have been filled'),
         }
     }
     // Inlining to make sure possibly huge `C` won't be in a user function name.
@@ -275,7 +275,7 @@ pub impl AddInputResultImpl<C> of AddInputResultTrait<C> {
     fn done(self: AddInputResult<C>) -> CircuitData<C> {
         match self {
             AddInputResult::Done(data) => data,
-            AddInputResult::More(_) => panic!("Not all inputs have been filled"),
+            AddInputResult::More(_) => panic_with_felt252('Not all inputs have been filled'),
         }
     }
 }
@@ -585,3 +585,4 @@ impl U384Zero of crate::num::traits::Zero<u384> {
         !self.is_zero()
     }
 }
+
