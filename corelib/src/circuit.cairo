@@ -586,3 +586,15 @@ impl U384Zero of crate::num::traits::Zero<u384> {
     }
 }
 
+impl U384One of crate::num::traits::One<u384> {
+    fn one() -> u384 {
+        u384 { limb0: 1, limb1: 0, limb2: 0, limb3: 0 }
+    }
+
+    fn is_one(self: @u384) -> bool {
+        *self == Self::one()
+    }
+    fn is_non_one(self: @u384) -> bool {
+        !self.is_one()
+    }
+}
