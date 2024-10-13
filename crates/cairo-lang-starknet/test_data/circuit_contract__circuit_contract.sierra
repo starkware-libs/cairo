@@ -1,9 +1,10 @@
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 29721761890975875353235833581453094220424382983267374> = Const<felt252, 29721761890975875353235833581453094220424382983267374> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132> = Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132> [storable: false, drop: false, dup: false, zero_sized: false];
-type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 16> = Const<felt252, 16> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 92342086994883127646987903453339415411> = Const<felt252, 92342086994883127646987903453339415411> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075> = Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075> [storable: false, drop: false, dup: false, zero_sized: false];
 type U96LimbsLtGuarantee<1> = U96LimbsLtGuarantee<1> [storable: true, drop: false, dup: false, zero_sized: false];
 type U96LimbsLtGuarantee<2> = U96LimbsLtGuarantee<2> [storable: true, drop: false, dup: false, zero_sized: false];
 type U96LimbsLtGuarantee<3> = U96LimbsLtGuarantee<3> [storable: true, drop: false, dup: false, zero_sized: false];
@@ -18,10 +19,7 @@ type Const<BoundedInt<0, 0>, 0> = Const<BoundedInt<0, 0>, 0> [storable: false, d
 type BoundedInt<0, 0> = BoundedInt<0, 0> [storable: true, drop: true, dup: true, zero_sized: false];
 type CircuitDescriptor<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>> = CircuitDescriptor<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>> [storable: true, drop: true, dup: true, zero_sized: false];
 type Const<BoundedInt<0, 79228162514264337593543950335>, 6> = Const<BoundedInt<0, 79228162514264337593543950335>, 6> [storable: false, drop: false, dup: false, zero_sized: false];
-type Const<felt252, 27> = Const<felt252, 27> [storable: false, drop: false, dup: false, zero_sized: false];
 type Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348> = Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348> [storable: false, drop: false, dup: false, zero_sized: false];
-type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
-type Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075> = Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075> [storable: false, drop: false, dup: false, zero_sized: false];
 type CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>> = CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>> [storable: true, drop: true, dup: false, zero_sized: false];
 type U96Guarantee = U96Guarantee [storable: true, drop: false, dup: false, zero_sized: false];
 type Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee> [storable: true, drop: false, dup: false, zero_sized: false];
@@ -122,10 +120,7 @@ libfunc add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::A
 libfunc drop<CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>> = drop<CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>;
 libfunc drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState> = drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>;
 libfunc drop<CircuitModulus> = drop<CircuitModulus>;
-libfunc const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>> = const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>;
-libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc const_as_immediate<Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>> = const_as_immediate<Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>>;
-libfunc const_as_immediate<Const<felt252, 27>> = const_as_immediate<Const<felt252, 27>>;
 libfunc enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1> = enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>;
 libfunc store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>> = store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>;
 libfunc const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 6>> = const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 6>>;
@@ -148,10 +143,11 @@ libfunc u96_single_limb_less_than_guarantee_verify = u96_single_limb_less_than_g
 libfunc store_temp<U96Guarantee> = store_temp<U96Guarantee>;
 libfunc jump = jump;
 libfunc u96_guarantee_verify = u96_guarantee_verify;
+libfunc const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>> = const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc const_as_immediate<Const<felt252, 92342086994883127646987903453339415411>> = const_as_immediate<Const<felt252, 92342086994883127646987903453339415411>>;
 libfunc const_as_immediate<Const<felt252, 16>> = const_as_immediate<Const<felt252, 16>>;
 libfunc drop<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>> = drop<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>;
-libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc const_as_immediate<Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>> = const_as_immediate<Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>>;
 libfunc const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>> = const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>;
 
@@ -257,7 +253,7 @@ const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> 
 const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([7]); // 99
 struct_construct<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>([4], [5], [6], [7]) -> ([8]); // 100
 store_temp<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>([8]) -> ([8]); // 101
-try_into_circuit_modulus([8]) { fallthrough([9]) 251() }; // 102
+try_into_circuit_modulus([8]) { fallthrough([9]) 230() }; // 102
 branch_align() -> (); // 103
 init_circuit_data<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>([2]) -> ([10], [11]); // 104
 const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 3>>() -> ([12]); // 105
@@ -272,154 +268,133 @@ struct_construct<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>(
 store_temp<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>([11]) -> ([11]); // 114
 store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([20]) -> ([20]); // 115
 store_temp<RangeCheck96>([10]) -> ([10]); // 116
-add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>([11], [20]) { fallthrough([21]) 143([22]) }; // 117
+add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>([11], [20]) { fallthrough([21]) 134([22]) }; // 117
 branch_align() -> (); // 118
 drop<CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>([21]) -> (); // 119
 drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 120
 drop<CircuitModulus>([9]) -> (); // 121
 array_new<felt252>() -> ([23]); // 122
-const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([24]); // 123
+const_as_immediate<Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>>() -> ([24]); // 123
 store_temp<felt252>([24]) -> ([24]); // 124
 array_append<felt252>([23], [24]) -> ([25]); // 125
-const_as_immediate<Const<felt252, 0>>() -> ([26]); // 126
-store_temp<felt252>([26]) -> ([26]); // 127
-array_append<felt252>([25], [26]) -> ([27]); // 128
-const_as_immediate<Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>>() -> ([28]); // 129
-store_temp<felt252>([28]) -> ([28]); // 130
-array_append<felt252>([27], [28]) -> ([29]); // 131
-const_as_immediate<Const<felt252, 27>>() -> ([30]); // 132
-store_temp<felt252>([30]) -> ([30]); // 133
-array_append<felt252>([29], [30]) -> ([31]); // 134
-struct_construct<core::panics::Panic>() -> ([32]); // 135
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([32], [31]) -> ([33]); // 136
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([33]) -> ([34]); // 137
-store_temp<AddMod>([0]) -> ([0]); // 138
-store_temp<MulMod>([1]) -> ([1]); // 139
-store_temp<RangeCheck96>([10]) -> ([10]); // 140
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([34]) -> ([34]); // 141
-return([0], [1], [10], [34]); // 142
-branch_align() -> (); // 143
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 6>>() -> ([35]); // 144
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([35]) -> ([36]); // 145
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([37]); // 146
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([37]) -> ([38]); // 147
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([39]); // 148
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([39]) -> ([40]); // 149
-const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([41]); // 150
-into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([41]) -> ([42]); // 151
-struct_construct<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([36], [38], [40], [42]) -> ([43]); // 152
-store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([43]) -> ([43]); // 153
-add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>([22], [43]) { fallthrough([44]) 223([45]) }; // 154
-branch_align() -> (); // 155
-get_circuit_descriptor<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>() -> ([46]); // 156
-const_as_immediate<Const<BoundedInt<0, 0>, 0>>() -> ([47]); // 157
-const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([48]); // 158
-store_temp<BoundedInt<0, 0>>([47]) -> ([47]); // 159
-store_temp<BoundedInt<1, 1>>([48]) -> ([48]); // 160
-eval_circuit<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>([0], [1], [46], [44], [9], [47], [48]) { fallthrough([49], [50], [51]) 172([52], [53], [54], [55]) }; // 161
-branch_align() -> (); // 162
-drop<CircuitOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>([51]) -> (); // 163
-struct_construct<Unit>() -> ([56]); // 164
-struct_construct<Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>>([3], [56]) -> ([57]); // 165
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 0>([57]) -> ([58]); // 166
-store_temp<AddMod>([49]) -> ([49]); // 167
-store_temp<MulMod>([50]) -> ([50]); // 168
-store_temp<RangeCheck96>([10]) -> ([10]); // 169
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([58]) -> ([58]); // 170
-return([49], [50], [10], [58]); // 171
-branch_align() -> (); // 172
-drop<CircuitPartialOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>([54]) -> (); // 173
-drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 174
-const_as_immediate<Const<BoundedInt<0, 0>, 0>>() -> ([59]); // 175
-const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([60]); // 176
-store_temp<MulMod>([53]) -> ([53]); // 177
-store_temp<BoundedInt<0, 0>>([59]) -> ([59]); // 178
-store_temp<BoundedInt<1, 1>>([60]) -> ([60]); // 179
-circuit_failure_guarantee_verify([10], [53], [55], [59], [60]) -> ([61], [62], [63]); // 180
-store_temp<AddMod>([52]) -> ([52]); // 181
-store_temp<RangeCheck96>([61]) -> ([61]); // 182
-store_temp<MulMod>([62]) -> ([62]); // 183
-u96_limbs_less_than_guarantee_verify<4>([63]) { fallthrough([64]) 199([65]) }; // 184
-branch_align() -> (); // 185
-u96_limbs_less_than_guarantee_verify<3>([64]) { fallthrough([66]) 196([67]) }; // 186
+struct_construct<core::panics::Panic>() -> ([26]); // 126
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([26], [25]) -> ([27]); // 127
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([27]) -> ([28]); // 128
+store_temp<AddMod>([0]) -> ([0]); // 129
+store_temp<MulMod>([1]) -> ([1]); // 130
+store_temp<RangeCheck96>([10]) -> ([10]); // 131
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([28]) -> ([28]); // 132
+return([0], [1], [10], [28]); // 133
+branch_align() -> (); // 134
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 6>>() -> ([29]); // 135
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([29]) -> ([30]); // 136
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([31]); // 137
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([31]) -> ([32]); // 138
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([33]); // 139
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([33]) -> ([34]); // 140
+const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>() -> ([35]); // 141
+into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>([35]) -> ([36]); // 142
+struct_construct<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([30], [32], [34], [36]) -> ([37]); // 143
+store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>([37]) -> ([37]); // 144
+add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>([22], [37]) { fallthrough([38]) 214([39]) }; // 145
+branch_align() -> (); // 146
+get_circuit_descriptor<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>() -> ([40]); // 147
+const_as_immediate<Const<BoundedInt<0, 0>, 0>>() -> ([41]); // 148
+const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([42]); // 149
+store_temp<BoundedInt<0, 0>>([41]) -> ([41]); // 150
+store_temp<BoundedInt<1, 1>>([42]) -> ([42]); // 151
+eval_circuit<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>([0], [1], [40], [38], [9], [41], [42]) { fallthrough([43], [44], [45]) 163([46], [47], [48], [49]) }; // 152
+branch_align() -> (); // 153
+drop<CircuitOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>([45]) -> (); // 154
+struct_construct<Unit>() -> ([50]); // 155
+struct_construct<Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>>([3], [50]) -> ([51]); // 156
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 0>([51]) -> ([52]); // 157
+store_temp<AddMod>([43]) -> ([43]); // 158
+store_temp<MulMod>([44]) -> ([44]); // 159
+store_temp<RangeCheck96>([10]) -> ([10]); // 160
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([52]) -> ([52]); // 161
+return([43], [44], [10], [52]); // 162
+branch_align() -> (); // 163
+drop<CircuitPartialOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>([48]) -> (); // 164
+drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 165
+const_as_immediate<Const<BoundedInt<0, 0>, 0>>() -> ([53]); // 166
+const_as_immediate<Const<BoundedInt<1, 1>, 1>>() -> ([54]); // 167
+store_temp<MulMod>([47]) -> ([47]); // 168
+store_temp<BoundedInt<0, 0>>([53]) -> ([53]); // 169
+store_temp<BoundedInt<1, 1>>([54]) -> ([54]); // 170
+circuit_failure_guarantee_verify([10], [47], [49], [53], [54]) -> ([55], [56], [57]); // 171
+store_temp<AddMod>([46]) -> ([46]); // 172
+store_temp<RangeCheck96>([55]) -> ([55]); // 173
+store_temp<MulMod>([56]) -> ([56]); // 174
+u96_limbs_less_than_guarantee_verify<4>([57]) { fallthrough([58]) 190([59]) }; // 175
+branch_align() -> (); // 176
+u96_limbs_less_than_guarantee_verify<3>([58]) { fallthrough([60]) 187([61]) }; // 177
+branch_align() -> (); // 178
+u96_limbs_less_than_guarantee_verify<2>([60]) { fallthrough([62]) 184([63]) }; // 179
+branch_align() -> (); // 180
+u96_single_limb_less_than_guarantee_verify([62]) -> ([64]); // 181
+store_temp<U96Guarantee>([64]) -> ([65]); // 182
+jump() { 192() }; // 183
+branch_align() -> (); // 184
+store_temp<U96Guarantee>([63]) -> ([65]); // 185
+jump() { 192() }; // 186
 branch_align() -> (); // 187
-u96_limbs_less_than_guarantee_verify<2>([66]) { fallthrough([68]) 193([69]) }; // 188
-branch_align() -> (); // 189
-u96_single_limb_less_than_guarantee_verify([68]) -> ([70]); // 190
-store_temp<U96Guarantee>([70]) -> ([71]); // 191
-jump() { 201() }; // 192
-branch_align() -> (); // 193
-store_temp<U96Guarantee>([69]) -> ([71]); // 194
-jump() { 201() }; // 195
-branch_align() -> (); // 196
-store_temp<U96Guarantee>([67]) -> ([71]); // 197
-jump() { 201() }; // 198
-branch_align() -> (); // 199
-store_temp<U96Guarantee>([65]) -> ([71]); // 200
-u96_guarantee_verify([61], [71]) -> ([72]); // 201
-array_new<felt252>() -> ([73]); // 202
-const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([74]); // 203
+store_temp<U96Guarantee>([61]) -> ([65]); // 188
+jump() { 192() }; // 189
+branch_align() -> (); // 190
+store_temp<U96Guarantee>([59]) -> ([65]); // 191
+u96_guarantee_verify([55], [65]) -> ([66]); // 192
+array_new<felt252>() -> ([67]); // 193
+const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([68]); // 194
+store_temp<felt252>([68]) -> ([68]); // 195
+array_append<felt252>([67], [68]) -> ([69]); // 196
+const_as_immediate<Const<felt252, 0>>() -> ([70]); // 197
+store_temp<felt252>([70]) -> ([70]); // 198
+array_append<felt252>([69], [70]) -> ([71]); // 199
+const_as_immediate<Const<felt252, 92342086994883127646987903453339415411>>() -> ([72]); // 200
+store_temp<felt252>([72]) -> ([72]); // 201
+array_append<felt252>([71], [72]) -> ([73]); // 202
+const_as_immediate<Const<felt252, 16>>() -> ([74]); // 203
 store_temp<felt252>([74]) -> ([74]); // 204
 array_append<felt252>([73], [74]) -> ([75]); // 205
-const_as_immediate<Const<felt252, 0>>() -> ([76]); // 206
-store_temp<felt252>([76]) -> ([76]); // 207
-array_append<felt252>([75], [76]) -> ([77]); // 208
-const_as_immediate<Const<felt252, 92342086994883127646987903453339415411>>() -> ([78]); // 209
-store_temp<felt252>([78]) -> ([78]); // 210
-array_append<felt252>([77], [78]) -> ([79]); // 211
-const_as_immediate<Const<felt252, 16>>() -> ([80]); // 212
-store_temp<felt252>([80]) -> ([80]); // 213
-array_append<felt252>([79], [80]) -> ([81]); // 214
-struct_construct<core::panics::Panic>() -> ([82]); // 215
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([82], [81]) -> ([83]); // 216
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([83]) -> ([84]); // 217
-store_temp<AddMod>([52]) -> ([52]); // 218
-store_temp<MulMod>([62]) -> ([62]); // 219
-store_temp<RangeCheck96>([72]) -> ([72]); // 220
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([84]) -> ([84]); // 221
-return([52], [62], [72], [84]); // 222
-branch_align() -> (); // 223
-drop<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>([45]) -> (); // 224
-drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 225
-drop<CircuitModulus>([9]) -> (); // 226
-array_new<felt252>() -> ([85]); // 227
-const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([86]); // 228
-store_temp<felt252>([86]) -> ([86]); // 229
-array_append<felt252>([85], [86]) -> ([87]); // 230
-const_as_immediate<Const<felt252, 1>>() -> ([88]); // 231
-store_temp<felt252>([88]) -> ([88]); // 232
-array_append<felt252>([87], [88]) -> ([89]); // 233
-const_as_immediate<Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>>() -> ([90]); // 234
-store_temp<felt252>([90]) -> ([90]); // 235
-array_append<felt252>([89], [90]) -> ([91]); // 236
-const_as_immediate<Const<felt252, 0>>() -> ([92]); // 237
-store_temp<felt252>([92]) -> ([92]); // 238
-array_append<felt252>([91], [92]) -> ([93]); // 239
-const_as_immediate<Const<felt252, 0>>() -> ([94]); // 240
-store_temp<felt252>([94]) -> ([94]); // 241
-array_append<felt252>([93], [94]) -> ([95]); // 242
-struct_construct<core::panics::Panic>() -> ([96]); // 243
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([96], [95]) -> ([97]); // 244
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([97]) -> ([98]); // 245
-store_temp<AddMod>([0]) -> ([0]); // 246
-store_temp<MulMod>([1]) -> ([1]); // 247
-store_temp<RangeCheck96>([10]) -> ([10]); // 248
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([98]) -> ([98]); // 249
-return([0], [1], [10], [98]); // 250
-branch_align() -> (); // 251
-drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 252
-array_new<felt252>() -> ([99]); // 253
-const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([100]); // 254
-store_temp<felt252>([100]) -> ([100]); // 255
-array_append<felt252>([99], [100]) -> ([101]); // 256
-struct_construct<core::panics::Panic>() -> ([102]); // 257
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([102], [101]) -> ([103]); // 258
-enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([103]) -> ([104]); // 259
-store_temp<AddMod>([0]) -> ([0]); // 260
-store_temp<MulMod>([1]) -> ([1]); // 261
-store_temp<RangeCheck96>([2]) -> ([2]); // 262
-store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([104]) -> ([104]); // 263
-return([0], [1], [2], [104]); // 264
+struct_construct<core::panics::Panic>() -> ([76]); // 206
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([76], [75]) -> ([77]); // 207
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([77]) -> ([78]); // 208
+store_temp<AddMod>([46]) -> ([46]); // 209
+store_temp<MulMod>([56]) -> ([56]); // 210
+store_temp<RangeCheck96>([66]) -> ([66]); // 211
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([78]) -> ([78]); // 212
+return([46], [56], [66], [78]); // 213
+branch_align() -> (); // 214
+drop<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>([39]) -> (); // 215
+drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 216
+drop<CircuitModulus>([9]) -> (); // 217
+array_new<felt252>() -> ([79]); // 218
+const_as_immediate<Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>>() -> ([80]); // 219
+store_temp<felt252>([80]) -> ([80]); // 220
+array_append<felt252>([79], [80]) -> ([81]); // 221
+struct_construct<core::panics::Panic>() -> ([82]); // 222
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([82], [81]) -> ([83]); // 223
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([83]) -> ([84]); // 224
+store_temp<AddMod>([0]) -> ([0]); // 225
+store_temp<MulMod>([1]) -> ([1]); // 226
+store_temp<RangeCheck96>([10]) -> ([10]); // 227
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([84]) -> ([84]); // 228
+return([0], [1], [10], [84]); // 229
+branch_align() -> (); // 230
+drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>([3]) -> (); // 231
+array_new<felt252>() -> ([85]); // 232
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([86]); // 233
+store_temp<felt252>([86]) -> ([86]); // 234
+array_append<felt252>([85], [86]) -> ([87]); // 235
+struct_construct<core::panics::Panic>() -> ([88]); // 236
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([88], [87]) -> ([89]); // 237
+enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>([89]) -> ([90]); // 238
+store_temp<AddMod>([0]) -> ([0]); // 239
+store_temp<MulMod>([1]) -> ([1]); // 240
+store_temp<RangeCheck96>([2]) -> ([2]); // 241
+store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>([90]) -> ([90]); // 242
+return([0], [1], [2], [90]); // 243
 
 cairo_level_tests::contracts::circuit_contract::circuit_contract::__wrapper__circuit_builtins@0([0]: RangeCheck, [1]: RangeCheck96, [2]: AddMod, [3]: MulMod, [4]: GasBuiltin, [5]: System, [6]: core::array::Span::<core::felt252>) -> (RangeCheck, RangeCheck96, AddMod, MulMod, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 cairo_level_tests::contracts::circuit_contract::circuit_contract::circuit_builtins@96([0]: AddMod, [1]: MulMod, [2]: RangeCheck96, [3]: cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState) -> (AddMod, MulMod, RangeCheck96, core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>);
