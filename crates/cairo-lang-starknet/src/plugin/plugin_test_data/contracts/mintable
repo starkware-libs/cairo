@@ -77,11 +77,13 @@ mod mintable_erc20_ownable {
 
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct StorageStorageBase {
     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
     mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -96,11 +98,13 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct StorageStorageBaseMut {
     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
     mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<mintable_comp::Storage>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -169,6 +173,7 @@ impl ContractStateMint of
         unsafe_new_contract_state()
     }
 }
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -210,6 +215,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -547,9 +553,11 @@ impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct GetSupplyDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl GetSupplyDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplyDispatcher> {
     type SubPointersType = GetSupplyDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyDispatcher>) -> GetSupplyDispatcherSubPointers {
@@ -565,9 +573,11 @@ impl GetSupplyDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSup
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct GetSupplyDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl GetSupplyDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplyDispatcher> {
     type SubPointersType = GetSupplyDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyDispatcher>>) -> GetSupplyDispatcherSubPointersMut {
@@ -627,9 +637,11 @@ impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispat
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct GetSupplyLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl GetSupplyLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplyLibraryDispatcher> {
     type SubPointersType = GetSupplyLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplyLibraryDispatcher>) -> GetSupplyLibraryDispatcherSubPointers {
@@ -645,9 +657,11 @@ impl GetSupplyLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct GetSupplyLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl GetSupplyLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplyLibraryDispatcher> {
     type SubPointersType = GetSupplyLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplyLibraryDispatcher>>) -> GetSupplyLibraryDispatcherSubPointersMut {
@@ -707,9 +721,11 @@ impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibra
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct GetSupplySafeLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl GetSupplySafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplySafeLibraryDispatcher> {
     type SubPointersType = GetSupplySafeLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplySafeLibraryDispatcher>) -> GetSupplySafeLibraryDispatcherSubPointers {
@@ -725,9 +741,11 @@ impl GetSupplySafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPoin
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct GetSupplySafeLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl GetSupplySafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplySafeLibraryDispatcher> {
     type SubPointersType = GetSupplySafeLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplySafeLibraryDispatcher>>) -> GetSupplySafeLibraryDispatcherSubPointersMut {
@@ -787,9 +805,11 @@ impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> 
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct GetSupplySafeDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl GetSupplySafeDispatcherSubPointersImpl of starknet::storage::SubPointers<GetSupplySafeDispatcher> {
     type SubPointersType = GetSupplySafeDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<GetSupplySafeDispatcher>) -> GetSupplySafeDispatcherSubPointers {
@@ -805,9 +825,11 @@ impl GetSupplySafeDispatcherSubPointersImpl of starknet::storage::SubPointers<Ge
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct GetSupplySafeDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl GetSupplySafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<GetSupplySafeDispatcher> {
     type SubPointersType = GetSupplySafeDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<GetSupplySafeDispatcher>>) -> GetSupplySafeDispatcherSubPointersMut {
@@ -902,11 +924,13 @@ impl GetSupplySafeDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupply
 
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct StorageStorageBase {
     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
     mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -921,11 +945,13 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct StorageStorageBaseMut {
     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
     mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<mintable_comp::Storage>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -994,6 +1020,7 @@ impl ContractStateMint of
         unsafe_new_contract_state()
     }
 }
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -1035,6 +1062,7 @@ fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();

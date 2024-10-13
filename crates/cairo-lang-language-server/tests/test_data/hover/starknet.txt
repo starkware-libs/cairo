@@ -99,6 +99,7 @@ hello
 ```
 ```cairo
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub value: starknet::storage::StorageBase<starknet::storage::Mutable<u128>>,
 }

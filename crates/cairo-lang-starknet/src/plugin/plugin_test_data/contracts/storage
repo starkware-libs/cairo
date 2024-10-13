@@ -132,9 +132,11 @@ impl StoreOuterType of starknet::Store::<OuterType> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct OuterTypeSubPointers {
     pub x: starknet::storage::StoragePointer<u32>,
 }
+#[doc(hidden)]
 impl OuterTypeSubPointersImpl of starknet::storage::SubPointers<OuterType> {
     type SubPointersType = OuterTypeSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<OuterType>) -> OuterTypeSubPointers {
@@ -150,9 +152,11 @@ impl OuterTypeSubPointersImpl of starknet::storage::SubPointers<OuterType> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct OuterTypeSubPointersMut {
     pub x: starknet::storage::StoragePointer<starknet::storage::Mutable::<u32>>,
 }
+#[doc(hidden)]
 impl OuterTypeSubPointersMutImpl of starknet::storage::SubPointersMut<OuterType> {
     type SubPointersType = OuterTypeSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<OuterType>>) -> OuterTypeSubPointersMut {
@@ -216,6 +220,7 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub var_felt252: starknet::storage::StorageBase<felt252>,
     pub var_u8: starknet::storage::StorageBase<u8>,
@@ -232,6 +237,7 @@ pub struct StorageStorageBase {
     pub inner_type_var: starknet::storage::StorageBase<inner::InnerType>,
     pub inner_type_to_inner_type: starknet::storage::StorageBase<LegacyMap::<inner::InnerType, inner::InnerType>>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -268,6 +274,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub var_felt252: starknet::storage::StorageBase<starknet::storage::Mutable::<felt252>>,
     pub var_u8: starknet::storage::StorageBase<starknet::storage::Mutable::<u8>>,
@@ -284,6 +291,7 @@ pub struct StorageStorageBaseMut {
     pub inner_type_var: starknet::storage::StorageBase<starknet::storage::Mutable::<inner::InnerType>>,
     pub inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<inner::InnerType, inner::InnerType>>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {

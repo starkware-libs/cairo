@@ -112,12 +112,14 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub var: starknet::storage::StorageBase<WrappedFelt252>,
     pub zero_size: starknet::storage::StorageBase<ZeroSize>,
     pub mapping: starknet::storage::StorageBase<LegacyMap::<WrappedFelt252, WrappedFelt252>>,
     pub zero_size_mapping: starknet::storage::StorageBase<LegacyMap::<ZeroSize, ZeroSize>>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -134,12 +136,14 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub var: starknet::storage::StorageBase<starknet::storage::Mutable::<WrappedFelt252>>,
     pub zero_size: starknet::storage::StorageBase<starknet::storage::Mutable::<ZeroSize>>,
     pub mapping: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<WrappedFelt252, WrappedFelt252>>>,
     pub zero_size_mapping: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<ZeroSize, ZeroSize>>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -278,9 +282,11 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct WrappedFelt252SubPointers {
     pub value: starknet::storage::StoragePointer<felt252>,
 }
+#[doc(hidden)]
 impl WrappedFelt252SubPointersImpl of starknet::storage::SubPointers<WrappedFelt252> {
     type SubPointersType = WrappedFelt252SubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<WrappedFelt252>) -> WrappedFelt252SubPointers {
@@ -296,9 +302,11 @@ impl WrappedFelt252SubPointersImpl of starknet::storage::SubPointers<WrappedFelt
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct WrappedFelt252SubPointersMut {
     pub value: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
 }
+#[doc(hidden)]
 impl WrappedFelt252SubPointersMutImpl of starknet::storage::SubPointersMut<WrappedFelt252> {
     type SubPointersType = WrappedFelt252SubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<WrappedFelt252>>) -> WrappedFelt252SubPointersMut {

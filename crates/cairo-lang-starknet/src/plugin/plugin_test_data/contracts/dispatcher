@@ -251,9 +251,11 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl IContractDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractDispatcher> {
     type SubPointersType = IContractDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractDispatcher>) -> IContractDispatcherSubPointers {
@@ -269,9 +271,11 @@ impl IContractDispatcherSubPointersImpl of starknet::storage::SubPointers<IContr
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl IContractDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractDispatcher> {
     type SubPointersType = IContractDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> IContractDispatcherSubPointersMut {
@@ -345,9 +349,11 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractLibraryDispatcher> {
     type SubPointersType = IContractLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractLibraryDispatcher>) -> IContractLibraryDispatcherSubPointers {
@@ -363,9 +369,11 @@ impl IContractLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractLibraryDispatcher> {
     type SubPointersType = IContractLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> IContractLibraryDispatcherSubPointersMut {
@@ -439,9 +447,11 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractSafeLibraryDispatcher> {
     type SubPointersType = IContractSafeLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractSafeLibraryDispatcher>) -> IContractSafeLibraryDispatcherSubPointers {
@@ -457,9 +467,11 @@ impl IContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPoin
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractSafeLibraryDispatcher> {
     type SubPointersType = IContractSafeLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> IContractSafeLibraryDispatcherSubPointersMut {
@@ -533,9 +545,11 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractSafeDispatcher> {
     type SubPointersType = IContractSafeDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractSafeDispatcher>) -> IContractSafeDispatcherSubPointers {
@@ -551,9 +565,11 @@ impl IContractSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IC
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractSafeDispatcher> {
     type SubPointersType = IContractSafeDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> IContractSafeDispatcherSubPointersMut {
@@ -774,9 +790,11 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl IContractDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractDispatcher> {
     type SubPointersType = IContractDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractDispatcher>) -> IContractDispatcherSubPointers {
@@ -792,9 +810,11 @@ impl IContractDispatcherSubPointersImpl of starknet::storage::SubPointers<IContr
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl IContractDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractDispatcher> {
     type SubPointersType = IContractDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> IContractDispatcherSubPointersMut {
@@ -868,9 +888,11 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractLibraryDispatcher> {
     type SubPointersType = IContractLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractLibraryDispatcher>) -> IContractLibraryDispatcherSubPointers {
@@ -886,9 +908,11 @@ impl IContractLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractLibraryDispatcher> {
     type SubPointersType = IContractLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> IContractLibraryDispatcherSubPointersMut {
@@ -962,9 +986,11 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractSafeLibraryDispatcher> {
     type SubPointersType = IContractSafeLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractSafeLibraryDispatcher>) -> IContractSafeLibraryDispatcherSubPointers {
@@ -980,9 +1006,11 @@ impl IContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPoin
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractSafeLibraryDispatcher> {
     type SubPointersType = IContractSafeLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> IContractSafeLibraryDispatcherSubPointersMut {
@@ -1056,9 +1084,11 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractSafeDispatcher> {
     type SubPointersType = IContractSafeDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractSafeDispatcher>) -> IContractSafeDispatcherSubPointers {
@@ -1074,9 +1104,11 @@ impl IContractSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IC
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractSafeDispatcher> {
     type SubPointersType = IContractSafeDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> IContractSafeDispatcherSubPointersMut {
@@ -1377,9 +1409,11 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl IContractDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractDispatcher> {
     type SubPointersType = IContractDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractDispatcher>) -> IContractDispatcherSubPointers {
@@ -1395,9 +1429,11 @@ impl IContractDispatcherSubPointersImpl of starknet::storage::SubPointers<IContr
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl IContractDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractDispatcher> {
     type SubPointersType = IContractDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractDispatcher>>) -> IContractDispatcherSubPointersMut {
@@ -1471,9 +1507,11 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractLibraryDispatcher> {
     type SubPointersType = IContractLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractLibraryDispatcher>) -> IContractLibraryDispatcherSubPointers {
@@ -1489,9 +1527,11 @@ impl IContractLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl IContractLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractLibraryDispatcher> {
     type SubPointersType = IContractLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractLibraryDispatcher>>) -> IContractLibraryDispatcherSubPointersMut {
@@ -1565,9 +1605,11 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractSafeLibraryDispatcher> {
     type SubPointersType = IContractSafeLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractSafeLibraryDispatcher>) -> IContractSafeLibraryDispatcherSubPointers {
@@ -1583,9 +1625,11 @@ impl IContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPoin
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl IContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractSafeLibraryDispatcher> {
     type SubPointersType = IContractSafeLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeLibraryDispatcher>>) -> IContractSafeLibraryDispatcherSubPointersMut {
@@ -1659,9 +1703,11 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IContractSafeDispatcher> {
     type SubPointersType = IContractSafeDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IContractSafeDispatcher>) -> IContractSafeDispatcherSubPointers {
@@ -1677,9 +1723,11 @@ impl IContractSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IC
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct IContractSafeDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl IContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IContractSafeDispatcher> {
     type SubPointersType = IContractSafeDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IContractSafeDispatcher>>) -> IContractSafeDispatcherSubPointersMut {
