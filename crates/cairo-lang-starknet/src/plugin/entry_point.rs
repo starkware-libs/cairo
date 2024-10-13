@@ -340,6 +340,7 @@ fn generate_entry_point_wrapper(
     let arg_definitions = RewriteNode::Text(arg_definitions.join("\n    "));
     Ok(RewriteNode::interpolate_patched(
         &formatdoc! {"
+            #[doc(hidden)]
             $implicit_precedence$
             fn $wrapper_function_name$$generic_params$(mut data: Span::<felt252>) -> Span::<felt252> {{
                 core::internal::require_implicit::<System>();
