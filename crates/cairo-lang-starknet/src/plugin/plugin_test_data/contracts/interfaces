@@ -323,9 +323,11 @@ impl StoreInterface1Dispatcher of starknet::Store::<Interface1Dispatcher> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface1DispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl Interface1DispatcherSubPointersImpl of starknet::storage::SubPointers<Interface1Dispatcher> {
     type SubPointersType = Interface1DispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<Interface1Dispatcher>) -> Interface1DispatcherSubPointers {
@@ -341,9 +343,11 @@ impl Interface1DispatcherSubPointersImpl of starknet::storage::SubPointers<Inter
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface1DispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl Interface1DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<Interface1Dispatcher> {
     type SubPointersType = Interface1DispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface1Dispatcher>>) -> Interface1DispatcherSubPointersMut {
@@ -417,9 +421,11 @@ impl StoreInterface1LibraryDispatcher of starknet::Store::<Interface1LibraryDisp
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface1LibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl Interface1LibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface1LibraryDispatcher> {
     type SubPointersType = Interface1LibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<Interface1LibraryDispatcher>) -> Interface1LibraryDispatcherSubPointers {
@@ -435,9 +441,11 @@ impl Interface1LibraryDispatcherSubPointersImpl of starknet::storage::SubPointer
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface1LibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl Interface1LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<Interface1LibraryDispatcher> {
     type SubPointersType = Interface1LibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface1LibraryDispatcher>>) -> Interface1LibraryDispatcherSubPointersMut {
@@ -511,9 +519,11 @@ impl StoreInterface1SafeLibraryDispatcher of starknet::Store::<Interface1SafeLib
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface1SafeLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl Interface1SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface1SafeLibraryDispatcher> {
     type SubPointersType = Interface1SafeLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<Interface1SafeLibraryDispatcher>) -> Interface1SafeLibraryDispatcherSubPointers {
@@ -529,9 +539,11 @@ impl Interface1SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPoi
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface1SafeLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl Interface1SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<Interface1SafeLibraryDispatcher> {
     type SubPointersType = Interface1SafeLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface1SafeLibraryDispatcher>>) -> Interface1SafeLibraryDispatcherSubPointersMut {
@@ -605,9 +617,11 @@ impl StoreInterface1SafeDispatcher of starknet::Store::<Interface1SafeDispatcher
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface1SafeDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl Interface1SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface1SafeDispatcher> {
     type SubPointersType = Interface1SafeDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<Interface1SafeDispatcher>) -> Interface1SafeDispatcherSubPointers {
@@ -623,9 +637,11 @@ impl Interface1SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<I
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface1SafeDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl Interface1SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<Interface1SafeDispatcher> {
     type SubPointersType = Interface1SafeDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface1SafeDispatcher>>) -> Interface1SafeDispatcherSubPointersMut {
@@ -699,9 +715,11 @@ impl StoreInterface2Dispatcher of starknet::Store::<Interface2Dispatcher> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface2DispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl Interface2DispatcherSubPointersImpl of starknet::storage::SubPointers<Interface2Dispatcher> {
     type SubPointersType = Interface2DispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<Interface2Dispatcher>) -> Interface2DispatcherSubPointers {
@@ -717,9 +735,11 @@ impl Interface2DispatcherSubPointersImpl of starknet::storage::SubPointers<Inter
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface2DispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl Interface2DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<Interface2Dispatcher> {
     type SubPointersType = Interface2DispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface2Dispatcher>>) -> Interface2DispatcherSubPointersMut {
@@ -793,9 +813,11 @@ impl StoreInterface2LibraryDispatcher of starknet::Store::<Interface2LibraryDisp
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface2LibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl Interface2LibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface2LibraryDispatcher> {
     type SubPointersType = Interface2LibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<Interface2LibraryDispatcher>) -> Interface2LibraryDispatcherSubPointers {
@@ -811,9 +833,11 @@ impl Interface2LibraryDispatcherSubPointersImpl of starknet::storage::SubPointer
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface2LibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl Interface2LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<Interface2LibraryDispatcher> {
     type SubPointersType = Interface2LibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface2LibraryDispatcher>>) -> Interface2LibraryDispatcherSubPointersMut {
@@ -887,9 +911,11 @@ impl StoreInterface2SafeLibraryDispatcher of starknet::Store::<Interface2SafeLib
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface2SafeLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl Interface2SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface2SafeLibraryDispatcher> {
     type SubPointersType = Interface2SafeLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<Interface2SafeLibraryDispatcher>) -> Interface2SafeLibraryDispatcherSubPointers {
@@ -905,9 +931,11 @@ impl Interface2SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPoi
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface2SafeLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl Interface2SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<Interface2SafeLibraryDispatcher> {
     type SubPointersType = Interface2SafeLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface2SafeLibraryDispatcher>>) -> Interface2SafeLibraryDispatcherSubPointersMut {
@@ -981,9 +1009,11 @@ impl StoreInterface2SafeDispatcher of starknet::Store::<Interface2SafeDispatcher
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface2SafeDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl Interface2SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<Interface2SafeDispatcher> {
     type SubPointersType = Interface2SafeDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<Interface2SafeDispatcher>) -> Interface2SafeDispatcherSubPointers {
@@ -999,9 +1029,11 @@ impl Interface2SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<I
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct Interface2SafeDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl Interface2SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<Interface2SafeDispatcher> {
     type SubPointersType = Interface2SafeDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<Interface2SafeDispatcher>>) -> Interface2SafeDispatcherSubPointersMut {
@@ -1177,8 +1209,10 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -1187,8 +1221,10 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -1331,6 +1367,7 @@ pub trait UnsafeNewContractStateTraitForI1I1<
     fn unsafe_new_contract_state() -> TContractState;
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__I1I1__foo<TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I1<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -1374,6 +1411,7 @@ pub trait UnsafeNewContractStateTraitForI1I2<
     fn unsafe_new_contract_state() -> TContractState;
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__I1I2__foo<TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I2<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -1417,6 +1455,7 @@ pub trait UnsafeNewContractStateTraitForI2I<
     fn unsafe_new_contract_state() -> TContractState;
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__I2I__foo<TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI2I<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -1463,9 +1502,11 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub comp_storage: starknet::storage::FlattenedStorage<super::comp::Storage>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -1476,9 +1517,11 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub comp_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::comp::Storage>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -1546,6 +1589,7 @@ impl ContractStateI2I of
         unsafe_new_contract_state()
     }
 }
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();

@@ -85,9 +85,11 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub data: starknet::storage::StorageBase<u32>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -98,9 +100,11 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable::<u32>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -220,11 +224,13 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub test_component_storage: starknet::storage::FlattenedStorage<super::test_component::Storage>,
     pub normal_member1: starknet::storage::StorageBase<usize>,
     pub normal_member2: starknet::storage::StorageBase<usize>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -239,11 +245,13 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub test_component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::test_component::Storage>>,
     pub normal_member1: starknet::storage::StorageBase<starknet::storage::Mutable::<usize>>,
     pub normal_member2: starknet::storage::StorageBase<starknet::storage::Mutable::<usize>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -297,6 +305,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x13b620794e5b3dc7cc2033d0b9381b35d5d10d1f0a43fe1f5e1d495f793ebab;
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -539,9 +548,11 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub data: starknet::storage::StorageBase<u32>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -552,9 +563,11 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable::<u32>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -674,9 +687,11 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub data: starknet::storage::StorageBase<u32>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -687,9 +702,11 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable::<u32>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -809,10 +826,12 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub component1_storage: starknet::storage::FlattenedStorage<super::component1::Storage>,
     pub component2_storage: starknet::storage::FlattenedStorage<super::component2::Storage>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -825,10 +844,12 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub component1_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component1::Storage>>,
     pub component2_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component2::Storage>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -882,6 +903,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x20768e618c747c9e742de0446492553ae65eafb837da660ed6516e1ed6b52fc;
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -1170,9 +1192,11 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub data: starknet::storage::StorageBase<u32>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -1183,9 +1207,11 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable::<u32>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -1305,9 +1331,11 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub data: starknet::storage::StorageBase<u32>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -1318,9 +1346,11 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub data: starknet::storage::StorageBase<starknet::storage::Mutable::<u32>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -1440,10 +1470,12 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub component1_storage: starknet::storage::FlattenedStorage<super::component1::Storage>,
     pub component2_storage: starknet::storage::FlattenedStorage<super::component2::Storage>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -1456,10 +1488,12 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub component1_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component1::Storage>>,
     pub component2_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component2::Storage>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -1513,6 +1547,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x20768e618c747c9e742de0446492553ae65eafb837da660ed6516e1ed6b52fc;
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();

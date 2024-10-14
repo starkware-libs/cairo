@@ -1350,10 +1350,12 @@ lib.cairo:27:1
 storage_node:
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct BalancePairStorageBase {
     pub balance1: starknet::storage::StorageBase<u256>,
     pub balance2: starknet::storage::FlattenedStorage<felt252>,
 }
+#[doc(hidden)]
 impl BalancePairStorageImpl of starknet::storage::StorageTrait<BalancePair> {
     type BaseType = BalancePairStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<BalancePair>) -> BalancePairStorageBase {
@@ -1366,10 +1368,12 @@ impl BalancePairStorageImpl of starknet::storage::StorageTrait<BalancePair> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct BalancePairStorageBaseMut {
     pub balance1: starknet::storage::StorageBase<starknet::storage::Mutable::<u256>>,
     pub balance2: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<felt252>>,
 }
+#[doc(hidden)]
 impl BalancePairStorageMutImpl of starknet::storage::StorageTraitMut<BalancePair> {
     type BaseType = BalancePairStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<BalancePair>>) -> BalancePairStorageBaseMut {
@@ -1382,10 +1386,12 @@ impl BalancePairStorageMutImpl of starknet::storage::StorageTraitMut<BalancePair
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct BalancePairStorageNode {
     pub balance1: starknet::storage::PendingStoragePath<u256>,
     pub balance2: starknet::storage::StoragePath<felt252>,
 }
+#[doc(hidden)]
 impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
     type NodeType = BalancePairStorageNode;
     fn storage_node(self: starknet::storage::StoragePath<BalancePair>) -> BalancePairStorageNode {
@@ -1401,10 +1407,12 @@ impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct BalancePairStorageNodeMut {
     pub balance1: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<u256>>,
     pub balance2: starknet::storage::StoragePath<starknet::storage::Mutable::<felt252>>,
 }
+#[doc(hidden)]
 impl BalancePairStorageNodeMutImpl of starknet::storage::StorageNodeMut<BalancePair> {
     type NodeType = BalancePairStorageNodeMut;
     fn storage_node_mut(self: starknet::storage::StoragePath<starknet::storage::Mutable::<BalancePair>>) -> BalancePairStorageNodeMut {
@@ -1478,10 +1486,12 @@ impl StoreSlicedBalanceTrio of starknet::Store::<SlicedBalanceTrio> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct SlicedBalanceTrioSubPointers {
     pub balance1: starknet::storage::StoragePointer<u256>,
     pub balance12: starknet::storage::StoragePointer<SlicedBalancePair>,
 }
+#[doc(hidden)]
 impl SlicedBalanceTrioSubPointersImpl of starknet::storage::SubPointers<SlicedBalanceTrio> {
     type SubPointersType = SlicedBalanceTrioSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalanceTrio>) -> SlicedBalanceTrioSubPointers {
@@ -1503,10 +1513,12 @@ impl SlicedBalanceTrioSubPointersImpl of starknet::storage::SubPointers<SlicedBa
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct SlicedBalanceTrioSubPointersMut {
     pub balance1: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
     pub balance12: starknet::storage::StoragePointer<starknet::storage::Mutable::<SlicedBalancePair>>,
 }
+#[doc(hidden)]
 impl SlicedBalanceTrioSubPointersMutImpl of starknet::storage::SubPointersMut<SlicedBalanceTrio> {
     type SubPointersType = SlicedBalanceTrioSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<SlicedBalanceTrio>>) -> SlicedBalanceTrioSubPointersMut {
@@ -1586,10 +1598,12 @@ impl StoreSlicedBalancePair of starknet::Store::<SlicedBalancePair> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct SlicedBalancePairSubPointers {
     pub balance1: starknet::storage::StoragePointer<u256>,
     pub balance2: starknet::storage::StoragePointer<felt252>,
 }
+#[doc(hidden)]
 impl SlicedBalancePairSubPointersImpl of starknet::storage::SubPointers<SlicedBalancePair> {
     type SubPointersType = SlicedBalancePairSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<SlicedBalancePair>) -> SlicedBalancePairSubPointers {
@@ -1611,10 +1625,12 @@ impl SlicedBalancePairSubPointersImpl of starknet::storage::SubPointers<SlicedBa
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct SlicedBalancePairSubPointersMut {
     pub balance1: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
     pub balance2: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
 }
+#[doc(hidden)]
 impl SlicedBalancePairSubPointersMutImpl of starknet::storage::SubPointersMut<SlicedBalancePair> {
     type SubPointersType = SlicedBalancePairSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<SlicedBalancePair>>) -> SlicedBalancePairSubPointersMut {
@@ -1643,10 +1659,12 @@ lib.cairo:46:1
 storage_node:
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct LinkedListStorageBase {
     pub value: starknet::storage::StorageBase<felt252>,
     pub next: starknet::storage::StorageBase<LinkedList>,
 }
+#[doc(hidden)]
 impl LinkedListStorageImpl of starknet::storage::StorageTrait<LinkedList> {
     type BaseType = LinkedListStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<LinkedList>) -> LinkedListStorageBase {
@@ -1659,10 +1677,12 @@ impl LinkedListStorageImpl of starknet::storage::StorageTrait<LinkedList> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct LinkedListStorageBaseMut {
     pub value: starknet::storage::StorageBase<starknet::storage::Mutable::<felt252>>,
     pub next: starknet::storage::StorageBase<starknet::storage::Mutable::<LinkedList>>,
 }
+#[doc(hidden)]
 impl LinkedListStorageMutImpl of starknet::storage::StorageTraitMut<LinkedList> {
     type BaseType = LinkedListStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<LinkedList>>) -> LinkedListStorageBaseMut {
@@ -1675,10 +1695,12 @@ impl LinkedListStorageMutImpl of starknet::storage::StorageTraitMut<LinkedList> 
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct LinkedListStorageNode {
     pub value: starknet::storage::PendingStoragePath<felt252>,
     pub next: starknet::storage::PendingStoragePath<LinkedList>,
 }
+#[doc(hidden)]
 impl LinkedListStorageNodeImpl of starknet::storage::StorageNode<LinkedList> {
     type NodeType = LinkedListStorageNode;
     fn storage_node(self: starknet::storage::StoragePath<LinkedList>) -> LinkedListStorageNode {
@@ -1697,10 +1719,12 @@ impl LinkedListStorageNodeImpl of starknet::storage::StorageNode<LinkedList> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct LinkedListStorageNodeMut {
     pub value: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<felt252>>,
     pub next: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<LinkedList>>,
 }
+#[doc(hidden)]
 impl LinkedListStorageNodeMutImpl of starknet::storage::StorageNodeMut<LinkedList> {
     type NodeType = LinkedListStorageNodeMut;
     fn storage_node_mut(self: starknet::storage::StoragePath<starknet::storage::Mutable::<LinkedList>>) -> LinkedListStorageNodeMut {
@@ -1930,9 +1954,11 @@ impl StoreHelloStarknetTraitDispatcher of starknet::Store::<HelloStarknetTraitDi
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct HelloStarknetTraitDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitDispatcher> {
     type SubPointersType = HelloStarknetTraitDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitDispatcher>) -> HelloStarknetTraitDispatcherSubPointers {
@@ -1948,9 +1974,11 @@ impl HelloStarknetTraitDispatcherSubPointersImpl of starknet::storage::SubPointe
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct HelloStarknetTraitDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl HelloStarknetTraitDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitDispatcher> {
     type SubPointersType = HelloStarknetTraitDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitDispatcher>>) -> HelloStarknetTraitDispatcherSubPointersMut {
@@ -2024,9 +2052,11 @@ impl StoreHelloStarknetTraitLibraryDispatcher of starknet::Store::<HelloStarknet
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct HelloStarknetTraitLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl HelloStarknetTraitLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitLibraryDispatcher> {
     type SubPointersType = HelloStarknetTraitLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitLibraryDispatcher>) -> HelloStarknetTraitLibraryDispatcherSubPointers {
@@ -2042,9 +2072,11 @@ impl HelloStarknetTraitLibraryDispatcherSubPointersImpl of starknet::storage::Su
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct HelloStarknetTraitLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl HelloStarknetTraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitLibraryDispatcher> {
     type SubPointersType = HelloStarknetTraitLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitLibraryDispatcher>>) -> HelloStarknetTraitLibraryDispatcherSubPointersMut {
@@ -2118,9 +2150,11 @@ impl StoreHelloStarknetTraitSafeLibraryDispatcher of starknet::Store::<HelloStar
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct HelloStarknetTraitSafeLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitSafeLibraryDispatcher> {
     type SubPointersType = HelloStarknetTraitSafeLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitSafeLibraryDispatcher>) -> HelloStarknetTraitSafeLibraryDispatcherSubPointers {
@@ -2136,9 +2170,11 @@ impl HelloStarknetTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct HelloStarknetTraitSafeLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl HelloStarknetTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitSafeLibraryDispatcher> {
     type SubPointersType = HelloStarknetTraitSafeLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitSafeLibraryDispatcher>>) -> HelloStarknetTraitSafeLibraryDispatcherSubPointersMut {
@@ -2212,9 +2248,11 @@ impl StoreHelloStarknetTraitSafeDispatcher of starknet::Store::<HelloStarknetTra
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct HelloStarknetTraitSafeDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitSafeDispatcher> {
     type SubPointersType = HelloStarknetTraitSafeDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitSafeDispatcher>) -> HelloStarknetTraitSafeDispatcherSubPointers {
@@ -2230,9 +2268,11 @@ impl HelloStarknetTraitSafeDispatcherSubPointersImpl of starknet::storage::SubPo
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct HelloStarknetTraitSafeDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl HelloStarknetTraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitSafeDispatcher> {
     type SubPointersType = HelloStarknetTraitSafeDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitSafeDispatcher>>) -> HelloStarknetTraitSafeDispatcherSubPointersMut {
@@ -2471,6 +2511,7 @@ pub struct Storage {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBase {
     pub balance: starknet::storage::StorageBase<usize>,
     pub user_balance: starknet::storage::StorageBase<Map<usize, usize>>,
@@ -2482,6 +2523,7 @@ pub struct StorageStorageBase {
     pub arr: starknet::storage::StorageBase<Vec<usize>>,
     pub queryable_enum: starknet::storage::StorageBase<QueryableEnum>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -2508,6 +2550,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 pub struct StorageStorageBaseMut {
     pub balance: starknet::storage::StorageBase<starknet::storage::Mutable::<usize>>,
     pub user_balance: starknet::storage::StorageBase<starknet::storage::Mutable::<Map<usize, usize>>>,
@@ -2519,6 +2562,7 @@ pub struct StorageStorageBaseMut {
     pub arr: starknet::storage::StorageBase<starknet::storage::Mutable::<Vec<usize>>>,
     pub queryable_enum: starknet::storage::StorageBase<starknet::storage::Mutable::<QueryableEnum>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -2582,6 +2626,7 @@ use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
 pub const TEST_CLASS_HASH: felt252 = 0x13345f027182b66c8c6896fb7d81cff14cbe9cf251ecb0de870f4dd7fc5f8ce;
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2603,6 +2648,7 @@ fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> 
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2622,6 +2668,7 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__get_user_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2644,6 +2691,7 @@ fn __wrapper__HelloStarknetImpl__get_user_balance(mut data: Span::<felt252>) -> 
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__get_legacy_user_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2666,6 +2714,7 @@ fn __wrapper__HelloStarknetImpl__get_legacy_user_balance(mut data: Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__set_user_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2691,6 +2740,7 @@ fn __wrapper__HelloStarknetImpl__set_user_balance(mut data: Span::<felt252>) -> 
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__set_legacy_user_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2716,6 +2766,7 @@ fn __wrapper__HelloStarknetImpl__set_legacy_user_balance(mut data: Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__get_user_balance_subbalance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2742,6 +2793,7 @@ fn __wrapper__HelloStarknetImpl__get_user_balance_subbalance(mut data: Span::<fe
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__get_balance_pair_balance1(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2761,6 +2813,7 @@ fn __wrapper__HelloStarknetImpl__get_balance_pair_balance1(mut data: Span::<felt
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__get_balance_pair_balance2(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2780,6 +2833,7 @@ fn __wrapper__HelloStarknetImpl__get_balance_pair_balance2(mut data: Span::<felt
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__set_balance_pair_balance1(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2801,6 +2855,7 @@ fn __wrapper__HelloStarknetImpl__set_balance_pair_balance1(mut data: Span::<felt
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__get_balance_trio_sub_member(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2820,6 +2875,7 @@ fn __wrapper__HelloStarknetImpl__get_balance_trio_sub_member(mut data: Span::<fe
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__set_balance_trio_sub_member(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2841,6 +2897,7 @@ fn __wrapper__HelloStarknetImpl__set_balance_trio_sub_member(mut data: Span::<fe
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__get_third_list_value(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2860,6 +2917,7 @@ fn __wrapper__HelloStarknetImpl__get_third_list_value(mut data: Span::<felt252>)
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__get_arr_at(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2882,6 +2940,7 @@ fn __wrapper__HelloStarknetImpl__get_arr_at(mut data: Span::<felt252>) -> Span::
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__append_to_arr(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2903,6 +2962,7 @@ fn __wrapper__HelloStarknetImpl__append_to_arr(mut data: Span::<felt252>) -> Spa
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__HelloStarknetImpl__get_queryable_enum(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();

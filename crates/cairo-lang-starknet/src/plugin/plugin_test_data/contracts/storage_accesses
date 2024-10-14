@@ -166,10 +166,12 @@ pub enum Event {}
 
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct StorageStorageBase {
     user_info: starknet::storage::StorageBase<UserInfo>,
     transaction_info: starknet::storage::StorageBase<TransactionInfo>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -182,10 +184,12 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct StorageStorageBaseMut {
     user_info: starknet::storage::StorageBase<starknet::storage::Mutable::<UserInfo>>,
     transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable::<TransactionInfo>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -228,6 +232,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -265,6 +270,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -284,6 +290,7 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -303,6 +310,7 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -322,6 +330,7 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -341,6 +350,7 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -363,6 +373,7 @@ fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -389,6 +400,7 @@ fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -414,6 +426,7 @@ fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span:
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -439,6 +452,7 @@ fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span:
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -460,6 +474,7 @@ fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -1303,12 +1318,14 @@ impl StoreUserInfo of starknet::Store::<UserInfo> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct UserInfoSubPointers {
     name: starknet::storage::StoragePointer<felt252>,
     symbol: starknet::storage::StoragePointer<felt252>,
     decimals: starknet::storage::StoragePointer<u8>,
     total_supply: starknet::storage::StoragePointer<u256>,
 }
+#[doc(hidden)]
 impl UserInfoSubPointersImpl of starknet::storage::SubPointers<UserInfo> {
     type SubPointersType = UserInfoSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<UserInfo>) -> UserInfoSubPointers {
@@ -1342,12 +1359,14 @@ impl UserInfoSubPointersImpl of starknet::storage::SubPointers<UserInfo> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct UserInfoSubPointersMut {
     name: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
     symbol: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
     decimals: starknet::storage::StoragePointer<starknet::storage::Mutable::<u8>>,
     total_supply: starknet::storage::StoragePointer<starknet::storage::Mutable::<u256>>,
 }
+#[doc(hidden)]
 impl UserInfoSubPointersMutImpl of starknet::storage::SubPointersMut<UserInfo> {
     type SubPointersType = UserInfoSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<UserInfo>>) -> UserInfoSubPointersMut {
@@ -1381,10 +1400,12 @@ impl UserInfoSubPointersMutImpl of starknet::storage::SubPointersMut<UserInfo> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct TransactionInfoStorageBase {
     balances: starknet::storage::StorageBase<Map::<ContractAddress, u256>>,
     allowances: starknet::storage::StorageBase<Map::<ContractAddress, Map<ContractAddress, u256>>>,
 }
+#[doc(hidden)]
 impl TransactionInfoStorageImpl of starknet::storage::StorageTrait<TransactionInfo> {
     type BaseType = TransactionInfoStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<TransactionInfo>) -> TransactionInfoStorageBase {
@@ -1397,10 +1418,12 @@ impl TransactionInfoStorageImpl of starknet::storage::StorageTrait<TransactionIn
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct TransactionInfoStorageBaseMut {
     balances: starknet::storage::StorageBase<starknet::storage::Mutable::<Map::<ContractAddress, u256>>>,
     allowances: starknet::storage::StorageBase<starknet::storage::Mutable::<Map::<ContractAddress, Map<ContractAddress, u256>>>>,
 }
+#[doc(hidden)]
 impl TransactionInfoStorageMutImpl of starknet::storage::StorageTraitMut<TransactionInfo> {
     type BaseType = TransactionInfoStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<TransactionInfo>>) -> TransactionInfoStorageBaseMut {
@@ -1413,10 +1436,12 @@ impl TransactionInfoStorageMutImpl of starknet::storage::StorageTraitMut<Transac
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct TransactionInfoStorageNode {
     balances: starknet::storage::PendingStoragePath<Map::<ContractAddress, u256>>,
     allowances: starknet::storage::PendingStoragePath<Map::<ContractAddress, Map<ContractAddress, u256>>>,
 }
+#[doc(hidden)]
 impl TransactionInfoStorageNodeImpl of starknet::storage::StorageNode<TransactionInfo> {
     type NodeType = TransactionInfoStorageNode;
     fn storage_node(self: starknet::storage::StoragePath<TransactionInfo>) -> TransactionInfoStorageNode {
@@ -1435,10 +1460,12 @@ impl TransactionInfoStorageNodeImpl of starknet::storage::StorageNode<Transactio
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct TransactionInfoStorageNodeMut {
     balances: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<Map::<ContractAddress, u256>>>,
     allowances: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<Map::<ContractAddress, Map<ContractAddress, u256>>>>,
 }
+#[doc(hidden)]
 impl TransactionInfoStorageNodeMutImpl of starknet::storage::StorageNodeMut<TransactionInfo> {
     type NodeType = TransactionInfoStorageNodeMut;
     fn storage_node_mut(self: starknet::storage::StoragePath<starknet::storage::Mutable::<TransactionInfo>>) -> TransactionInfoStorageNodeMut {
@@ -1501,9 +1528,11 @@ impl StoreIERC20Dispatcher of starknet::Store::<IERC20Dispatcher> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct IERC20DispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl IERC20DispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20Dispatcher> {
     type SubPointersType = IERC20DispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IERC20Dispatcher>) -> IERC20DispatcherSubPointers {
@@ -1519,9 +1548,11 @@ impl IERC20DispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20Dis
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct IERC20DispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl IERC20DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20Dispatcher> {
     type SubPointersType = IERC20DispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20Dispatcher>>) -> IERC20DispatcherSubPointersMut {
@@ -1581,9 +1612,11 @@ impl StoreIERC20LibraryDispatcher of starknet::Store::<IERC20LibraryDispatcher> 
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct IERC20LibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl IERC20LibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20LibraryDispatcher> {
     type SubPointersType = IERC20LibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IERC20LibraryDispatcher>) -> IERC20LibraryDispatcherSubPointers {
@@ -1599,9 +1632,11 @@ impl IERC20LibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IE
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct IERC20LibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl IERC20LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20LibraryDispatcher> {
     type SubPointersType = IERC20LibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20LibraryDispatcher>>) -> IERC20LibraryDispatcherSubPointersMut {
@@ -1661,9 +1696,11 @@ impl StoreIERC20SafeLibraryDispatcher of starknet::Store::<IERC20SafeLibraryDisp
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct IERC20SafeLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
+#[doc(hidden)]
 impl IERC20SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20SafeLibraryDispatcher> {
     type SubPointersType = IERC20SafeLibraryDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IERC20SafeLibraryDispatcher>) -> IERC20SafeLibraryDispatcherSubPointers {
@@ -1679,9 +1716,11 @@ impl IERC20SafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointer
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct IERC20SafeLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
+#[doc(hidden)]
 impl IERC20SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20SafeLibraryDispatcher> {
     type SubPointersType = IERC20SafeLibraryDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeLibraryDispatcher>>) -> IERC20SafeLibraryDispatcherSubPointersMut {
@@ -1741,9 +1780,11 @@ impl StoreIERC20SafeDispatcher of starknet::Store::<IERC20SafeDispatcher> {
 }
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct IERC20SafeDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
+#[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC20SafeDispatcher> {
     type SubPointersType = IERC20SafeDispatcherSubPointers;
     fn sub_pointers(self: starknet::storage::StoragePointer<IERC20SafeDispatcher>) -> IERC20SafeDispatcherSubPointers {
@@ -1759,9 +1800,11 @@ impl IERC20SafeDispatcherSubPointersImpl of starknet::storage::SubPointers<IERC2
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct IERC20SafeDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
+#[doc(hidden)]
 impl IERC20SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<IERC20SafeDispatcher> {
     type SubPointersType = IERC20SafeDispatcherSubPointersMut;
     fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<IERC20SafeDispatcher>>) -> IERC20SafeDispatcherSubPointersMut {
@@ -1929,10 +1972,12 @@ pub enum Event {}
 
 
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct StorageStorageBase {
     user_info: starknet::storage::StorageBase<UserInfo>,
     transaction_info: starknet::storage::StorageBase<TransactionInfo>,
 }
+#[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
@@ -1945,10 +1990,12 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     }
 }
 #[derive(Drop, Copy)]
+#[doc(hidden)]
 struct StorageStorageBaseMut {
     user_info: starknet::storage::StorageBase<starknet::storage::Mutable::<UserInfo>>,
     transaction_info: starknet::storage::StorageBase<starknet::storage::Mutable::<TransactionInfo>>,
 }
+#[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
@@ -1991,6 +2038,7 @@ pub fn unsafe_new_contract_state() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2028,6 +2076,7 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2047,6 +2096,7 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2066,6 +2116,7 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2085,6 +2136,7 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2104,6 +2156,7 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2126,6 +2179,7 @@ fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2152,6 +2206,7 @@ fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2177,6 +2232,7 @@ fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span:
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2202,6 +2258,7 @@ fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span:
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
@@ -2223,6 +2280,7 @@ fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt25
     core::array::ArrayTrait::span(@arr)
 }
 
+#[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
 fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
