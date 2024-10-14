@@ -11,6 +11,7 @@ use crate::lang::db::AnalysisDatabase;
 const TITLE: &str = "value of literal";
 const RULER: &str = "***";
 
+/// An unified representation of the literal terminal.
 #[derive(Debug, Clone)]
 pub enum Literal {
     Number(TerminalLiteralNumber),
@@ -19,6 +20,7 @@ pub enum Literal {
 }
 
 impl Literal {
+    /// Generate a hover containing value of the literal and its type.
     pub fn render(&self, db: &AnalysisDatabase, file_id: FileId) -> Option<Hover> {
         match self {
             Literal::Number(literal) => number(db, literal, file_id),
@@ -28,6 +30,7 @@ impl Literal {
     }
 }
 
+/// Format the number literal writing its decimal, hexadecimal and binary value and type.
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn number(
     db: &AnalysisDatabase,
@@ -50,6 +53,7 @@ pub fn number(
     Some(Hover { contents: markdown_contents(representation), range: literal.range(db, file_id) })
 }
 
+/// Format the number literal writing it along with the `core::byte_array::ByteArray` type.
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn string(db: &AnalysisDatabase, literal: &TerminalString, file_id: FileId) -> Option<Hover> {
     let string = literal.string_value(db)?;
@@ -65,6 +69,8 @@ pub fn string(db: &AnalysisDatabase, literal: &TerminalString, file_id: FileId) 
     Some(Hover { contents: markdown_contents(representation), range: literal.range(db, file_id) })
 }
 
+/// Format the short string literal writing its textual and numeric value along with the
+/// `core::felt252` type.
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn short_string(
     db: &AnalysisDatabase,
