@@ -291,13 +291,11 @@ impl SyntaxNode {
     }
 
     /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
-    pub fn tokens(&self, db: &dyn SyntaxGroup) -> Vec<Self> {
-        self.preorder(db)
-            .filter_map(|event| match event {
-                WalkEvent::Enter(node) if node.green_node(db).kind.is_terminal() => Some(node),
-                _ => None,
-            })
-            .collect()
+    pub fn tokens<'a>(&'a self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self> + 'a {
+        self.preorder(db).filter_map(|event| match event {
+            WalkEvent::Enter(node) if node.green_node(db).kind.is_terminal() => Some(node),
+            _ => None,
+        })
     }
 }
 
