@@ -378,7 +378,10 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::TraitItemList
                 | SyntaxKind::ImplItemList
                 | SyntaxKind::UsePathMulti
-                | SyntaxKind::ItemEnum => Some(5),
+                | SyntaxKind::ItemEnum
+                | SyntaxKind::ParenthesizedTokenTree
+                | SyntaxKind::BracedTokenTree
+                | SyntaxKind::BracketedTokenTree => Some(5),
                 _ => None,
             },
         }
