@@ -1,5 +1,3 @@
-use tower_lsp::lsp_types;
-
 /// Produces minimal client capabilities provided by the mock language client.
 ///
 /// Tests will most often need to extend these with test-specific additions using the

@@ -19,7 +19,7 @@ use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{LookupIntern, Upcast};
-use tower_lsp::lsp_types::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
+use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit};
 use tracing::debug;
 
 use crate::ide::utils::find_methods_for_type;
@@ -282,7 +282,7 @@ pub fn completion_for_method(
     let completion = CompletionItem {
         label: format!("{}()", name),
         insert_text: Some(format!("{}($0)", name)),
-        insert_text_format: Some(tower_lsp::lsp_types::InsertTextFormat::SNIPPET),
+        insert_text_format: Some(InsertTextFormat::SNIPPET),
         detail: Some(detail),
         kind: Some(CompletionItemKind::METHOD),
         additional_text_edits: Some(additional_text_edits),

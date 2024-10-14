@@ -5,7 +5,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
+use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use tracing::debug;
 
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};

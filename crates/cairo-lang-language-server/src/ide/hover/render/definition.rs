@@ -4,7 +4,7 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::Hover;
+use lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
 use crate::ide::hover::render::markdown::{RULE, fenced_code_block};

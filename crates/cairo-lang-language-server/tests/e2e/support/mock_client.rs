@@ -1,23 +1,17 @@
 use std::collections::VecDeque;
 use std::ffi::OsStr;
 use std::path::Path;
-use std::sync::Arc;
 use std::time::Duration;
-use std::{fmt, future, mem, process};
+use std::{fmt, mem, process};
 
 use cairo_lang_language_server::build_service_for_e2e_tests;
-use futures::channel::mpsc;
-use futures::{FutureExt, SinkExt, StreamExt, TryFutureExt, join, stream};
-use lsp_types::request::Request as LspRequest;
+use lsp_server::{Message, Notification, Request, Response};
+use lsp_types::request::{RegisterCapability, Request as LspRequest};
 use lsp_types::{lsp_notification, lsp_request};
 use serde_json::Value;
-use tokio::time::timeout;
-use tower_lsp::{ClientSocket, LanguageServer, LspService, jsonrpc, lsp_types};
-use tower_service::Service;
 
 use crate::support::fixture::Fixture;
-use crate::support::jsonrpc::{Message, RequestIdGenerator};
-use crate::support::runtime::{AbortOnDrop, GuardedRuntime};
+use crate::support::jsonrpc::RequestIdGenerator;
 
 /// A mock language client implementation that facilitates end-to-end testing language servers.
 ///
@@ -25,21 +19,15 @@ use crate::support::runtime::{AbortOnDrop, GuardedRuntime};
 ///
 /// The language server is terminated abruptly upon dropping of this struct.
 /// The `shutdown` request and `exit` notifications are not sent at all.
-/// Instead, the Tokio Runtime executing the server is being shut down and any running
+/// Instead, the thread executing the server is being shut down and any running
 /// blocking tasks are given a small period of time to complete.
 pub struct MockClient {
     fixture: Fixture,
-    // NOTE: The runtime is wrapped in `Arc`, which is then cloned at usage places, so that we do
-    //   not have to reference `*self` while trying to block on it.
-    //   This enables `async` blocks (that are blocked on) to take that `*self` for themselves.
-    rt: Arc<GuardedRuntime>,
     req_id: RequestIdGenerator,
-    input_tx: mpsc::Sender<Message>,
-    output_rx: mpsc::Receiver<Message>,
+    client: lsp_server::Connection,
     trace: Vec<Message>,
     workspace_configuration: Value,
     expect_request_handlers: VecDeque<ExpectRequestHandler>,
-    _main_loop: AbortOnDrop,
 }
 
 impl MockClient {
@@ -54,90 +42,22 @@ impl MockClient {
         capabilities: lsp_types::ClientCapabilities,
         workspace_configuration: Value,
     ) -> Self {
-        let rt = Arc::new(GuardedRuntime::start());
-        let (service, loopback) = build_service_for_e2e_tests();
-
-        let (requests_tx, requests_rx) = mpsc::channel(0);
-        let (responses_tx, responses_rx) = mpsc::channel(0);
-
-        let main_loop = rt
-            .spawn(Self::serve(service, loopback, requests_rx, responses_tx.clone()))
-            .abort_handle()
-            .into();
+        let (init, client) = build_service_for_e2e_tests();
 
         let mut this = Self {
             fixture,
-            rt,
+            client,
             req_id: RequestIdGenerator::default(),
-            input_tx: requests_tx,
-            output_rx: responses_rx,
             trace: Vec::new(),
             workspace_configuration,
             expect_request_handlers: Default::default(),
-            _main_loop: main_loop,
         };
+
+        std::thread::spawn(|| init().run_for_tests());
 
         this.initialize(capabilities);
 
         this
-    }
-
-    /// Copy-paste of [`tower_lsp::Server::serve`] that skips IO serialization.
-    async fn serve(
-        mut service: LspService<impl LanguageServer>,
-        loopback: ClientSocket,
-        mut requests_rx: mpsc::Receiver<Message>,
-        mut responses_tx: mpsc::Sender<Message>,
-    ) {
-        let (client_requests, mut client_responses) = loopback.split();
-        let (client_requests, client_abort) = stream::abortable(client_requests);
-        let (mut server_tasks_tx, server_tasks_rx) = mpsc::channel(100);
-
-        let process_server_tasks = server_tasks_rx
-            .buffer_unordered(4)
-            .filter_map(future::ready)
-            .map(Message::Response)
-            .map(Ok)
-            .forward(responses_tx.clone().sink_map_err(|_| unreachable!()))
-            .map(|_| ());
-
-        let print_output = client_requests
-            .map(Message::Request)
-            .map(Ok)
-            .forward(responses_tx.clone().sink_map_err(|_| unreachable!()))
-            .map(|_| ());
-
-        let read_input = async {
-            while let Some(msg) = requests_rx.next().await {
-                match msg {
-                    Message::Request(req) => {
-                        if let Err(err) = future::poll_fn(|cx| service.poll_ready(cx)).await {
-                            eprintln!("{err:?}");
-                            break;
-                        }
-
-                        let fut = service.call(req).unwrap_or_else(|err| {
-                            eprintln!("{err:?}");
-                            None
-                        });
-
-                        server_tasks_tx.send(fut).await.unwrap()
-                    }
-                    Message::Response(res) => {
-                        if let Err(err) = client_responses.send(res).await {
-                            eprintln!("{err:?}");
-                            break;
-                        }
-                    }
-                }
-            }
-
-            server_tasks_tx.disconnect();
-            responses_tx.disconnect();
-            client_abort.abort();
-        };
-
-        join!(print_output, read_input, process_server_tasks);
     }
 
     /// Performs the `initialize`/`initialized` handshake with the server synchronously.
@@ -159,6 +79,8 @@ impl MockClient {
             ..lsp_types::InitializeParams::default()
         });
 
+        self.expect_request::<RegisterCapability>(|_req| {});
+
         self.send_notification::<lsp_notification!("initialized")>(lsp_types::InitializedParams {});
     }
 
@@ -172,56 +94,49 @@ impl MockClient {
     /// Sends an arbitrary request to the server.
     pub fn send_request_untyped(&mut self, method: &'static str, params: Value) -> Value {
         let id = self.req_id.next();
-        let message = Message::request(method, id.clone(), params);
+        let message = Message::Request(Request::new(id.clone(), method.to_owned(), params));
 
         let mut expect_request_handlers = mem::take(&mut self.expect_request_handlers);
         let does_expect_requests = !expect_request_handlers.is_empty();
 
-        let rt = self.rt.clone();
-        rt.block_on(async {
-            self.input_tx.send(message.clone()).await.expect("failed to send request");
+        self.client.sender.send(message.clone()).expect("failed to send request");
 
-            while let Some(response_message) =
-                self.recv().await.unwrap_or_else(|err| panic!("{err:?}: {message:?}"))
-            {
-                match response_message {
-                    Message::Request(res) if res.id().is_none() => {
-                        // This looks like a notification, skip it.
+        while let Some(response_message) =
+            self.recv().unwrap_or_else(|err| panic!("{err:?}: {message:?}"))
+        {
+            match response_message {
+                Message::Notification(_) => {
+                    // Skip notifications.
+                }
+
+                Message::Request(req) => {
+                    if does_expect_requests {
+                        if let Some(handler) = expect_request_handlers.pop_front() {
+                            let response = (handler.f)(&req);
+                            let message = Message::Response(response);
+                            self.client.sender.send(message).expect("failed to send response");
+                            continue;
+                        }
                     }
 
-                    Message::Request(req) => {
-                        if does_expect_requests {
-                            if let Some(handler) = expect_request_handlers.pop_front() {
-                                let response = (handler.f)(&req);
-                                let message = Message::Response(response);
-                                self.input_tx.send(message).await.expect("failed to send response");
-                                continue;
-                            }
-                        }
+                    panic!("unexpected request: {:?}", req)
+                }
 
-                        panic!("unexpected request: {:?}", req)
-                    }
+                Message::Response(res) => {
+                    let res_id = res.id;
+                    let result = res.result.ok_or_else(|| res.error.unwrap());
 
-                    Message::Response(res) => {
-                        let (res_id, result) = res.into_parts();
-                        assert_eq!(res_id, id);
+                    assert_eq!(res_id, id);
 
-                        assert!(
-                            !does_expect_requests || expect_request_handlers.is_empty(),
-                            "expected more requests to be received from the client while \
-                             processing the current server one: {expect_request_handlers:?}"
-                        );
-
-                        match result {
-                            Ok(result) => return result,
-                            Err(err) => panic!("error response: {:#?}", err),
-                        }
+                    match result {
+                        Ok(result) => return result,
+                        Err(err) => panic!("error response: {:#?}", err),
                     }
                 }
             }
+        }
 
-            panic!("no response for request: {message:?}")
-        })
+        panic!("no response for request: {message:?}")
     }
 
     /// Sends a typed notification to the server.
@@ -235,10 +150,8 @@ impl MockClient {
 
     /// Sends an arbitrary notification to the server.
     pub fn send_notification_untyped(&mut self, method: &'static str, params: Value) {
-        let message = Message::notification(method, params);
-        self.rt.block_on(async {
-            self.input_tx.send(message).await.expect("failed to send notification");
-        })
+        let message = Message::Notification(Notification::new(method.to_string(), params));
+        self.client.sender.send(message).expect("failed to send notification");
     }
 }
 
@@ -256,25 +169,23 @@ enum RecvError {
     NoMessage,
 }
 
-impl From<tokio::time::error::Elapsed> for RecvError {
-    fn from(_: tokio::time::error::Elapsed) -> Self {
-        RecvError::Timeout
-    }
-}
-
 /// Receiving messages.
 impl MockClient {
     /// Receives a message from the server.
-    async fn recv(&mut self) -> Result<Option<Message>, RecvError> {
+    fn recv(&mut self) -> Result<Option<Message>, RecvError> {
         const TIMEOUT: Duration = Duration::from_secs(3 * 60);
-        let message = timeout(TIMEOUT, self.output_rx.next()).await?;
+        let message = match self.client.receiver.recv_timeout(TIMEOUT) {
+            Ok(msg) => Some(msg),
+            Err(crossbeam::channel::RecvTimeoutError::Disconnected) => None,
+            Err(crossbeam::channel::RecvTimeoutError::Timeout) => return Err(RecvError::Timeout),
+        };
 
         if let Some(message) = &message {
             self.trace.push(message.clone());
 
             if let Message::Request(request) = &message {
-                if request.method() == <lsp_request!("workspace/configuration")>::METHOD {
-                    self.auto_respond_to_workspace_configuration_request(request).await;
+                if request.method == <lsp_request!("workspace/configuration")>::METHOD {
+                    self.auto_respond_to_workspace_configuration_request(request);
                 }
             }
         }
@@ -284,7 +195,7 @@ impl MockClient {
 
     /// Looks for a message that satisfies the given predicate in message trace or waits for a new
     /// one.
-    async fn wait_for_message<T>(
+    fn wait_for_message<T>(
         &mut self,
         predicate: impl Fn(&Message) -> Option<T>,
     ) -> Result<T, RecvError> {
@@ -295,7 +206,7 @@ impl MockClient {
         }
 
         loop {
-            let message = self.recv().await?.ok_or(RecvError::NoMessage)?;
+            let message = self.recv()?.ok_or(RecvError::NoMessage)?;
             if let Some(ret) = predicate(&message) {
                 return Ok(ret);
             }
@@ -304,16 +215,15 @@ impl MockClient {
 
     /// Looks for a client JSON-RPC request that satisfies the given predicate in message trace
     /// or waits for a new one.
-    fn wait_for_rpc_request<T>(&mut self, predicate: impl Fn(&jsonrpc::Request) -> Option<T>) -> T {
-        let rt = self.rt.clone();
-        rt.block_on(async {
-            self.wait_for_message(|message| {
-                let Message::Request(req) = message else { return None };
-                predicate(req)
-            })
-            .await
-            .unwrap_or_else(|err| panic!("waiting for request failed: {err:?}"))
+    fn wait_for_rpc_notification<T>(
+        &mut self,
+        predicate: impl Fn(&lsp_server::Notification) -> Option<T>,
+    ) -> T {
+        self.wait_for_message(|message| {
+            let Message::Notification(notification) = message else { return None };
+            predicate(notification)
         })
+        .unwrap_or_else(|err| panic!("waiting for request failed: {err:?}"))
     }
 
     /// Looks for a typed client notification that satisfies the given predicate in message trace
@@ -322,11 +232,11 @@ impl MockClient {
     where
         N: lsp_types::notification::Notification,
     {
-        self.wait_for_rpc_request(|req| {
-            if req.method() != N::METHOD {
+        self.wait_for_rpc_notification(|notification| {
+            if notification.method != N::METHOD {
                 return None;
             }
-            let params = serde_json::from_value(req.params().cloned().unwrap_or_default())
+            let params = serde_json::from_value(notification.params.clone())
                 .expect("failed to parse notification params");
             predicate(&params).then_some(params)
         })
@@ -335,7 +245,7 @@ impl MockClient {
 
 /// Methods for handling interactive requests.
 impl MockClient {
-    /// Expect a specified request to be received from the served while processing the next client
+    /// Expect a specified request to be received from the server while processing the next client
     /// request.
     ///
     /// The handler is expected to return a response to the caught request.
@@ -347,18 +257,16 @@ impl MockClient {
         R: lsp_types::request::Request,
     {
         self.expect_request_untyped(R::METHOD, move |req| {
-            assert_eq!(req.method(), R::METHOD);
+            assert_eq!(req.method, R::METHOD);
 
-            let Some(id) = req.id().cloned() else {
-                panic!("request ID is missing: {req:?}");
-            };
+            let id = req.id.clone();
 
-            let params = serde_json::from_value(req.params().cloned().unwrap_or_default())
-                .expect("failed to parse request params");
+            let params =
+                serde_json::from_value(req.params.clone()).expect("failed to parse request params");
             let result = handler(&params);
             let result = serde_json::to_value(result).expect("failed to serialize response");
 
-            jsonrpc::Response::from_ok(id, result)
+            lsp_server::Response::new_ok(id, result)
         })
     }
 
@@ -369,7 +277,7 @@ impl MockClient {
     pub fn expect_request_untyped(
         &mut self,
         description: &'static str,
-        handler: impl FnOnce(&jsonrpc::Request) -> jsonrpc::Response + 'static,
+        handler: impl FnOnce(&lsp_server::Request) -> lsp_server::Response + 'static,
     ) {
         self.expect_request_handlers
             .push_back(ExpectRequestHandler { description, f: Box::new(handler) })
@@ -434,30 +342,23 @@ impl MockClient {
 impl MockClient {
     /// Assuming `request` is a `workspace/configuration` request, computes and sends a response to
     /// it.
-    async fn auto_respond_to_workspace_configuration_request(
-        &mut self,
-        request: &jsonrpc::Request,
-    ) {
-        assert_eq!(
-            request.method(),
-            <lsp_request!("workspace/configuration") as LspRequest>::METHOD
-        );
+    fn auto_respond_to_workspace_configuration_request(&mut self, request: &lsp_server::Request) {
+        assert_eq!(request.method, <lsp_request!("workspace/configuration") as LspRequest>::METHOD);
 
-        let id = request.id().cloned().expect("request ID is missing");
+        let id = request.id.clone();
 
-        let params =
-            serde_json::from_value(request.params().expect("request params are missing").clone())
-                .expect("failed to parse `workspace/configuration` params");
+        let params = serde_json::from_value(request.params.clone())
+            .expect("failed to parse `workspace/configuration` params");
 
         let result = self.compute_workspace_configuration(params);
 
-        let result = Ok(serde_json::to_value(result)
-            .expect("failed to serialize `workspace/configuration` response"));
+        let result = serde_json::to_value(result)
+            .expect("failed to serialize `workspace/configuration` response");
 
-        let message = Message::response(id, result);
-        self.input_tx
+        let message = Message::Response(Response::new_ok(id, result));
+        self.client
+            .sender
             .send(message)
-            .await
             .expect("failed to send `workspace/configuration` response");
     }
 
@@ -499,7 +400,7 @@ impl AsRef<Fixture> for MockClient {
 /// The description is used in panic messages.
 struct ExpectRequestHandler {
     description: &'static str,
-    f: Box<dyn FnOnce(&jsonrpc::Request) -> jsonrpc::Response>,
+    f: Box<dyn FnOnce(&lsp_server::Request) -> lsp_server::Response>,
 }
 
 impl fmt::Debug for ExpectRequestHandler {

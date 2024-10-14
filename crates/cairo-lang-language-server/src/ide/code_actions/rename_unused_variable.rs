@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_utils::Upcast;
-use tower_lsp::lsp_types::{CodeAction, Diagnostic, TextEdit, Url, WorkspaceEdit};
+use lsp_types::{CodeAction, Diagnostic, TextEdit, Url, WorkspaceEdit};
 
 use crate::lang::db::AnalysisDatabase;
 

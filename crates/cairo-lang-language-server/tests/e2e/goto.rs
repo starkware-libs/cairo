@@ -1,6 +1,6 @@
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use tower_lsp::lsp_types::{
+use lsp_types::{
     ClientCapabilities, GotoCapability, GotoDefinitionParams, GotoDefinitionResponse,
     TextDocumentClientCapabilities, TextDocumentIdentifier, TextDocumentPositionParams,
     lsp_request,

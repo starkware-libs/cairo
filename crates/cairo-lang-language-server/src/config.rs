@@ -2,12 +2,17 @@ use std::collections::VecDeque;
 use std::path::PathBuf;
 
 use anyhow::Context;
+use lsp_server::ErrorCode;
+use lsp_types::request::WorkspaceConfiguration;
+use lsp_types::{ClientCapabilities, ConfigurationItem, ConfigurationParams};
 use serde_json::Value;
-use tower_lsp::Client;
-use tower_lsp::lsp_types::{ClientCapabilities, ConfigurationItem};
 use tracing::{debug, error, warn};
 
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
+use crate::lsp::result::{LSPResult, LSPResultEx};
+use crate::server::client::{Notifier, Requester};
+use crate::server::schedule::Task;
+use crate::state::State;
 
 // TODO(mkaput): Write a macro that will auto-generate this struct and the `reload` logic.
 // TODO(mkaput): Write a test that checks that fields in this struct are sorted alphabetically.
@@ -39,13 +44,18 @@ pub struct Config {
 impl Config {
     /// Reloads the configuration from the language client.
     #[tracing::instrument(name = "reload_config", level = "trace", skip_all)]
-    pub async fn reload(&mut self, client: &Client, client_capabilities: &ClientCapabilities) {
+    pub fn reload(
+        &mut self,
+        requester: &mut Requester<'_>,
+        client_capabilities: &ClientCapabilities,
+        on_reloaded: fn(&mut State, &Notifier),
+    ) -> LSPResult<()> {
         if !client_capabilities.workspace_configuration_support() {
             warn!(
                 "client does not support `workspace/configuration` requests, config will not be \
                  reloaded"
             );
-            return;
+            return Ok(());
         }
 
         let items = vec![
@@ -56,34 +66,40 @@ impl Config {
             },
         ];
         let expected_len = items.len();
-        if let Ok(response) = client
-            .configuration(items)
-            .await
-            .context("failed to query language client for configuration items")
-            .inspect_err(|e| warn!("{e:?}"))
-        {
+
+        let handler = move |response: Vec<Value>| {
             let response_len = response.len();
             if response_len != expected_len {
                 error!(
                     "server returned unexpected number of configuration items, expected: \
                      {expected_len}, got: {response_len}"
                 );
-                return;
+                return Task::nothing();
             }
 
             // This conversion is O(1), and makes popping from front also O(1).
             let mut response = VecDeque::from(response);
 
-            self.unmanaged_core_path = response
-                .pop_front()
-                .as_ref()
-                .and_then(Value::as_str)
-                .filter(|s| !s.is_empty())
-                .map(Into::into);
-            self.trace_macro_diagnostics =
-                response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default();
+            Task::local(move |state, notifier, _, _| {
+                state.config.unmanaged_core_path = response
+                    .pop_front()
+                    .as_ref()
+                    .and_then(Value::as_str)
+                    .filter(|s| !s.is_empty())
+                    .map(Into::into);
+                state.config.trace_macro_diagnostics =
+                    response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default();
 
-            debug!("reloaded configuration: {self:#?}");
-        }
+                debug!("reloaded configuration: {:#?}", state.config);
+
+                on_reloaded(state, &notifier);
+            })
+        };
+
+        requester
+            .request::<WorkspaceConfiguration>(ConfigurationParams { items }, handler)
+            .context("failed to query language client for configuration items")
+            .with_failure_code(ErrorCode::RequestFailed)
+            .inspect_err(|e| warn!("{e:?}"))
     }
 }
