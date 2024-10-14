@@ -291,27 +291,13 @@ impl SyntaxNode {
     }
 
     /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
-    pub fn get_node_tree_leaves(&self, db: &dyn SyntaxGroup) -> Vec<Self> {
-        let mut leaves: Vec<Self> = Vec::default();
-        Self::travers_node_tree_for_leaves(db, &mut leaves, self);
-        leaves
-    }
-
-    /// Recursively traverses the SyntaxTree starting from the passed Node.
-    /// Colletcs all the leaves of the tree inside the `leaves` vector.
-    fn travers_node_tree_for_leaves(
-        db: &dyn SyntaxGroup,
-        leaves: &mut Vec<SyntaxNode>,
-        node: &SyntaxNode,
-    ) {
-        let children = db.get_children(node.clone());
-        if children.len() == 0 {
-            leaves.push(node.clone());
-        } else {
-            for child in children.iter() {
-                Self::travers_node_tree_for_leaves(db, leaves, child);
-            }
-        }
+    pub fn tokens(&self, db: &dyn SyntaxGroup) -> Vec<Self> {
+        self.preorder(db)
+            .filter_map(|event| match event {
+                WalkEvent::Enter(node) if node.green_node(db).kind.is_terminal() => Some(node),
+                _ => None,
+            })
+            .collect()
     }
 }
 
