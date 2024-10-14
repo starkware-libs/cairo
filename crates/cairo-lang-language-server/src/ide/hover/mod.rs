@@ -26,7 +26,7 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
 
     if let Some(hover) = db
         .find_identifier_at_position(file_id, position)
-        .map(|ref id| render::definition(db, &id, file_id).or_else(|| render::legacy(db, &id)))
+        .map(|ref id| render::definition(db, id, file_id).or_else(|| render::legacy(db, id)))
     {
         return hover;
     }

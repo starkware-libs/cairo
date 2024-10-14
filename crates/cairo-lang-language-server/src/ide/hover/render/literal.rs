@@ -42,13 +42,13 @@ pub fn number(
     let number_type = type_suffix.as_ref().map(SmolStr::as_str).unwrap_or("felt252");
     let type_path = if number_type == "felt252" { "core" } else { "core::integer" };
 
-    let representation = String::from(formatdoc!(
+    let representation = formatdoc!(
         "
         {TITLE}: `{value} ({value:#x} | {value:#b})`
         {RULER}
         Type: `{type_path}::{number_type}`
         "
-    ));
+    );
 
     Some(Hover { contents: markdown_contents(representation), range: literal.range(db, file_id) })
 }
@@ -58,13 +58,13 @@ pub fn number(
 pub fn string(db: &AnalysisDatabase, literal: &TerminalString, file_id: FileId) -> Option<Hover> {
     let string = literal.string_value(db)?;
 
-    let representation = String::from(formatdoc!(
+    let representation = formatdoc!(
         r#"
         {TITLE}: `"{string}"`
         {RULER}
         Type: `core::byte_array::ByteArray`
         "#
-    ));
+    );
 
     Some(Hover { contents: markdown_contents(representation), range: literal.range(db, file_id) })
 }
@@ -79,20 +79,20 @@ pub fn short_string(
 ) -> Option<Hover> {
     let representation = match (literal.numeric_value(db), literal.string_value(db)) {
         (None, _) => None,
-        (Some(numeric), None) => Some(String::from(formatdoc!(
+        (Some(numeric), None) => Some(formatdoc!(
             "
             {TITLE}: `{numeric:#x}`
             {RULER}
             Type: `core::felt252`
             "
-        ))),
-        (Some(numeric), Some(string)) => Some(String::from(formatdoc!(
+        )),
+        (Some(numeric), Some(string)) => Some(formatdoc!(
             "
             {TITLE}: `'{string}' ({numeric:#x})`
             {RULER}
             Type: `core::felt252`
             "
-        ))),
+        )),
     }?;
 
     Some(Hover { contents: markdown_contents(representation), range: literal.range(db, file_id) })
