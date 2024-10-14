@@ -1,6 +1,7 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{DiagnosticLocation, Severity, format_diagnostics};
+use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -19,9 +20,16 @@ pub fn expand_module_text(
     // Collect the module diagnostics.
     for (file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
         let syntax_node = diag.stable_ptr.lookup(syntax_db);
-        let location = DiagnosticLocation {
-            file_id: file_id.file_id(db.upcast()).unwrap(),
-            span: syntax_node.span_without_trivia(syntax_db),
+        let file_id = file_id.file_id(db.upcast()).unwrap();
+        let location = match diag.inner_span {
+            Some((start, width)) => {
+                let start = syntax_node.offset().add_width(start);
+                let end = start.add_width(width);
+                DiagnosticLocation { file_id, span: TextSpan { start, end } }
+            }
+            None => {
+                DiagnosticLocation { file_id, span: syntax_node.span_without_trivia(db.upcast()) }
+            }
         };
         diagnostics.push(format!(
             "{}: {}",
