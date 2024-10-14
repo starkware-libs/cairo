@@ -155,6 +155,7 @@ fn expand_inline_macros(
         &mut files,
         &mut output,
         FileProcessorConfig::main_file(db, node_to_expand, top_level_macro_kind),
+        top_level_macro_kind,
     )?;
 
     while let Some(file) = files.pop_front() {
@@ -165,6 +166,7 @@ fn expand_inline_macros(
             &mut files,
             &mut output,
             FileProcessorConfig::generated_file(db, file, db.file_content(file)?.to_string())?,
+            top_level_macro_kind,
         )?;
     }
 
@@ -250,6 +252,7 @@ fn expand_inline_macros_in_single_file(
     files: &mut VecDeque<FileId>,
     output: &mut String,
     mut config: FileProcessorConfig,
+    top_level_macro_kind: TopLevelMacroKind,
 ) -> Option<()> {
     let plugins = db.inline_macro_plugins();
 
@@ -277,10 +280,12 @@ fn expand_inline_macros_in_single_file(
             name: file.file_name(db).into(),
             content: config.content.into(),
             code_mappings: Default::default(),
-            kind: file.kind(db),
+            kind: match top_level_macro_kind {
+                TopLevelMacroKind::Inline => FileKind::Expr,
+                TopLevelMacroKind::Attribute => FileKind::Module,
+            },
         })
         .intern(db);
-
         files.push_back(new_file);
     };
 

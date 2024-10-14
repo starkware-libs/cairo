@@ -11,6 +11,7 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
     error_code,
 };
+use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -42,6 +43,12 @@ pub trait SemanticDiagnosticsBuilder {
         stable_ptr: impl Into<SyntaxStablePtrId>,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded;
+    fn report_with_inner_span(
+        &mut self,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
+        inner_span: (TextWidth, TextWidth),
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded;
 }
 impl SemanticDiagnosticsBuilder for SemanticDiagnostics {
     fn report(
@@ -57,6 +64,17 @@ impl SemanticDiagnosticsBuilder for SemanticDiagnostics {
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
         self.add(SemanticDiagnostic::new_after(StableLocation::new(stable_ptr.into()), kind))
+    }
+    fn report_with_inner_span(
+        &mut self,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
+        inner_span: (TextWidth, TextWidth),
+        kind: SemanticDiagnosticKind,
+    ) -> DiagnosticAdded {
+        self.add(SemanticDiagnostic::new(
+            StableLocation::with_inner_span(stable_ptr.into(), inner_span),
+            kind,
+        ))
     }
 }
 

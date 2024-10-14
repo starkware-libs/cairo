@@ -1590,10 +1590,20 @@ fn module_semantic_diagnostics(
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
     for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)?.iter().cloned() {
-        diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(plugin_diag.stable_ptr),
-            SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
-        ));
+        match plugin_diag.inner_span {
+            None => {
+                diagnostics.add(SemanticDiagnostic::new(
+                    StableLocation::new(plugin_diag.stable_ptr),
+                    SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+                ));
+            }
+            Some(inner_span) => {
+                diagnostics.add(SemanticDiagnostic::new(
+                    StableLocation::with_inner_span(plugin_diag.stable_ptr, inner_span),
+                    SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+                ));
+            }
+        }
     }
     let data = db.priv_module_semantic_data(module_id)?;
     diagnostics.extend(data.diagnostics.clone());
