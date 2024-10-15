@@ -40,13 +40,13 @@
 
 use std::collections::{HashMap, HashSet};
 use std::io;
-use std::panic::{AssertUnwindSafe, RefUnwindSafe, catch_unwind};
+use std::panic::{catch_unwind, AssertUnwindSafe, RefUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
@@ -58,9 +58,9 @@ use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_project::ProjectConfig;
-use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
@@ -81,13 +81,13 @@ use crate::lsp::capabilities::server::{
 };
 use crate::lsp::ext::CorelibVersionMismatch;
 use crate::lsp::result::{LSPError, LSPResult};
-use crate::project::ProjectManifestPath;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
+use crate::project::ProjectManifestPath;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::schedule::{
-    JoinHandle, Scheduler, SyncTask, Task, bounded_available_parallelism, event_loop_thread,
+    bounded_available_parallelism, event_loop_thread, JoinHandle, Scheduler, SyncTask, Task,
 };
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
@@ -157,8 +157,8 @@ pub fn start_with_tricks(tricks: Tricks) -> ExitCode {
 
 /// Special function to run the language server in end-to-end tests.
 #[cfg(feature = "testing")]
-pub fn build_service_for_e2e_tests()
--> (Box<dyn FnOnce() -> BackendForTesting + Send>, lsp_server::Connection) {
+pub fn build_service_for_e2e_tests(
+) -> (Box<dyn FnOnce() -> BackendForTesting + Send>, lsp_server::Connection) {
     BackendForTesting::new_for_testing(Default::default())
 }
 
@@ -171,9 +171,9 @@ fn init_logging() -> Option<impl Drop> {
 
     use tracing_chrome::ChromeLayerBuilder;
     use tracing_subscriber::filter::{EnvFilter, LevelFilter};
-    use tracing_subscriber::fmt::Layer;
     use tracing_subscriber::fmt::format::FmtSpan;
     use tracing_subscriber::fmt::time::Uptime;
+    use tracing_subscriber::fmt::Layer;
     use tracing_subscriber::prelude::*;
 
     let mut guard = None;
@@ -299,9 +299,9 @@ impl Backend {
         client_capabilities: ClientCapabilities,
         tricks: Tricks,
     ) -> State {
-        let db = AnalysisDatabase::new(&tricks);
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier);
+        let db = AnalysisDatabase::new(&tricks, &Default::default(), Some(&scarb_toolchain));
 
         State::new(db, client_capabilities, scarb_toolchain, tricks)
     }
@@ -635,7 +635,8 @@ impl Backend {
     fn swap_database(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
         debug!("scheduled");
         let mut new_db = Backend::catch_panics(|| {
-            let mut new_db = AnalysisDatabase::new(&state.tricks);
+            let mut new_db =
+                AnalysisDatabase::new(&state.tricks, &state.config, Some(&state.scarb_toolchain));
             ensure_exists_in_db(&mut new_db, &state.db, state.open_files.iter());
             new_db
         })?;

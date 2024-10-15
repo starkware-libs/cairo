@@ -1,11 +1,11 @@
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
+use cairo_lang_defs::db::{ext_as_virtual_impl, DefsDatabase, DefsGroup};
 use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_files_group,
+    init_files_group, AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup,
 };
 use cairo_lang_filesystem::ids::VirtualFile;
-use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
+use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
@@ -18,6 +18,11 @@ use cairo_lang_utils::Upcast;
 
 pub use self::semantic::*;
 pub use self::syntax::*;
+use super::proc_macros::cache_group::{ProcMacroCacheDatabase, ProcMacroCacheGroup};
+use super::proc_macros::client::spawn_proc_macro_server;
+use super::proc_macros::plugins::proc_macro_plugin_suite;
+use crate::config::Config;
+use crate::toolchain::scarb::ScarbToolchain;
 use crate::Tricks;
 
 mod semantic;
@@ -31,7 +36,8 @@ mod syntax;
     ParserDatabase,
     SemanticDatabase,
     SyntaxDatabase,
-    DocDatabase
+    DocDatabase,
+    ProcMacroCacheDatabase
 )]
 pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,
@@ -39,7 +45,7 @@ pub struct AnalysisDatabase {
 
 impl AnalysisDatabase {
     /// Creates a new instance of the database.
-    pub fn new(tricks: &Tricks) -> Self {
+    pub fn new(tricks: &Tricks, config: &Config, scarb: Option<&ScarbToolchain>) -> Self {
         let mut db = Self { storage: Default::default() };
 
         init_files_group(&mut db);
@@ -56,6 +62,21 @@ impl AnalysisDatabase {
                     acc
                 });
         db.apply_plugin_suite(plugin_suite);
+
+        if !config.disable_proc_macros {
+            if let Some(scarb) = scarb {
+                if let Ok(client) = spawn_proc_macro_server(scarb) {
+                    db.apply_plugin_suite(proc_macro_plugin_suite(
+                        client.defined_attributes(),
+                        client.defined_derives(),
+                        client.defined_other_attributes(),
+                        client.defined_inline_macros(),
+                    ));
+
+                    db.set_proc_macro_client(client);
+                }
+            }
+        }
 
         db
     }

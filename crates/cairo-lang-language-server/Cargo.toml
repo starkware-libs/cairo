@@ -25,6 +25,9 @@ cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.8.4" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.8.4" }
 cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.8.4" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.4" }
+cairo-lang-macro = { path = "../../../scarb/plugins/cairo-lang-macro" }
+scarb-stable-hash = "1.0.0"
+convert_case.workspace = true
 crossbeam = "0.8.4"
 indent.workspace = true
 indoc.workspace = true
@@ -49,7 +52,9 @@ libc = "0.2.155"
 [dev-dependencies]
 assert_fs = "1.1"
 cairo-lang-language-server = { path = ".", features = ["testing"] }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = [
+    "testing",
+] }
 futures = "0.3"
 pathdiff = "0.2"
 pretty_assertions.workspace = true
