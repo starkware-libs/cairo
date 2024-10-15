@@ -11,7 +11,7 @@ use anyhow::Result;
 use task::BackgroundTaskBuilder;
 use thread::ThreadPriority;
 
-use crate::server::client::Client;
+use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::ClientSender;
 use crate::state::State;
 
@@ -82,6 +82,16 @@ impl<'s> Scheduler<'s> {
                 }
             }
         }
+    }
+
+    /// Dispatches a local `task`.
+    ///
+    /// This is a shortcut for `dispatch(Task::local(func))`.
+    pub fn local(
+        &mut self,
+        func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
+    ) {
+        self.dispatch(Task::local(func));
     }
 }
 
