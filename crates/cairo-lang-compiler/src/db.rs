@@ -89,6 +89,7 @@ pub struct RootDatabaseBuilder {
     plugin_suite: PluginSuite,
     detect_corelib: bool,
     auto_withdraw_gas: bool,
+    add_redeposit_gas: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
     inlining_strategy: InliningStrategy,
@@ -100,6 +101,7 @@ impl RootDatabaseBuilder {
             plugin_suite: get_default_plugin_suite(),
             detect_corelib: false,
             auto_withdraw_gas: true,
+            add_redeposit_gas: false,
             project_config: None,
             cfg_set: None,
             inlining_strategy: InliningStrategy::Default,
@@ -118,6 +120,11 @@ impl RootDatabaseBuilder {
 
     pub fn with_inlining_strategy(&mut self, inlining_strategy: InliningStrategy) -> &mut Self {
         self.inlining_strategy = inlining_strategy;
+        self
+    }
+
+    pub fn with_add_redeposit_gas(&mut self) -> &mut Self {
+        self.add_redeposit_gas = true;
         self
     }
 
@@ -167,6 +174,11 @@ impl RootDatabaseBuilder {
         db.set_flag(
             add_withdraw_gas_flag_id,
             Some(Arc::new(Flag::AddWithdrawGas(self.auto_withdraw_gas))),
+        );
+        let add_redeposit_gas_flag_id = FlagId::new(db.upcast(), "add_redeposit_gas");
+        db.set_flag(
+            add_redeposit_gas_flag_id,
+            Some(Arc::new(Flag::AddRedepositGas(self.add_redeposit_gas))),
         );
 
         if let Some(config) = &self.project_config {
