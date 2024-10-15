@@ -144,14 +144,15 @@ impl InferenceEmbeddings for Inference<'_> {
             }
             UninferredImpl::GeneratedImpl(generated_impl) => {
                 let long_id = generated_impl.lookup_intern(self.db);
+
+                // we never use the generic args of the generated impl, so we don't need to save
+                // them. we only make sure they can be inferred.
+                self.infer_generic_args(&long_id.generic_params[..], lookup_context, stable_ptr)?;
+
                 ImplLongId::GeneratedImpl(
                     GeneratedImplLongId {
                         concrete_trait: long_id.concrete_trait,
-                        generic_args: self.infer_generic_args(
-                            &long_id.generic_params[..],
-                            lookup_context,
-                            stable_ptr,
-                        )?,
+                        generic_params: long_id.generic_params,
                         impl_items: long_id.impl_items,
                     }
                     .intern(self.db),

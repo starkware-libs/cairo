@@ -12,11 +12,13 @@ use cairo_lang_defs::ids::{
     LookupItemId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId, TraitId,
     TraitImplId, TraitTypeId, VarId, VariantId,
 };
-use cairo_lang_diagnostics::{DiagnosticAdded, skip_diagnostic};
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
-use cairo_lang_utils::{Intern, LookupIntern, define_short_id, extract_matches};
+use cairo_lang_utils::{
+    Intern, LookupIntern, define_short_id, extract_matches, try_extract_matches,
+};
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
@@ -930,63 +932,84 @@ impl<'db> Inference<'db> {
         lookup_context: &ImplLookupContext,
         canonical_impl: CanonicalImpl,
     ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
-        let ImplLongId::Concrete(concrete_impl) = canonical_impl.0.lookup_intern(self.db) else {
-            return Ok(SolutionSet::Unique(canonical_impl));
-        };
-        let mut rewriter = SubstitutionRewriter {
-            db: self.db,
-            substitution: &concrete_impl
-                .substitution(self.db)
-                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?,
-        };
+        fn validate_no_solution_set(
+            inference: &mut Inference,
+            canonical_impl: CanonicalImpl,
+            lookup_context: &ImplLookupContext,
+            concrete_traits: impl Iterator<Item = Maybe<ConcreteTraitId>>,
+        ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
+            for concrete_trait_id in concrete_traits {
+                let concrete_trait_id = concrete_trait_id.map_err(|diag_added| {
+                    inference.set_error(InferenceError::Reported(diag_added))
+                })?;
+                for garg in concrete_trait_id.generic_args(inference.db) {
+                    let GenericArgumentId::Type(ty) = garg else {
+                        continue;
+                    };
 
-        for garg in self
-            .db
-            .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
-            .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?
-        {
-            let GenericParam::NegImpl(neg_impl) = garg else {
-                continue;
-            };
+                    // If the negative impl has a generic argument that is not fully
+                    // concrete we can't tell if we should rule out the candidate impl.
+                    // For example if we have -TypeEqual<S, T> we can't tell if S and
+                    // T are going to be assigned the same concrete type.
+                    // We return `SolutionSet::Ambiguous` here to indicate that more
+                    // information is needed.
+                    if !ty.is_fully_concrete(inference.db) {
+                        // TODO(ilya): Try to detect the ambiguity earlier in the
+                        // inference process.
+                        return Ok(SolutionSet::Ambiguous(
+                            Ambiguity::NegativeImplWithUnresolvedGenericArgs {
+                                impl_id: canonical_impl.0,
+                                ty,
+                            },
+                        ));
+                    }
+                }
 
-            let concrete_trait_id = rewriter
-                .rewrite(neg_impl)
-                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?
-                .concrete_trait
-                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
-            for garg in concrete_trait_id.generic_args(self.db) {
-                let GenericArgumentId::Type(ty) = garg else {
-                    continue;
-                };
-
-                // If the negative impl has a generic argument that is not fully
-                // concrete we can't tell if we should rule out the candidate impl.
-                // For example if we have -TypeEqual<S, T> we can't tell if S and
-                // T are going to be assigned the same concrete type.
-                // We return `SolutionSet::Ambiguous` here to indicate that more
-                // information is needed.
-                if !ty.is_fully_concrete(self.db) {
-                    // TODO(ilya): Try to detect the ambiguity earlier in the
-                    // inference process.
-                    return Ok(SolutionSet::Ambiguous(
-                        Ambiguity::NegativeImplWithUnresolvedGenericArgs {
-                            impl_id: ImplLongId::Concrete(concrete_impl).intern(self.db),
-                            ty,
-                        },
-                    ));
+                if !matches!(
+                    inference.trait_solution_set(concrete_trait_id, lookup_context.clone())?,
+                    SolutionSet::None
+                ) {
+                    // If a negative impl has an impl, then we should skip it.
+                    return Ok(SolutionSet::None);
                 }
             }
 
-            if !matches!(
-                self.trait_solution_set(concrete_trait_id, lookup_context.clone())?,
-                SolutionSet::None
-            ) {
-                // If a negative impl has an impl, then we should skip it.
-                return Ok(SolutionSet::None);
-            }
+            Ok(SolutionSet::Unique(canonical_impl))
         }
-
-        Ok(SolutionSet::Unique(canonical_impl))
+        match canonical_impl.0.lookup_intern(self.db) {
+            ImplLongId::Concrete(concrete_impl) => {
+                let mut rewriter = SubstitutionRewriter {
+                    db: self.db,
+                    substitution: &concrete_impl.substitution(self.db).map_err(|diag_added| {
+                        self.set_error(InferenceError::Reported(diag_added))
+                    })?,
+                };
+                let concrete_traits = self
+                    .db
+                    .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+                let concrete_traits = concrete_traits
+                    .iter()
+                    .filter_map(|garg| try_extract_matches!(garg, GenericParam::NegImpl))
+                    .map(|garg| rewriter.rewrite(*garg).and_then(|garg| garg.concrete_trait));
+                validate_no_solution_set(self, canonical_impl, lookup_context, concrete_traits)
+            }
+            ImplLongId::GeneratedImpl(generated_impl) => validate_no_solution_set(
+                self,
+                canonical_impl,
+                lookup_context,
+                generated_impl
+                    .lookup_intern(self.db)
+                    .generic_params
+                    .iter()
+                    .filter_map(|garg| try_extract_matches!(garg, GenericParam::NegImpl))
+                    .map(|garg| garg.concrete_trait),
+            ),
+            ImplLongId::GenericParameter(_)
+            | ImplLongId::ImplVar(_)
+            | ImplLongId::ImplImpl(_)
+            | ImplLongId::TraitImpl(_) => return Ok(SolutionSet::Unique(canonical_impl)),
+        }
     }
 
     // Error handling methods
