@@ -3,7 +3,6 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-
 //! > function
 fn foo(ref a: A) {
     a.f = 5;

@@ -16,7 +16,10 @@ use cairo_lang_diagnostics::{DiagnosticAdded, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
-use cairo_lang_utils::{Intern, LookupIntern, define_short_id, extract_matches};
+use cairo_lang_utils::{
+    Intern, LookupIntern, define_short_id, extract_matches, try_extract_matches,
+};
+use itertools::Itertools;
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
@@ -930,29 +933,38 @@ impl<'db> Inference<'db> {
         lookup_context: &ImplLookupContext,
         canonical_impl: CanonicalImpl,
     ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
-        let ImplLongId::Concrete(concrete_impl) = canonical_impl.0.lookup_intern(self.db) else {
-            return Ok(SolutionSet::Unique(canonical_impl));
-        };
-        let mut rewriter = SubstitutionRewriter {
-            db: self.db,
-            substitution: &concrete_impl
-                .substitution(self.db)
-                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?,
+        let concrete_traits = match canonical_impl.0.lookup_intern(self.db) {
+            ImplLongId::Concrete(concrete_impl) => {
+                let mut rewriter = SubstitutionRewriter {
+                    db: self.db,
+                    substitution: &concrete_impl.substitution(self.db).map_err(|diag_added| {
+                        self.set_error(InferenceError::Reported(diag_added))
+                    })?,
+                };
+                self.db
+                    .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?
+                    .iter()
+                    .filter_map(|garg| try_extract_matches!(garg, GenericParam::NegImpl))
+                    .map(|garg| rewriter.rewrite(*garg).and_then(|garg| garg.concrete_trait))
+                    .collect_vec()
+            }
+            ImplLongId::GeneratedImpl(generated_impl) => generated_impl
+                .lookup_intern(self.db)
+                .generic_params
+                .iter()
+                .filter_map(|garg| try_extract_matches!(garg, GenericParam::NegImpl))
+                .map(|garg| garg.concrete_trait)
+                .collect_vec(),
+            ImplLongId::GenericParameter(_)
+            | ImplLongId::ImplVar(_)
+            | ImplLongId::ImplImpl(_)
+            | ImplLongId::TraitImpl(_) => return Ok(SolutionSet::Unique(canonical_impl)),
         };
 
-        for garg in self
-            .db
-            .impl_def_generic_params(concrete_impl.impl_def_id(self.db))
-            .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?
-        {
-            let GenericParam::NegImpl(neg_impl) = garg else {
-                continue;
-            };
-
-            let concrete_trait_id = rewriter
-                .rewrite(neg_impl)
-                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?
-                .concrete_trait
+        //
+        for concrete_trait_id in concrete_traits {
+            let concrete_trait_id = concrete_trait_id
                 .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
             for garg in concrete_trait_id.generic_args(self.db) {
                 let GenericArgumentId::Type(ty) = garg else {
@@ -970,7 +982,7 @@ impl<'db> Inference<'db> {
                     // inference process.
                     return Ok(SolutionSet::Ambiguous(
                         Ambiguity::NegativeImplWithUnresolvedGenericArgs {
-                            impl_id: ImplLongId::Concrete(concrete_impl).intern(self.db),
+                            impl_id: canonical_impl.0,
                             ty,
                         },
                     ));

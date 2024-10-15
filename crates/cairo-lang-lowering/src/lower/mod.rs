@@ -1800,7 +1800,7 @@ fn add_closure_call_function(
     let impl_id = ImplLongId::GeneratedImpl(
         GeneratedImplLongId {
             concrete_trait,
-            generic_args: vec![],
+            generic_params: vec![],
             impl_items: GeneratedImplItems(iter::once((ret_ty, closure_ty.ret_ty)).collect()),
         }
         .intern(semantic_db),
