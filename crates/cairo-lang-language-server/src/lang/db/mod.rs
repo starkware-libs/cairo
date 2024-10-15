@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
 use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -19,7 +21,12 @@ use cairo_lang_utils::Upcast;
 pub use self::semantic::*;
 pub use self::swapper::*;
 pub use self::syntax::*;
+use super::proc_macros::cache_group::{ProcMacroCacheDatabase, ProcMacroCacheGroup};
+use super::proc_macros::client::ProcMacroClient;
+use super::proc_macros::plugins::proc_macro_plugin_suite;
 use crate::Tricks;
+use crate::config::Config;
+use crate::toolchain::scarb::ScarbToolchain;
 
 mod semantic;
 mod swapper;
@@ -33,15 +40,17 @@ mod syntax;
     ParserDatabase,
     SemanticDatabase,
     SyntaxDatabase,
-    DocDatabase
+    DocDatabase,
+    ProcMacroCacheDatabase
 )]
 pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,
 }
 
 impl AnalysisDatabase {
-    /// Creates a new instance of the database.
-    pub fn new(tricks: &Tricks) -> Self {
+    /// Creates a new instance of the database. Without instantiating proc-macro-server.
+    /// Useful for tests.
+    pub fn new_basic(tricks: &Tricks) -> Self {
         let mut db = Self { storage: Default::default() };
 
         init_files_group(&mut db);
@@ -58,6 +67,29 @@ impl AnalysisDatabase {
                     acc
                 });
         db.apply_plugin_suite(plugin_suite);
+
+        db
+    }
+
+    /// Creates a new instance of the database.
+    pub fn new(tricks: &Tricks, config: &Config, scarb: &ScarbToolchain) -> Self {
+        let mut db = Self::new_basic(tricks);
+
+        if !config.disable_proc_macros {
+            if let Ok(proc_macro_server) = scarb.proc_macro_server() {
+                let client = ProcMacroClient::new(proc_macro_server);
+
+                if let Some(plugin) = proc_macro_plugin_suite(&client) {
+                    db.apply_plugin_suite(plugin);
+
+                    db.set_attribute_macro_resolution(Default::default());
+                    db.set_derive_macro_resolution(Default::default());
+                    db.set_inline_macro_resolution(Default::default());
+
+                    db.set_proc_macro_client(Arc::new(client));
+                };
+            }
+        }
 
         db
     }

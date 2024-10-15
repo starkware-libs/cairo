@@ -10,8 +10,10 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_types::Url;
 use tracing::{error, warn};
 
+use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
+use crate::toolchain::scarb::ScarbToolchain;
 use crate::{Tricks, env_config};
 
 /// Swaps entire [`AnalysisDatabase`] with empty one periodically.
@@ -50,6 +52,8 @@ impl AnalysisDatabaseSwapper {
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
         tricks: &Tricks,
+        config: &Config,
+        scarb_toolchain: &ScarbToolchain,
     ) {
         let Ok(elapsed) = self.last_replace.elapsed() else {
             warn!("system time went backwards, skipping db swap");
@@ -66,7 +70,7 @@ impl AnalysisDatabaseSwapper {
         }
 
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
-            let mut new_db = AnalysisDatabase::new(tricks);
+            let mut new_db = AnalysisDatabase::new(tricks, config, scarb_toolchain);
             ensure_exists_in_db(&mut new_db, db, open_files.iter());
             new_db
         })) else {
