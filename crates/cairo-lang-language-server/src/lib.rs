@@ -43,7 +43,6 @@ use std::io;
 use std::panic::{AssertUnwindSafe, RefUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use std::sync::Arc;
 use std::time::SystemTime;
 
 use anyhow::{Context, Result};
@@ -61,8 +60,7 @@ use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
+use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 use lsp_server::Message;
 use lsp_types::notification::PublishDiagnostics;
@@ -85,7 +83,6 @@ use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
-use crate::server::panic::ls_catch_unwind;
 use crate::server::schedule::{
     JoinHandle, Scheduler, Task, bounded_available_parallelism, event_loop_thread,
 };
@@ -226,25 +223,6 @@ fn init_logging() -> Option<impl Drop> {
     guard
 }
 
-/// Makes sure that all open files exist in the new db, with their current changes.
-#[tracing::instrument(level = "trace", skip_all)]
-fn ensure_exists_in_db<'a>(
-    new_db: &mut AnalysisDatabase,
-    old_db: &AnalysisDatabase,
-    open_files: impl Iterator<Item = &'a Url>,
-) {
-    let overrides = old_db.file_overrides();
-    let mut new_overrides: OrderedHashMap<FileId, Arc<str>> = Default::default();
-    for uri in open_files {
-        let Some(file_id) = old_db.file_for_url(uri) else { continue };
-        let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
-        if let Some(content) = overrides.get(&file_id) {
-            new_overrides.insert(new_file_id, content.clone());
-        }
-    }
-    new_db.set_file_overrides(Arc::new(new_overrides));
-}
-
 struct Backend {
     connection: Connection,
     state: State,
@@ -319,15 +297,15 @@ impl Backend {
 
             Self::dispatch_setup_tasks(&mut scheduler);
 
+            // Attempt to swap the database to reduce memory use.
+            // Because diagnostics are always refreshed afterwards, the fresh database state will
+            // be quickly repopulated.
+            scheduler.on_sync_task(Self::maybe_swap_database);
+
             // Refresh diagnostics each time state changes.
             // Although it is possible to mutate state without affecting the analysis database,
             // we basically never hit such a case in CairoLS in happy paths.
             scheduler.on_sync_task(Self::refresh_diagnostics);
-
-            // After handling diagnostics, attempt to swap the database to reduce memory use.
-            // TODO(mkaput): This should be an independent cronjob when diagnostics are run as
-            //   a background task.
-            scheduler.on_sync_task(Self::maybe_swap_database);
 
             let result = Self::event_loop(&connection, scheduler);
 
@@ -591,79 +569,9 @@ impl Backend {
         result
     }
 
-    /// Checks if enough time passed since last db swap, and if so, swaps the database.
-    #[tracing::instrument(level = "trace", skip_all)]
-    fn maybe_swap_database(state: &mut State, notifier: Notifier) {
-        if state.last_replace.elapsed().unwrap() <= state.db_replace_interval {
-            // Not enough time passed since last swap.
-            return;
-        }
-
-        Backend::swap_database(state, &notifier);
-
-        state.last_replace = SystemTime::now();
-    }
-
-    /// Perform database swap
-    #[tracing::instrument(level = "debug", skip_all)]
-    fn swap_database(state: &mut State, notifier: &Notifier) {
-        debug!("scheduled");
-        let Ok(mut new_db) = ls_catch_unwind(|| {
-            let mut new_db = AnalysisDatabase::new(&state.tricks);
-            ensure_exists_in_db(&mut new_db, &state.db, state.open_files.iter());
-            new_db
-        }) else {
-            return;
-        };
-        debug!("initial setup done");
-        Backend::ensure_diagnostics_queries_up_to_date(
-            &mut new_db,
-            &state.scarb_toolchain,
-            &state.config,
-            state.open_files.iter(),
-            notifier,
-        );
-        debug!("initial compilation done");
-        debug!("starting");
-
-        ensure_exists_in_db(&mut new_db, &state.db, state.open_files.iter());
-        state.db = new_db;
-
-        debug!("done");
-    }
-
-    /// Ensures that all diagnostics are up to date.
-    #[tracing::instrument(level = "trace", skip_all)]
-    fn ensure_diagnostics_queries_up_to_date<'a>(
-        db: &mut AnalysisDatabase,
-        scarb_toolchain: &ScarbToolchain,
-        config: &Config,
-        open_files: impl Iterator<Item = &'a Url>,
-        notifier: &Notifier,
-    ) {
-        let query_diags = |db: &AnalysisDatabase, file_id| {
-            db.file_syntax_diagnostics(file_id);
-            let _ = db.file_semantic_diagnostics(file_id);
-            let _ = db.file_lowering_diagnostics(file_id);
-        };
-        for uri in open_files {
-            let Some(file_id) = db.file_for_url(uri) else { continue };
-            if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
-                Backend::detect_crate_for(db, scarb_toolchain, config, &file_path, notifier);
-            }
-            query_diags(db, file_id);
-        }
-        for crate_id in db.crates() {
-            for module_files in db
-                .crate_modules(crate_id)
-                .iter()
-                .filter_map(|module_id| db.module_files(*module_id).ok())
-            {
-                for file_id in module_files.iter().copied() {
-                    query_diags(db, file_id);
-                }
-            }
-        }
+    /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
+    fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
+        state.db_swapper.maybe_swap(&mut state.db, &state.open_files, &state.tricks);
     }
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
