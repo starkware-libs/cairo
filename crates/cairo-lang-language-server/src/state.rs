@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
 
 use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -10,10 +9,10 @@ use cairo_lang_semantic::SemanticDiagnostic;
 use lsp_types::{ClientCapabilities, Url};
 use salsa::ParallelDatabase;
 
+use crate::Tricks;
 use crate::config::Config;
-use crate::lang::db::AnalysisDatabase;
+use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::toolchain::scarb::ScarbToolchain;
-use crate::{Tricks, env_config};
 
 /// State of Language server.
 pub struct State {
@@ -23,8 +22,7 @@ pub struct State {
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
     pub scarb_toolchain: ScarbToolchain,
-    pub last_replace: SystemTime,
-    pub db_replace_interval: Duration,
+    pub db_swapper: AnalysisDatabaseSwapper,
     pub tricks: Owned<Tricks>,
 }
 
@@ -55,10 +53,9 @@ impl State {
             file_diagnostics: Default::default(),
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
-            tricks: Owned::new(tricks.into()),
             scarb_toolchain,
-            last_replace: SystemTime::now(),
-            db_replace_interval: env_config::db_replace_interval(),
+            db_swapper: AnalysisDatabaseSwapper::new(),
+            tricks: Owned::new(tricks.into()),
         }
     }
 
