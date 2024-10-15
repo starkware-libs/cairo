@@ -144,7 +144,7 @@ impl SyncNotificationHandler for DidChangeTextDocument {
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     fn run(
         state: &mut State,
-        notifier: Notifier,
+        _notifier: Notifier,
         _requester: &mut Requester<'_>,
         params: DidChangeTextDocumentParams,
     ) -> LSPResult<()> {
@@ -159,7 +159,6 @@ impl SyncNotificationHandler for DidChangeTextDocument {
 
         if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
             state.db.override_file_content(file, Some(text.into()));
-            Backend::refresh_diagnostics(state, &notifier)?;
         };
 
         Ok(())
@@ -174,7 +173,7 @@ impl SyncNotificationHandler for DidChangeConfiguration {
         requester: &mut Requester<'_>,
         _params: DidChangeConfigurationParams,
     ) -> LSPResult<()> {
-        Backend::reload_config(state, requester)
+        state.config.reload(requester, &state.client_capabilities)
     }
 }
 
@@ -214,14 +213,13 @@ impl SyncNotificationHandler for DidCloseTextDocument {
     #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
     fn run(
         state: &mut State,
-        notifier: Notifier,
+        _notifier: Notifier,
         _requester: &mut Requester<'_>,
         params: DidCloseTextDocumentParams,
     ) -> LSPResult<()> {
         state.open_files.remove(&params.text_document.uri);
         if let Some(file) = state.db.file_for_url(&params.text_document.uri) {
             state.db.override_file_content(file, None);
-            Backend::refresh_diagnostics(state, &notifier)?;
         }
 
         Ok(())
@@ -255,8 +253,6 @@ impl SyncNotificationHandler for DidOpenTextDocument {
         if let Some(file_id) = state.db.file_for_url(&uri) {
             state.open_files.insert(uri);
             state.db.override_file_content(file_id, Some(params.text_document.text.into()));
-
-            Backend::refresh_diagnostics(state, &notifier)?;
         }
 
         Ok(())
