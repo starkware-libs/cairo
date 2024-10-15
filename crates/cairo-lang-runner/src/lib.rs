@@ -22,6 +22,7 @@ use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{Function, GenStatement, GenericArg, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
+use cairo_lang_sierra_gas::CostError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
     Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
@@ -62,9 +63,10 @@ pub enum RunnerError {
     #[error("GasBuiltin is required while `available_gas` value is provided.")]
     GasBuiltinRequired,
     #[error(
-        "Failed calculating gas usage, it is likely a call for `gas::withdraw_gas` is missing."
+        "Failed calculating gas usage, it is likely a call for `gas::withdraw_gas` is missing. \
+         Inner error: {0}"
     )]
-    FailedGasCalculation,
+    FailedGasCalculation(#[from] CostError),
     #[error("Function with suffix `{suffix}` to run not found.")]
     MissingFunction { suffix: String },
     #[error("Function param {param_index} only partially contains argument {arg_index}.")]
@@ -881,6 +883,6 @@ fn create_metadata(
     }
     .map_err(|err| match err {
         MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
-        MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
+        MetadataError::CostError(err) => RunnerError::FailedGasCalculation(err),
     })
 }
