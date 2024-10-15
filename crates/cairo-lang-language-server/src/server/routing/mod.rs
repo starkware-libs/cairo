@@ -18,9 +18,9 @@ use lsp_types::request::{
 use tracing::{error, warn};
 
 use super::client::Responder;
-use crate::Backend;
 use crate::lsp::ext::{ExpandMacro, ProvideVirtualFile, ViewAnalyzedCrates};
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
+use crate::server::panic::ls_catch_unwind;
 use crate::server::schedule::{BackgroundSchedule, Task};
 use crate::state::State;
 
@@ -122,9 +122,8 @@ fn background_request_task<'a, R: traits::BackgroundDocumentRequestHandler>(
     Ok(Task::background(schedule, move |state: &State| {
         let state_snapshot = state.snapshot();
         Box::new(move |notifier, responder| {
-            let result =
-                Backend::catch_panics(|| R::run_with_snapshot(state_snapshot, notifier, params))
-                    .and_then(|res| res);
+            let result = ls_catch_unwind(|| R::run_with_snapshot(state_snapshot, notifier, params))
+                .and_then(|res| res);
             respond::<R>(id, result, &responder);
         })
     }))
