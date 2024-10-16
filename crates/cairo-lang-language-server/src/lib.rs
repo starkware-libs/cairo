@@ -83,9 +83,7 @@ use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
-use crate::server::schedule::{
-    JoinHandle, Scheduler, Task, bounded_available_parallelism, event_loop_thread,
-};
+use crate::server::schedule::{JoinHandle, Scheduler, Task, event_loop_thread};
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
 
@@ -289,11 +287,7 @@ impl Backend {
         event_loop_thread(move || {
             let Self { mut state, connection } = self;
 
-            let mut scheduler = Scheduler::new(
-                &mut state,
-                bounded_available_parallelism(4),
-                connection.make_sender(),
-            );
+            let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
 
             Self::dispatch_setup_tasks(&mut scheduler);
 

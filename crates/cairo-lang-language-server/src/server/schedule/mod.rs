@@ -5,8 +5,6 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69  |
 // +---------------------------------------------------+
 
-use std::num::NonZeroUsize;
-
 use anyhow::Result;
 use task::BackgroundTaskBuilder;
 use thread::ThreadPriority;
@@ -48,11 +46,11 @@ pub struct Scheduler<'s> {
 }
 
 impl<'s> Scheduler<'s> {
-    pub fn new(state: &'s mut State, worker_threads: NonZeroUsize, sender: ClientSender) -> Self {
+    pub fn new(state: &'s mut State, sender: ClientSender) -> Self {
         Self {
             state,
             client: Client::new(sender),
-            background_pool: thread::Pool::new(worker_threads),
+            background_pool: thread::Pool::new(),
             sync_task_hooks: Default::default(),
         }
     }
@@ -113,14 +111,4 @@ impl<'s> Scheduler<'s> {
     pub fn on_sync_task(&mut self, hook: impl Fn(&mut State, Notifier) + 'static) {
         self.sync_task_hooks.push(Box::new(hook));
     }
-}
-
-/// Returns an estimate of the default amount of parallelism a program should use,
-/// capping or falling-back to a hardcoded _bound_.
-///
-/// ## Panics
-/// This function panics if `bound` is zero.
-pub fn bounded_available_parallelism(bound: usize) -> NonZeroUsize {
-    let bound = NonZeroUsize::new(bound).unwrap();
-    std::thread::available_parallelism().unwrap_or(bound).max(bound)
 }
