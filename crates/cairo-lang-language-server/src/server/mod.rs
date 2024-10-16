@@ -1,7 +1,8 @@
-pub(crate) mod client;
-pub(crate) mod commands;
-pub(crate) mod connection;
-pub(crate) mod schedule;
+pub mod client;
+pub mod commands;
+pub mod connection;
+pub mod panic;
+pub mod schedule;
 
 mod routing;
 pub use routing::{notification, request};

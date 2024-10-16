@@ -46,7 +46,7 @@ use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::SystemTime;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result};
 use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
@@ -64,10 +64,9 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
 use itertools::Itertools;
-use lsp_server::{ErrorCode, Message};
+use lsp_server::Message;
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{ClientCapabilities, PublishDiagnosticsParams, RegistrationParams, Url};
-use salsa::Cancelled;
 use server::connection::ClientSender;
 use state::FileDiagnostics;
 use tracing::{debug, error, info, trace_span, warn};
@@ -80,12 +79,13 @@ use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
 use crate::lsp::ext::CorelibVersionMismatch;
-use crate::lsp::result::{LSPError, LSPResult};
+use crate::lsp::result::LSPResult;
 use crate::project::ProjectManifestPath;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
+use crate::server::panic::ls_catch_unwind;
 use crate::server::schedule::{
     JoinHandle, Scheduler, SyncTask, Task, bounded_available_parallelism, event_loop_thread,
 };
@@ -386,33 +386,6 @@ impl Backend {
         Ok(())
     }
 
-    /// Catches panics and returns Err.
-    fn catch_panics<T>(f: impl FnOnce() -> T) -> LSPResult<T> {
-        catch_unwind(AssertUnwindSafe(f)).map_err(|err| {
-            // Salsa is broken and sometimes when cancelled throws regular assert instead of
-            // [`Cancelled`]. Catch this case too.
-            if err.is::<Cancelled>()
-                || err.downcast_ref::<&str>().is_some_and(|msg| {
-                    msg.contains(
-                        "assertion failed: old_memo.revisions.changed_at <= revisions.changed_at",
-                    )
-                })
-            {
-                debug!("LSP worker thread was cancelled");
-                LSPError::new(
-                    anyhow!("LSP worker thread was cancelled"),
-                    ErrorCode::ServerCancelled,
-                )
-            } else {
-                error!("caught panic in LSP worker thread");
-                LSPError::new(
-                    anyhow!("caught panic in LSP worker thread"),
-                    ErrorCode::InternalError,
-                )
-            }
-        })
-    }
-
     /// Refresh diagnostics and send diffs to the client.
     #[tracing::instrument(level = "debug", skip_all)]
     fn refresh_diagnostics(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
@@ -634,7 +607,7 @@ impl Backend {
     #[tracing::instrument(level = "debug", skip_all)]
     fn swap_database(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
         debug!("scheduled");
-        let mut new_db = Backend::catch_panics(|| {
+        let mut new_db = ls_catch_unwind(|| {
             let mut new_db = AnalysisDatabase::new(&state.tricks);
             ensure_exists_in_db(&mut new_db, &state.db, state.open_files.iter());
             new_db
