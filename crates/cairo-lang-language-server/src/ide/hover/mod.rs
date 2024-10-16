@@ -24,7 +24,9 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
         return hover;
     }
 
-    return None;
+    None
+
+    // TODO(mkaput): If client only supports plaintext, strip markdown formatting here like RA.
 }
 
 /// Convenience shortcut for building hover contents from markdown block.
