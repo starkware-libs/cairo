@@ -87,7 +87,7 @@ use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::panic::ls_catch_unwind;
 use crate::server::schedule::{
-    JoinHandle, Scheduler, SyncTask, Task, bounded_available_parallelism, event_loop_thread,
+    JoinHandle, Scheduler, Task, bounded_available_parallelism, event_loop_thread,
 };
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
@@ -330,14 +330,11 @@ impl Backend {
     }
 
     fn dispatch_setup_tasks(scheduler: &mut Scheduler<'_>) {
-        scheduler
-            .dispatch(Task::Sync(SyncTask { func: Box::new(Self::register_dynamic_capabilities) }));
+        scheduler.local(Self::register_dynamic_capabilities);
 
-        scheduler.dispatch(Task::Sync(SyncTask {
-            func: Box::new(|state, _notifier, requester, _responder| {
-                let _ = Self::reload_config(state, requester);
-            }),
-        }));
+        scheduler.local(|state, _notifier, requester, _responder| {
+            let _ = Self::reload_config(state, requester);
+        });
     }
 
     fn register_dynamic_capabilities(
