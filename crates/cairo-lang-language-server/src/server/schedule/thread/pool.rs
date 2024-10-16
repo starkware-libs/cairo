@@ -22,8 +22,6 @@
 //! The thread pool is implemented entirely using
 //! the threading utilities in [`crate::server::schedule::thread`].
 
-use std::num::NonZeroUsize;
-
 use crossbeam::channel::{Receiver, Sender};
 
 use super::{Builder, JoinHandle, ThreadPriority};
@@ -46,12 +44,12 @@ struct Job {
 }
 
 impl Pool {
-    pub fn new(threads: NonZeroUsize) -> Pool {
+    pub fn new() -> Pool {
         // Override OS defaults to avoid stack overflows on platforms with low stack size defaults.
         const STACK_SIZE: usize = 2 * 1024 * 1024;
         const INITIAL_PRIORITY: ThreadPriority = ThreadPriority::Worker;
 
-        let threads = usize::from(threads);
+        let threads = std::thread::available_parallelism().map(usize::from).unwrap_or(1);
 
         // Channel buffer capacity is between 2 and 4, depending on the pool size.
         let (job_sender, job_receiver) = crossbeam::channel::bounded(std::cmp::min(threads * 2, 4));
