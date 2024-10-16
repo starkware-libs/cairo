@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
+use std::{env, fs};
 
 use anyhow::{Context, Result, bail};
 use lsp_types::notification::Notification;
@@ -38,6 +39,18 @@ impl ScarbToolchain {
         ScarbToolchain { scarb_path_cell: Default::default(), notifier, is_silent: false }
     }
 
+    fn discover_env_path() -> Option<PathBuf> {
+        if let Ok(path) = env::var("PATH") {
+            for p in path.split(":") {
+                let p_str = format!("{}/{}", p, "scarb");
+                if fs::metadata(&p_str).is_ok() {
+                    return Some(PathBuf::from(p_str));
+                }
+            }
+        }
+        None
+    }
+
     /// Finds the path to the `scarb` executable to use.
     ///
     /// This method may send notifications to the language client if there are any actionable issues
@@ -45,7 +58,10 @@ impl ScarbToolchain {
     fn discover(&self) -> Option<&Path> {
         self.scarb_path_cell
             .get_or_init(|| {
-                let path = env_config::scarb_path();
+                let mut path = env_config::scarb_path();
+                if path.is_none() {
+                    path = Self::discover_env_path();
+                }
                 // TODO(mkaput): Perhaps we should display this notification again after reloading?
                 if path.is_none() {
                     if self.is_silent {
