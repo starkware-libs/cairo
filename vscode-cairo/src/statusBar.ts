@@ -19,26 +19,20 @@ async function updateStatusBar(ctx: Context) {
   const enableStatusBar = config.get<boolean>("enableStatusBar", true);
 
   if (enableStatusBar) {
-    const editor = vscode.window.activeTextEditor;
-    if (editor && editor.document.languageId === "cairo") {
-      ctx.statusBarItem.text = "Cairo";
-      ctx.statusBarItem.tooltip = "Cairo Language";
+    ctx.statusBarItem.text = "Cairo";
+    ctx.statusBarItem.tooltip = "Cairo Language";
 
-      // Get Scarb version
-      try {
-        const scarb = await Scarb.find(vscode.workspace.workspaceFolders?.[0], ctx);
-        if (scarb) {
-          const version = await scarb.getVersion(ctx);
-          ctx.statusBarItem.tooltip = `Cairo Language\n${version}`;
-        }
-      } catch (error) {
-        ctx.log.error(`Error getting Scarb version: ${error}`);
+    try {
+      const scarb = await Scarb.find(vscode.workspace.workspaceFolders?.[0], ctx);
+      if (scarb) {
+        const version = await scarb.getVersion(ctx);
+        ctx.statusBarItem.tooltip = `Cairo Language\n${version}`;
       }
-
-      ctx.statusBarItem.show();
-    } else {
-      ctx.statusBarItem.hide();
+    } catch (error) {
+      ctx.log.error(`Error getting Scarb version: ${error}`);
     }
+
+    ctx.statusBarItem.show();
   } else {
     ctx.statusBarItem.hide();
   }

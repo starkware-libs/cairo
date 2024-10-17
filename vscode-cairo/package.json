@@ -139,7 +139,8 @@
           "cairo1.enableStatusBar": {
             "type": "boolean",
             "default": true,
-            "description": "Show Cairo Language Server information"
+            "description": "Show Cairo Language Server information",
+            "scope": "window"
           }
         }
       }
