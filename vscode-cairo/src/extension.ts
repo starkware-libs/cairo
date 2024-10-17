@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 import { setupLanguageServer } from "./cairols";
 import { Context } from "./context";
-import { setupStatusBar } from "./statusBar";
 
 let client: lc.LanguageClient | undefined;
 
@@ -17,7 +16,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   }
 
   if (ctx.config.get("showInStatusBar")) {
-    await setupStatusBar(ctx, client);
+    ctx.statusBar.setupStatusBar(client);
   }
 }
 
