@@ -135,6 +135,11 @@
             },
             "default": {},
             "markdownDescription": "Extra environment variables that will be passed to the `cairo-language-server` executable.\nUseful for passing e.g. `CAIRO_LS_LOG` for debugging."
+          },
+          "cairo1.showStatusBar": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show Cairo Language Server information"
           }
         }
       }
