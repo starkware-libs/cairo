@@ -8,7 +8,7 @@ const CAIRO_STATUS_BAR_COMMAND = "cairo1.statusBar.clicked";
 export async function setupStatusBar(ctx: Context, client?: lc.LanguageClient) {
   ctx.extension.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("cairo1.enableStatusBar")) {
+      if (e.affectsConfiguration("cairo1.showInStatusBar")) {
         updateStatusBar(ctx);
       }
     }),
@@ -30,9 +30,9 @@ export async function setupStatusBar(ctx: Context, client?: lc.LanguageClient) {
 
 async function updateStatusBar(ctx: Context) {
   const config = vscode.workspace.getConfiguration("cairo1");
-  const enableStatusBar = config.get<boolean>("enableStatusBar", true);
+  const showInStatusBar = config.get<boolean>("showInStatusBar", true);
 
-  if (enableStatusBar) {
+  if (showInStatusBar) {
     ctx.statusBarItem.text = "Cairo";
     ctx.statusBarItem.tooltip = "Cairo Language";
 
