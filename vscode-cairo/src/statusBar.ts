@@ -1,8 +1,11 @@
 import * as vscode from "vscode";
 import { Context } from "./context";
 import { Scarb } from "./scarb";
+import * as lc from "vscode-languageclient/node";
 
-export async function setupStatusBar(ctx: Context) {
+const CAIRO_STATUS_BAR_COMMAND = "cairo1.statusBar.clicked";
+
+export async function setupStatusBar(ctx: Context, client?: lc.LanguageClient) {
   ctx.extension.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("cairo1.enableStatusBar")) {
@@ -10,6 +13,17 @@ export async function setupStatusBar(ctx: Context) {
       }
     }),
   );
+
+  ctx.extension.subscriptions.push(
+    vscode.commands.registerCommand(CAIRO_STATUS_BAR_COMMAND, () => {
+      if (client) {
+        client.outputChannel.show();
+      } else {
+        vscode.window.showWarningMessage("Cairo Language Server is not active");
+      }
+    }),
+  );
+  ctx.statusBarItem.command = CAIRO_STATUS_BAR_COMMAND;
 
   updateStatusBar(ctx);
 }

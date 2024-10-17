@@ -17,7 +17,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
   }
 
   if (ctx.config.get("enableStatusBar")) {
-    await setupStatusBar(ctx);
+    await setupStatusBar(ctx, client);
   } else {
     ctx.log.warn("status bar is disabled");
     ctx.log.warn("note: set `cairo1.enableStatusBar` to `true` to enable it");
