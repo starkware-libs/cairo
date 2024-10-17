@@ -407,8 +407,12 @@ impl ImplImplId {
         self.trait_impl_id
     }
 
+    pub fn concrete_trait_impl_id(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitImplId> {
+        Ok(ConcreteTraitImplId::new(db, self.impl_id.concrete_trait(db)?, self.trait_impl_id))
+    }
+
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_impl_id.name(db.upcast()))
+        format!("{}::{}", self.impl_id.name(db.upcast()), self.trait_impl_id.name(db.upcast()),)
             .into()
     }
 }
@@ -587,7 +591,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
             param_impl.concrete_trait
         }
         ImplLongId::ImplVar(var) => Ok(var.lookup_intern(db).concrete_trait_id),
-        ImplLongId::ImplImpl(impl_impl) => impl_impl_concrete_trait(db, impl_impl),
+        ImplLongId::ImplImpl(impl_impl) => db.impl_impl_concrete_trait(impl_impl),
         ImplLongId::TraitImpl(trait_impl) => db.trait_impl_concrete_trait(trait_impl),
         ImplLongId::GeneratedImpl(generated_impl) => Ok(generated_impl.concrete_trait(db)),
     }
@@ -2621,7 +2625,7 @@ pub fn implicit_impl_impl_impl(
 ) -> Maybe<ImplId> {
     db.priv_implicit_impl_impl_semantic_data(impl_def_id, trait_impl_id, in_cycle)?.resolved_impl
 }
-/// Query implementation of [crate::db::SemanticGroup::implicit_impl_impl_impl].
+/// Cycle handling for [crate::db::SemanticGroup::implicit_impl_impl_impl].
 pub fn implicit_impl_impl_impl_cycle(
     db: &dyn SemanticGroup,
     _cycle: &salsa::Cycle,
@@ -2658,14 +2662,23 @@ pub fn priv_implicit_impl_impl_semantic_data(
         Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
     // We cannot use `Self` as it will always find the implicit impl.
     resolver.trait_or_impl_ctx = TraitOrImplContext::None;
-    let trait_impl_concrete_trait =
-        db.trait_impl_concrete_trait(trait_impl_id).and_then(|concrete_trait_id| {
+
+    let concrete_trait_impl_concrete_trait = db
+        .impl_def_concrete_trait(impl_def_id)
+        .and_then(|concrete_trait_id| {
+            db.concrete_trait_impl_concrete_trait(ConcreteTraitImplId::new(
+                db,
+                concrete_trait_id,
+                trait_impl_id,
+            ))
+        })
+        .and_then(|concrete_trait_id| {
             let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
             SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
                 .rewrite(concrete_trait_id)
         });
     let impl_lookup_context = resolver.impl_lookup_context();
-    let resolved_impl = trait_impl_concrete_trait.map(|concrete_trait_id| {
+    let resolved_impl = concrete_trait_impl_concrete_trait.and_then(|concrete_trait_id| {
         let imp = resolver.inference().new_impl_var(concrete_trait_id, None, impl_lookup_context);
         if let Err((err_set, _)) = resolver.inference().finalize_without_reporting() {
             diagnostics.report(
@@ -2678,7 +2691,7 @@ pub fn priv_implicit_impl_impl_semantic_data(
                 impl_def_id.stable_ptr(db.upcast()).untyped(),
             );
         };
-        imp
+        resolver.inference().rewrite(imp).map_err(|_| skip_diagnostic())
     });
 
     Ok(ImplicitImplImplData { resolved_impl, trait_impl_id, diagnostics: diagnostics.build() })
@@ -2764,11 +2777,7 @@ pub fn impl_impl_concrete_trait(
     db: &dyn SemanticGroup,
     impl_impl_id: ImplImplId,
 ) -> Maybe<ConcreteTraitId> {
-    let concrete_trait_impl = ConcreteTraitImplId::new(
-        db,
-        impl_impl_id.impl_id.concrete_trait(db)?,
-        impl_impl_id.trait_impl_id,
-    );
+    let concrete_trait_impl = impl_impl_id.concrete_trait_impl_id(db)?;
     let substitution = GenericSubstitution::from_impl(impl_impl_id.impl_id());
 
     db.concrete_trait_impl_concrete_trait(concrete_trait_impl).and_then(|concrete_trait_id| {
