@@ -1,59 +1,101 @@
+use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::ast::{TerminalLiteralNumber, TerminalShortString, TerminalString};
+use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::lookup_item::LookupItemEx;
+use cairo_lang_syntax::node::ast::{
+    Expr, ItemConstant, TerminalLiteralNumber, TerminalShortString, TerminalString,
+};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use indoc::formatdoc;
 use lsp_types::Hover;
-use smol_str::SmolStr;
 
 use crate::ide::hover::markdown_contents;
-use crate::lang::db::AnalysisDatabase;
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
 
-const TITLE: &str = "value of literal";
-const RULER: &str = "***";
-
-/// Narrow down [`SyntaxNode`] to [`TerminalLiteralNumber`], [`TermialString`] or
+/// Narrow down [`SyntaxNode`] to [`TerminalLiteralNumber`], [`TerminalString`] or
 /// [`TerminalShortString`] if it represents some literal
 /// and render a hover containing its value and type, return None otherwise.
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn literal(db: &AnalysisDatabase, node: &SyntaxNode, file_id: FileId) -> Option<Hover> {
-    let syntax_db = db.upcast();
-
-    match node.kind(syntax_db) {
+    match node.kind(db) {
         SyntaxKind::TokenLiteralNumber => {
-            let literal = TerminalLiteralNumber::from_syntax_node(syntax_db, node.parent()?);
-            number(db, &literal, file_id)
+            let parent = node.parent()?;
+            let literal = TerminalLiteralNumber::from_syntax_node(db, parent.clone());
+            let r#type = find_type(db, parent)?;
+            number(db, &literal, &r#type, file_id)
         }
         SyntaxKind::TokenString => {
-            let literal = TerminalString::from_syntax_node(syntax_db, node.parent()?);
-            string(db, &literal, file_id)
+            let parent = node.parent()?;
+            let literal = TerminalString::from_syntax_node(db, parent.clone());
+            let r#type = find_type(db, parent)?;
+            string(db, &literal, &r#type, file_id)
         }
-        SyntaxKind::TerminalShortString => {
-            let literal = TerminalShortString::from_syntax_node(syntax_db, node.parent()?);
-            short_string(db, &literal, file_id)
+        SyntaxKind::TokenShortString => {
+            let parent = node.parent()?;
+            let literal = TerminalShortString::from_syntax_node(db, parent.clone());
+            let r#type = find_type(db, parent)?;
+            short_string(db, &literal, &r#type, file_id)
         }
         _ => None,
     }
+}
+
+/// Get the type of an expression associated with [`SyntaxNode`].
+fn find_type(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
+    if let Some(function_id) = db.find_lookup_item(&node)?.function_with_body() {
+        find_type_in_function_context(db, node.clone(), function_id)
+    } else {
+        find_type_in_const_declaration(db, node)
+    }
+}
+
+/// Get the type of an expression associated with [`SyntaxNode`] assuming it's defined in the
+/// context of function.
+fn find_type_in_function_context(
+    db: &AnalysisDatabase,
+    node: SyntaxNode,
+    function_id: FunctionWithBodyId,
+) -> Option<String> {
+    let expr = Expr::from_syntax_node(db, node);
+    let expr_id = db.lookup_expr_by_ptr(function_id, expr.stable_ptr()).ok()?;
+    let r#type = db.expr_semantic(function_id, expr_id).ty().format(db);
+    Some(r#type)
+}
+
+// TODO: think about something better
+/// Get the type of an expression associated with [`SyntaxNode`] assuming it's a const item.
+fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
+    let mut node = node;
+
+    while node.kind(db) != SyntaxKind::ItemConstant {
+        node = node.parent()?;
+    }
+
+    let declaration = ItemConstant::from_syntax_node(db, node);
+    let r#type = declaration.type_clause(db).ty(db).as_syntax_node().get_text(db);
+    Some(r#type)
 }
 
 /// Format the number literal writing its decimal, hexadecimal and binary value and type.
 fn number(
     db: &AnalysisDatabase,
     literal: &TerminalLiteralNumber,
+    r#type: &str,
     file_id: FileId,
 ) -> Option<Hover> {
-    let (value, type_suffix) = literal.numeric_value_and_suffix(db)?;
-
-    let number_type = type_suffix.as_ref().map(SmolStr::as_str).unwrap_or("felt252");
-    let type_path = if number_type == "felt252" { "core" } else { "core::integer" };
+    let (value, _) = literal.numeric_value_and_suffix(db)?;
 
     let representation = formatdoc!(
         "
-        {TITLE}: `{value} ({value:#x} | {value:#b})`
-        {RULER}
-        Type: `{type_path}::{number_type}`
+        ```cairo
+        {type}
+        ```
+        ***
+        value of literal: `{value} ({value:#x} | {value:#b})`
         "
     );
 
@@ -68,14 +110,21 @@ fn number(
 }
 
 /// Format the number literal writing it along with the `core::byte_array::ByteArray` type.
-fn string(db: &AnalysisDatabase, literal: &TerminalString, file_id: FileId) -> Option<Hover> {
+fn string(
+    db: &AnalysisDatabase,
+    literal: &TerminalString,
+    r#type: &str,
+    file_id: FileId,
+) -> Option<Hover> {
     let string = literal.string_value(db)?;
 
     let representation = formatdoc!(
         r#"
-        {TITLE}: `"{string}"`
-        {RULER}
-        Type: `core::byte_array::ByteArray`
+        ```cairo
+        {type}
+        ```
+        ***
+        value of literal: `"{string}"`
         "#
     );
 
@@ -94,22 +143,27 @@ fn string(db: &AnalysisDatabase, literal: &TerminalString, file_id: FileId) -> O
 fn short_string(
     db: &AnalysisDatabase,
     literal: &TerminalShortString,
+    r#type: &str,
     file_id: FileId,
 ) -> Option<Hover> {
     let representation = match (literal.numeric_value(db), literal.string_value(db)) {
         (None, _) => None,
         (Some(numeric), None) => Some(formatdoc!(
             "
-            {TITLE}: `{numeric:#x}`
-            {RULER}
-            Type: `core::felt252`
+            ```cairo
+            {type}
+            ```
+            ***
+            value of literal: `{numeric:#x}`
             "
         )),
         (Some(numeric), Some(string)) => Some(formatdoc!(
             "
-            {TITLE}: `'{string}' ({numeric:#x})`
-            {RULER}
-            Type: `core::felt252`
+            ```cairo
+            {type}
+            ```
+            ***
+            value of literal: `'{string}' ({numeric:#x})`
             "
         )),
     }?;
