@@ -476,6 +476,6 @@ fn test_unknown_item_macro() {
         format!("{:?}", db.module_plugin_diagnostics(module_id).unwrap()),
         "[(ModuleFileId(CrateRoot(CrateId(0)), FileIndex(0)), PluginDiagnostic { stable_ptr: \
          SyntaxStablePtrId(3), message: \"Unknown inline item macro: 'unknown_item_macro'.\", \
-         severity: Error })]"
+         severity: Error, inner_span: None })]"
     )
 }
