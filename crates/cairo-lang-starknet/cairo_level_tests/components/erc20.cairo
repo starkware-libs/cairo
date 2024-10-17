@@ -19,7 +19,7 @@ pub trait ERC20Trait<TCS> {
 
 #[starknet::component]
 pub mod erc20 {
-    use starknet::{ContractAddress, get_caller_address, contract_address_const};
+    use starknet::{ContractAddress, get_caller_address, const_value};
     use core::num::traits::Zero;
     use starknet::storage::{
         Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
@@ -192,9 +192,7 @@ pub mod erc20 {
                 .emit(
                     Event::Transfer(
                         TransferEvent {
-                            from: contract_address_const::<0>(),
-                            to: recipient,
-                            value: initial_supply
+                            from: const_value::<0>(), to: recipient, value: initial_supply
                         }
                     )
                 );

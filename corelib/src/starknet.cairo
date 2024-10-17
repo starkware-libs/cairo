@@ -30,6 +30,9 @@ use syscalls::{
     get_class_hash_at_syscall
 };
 
+mod consts;
+pub use consts::{u251, const_value};
+
 /// secp256
 pub mod secp256_trait;
 pub mod secp256k1;
@@ -37,7 +40,10 @@ pub mod secp256r1;
 
 /// ContractAddress
 pub mod contract_address;
-pub use contract_address::{ContractAddress, contract_address_const};
+pub use contract_address::ContractAddress;
+#[feature("deprecated-starknet-consts")]
+#[deprecated(feature: "deprecated-starknet-consts", note: "Use `starknet::const_value` instead.")]
+pub use contract_address::contract_address_const;
 #[allow(unused_imports)]
 use contract_address::{
     ContractAddressIntoFelt252, Felt252TryIntoContractAddress, contract_address_to_felt252,
@@ -61,6 +67,7 @@ use eth_signature::verify_eth_signature;
 pub mod class_hash;
 pub use class_hash::ClassHash;
 #[allow(unused_imports)]
+#[feature("deprecated-starknet-consts")]
 use class_hash::{
     ClassHashIntoFelt252, Felt252TryIntoClassHash, class_hash_const, class_hash_to_felt252,
     class_hash_try_from_felt252

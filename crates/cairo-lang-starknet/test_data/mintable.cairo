@@ -70,7 +70,7 @@ trait ERC20Trait<TCS> {
 #[starknet::component]
 mod erc20 {
     use core::num::traits::Zero;
-    use starknet::{ContractAddress, get_caller_address, contract_address_const};
+    use starknet::{ContractAddress, get_caller_address, const_value};
     #[storage]
     struct Storage {
         name: felt252,
@@ -238,9 +238,7 @@ mod erc20 {
                 .emit(
                     Event::Transfer(
                         TransferEvent {
-                            from: contract_address_const::<0>(),
-                            to: recipient,
-                            value: initial_supply
+                            from: const_value::<0>(), to: recipient, value: initial_supply
                         }
                     )
                 );
@@ -257,7 +255,7 @@ trait MintTrait<TContractState> {
 
 #[starknet::component]
 mod mintable {
-    use starknet::{ContractAddress, contract_address_const};
+    use starknet::{ContractAddress, const_value};
     use super::ownable::OwnableHelperImpl;
     #[storage]
     struct Storage {}
@@ -282,7 +280,7 @@ mod mintable {
             erc20_component
                 .emit(
                     super::erc20::TransferEvent {
-                        from: contract_address_const::<0>(), to: account, value: amount
+                        from: const_value::<0>(), to: account, value: amount
                     }
                 );
         }
