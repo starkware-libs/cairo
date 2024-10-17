@@ -319,6 +319,16 @@ impl Backend {
 
             Self::dispatch_setup_tasks(&mut scheduler);
 
+            // Refresh diagnostics each time state changes.
+            // Although it is possible to mutate state without affecting the analysis database,
+            // we basically never hit such a case in CairoLS in happy paths.
+            scheduler.on_sync_task(Self::refresh_diagnostics);
+
+            // After handling diagnostics, attempt to swap the database to reduce memory use.
+            // TODO(mkaput): This should be an independent cronjob when diagnostics are run as
+            //   a background task.
+            scheduler.on_sync_task(Self::maybe_swap_database);
+
             let result = Self::event_loop(&connection, scheduler);
 
             if let Err(err) = connection.close() {
@@ -329,11 +339,12 @@ impl Backend {
         })
     }
 
+    /// Runs various setup tasks before entering the main event loop.
     fn dispatch_setup_tasks(scheduler: &mut Scheduler<'_>) {
         scheduler.local(Self::register_dynamic_capabilities);
 
         scheduler.local(|state, _notifier, requester, _responder| {
-            let _ = Self::reload_config(state, requester);
+            let _ = state.config.reload(requester, &state.client_capabilities);
         });
     }
 
@@ -385,7 +396,7 @@ impl Backend {
 
     /// Refresh diagnostics and send diffs to the client.
     #[tracing::instrument(level = "debug", skip_all)]
-    fn refresh_diagnostics(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
+    fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
         // TODO(#6318): implement a pop queue of size 1 for diags
         let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
         let mut processed_modules: HashSet<ModuleId> = HashSet::default();
@@ -410,7 +421,7 @@ impl Backend {
                     &file_modules_ids,
                     &mut processed_modules,
                     &mut files_with_set_diagnostics,
-                    notifier,
+                    &notifier,
                 );
             }
         });
@@ -441,7 +452,7 @@ impl Backend {
                     &file_modules_ids,
                     &mut processed_modules,
                     &mut files_with_set_diagnostics,
-                    notifier,
+                    &notifier,
                 );
             }
         });
@@ -468,11 +479,6 @@ impl Backend {
                 });
             }
         });
-
-        // After handling of all diagnostics, attempting to swap the database to reduce memory
-        // consumption.
-        // This should be an independent cronjob when diagnostics are run as a background task.
-        Backend::maybe_swap_database(state, notifier)
     }
 
     /// Refresh diagnostics for a single file.
@@ -587,28 +593,28 @@ impl Backend {
 
     /// Checks if enough time passed since last db swap, and if so, swaps the database.
     #[tracing::instrument(level = "trace", skip_all)]
-    fn maybe_swap_database(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
+    fn maybe_swap_database(state: &mut State, notifier: Notifier) {
         if state.last_replace.elapsed().unwrap() <= state.db_replace_interval {
             // Not enough time passed since last swap.
-            return Ok(());
+            return;
         }
 
-        let result = Backend::swap_database(state, notifier);
+        Backend::swap_database(state, &notifier);
 
         state.last_replace = SystemTime::now();
-
-        result
     }
 
     /// Perform database swap
     #[tracing::instrument(level = "debug", skip_all)]
-    fn swap_database(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
+    fn swap_database(state: &mut State, notifier: &Notifier) {
         debug!("scheduled");
-        let mut new_db = ls_catch_unwind(|| {
+        let Ok(mut new_db) = ls_catch_unwind(|| {
             let mut new_db = AnalysisDatabase::new(&state.tricks);
             ensure_exists_in_db(&mut new_db, &state.db, state.open_files.iter());
             new_db
-        })?;
+        }) else {
+            return;
+        };
         debug!("initial setup done");
         Backend::ensure_diagnostics_queries_up_to_date(
             &mut new_db,
@@ -624,7 +630,6 @@ impl Backend {
         state.db = new_db;
 
         debug!("done");
-        Ok(())
     }
 
     /// Ensures that all diagnostics are up to date.
@@ -726,7 +731,7 @@ impl Backend {
         notifier: &Notifier,
         requester: &mut Requester<'_>,
     ) -> LSPResult<()> {
-        Backend::reload_config(state, requester)?;
+        state.config.reload(requester, &state.client_capabilities)?;
 
         for uri in state.open_files.iter() {
             let Some(file_id) = state.db.file_for_url(uri) else { continue };
@@ -741,13 +746,6 @@ impl Backend {
             }
         }
 
-        Backend::refresh_diagnostics(state, notifier)
-    }
-
-    /// Reload the [`Config`] and all its dependencies.
-    fn reload_config(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
-        state.config.reload(requester, &state.client_capabilities, |state, notifier| {
-            Backend::refresh_diagnostics(state, notifier).ok();
-        })
+        Ok(())
     }
 }

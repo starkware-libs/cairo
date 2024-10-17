@@ -19,8 +19,8 @@ mod task;
 mod thread;
 
 pub(super) use task::BackgroundSchedule;
-pub(crate) use task::{SyncTask, Task};
-pub(crate) use thread::JoinHandle;
+pub use task::{SyncTask, Task};
+pub use thread::JoinHandle;
 
 /// The event loop thread is actually a secondary thread that we spawn from the
 /// _actual_ main thread. This secondary thread has a larger stack size
@@ -38,18 +38,22 @@ pub fn event_loop_thread(
         .spawn(func)?)
 }
 
+type SyncTaskHook = Box<dyn Fn(&mut State, Notifier)>;
+
 pub struct Scheduler<'s> {
     state: &'s mut State,
     client: Client<'s>,
     background_pool: thread::Pool,
+    sync_task_hooks: Vec<SyncTaskHook>,
 }
 
 impl<'s> Scheduler<'s> {
     pub fn new(state: &'s mut State, worker_threads: NonZeroUsize, sender: ClientSender) -> Self {
         Self {
             state,
-            background_pool: thread::Pool::new(worker_threads),
             client: Client::new(sender),
+            background_pool: thread::Pool::new(worker_threads),
+            sync_task_hooks: Default::default(),
         }
     }
 
@@ -65,7 +69,11 @@ impl<'s> Scheduler<'s> {
             Task::Sync(SyncTask { func }) => {
                 let notifier = self.client.notifier();
                 let responder = self.client.responder();
-                func(self.state, notifier, &mut self.client.requester, responder);
+                func(self.state, notifier.clone(), &mut self.client.requester, responder);
+
+                for hook in &self.sync_task_hooks {
+                    hook(self.state, notifier.clone());
+                }
             }
             Task::Background(BackgroundTaskBuilder { schedule, builder: func }) => {
                 let static_func = func(self.state);
@@ -92,6 +100,18 @@ impl<'s> Scheduler<'s> {
         func: impl FnOnce(&mut State, Notifier, &mut Requester<'_>, Responder) + 's,
     ) {
         self.dispatch(Task::local(func));
+    }
+
+    /// Registers a hook to be called each time a synchronous task is executed.
+    ///
+    /// All hooks are called right after task execution, in the same thread and with the same
+    /// context.
+    /// This mechanism is useful for doing various bookkeeping in reaction to user interaction
+    /// such as scheduling diagnostics computation, starting manual GC, etc.
+    /// This includes reacting to state changes, though note that this hook will be called even
+    /// after tasks that do not mutate the state.
+    pub fn on_sync_task(&mut self, hook: impl Fn(&mut State, Notifier) + 'static) {
+        self.sync_task_hooks.push(Box::new(hook));
     }
 }
 
