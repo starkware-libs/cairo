@@ -9,9 +9,12 @@ export class Context {
         log: true,
       }),
     );
-    extensionContext.subscriptions.push(log);
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 
-    return new Context(extensionContext, log);
+    extensionContext.subscriptions.push(log);
+    extensionContext.subscriptions.push(statusBarItem);
+
+    return new Context(extensionContext, log, statusBarItem);
   }
 
   public readonly config: Config = new Config();
@@ -19,5 +22,6 @@ export class Context {
   private constructor(
     public readonly extension: vscode.ExtensionContext,
     public readonly log: RootLogOutputChannel,
+    public readonly statusBarItem: vscode.StatusBarItem,
   ) {}
 }
