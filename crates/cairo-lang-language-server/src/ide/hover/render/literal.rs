@@ -16,9 +16,9 @@ use crate::ide::hover::markdown_contents;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
 
-/// Narrow down [`SyntaxNode`] to [`TerminalLiteralNumber`], [`TerminalString`] or
+/// Narrows down [`SyntaxNode`] to [`TerminalLiteralNumber`], [`TerminalString`] or
 /// [`TerminalShortString`] if it represents some literal
-/// and render a hover containing its value and type, return None otherwise.
+/// and renders a hover containing its value and type, returns None otherwise.
 #[tracing::instrument(level = "trace", skip_all)]
 pub fn literal(db: &AnalysisDatabase, node: &SyntaxNode, file_id: FileId) -> Option<Hover> {
     match node.kind(db) {
@@ -44,7 +44,7 @@ pub fn literal(db: &AnalysisDatabase, node: &SyntaxNode, file_id: FileId) -> Opt
     }
 }
 
-/// Get the type of an expression associated with [`SyntaxNode`].
+/// Gets the type of an expression associated with [`SyntaxNode`].
 fn find_type(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
     if let Some(function_id) = db.find_lookup_item(&node)?.function_with_body() {
         find_type_in_function_context(db, node.clone(), function_id)
@@ -53,7 +53,7 @@ fn find_type(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
     }
 }
 
-/// Get the type of an expression associated with [`SyntaxNode`] assuming it's defined in the
+/// Gets the type of an expression associated with [`SyntaxNode`] assuming it's defined in the
 /// context of function.
 fn find_type_in_function_context(
     db: &AnalysisDatabase,
@@ -67,7 +67,7 @@ fn find_type_in_function_context(
 }
 
 // TODO: think about something better
-/// Get the type of an expression associated with [`SyntaxNode`] assuming it's a const item.
+/// Gets the type of an expression associated with [`SyntaxNode`] assuming it's a const item.
 fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
     let mut node = node;
 
@@ -80,7 +80,7 @@ fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Op
     Some(r#type)
 }
 
-/// Format the number literal writing its decimal, hexadecimal and binary value and type.
+/// Formats the number literal writing its decimal, hexadecimal and binary value and type.
 fn number(
     db: &AnalysisDatabase,
     literal: &TerminalLiteralNumber,
@@ -109,7 +109,7 @@ fn number(
     })
 }
 
-/// Format the number literal writing it along with the `core::byte_array::ByteArray` type.
+/// Formats the number literal writing it along with the `core::byte_array::ByteArray` type.
 fn string(
     db: &AnalysisDatabase,
     literal: &TerminalString,
@@ -138,7 +138,7 @@ fn string(
     })
 }
 
-/// Format the short string literal writing its textual and numeric value along with the
+/// Formats the short string literal writing its textual and numeric value along with the
 /// `core::felt252` type.
 fn short_string(
     db: &AnalysisDatabase,
