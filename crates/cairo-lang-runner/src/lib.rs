@@ -164,25 +164,19 @@ impl From<Felt252> for Arg {
 }
 
 /// Builds hints_dict required in cairo_vm::types::program::Program from instructions.
-pub fn build_hints_dict<'b>(
-    instructions: impl Iterator<Item = &'b Instruction>,
+pub fn build_hints_dict(
+    hints: &[(usize, Vec<Hint>)],
 ) -> (HashMap<usize, Vec<HintParams>>, HashMap<String, Hint>) {
     let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
     let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
 
-    let mut hint_offset = 0;
-
-    for instruction in instructions {
-        if !instruction.hints.is_empty() {
-            // Register hint with string for the hint processor.
-            for hint in instruction.hints.iter() {
-                string_to_hint.insert(hint.representing_string(), hint.clone());
-            }
-            // Add hint, associated with the instruction offset.
-            hints_dict
-                .insert(hint_offset, instruction.hints.iter().map(hint_to_hint_params).collect());
+    for (offset, offset_hints) in hints {
+        // Register hint with string for the hint processor.
+        for hint in offset_hints {
+            string_to_hint.insert(hint.representing_string(), hint.clone());
         }
-        hint_offset += instruction.body.op_size();
+        // Add hint, associated with the instruction offset.
+        hints_dict.insert(*offset, offset_hints.iter().map(hint_to_hint_params).collect());
     }
     (hints_dict, string_to_hint)
 }
@@ -245,9 +239,8 @@ impl SierraCasmRunner {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = Self::create_code_footer();
-        let (hints_dict, string_to_hint) =
-            build_hints_dict(chain!(&entry_code, &self.casm_program.instructions));
         let assembled_program = self.casm_program.clone().assemble_ex(&entry_code, &footer);
+        let (hints_dict, string_to_hint) = build_hints_dict(&assembled_program.hints);
 
         let mut hint_processor = CairoHintProcessor {
             runner: Some(self),
