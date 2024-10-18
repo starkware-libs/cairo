@@ -1,0 +1,14 @@
+//! > Test if diagnostics are properly mapped back on macros invocations
+
+//! > test_runner_name
+test_diagnostics
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+

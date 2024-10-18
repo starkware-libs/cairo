@@ -236,6 +236,13 @@ fn ensure_exists_in_db<'a>(
     new_db.set_file_overrides(Arc::new(new_overrides));
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub(crate) enum Progress {
+    Begin,
+    Report,
+    End,
+}
+
 struct Backend {
     connection: Connection,
     state: State,
@@ -572,5 +579,47 @@ impl Backend {
     /// Reload the [`Config`] and all its dependencies.
     fn reload_config(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
         state.config.reload(requester, &state.client_capabilities)
+    }
+
+    /// Sends a request to the client to report progress with different statuses
+    fn report_progress(
+        &mut self,
+        requester: &mut Requester<'_>,
+        notifier: &Notifier,
+        title: &str,
+        state: Progress,
+        message: Option<String>,
+    ) {
+        let token = lsp_types::ProgressToken::String(format!("rustAnalyzer/{title}"));
+        tracing::debug!(?token, ?state, "report_progress {message:?}");
+        let work_done_progress = match state {
+            Progress::Begin => {
+                requester.request::<lsp_types::request::WorkDoneProgressCreate>(
+                    lsp_types::WorkDoneProgressCreateParams { token: token.clone() },
+                    |_| Task::nothing(),
+                );
+
+                lsp_types::WorkDoneProgress::Begin(lsp_types::WorkDoneProgressBegin {
+                    title: title.into(),
+                    message,
+                    cancellable: None,
+                    percentage: None,
+                })
+            }
+            Progress::Report => {
+                lsp_types::WorkDoneProgress::Report(lsp_types::WorkDoneProgressReport {
+                    message,
+                    cancellable: None,
+                    percentage: None,
+                })
+            }
+            Progress::End => {
+                lsp_types::WorkDoneProgress::End(lsp_types::WorkDoneProgressEnd { message })
+            }
+        };
+        notifier.notify::<lsp_types::notification::Progress>(lsp_types::ProgressParams {
+            token,
+            value: lsp_types::ProgressParamsValue::WorkDone(work_done_progress),
+        });
     }
 }

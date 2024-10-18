@@ -10,7 +10,7 @@ use self::state::{
     DiagnosticsState, FileDiagnosticsChange, StateDiff, StateSnapshotForDiagnostics,
 };
 use crate::lang::db::AnalysisDatabase;
-use crate::server::client::{Notifier, Responder};
+use crate::server::client::{Notifier, Requester, Responder};
 use crate::server::panic::{catch_cancellation, UnwindErrorKind};
 use crate::server::schedule::thread;
 use crate::server::schedule::thread::ThreadPriority;
@@ -26,18 +26,19 @@ mod state;
 pub struct Diagnostics {
     state: DiagnosticsState,
     notifier: Notifier,
+    requester: Requester,
     thread_pool: thread::SharedPool,
 }
 
 impl Diagnostics {
     pub fn tasks(
         thread_pool: thread::SharedPool,
-    ) -> (impl Fn(&mut State, Notifier), impl FnOnce(Notifier, Responder)) {
+    ) -> (impl Fn(&mut State, Notifier), impl FnOnce(Notifier, Requester, Responder)) {
         let (slot_reader, slot_writer) = slot(None);
         let jobs_number = Self::jobs_number(&thread_pool);
 
-        let diagnostics_main_job = move |notifier, _responder| {
-            let mut diagnostics = Self::new(notifier, thread_pool);
+        let diagnostics_main_job = move |notifier, requester, _responder| {
+            let mut diagnostics = Self::new(notifier, requester, thread_pool);
 
             while let Some(message) = slot_reader.pop() {
                 diagnostics.refresh(message);
@@ -55,8 +56,8 @@ impl Diagnostics {
         (diagnostics_post_hook, diagnostics_main_job)
     }
 
-    fn new(notifier: Notifier, thread_pool: thread::SharedPool) -> Self {
-        Self { state: Default::default(), thread_pool, notifier }
+    fn new(notifier: Notifier, requester: Requester, thread_pool: thread::SharedPool) -> Self {
+        Self { state: Default::default(), thread_pool, notifier, requester }
     }
 
     fn jobs_number(thread_pool: &thread::SharedPool) -> usize {
