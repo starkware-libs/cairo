@@ -17,10 +17,12 @@ use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::Upcast;
 
 pub use self::semantic::*;
+pub use self::swapper::*;
 pub use self::syntax::*;
 use crate::Tricks;
 
 mod semantic;
+mod swapper;
 mod syntax;
 
 /// The Cairo compiler Salsa database tailored for language server usage.

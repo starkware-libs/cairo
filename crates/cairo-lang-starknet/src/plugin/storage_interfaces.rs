@@ -519,6 +519,7 @@ fn add_interface_struct_definition(
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
             "#[derive(Drop, Copy)]
+            #[doc(hidden)]
             $struct_visibility$struct {node_type_name} {{
 ",
         ),
@@ -574,7 +575,8 @@ fn add_interface_impl(
 
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "impl {node_impl_name} of {node_trait_name} {{
+            "#[doc(hidden)]
+             impl {node_impl_name} of {node_trait_name} {{
                  type {node_type} = {node_type_name};
                  fn {node_init_function_name}(self: {originating_type}) -> {node_type_name} \
              {{{node_constructor_prefix_code}

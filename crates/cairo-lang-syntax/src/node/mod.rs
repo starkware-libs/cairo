@@ -289,6 +289,14 @@ impl SyntaxNode {
     pub fn preorder<'db>(&self, db: &'db dyn SyntaxGroup) -> Preorder<'db> {
         Preorder::new(self.clone(), db)
     }
+
+    /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
+    pub fn tokens<'a>(&'a self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self> + 'a {
+        self.preorder(db).filter_map(|event| match event {
+            WalkEvent::Enter(node) if node.green_node(db).kind.is_terminal() => Some(node),
+            _ => None,
+        })
+    }
 }
 
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
