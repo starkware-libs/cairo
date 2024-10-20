@@ -611,6 +611,11 @@ error: Plugin diagnostic: Unused argument.
     format!("{2}{0}", ba, 2, 1);
                           ^
 
+error: Plugin diagnostic: Macro can not be parsed as legacy macro.
+ --> lib.cairo:32:5
+    format!;
+    ^*****^
+
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
@@ -714,6 +719,11 @@ error: Plugin diagnostic: Unused argument.
     print!("{2}{0}", ba, 2, 1);
                          ^
 
+error: Plugin diagnostic: Macro can not be parsed as legacy macro.
+ --> lib.cairo:32:5
+    print!;
+    ^****^
+
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
@@ -816,6 +826,11 @@ error: Plugin diagnostic: Unused argument.
  --> lib.cairo:29:28
     println!("{2}{0}", ba, 2, 1);
                            ^
+
+error: Plugin diagnostic: Macro can not be parsed as legacy macro.
+ --> lib.cairo:32:5
+    println!;
+    ^******^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9

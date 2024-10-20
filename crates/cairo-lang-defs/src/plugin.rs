@@ -6,9 +6,10 @@ use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::CodeMapping;
-use cairo_lang_syntax::node::ast;
+use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::{SyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
 
@@ -68,13 +69,43 @@ pub struct PluginDiagnostic {
     pub stable_ptr: SyntaxStablePtrId,
     pub message: String,
     pub severity: Severity,
+    pub inner_span: Option<(TextWidth, TextWidth)>,
 }
 impl PluginDiagnostic {
     pub fn error(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Error }
+        PluginDiagnostic {
+            stable_ptr: stable_ptr.into(),
+            message,
+            severity: Severity::Error,
+            inner_span: None,
+        }
     }
+
+    /// Creates a diagnostic, pointing to an inner span inside the given stable pointer.
+    pub fn error_with_inner_span(
+        db: &dyn SyntaxGroup,
+        stable_ptr: impl Into<SyntaxStablePtrId>,
+        inner_span: SyntaxNode,
+        message: String,
+    ) -> PluginDiagnostic {
+        let stable_ptr = stable_ptr.into();
+        let offset = inner_span.offset() - stable_ptr.lookup(db).offset();
+        let width = inner_span.width(db);
+        PluginDiagnostic {
+            stable_ptr,
+            message,
+            severity: Severity::Error,
+            inner_span: Some((offset, width)),
+        }
+    }
+
     pub fn warning(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
-        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Warning }
+        PluginDiagnostic {
+            stable_ptr: stable_ptr.into(),
+            message,
+            severity: Severity::Warning,
+            inner_span: None,
+        }
     }
 }
 
