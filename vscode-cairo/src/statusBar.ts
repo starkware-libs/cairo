@@ -13,11 +13,11 @@ export class StatusBar {
     this.context.extension.subscriptions.push(this.statusBarItem);
   }
 
-  public setupStatusBar(client?: lc.LanguageClient): void {
+  public setup(client?: lc.LanguageClient): void {
     this.context.extension.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration("cairo1.showInStatusBar")) {
-          this.updateStatusBar();
+          this.update();
         }
       }),
     );
@@ -33,10 +33,10 @@ export class StatusBar {
     );
     this.statusBarItem.command = CAIRO_STATUS_BAR_COMMAND;
 
-    this.updateStatusBar();
+    this.update();
   }
 
-  public async updateStatusBar(): Promise<void> {
+  private async update(): Promise<void> {
     const config = vscode.workspace.getConfiguration("cairo1");
     const showInStatusBar = config.get<boolean>("showInStatusBar", true);
 
