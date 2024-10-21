@@ -2184,25 +2184,16 @@ pub fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
     (cell, base_offset)
 }
 
-/// Provides context for the `additional_initialization` callback function of [run_function].
-pub struct RunFunctionContext<'a> {
-    pub vm: &'a mut VirtualMachine,
-    pub data_len: usize,
-}
-
 /// Runs CairoRunner on layout with prime.
 /// Allows injecting custom CairoRunner.
 pub fn run_function_with_runner(
-    data_len: usize,
-    additional_initialization: fn(
-        context: RunFunctionContext<'_>,
-    ) -> Result<(), Box<CairoRunError>>,
+    additional_initialization: impl FnOnce(&mut VirtualMachine) -> Result<(), Box<CairoRunError>>,
     hint_processor: &mut dyn HintProcessor,
     runner: &mut CairoRunner,
 ) -> Result<(), Box<CairoRunError>> {
     let end = runner.initialize(true).map_err(CairoRunError::from)?;
 
-    additional_initialization(RunFunctionContext { vm: &mut runner.vm, data_len })?;
+    additional_initialization(&mut runner.vm)?;
 
     runner.run_until_pc(end, hint_processor).map_err(CairoRunError::from)?;
     runner.end_run(true, false, hint_processor).map_err(CairoRunError::from)?;
@@ -2249,18 +2240,15 @@ pub struct RunFunctionResult {
 pub fn run_function<'a, 'b: 'a>(
     bytecode: impl Iterator<Item = &'a BigInt> + Clone,
     builtins: Vec<BuiltinName>,
-    additional_initialization: fn(
-        context: RunFunctionContext<'_>,
-    ) -> Result<(), Box<CairoRunError>>,
+    additional_initialization: impl FnOnce(&mut VirtualMachine) -> Result<(), Box<CairoRunError>>,
     hint_processor: &mut dyn HintProcessor,
     hints_dict: HashMap<usize, Vec<HintParams>>,
 ) -> Result<RunFunctionResult, Box<CairoRunError>> {
     let data: Vec<MaybeRelocatable> =
         bytecode.map(Felt252::from).map(MaybeRelocatable::from).collect();
-    let data_len = data.len();
     let mut runner = build_cairo_runner(data, builtins, hints_dict)?;
 
-    run_function_with_runner(data_len, additional_initialization, hint_processor, &mut runner)?;
+    run_function_with_runner(additional_initialization, hint_processor, &mut runner)?;
 
     let used_resources = runner
         .get_execution_resources()
