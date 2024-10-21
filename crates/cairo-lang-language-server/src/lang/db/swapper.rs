@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
@@ -11,7 +12,6 @@ use tracing::{error, warn};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
-use crate::server::panic::ls_catch_unwind;
 use crate::{Tricks, env_config};
 
 /// Swaps entire [`AnalysisDatabase`] with empty one periodically.
@@ -65,11 +65,11 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
-        let Ok(new_db) = ls_catch_unwind(|| {
+        let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
             let mut new_db = AnalysisDatabase::new(tricks);
             ensure_exists_in_db(&mut new_db, db, open_files.iter());
             new_db
-        }) else {
+        })) else {
             error!("caught panic when preparing new db for swap");
             return;
         };
