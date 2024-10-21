@@ -1,7 +1,10 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, MemberId, VariantId};
+use cairo_lang_defs::ids::{
+    LanguageElementId, LookupItemId, MemberId, NamedLanguageElementId, VariantId,
+};
 use cairo_lang_filesystem::ids::CrateId;
+use smol_str::SmolStr;
 
 /// Item which documentation can be fetched from source code.
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
@@ -21,6 +24,17 @@ impl DocumentableItemId {
             }
             DocumentableItemId::Member(member_id) => Some(member_id.stable_location(db)),
             DocumentableItemId::Variant(variant_id) => Some(variant_id.stable_location(db)),
+        }
+    }
+
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            DocumentableItemId::LookupItem(LookupItemId::ModuleItem(id)) => id.name(db),
+            DocumentableItemId::LookupItem(LookupItemId::ImplItem(id)) => id.name(db),
+            DocumentableItemId::LookupItem(LookupItemId::TraitItem(id)) => id.name(db),
+            DocumentableItemId::Crate(id) => id.name(db.upcast()),
+            DocumentableItemId::Member(id) => id.name(db),
+            DocumentableItemId::Variant(id) => id.name(db),
         }
     }
 }

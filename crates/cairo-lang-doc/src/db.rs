@@ -5,20 +5,23 @@ use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, Tra
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
-use cairo_lang_syntax::node::SyntaxNode;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_utils::Upcast;
-use itertools::{Itertools, chain};
+use itertools::{chain, Itertools};
 
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
+use crate::types::{DocumentationCommentParser, DocumentationCommentToken};
 
 #[salsa::query_group(DocDatabase)]
 pub trait DocGroup:
     Upcast<dyn DefsGroup>
     + Upcast<dyn SyntaxGroup>
     + Upcast<dyn FilesGroup>
+    + Upcast<dyn SemanticGroup>
     + SyntaxGroup
     + FilesGroup
     + DefsGroup
@@ -29,6 +32,11 @@ pub trait DocGroup:
     /// Gets the documentation of an item.
     fn get_item_documentation(&self, item_id: DocumentableItemId) -> Option<String>;
 
+    fn get_item_documentation_as_tokens(
+        &self,
+        item_id: DocumentableItemId,
+    ) -> Vec<DocumentationCommentToken>;
+
     /// Gets the signature of an item (i.e., item without its body).
     fn get_item_signature(&self, item_id: DocumentableItemId) -> String;
 }
@@ -37,16 +45,8 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
     match item_id {
         DocumentableItemId::Crate(crate_id) => get_crate_root_module_documentation(db, crate_id),
         item_id => {
-            // We check for different type of comments for the item. Even modules can have both
-            // inner and module level comments.
-            let outer_comments = extract_item_outer_documentation(db, item_id);
-            // In case if item_id is a module, there are 2 possible cases:
-            // 1. Inline module: It could have inner comments, but not the module_level.
-            // 2. Non-inline Module (module as file): It could have module level comments, but not
-            //    the inner ones.
-            let inner_comments = extract_item_inner_documentation(db, item_id);
-            let module_level_comments =
-                extract_item_module_level_documentation(db.upcast(), item_id);
+            let (outer_comments, inner_comments, module_level_comments) =
+                get_item_documentation_content(db, item_id);
             match (module_level_comments, outer_comments, inner_comments) {
                 (None, None, None) => None,
                 (module_level_comments, outer_comments, inner_comments) => Some(
@@ -193,6 +193,60 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
         _ => "".to_owned(),
     };
     fmt(definition)
+}
+
+fn get_item_documentation_as_tokens(
+    db: &dyn DocGroup,
+    item_id: DocumentableItemId,
+) -> Vec<DocumentationCommentToken> {
+    let (outer_comments, inner_comments, module_level_comments) = match item_id {
+        DocumentableItemId::Crate(crate_id) => {
+            (None, None, get_crate_root_module_documentation(db, crate_id))
+        }
+        item_id => get_item_documentation_content(db, item_id),
+    };
+
+    let doc_parser = DocumentationCommentParser::new(db.upcast());
+
+    let outer_comment_tokens = outer_comments
+        .map(|comment| doc_parser.from_documentation_comment(item_id, comment))
+        .unwrap_or(Vec::default());
+
+    let inner_comment_tokens = inner_comments
+        .map(|comment| doc_parser.from_documentation_comment(item_id, comment))
+        .unwrap_or(Vec::default());
+
+    let module_level_comment_tokens = module_level_comments
+        .map(|comment| doc_parser.from_documentation_comment(item_id, comment))
+        .unwrap_or(Vec::default());
+
+    let separator_token = vec![DocumentationCommentToken::CommentContent(" ".to_string())];
+
+    chain!(
+        outer_comment_tokens,
+        separator_token.clone(),
+        inner_comment_tokens,
+        separator_token.clone(),
+        module_level_comment_tokens
+    )
+    .collect()
+}
+
+fn get_item_documentation_content(
+    db: &dyn DocGroup,
+    item_id: DocumentableItemId,
+) -> (Option<String>, Option<String>, Option<String>) {
+    // We check for different type of comments for the item. Even modules can have both
+    // inner and module level comments.
+    let outer_comments = extract_item_outer_documentation(db, item_id);
+    // In case if item_id is a module, there are 2 possible cases:
+    // 1. Inline module: It could have inner comments, but not the module_level.
+    // 2. Non-inline Module (module as a file): It could have module level comments, but not
+    //    the inner ones.
+    let inner_comments = extract_item_inner_documentation(db, item_id);
+    let module_level_comments = extract_item_module_level_documentation(db.upcast(), item_id);
+
+    (outer_comments, inner_comments, module_level_comments)
 }
 
 /// Run Cairo formatter over code with extra post-processing that is specific to signatures.

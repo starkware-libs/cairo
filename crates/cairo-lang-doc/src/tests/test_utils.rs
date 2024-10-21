@@ -1,9 +1,9 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
-    init_dev_corelib, init_files_group,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, CrateConfiguration, ExternalFiles,
+    FilesDatabase, FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};

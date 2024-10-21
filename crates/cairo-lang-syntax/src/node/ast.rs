@@ -7,7 +7,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use cairo_lang_filesystem::span::TextWidth;
-use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
+use cairo_lang_utils::{extract_matches, Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use super::element_list::ElementList;

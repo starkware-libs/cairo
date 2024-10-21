@@ -3,13 +3,13 @@
 mod test;
 
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
-use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{
     TokenNewline, TokenSingleLineComment, TokenSingleLineDocComment, TokenSingleLineInnerComment,
     TokenWhitespace, TriviumGreen,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::Token;
 use cairo_lang_utils::require;
 use smol_str::SmolStr;
 
