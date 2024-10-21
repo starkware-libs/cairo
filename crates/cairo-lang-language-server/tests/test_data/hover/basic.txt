@@ -91,6 +91,13 @@ fn many_variables() {
     let g = 0o<caret>77;
 }
 
+/// Declares many variables generating errors.
+fn many_wrong_variables() {
+    let a: u32 = 0x2<caret>137_felt252;
+    let b: u8 = "some_st<caret>ring";
+    let c: u8 = 0x<caret>fff;
+}
+
 //! > hover #0
 // = source context
     let mut x<caret> = 5;
@@ -665,3 +672,39 @@ core::felt252
 ```
 ***
 value of literal: `63 (0x3f | 0b111111)`
+
+//! > hover #41
+// = source context
+    let a: u32 = 0x2<caret>137_felt252;
+// = highlight
+    let a: u32 = <sel>0x2137_felt252</sel>;
+// = popover
+```cairo
+core::felt252
+```
+***
+value of literal: `8503 (0x2137 | 0b10000100110111)`
+
+//! > hover #42
+// = source context
+    let b: u8 = "some_st<caret>ring";
+// = highlight
+    let b: u8 = <sel>"some_string"</sel>;
+// = popover
+```cairo
+core::integer::u8
+```
+***
+value of literal: `"some_string"`
+
+//! > hover #43
+// = source context
+    let c: u8 = 0x<caret>fff;
+// = highlight
+    let c: u8 = <sel>0xfff</sel>;
+// = popover
+```cairo
+core::integer::u8
+```
+***
+value of literal: `4095 (0xfff | 0b111111111111)`
