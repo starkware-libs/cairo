@@ -15,9 +15,7 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
     ctx.log.warn("note: set `cairo1.enableLanguageServer` to `true` to enable it");
   }
 
-  if (ctx.config.get("showInStatusBar")) {
-    ctx.statusBar.setupStatusBar(client);
-  }
+  ctx.statusBar.setupStatusBar(client);
 }
 
 export function deactivate(): Thenable<void> | undefined {
