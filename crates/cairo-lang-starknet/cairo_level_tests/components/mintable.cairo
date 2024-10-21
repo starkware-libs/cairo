@@ -8,7 +8,7 @@ pub trait MintTrait<TContractState> {
 #[starknet::component]
 pub mod mintable {
     use core::num::traits::Zero;
-    use starknet::{ContractAddress, contract_address_const};
+    use starknet::{ContractAddress, const_value};
     use starknet::storage::{
         StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapWriteAccess,
         StorageMapReadAccess
@@ -40,7 +40,7 @@ pub mod mintable {
             erc20_component
                 .emit(
                     erc20_comp::TransferEvent {
-                        from: contract_address_const::<0>(), to: account, value: amount
+                        from: const_value::<0>(), to: account, value: amount
                     }
                 );
         }

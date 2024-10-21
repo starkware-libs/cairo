@@ -1,4 +1,5 @@
 use core::num::traits::Zero;
+use starknet::const_value;
 
 use super::utils::serialized;
 
@@ -175,7 +176,7 @@ fn test_get_block_info() {
     assert(info.sequencer_address.is_zero(), 'non default sequencer_address');
     starknet::testing::set_block_number(1_u64);
     starknet::testing::set_block_timestamp(2_u64);
-    starknet::testing::set_sequencer_address(starknet::contract_address_const::<3>());
+    starknet::testing::set_sequencer_address(const_value::<3>());
     let info = starknet::get_block_info().unbox();
     assert_eq!(info.block_number, 1_u64);
     assert_eq!(info.block_timestamp, 2_u64);
@@ -185,14 +186,14 @@ fn test_get_block_info() {
 #[test]
 fn test_get_caller_address() {
     assert(starknet::get_caller_address().is_zero(), 'non default value');
-    starknet::testing::set_caller_address(starknet::contract_address_const::<1>());
+    starknet::testing::set_caller_address(const_value::<1>());
     assert_eq!(starknet::get_caller_address().into(), 1);
 }
 
 #[test]
 fn test_get_contract_address() {
     assert(starknet::get_contract_address().is_zero(), 'non default value');
-    starknet::testing::set_contract_address(starknet::contract_address_const::<1>());
+    starknet::testing::set_contract_address(const_value::<1>());
     assert_eq!(starknet::get_contract_address().into(), 1);
 }
 
@@ -206,7 +207,7 @@ fn test_get_version() {
 #[test]
 fn test_get_account_contract_address() {
     assert(starknet::get_tx_info().unbox().account_contract_address.is_zero(), 'non default value');
-    starknet::testing::set_account_contract_address(starknet::contract_address_const::<1>());
+    starknet::testing::set_account_contract_address(const_value::<1>());
     assert_eq!(starknet::get_tx_info().unbox().account_contract_address.into(), 1);
 }
 
@@ -267,14 +268,14 @@ fn test_get_block_hash() {
 #[test]
 #[should_panic]
 fn test_pop_log_empty_logs() {
-    let contract_address = starknet::contract_address_const::<0x1234>();
+    let contract_address = const_value::<0x1234>();
     starknet::testing::pop_log_raw(contract_address).unwrap();
 }
 
 #[test]
 #[should_panic]
 fn test_pop_l2_to_l1_message_empty_messages() {
-    let contract_address = starknet::contract_address_const::<0x1234>();
+    let contract_address = const_value::<0x1234>();
     starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
 }
 
@@ -337,7 +338,7 @@ fn test_event_serde() {
 #[test]
 fn test_dispatcher_serde() {
     // Contract Dispatcher
-    let contract_address = starknet::contract_address_const::<123>();
+    let contract_address = const_value::<123>();
     let contract0 = ITestContractDispatcher { contract_address };
 
     // Serialize
