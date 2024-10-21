@@ -12,9 +12,9 @@ pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
 
     if let Some(hover) = db
         .find_syntax_node_at_position(file_id, position)
-        .map(|ref node| render::literal(db, node, file_id))
+        .and_then(|ref node| render::literal(db, node, file_id))
     {
-        return hover;
+        return Some(hover);
     }
 
     if let Some(hover) = db

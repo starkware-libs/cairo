@@ -25,20 +25,20 @@ pub fn literal(db: &AnalysisDatabase, node: &SyntaxNode, file_id: FileId) -> Opt
         SyntaxKind::TokenLiteralNumber => {
             let parent = node.parent()?;
             let literal = TerminalLiteralNumber::from_syntax_node(db, parent.clone());
-            let r#type = find_type(db, parent)?;
-            number(db, &literal, &r#type, file_id)
+            let ty = find_type(db, parent)?;
+            number(db, &literal, &ty, file_id)
         }
         SyntaxKind::TokenString => {
             let parent = node.parent()?;
             let literal = TerminalString::from_syntax_node(db, parent.clone());
-            let r#type = find_type(db, parent)?;
-            string(db, &literal, &r#type, file_id)
+            let ty = find_type(db, parent)?;
+            string(db, &literal, &ty, file_id)
         }
         SyntaxKind::TokenShortString => {
             let parent = node.parent()?;
             let literal = TerminalShortString::from_syntax_node(db, parent.clone());
-            let r#type = find_type(db, parent)?;
-            short_string(db, &literal, &r#type, file_id)
+            let ty = find_type(db, parent)?;
+            short_string(db, &literal, &ty, file_id)
         }
         _ => None,
     }
@@ -62,8 +62,7 @@ fn find_type_in_function_context(
 ) -> Option<String> {
     let expr = Expr::from_syntax_node(db, node);
     let expr_id = db.lookup_expr_by_ptr(function_id, expr.stable_ptr()).ok()?;
-    let r#type = db.expr_semantic(function_id, expr_id).ty().format(db);
-    Some(r#type)
+    Some(db.expr_semantic(function_id, expr_id).ty().format(db))
 }
 
 // TODO: think about something better
@@ -76,23 +75,22 @@ fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Op
     }
 
     let declaration = ItemConstant::from_syntax_node(db, node);
-    let r#type = declaration.type_clause(db).ty(db).as_syntax_node().get_text(db);
-    Some(r#type)
+    Some(declaration.type_clause(db).ty(db).as_syntax_node().get_text(db))
 }
 
 /// Formats the number literal writing its decimal, hexadecimal and binary value and type.
 fn number(
     db: &AnalysisDatabase,
     literal: &TerminalLiteralNumber,
-    r#type: &str,
+    ty: &str,
     file_id: FileId,
 ) -> Option<Hover> {
-    let (value, _) = literal.numeric_value_and_suffix(db)?;
+    let value = literal.numeric_value(db)?;
 
     let representation = formatdoc!(
         "
         ```cairo
-        {type}
+        {ty}
         ```
         ***
         value of literal: `{value} ({value:#x} | {value:#b})`
@@ -113,7 +111,7 @@ fn number(
 fn string(
     db: &AnalysisDatabase,
     literal: &TerminalString,
-    r#type: &str,
+    ty: &str,
     file_id: FileId,
 ) -> Option<Hover> {
     let string = literal.string_value(db)?;
@@ -121,7 +119,7 @@ fn string(
     let representation = formatdoc!(
         r#"
         ```cairo
-        {type}
+        {ty}
         ```
         ***
         value of literal: `"{string}"`
@@ -143,7 +141,7 @@ fn string(
 fn short_string(
     db: &AnalysisDatabase,
     literal: &TerminalShortString,
-    r#type: &str,
+    ty: &str,
     file_id: FileId,
 ) -> Option<Hover> {
     let representation = match (literal.numeric_value(db), literal.string_value(db)) {
@@ -151,7 +149,7 @@ fn short_string(
         (Some(numeric), None) => Some(formatdoc!(
             "
             ```cairo
-            {type}
+            {ty}
             ```
             ***
             value of literal: `{numeric:#x}`
@@ -160,7 +158,7 @@ fn short_string(
         (Some(numeric), Some(string)) => Some(formatdoc!(
             "
             ```cairo
-            {type}
+            {ty}
             ```
             ***
             value of literal: `'{string}' ({numeric:#x})`
