@@ -26,19 +26,19 @@ pub fn literal(db: &AnalysisDatabase, node: &SyntaxNode, file_id: FileId) -> Opt
             let parent = node.parent()?;
             let literal = TerminalLiteralNumber::from_syntax_node(db, parent.clone());
             let ty = find_type(db, parent)?;
-            number(db, &literal, &ty, file_id)
+            number_hover(db, &literal, &ty, file_id)
         }
         SyntaxKind::TokenString => {
             let parent = node.parent()?;
             let literal = TerminalString::from_syntax_node(db, parent.clone());
             let ty = find_type(db, parent)?;
-            string(db, &literal, &ty, file_id)
+            string_hover(db, &literal, &ty, file_id)
         }
         SyntaxKind::TokenShortString => {
             let parent = node.parent()?;
             let literal = TerminalShortString::from_syntax_node(db, parent.clone());
             let ty = find_type(db, parent)?;
-            short_string(db, &literal, &ty, file_id)
+            short_string_hover(db, &literal, &ty, file_id)
         }
         _ => None,
     }
@@ -79,7 +79,7 @@ fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Op
 }
 
 /// Formats the number literal writing its decimal, hexadecimal and binary value and type.
-fn number(
+fn number_hover(
     db: &AnalysisDatabase,
     literal: &TerminalLiteralNumber,
     ty: &str,
@@ -108,7 +108,7 @@ fn number(
 }
 
 /// Formats the number literal writing it along with the `core::byte_array::ByteArray` type.
-fn string(
+fn string_hover(
     db: &AnalysisDatabase,
     literal: &TerminalString,
     ty: &str,
@@ -138,7 +138,7 @@ fn string(
 
 /// Formats the short string literal writing its textual and numeric value along with the
 /// `core::felt252` type.
-fn short_string(
+fn short_string_hover(
     db: &AnalysisDatabase,
     literal: &TerminalShortString,
     ty: &str,
