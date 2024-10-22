@@ -31,14 +31,8 @@ pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct CrateIdentifier(SmolStr);
 
-impl From<SmolStr> for CrateIdentifier {
-    fn from(value: SmolStr) -> Self {
-        Self(value)
-    }
-}
-
-impl From<&str> for CrateIdentifier {
-    fn from(value: &str) -> Self {
+impl<T: ToSmolStr> From<T> for CrateIdentifier {
+    fn from(value: T) -> Self {
         Self(value.to_smolstr())
     }
 }
