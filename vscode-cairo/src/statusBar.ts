@@ -1,6 +1,6 @@
-import type { Context } from "./context";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
+import type { Context } from "./context";
 import { Scarb } from "./scarb";
 
 const CAIRO_STATUS_BAR_COMMAND = "cairo1.statusBar.clicked";
@@ -16,10 +16,8 @@ export class StatusBar {
     this.context.extension.subscriptions.push(this.statusBarItem);
 
     this.context.extension.subscriptions.push(
-      vscode.workspace.onDidChangeConfiguration((e) => {
-        if (e.affectsConfiguration("cairo1.showInStatusBar")) {
-          this.update();
-        }
+      vscode.workspace.onDidChangeConfiguration(() => {
+        this.update();
       }),
     );
 
@@ -57,6 +55,9 @@ export class StatusBar {
     }
   }
 
+  /**
+   * Updates the status bar item based on the current workspace configuration.
+   */
   private async update(): Promise<void> {
     const config = vscode.workspace.getConfiguration("cairo1");
     const showInStatusBar = config.get<boolean>("showInStatusBar", true);
