@@ -7,7 +7,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{LookupIntern, Upcast};
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
+use smol_str::{SmolStr, ToSmolStr};
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
@@ -28,7 +28,26 @@ pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 ///
 /// This directly translates to [`DependencySettings.discriminator`] expect the discriminator
 /// **must** be `None` for the core crate.
-pub type CrateIdentifier = SmolStr;
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Hash)]
+pub struct CrateIdentifier(SmolStr);
+
+impl From<SmolStr> for CrateIdentifier {
+    fn from(value: SmolStr) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&str> for CrateIdentifier {
+    fn from(value: &str) -> Self {
+        Self(value.to_smolstr())
+    }
+}
+
+impl From<CrateIdentifier> for SmolStr {
+    fn from(value: CrateIdentifier) -> Self {
+        value.0
+    }
+}
 
 /// A configuration per crate.
 #[derive(Clone, Debug, PartialEq, Eq)]
