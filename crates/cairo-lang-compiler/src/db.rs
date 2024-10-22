@@ -5,8 +5,8 @@ use cairo_lang_defs::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, CORELIB_CRATE_NAME, CORELIB_VERSION, ExternalFiles, FilesDatabase, FilesGroup,
-    FilesGroupEx, init_dev_corelib, init_files_group,
+    AsFilesGroupMut, CORELIB_VERSION, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
@@ -23,7 +23,7 @@ use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::InliningStrategy;
-use crate::project::{update_crate_root, update_crate_roots_from_project_config};
+use crate::project::update_crate_roots_from_project_config;
 
 #[salsa::database(
     DefsDatabase,
@@ -183,9 +183,6 @@ impl RootDatabaseBuilder {
 
         if let Some(config) = &self.project_config {
             update_crate_roots_from_project_config(&mut db, config.as_ref());
-            if let Some(corelib) = &config.corelib {
-                update_crate_root(&mut db, config, CORELIB_CRATE_NAME.into(), corelib.clone());
-            }
         }
         validate_corelib(&db)?;
 

@@ -24,6 +24,12 @@ mod test;
 pub const CORELIB_CRATE_NAME: &str = "core";
 pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+/// Unique identifier of a crate.
+///
+/// This directly translates to [`DependencySettings.discriminator`] expect the discriminator
+/// **must** be `None` for the core crate.
+pub type CrateIdentifier = SmolStr;
+
 /// A configuration per crate.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CrateConfiguration {
@@ -41,11 +47,13 @@ impl CrateConfiguration {
 /// Same as `CrateConfiguration` but without the root directory.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CrateSettings {
+    /// The name reflecting how the crate is referred to in the Cairo code e.g. `use crate_name::`.
+    pub name: SmolStr,
     /// The crate's Cairo edition.
     pub edition: Edition,
     /// The crate's version.
     ///
-    /// ## [CrateSettings.version] vs. [DependencySettings.discriminator]
+    /// ## [CrateSettings.version] vs. [CrateIdentifier]
     ///
     /// Cairo uses semantic versioning for crates.
     /// The version field is an optional piece of metadata that can be attached to a crate
@@ -201,6 +209,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
         Some(CrateConfiguration {
             root: Directory::Real(core_lib_dir),
             settings: CrateSettings {
+                name: CORELIB_CRATE_NAME.into(),
                 edition: Edition::V2024_07,
                 version: Version::parse(CORELIB_VERSION).ok(),
                 cfg_set: Default::default(),

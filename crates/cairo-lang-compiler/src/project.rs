@@ -3,13 +3,12 @@ use std::path::Path;
 
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    CORELIB_CRATE_NAME, CrateConfiguration, CrateSettings, FilesGroupEx,
+    CORELIB_CRATE_NAME, CrateConfiguration, CrateIdentifier, CrateSettings, FilesGroupEx,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 pub use cairo_lang_project::*;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Intern;
-use smol_str::{SmolStr, ToSmolStr};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ProjectError {
@@ -68,9 +67,9 @@ pub fn setup_single_file_project(
 
 /// Updates the crate roots from a ProjectConfig object.
 pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: &ProjectConfig) {
-    for (crate_name, directory_path) in config.content.crate_roots.iter() {
+    for (crate_identifier, directory_path) in config.content.crate_roots.iter() {
         let root = Directory::Real(config.absolute_crate_root(directory_path));
-        update_crate_root(db, config, crate_name.clone(), root);
+        update_crate_root(db, config, crate_identifier, root);
     }
 }
 
@@ -80,10 +79,10 @@ pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config
 pub fn update_crate_root(
     db: &mut dyn SemanticGroup,
     config: &ProjectConfig,
-    crate_name: SmolStr,
+    crate_identifier: &CrateIdentifier,
     root: Directory,
 ) {
-    let (crate_id, crate_settings) = get_crate_id_and_settings(db, crate_name, config);
+    let (crate_id, crate_settings) = get_crate_id_and_settings(db, crate_identifier, config);
     db.set_crate_config(
         crate_id,
         Some(CrateConfiguration { root, settings: crate_settings.clone() }),
@@ -135,21 +134,20 @@ pub fn get_main_crate_ids_from_project(
         .content
         .crate_roots
         .keys()
-        .map(|name| get_crate_id_and_settings(db, name.clone(), config).0)
+        .map(|crate_identifier| get_crate_id_and_settings(db, crate_identifier, config).0)
         .collect()
 }
 
 fn get_crate_id_and_settings<'a>(
     db: &mut dyn SemanticGroup,
-    name: SmolStr,
+    crate_identifier: &CrateIdentifier,
     config: &'a ProjectConfig,
 ) -> (CrateId, &'a CrateSettings) {
-    let crate_settings = config.content.crates_config.get(&name);
-    let discriminator = if name == CORELIB_CRATE_NAME {
-        None
-    } else {
-        crate_settings.version.as_ref().map(ToSmolStr::to_smolstr)
-    };
+    let crate_settings = config.content.crates_config.get(crate_identifier);
+    let name = crate_settings.name.clone();
+    // It has to be done due to how `CrateId::core` works.
+    let discriminator =
+        if name == CORELIB_CRATE_NAME { None } else { Some(crate_identifier.clone()) };
     let crate_id = CrateLongId::Real { name, discriminator }.intern(db);
     (crate_id, crate_settings)
 }

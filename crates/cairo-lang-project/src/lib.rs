@@ -4,11 +4,9 @@ mod test;
 
 use std::path::{Path, PathBuf};
 
-use cairo_lang_filesystem::db::CrateSettings;
-use cairo_lang_filesystem::ids::Directory;
+use cairo_lang_filesystem::db::{CrateIdentifier, CrateSettings};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeserializationError {
@@ -27,14 +25,13 @@ pub const PROJECT_FILE_NAME: &str = "cairo_project.toml";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectConfig {
     pub base_path: PathBuf,
-    pub corelib: Option<Directory>,
     pub content: ProjectConfigContent,
 }
 
 /// Contents of a Cairo project config file.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectConfigContent {
-    pub crate_roots: OrderedHashMap<SmolStr, PathBuf>,
+    pub crate_roots: OrderedHashMap<CrateIdentifier, PathBuf>,
     /// Additional configurations for the crates.
     #[serde(default)]
     #[serde(rename = "config")]
@@ -50,12 +47,13 @@ pub struct AllCratesConfig {
     /// Configuration override per crate.
     #[serde(default)]
     #[serde(rename = "override")]
-    pub override_map: OrderedHashMap<SmolStr, CrateSettings>,
+    pub override_map: OrderedHashMap<CrateIdentifier, CrateSettings>,
 }
+
 impl AllCratesConfig {
     /// Returns the configuration for the given crate.
-    pub fn get(&self, crate_name: &str) -> &CrateSettings {
-        self.override_map.get(crate_name).unwrap_or(&self.global)
+    pub fn get(&self, crate_identifier: &str) -> &CrateSettings {
+        self.override_map.get(crate_identifier).unwrap_or(&self.global)
     }
 }
 
@@ -70,7 +68,7 @@ impl ProjectConfig {
             .ok_or(DeserializationError::PathError)?
             .into();
         let content = toml::from_str(&std::fs::read_to_string(filename)?)?;
-        Ok(ProjectConfig { base_path, content, corelib: None })
+        Ok(ProjectConfig { base_path, content })
     }
 
     /// Returns the crate root's absolute path, according to the base path of this project.
