@@ -10,10 +10,11 @@ export class StatusBar {
 
   constructor(private readonly context: Context) {
     this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    this.context.extension.subscriptions.push(this.statusBarItem);
   }
 
-  public setup(client?: lc.LanguageClient): void {
+  public async setup(client?: lc.LanguageClient): Promise<void> {
+    this.context.extension.subscriptions.push(this.statusBarItem);
+
     this.context.extension.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration("cairo1.showInStatusBar")) {
@@ -31,9 +32,29 @@ export class StatusBar {
         }
       }),
     );
-    this.statusBarItem.command = CAIRO_STATUS_BAR_COMMAND;
 
-    this.update();
+    await this.initializeStatusBarItem();
+  }
+
+  private async initializeStatusBarItem(): Promise<void> {
+    this.statusBarItem.command = CAIRO_STATUS_BAR_COMMAND;
+    this.statusBarItem.text = "Cairo";
+    this.statusBarItem.tooltip = "Cairo Language";
+
+    await this.updateScarbVersion();
+  }
+
+  private async updateScarbVersion(): Promise<void> {
+    try {
+      // TODO(mkaput): Support multi-root workspaces.
+      const scarb = await Scarb.find(vscode.workspace.workspaceFolders?.[0], this.context);
+      if (scarb) {
+        const version = await scarb.getVersion(this.context);
+        this.statusBarItem.tooltip = `Cairo Language\n${version}`;
+      }
+    } catch (error) {
+      this.context.log.error(`Error getting Scarb version: ${error}`);
+    }
   }
 
   private async update(): Promise<void> {
@@ -41,20 +62,7 @@ export class StatusBar {
     const showInStatusBar = config.get<boolean>("showInStatusBar", true);
 
     if (showInStatusBar) {
-      this.statusBarItem.text = "Cairo";
-      this.statusBarItem.tooltip = "Cairo Language";
-
-      try {
-        // TODO(mkaput): Support multi-root workspaces.
-        const scarb = await Scarb.find(vscode.workspace.workspaceFolders?.[0], this.context);
-        if (scarb) {
-          const version = await scarb.getVersion(this.context);
-          this.statusBarItem.tooltip = `Cairo Language\n${version}`;
-        }
-      } catch (error) {
-        this.context.log.error(`Error getting Scarb version: ${error}`);
-      }
-
+      await this.updateScarbVersion();
       this.showStatusBarItem();
     } else {
       this.hideStatusBarItem();
