@@ -92,7 +92,7 @@ fn number_hover(
         ```cairo
         {ty}
         ```
-        ***
+        ---
         value of literal: `{value} ({value:#x} | {value:#b})`
         "
     );
@@ -121,7 +121,7 @@ fn string_hover(
         ```cairo
         {ty}
         ```
-        ***
+        ---
         value of literal: `"{string}"`
         "#
     );
@@ -151,7 +151,7 @@ fn short_string_hover(
             ```cairo
             {ty}
             ```
-            ***
+            ---
             value of literal: `{numeric:#x}`
             "
         )),
@@ -160,7 +160,7 @@ fn short_string_hover(
             ```cairo
             {ty}
             ```
-            ***
+            ---
             value of literal: `'{string}' ({numeric:#x})`
             "
         )),
