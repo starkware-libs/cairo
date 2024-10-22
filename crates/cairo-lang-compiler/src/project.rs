@@ -144,7 +144,7 @@ fn get_crate_id_and_settings<'a>(
     config: &'a ProjectConfig,
 ) -> (CrateId, &'a CrateSettings) {
     let crate_settings = config.content.crates_config.get(crate_identifier);
-    let name = crate_settings.name.clone();
+    let name = crate_settings.name.as_ref().unwrap_or(crate_identifier).clone();
     // It has to be done due to how `CrateId::core` works.
     let discriminator =
         if name == CORELIB_CRATE_NAME { None } else { Some(crate_identifier.clone()) };

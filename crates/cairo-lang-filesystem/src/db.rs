@@ -48,7 +48,8 @@ impl CrateConfiguration {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CrateSettings {
     /// The name reflecting how the crate is referred to in the Cairo code e.g. `use crate_name::`.
-    pub name: SmolStr,
+    /// If set to [`None`] then [`CrateIdentifier`] key will be used as a name.
+    pub name: Option<SmolStr>,
     /// The crate's Cairo edition.
     pub edition: Edition,
     /// The crate's version.
@@ -211,7 +212,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
         Some(CrateConfiguration {
             root: Directory::Real(core_lib_dir),
             settings: CrateSettings {
-                name: CORELIB_CRATE_NAME.into(),
+                name: None,
                 edition: Edition::V2024_07,
                 version: Version::parse(CORELIB_VERSION).ok(),
                 cfg_set: Default::default(),

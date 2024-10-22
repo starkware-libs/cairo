@@ -143,7 +143,7 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
             };
 
             let settings = CrateSettings {
-                name: crate_name.into(),
+                name: Some(crate_name.into()),
                 edition,
                 version,
                 dependencies,

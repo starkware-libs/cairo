@@ -139,7 +139,7 @@ pub fn setup_test_crate_ex(
         toml::from_str(crate_settings).expect("Invalid config.")
     } else {
         CrateSettings {
-            name: "test".into(),
+            name: None,
             edition: Edition::default(),
             version: None,
             dependencies: Default::default(),

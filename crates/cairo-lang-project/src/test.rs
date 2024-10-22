@@ -16,7 +16,7 @@ fn test_serde() {
         .collect(),
         crates_config: AllCratesConfig {
             global: CrateSettings {
-                name: Default::default(),
+                name: None,
                 edition: Default::default(),
                 version: Default::default(),
                 dependencies: Default::default(),
@@ -25,7 +25,7 @@ fn test_serde() {
             },
             override_map: [
                 ("crate1".into(), CrateSettings {
-                    name: "crate1".into(),
+                    name: None,
                     edition: Edition::V2023_10,
                     version: Default::default(),
                     dependencies: Default::default(),
@@ -33,7 +33,7 @@ fn test_serde() {
                     cfg_set: Default::default(),
                 }),
                 ("crate3".into(), CrateSettings {
-                    name: "crate3".into(),
+                    name: None,
                     edition: Default::default(),
                     version: Default::default(),
                     dependencies: Default::default(),
