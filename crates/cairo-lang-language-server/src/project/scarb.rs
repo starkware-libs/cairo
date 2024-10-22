@@ -142,8 +142,14 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                     .collect()
             };
 
-            let settings =
-                CrateSettings { edition, version, dependencies, cfg_set, experimental_features };
+            let settings = CrateSettings {
+                name: Some(crate_name.into()),
+                edition,
+                version,
+                dependencies,
+                cfg_set,
+                experimental_features,
+            };
 
             let custom_main_file_stems = (file_stem != "lib").then_some(vec![file_stem.into()]);
 

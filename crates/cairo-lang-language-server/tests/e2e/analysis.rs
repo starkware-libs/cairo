@@ -42,6 +42,7 @@ fn cairo_projects() {
             - `core`: `["[CAIRO_SOURCE]/corelib/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
+                    name: None,
                     edition: V2024_07,
                     version: Some(
                         Version {
@@ -61,6 +62,7 @@ fn cairo_projects() {
             - `project1`: `["[ROOT]/project1/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
+                    name: None,
                     edition: V2023_01,
                     version: None,
                     cfg_set: None,
@@ -74,6 +76,7 @@ fn cairo_projects() {
             - `project2`: `["[ROOT]/project2/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
+                    name: None,
                     edition: V2023_01,
                     version: None,
                     cfg_set: None,
@@ -87,6 +90,7 @@ fn cairo_projects() {
             - `subproject`: `["[ROOT]/project2/subproject/src/lib.cairo"]`
                 ```rust
                 CrateSettings {
+                    name: None,
                     edition: V2023_01,
                     version: None,
                     cfg_set: None,

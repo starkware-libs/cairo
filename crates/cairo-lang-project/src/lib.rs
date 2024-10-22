@@ -4,10 +4,9 @@ mod test;
 
 use std::path::{Path, PathBuf};
 
-use cairo_lang_filesystem::db::CrateSettings;
+use cairo_lang_filesystem::db::{CrateIdentifier, CrateSettings};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeserializationError {
@@ -32,7 +31,7 @@ pub struct ProjectConfig {
 /// Contents of a Cairo project config file.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectConfigContent {
-    pub crate_roots: OrderedHashMap<SmolStr, PathBuf>,
+    pub crate_roots: OrderedHashMap<CrateIdentifier, PathBuf>,
     /// Additional configurations for the crates.
     #[serde(default)]
     #[serde(rename = "config")]
@@ -48,12 +47,13 @@ pub struct AllCratesConfig {
     /// Configuration override per crate.
     #[serde(default)]
     #[serde(rename = "override")]
-    pub override_map: OrderedHashMap<SmolStr, CrateSettings>,
+    pub override_map: OrderedHashMap<CrateIdentifier, CrateSettings>,
 }
+
 impl AllCratesConfig {
     /// Returns the configuration for the given crate.
-    pub fn get(&self, crate_name: &str) -> &CrateSettings {
-        self.override_map.get(crate_name).unwrap_or(&self.global)
+    pub fn get(&self, crate_identifier: &CrateIdentifier) -> &CrateSettings {
+        self.override_map.get(crate_identifier).unwrap_or(&self.global)
     }
 }
 

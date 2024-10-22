@@ -756,7 +756,6 @@ dependencies = [
  "indoc",
  "pretty_assertions",
  "serde",
- "smol_str",
  "thiserror",
  "toml",
 ]
