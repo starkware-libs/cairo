@@ -13,17 +13,16 @@ export class Context {
 
     extensionContext.subscriptions.push(log);
 
-    const context = new Context(extensionContext, log);
-    context.statusBar = new StatusBar(context);
-
-    return context;
+    return new Context(extensionContext, log);
   }
 
   public readonly config: Config = new Config();
-  public statusBar!: StatusBar;
+  public readonly statusBar: StatusBar;
 
   private constructor(
     public readonly extension: vscode.ExtensionContext,
     public readonly log: RootLogOutputChannel,
-  ) {}
+  ) {
+    this.statusBar = new StatusBar(this);
+  }
 }
