@@ -7,7 +7,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{LookupIntern, Upcast};
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
+use smol_str::{SmolStr, ToSmolStr};
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
@@ -23,6 +23,25 @@ mod test;
 
 pub const CORELIB_CRATE_NAME: &str = "core";
 pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// Unique identifier of a crate.
+///
+/// This directly translates to [`DependencySettings.discriminator`] expect the discriminator
+/// **must** be `None` for the core crate.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Hash)]
+pub struct CrateIdentifier(SmolStr);
+
+impl<T: ToSmolStr> From<T> for CrateIdentifier {
+    fn from(value: T) -> Self {
+        Self(value.to_smolstr())
+    }
+}
+
+impl From<CrateIdentifier> for SmolStr {
+    fn from(value: CrateIdentifier) -> Self {
+        value.0
+    }
+}
 
 /// A configuration per crate.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -41,6 +60,9 @@ impl CrateConfiguration {
 /// Same as `CrateConfiguration` but without the root directory.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CrateSettings {
+    /// The name reflecting how the crate is referred to in the Cairo code e.g. `use crate_name::`.
+    /// If set to [`None`] then [`CrateIdentifier`] key will be used as a name.
+    pub name: Option<SmolStr>,
     /// The crate's Cairo edition.
     pub edition: Edition,
     /// The crate's version.
@@ -119,6 +141,8 @@ pub struct DependencySettings {
     /// in the compilation unit.
     ///
     /// Usually such copies differ by their versions or sources (or both).
+    /// It **must** be [`None`] for the core crate, for other crates it should be directly
+    /// translated from their [`CrateIdentifier`].
     pub discriminator: Option<SmolStr>,
 }
 
@@ -201,6 +225,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
         Some(CrateConfiguration {
             root: Directory::Real(core_lib_dir),
             settings: CrateSettings {
+                name: None,
                 edition: Edition::V2024_07,
                 version: Version::parse(CORELIB_VERSION).ok(),
                 cfg_set: Default::default(),
