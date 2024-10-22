@@ -286,7 +286,7 @@ impl Backend {
             // Refresh diagnostics each time state changes.
             // Although it is possible to mutate state without affecting the analysis database,
             // we basically never hit such a case in CairoLS in happy paths.
-            scheduler.on_sync_task(lang::diagnostics::refresh::refresh_diagnostics);
+            scheduler.on_sync_task(Self::refresh_diagnostics);
 
             let result = Self::event_loop(&connection, scheduler);
 
@@ -356,6 +356,11 @@ impl Backend {
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
     fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
         state.db_swapper.maybe_swap(&mut state.db, &state.open_files, &state.tricks);
+    }
+
+    /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
+    fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
+        state.diagnostics_controller.refresh(state.snapshot(), notifier);
     }
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
