@@ -53,7 +53,7 @@ pub struct CrateSettings {
     pub edition: Edition,
     /// The crate's version.
     ///
-    /// ## [CrateSettings.version] vs. [CrateIdentifier]
+    /// ## [CrateSettings.version] vs. [DependencySettings.discriminator]
     ///
     /// Cairo uses semantic versioning for crates.
     /// The version field is an optional piece of metadata that can be attached to a crate
@@ -127,6 +127,8 @@ pub struct DependencySettings {
     /// in the compilation unit.
     ///
     /// Usually such copies differ by their versions or sources (or both).
+    /// It **must** be [`None`] for the core crate, for other crates it should be directly
+    /// translated from their [`CrateIdentifier`].
     pub discriminator: Option<SmolStr>,
 }
 
