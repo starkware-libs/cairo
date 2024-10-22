@@ -55,9 +55,9 @@ export class StatusBar {
         this.context.log.error(`Error getting Scarb version: ${error}`);
       }
 
-      this.statusBarItem.show();
+      this.showStatusBarItem();
     } else {
-      this.statusBarItem.hide();
+      this.hideStatusBarItem();
     }
   }
 
