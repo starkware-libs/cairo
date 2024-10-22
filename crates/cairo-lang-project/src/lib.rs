@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 use cairo_lang_filesystem::db::{CrateIdentifier, CrateSettings};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
+use smol_str::SmolStr;
 
 #[derive(thiserror::Error, Debug)]
 pub enum DeserializationError {
@@ -18,6 +19,7 @@ pub enum DeserializationError {
     PathError,
 }
 pub const PROJECT_FILE_NAME: &str = "cairo_project.toml";
+pub type CrateName = SmolStr;
 
 /// Cairo project config, including its file content and metadata about the file.
 /// This file is expected to be at a root of a crate and specify the crate name and location and
@@ -43,16 +45,16 @@ pub struct ProjectConfigContent {
 pub struct AllCratesConfig {
     /// The configuration for non overridden crates.
     #[serde(default)]
-    pub global: CrateSettings,
+    pub global: (CrateName, CrateSettings),
     /// Configuration override per crate.
     #[serde(default)]
     #[serde(rename = "override")]
-    pub override_map: OrderedHashMap<CrateIdentifier, CrateSettings>,
+    pub override_map: OrderedHashMap<CrateIdentifier, (CrateName, CrateSettings)>,
 }
 
 impl AllCratesConfig {
     /// Returns the configuration for the given crate.
-    pub fn get(&self, crate_identifier: &str) -> &CrateSettings {
+    pub fn get(&self, crate_identifier: &str) -> &(CrateName, CrateSettings) {
         self.override_map.get(crate_identifier).unwrap_or(&self.global)
     }
 }

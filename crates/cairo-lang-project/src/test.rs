@@ -15,34 +15,37 @@ fn test_serde() {
         .into_iter()
         .collect(),
         crates_config: AllCratesConfig {
-            global: CrateSettings {
-                name: Default::default(),
+            global: (Default::default(), CrateSettings {
                 edition: Default::default(),
                 version: Default::default(),
                 dependencies: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig::default(),
                 cfg_set: Default::default(),
-            },
+            }),
             override_map: [
-                ("crate1".into(), CrateSettings {
-                    name: "crate1".into(),
-                    edition: Edition::V2023_10,
-                    version: Default::default(),
-                    dependencies: Default::default(),
-                    experimental_features: ExperimentalFeaturesConfig::default(),
-                    cfg_set: Default::default(),
-                }),
-                ("crate3".into(), CrateSettings {
-                    name: "crate3".into(),
-                    edition: Default::default(),
-                    version: Default::default(),
-                    dependencies: Default::default(),
-                    experimental_features: ExperimentalFeaturesConfig {
-                        negative_impls: true,
-                        coupons: false,
-                    },
-                    cfg_set: Default::default(),
-                }),
+                (
+                    "crate1".into(),
+                    ("crate1".into(), CrateSettings {
+                        edition: Edition::V2023_10,
+                        version: Default::default(),
+                        dependencies: Default::default(),
+                        experimental_features: ExperimentalFeaturesConfig::default(),
+                        cfg_set: Default::default(),
+                    }),
+                ),
+                (
+                    "crate3".into(),
+                    ("crate3".into(), CrateSettings {
+                        edition: Default::default(),
+                        version: Default::default(),
+                        dependencies: Default::default(),
+                        experimental_features: ExperimentalFeaturesConfig {
+                            negative_impls: true,
+                            coupons: false,
+                        },
+                        cfg_set: Default::default(),
+                    }),
+                ),
             ]
             .into_iter()
             .collect(),
