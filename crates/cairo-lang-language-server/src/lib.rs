@@ -69,7 +69,8 @@ use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
-use crate::server::schedule::{JoinHandle, Scheduler, Task, event_loop_thread};
+use crate::server::schedule::thread::JoinHandle;
+use crate::server::schedule::{Scheduler, Task, event_loop_thread};
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
 
