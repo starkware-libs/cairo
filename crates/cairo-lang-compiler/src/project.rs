@@ -143,10 +143,11 @@ fn get_crate_id_and_settings<'a>(
     crate_identifier: &CrateIdentifier,
     config: &'a ProjectConfig,
 ) -> (CrateId, &'a CrateSettings) {
-    let (crate_name, crate_settings) = config.content.crates_config.get(crate_identifier);
+    let crate_settings = config.content.crates_config.get(crate_identifier);
+    let name = crate_settings.name.clone();
     // It has to be done due to how `CrateId::core` works.
     let discriminator =
-        if crate_name == CORELIB_CRATE_NAME { None } else { Some(crate_identifier.clone()) };
-    let crate_id = CrateLongId::Real { name: crate_name.clone(), discriminator }.intern(db);
+        if name == CORELIB_CRATE_NAME { None } else { Some(crate_identifier.clone()) };
+    let crate_id = CrateLongId::Real { name, discriminator }.intern(db);
     (crate_id, crate_settings)
 }
