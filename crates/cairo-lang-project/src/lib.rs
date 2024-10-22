@@ -52,7 +52,7 @@ pub struct AllCratesConfig {
 
 impl AllCratesConfig {
     /// Returns the configuration for the given crate.
-    pub fn get(&self, crate_identifier: &str) -> &CrateSettings {
+    pub fn get(&self, crate_identifier: &CrateIdentifier) -> &CrateSettings {
         self.override_map.get(crate_identifier).unwrap_or(&self.global)
     }
 }
