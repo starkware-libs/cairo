@@ -6,19 +6,18 @@
 // +---------------------------------------------------+
 
 use anyhow::Result;
-use task::BackgroundTaskBuilder;
-use thread::ThreadPriority;
 
+use self::task::BackgroundTaskBuilder;
+use self::thread::{JoinHandle, ThreadPriority};
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::ClientSender;
 use crate::state::State;
 
 mod task;
-mod thread;
+pub mod thread;
 
-pub(super) use task::BackgroundSchedule;
-pub use task::{SyncTask, Task};
-pub use thread::JoinHandle;
+pub(super) use self::task::BackgroundSchedule;
+pub use self::task::{SyncTask, Task};
 
 /// The event loop thread is actually a secondary thread that we spawn from the
 /// _actual_ main thread. This secondary thread has a larger stack size
