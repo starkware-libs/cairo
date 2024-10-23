@@ -5,6 +5,9 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69           |
 // +------------------------------------------------------------+
 
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+use anyhow::anyhow;
 use lsp_server::{ErrorCode, ExtractError, Notification, Request, RequestId};
 use lsp_types::notification::{
     Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
@@ -15,12 +18,12 @@ use lsp_types::request::{
     CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
     Request as RequestTrait, SemanticTokensFullRequest,
 };
-use tracing::{error, warn};
+use tracing::{debug, error, warn};
 
 use super::client::Responder;
 use crate::lsp::ext::{ExpandMacro, ProvideVirtualFile, ViewAnalyzedCrates};
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
-use crate::server::panic::ls_catch_unwind;
+use crate::server::panic::is_cancelled;
 use crate::server::schedule::{BackgroundSchedule, Task};
 use crate::state::State;
 
@@ -122,8 +125,25 @@ fn background_request_task<'a, R: traits::BackgroundDocumentRequestHandler>(
     Ok(Task::background(schedule, move |state: &State| {
         let state_snapshot = state.snapshot();
         Box::new(move |notifier, responder| {
-            let result = ls_catch_unwind(|| R::run_with_snapshot(state_snapshot, notifier, params))
-                .and_then(|res| res);
+            let result = catch_unwind(AssertUnwindSafe(|| {
+                R::run_with_snapshot(state_snapshot, notifier, params)
+            }))
+            .map_err(|err| {
+                if is_cancelled(&err) {
+                    debug!("LSP worker thread was cancelled");
+                    LSPError::new(
+                        anyhow!("LSP worker thread was cancelled"),
+                        ErrorCode::ServerCancelled,
+                    )
+                } else {
+                    error!("caught panic in LSP worker thread");
+                    LSPError::new(
+                        anyhow!("caught panic in LSP worker thread"),
+                        ErrorCode::InternalError,
+                    )
+                }
+            })
+            .and_then(|res| res);
             respond::<R>(id, result, &responder);
         })
     }))
