@@ -8,10 +8,33 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
-use super::test_utils::{set_file_content, setup_test_module, TestDatabase};
+use super::test_utils::{TestDatabase, set_file_content, setup_test_module};
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 use crate::types::DocumentationCommentToken;
+
+impl DocumentationCommentToken {
+    pub fn to_string(&self, db: &dyn DefsGroup) -> String {
+        match self {
+            DocumentationCommentToken::Content(content) => content.clone(),
+            DocumentationCommentToken::Link(link) => match &link.path {
+                Some(path) => format!(
+                    "[{}]({})",
+                    link.label,
+                    link.resolved_item
+                        .map(|item| format!("Resolved item: {}", item.name(db).to_string()))
+                        .unwrap_or(path.clone())
+                ),
+                None => format!(
+                    "[{}]",
+                    link.resolved_item
+                        .map(|item| format!("Resolved item: {}", item.name(db).to_string()))
+                        .unwrap_or(link.label.clone())
+                ),
+            },
+        }
+    }
+}
 
 cairo_lang_test_utils::test_file_test!(
   item_documentation,

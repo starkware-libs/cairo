@@ -1,31 +1,25 @@
 use std::iter;
 
-use cairo_lang_defs::{
-    db::DefsGroup,
-    ids::{
-        FileIndex, GenericTypeId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, TraitItemId,
-    },
+use cairo_lang_defs::ids::{
+    FileIndex, GenericTypeId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, TraitItemId,
 };
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
-use cairo_lang_semantic::{
-    db::SemanticGroup,
-    diagnostic::{NotFoundItemType, SemanticDiagnostics},
-    expr::inference::InferenceId,
-    items::functions::GenericFunctionId,
-    resolve::{AsSegments, ResolvedGenericItem, Resolver},
-};
-use cairo_lang_syntax::node::{ast::ExprPath, helpers::GetIdentifier};
-use cairo_lang_syntax::node::{
-    ast::{Expr, ItemModule},
-    kind::SyntaxKind,
-    SyntaxNode, TypedSyntaxNode,
-};
+use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use cairo_lang_semantic::expr::inference::InferenceId;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::resolve::{AsSegments, ResolvedGenericItem, Resolver};
+use cairo_lang_syntax::node::ast::{Expr, ExprPath, ItemModule};
+use cairo_lang_syntax::node::helpers::GetIdentifier;
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 use regex::{Captures, Regex};
 
-use crate::{db::DocGroup, documentable_item::DocumentableItemId};
+use crate::db::DocGroup;
+use crate::documentable_item::DocumentableItemId;
 
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub struct CommentLinkToken {
@@ -36,39 +30,8 @@ pub struct CommentLinkToken {
 
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub enum DocumentationCommentToken {
-    CommentContent(String),
-    CommentLink(CommentLinkToken),
-}
-
-impl DocumentationCommentToken {
-    pub fn to_string(&self, db: &dyn DefsGroup) -> String {
-        match self {
-            DocumentationCommentToken::CommentContent(content) => {
-                format!("{}", content)
-            }
-            DocumentationCommentToken::CommentLink(link) => match &link.path {
-                Some(path) => format!(
-                    "[{}]({})",
-                    link.label,
-                    link.resolved_item
-                        .and_then(|item| Some(format!(
-                            "RESOLVED PATH: {}",
-                            item.name(db).to_string()
-                        )))
-                        .unwrap_or(path.clone())
-                ),
-                None => format!(
-                    "[{}]",
-                    link.resolved_item
-                        .and_then(|item| Some(format!(
-                            "RESOLVED PATH: {}",
-                            item.name(db).to_string()
-                        )))
-                        .unwrap_or(link.label.clone())
-                ),
-            },
-        }
-    }
+    Content(String),
+    Link(CommentLinkToken),
 }
 
 pub struct DocumentationCommentParser<'a> {
@@ -80,7 +43,7 @@ impl<'a> DocumentationCommentParser<'a> {
         Self { db }
     }
 
-    pub fn from_documentation_comment(
+    pub fn parse_documentation_comment(
         &self,
         item_id: DocumentableItemId,
         documentation_comment: String,
@@ -99,12 +62,12 @@ impl<'a> DocumentationCommentParser<'a> {
         for (i, content_part) in docs_no_inline_links.iter().enumerate() {
             if !content_part.is_empty() {
                 docs_and_inline_links_tokenized
-                    .push(DocumentationCommentToken::CommentContent(content_part.to_string()));
+                    .push(DocumentationCommentToken::Content(content_part.to_string()));
             }
 
             if i < docs_no_inline_links.len() - 1 && i < inline_link_captures.len() {
                 let matched_link: &Captures = inline_link_captures.get(i).unwrap();
-                docs_and_inline_links_tokenized.push(DocumentationCommentToken::CommentLink(
+                docs_and_inline_links_tokenized.push(DocumentationCommentToken::Link(
                     CommentLinkToken {
                         label: matched_link["label"].to_string(),
                         path: Some(matched_link["path"].to_string()),
@@ -120,7 +83,7 @@ impl<'a> DocumentationCommentParser<'a> {
 
         for comment in docs_and_inline_links_tokenized.into_iter() {
             match comment {
-                DocumentationCommentToken::CommentContent(content) => {
+                DocumentationCommentToken::Content(content) => {
                     let content_no_implied_links: Vec<&str> =
                         implied_link_pattern.split(&content).collect();
                     let implied_link_captures: Vec<Captures> =
@@ -128,19 +91,24 @@ impl<'a> DocumentationCommentParser<'a> {
 
                     for (i, content_part) in content_no_implied_links.iter().enumerate() {
                         if !content_part.is_empty() {
-                            result.push(DocumentationCommentToken::CommentContent(
-                                content_part.to_string(),
-                            ));
+                            result
+                                .push(DocumentationCommentToken::Content(content_part.to_string()));
                         }
 
                         if i < content_no_implied_links.len() - 1 && i < implied_link_captures.len()
                         {
                             let matched_link: &Captures = implied_link_captures.get(i).unwrap();
-                            result.push(DocumentationCommentToken::CommentLink(CommentLinkToken {
-                                label: matched_link["path"].to_string(),
+                            let path_raw = matched_link["path"].to_string();
+                            let path = if path_raw.starts_with("`") && path_raw.ends_with("`") {
+                                path_raw.trim_start_matches("`").trim_end_matches("`").to_string()
+                            } else {
+                                path_raw.clone()
+                            };
+
+                            result.push(DocumentationCommentToken::Link(CommentLinkToken {
+                                label: path_raw,
                                 path: None,
-                                resolved_item: self
-                                    .resolve_linked_item(item_id, matched_link["path"].to_string()),
+                                resolved_item: self.resolve_linked_item(item_id, path.clone()),
                             }))
                         }
                     }
@@ -191,11 +159,7 @@ impl<'a> DocumentationCommentParser<'a> {
             &path,
         );
 
-        if let Expr::Path(expr_path) = expr {
-            Some(expr_path)
-        } else {
-            None
-        }
+        if let Expr::Path(expr_path) = expr { Some(expr_path) } else { None }
     }
 
     /// Returns a [`ModuleFileId`] containing the node.

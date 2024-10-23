@@ -11,12 +11,13 @@ hello = "src"
 //! This comment refers to the crate.
 
 /// Main function comment outside.
+/// Below there is a [`TraitTest`]
 fn main() {
     //! Main function comment inside.
     println!("main");
 }
 
-/// Trait containing abc function.
+/// Trait containing abc function. Below a [main] function
 trait TraitTest {
     /// abc function returning u32.
     /// Default impl of abc TraitTest function.
@@ -27,7 +28,7 @@ trait TraitTest {
     }
 }
 
-/// Implementation of TraitTest's abc function.
+/// Implementation of TraitTest's abc function. Impements [this](TraitTest) trait.
 impl TraitTestImpl of TraitTest {
     /// Default impl of abc TraitTest function.
     fn abc() -> u32 {
@@ -37,10 +38,12 @@ impl TraitTestImpl of TraitTest {
     }
 }
 
-/// Test module used to check if the documentation is being attached to the nodes correctly.
+/// Test module used to check if the documentation is being attached to the nodes correctly. Inside
+/// there is [this](test_module::inner_test_module_function) function.
 pub mod test_module {
     //! Test module used to check if the documentation is being attached to the nodes correctly.
     /// Just a function outside the test_module.
+    /// Abote that module there is a [trait](super::TraitTest).
     pub fn inner_test_module_function() -> () {
         //! Just a function inside the test_module.
         println!("inside inner test module inner function");
@@ -54,6 +57,7 @@ pub mod test_module {
 ///     Point {x: 12, y: 14}
 ///   }
 /// ```
+/// [Point::bang]
 #[derive(Drop)]
 #[derive(Copy)]
 struct Point {
@@ -64,6 +68,9 @@ struct Point {
 }
 
 /// Answer Enum representing an answer to a yes/no question.
+/// It will just refer in the docs to some wrong [item_that_does_not_exist] and also to
+/// [this](another_not_existing_path).
+/// But [this](Answer::Yes) is an existing variant of Answer
 enum Answer {
     /// Yes answer variant.
     Yes,
@@ -76,17 +83,26 @@ enum Answer {
 //! > Item documentation #1
 This comment refers to the crate.
 
+//! > Item documentation tokens #1
+This comment refers to the crate.
+
 //! > Item signature #2
 fn main()
 
 //! > Item documentation #2
-Main function comment outside. Main function comment inside.
+Main function comment outside. Below there is a [`TraitTest`] Main function comment inside.
+
+//! > Item documentation tokens #2
+Main function comment outside. Below there is a [Resolved item: TraitTest] Main function comment inside.
 
 //! > Item signature #3
 trait TraitTest
 
 //! > Item documentation #3
-Trait containing abc function.
+Trait containing abc function. Below a [main] function
+
+//! > Item documentation tokens #3
+Trait containing abc function. Below a [Resolved item: main] function
 
 //! > Item signature #4
 fn abc() -> u32
@@ -94,11 +110,17 @@ fn abc() -> u32
 //! > Item documentation #4
 abc function returning u32. Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
+//! > Item documentation tokens #4
+abc function returning u32. Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
+
 //! > Item signature #5
 impl TraitTestImpl of TraitTest
 
 //! > Item documentation #5
-Implementation of TraitTest's abc function.
+Implementation of TraitTest's abc function. Impements [this](TraitTest) trait.
+
+//! > Item documentation tokens #5
+Implementation of TraitTest's abc function. Impements [this](Resolved item: TraitTest) trait.
 
 //! > Item signature #6
 fn abc() -> u32
@@ -106,16 +128,25 @@ fn abc() -> u32
 //! > Item documentation #6
 Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
+//! > Item documentation tokens #6
+Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
+
 //! > Item signature #7
 
 //! > Item documentation #7
-Test module used to check if the documentation is being attached to the nodes correctly. Test module used to check if the documentation is being attached to the nodes correctly.
+Test module used to check if the documentation is being attached to the nodes correctly. Inside there is [this](test_module::inner_test_module_function) function. Test module used to check if the documentation is being attached to the nodes correctly.
+
+//! > Item documentation tokens #7
+Test module used to check if the documentation is being attached to the nodes correctly. Inside there is [this](Resolved item: inner_test_module_function) function. Test module used to check if the documentation is being attached to the nodes correctly.
 
 //! > Item signature #8
 pub fn inner_test_module_function() -> ()
 
 //! > Item documentation #8
-Just a function outside the test_module. Just a function inside the test_module.
+Just a function outside the test_module. Abote that module there is a [trait](super::TraitTest). Just a function inside the test_module.
+
+//! > Item documentation tokens #8
+Just a function outside the test_module. Abote that module there is a [trait](Resolved item: TraitTest). Just a function inside the test_module.
 
 //! > Item signature #9
 #[derive(Drop)]
@@ -132,6 +163,16 @@ Point struct representing a point in a 2d space. Example usage:
     Point {x: 12, y: 14}
   }
 ```
+[Point::bang]
+
+//! > Item documentation tokens #9
+Point struct representing a point in a 2d space. Example usage: 
+```cairo
+  fn new_Point() {
+    Point {x: 12, y: 14}
+  }
+```
+[Point::bang]
 
 //! > Item signature #10
 pub x: u32
@@ -139,10 +180,16 @@ pub x: u32
 //! > Item documentation #10
 X coordinate.
 
+//! > Item documentation tokens #10
+X coordinate.
+
 //! > Item signature #11
 y: u32
 
 //! > Item documentation #11
+Y coordinate.
+
+//! > Item documentation tokens #11
 Y coordinate.
 
 //! > Item signature #12
@@ -152,7 +199,10 @@ enum Answer {
 }
 
 //! > Item documentation #12
-Answer Enum representing an answer to a yes/no question.
+Answer Enum representing an answer to a yes/no question. It will just refer in the docs to some wrong [item_that_does_not_exist] and also to [this](another_not_existing_path). But [this](Answer::Yes) is an existing variant of Answer
+
+//! > Item documentation tokens #12
+Answer Enum representing an answer to a yes/no question. It will just refer in the docs to some wrong [item_that_does_not_exist] and also to [this](another_not_existing_path). But [this](Resolved item: Yes) is an existing variant of Answer
 
 //! > Item signature #13
 Yes
@@ -160,8 +210,14 @@ Yes
 //! > Item documentation #13
 Yes answer variant.
 
+//! > Item documentation tokens #13
+Yes answer variant.
+
 //! > Item signature #14
 No
 
 //! > Item documentation #14
+No answer variant.
+
+//! > Item documentation tokens #14
 No answer variant.

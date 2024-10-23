@@ -2,11 +2,11 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_utils::{define_short_id, Intern, LookupIntern};
+use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 use path_clean::PathClean;
 use smol_str::SmolStr;
 
-use crate::db::{FilesGroup, CORELIB_CRATE_NAME};
+use crate::db::{CORELIB_CRATE_NAME, FilesGroup};
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";

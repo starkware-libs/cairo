@@ -6,11 +6,11 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_utils::Upcast;
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
@@ -199,7 +199,7 @@ fn get_item_documentation_as_tokens(
     db: &dyn DocGroup,
     item_id: DocumentableItemId,
 ) -> Vec<DocumentationCommentToken> {
-    let (outer_comments, inner_comments, module_level_comments) = match item_id {
+    let (outer_comment, inner_comment, module_level_comment) = match item_id {
         DocumentableItemId::Crate(crate_id) => {
             (None, None, get_crate_root_module_documentation(db, crate_id))
         }
@@ -208,28 +208,53 @@ fn get_item_documentation_as_tokens(
 
     let doc_parser = DocumentationCommentParser::new(db.upcast());
 
-    let outer_comment_tokens = outer_comments
-        .map(|comment| doc_parser.from_documentation_comment(item_id, comment))
-        .unwrap_or(Vec::default());
+    let mut outer_comment_tokens =
+        outer_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
 
-    let inner_comment_tokens = inner_comments
-        .map(|comment| doc_parser.from_documentation_comment(item_id, comment))
-        .unwrap_or(Vec::default());
+    if let Some(outer_comment_tokens) = &mut outer_comment_tokens {
+        if let Some(DocumentationCommentToken::Content(token)) = outer_comment_tokens.last_mut() {
+            *token = token.trim_end().to_string();
+        }
+    }
 
-    let module_level_comment_tokens = module_level_comments
-        .map(|comment| doc_parser.from_documentation_comment(item_id, comment))
-        .unwrap_or(Vec::default());
+    let mut inner_comment_tokens =
+        inner_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
 
-    let separator_token = vec![DocumentationCommentToken::CommentContent(" ".to_string())];
+    if let Some(inner_comment_tokens) = &mut inner_comment_tokens {
+        if let Some(DocumentationCommentToken::Content(token)) = inner_comment_tokens.last_mut() {
+            *token = token.trim_end().to_string();
+        }
+    }
 
-    chain!(
-        outer_comment_tokens,
-        separator_token.clone(),
-        inner_comment_tokens,
-        separator_token.clone(),
-        module_level_comment_tokens
-    )
-    .collect()
+    let mut module_level_comment_tokens = module_level_comment
+        .map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
+
+    if let Some(module_level_comment_tokens) = &mut module_level_comment_tokens {
+        if let Some(DocumentationCommentToken::Content(token)) =
+            module_level_comment_tokens.last_mut()
+        {
+            *token = token.trim_end().to_string();
+        }
+    }
+
+    let separator_token = DocumentationCommentToken::Content(" ".to_string());
+
+    let mut result: Vec<Vec<DocumentationCommentToken>> =
+        vec![outer_comment_tokens, inner_comment_tokens, module_level_comment_tokens]
+            .into_iter()
+            .flatten()
+            .collect();
+
+    let result_len = result.len();
+    result.iter_mut().enumerate().for_each(|(index, array)| {
+        if index < result_len - 1 {
+            array.push(separator_token.clone());
+        }
+    });
+
+    result.into_iter().flatten().collect()
+
+    // chain!(outer_comment_tokens, inner_comment_tokens, module_level_comment_tokens).collect()
 }
 
 fn get_item_documentation_content(
@@ -241,8 +266,8 @@ fn get_item_documentation_content(
     let outer_comments = extract_item_outer_documentation(db, item_id);
     // In case if item_id is a module, there are 2 possible cases:
     // 1. Inline module: It could have inner comments, but not the module_level.
-    // 2. Non-inline Module (module as a file): It could have module level comments, but not
-    //    the inner ones.
+    // 2. Non-inline Module (module as a file): It could have module level comments, but not the
+    //    inner ones.
     let inner_comments = extract_item_inner_documentation(db, item_id);
     let module_level_comments = extract_item_module_level_documentation(db.upcast(), item_id);
 

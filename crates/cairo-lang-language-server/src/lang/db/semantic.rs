@@ -12,7 +12,7 @@ use cairo_lang_syntax::node::ast::ItemModule;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, Upcast};
 
 // TODO(mkaput): Make this a real Salsa query group with sensible LRU.

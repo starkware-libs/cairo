@@ -52,10 +52,15 @@ pub extern type S<T>;
 
 //! > Item documentation #1
 
+//! > Item documentation tokens #1
+
 //! > Item signature #2
 const a: u32 = 123;
 
 //! > Item documentation #2
+Const comment
+
+//! > Item documentation tokens #2
 Const comment
 
 //! > Item signature #3
@@ -69,16 +74,25 @@ pub struct Pair<T, U> {
 //! > Item documentation #3
 Test Pair
 
+//! > Item documentation tokens #3
+Test Pair
+
 //! > Item signature #4
 first: T
 
 //! > Item documentation #4
 first field
 
+//! > Item documentation tokens #4
+first field
+
 //! > Item signature #5
 second: U
 
 //! > Item documentation #5
+second field
+
+//! > Item documentation tokens #5
 second field
 
 //! > Item signature #6
@@ -91,16 +105,24 @@ struct Pair2<T, U> {
 
 //! > Item documentation #6
 
+//! > Item documentation tokens #6
+
 //! > Item signature #7
 pub first: T
 
 //! > Item documentation #7
 First field
 
+//! > Item documentation tokens #7
+First field
+
 //! > Item signature #8
 second: U
 
 //! > Item documentation #8
+Second field
+
+//! > Item documentation tokens #8
 Second field
 
 //! > Item signature #9
@@ -111,10 +133,15 @@ pub enum TestEnum {
 
 //! > Item documentation #9
 
+//! > Item documentation tokens #9
+
 //! > Item signature #10
 Var1
 
 //! > Item documentation #10
+First variant
+
+//! > Item documentation tokens #10
 First variant
 
 //! > Item signature #11
@@ -123,8 +150,14 @@ Var2
 //! > Item documentation #11
 Second variant
 
+//! > Item documentation tokens #11
+Second variant
+
 //! > Item signature #12
 pub extern type S<T>
 
 //! > Item documentation #12
+extern type comment
+
+//! > Item documentation tokens #12
 extern type comment
