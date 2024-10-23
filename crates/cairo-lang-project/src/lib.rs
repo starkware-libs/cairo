@@ -5,7 +5,6 @@ mod test;
 use std::path::{Path, PathBuf};
 
 use cairo_lang_filesystem::db::CrateSettings;
-use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -27,7 +26,6 @@ pub const PROJECT_FILE_NAME: &str = "cairo_project.toml";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectConfig {
     pub base_path: PathBuf,
-    pub corelib: Option<Directory>,
     pub content: ProjectConfigContent,
 }
 
@@ -70,7 +68,7 @@ impl ProjectConfig {
             .ok_or(DeserializationError::PathError)?
             .into();
         let content = toml::from_str(&std::fs::read_to_string(filename)?)?;
-        Ok(ProjectConfig { base_path, content, corelib: None })
+        Ok(ProjectConfig { base_path, content })
     }
 
     /// Returns the crate root's absolute path, according to the base path of this project.
