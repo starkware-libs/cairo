@@ -154,7 +154,6 @@ fn init_logging() -> Option<impl Drop> {
     use tracing_chrome::ChromeLayerBuilder;
     use tracing_subscriber::filter::{EnvFilter, LevelFilter};
     use tracing_subscriber::fmt::Layer;
-    use tracing_subscriber::fmt::format::FmtSpan;
     use tracing_subscriber::fmt::time::Uptime;
     use tracing_subscriber::prelude::*;
 
@@ -164,7 +163,6 @@ fn init_logging() -> Option<impl Drop> {
         .with_writer(io::stderr)
         .with_timer(Uptime::default())
         .with_ansi(io::stderr().is_terminal())
-        .with_span_events(FmtSpan::CLOSE)
         .with_filter(
             EnvFilter::builder()
                 .with_default_directive(LevelFilter::WARN.into())
