@@ -20,9 +20,6 @@ struct Args {
     /// Add gas usage check
     #[arg(long, default_value_t = false)]
     gas_usage_check: bool,
-    #[arg(long, default_value_t = false)]
-    /// Add pythonic hints
-    add_pythonic_hints: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -44,9 +41,8 @@ fn main() -> anyhow::Result<()> {
     )
     .with_context(|| "Compilation failed.")?;
 
-    let casm_cairo_program =
-        CasmCairoProgram::new(&sierra_program, &cairo_program, args.add_pythonic_hints)
-            .with_context(|| "Sierra to Casm compilation failed.")?;
+    let casm_cairo_program = CasmCairoProgram::new(&sierra_program, &cairo_program)
+        .with_context(|| "Sierra to Casm compilation failed.")?;
 
     let res = serde_json::to_string(&casm_cairo_program)
         .with_context(|| "Casm contract Serialization failed.")?;
