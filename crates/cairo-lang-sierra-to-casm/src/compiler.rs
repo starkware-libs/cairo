@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
-use cairo_lang_casm::hints::{Hint, PythonicHint};
+use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
@@ -140,8 +140,6 @@ pub struct CasmCairoProgram {
     pub compiler_version: String,
     pub bytecode: Vec<BigUintAsHex>,
     pub hints: Vec<(usize, Vec<Hint>)>,
-    #[serde(skip_serializing_if = "skip_if_none")]
-    pub pythonic_hints: Option<Vec<(usize, Vec<String>)>>,
     pub entry_points_by_function: OrderedHashMap<String, CasmCairoEntryPoint>,
 }
 
@@ -175,7 +173,6 @@ impl CasmCairoProgram {
     pub fn new(
         sierra_program: &Program,
         cairo_program: &CairoProgram,
-        add_pythonic_hints: bool,
     ) -> Result<Self, CompilationError> {
         let replacer = CanonicalReplacer::from_program(&sierra_program);
         let sierra_program = &replacer.apply(&sierra_program);
@@ -195,18 +192,6 @@ impl CasmCairoProgram {
                 }
             })
             .collect();
-
-        let pythonic_hints = match add_pythonic_hints {
-            true => Some(
-                hints
-                    .iter()
-                    .map(|(pc, hints)| {
-                        (*pc, hints.iter().map(|hint| hint.get_pythonic_hint()).collect_vec())
-                    })
-                    .collect_vec(),
-            ),
-            false => None,
-        };
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
             RangeCheckType::id(),
@@ -309,14 +294,7 @@ impl CasmCairoProgram {
                 (function_name, CasmCairoEntryPoint { offset, builtins, input_args, return_arg })
             }));
 
-        Ok(Self {
-            prime,
-            compiler_version,
-            bytecode,
-            hints,
-            pythonic_hints,
-            entry_points_by_function,
-        })
+        Ok(Self { prime, compiler_version, bytecode, hints, entry_points_by_function })
     }
 }
 
