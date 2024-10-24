@@ -87,6 +87,11 @@ export class Scarb implements LanguageServerExecutableProvider {
     return this.hasCommand("cairo-language-server", ctx);
   }
 
+  public async getVersion(ctx: Context): Promise<string> {
+    const output = await this.execWithOutput(["--version"], ctx);
+    return output.trim();
+  }
+
   public async cacheClean(ctx: Context): Promise<void> {
     await this.execWithOutput(["cache", "clean"], ctx);
   }
