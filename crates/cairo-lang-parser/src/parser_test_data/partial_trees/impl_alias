@@ -1,0 +1,58 @@
+//! > Test impl alias syntax tree.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+impl MyImplAlias<T> = OtherImpl<Stuff, A<T>>;
+
+//! > top_level_kind
+ItemImplAlias
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemImplAlias
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── impl_kw (kind: TokenImpl): 'impl'
+    ├── name (kind: TokenIdentifier): 'MyImplAlias'
+    ├── generic_params (kind: WrappedGenericParamList)
+    │   ├── langle (kind: TokenLT): '<'
+    │   ├── generic_params (kind: GenericParamList)
+    │   │   └── item #0 (kind: GenericParamType)
+    │   │       └── name (kind: TokenIdentifier): 'T'
+    │   └── rangle (kind: TokenGT): '>'
+    ├── eq (kind: TokenEq): '='
+    ├── impl_path (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentWithGenericArgs)
+    │       ├── ident (kind: TokenIdentifier): 'OtherImpl'
+    │       ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │       └── generic_args (kind: GenericArgs)
+    │           ├── langle (kind: TokenLT): '<'
+    │           ├── generic_args (kind: GenericArgList)
+    │           │   ├── item #0 (kind: GenericArgUnnamed)
+    │           │   │   └── value (kind: GenericArgValueExpr)
+    │           │   │       └── expr (kind: ExprPath)
+    │           │   │           └── item #0 (kind: PathSegmentSimple)
+    │           │   │               └── ident (kind: TokenIdentifier): 'Stuff'
+    │           │   ├── separator #0 (kind: TokenComma): ','
+    │           │   └── item #1 (kind: GenericArgUnnamed)
+    │           │       └── value (kind: GenericArgValueExpr)
+    │           │           └── expr (kind: ExprPath)
+    │           │               └── item #0 (kind: PathSegmentWithGenericArgs)
+    │           │                   ├── ident (kind: TokenIdentifier): 'A'
+    │           │                   ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │           │                   └── generic_args (kind: GenericArgs)
+    │           │                       ├── langle (kind: TokenLT): '<'
+    │           │                       ├── generic_args (kind: GenericArgList)
+    │           │                       │   └── item #0 (kind: GenericArgUnnamed)
+    │           │                       │       └── value (kind: GenericArgValueExpr)
+    │           │                       │           └── expr (kind: ExprPath)
+    │           │                       │               └── item #0 (kind: PathSegmentSimple)
+    │           │                       │                   └── ident (kind: TokenIdentifier): 'T'
+    │           │                       └── rangle (kind: TokenGT): '>'
+    │           └── rangle (kind: TokenGT): '>'
+    └── semicolon (kind: TokenSemicolon): ';'

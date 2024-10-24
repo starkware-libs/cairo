@@ -1,0 +1,645 @@
+//! > test serialization and deserialization of sierra on example of fib_no_gas
+
+//! > test_runner_name
+test_sierra_serde_json
+
+//! > pretty_json
+{
+  "version": 1,
+  "type_declarations": [
+    {
+      "id": {
+        "id": 18197987107266074389,
+        "debug_name": "felt252"
+      },
+      "long_id": {
+        "generic_id": "felt252",
+        "generic_args": []
+      },
+      "declared_type_info": null
+    },
+    {
+      "id": {
+        "id": 7714117757135972556,
+        "debug_name": "NonZeroFelt252"
+      },
+      "long_id": {
+        "generic_id": "NonZero",
+        "generic_args": [
+          {
+            "Type": {
+              "id": 18197987107266074389,
+              "debug_name": "felt252"
+            }
+          }
+        ]
+      },
+      "declared_type_info": null
+    }
+  ],
+  "libfunc_declarations": [
+    {
+      "id": {
+        "id": 3328301606880823183,
+        "debug_name": "branch_align"
+      },
+      "long_id": {
+        "generic_id": "branch_align",
+        "generic_args": []
+      }
+    },
+    {
+      "id": {
+        "id": 14115798396771957644,
+        "debug_name": "store_temp_felt252"
+      },
+      "long_id": {
+        "generic_id": "store_temp",
+        "generic_args": [
+          {
+            "Type": {
+              "id": 18197987107266074389,
+              "debug_name": "felt252"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": {
+        "id": 7886916414467468699,
+        "debug_name": "store_temp_nz_felt252"
+      },
+      "long_id": {
+        "generic_id": "store_temp",
+        "generic_args": [
+          {
+            "Type": {
+              "id": 7714117757135972556,
+              "debug_name": "NonZeroFelt252"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": {
+        "id": 3075775707538119114,
+        "debug_name": "felt252_const_minus_1"
+      },
+      "long_id": {
+        "generic_id": "felt252_const",
+        "generic_args": [
+          {
+            "Value": [
+              -1,
+              [
+                1
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": {
+        "id": 5573091817713561949,
+        "debug_name": "felt252_add"
+      },
+      "long_id": {
+        "generic_id": "felt252_add",
+        "generic_args": []
+      }
+    },
+    {
+      "id": {
+        "id": 2468470103186650467,
+        "debug_name": "felt252_dup"
+      },
+      "long_id": {
+        "generic_id": "dup",
+        "generic_args": [
+          {
+            "Type": {
+              "id": 18197987107266074389,
+              "debug_name": "felt252"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": {
+        "id": 6741348721511978627,
+        "debug_name": "felt252_drop"
+      },
+      "long_id": {
+        "generic_id": "drop",
+        "generic_args": [
+          {
+            "Type": {
+              "id": 18197987107266074389,
+              "debug_name": "felt252"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": {
+        "id": 4730041110748051225,
+        "debug_name": "felt252_is_zero"
+      },
+      "long_id": {
+        "generic_id": "felt252_is_zero",
+        "generic_args": []
+      }
+    },
+    {
+      "id": {
+        "id": 9547199891349871288,
+        "debug_name": "felt252_unwrap_non_zero"
+      },
+      "long_id": {
+        "generic_id": "unwrap_non_zero",
+        "generic_args": [
+          {
+            "Type": {
+              "id": 18197987107266074389,
+              "debug_name": "felt252"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": {
+        "id": 18361914643646105729,
+        "debug_name": "call_lib"
+      },
+      "long_id": {
+        "generic_id": "function_call",
+        "generic_args": [
+          {
+            "UserFunc": {
+              "id": 2313213558037562915,
+              "debug_name": "Fibonacci"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": {
+        "id": 14767329129431461243,
+        "debug_name": "disable_ap_tracking"
+      },
+      "long_id": {
+        "generic_id": "disable_ap_tracking",
+        "generic_args": []
+      }
+    }
+  ],
+  "statements": [
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 4730041110748051225,
+          "debug_name": "felt252_is_zero"
+        },
+        "args": [
+          {
+            "id": 12638194897137039473,
+            "debug_name": "n"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": []
+          },
+          {
+            "target": {
+              "Statement": 6
+            },
+            "results": [
+              {
+                "id": 12638194897137039473,
+                "debug_name": "n"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 3328301606880823183,
+          "debug_name": "branch_align"
+        },
+        "args": [],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": []
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 6741348721511978627,
+          "debug_name": "felt252_drop"
+        },
+        "args": [
+          {
+            "id": 12638190499090526629,
+            "debug_name": "b"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": []
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 14115798396771957644,
+          "debug_name": "store_temp_felt252"
+        },
+        "args": [
+          {
+            "id": 12638187200555641996,
+            "debug_name": "a"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": [
+              {
+                "id": 12638187200555641996,
+                "debug_name": "a"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 14767329129431461243,
+          "debug_name": "disable_ap_tracking"
+        },
+        "args": [],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": []
+          }
+        ]
+      }
+    },
+    {
+      "Return": [
+        {
+          "id": 12638187200555641996,
+          "debug_name": "a"
+        }
+      ]
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 3328301606880823183,
+          "debug_name": "branch_align"
+        },
+        "args": [],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": []
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 9547199891349871288,
+          "debug_name": "felt252_unwrap_non_zero"
+        },
+        "args": [
+          {
+            "id": 12638194897137039473,
+            "debug_name": "n"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": [
+              {
+                "id": 12638194897137039473,
+                "debug_name": "n"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 3075775707538119114,
+          "debug_name": "felt252_const_minus_1"
+        },
+        "args": [],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": [
+              {
+                "id": 6610366976596557946,
+                "debug_name": "minus1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 5573091817713561949,
+          "debug_name": "felt252_add"
+        },
+        "args": [
+          {
+            "id": 12638194897137039473,
+            "debug_name": "n"
+          },
+          {
+            "id": 6610366976596557946,
+            "debug_name": "minus1"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": [
+              {
+                "id": 12638194897137039473,
+                "debug_name": "n"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 2468470103186650467,
+          "debug_name": "felt252_dup"
+        },
+        "args": [
+          {
+            "id": 12638190499090526629,
+            "debug_name": "b"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": [
+              {
+                "id": 12638190499090526629,
+                "debug_name": "b"
+              },
+              {
+                "id": 623301080264879054,
+                "debug_name": "b_"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 5573091817713561949,
+          "debug_name": "felt252_add"
+        },
+        "args": [
+          {
+            "id": 12638187200555641996,
+            "debug_name": "a"
+          },
+          {
+            "id": 623301080264879054,
+            "debug_name": "b_"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": [
+              {
+                "id": 11807312940536349088,
+                "debug_name": "a_plus_b"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 14115798396771957644,
+          "debug_name": "store_temp_felt252"
+        },
+        "args": [
+          {
+            "id": 12638190499090526629,
+            "debug_name": "b"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": [
+              {
+                "id": 12638190499090526629,
+                "debug_name": "b"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 14115798396771957644,
+          "debug_name": "store_temp_felt252"
+        },
+        "args": [
+          {
+            "id": 11807312940536349088,
+            "debug_name": "a_plus_b"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": [
+              {
+                "id": 11807312940536349088,
+                "debug_name": "a_plus_b"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 14115798396771957644,
+          "debug_name": "store_temp_felt252"
+        },
+        "args": [
+          {
+            "id": 12638194897137039473,
+            "debug_name": "n"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": [
+              {
+                "id": 12638194897137039473,
+                "debug_name": "n"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Invocation": {
+        "libfunc_id": {
+          "id": 18361914643646105729,
+          "debug_name": "call_lib"
+        },
+        "args": [
+          {
+            "id": 12638190499090526629,
+            "debug_name": "b"
+          },
+          {
+            "id": 11807312940536349088,
+            "debug_name": "a_plus_b"
+          },
+          {
+            "id": 12638194897137039473,
+            "debug_name": "n"
+          }
+        ],
+        "branches": [
+          {
+            "target": "Fallthrough",
+            "results": [
+              {
+                "id": 12638208091276578005,
+                "debug_name": "r"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "Return": [
+        {
+          "id": 12638208091276578005,
+          "debug_name": "r"
+        }
+      ]
+    }
+  ],
+  "funcs": [
+    {
+      "id": {
+        "id": 2313213558037562915,
+        "debug_name": "Fibonacci"
+      },
+      "signature": {
+        "param_types": [
+          {
+            "id": 18197987107266074389,
+            "debug_name": "felt252"
+          },
+          {
+            "id": 18197987107266074389,
+            "debug_name": "felt252"
+          },
+          {
+            "id": 18197987107266074389,
+            "debug_name": "felt252"
+          }
+        ],
+        "ret_types": [
+          {
+            "id": 18197987107266074389,
+            "debug_name": "felt252"
+          }
+        ]
+      },
+      "params": [
+        {
+          "id": {
+            "id": 12638187200555641996,
+            "debug_name": "a"
+          },
+          "ty": {
+            "id": 18197987107266074389,
+            "debug_name": "felt252"
+          }
+        },
+        {
+          "id": {
+            "id": 12638190499090526629,
+            "debug_name": "b"
+          },
+          "ty": {
+            "id": 18197987107266074389,
+            "debug_name": "felt252"
+          }
+        },
+        {
+          "id": {
+            "id": 12638194897137039473,
+            "debug_name": "n"
+          },
+          "ty": {
+            "id": 18197987107266074389,
+            "debug_name": "felt252"
+          }
+        }
+      ],
+      "entry_point": 0
+    }
+  ]
+}

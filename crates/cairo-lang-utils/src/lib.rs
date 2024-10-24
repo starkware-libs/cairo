@@ -1,10 +1,20 @@
 //! Cairo utilities.
-use std::fmt;
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+use alloc::boxed::Box;
+use core::fmt;
 
 pub mod bigint;
+pub mod byte_array;
 pub mod casts;
 pub mod collection_arithmetics;
 pub mod extract_matches;
+#[cfg(feature = "std")]
 pub mod graph_algos;
 pub mod iterators;
 #[cfg(feature = "env_logger")]
@@ -22,7 +32,7 @@ where
     fn option_from(other: T) -> Option<Self>;
 }
 
-pub fn write_comma_separated<Iter: IntoIterator<Item = V>, V: std::fmt::Display>(
+pub fn write_comma_separated<Iter: IntoIterator<Item = V>, V: core::fmt::Display>(
     f: &mut fmt::Formatter<'_>,
     values: Iter,
 ) -> fmt::Result {
@@ -49,24 +59,9 @@ impl<T> OptionHelper for Option<T> {
     }
 }
 
-/// Helper operations on `Option<T>`.
-pub trait ResultHelper<E> {
-    fn on_err<F: FnOnce(&E)>(self, f: F) -> Self;
-}
-impl<T, E> ResultHelper<E> for Result<T, E> {
-    fn on_err<F: FnOnce(&E)>(self, f: F) -> Self {
-        match &self {
-            Ok(_) => self,
-            Err(e) => {
-                f(e);
-                self
-            }
-        }
-    }
-}
-
-/// Borrows a mutable reference as Box for the lifespan of this function. Runs the given closure
-/// with the boxed value as a parameter.
+/// Borrows a mutable reference as Box for the lifespan of this function.
+///
+/// Runs the given closure with the boxed value as a parameter.
 /// The closure is expected to return a boxed value, whose changes will be reflected on the mutable
 /// reference.
 /// Example:
@@ -82,9 +77,17 @@ impl<T, E> ResultHelper<E> for Result<T, E> {
 pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut T, f: F) -> R {
     // TODO(spapini): Consider replacing take with something the leaves the memory dangling, instead
     // of filling with default().
-    let (res, boxed) = f(Box::new(std::mem::take(ptr)));
+    let (res, boxed) = f(Box::new(core::mem::take(ptr)));
     *ptr = *boxed;
     res
+}
+
+/// A trait for the `lookup_intern` method for short IDs (returning the long ID).
+pub trait LookupIntern<'a, DynDbGroup: ?Sized, LongId> {
+    fn lookup_intern(&self, db: &(impl Upcast<DynDbGroup> + ?Sized)) -> LongId;
+}
+pub trait Intern<'a, DynDbGroup: ?Sized, ShortId> {
+    fn intern(self, db: &(impl Upcast<DynDbGroup> + ?Sized)) -> ShortId;
 }
 
 // Defines a short id struct for use with salsa interning.
@@ -97,9 +100,25 @@ pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut 
 //   usually include the short id of the entity's parent.
 #[macro_export]
 macro_rules! define_short_id {
-    ($short_id:ident, $long_id:ident, $db:ident, $lookup:ident) => {
+    ($short_id:ident, $long_id:path, $db:ident, $lookup:ident, $intern:ident) => {
         #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
         pub struct $short_id(salsa::InternId);
+        impl<'a> cairo_lang_utils::LookupIntern<'a, dyn $db + 'a, $long_id> for $short_id {
+            fn lookup_intern(
+                &self,
+                db: &(impl cairo_lang_utils::Upcast<dyn $db + 'a> + ?Sized),
+            ) -> $long_id {
+                $db::$lookup(db.upcast(), *self)
+            }
+        }
+        impl<'a> cairo_lang_utils::Intern<'a, dyn $db + 'a, $short_id> for $long_id {
+            fn intern(
+                self,
+                db: &(impl cairo_lang_utils::Upcast<dyn $db + 'a> + ?Sized),
+            ) -> $short_id {
+                $db::$intern(db.upcast(), self)
+            }
+        }
         impl salsa::InternKey for $short_id {
             fn from_intern_id(salsa_id: salsa::InternId) -> Self {
                 Self(salsa_id)
@@ -114,7 +133,7 @@ macro_rules! define_short_id {
             cairo_lang_debug::DebugWithDb<T> for $short_id
         {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
-                use std::fmt::Debug;
+                use core::fmt::Debug;
 
                 use cairo_lang_debug::helper::Fallback;
                 let db = db.upcast();
@@ -146,4 +165,15 @@ impl<T: ?Sized> UpcastMut<T> for T {
     fn upcast_mut(&mut self) -> &mut T {
         self
     }
+}
+
+/// Returns `Some(())` if the condition is true, otherwise `None`.
+///
+/// Useful in functions returning `None` on some condition:
+/// `require(condition)?;`
+/// And for functions returning `Err` on some condition:
+/// `require(condition).ok_or_else(|| create_err())?;`
+#[must_use = "This function is only relevant to create a possible return."]
+pub fn require(condition: bool) -> Option<()> {
+    condition.then_some(())
 }

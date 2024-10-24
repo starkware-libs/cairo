@@ -8,18 +8,16 @@ foo
 
 //! > function_code
 fn foo(x: MyEnum, y: felt252, z: felt252, w: felt252) -> felt252 {
-    match x {
-        MyEnum::A(a) => {
-            MyEnum::A(1);
-            MyEnum::A(2)
-        },
-        MyEnum::B(b) => {
-            MyEnum::A(b + y + z)
-        },
-        MyEnum::C((c0, c1)) => {
-            MyEnum::C((z, w))
-        },
-    };
+    immovable(
+        match x {
+            MyEnum::A(_a) => {
+                immovable(MyEnum::A(1));
+                MyEnum::A(2)
+            },
+            MyEnum::B(b) => { MyEnum::A(b + y + z) },
+            MyEnum::C((_c0, _c1)) => { MyEnum::C((z, w)) },
+        }
+    );
     w
 }
 
@@ -30,7 +28,12 @@ enum MyEnum {
     C: (felt252, felt252),
 }
 
-impl MyEnumDrop of Drop::<MyEnum>;
+impl MyEnumDrop of Drop<MyEnum>;
+
+#[inline(never)]
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > lowering_format
 Parameters: v0: test::MyEnum, v1: core::felt252, v2: core::felt252, v3: core::felt252
@@ -39,56 +42,61 @@ Statements:
 End:
   Match(match_enum(v0) {
     MyEnum::A(v4) => blk1,
-    MyEnum::B(v9) => blk2,
-    MyEnum::C(v13) => blk3,
+    MyEnum::B(v5) => blk2,
+    MyEnum::C(v6) => blk3,
   })
 
 blk1:
 Statements:
-  (v5: core::felt252) <- 1u
-  (v6: test::MyEnum) <- MyEnum::A(v5)
-  (v7: core::felt252) <- 2u
+  (v7: core::felt252) <- 1
   (v8: test::MyEnum) <- MyEnum::A(v7)
+  (v9: test::MyEnum) <- test::immovable::<test::MyEnum>(v8)
+  (v10: core::felt252) <- 2
+  (v11: test::MyEnum) <- MyEnum::A(v10)
 End:
-  Goto(blk4, {})
+  Goto(blk4, {v11 -> v12})
 
 blk2:
 Statements:
-  (v19: core::felt252) <- core::felt252_add(v9, v1)
-  (v20: core::felt252) <- core::felt252_add(v19, v2)
-  (v12: test::MyEnum) <- MyEnum::A(v20)
+  (v13: core::felt252) <- core::felt252_add(v5, v1)
+  (v14: core::felt252) <- core::felt252_add(v13, v2)
+  (v15: test::MyEnum) <- MyEnum::A(v14)
 End:
-  Goto(blk4, {})
+  Goto(blk4, {v15 -> v12})
 
 blk3:
 Statements:
   (v16: (core::felt252, core::felt252)) <- struct_construct(v2, v3)
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Goto(blk4, {})
+  Goto(blk4, {v17 -> v12})
 
 blk4:
 Statements:
+  (v18: test::MyEnum) <- test::immovable::<test::MyEnum>(v12)
 End:
   Return(v3)
 
 //! > last_use
-v3: ((BlockId(4), 0), 0)
+v3: ((BlockId(4), 1), 0)
+v12: ((BlockId(4), 0), 0)
+v17: ((BlockId(3), 2), 0)
 v16: ((BlockId(3), 1), 0)
 v2: ((BlockId(3), 0), 0)
-v20: ((BlockId(2), 2), 0)
+v15: ((BlockId(2), 3), 0)
+v14: ((BlockId(2), 2), 0)
 v2: ((BlockId(2), 1), 1)
-v19: ((BlockId(2), 1), 0)
+v13: ((BlockId(2), 1), 0)
 v1: ((BlockId(2), 0), 1)
-v9: ((BlockId(2), 0), 0)
-v7: ((BlockId(1), 3), 0)
-v5: ((BlockId(1), 1), 0)
+v5: ((BlockId(2), 0), 0)
+v11: ((BlockId(1), 5), 0)
+v10: ((BlockId(1), 4), 0)
+v8: ((BlockId(1), 2), 0)
+v7: ((BlockId(1), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(3), 1)): v17
-PostStatement((BlockId(2), 2)): v12
-PostStatement((BlockId(1), 3)): v8
-PostStatement((BlockId(1), 1)): v6
+PostStatement((BlockId(4), 0)): v18
+PostStatement((BlockId(1), 2)): v9
 BeginningOfBlock(BlockId(1)): v4, v2, v1
-BeginningOfBlock(BlockId(3)): v13, v1
+BeginningOfBlock(BlockId(3)): v6, v1

@@ -1,9 +1,8 @@
-use std::sync::Arc;
-
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
+use cairo_lang_utils::Intern;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -20,11 +19,14 @@ fn test_location_marks() {
     // Note that content does not end with '\n'.
 
     let db = FilesDatabaseForTesting::default();
-    let file = db.intern_file(FileLongId::Virtual(VirtualFile {
+    let file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "name".into(),
-        content: Arc::new(content.into()),
-    }));
+        content: content.into(),
+        code_mappings: [].into(),
+        kind: FileKind::Module,
+    })
+    .intern(&db);
     let summary = db.file_summary(file).unwrap();
     let second_line = summary.line_offsets[1];
     let third_line = summary.line_offsets[2];
@@ -38,13 +40,10 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(
-        get_location_marks(&db, &location) + "\n",
-        indoc! {"
+    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
             Second liné.
                         ^
-        "}
-    );
+        "});
 
     // Span of length 1.
     let location = DiagnosticLocation {
@@ -55,13 +54,10 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(
-        get_location_marks(&db, &location) + "\n",
-        indoc! {"
+    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
             Third liné.
                ^
-        "}
-    );
+        "});
 
     // Span of length 2.
     let location = DiagnosticLocation {
@@ -72,13 +68,10 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(
-        get_location_marks(&db, &location) + "\n",
-        indoc! {"
+    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
             Third liné.
                ^^
-        "}
-    );
+        "});
 
     // Span of length > 1.
     let location = DiagnosticLocation {
@@ -89,13 +82,10 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(
-        get_location_marks(&db, &location) + "\n",
-        indoc! {"
+    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
             Second liné.
                    ^**^
-        "}
-    );
+        "});
 
     // Multiline span.
     let location = DiagnosticLocation {
@@ -106,13 +96,10 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(
-        get_location_marks(&db, &location) + "\n",
-        indoc! {"
+    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
             Second liné.
                    ^***^
-        "}
-    );
+        "});
 
     // Span that ends past the end of the file.
     let location = DiagnosticLocation {
@@ -123,13 +110,10 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(
-        get_location_marks(&db, &location) + "\n",
-        indoc! {"
+    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
             Third liné.
                    ^**^
-        "}
-    );
+        "});
 
     // Empty span past the end of the file.
     let location = DiagnosticLocation {
@@ -137,11 +121,8 @@ fn test_location_marks() {
         span: TextSpan { start: summary.last_offset, end: summary.last_offset },
     };
 
-    assert_eq!(
-        get_location_marks(&db, &location) + "\n",
-        indoc! {"
+    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
             Third liné.
                        ^
-        "}
-    );
+        "});
 }

@@ -70,9 +70,10 @@ impl KnownStack {
     /// Updates offset according to the maximal index in `variables_on_stack`.
     /// This is the expected behavior after invoking a libfunc.
     pub fn update_offset_by_max(&mut self) {
-        // `offset` is one more than the maximum of the indices in `variables_on_stack`
-        // (or 0 if empty).
-        self.offset = self.variables_on_stack.values().max().map(|idx| idx + 1).unwrap_or(0);
+        // `offset` is one more than the maximum of the indices in `variables_on_stack`, or the
+        // previous value (this would handle cases of variables being removed from the top of
+        // stack).
+        self.offset = self.variables_on_stack.values().fold(self.offset, |acc, f| acc.max(*f + 1));
     }
 
     /// Removes the information known about the given variable.
@@ -110,7 +111,6 @@ impl KnownStack {
     ///
     /// For example, merging the stacks [0, 1, 2, 3, 4] and [1, 9, 3, 4] (where the last element in
     /// the top) will yield [3, 4] (1 will not be included because of the hole).
-    #[allow(dead_code)]
     pub fn merge_with(&self, other: &Self) -> Self {
         // Choose the new offset to be the maximum of the input offsets. This is somewhat arbitrary.
         let new_offset = max(self.offset, other.offset);

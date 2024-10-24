@@ -1,0 +1,73 @@
+//! > Test call with coupon
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > module_code
+fn foo(x: u8) {
+    6;
+}
+extern fn get_coupon() -> foo::Coupon nopanic;
+
+//! > expr_code
+foo(7, __coupon__: get_coupon())
+
+//! > expected
+FunctionCall(
+    ExprFunctionCall {
+        function: test::foo,
+        args: [
+            Value(
+                Literal(
+                    ExprLiteral {
+                        value: 7,
+                        ty: core::integer::u8,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: Some(
+            FunctionCall(
+                ExprFunctionCall {
+                    function: test::get_coupon,
+                    args: [],
+                    coupon_arg: None,
+                    ty: test::foo::Coupon,
+                },
+            ),
+        ),
+        ty: (),
+    },
+)
+
+//! > semantic_diagnostics
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: test::foo,
+        args: [
+            Value(
+                Literal(
+                    ExprLiteral {
+                        value: 7,
+                        ty: core::integer::u8,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: Some(
+            FunctionCall(
+                ExprFunctionCall {
+                    function: test::get_coupon,
+                    args: [],
+                    coupon_arg: None,
+                    ty: test::foo::Coupon,
+                },
+            ),
+        ),
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics

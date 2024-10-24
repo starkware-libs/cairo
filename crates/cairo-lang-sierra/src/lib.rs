@@ -11,11 +11,13 @@
 
 use lalrpop_util::lalrpop_mod;
 
+pub mod algorithm;
 pub mod debug_info;
 pub mod edit_state;
 pub mod extensions;
 pub mod fmt;
 pub mod ids;
+mod pre_statement;
 pub mod program;
 pub mod program_registry;
 pub mod simulation;

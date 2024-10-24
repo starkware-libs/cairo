@@ -1,0 +1,60 @@
+//! > Test for break with value
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let mut _iter = array![10, 11, 12, 13_felt252].span();
+    for _x in _iter {
+        1;
+        break 5;
+        break;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Can only break with a value inside a `loop`.
+ --> lib.cairo:5:9
+        break 5;
+        ^******^
+
+//! > ==========================================================================
+
+//! >  Test for Unsupported feature
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let arr = array![A { x: Option::Some(1) }, A { x: Option::None }, A { x: Option::Some(2) }]
+        .span();
+    for A(x) in arr {
+        x;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    x: Option<i32>,
+}
+
+//! > expected_diagnostics
+error: Not a variant. Use the full name Enum::Variant.
+ --> lib.cairo:7:9
+    for A(x) in arr {
+        ^
+
+error: Identifier not found.
+ --> lib.cairo:8:9
+        x;
+        ^

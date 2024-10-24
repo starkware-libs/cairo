@@ -1,60 +1,66 @@
-use zeroable::Zeroable;
-use serde::Serde;
+use core::serde::Serde;
+#[allow(unused_imports)]
+use core::hash::{Hash, HashStateTrait};
+use core::RangeCheck;
 
+/// Represents a Starknet contract class hash.
+/// The value range of this type is `[0, 2**251)`.
 #[derive(Copy, Drop)]
-extern type ClassHash;
+pub extern type ClassHash;
 
+pub extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
+pub(crate) extern fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
 
-extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
-extern fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
-
-extern fn class_hash_try_from_felt252(
+pub(crate) extern fn class_hash_try_from_felt252(
     address: felt252
 ) -> Option<ClassHash> implicits(RangeCheck) nopanic;
 
-impl Felt252TryIntoClassHash of TryInto<felt252, ClassHash> {
+pub(crate) impl Felt252TryIntoClassHash of TryInto<felt252, ClassHash> {
     fn try_into(self: felt252) -> Option<ClassHash> {
         class_hash_try_from_felt252(self)
     }
 }
-impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
+pub(crate) impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
     fn into(self: ClassHash) -> felt252 {
         class_hash_to_felt252(self)
     }
 }
 
-impl ClassHashZeroable of Zeroable<ClassHash> {
+impl ClassHashZero of core::num::traits::Zero<ClassHash> {
     fn zero() -> ClassHash {
         class_hash_const::<0>()
     }
-    #[inline(always)]
-    fn is_zero(self: ClassHash) -> bool {
-        class_hash_to_felt252(self).is_zero()
+    #[inline]
+    fn is_zero(self: @ClassHash) -> bool {
+        core::num::traits::Zero::<felt252>::is_zero(@class_hash_to_felt252(*self))
     }
-    #[inline(always)]
-    fn is_non_zero(self: ClassHash) -> bool {
+    #[inline]
+    fn is_non_zero(self: @ClassHash) -> bool {
         !self.is_zero()
     }
 }
 
-impl ClassHashSerde of serde::Serde<ClassHash> {
+pub(crate) impl ClassHashZeroable =
+    core::zeroable::zero_based::ZeroableImpl<ClassHash, ClassHashZero>;
+
+impl ClassHashSerde of Serde<ClassHash> {
     fn serialize(self: @ClassHash, ref output: Array<felt252>) {
         class_hash_to_felt252(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<ClassHash> {
-        Option::Some(
-            class_hash_try_from_felt252(serde::Serde::<felt252>::deserialize(ref serialized)?)?
-        )
+        Option::Some(class_hash_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?)
     }
 }
 
 impl ClassHashPartialEq of PartialEq<ClassHash> {
-    #[inline(always)]
-    fn eq(lhs: ClassHash, rhs: ClassHash) -> bool {
-        class_hash_to_felt252(lhs) == class_hash_to_felt252(rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: ClassHash, rhs: ClassHash) -> bool {
-        !(lhs == rhs)
+    #[inline]
+    fn eq(lhs: @ClassHash, rhs: @ClassHash) -> bool {
+        class_hash_to_felt252(*lhs) == class_hash_to_felt252(*rhs)
     }
 }
+
+impl HashClassHash<S, +HashStateTrait<S>, +Drop<S>> =
+    core::hash::into_felt252_based::HashImpl<ClassHash, S>;
+
+impl DebugClassHash = core::fmt::into_felt252_based::DebugImpl<ClassHash>;
+impl LowerHexClassHash = core::fmt::into_felt252_based::LowerHexImpl<ClassHash>;

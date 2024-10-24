@@ -22,7 +22,7 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    args_as_single_type, ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError,
+    ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError, args_as_single_type,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -59,15 +59,16 @@ impl StructConcreteType {
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let mut duplicatable = true;
         let mut droppable = true;
+        let mut storable = true;
         let mut members: Vec<ConcreteTypeId> = Vec::new();
-        let mut size = 0;
+        let mut zero_sized = true;
         for arg in args_iter {
             let ty = try_extract_matches!(arg, GenericArg::Type)
                 .ok_or(SpecializationError::UnsupportedGenericArg)?
                 .clone();
             let info = context.get_type_info(ty.clone())?;
             if !info.storable {
-                return Err(SpecializationError::UnsupportedGenericArg);
+                storable = false;
             }
             if !info.duplicatable {
                 duplicatable = false;
@@ -75,7 +76,7 @@ impl StructConcreteType {
             if !info.droppable {
                 droppable = false;
             }
-            size += info.size;
+            zero_sized = zero_sized && info.zero_sized;
             members.push(ty);
         }
         Ok(StructConcreteType {
@@ -86,11 +87,32 @@ impl StructConcreteType {
                 },
                 duplicatable,
                 droppable,
-                storable: true,
-                size,
+                storable,
+                zero_sized,
             },
             members,
         })
+    }
+
+    /// Returns the StructConcreteType of the given long id, or a specialization error if not
+    /// possible.
+    fn try_from_long_id(
+        context: &dyn SignatureSpecializationContext,
+        long_id: &ConcreteTypeLongId,
+    ) -> Result<Self, SpecializationError> {
+        if long_id.generic_id != StructType::ID {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
+        Self::new(context.as_type_specialization_context(), &long_id.generic_args)
+    }
+
+    /// Returns the StructConcreteType of the given type, or a specialization error if not possible.
+    pub fn try_from_concrete_type(
+        context: &dyn SignatureSpecializationContext,
+        ty: &ConcreteTypeId,
+    ) -> Result<Self, SpecializationError> {
+        let long_id = context.get_type_info(ty.clone())?.long_id;
+        Self::try_from_long_id(context, &long_id)
     }
 }
 impl ConcreteType for StructConcreteType {
@@ -119,10 +141,22 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
-        let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
+        let type_info = context.get_type_info(struct_type.clone())?;
         let member_types =
-            StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .members;
+            StructConcreteType::try_from_long_id(context, &type_info.long_id)?.members;
+
+        let mut opt_same_as_param_idx = None;
+        for (idx, ty) in member_types.iter().cloned().enumerate() {
+            if !context.get_type_info(ty)?.zero_sized {
+                if opt_same_as_param_idx.is_some() {
+                    // There are multiple non-zero sized items, can't use the same param.
+                    opt_same_as_param_idx = None;
+                    break;
+                }
+                opt_same_as_param_idx = Some(idx);
+            }
+        }
+
         Ok(LibfuncSignature::new_non_branch_ex(
             member_types
                 .into_iter()
@@ -135,7 +169,13 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
                 .collect(),
             vec![OutputVarInfo {
                 ty: struct_type,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ref_info: if type_info.zero_sized {
+                    OutputVarReferenceInfo::ZeroSized
+                } else if let Some(param_idx) = opt_same_as_param_idx {
+                    OutputVarReferenceInfo::SameAsParam { param_idx }
+                } else {
+                    OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
+                },
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
@@ -154,10 +194,8 @@ impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
-        let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
         let member_types =
-            StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .members;
+            StructConcreteType::try_from_concrete_type(context, &struct_type)?.members;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature {
                 ty: struct_type,
@@ -167,13 +205,19 @@ impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
             }],
             member_types
                 .into_iter()
-                .map(|ty| OutputVarInfo {
-                    ty,
-                    // All memory of the deconstruction would have the same lifetime as the first
-                    // param - as it is its deconstruction.
-                    ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                .map(|ty| {
+                    Ok(OutputVarInfo {
+                        ty: ty.clone(),
+                        ref_info: if context.get_type_info(ty)?.zero_sized {
+                            OutputVarReferenceInfo::ZeroSized
+                        } else {
+                            // All memory of the deconstruction would have the same lifetime as the
+                            // first param - as it is its deconstruction.
+                            OutputVarReferenceInfo::PartialParam { param_idx: 0 }
+                        },
+                    })
                 })
-                .collect(),
+                .collect::<Result<Vec<_>, _>>()?,
             SierraApChange::Known { new_vars_only: true },
         ))
     }
@@ -191,20 +235,22 @@ impl SignatureOnlyGenericLibfunc for StructSnapshotDeconstructLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
-        let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
         let member_types =
-            StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
-                .members;
+            StructConcreteType::try_from_concrete_type(context, &struct_type)?.members;
         Ok(LibfuncSignature::new_non_branch(
             vec![snapshot_ty(context, struct_type)?],
             member_types
                 .into_iter()
                 .map(|ty| {
                     Ok(OutputVarInfo {
-                        ty: snapshot_ty(context, ty)?,
-                        // All memory of the deconstruction would have the same lifetime as the
-                        // first param - as it is its deconstruction.
-                        ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                        ty: snapshot_ty(context, ty.clone())?,
+                        ref_info: if context.get_type_info(ty)?.zero_sized {
+                            OutputVarReferenceInfo::ZeroSized
+                        } else {
+                            // All memory of the deconstruction would have the same lifetime as the
+                            // first param - as it is its deconstruction.
+                            OutputVarReferenceInfo::PartialParam { param_idx: 0 }
+                        },
                     })
                 })
                 .collect::<Result<Vec<_>, _>>()?,

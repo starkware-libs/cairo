@@ -8,7 +8,8 @@ types by having `move semantics` and forbidding copying and dropping values by d
 When passing a value to a function, it is moved by default. This means that after a value is used
 for the first time, it cannot be used again. For example, the following code does not compile:
 
-```rust
+[source,cairo]
+----
 struct A {}
 
 fn main() {
@@ -16,12 +17,13 @@ fn main() {
     foo(a); // value is passed by value once here.
     foo(a); // error: Value was previously moved.
 }
-```
+----
 
 To allow a value to be used multiple times, the `Copy` trait must be implemented for it.
 For example, the following code compiles:
 
-```rust
+[source,cairo]
+----
 #[derive(Copy)]
 struct A {}
 
@@ -30,12 +32,12 @@ fn main() {
     foo(a); // value is passed by value once here.
     foo(a); // Now there is no error.
 }
-```
+----
 
-Note: the snapshot operator `@` (See the docs about snapshot) is not considered moving a value.
+Note: the snapshot operator `@` (See the docs about snapshot) is considered not moving a value.
 
 == Clone
-Sometime a value cannot not be trivially copied, but we can still use code to build a of copy it.
+Sometime a value can't be trivially copied, but we can still use code to build a copy of it.
 For example, a value containing an `Array` cannot be copied, but we can still clone it by cloning
 the array it contains with `.clone()`.
 This can be done by implementing or deriving the `Clone` trait. The derived implementation requires
@@ -45,26 +47,28 @@ that all fields implement `Clone`, and will automatically call `.clone()` on all
 By default, a value may not go out of scope unless it was previously moved. For example, the
 following code does not compile:
 
-```rust
+[source,cairo]
+----
 #[derive(Copy)]
 struct A {}
 
 fn main() {
     A {}; // error: Value not dropped.
 }
-```
+----
 
 To allow a value to be dropped, the `Drop` trait must be implemented for it.
 For example, the following code compiles:
 
-```rust
+[source,cairo]
+----
 #[derive(Drop)]
 struct A {}
 
 fn main() {
     A {}; // Now there is no error.
 }
-```
+----
 
 == Destructors
 Sometime a value must not be dropped, but we can still use code to get rid of it.
@@ -74,7 +78,8 @@ This can be done by implementing or deriving the `Destruct` trait, which will be
 automatically when a non-droppable value goes out of scope. The derived implementation requires
 that all fields implement `Destruct`, and will automatically call `.destruct()` on all the fields.
 
-```rust
+[source,cairo]
+----
 #[derive(Destruct)]
 struct A {
     d: Dict<usize>
@@ -83,7 +88,7 @@ struct A {
 fn main() {
     A {}; // No error, A will be destructed.
 }
-```
+----
 
 When implementing `Destruct` manually, note that the implementation must be `nopanic`, because
 destructors are called when a value goes out of scope, which may happen in a panic.
@@ -105,12 +110,12 @@ value.
 ** Use `ref` to pass the value by reference.
 ** Implement or derive `Copy` to allow the value to be copied.
 ** Implement or derive `Clone` to allow the value to be cloned.
-** For a generic parameter, add another generic paramter for Copy or Clone (e.g. `impl TCopy: Copy<T>`).
+** For a generic parameter, add another generic parameter for Copy or Clone (e.g. `impl TCopy: Copy<T>`).
 * How to avoid "Value was not dropped" errors?
 ** Implement or derive `Drop` to allow the value to be dropped.
 ** Implement or derive `Destruct` to allow the value to be destructed.
 ** For structs, deconstruct them using `let A { .. } = a;`.
 ** For enums, deconstruct them using `match`.
 ** In particular, for the 'never' type, match like this: `match x {}`.
-** For a generic parameter, add another generic paramter for Drop or Destruct (e.g. `impl TDrop: Drop<T>`).
+** For a generic parameter, add another generic parameter for Drop or Destruct (e.g. `impl TDrop: Drop<T>`).
 ** Find a function that can be used to destroy the value, and call it.

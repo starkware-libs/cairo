@@ -1,12 +1,12 @@
 //! > Test basic error propagation on Option.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option::<felt252> {
     with_err()?;
-    Option::<felt252>::None(())
+    Option::<felt252>::None
 }
 
 //! > function_name
@@ -14,7 +14,7 @@ foo
 
 //! > module_code
 fn with_err() -> Option::<felt252> {
-    Option::<felt252>::None(())
+    Option::<felt252>::None
 }
 
 //! > expected_diagnostics
@@ -24,7 +24,7 @@ fn with_err() -> Option::<felt252> {
 //! > Test bad function for error propagation on Option.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -37,11 +37,11 @@ foo
 
 //! > module_code
 fn with_err() -> Option::<felt252> {
-    Option::<felt252>::None(())
+    Option::<felt252>::None
 }
 
 //! > expected_diagnostics
-error: Return type "core::felt252" does not wrap error "()"
+error: `?` can only be used in a function with `Option` or `Result` return type.
  --> lib.cairo:5:5
     with_err()?;
     ^*********^
@@ -51,7 +51,7 @@ error: Return type "core::felt252" does not wrap error "()"
 //! > Test basic error propagation on Result.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Result::<felt252, u128> {
@@ -78,7 +78,7 @@ fn with_err2() -> Result::<felt252, u128> {
 //! > Test bad function for error propagation on Result.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -95,7 +95,7 @@ fn with_err() -> Result::<felt252, u128> {
 }
 
 //! > expected_diagnostics
-error: Return type "core::felt252" does not wrap error "core::integer::u128"
+error: `?` can only be used in a function with `Option` or `Result` return type.
  --> lib.cairo:5:5
     with_err()?;
     ^*********^
@@ -105,7 +105,7 @@ error: Return type "core::felt252" does not wrap error "core::integer::u128"
 //! > Test error propagation on mismatching Result types.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Result::<felt252, u128> {
@@ -137,12 +137,12 @@ fn foo() -> Result::<felt252, u128> {
 //! > Test bad operand for error propagation.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() -> felt252 {
-    6?;
-    35
+fn foo() -> Option<felt252> {
+    6_u32?;
+    Option::None
 }
 
 //! > function_name
@@ -151,7 +151,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type "?0" can not error propagate
+error: Type "core::integer::u32" can not error propagate
  --> lib.cairo:2:5
-    6?;
-    ^^
+    6_u32?;
+    ^****^

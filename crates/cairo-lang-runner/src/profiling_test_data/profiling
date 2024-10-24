@@ -1,0 +1,357 @@
+//! > Test profiling info of enum_flow.sierra
+
+//! > test_runner_name
+test_profiling
+
+//! > cairo_code
+>>> file: ../../examples/enum_flow.cairo
+
+//! > function_name
+main
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 1: 1 (store_temp<felt252>([0]) -> ([0]))
+  statement 2: 1 (return([0]))
+Weight by concrete libfunc:
+  libfunc store_temp<felt252>: 1
+  return: 1
+Weight by generic libfunc:
+  libfunc store_temp: 1
+  return: 1
+Weight by user function (inc. generated):
+  function test::main: 2
+Weight by original user function (exc. generated):
+  function test::main: 2
+Weight by Cairo function:
+  function lib.cairo::main: 2
+Weight by Sierra stack trace:
+  test::main: 2
+Weight by Cairo stack trace:
+  test::main: 2
+
+//! > ==========================================================================
+
+//! > Test profiling info of match_or.sierra
+
+//! > test_runner_name
+test_profiling
+
+//! > cairo_code
+>>> file: ../../examples/match_or.cairo
+
+//! > function_name
+main
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 18: 4 (store_temp<test::MyEnum>([4]) -> ([4]))
+  statement 19: 4 (store_temp<test::MyEnum>([8]) -> ([8]))
+  statement 20: 4 (store_temp<test::MyEnum>([13]) -> ([13]))
+  statement 21: 4 (store_temp<test::MyEnum>([18]) -> ([18]))
+  statement 89: 4 (u8_overflowing_add([41], [63], [64]) { fallthrough([68], [69]) 135([70], [71]) })
+  statement 113: 4 (u8_overflowing_add([59], [81], [82]) { fallthrough([86], [87]) 123([88], [89]) })
+  statement 121: 3 (store_temp<core::panics::PanicResult::<((),)>>([93]) -> ([93]))
+  statement 46: 2 (enum_match<test::MyEnum>([8]) { fallthrough([37]) 50([38]) 54([39]) 60([40]) })
+  statement 70: 2 (enum_match<test::MyEnum>([13]) { fallthrough([55]) 74([56]) 78([57]) 84([58]) })
+  statement 94: 2 (enum_match<test::MyEnum>([18]) { fallthrough([73]) 98([74]) 102([75]) 108([76]) })
+  statement 22: 1 (enum_match<test::MyEnum>([4]) { fallthrough([19]) 26([20]) 30([21]) 36([22]) })
+  statement 23: 1 (branch_align() -> ())
+  statement 25: 1 (jump() { 28() })
+  statement 28: 1 (store_temp<RangeCheck>([0]) -> ([23]))
+  statement 29: 1 (jump() { 46() })
+  statement 50: 1 (branch_align() -> ())
+  statement 52: 1 (store_temp<RangeCheck>([23]) -> ([41]))
+  statement 53: 1 (jump() { 70() })
+  statement 81: 1 (store_temp<u8>([60]) -> ([63]))
+  statement 82: 1 (store_temp<u8>([62]) -> ([64]))
+  statement 83: 1 (jump() { 89() })
+  statement 93: 1 (store_temp<RangeCheck>([68]) -> ([59]))
+  statement 111: 1 (store_temp<u8>([83]) -> ([81]))
+  statement 112: 1 (store_temp<u8>([85]) -> ([82]))
+  statement 114: 1 (branch_align() -> ())
+  statement 117: 1 (store_temp<RangeCheck>([86]) -> ([77]))
+  statement 122: 1 (return([77], [93]))
+Weight by concrete libfunc:
+  libfunc store_temp<test::MyEnum>: 16
+  libfunc u8_overflowing_add: 8
+  libfunc enum_match<test::MyEnum>: 7
+  libfunc jump: 4
+  libfunc store_temp<RangeCheck>: 4
+  libfunc store_temp<u8>: 4
+  libfunc branch_align: 3
+  libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
+  return: 1
+Weight by generic libfunc:
+  libfunc store_temp: 27
+  libfunc u8_overflowing_add: 8
+  libfunc enum_match: 7
+  libfunc jump: 4
+  libfunc branch_align: 3
+  return: 1
+Weight by user function (inc. generated):
+  function test::main: 50
+Weight by original user function (exc. generated):
+  function test::main: 50
+Weight by Cairo function:
+  function lib.cairo::foo: 31
+  function core::integer::U8Add::add: 11
+  function lib.cairo::main: 8
+Weight by Sierra stack trace:
+  test::main: 50
+Weight by Cairo stack trace:
+  test::main: 50
+
+//! > ==========================================================================
+
+//! > Test profiling info of pedersen_test.sierra
+
+//! > test_runner_name
+test_profiling
+
+//! > cairo_code
+>>> file: ../../examples/pedersen_test.cairo
+
+//! > function_name
+test_pedersen
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 4: 2 (pedersen([0], [1], [2]) -> ([3], [4]))
+  statement 8: 2 (pedersen([3], [4], [5]) -> ([6], [7]))
+  statement 12: 2 (pedersen([6], [7], [8]) -> ([9], [10]))
+  statement 2: 1 (store_temp<felt252>([1]) -> ([1]))
+  statement 3: 1 (store_temp<felt252>([2]) -> ([2]))
+  statement 6: 1 (store_temp<felt252>([4]) -> ([4]))
+  statement 7: 1 (store_temp<felt252>([5]) -> ([5]))
+  statement 10: 1 (store_temp<felt252>([7]) -> ([7]))
+  statement 11: 1 (store_temp<felt252>([8]) -> ([8]))
+  statement 13: 1 (store_temp<Pedersen>([9]) -> ([9]))
+  statement 14: 1 (store_temp<felt252>([10]) -> ([10]))
+  statement 15: 1 (return([9], [10]))
+Weight by concrete libfunc:
+  libfunc store_temp<felt252>: 7
+  libfunc pedersen: 6
+  libfunc store_temp<Pedersen>: 1
+  return: 1
+Weight by generic libfunc:
+  libfunc store_temp: 8
+  libfunc pedersen: 6
+  return: 1
+Weight by user function (inc. generated):
+  function test::test_pedersen: 15
+Weight by original user function (exc. generated):
+  function test::test_pedersen: 15
+Weight by Cairo function:
+  function lib.cairo::test_pedersen: 15
+Weight by Sierra stack trace:
+  test::test_pedersen: 15
+Weight by Cairo stack trace:
+  test::test_pedersen: 15
+
+//! > ==========================================================================
+
+//! > Test profiling info of a program with a simple loop
+
+//! > test_runner_name
+test_profiling
+
+//! > cairo_code
+fn main() {
+    let mut n = 5;
+    loop {
+        if n == 0 {
+            break;
+        }
+        n -= 1;
+    }
+}
+
+//! > function_name
+main
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 23: 18 (withdraw_gas([0], [1]) { fallthrough([3], [4]) 45([5], [6]) })
+  statement 26: 6 (store_temp<RangeCheck>([3]) -> ([3]))
+  statement 27: 6 (felt252_is_zero([7]) { fallthrough() 36([8]) })
+  statement 40: 5 (store_temp<RangeCheck>([3]) -> ([3]))
+  statement 41: 5 (store_temp<GasBuiltin>([4]) -> ([4]))
+  statement 42: 5 (store_temp<felt252>([13]) -> ([13]))
+  statement 43: 5 (function_call<user@test::main[expr12]>([3], [4], [13]) -> ([14], [15], [16]))
+  statement 44: 5 (return([14], [15], [16]))
+  statement 14: 3 (store_temp<core::panics::PanicResult::<((),)>>([11]) -> ([11]))
+  statement 34: 3 (store_temp<core::panics::PanicResult::<(core::felt252, ())>>([11]) -> ([11]))
+  statement 2: 1 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 3: 1 (store_temp<GasBuiltin>([1]) -> ([1]))
+  statement 4: 1 (store_temp<felt252>([2]) -> ([2]))
+  statement 5: 1 (function_call<user@test::main[expr12]>([0], [1], [2]) -> ([3], [4], [5]))
+  statement 6: 1 (enum_match<core::panics::PanicResult::<(core::felt252, ())>>([5]) { fallthrough([6]) 16([7]) })
+  statement 12: 1 (store_temp<RangeCheck>([3]) -> ([3]))
+  statement 13: 1 (store_temp<GasBuiltin>([4]) -> ([4]))
+  statement 15: 1 (return([3], [4], [11]))
+  statement 32: 1 (store_temp<RangeCheck>([3]) -> ([3]))
+  statement 33: 1 (store_temp<GasBuiltin>([4]) -> ([4]))
+  statement 35: 1 (return([3], [4], [11]))
+Weight by concrete libfunc:
+  libfunc withdraw_gas: 18
+  libfunc store_temp<RangeCheck>: 14
+  libfunc store_temp<GasBuiltin>: 8
+  libfunc felt252_is_zero: 6
+  libfunc function_call<user@test::main[expr12]>: 6
+  libfunc store_temp<felt252>: 6
+  libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
+  libfunc store_temp<core::panics::PanicResult::<(core::felt252, ())>>: 3
+  libfunc enum_match<core::panics::PanicResult::<(core::felt252, ())>>: 1
+  return: 7
+Weight by generic libfunc:
+  libfunc store_temp: 34
+  libfunc withdraw_gas: 18
+  libfunc felt252_is_zero: 6
+  libfunc function_call: 6
+  libfunc enum_match: 1
+  return: 7
+Weight by user function (inc. generated):
+  function test::main[expr12]: 61
+  function test::main: 11
+Weight by original user function (exc. generated):
+  function test::main: 72
+Weight by Cairo function:
+  function lib.cairo::main: 60
+  function core::Felt252PartialEq::eq: 12
+Weight by Sierra stack trace:
+  test::main: 72
+  test::main -> test::main[expr12]: 61
+  test::main -> test::main[expr12] -> test::main[expr12]: 51
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 41
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 31
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 21
+  test::main -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12] -> test::main[expr12]: 11
+Weight by Cairo stack trace:
+  test::main: 72
+
+//! > ==========================================================================
+
+//! > Test max stack trace depth.
+
+//! > test_runner_name
+test_profiling
+
+//! > cairo_code
+fn main() {
+    foo1();
+}
+fn foo1() {
+    foo2();
+    foo2();
+}
+fn foo2() {
+    foo3();
+}
+fn foo3() {}
+
+//! > max_stack_trace_depth
+2
+
+//! > function_name
+main
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 0: 1 (return())
+Weight by concrete libfunc:
+  return: 1
+Weight by generic libfunc:
+  return: 1
+Weight by user function (inc. generated):
+  function test::main: 1
+Weight by original user function (exc. generated):
+  function test::main: 1
+Weight by Cairo function:
+  function unknown: 1
+Weight by Sierra stack trace:
+  test::main: 1
+Weight by Cairo stack trace:
+  test::main: 1
+
+//! > ==========================================================================
+
+//! > Test max stack trace depth.2
+
+//! > test_runner_name
+test_profiling
+
+//! > cairo_code
+fn main() {
+    foo1();
+}
+fn foo1() {
+    foo2();
+    foo2();
+}
+fn foo2() {
+    foo3();
+}
+fn foo3() {}
+
+//! > function_name
+main
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 0: 1 (return())
+Weight by concrete libfunc:
+  return: 1
+Weight by generic libfunc:
+  return: 1
+Weight by user function (inc. generated):
+  function test::main: 1
+Weight by original user function (exc. generated):
+  function test::main: 1
+Weight by Cairo function:
+  function unknown: 1
+Weight by Sierra stack trace:
+  test::main: 1
+Weight by Cairo stack trace:
+  test::main: 1
+
+//! > ==========================================================================
+
+//! > Test profiling with inlining.
+
+//! > test_runner_name
+test_profiling
+
+//! > cairo_code
+fn main() {
+    foo1();
+}
+fn foo1() {
+    foo2();
+}
+#[inline(always)]
+fn foo2() {
+    foo3();
+}
+fn foo3() {}
+
+//! > function_name
+main
+
+//! > expected_profiling_info
+Weight by sierra statement:
+  statement 0: 1 (return())
+Weight by concrete libfunc:
+  return: 1
+Weight by generic libfunc:
+  return: 1
+Weight by user function (inc. generated):
+  function test::main: 1
+Weight by original user function (exc. generated):
+  function test::main: 1
+Weight by Cairo function:
+  function unknown: 1
+Weight by Sierra stack trace:
+  test::main: 1
+Weight by Cairo stack trace:
+  test::main: 1

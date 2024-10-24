@@ -2,11 +2,12 @@ use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureOnlyGenericLibfunc,
     SignatureSpecializationContext,
 };
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{
-    args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
+    NamedType, OutputVarReferenceInfo, SpecializationError, args_as_single_type,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
@@ -19,13 +20,20 @@ impl GenericTypeArgGenericType for SnapshotTypeWrapped {
 
     fn calc_info(
         &self,
+        _context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { size, storable, duplicatable, .. }: TypeInfo,
+        TypeInfo { zero_sized, storable, duplicatable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // Duplicatable types are their own snapshot - as the snapshot itself is useless if we can
         // dup the value already.
         if storable && !duplicatable {
-            Ok(TypeInfo { long_id, size, storable: true, droppable: true, duplicatable: true })
+            Ok(TypeInfo {
+                long_id,
+                zero_sized,
+                storable: true,
+                droppable: true,
+                duplicatable: true,
+            })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }

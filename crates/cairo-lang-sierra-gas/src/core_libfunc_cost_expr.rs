@@ -1,14 +1,16 @@
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
+use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::core_libfunc_cost_base::{
-    core_libfunc_postcost, core_libfunc_precost, CostOperations, InvocationCostInfoProvider,
+    CostOperations, InvocationCostInfoProvider, core_libfunc_postcost, core_libfunc_precost,
 };
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
+use crate::objects::CostInfoProvider;
 
 pub type CostExprMap = OrderedHashMap<CostTokenType, CostExpr>;
 
@@ -31,7 +33,7 @@ impl CostOperations for Ops<'_> {
     ) -> Self::CostType {
         Self::CostType::from_iter([(
             token_type,
-            self.statement_future_cost.get_future_cost(&function.entry_point)[token_type].clone(),
+            self.statement_future_cost.get_future_cost(&function.entry_point)[&token_type].clone(),
         )])
     }
 
@@ -52,12 +54,21 @@ impl CostOperations for Ops<'_> {
 }
 
 /// Returns an expression for the gas cost for core libfuncs.
-pub fn core_libfunc_precost_expr(
+pub fn core_libfunc_precost_expr<InfoProvider: CostInfoProvider>(
     statement_future_cost: &mut dyn StatementFutureCost,
     idx: &StatementIdx,
     libfunc: &CoreConcreteLibfunc,
+    info_provider: &InfoProvider,
 ) -> Vec<CostExprMap> {
-    core_libfunc_precost(&mut Ops { statement_future_cost, idx: *idx }, libfunc)
+    if matches!(libfunc, CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_))) {
+        // Keeping the old calculation as is - `withdraw_gas` should only supply gas for consts.
+        vec![Default::default(), Default::default()]
+    } else if matches!(libfunc, CoreConcreteLibfunc::Coupon(CouponConcreteLibfunc::Refund(_))) {
+        // Coupon refund is not supported (zero refund).
+        vec![Default::default()]
+    } else {
+        core_libfunc_precost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+    }
 }
 
 /// Returns an expression for the gas cost for core libfuncs.
@@ -67,5 +78,10 @@ pub fn core_libfunc_postcost_expr<InfoProvider: InvocationCostInfoProvider>(
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<CostExprMap> {
-    core_libfunc_postcost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+    if matches!(libfunc, CoreConcreteLibfunc::Coupon(CouponConcreteLibfunc::Refund(_))) {
+        // Coupon refund is not supported (zero refund).
+        vec![Default::default()]
+    } else {
+        core_libfunc_postcost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+    }
 }

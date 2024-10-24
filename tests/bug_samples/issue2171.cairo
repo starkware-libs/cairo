@@ -1,8 +1,5 @@
-use traits::{Into, TryInto};
-use option::OptionTrait;
-use starknet::contract_address::Felt252TryIntoContractAddress;
 use starknet::ContractAddress;
-use test::test_utils::{assert_eq, assert_ne};
+use core::test::test_utils::assert_eq;
 
 #[test]
 fn main() {
@@ -12,8 +9,8 @@ fn main() {
 
 fn foo(contract_address: ContractAddress) {
     assert_eq(
-        Into::<ContractAddress, felt252>::into(contract_address),
-        Into::<ContractAddress, felt252>::into(contract_address),
+        @Into::<ContractAddress, felt252>::into(contract_address),
+        @Into::<ContractAddress, felt252>::into(contract_address),
         'Some message'
     );
 }

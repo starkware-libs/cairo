@@ -1,0 +1,316 @@
+//! > Test a syntax tree with literals
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let a = 0x123 + 456 + 'abc';
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: ExprPath) <ignored>
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprBinary)
+    │   ├── lhs (kind: ExprBinary)
+    │   │   ├── lhs (kind: TokenLiteralNumber): '0x123'
+    │   │   ├── op (kind: TokenPlus): '+'
+    │   │   └── rhs (kind: TokenLiteralNumber): '456'
+    │   ├── op (kind: TokenPlus): '+'
+    │   └── rhs (kind: TokenShortString): ''abc''
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test a syntax tree with literals with suffixes
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let a = 0x123_u8 + 456_u256 + 'abc'_u16;
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: ExprPath) <ignored>
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprBinary)
+    │   ├── lhs (kind: ExprBinary)
+    │   │   ├── lhs (kind: TokenLiteralNumber): '0x123_u8'
+    │   │   ├── op (kind: TokenPlus): '+'
+    │   │   └── rhs (kind: TokenLiteralNumber): '456_u256'
+    │   ├── op (kind: TokenPlus): '+'
+    │   └── rhs (kind: TokenShortString): ''abc'_u16'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test a syntax tree with literals with unary minuses
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let a = -0x123_u8 + -456_u256 + -'abc'_u16;
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: ExprPath) <ignored>
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprBinary)
+    │   ├── lhs (kind: ExprBinary)
+    │   │   ├── lhs (kind: ExprUnary)
+    │   │   │   ├── op (kind: TokenMinus): '-'
+    │   │   │   └── expr (kind: TokenLiteralNumber): '0x123_u8'
+    │   │   ├── op (kind: TokenPlus): '+'
+    │   │   └── rhs (kind: ExprUnary)
+    │   │       ├── op (kind: TokenMinus): '-'
+    │   │       └── expr (kind: TokenLiteralNumber): '456_u256'
+    │   ├── op (kind: TokenPlus): '+'
+    │   └── rhs (kind: ExprUnary)
+    │       ├── op (kind: TokenMinus): '-'
+    │       └── expr (kind: TokenShortString): ''abc'_u16'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Invalid literals.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let legal_bin = 0b1;
+    let illegal_bin = 0b2;
+    let illegal_bin = 0b12;
+    let legal_oct = 0o1;
+    let illegal_oct = 0o8;
+    let illegal_oct = 0o78;
+    let legal_hex = 0xf;
+    let illegal_hex = 0xg;
+    let illegal_hex = 0xfg;
+}
+
+//! > top_level_kind
+StatementList
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+error: Literal is not a valid number.
+ --> dummy_file.cairo:3:23
+    let illegal_bin = 0b2;
+                      ^^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:3:25
+    let illegal_bin = 0b2;
+                        ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:4:26
+    let illegal_bin = 0b12;
+                         ^
+
+error: Literal is not a valid number.
+ --> dummy_file.cairo:6:23
+    let illegal_oct = 0o8;
+                      ^^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:6:25
+    let illegal_oct = 0o8;
+                        ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:7:26
+    let illegal_oct = 0o78;
+                         ^
+
+error: Literal is not a valid number.
+ --> dummy_file.cairo:9:23
+    let illegal_hex = 0xg;
+                      ^^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:9:25
+    let illegal_hex = 0xg;
+                        ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:10:26
+    let illegal_hex = 0xfg;
+                         ^
+
+//! > expected_tree
+└── Top level kind: StatementList
+    ├── child #0 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── pattern (kind: ExprPath) <ignored>
+    │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── eq (kind: TokenEq): '='
+    │   ├── rhs (kind: TokenLiteralNumber): '0b1'
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    ├── child #1 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── pattern (kind: ExprPath) <ignored>
+    │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── eq (kind: TokenEq): '='
+    │   ├── rhs (kind: TokenLiteralNumber): '0b'
+    │   └── semicolon: Missing
+    ├── child #2 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── expr (kind: TokenLiteralNumber): '2'
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    ├── child #3 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── pattern (kind: ExprPath) <ignored>
+    │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── eq (kind: TokenEq): '='
+    │   ├── rhs (kind: TokenLiteralNumber): '0b1'
+    │   └── semicolon: Missing
+    ├── child #4 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── expr (kind: TokenLiteralNumber): '2'
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    ├── child #5 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── pattern (kind: ExprPath) <ignored>
+    │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── eq (kind: TokenEq): '='
+    │   ├── rhs (kind: TokenLiteralNumber): '0o1'
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    ├── child #6 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── pattern (kind: ExprPath) <ignored>
+    │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── eq (kind: TokenEq): '='
+    │   ├── rhs (kind: TokenLiteralNumber): '0o'
+    │   └── semicolon: Missing
+    ├── child #7 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── expr (kind: TokenLiteralNumber): '8'
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    ├── child #8 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── pattern (kind: ExprPath) <ignored>
+    │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── eq (kind: TokenEq): '='
+    │   ├── rhs (kind: TokenLiteralNumber): '0o7'
+    │   └── semicolon: Missing
+    ├── child #9 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── expr (kind: TokenLiteralNumber): '8'
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    ├── child #10 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── pattern (kind: ExprPath) <ignored>
+    │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── eq (kind: TokenEq): '='
+    │   ├── rhs (kind: TokenLiteralNumber): '0xf'
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    ├── child #11 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── pattern (kind: ExprPath) <ignored>
+    │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── eq (kind: TokenEq): '='
+    │   ├── rhs (kind: TokenLiteralNumber): '0x'
+    │   └── semicolon: Missing
+    ├── child #12 (kind: StatementExpr)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── expr (kind: ExprPath) <ignored>
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    ├── child #13 (kind: StatementLet)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── pattern (kind: ExprPath) <ignored>
+    │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── eq (kind: TokenEq): '='
+    │   ├── rhs (kind: TokenLiteralNumber): '0xf'
+    │   └── semicolon: Missing
+    └── child #14 (kind: StatementExpr)
+        ├── attributes (kind: AttributeList) []
+        ├── expr (kind: ExprPath) <ignored>
+        └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test short string suffix missing underscore
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    let a = 'a'u16;
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:2:16
+    let a = 'a'u16;
+               ^
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: ExprPath) <ignored>
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: TokenShortString): ''a''
+    └── semicolon: Missing

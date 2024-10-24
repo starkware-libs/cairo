@@ -1,0 +1,201 @@
+//! > Test if-else without extra braces
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    if 1 == 2 {
+        3
+    } else if 4 == 5 {
+        6
+    } else if 7 == 8 {
+        9
+    } else {
+        10
+    }
+}
+
+//! > top_level_kind
+ExprIf
+
+//! > ignored_kinds
+ExprBinary
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprIf
+    ├── if_kw (kind: TokenIf): 'if'
+    ├── condition (kind: ConditionExpr)
+    │   └── expr (kind: ExprBinary) <ignored>
+    ├── if_block (kind: ExprBlock)
+    │   ├── lbrace (kind: TokenLBrace): '{'
+    │   ├── statements (kind: StatementList)
+    │   │   └── child #0 (kind: StatementExpr)
+    │   │       ├── attributes (kind: AttributeList) []
+    │   │       ├── expr (kind: TokenLiteralNumber): '3'
+    │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   └── rbrace (kind: TokenRBrace): '}'
+    └── else_clause (kind: ElseClause)
+        ├── else_kw (kind: TokenElse): 'else'
+        └── else_block_or_if (kind: ExprIf)
+            ├── if_kw (kind: TokenIf): 'if'
+            ├── condition (kind: ConditionExpr)
+            │   └── expr (kind: ExprBinary) <ignored>
+            ├── if_block (kind: ExprBlock)
+            │   ├── lbrace (kind: TokenLBrace): '{'
+            │   ├── statements (kind: StatementList)
+            │   │   └── child #0 (kind: StatementExpr)
+            │   │       ├── attributes (kind: AttributeList) []
+            │   │       ├── expr (kind: TokenLiteralNumber): '6'
+            │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+            │   └── rbrace (kind: TokenRBrace): '}'
+            └── else_clause (kind: ElseClause)
+                ├── else_kw (kind: TokenElse): 'else'
+                └── else_block_or_if (kind: ExprIf)
+                    ├── if_kw (kind: TokenIf): 'if'
+                    ├── condition (kind: ConditionExpr)
+                    │   └── expr (kind: ExprBinary) <ignored>
+                    ├── if_block (kind: ExprBlock)
+                    │   ├── lbrace (kind: TokenLBrace): '{'
+                    │   ├── statements (kind: StatementList)
+                    │   │   └── child #0 (kind: StatementExpr)
+                    │   │       ├── attributes (kind: AttributeList) []
+                    │   │       ├── expr (kind: TokenLiteralNumber): '9'
+                    │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+                    │   └── rbrace (kind: TokenRBrace): '}'
+                    └── else_clause (kind: ElseClause)
+                        ├── else_kw (kind: TokenElse): 'else'
+                        └── else_block_or_if (kind: ExprBlock)
+                            ├── lbrace (kind: TokenLBrace): '{'
+                            ├── statements (kind: StatementList)
+                            │   └── child #0 (kind: StatementExpr)
+                            │       ├── attributes (kind: AttributeList) []
+                            │       ├── expr (kind: TokenLiteralNumber): '10'
+                            │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+                            └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test if-let 
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    if let Some(x) = 2 {
+        3
+    } else if 4 == 5 {
+        6
+    } else if let None(y) = 8 {
+        9
+    }
+}
+
+//! > top_level_kind
+ExprIf
+
+//! > ignored_kinds
+ExprBlock
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprIf
+    ├── if_kw (kind: TokenIf): 'if'
+    ├── condition (kind: ConditionLet)
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── patterns (kind: PatternListOr)
+    │   │   └── item #0 (kind: PatternEnum)
+    │   │       ├── path (kind: ExprPath)
+    │   │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │       └── ident (kind: TokenIdentifier): 'Some'
+    │   │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │           ├── lparen (kind: TokenLParen): '('
+    │   │           ├── pattern (kind: ExprPath)
+    │   │           │   └── item #0 (kind: PathSegmentSimple)
+    │   │           │       └── ident (kind: TokenIdentifier): 'x'
+    │   │           └── rparen (kind: TokenRParen): ')'
+    │   ├── eq (kind: TokenEq): '='
+    │   └── expr (kind: TokenLiteralNumber): '2'
+    ├── if_block (kind: ExprBlock) <ignored>
+    └── else_clause (kind: ElseClause)
+        ├── else_kw (kind: TokenElse): 'else'
+        └── else_block_or_if (kind: ExprIf)
+            ├── if_kw (kind: TokenIf): 'if'
+            ├── condition (kind: ConditionExpr)
+            │   └── expr (kind: ExprBinary)
+            │       ├── lhs (kind: TokenLiteralNumber): '4'
+            │       ├── op (kind: TokenEqEq): '=='
+            │       └── rhs (kind: TokenLiteralNumber): '5'
+            ├── if_block (kind: ExprBlock) <ignored>
+            └── else_clause (kind: ElseClause)
+                ├── else_kw (kind: TokenElse): 'else'
+                └── else_block_or_if (kind: ExprIf)
+                    ├── if_kw (kind: TokenIf): 'if'
+                    ├── condition (kind: ConditionLet)
+                    │   ├── let_kw (kind: TokenLet): 'let'
+                    │   ├── patterns (kind: PatternListOr)
+                    │   │   └── item #0 (kind: PatternEnum)
+                    │   │       ├── path (kind: ExprPath)
+                    │   │       │   └── item #0 (kind: PathSegmentSimple)
+                    │   │       │       └── ident (kind: TokenIdentifier): 'None'
+                    │   │       └── pattern (kind: PatternEnumInnerPattern)
+                    │   │           ├── lparen (kind: TokenLParen): '('
+                    │   │           ├── pattern (kind: ExprPath)
+                    │   │           │   └── item #0 (kind: PathSegmentSimple)
+                    │   │           │       └── ident (kind: TokenIdentifier): 'y'
+                    │   │           └── rparen (kind: TokenRParen): ')'
+                    │   ├── eq (kind: TokenEq): '='
+                    │   └── expr (kind: TokenLiteralNumber): '8'
+                    ├── if_block (kind: ExprBlock) <ignored>
+                    └── else_clause (kind: OptionElseClauseEmpty) []
+
+//! > ==========================================================================
+
+//! > Test if-let boolean opperators
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+/// TODO(Tomerstarkware): parse logical operators with lower precedence than `=`
+fn f() {
+    if let Some(x) = 2 && false {
+        3
+    }
+}
+
+//! > top_level_kind
+ExprIf
+
+//! > ignored_kinds
+ExprBlock
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprIf
+    ├── if_kw (kind: TokenIf): 'if'
+    ├── condition (kind: ConditionLet)
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── patterns (kind: PatternListOr)
+    │   │   └── item #0 (kind: PatternEnum)
+    │   │       ├── path (kind: ExprPath)
+    │   │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │       └── ident (kind: TokenIdentifier): 'Some'
+    │   │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │           ├── lparen (kind: TokenLParen): '('
+    │   │           ├── pattern (kind: ExprPath)
+    │   │           │   └── item #0 (kind: PathSegmentSimple)
+    │   │           │       └── ident (kind: TokenIdentifier): 'x'
+    │   │           └── rparen (kind: TokenRParen): ')'
+    │   ├── eq (kind: TokenEq): '='
+    │   └── expr (kind: ExprBinary)
+    │       ├── lhs (kind: TokenLiteralNumber): '2'
+    │       ├── op (kind: TokenAndAnd): '&&'
+    │       └── rhs (kind: TokenFalse): 'false'
+    ├── if_block (kind: ExprBlock) <ignored>
+    └── else_clause (kind: OptionElseClauseEmpty) []

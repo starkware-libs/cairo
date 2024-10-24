@@ -1,0 +1,34 @@
+//! > Test constructor with variables that don't exist.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let _x = MyStruct { a, b, a: 3 };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+    a: usize,
+    b: usize,
+}
+
+//! > expected_diagnostics
+error: Variable "a" not found.
+ --> lib.cairo:6:25
+    let _x = MyStruct { a, b, a: 3 };
+                        ^
+
+error: Variable "b" not found.
+ --> lib.cairo:6:28
+    let _x = MyStruct { a, b, a: 3 };
+                           ^
+
+error: Member specified more than once.
+ --> lib.cairo:6:31
+    let _x = MyStruct { a, b, a: 3 };
+                              ^

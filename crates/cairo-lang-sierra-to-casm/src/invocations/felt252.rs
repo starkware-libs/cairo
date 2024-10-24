@@ -9,7 +9,7 @@ use num_bigint::BigInt;
 
 use super::misc::build_is_zero;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{add_input_variables, CostValidationInfo};
+use crate::invocations::{CostValidationInfo, add_input_variables};
 use crate::references::ReferenceExpression;
 
 #[cfg(test)]
@@ -37,7 +37,7 @@ pub fn build(
 }
 
 /// Handles a felt252 operation with a variable.
-fn build_felt252_op_with_var(
+pub fn build_felt252_op_with_var(
     builder: CompiledInvocationBuilder<'_>,
     op: Felt252BinaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -51,7 +51,7 @@ fn build_felt252_op_with_var(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res_var]], None)],
-        CostValidationInfo { range_check_info: None, extra_costs: Some([extra_costs]) },
+        CostValidationInfo { builtin_infos: vec![], extra_costs: Some([extra_costs]) },
     ))
 }
 
@@ -69,7 +69,7 @@ fn build_felt252_op_with_const(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[res_var]], None)],
-        CostValidationInfo { range_check_info: None, extra_costs: Some([extra_costs]) },
+        CostValidationInfo { builtin_infos: vec![], extra_costs: Some([extra_costs]) },
     ))
 }
 
@@ -81,22 +81,18 @@ fn bin_op_helper(
     b: Var,
     op: Felt252BinaryOperator,
 ) -> (Var, i32) {
-    if op == Felt252BinaryOperator::Div {
-        casm_build_extend! {casm_builder,
-            tempvar res = a / b;
-        };
-        (res, 400)
-    } else {
-        (casm_builder.bin_op(felt252_to_cell_operator(op), a, b), 0)
-    }
-}
-
-/// Converts a felt252 operator to the corresponding cell operator.
-fn felt252_to_cell_operator(op: Felt252BinaryOperator) -> CellOperator {
-    match op {
+    let cell_op = match op {
         Felt252BinaryOperator::Add => CellOperator::Add,
         Felt252BinaryOperator::Sub => CellOperator::Sub,
         Felt252BinaryOperator::Mul => CellOperator::Mul,
-        Felt252BinaryOperator::Div => CellOperator::Div,
-    }
+        Felt252BinaryOperator::Div => {
+            // Special case for division, as it is heavier on the sequencer.
+            casm_build_extend! {casm_builder,
+                // Storing it once, so following stores won't be costly.
+                tempvar res = a / b;
+            };
+            return (res, 400);
+        }
+    };
+    (casm_builder.bin_op(cell_op, a, b), 0)
 }

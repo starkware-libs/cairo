@@ -4,6 +4,7 @@ mod test;
 
 use std::path::{Path, PathBuf};
 
+use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
@@ -18,7 +19,7 @@ pub enum DeserializationError {
     #[error("PathError")]
     PathError,
 }
-const PROJECT_FILE_NAME: &str = "cairo_project.toml";
+pub const PROJECT_FILE_NAME: &str = "cairo_project.toml";
 
 /// Cairo project config, including its file content and metadata about the file.
 /// This file is expected to be at a root of a crate and specify the crate name and location and
@@ -29,10 +30,33 @@ pub struct ProjectConfig {
     pub corelib: Option<Directory>,
     pub content: ProjectConfigContent,
 }
+
 /// Contents of a Cairo project config file.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectConfigContent {
     pub crate_roots: OrderedHashMap<SmolStr, PathBuf>,
+    /// Additional configurations for the crates.
+    #[serde(default)]
+    #[serde(rename = "config")]
+    pub crates_config: AllCratesConfig,
+}
+
+/// Additional configurations for all crates.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AllCratesConfig {
+    /// The configuration for non overridden crates.
+    #[serde(default)]
+    pub global: CrateSettings,
+    /// Configuration override per crate.
+    #[serde(default)]
+    #[serde(rename = "override")]
+    pub override_map: OrderedHashMap<SmolStr, CrateSettings>,
+}
+impl AllCratesConfig {
+    /// Returns the configuration for the given crate.
+    pub fn get(&self, crate_name: &str) -> &CrateSettings {
+        self.override_map.get(crate_name).unwrap_or(&self.global)
+    }
 }
 
 impl ProjectConfig {
@@ -47,5 +71,10 @@ impl ProjectConfig {
             .into();
         let content = toml::from_str(&std::fs::read_to_string(filename)?)?;
         Ok(ProjectConfig { base_path, content, corelib: None })
+    }
+
+    /// Returns the crate root's absolute path, according to the base path of this project.
+    pub fn absolute_crate_root(&self, root: &Path) -> PathBuf {
+        if root.is_relative() { self.base_path.join(root) } else { root.to_owned() }
     }
 }

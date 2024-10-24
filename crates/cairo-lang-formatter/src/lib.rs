@@ -5,13 +5,13 @@ pub mod cairo_formatter;
 pub mod formatter_impl;
 pub mod node_properties;
 
-use std::sync::Arc;
-
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_filesystem::ids::{FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use cairo_lang_utils::Intern;
+use serde::{Deserialize, Serialize};
 
 pub use crate::cairo_formatter::{CairoFormatter, FormatOutcome, StdinFmt};
 use crate::formatter_impl::FormatterImpl;
@@ -44,21 +44,26 @@ pub fn get_formatted_file(
 /// # Returns
 /// * `String` - The formatted code.
 pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
-    let virtual_file = db.upcast().intern_file(FileLongId::Virtual(VirtualFile {
+    let virtual_file = FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "string_to_format".into(),
-        content: Arc::new(content.clone()),
-    }));
-    let mut diagnostics = DiagnosticsBuilder::new();
+        content: content.clone().into(),
+        code_mappings: [].into(),
+        kind: FileKind::Module,
+    })
+    .intern(db);
+    let mut diagnostics = DiagnosticsBuilder::default();
     let syntax_root =
         Parser::parse_file(db, &mut diagnostics, virtual_file, content.as_str()).as_syntax_node();
     get_formatted_file(db, &syntax_root, FormatterConfig::default())
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct FormatterConfig {
     tab_size: usize,
     max_line_length: usize,
+    sort_module_level_items: bool,
 }
 
 // Config params
@@ -67,12 +72,17 @@ const TAB_SIZE: usize = 4;
 const MAX_LINE_LENGTH: usize = 100;
 
 impl FormatterConfig {
-    pub fn new(tab_size: usize, max_line_length: usize) -> Self {
-        Self { tab_size, max_line_length }
+    pub fn new(tab_size: usize, max_line_length: usize, sort_module_level_items: bool) -> Self {
+        Self { tab_size, max_line_length, sort_module_level_items }
+    }
+
+    pub fn sort_module_level_items(mut self, sort_module_level_items: bool) -> Self {
+        self.sort_module_level_items = sort_module_level_items;
+        self
     }
 }
 impl Default for FormatterConfig {
     fn default() -> Self {
-        Self::new(TAB_SIZE, MAX_LINE_LENGTH)
+        Self::new(TAB_SIZE, MAX_LINE_LENGTH, false)
     }
 }

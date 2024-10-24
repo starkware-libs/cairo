@@ -1,15 +1,71 @@
-use std::borrow::Borrow;
+use core::borrow::Borrow;
+use core::hash::{BuildHasher, Hash};
+use core::ops::Sub;
+#[cfg(feature = "std")]
 use std::collections::HashSet;
-use std::hash::Hash;
-use std::ops::Sub;
+#[cfg(feature = "std")]
+use std::collections::hash_map::RandomState;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashSet;
 
 /// A hash set that does not care about the order of insertion.
+///
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
 /// For an iterable version see [OrderedHashSet](crate::ordered_hash_set::OrderedHashSet).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UnorderedHashSet<Key: Hash + Eq>(HashSet<Key>);
+#[cfg(feature = "std")]
+#[derive(Clone, Debug)]
+pub struct UnorderedHashSet<Key, BH = RandomState>(HashSet<Key, BH>);
+#[cfg(not(feature = "std"))]
+#[derive(Clone, Debug)]
+pub struct UnorderedHashSet<Key, BH = hashbrown::hash_map::DefaultHashBuilder>(HashSet<Key, BH>);
 
-impl<Key: Hash + Eq> UnorderedHashSet<Key> {
+impl<K, BH: Default> Default for UnorderedHashSet<K, BH> {
+    #[cfg(feature = "std")]
+    fn default() -> Self {
+        Self(Default::default())
+    }
+    #[cfg(not(feature = "std"))]
+    fn default() -> Self {
+        Self(HashSet::with_hasher(Default::default()))
+    }
+}
+
+impl<K, BH> PartialEq for UnorderedHashSet<K, BH>
+where
+    K: Eq + Hash,
+    BH: BuildHasher,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl<K, BH> Eq for UnorderedHashSet<K, BH>
+where
+    K: Eq + Hash,
+    BH: BuildHasher,
+{
+}
+
+impl<Key, BH> UnorderedHashSet<Key, BH> {
+    /// Returns the number of elements in the set.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns true if the set contains no elements.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// Clears the set, removing all values.
+    pub fn clear(&mut self) {
+        self.0.clear()
+    }
+}
+
+impl<Key: Hash + Eq, BH: BuildHasher> UnorderedHashSet<Key, BH> {
     /// Inserts the value into the set.
     ///
     /// If an equivalent item already exists in the set, returns `false`. Otherwise, returns `true`.
@@ -42,39 +98,21 @@ impl<Key: Hash + Eq> UnorderedHashSet<Key> {
     {
         self.0.contains(value)
     }
-
-    /// Returns the number of elements in the set.
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    /// Returns true if the set contains no elements.
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    /// Clears the set, removing all values.
-    pub fn clear(&mut self) {
-        self.0.clear()
-    }
 }
 
-impl<Key: Hash + Eq> Default for UnorderedHashSet<Key> {
-    fn default() -> Self {
-        Self(Default::default())
-    }
-}
-
-impl<Key: Hash + Eq> FromIterator<Key> for UnorderedHashSet<Key> {
+impl<Key: Hash + Eq, BH: BuildHasher + Default> FromIterator<Key> for UnorderedHashSet<Key, BH> {
     fn from_iter<T: IntoIterator<Item = Key>>(iter: T) -> Self {
         Self(iter.into_iter().collect())
     }
 }
 
-impl<'a, Key: Hash + Eq + Clone> Sub<&'a UnorderedHashSet<Key>> for &'a UnorderedHashSet<Key> {
-    type Output = UnorderedHashSet<Key>;
+impl<'a, Key, BH> Sub<&'a UnorderedHashSet<Key, BH>> for &'a UnorderedHashSet<Key, BH>
+where
+    &'a HashSet<Key, BH>: Sub<Output = HashSet<Key, BH>>,
+{
+    type Output = UnorderedHashSet<Key, BH>;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        UnorderedHashSet::<Key>(&self.0 - &rhs.0)
+        UnorderedHashSet::<Key, BH>(&self.0 - &rhs.0)
     }
 }

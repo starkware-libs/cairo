@@ -1,7 +1,7 @@
 //! > Named arguments
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(d: bool) {
@@ -11,14 +11,17 @@ fn foo(d: bool) {
     // Note that a diagnostic is not reported for the wrong type when the name is wrong.
     bar(x: 0, 1, y: 2, 3, false);
     MyEnum::A(x: 0);
+    // Wrong number of params.
+    bar(0, 1, 2, 3);
+    // Wrong number of params.
+    bar(0, 1, 2, 3, 4, 5);
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn bar(a: felt252, b: felt252, c: felt252, d: felt252, e: felt252) {
-}
+fn bar(a: felt252, b: felt252, c: felt252, d: felt252, e: felt252) {}
 
 enum MyEnum {
     A: felt252
@@ -26,36 +29,46 @@ enum MyEnum {
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "core::bool".
- --> lib.cairo:9:19
+ --> lib.cairo:8:19
     bar(0, 1, 2, :d, e: 0);
                   ^
 
 error: Unexpected argument name. Expected: 'a', found 'x'.
- --> lib.cairo:12:9
+ --> lib.cairo:11:9
     bar(x: 0, 1, y: 2, 3, false);
         ^
 
 error: Unnamed arguments cannot follow named arguments.
- --> lib.cairo:12:15
+ --> lib.cairo:11:15
     bar(x: 0, 1, y: 2, 3, false);
               ^
 
 error: Unexpected argument name. Expected: 'c', found 'y'.
- --> lib.cairo:12:18
+ --> lib.cairo:11:18
     bar(x: 0, 1, y: 2, 3, false);
                  ^
 
 error: Named arguments are not supported in this context.
- --> lib.cairo:13:15
+ --> lib.cairo:12:15
     MyEnum::A(x: 0);
               ^
+
+error: Wrong number of arguments. Expected 5, found: 4
+ --> lib.cairo:14:5
+    bar(0, 1, 2, 3);
+    ^*************^
+
+error: Wrong number of arguments. Expected 5, found: 6
+ --> lib.cairo:16:5
+    bar(0, 1, 2, 3, 4, 5);
+    ^*******************^
 
 //! > ==========================================================================
 
 //! > Ref arguments
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(ref a: felt252) {
@@ -73,47 +86,46 @@ fn foo(ref a: felt252) {
 foo
 
 //! > module_code
-fn bar(a: felt252, ref b: felt252) {
-}
+fn bar(a: felt252, ref b: felt252) {}
 
 //! > expected_diagnostics
 error: ref argument must be passed with a preceding 'ref'.
- --> lib.cairo:6:12
+ --> lib.cairo:5:12
     bar(a, a);
            ^
 
 error: ref argument must be a mutable variable.
- --> lib.cairo:7:12
+ --> lib.cairo:6:12
+    bar(b, b);
+           ^
+
+error: ref argument must be passed with a preceding 'ref'.
+ --> lib.cairo:6:12
     bar(b, b);
            ^
 
 error: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:7:12
-    bar(b, b);
-           ^
-
-error: ref argument must be passed with a preceding 'ref'.
- --> lib.cairo:8:12
     bar(c, c);
            ^
 
 error: Argument to immutable parameter cannot have modifiers.
- --> lib.cairo:9:13
+ --> lib.cairo:8:13
     bar(ref a, ref a);
             ^
 
 error: Argument to immutable parameter cannot have modifiers.
- --> lib.cairo:10:13
+ --> lib.cairo:9:13
     bar(ref b, ref b);
             ^
 
 error: ref argument must be a mutable variable.
- --> lib.cairo:10:20
+ --> lib.cairo:9:20
     bar(ref b, ref b);
                    ^
 
 error: Argument to immutable parameter cannot have modifiers.
- --> lib.cairo:11:13
+ --> lib.cairo:10:13
     bar(ref c, ref c);
             ^
 
@@ -122,35 +134,50 @@ error: Argument to immutable parameter cannot have modifiers.
 //! > Unknown function
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(d: MyStruct) {
     bar(0);
     d + 0;
-    - d;
+    -d;
     d.bar();
+    d.baz();
 }
 
 //! > function_name
 foo
 
 //! > module_code
-struct MyStruct {
+struct MyStruct {}
+
+struct OtherStruct {}
+
+trait MyTrait<T> {
+    fn baz(self: T);
+}
+impl OtherStructImpl of MyTrait<OtherStruct> {
+    fn baz(self: OtherStruct) {}
 }
 
 //! > expected_diagnostics
 error: Function not found.
- --> lib.cairo:4:5
+ --> lib.cairo:12:5
     bar(0);
     ^*^
 
-error: Method `bar` not found on type "test::MyStruct". Did you import the correct trait and impl?
- --> lib.cairo:7:7
+error[E0002]: Method `bar` not found on type `test::MyStruct`. Did you import the correct trait and impl?
+ --> lib.cairo:15:7
     d.bar();
       ^*^
 
-error: Trait has no implementation in context: core::integer::NumericLiteral::<test::MyStruct>
- --> lib.cairo:5:9
+error[E0002]: Method `baz` could not be called on type `test::MyStruct`.
+Candidate `test::MyTrait::baz` inference failed with: Trait has no implementation in context: test::MyTrait::<test::MyStruct>.
+ --> lib.cairo:16:7
+    d.baz();
+      ^*^
+
+error: Trait has no implementation in context: core::traits::Add::<test::MyStruct>.
+ --> lib.cairo:13:5
     d + 0;
-        ^
+    ^***^

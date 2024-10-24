@@ -1,5 +1,5 @@
-use super::types::TypeInfo;
 use super::SpecializationError;
+use super::types::TypeInfo;
 use crate::ids::ConcreteTypeId;
 
 /// Trait for the specialization of types.

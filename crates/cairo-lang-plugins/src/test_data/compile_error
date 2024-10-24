@@ -1,0 +1,61 @@
+//! > Test diagnostics of compile error.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: true)
+
+//! > cairo_code
+compile_error!();
+
+compile_error!(1);
+
+compile_error!("message", "extra");
+
+compile_error!("error message");
+
+//! > expanded_cairo_code
+
+//! > expected_diagnostics
+error: Macro `compile_error` must have exactly 1 unnamed arguments.
+ --> test_src/lib.cairo:1:1
+compile_error!();
+^***************^
+
+error: `compiler_error!` argument must be an unnamed string argument.
+ --> test_src/lib.cairo:3:16
+compile_error!(1);
+               ^
+
+error: Macro `compile_error` must have exactly 1 unnamed arguments.
+ --> test_src/lib.cairo:5:1
+compile_error!("message", "extra");
+^*********************************^
+
+error: "error message"
+ --> test_src/lib.cairo:7:1
+compile_error!("error message");
+^******************************^
+
+//! > ==========================================================================
+
+//! > Test usage of `compile_error!` with `cfg`.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: true)
+
+//! > cfg
+["noignore"]
+
+//! > cairo_code
+#[cfg(noignore)]
+compile_error!("show");
+
+#[cfg(ignore)]
+compile_error!("ignore");
+
+//! > expanded_cairo_code
+
+//! > expected_diagnostics
+error: "show"
+ --> test_src/lib.cairo:1:1
+#[cfg(noignore)]
+^**************^

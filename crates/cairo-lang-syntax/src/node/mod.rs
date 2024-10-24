@@ -2,7 +2,9 @@ use core::hash::Hash;
 use std::fmt::Display;
 use std::sync::Arc;
 
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
+use cairo_lang_utils::{Intern, LookupIntern, require};
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -11,7 +13,7 @@ use self::green::GreenNode;
 use self::ids::{GreenId, SyntaxStablePtrId};
 use self::kind::SyntaxKind;
 use self::stable_ptr::SyntaxStablePtr;
-use crate::node::iter::{Preorder, SyntaxNodeChildIterator, WalkEvent};
+use crate::node::iter::{Preorder, WalkEvent};
 
 pub mod ast;
 pub mod db;
@@ -43,15 +45,16 @@ struct SyntaxNodeInner {
     stable_ptr: SyntaxStablePtrId,
 }
 impl SyntaxNode {
-    pub fn new_root(db: &dyn SyntaxGroup, green: ast::SyntaxFileGreen) -> Self {
+    pub fn new_root(db: &dyn SyntaxGroup, file_id: FileId, green: GreenId) -> Self {
         let inner = SyntaxNodeInner {
-            green: green.0,
+            green,
             offset: TextOffset::default(),
             parent: None,
-            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root),
+            stable_ptr: SyntaxStablePtr::Root(file_id, green).intern(db),
         };
         Self(Arc::new(inner))
     }
+
     pub fn offset(&self) -> TextOffset {
         self.0.offset
     }
@@ -68,57 +71,41 @@ impl SyntaxNode {
     }
     /// Returns the text of the token if this node is a token.
     pub fn text(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        match self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => Some(text),
+        match &self.green_node(db).details {
+            green::GreenNodeDetails::Token(text) => Some(text.clone()),
             green::GreenNodeDetails::Node { .. } => None,
         }
     }
-    pub fn green_node(&self, db: &dyn SyntaxGroup) -> GreenNode {
-        db.lookup_intern_green(self.0.green)
+    pub fn green_node(&self, db: &dyn SyntaxGroup) -> Arc<GreenNode> {
+        self.0.green.lookup_intern(db)
     }
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
         let start = self.span_start_without_trivia(db);
         let end = self.span_end_without_trivia(db);
         TextSpan { start, end }
     }
-    pub fn children<'db>(&self, db: &'db dyn SyntaxGroup) -> SyntaxNodeChildIterator<'db> {
-        SyntaxNodeChildIterator::new(self, db)
-    }
     pub fn parent(&self) -> Option<SyntaxNode> {
         self.0.parent.as_ref().cloned()
     }
+    /// Returns the position of a syntax node in its parent's children, or None if the node has no
+    /// parent.
+    pub fn position_in_parent(&self, db: &dyn SyntaxGroup) -> Option<usize> {
+        let parent_green = self.parent()?.green_node(db);
+        let parent_children = parent_green.children();
+        let self_green_id = self.0.green;
+        parent_children.iter().position(|child| child == &self_green_id)
+    }
     pub fn stable_ptr(&self) -> SyntaxStablePtrId {
         self.0.stable_ptr
-    }
-
-    /// Lookups a syntax node using a stable syntax pointer.
-    /// Should only be called on the root from which the stable pointer was generated.
-    pub fn lookup_ptr(&self, db: &dyn SyntaxGroup, stable_ptr: SyntaxStablePtrId) -> SyntaxNode {
-        assert!(self.0.parent.is_none(), "May only be called on the root.");
-        let ptr = db.lookup_intern_stable_ptr(stable_ptr);
-        match ptr {
-            SyntaxStablePtr::Root => self.clone(),
-            SyntaxStablePtr::Child { parent, .. } => {
-                let parent = self.lookup_ptr(db, parent);
-                for child in parent.children(db) {
-                    if child.stable_ptr() == stable_ptr {
-                        return child;
-                    }
-                }
-                unreachable!();
-            }
-        }
     }
 
     /// Gets the inner token from a terminal SyntaxNode. If the given node is not a terminal,
     /// returns None.
     pub fn get_terminal_token(&self, db: &dyn SyntaxGroup) -> Option<SyntaxNode> {
         let green_node = self.green_node(db);
-        if !green_node.kind.is_terminal() {
-            return None;
-        }
+        require(green_node.kind.is_terminal())?;
         // At this point we know we should have a second child which is the token.
-        let token_node = self.children(db).nth(1).unwrap();
+        let token_node = db.get_children(self.clone())[1].clone();
         Some(token_node)
     }
 
@@ -129,8 +116,9 @@ impl SyntaxNode {
                 if let Some(token_node) = self.get_terminal_token(db) {
                     return token_node.offset();
                 }
-                let children = &mut self.children(db);
-                if let Some(child) = children.find(|child| child.width(db) != TextWidth::default())
+                let children = db.get_children(self.clone());
+                if let Some(child) =
+                    children.iter().find(|child| child.width(db) != TextWidth::default())
                 {
                     child.span_start_without_trivia(db)
                 } else {
@@ -147,9 +135,9 @@ impl SyntaxNode {
                 if let Some(token_node) = self.get_terminal_token(db) {
                     return token_node.span(db).end;
                 }
-                let children = &mut self.children(db);
+                let children = &mut db.get_children(self.clone());
                 if let Some(child) =
-                    children.filter(|child| child.width(db) != TextWidth::default()).last()
+                    children.iter().filter(|child| child.width(db) != TextWidth::default()).last()
                 {
                     child.span_end_without_trivia(db)
                 } else {
@@ -162,7 +150,7 @@ impl SyntaxNode {
 
     /// Lookups a syntax node using an offset.
     pub fn lookup_offset(&self, db: &dyn SyntaxGroup, offset: TextOffset) -> SyntaxNode {
-        for child in self.children(db) {
+        for child in db.get_children(self.clone()).iter() {
             if child.offset().add_width(child.width(db)) > offset {
                 return child.lookup_offset(db, offset);
             }
@@ -170,10 +158,88 @@ impl SyntaxNode {
         self.clone()
     }
 
+    /// Lookups a syntax node using a position.
+    pub fn lookup_position(&self, db: &dyn SyntaxGroup, position: TextPosition) -> SyntaxNode {
+        match position.offset_in_file(db.upcast(), self.stable_ptr().file_id(db)) {
+            Some(offset) => self.lookup_offset(db, offset),
+            None => self.clone(),
+        }
+    }
+
     /// Returns all the text under the syntax node.
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text(&self, db: &dyn SyntaxGroup) -> String {
         format!("{}", NodeTextFormatter { node: self, db })
+    }
+
+    /// Returns all the text under the syntax node.
+    /// It traverses all the syntax tree of the node, but ignores functions and modules.
+    /// We ignore those, because if there's some inner functions or modules, we don't want to get
+    /// raw text of them. Comments inside them refer themselves directly, not this SyntaxNode.
+    pub fn get_text_without_inner_commentable_children(&self, db: &dyn SyntaxGroup) -> String {
+        let mut buffer = String::new();
+
+        match &self.green_node(db).as_ref().details {
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Node { .. } => {
+                for child in db.get_children(self.clone()).iter() {
+                    let kind = child.kind(db);
+
+                    // Checks all the items that the inner comment can be bubbled to (implementation
+                    // function is also a FunctionWithBody).
+                    if !matches!(
+                        kind,
+                        SyntaxKind::FunctionWithBody
+                            | SyntaxKind::ItemModule
+                            | SyntaxKind::TraitItemFunction
+                    ) {
+                        buffer.push_str(&SyntaxNode::get_text_without_inner_commentable_children(
+                            child, db,
+                        ));
+                    }
+                }
+            }
+        }
+        buffer
+    }
+
+    /// Returns all the text of the item without comments trivia.
+    /// It traverses all the syntax tree of the node.
+    pub fn get_text_without_all_comment_trivia(&self, db: &dyn SyntaxGroup) -> String {
+        let mut buffer = String::new();
+
+        match &self.green_node(db).as_ref().details {
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Node { .. } => {
+                for child in db.get_children(self.clone()).iter() {
+                    let kind = child.kind(db);
+
+                    if matches!(kind, SyntaxKind::Trivia) {
+                        ast::Trivia::from_syntax_node(db, child.clone())
+                            .elements(db)
+                            .iter()
+                            .for_each(|element| {
+                                if !matches!(
+                                    element,
+                                    ast::Trivium::SingleLineComment(_)
+                                        | ast::Trivium::SingleLineDocComment(_)
+                                        | ast::Trivium::SingleLineInnerComment(_)
+                                ) {
+                                    buffer.push_str(
+                                        &element
+                                            .as_syntax_node()
+                                            .get_text_without_all_comment_trivia(db),
+                                    );
+                                }
+                            });
+                    } else {
+                        buffer
+                            .push_str(&SyntaxNode::get_text_without_all_comment_trivia(child, db));
+                    }
+                }
+            }
+        }
+        buffer
     }
 
     /// Returns all the text under the syntax node, without the outmost trivia (the leading trivia
@@ -223,6 +289,14 @@ impl SyntaxNode {
     pub fn preorder<'db>(&self, db: &'db dyn SyntaxGroup) -> Preorder<'db> {
         Preorder::new(self.clone(), db)
     }
+
+    /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
+    pub fn tokens<'a>(&'a self, db: &'a dyn SyntaxGroup) -> impl Iterator<Item = Self> + 'a {
+        self.preorder(db).filter_map(|event| match event {
+            WalkEvent::Enter(node) if node.green_node(db).kind.is_terminal() => Some(node),
+            _ => None,
+        })
+    }
 }
 
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
@@ -230,12 +304,11 @@ impl SyntaxNode {
 pub trait TypedSyntaxNode {
     /// The relevant SyntaxKind. None for enums.
     const OPTIONAL_KIND: Option<SyntaxKind>;
-    type StablePtr;
+    type StablePtr: TypedStablePtr;
     type Green;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green;
     // TODO(spapini): Make this return an Option, if the kind is wrong.
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
-    fn from_ptr(db: &dyn SyntaxGroup, root: &ast::SyntaxFile, node: Self::StablePtr) -> Self;
     fn as_syntax_node(&self) -> SyntaxNode;
     fn stable_ptr(&self) -> Self::StablePtr;
 }
@@ -258,6 +331,15 @@ pub trait Terminal: TypedSyntaxNode {
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
 }
 
+/// Trait for stable pointers to syntax nodes.
+pub trait TypedStablePtr {
+    type SyntaxNode: TypedSyntaxNode;
+    /// Returns the syntax node pointed to by this stable pointer.
+    fn lookup(&self, db: &dyn SyntaxGroup) -> Self::SyntaxNode;
+    /// Returns the untyped stable pointer.
+    fn untyped(&self) -> SyntaxStablePtrId;
+}
+
 /// Wrapper for formatting the text of syntax nodes.
 pub struct NodeTextFormatter<'a> {
     /// The node to format.
@@ -265,14 +347,13 @@ pub struct NodeTextFormatter<'a> {
     /// The syntax db.
     pub db: &'a dyn SyntaxGroup,
 }
-impl<'a> Display for NodeTextFormatter<'a> {
+impl Display for NodeTextFormatter<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let node = self.node.green_node(self.db);
-        match node.details {
+        match &self.node.green_node(self.db).as_ref().details {
             green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
             green::GreenNodeDetails::Node { .. } => {
-                for child in self.node.children(self.db) {
-                    write!(f, "{}", NodeTextFormatter { node: &child, db: self.db })?;
+                for child in self.db.get_children(self.node.clone()).iter() {
+                    write!(f, "{}", NodeTextFormatter { node: child, db: self.db })?;
                 }
             }
         }

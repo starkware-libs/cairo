@@ -1,15 +1,15 @@
 //! > Test generics substitution.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 extern type A<S>;
-extern fn bar<T>(x:T) -> A::<T> nopanic;
+extern fn bar<T>(x: T) -> A::<T> nopanic;
 
-fn foo(a: A::<felt252>) -> A::<A::<felt252>> {
-    let res = bar::<A::<felt252>>(a);
-    let bad : A::<A::<bool>> = res;
+fn foo(a: A::<felt252>) -> A::<A<felt252>> {
+    let res = bar::<A<felt252>>(a);
+    let _bad: A::<A<bool>> = res;
     res
 }
 
@@ -20,16 +20,16 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
- --> lib.cairo:6:32
-    let bad : A::<A::<bool>> = res;
-                               ^*^
+ --> lib.cairo:6:30
+    let _bad: A::<A<bool>> = res;
+                             ^*^
 
 //! > ==========================================================================
 
 //! > Test generics in trait functions.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -41,7 +41,7 @@ fn foo() {
 trait MyTrait<T> {
     fn foo<S>(self: T, y: S) -> (T, S);
 }
-impl MyImpl of MyTrait::<felt252> {
+impl MyImpl of MyTrait<felt252> {
     fn foo<S>(self: felt252, y: S) -> (felt252, S) {
         (self, y)
     }
@@ -57,7 +57,7 @@ foo
 //! > Test ref self in trait functions.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -69,7 +69,7 @@ fn foo() {
 trait MyTrait<T> {
     fn foo(ref self: T);
 }
-impl MyImpl of MyTrait::<felt252> {
+impl MyImpl of MyTrait<felt252> {
     fn foo(ref self: felt252) {}
 }
 
@@ -83,70 +83,79 @@ foo
 //! > Test generic kind failures
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    bar::<1,1,1,1>();
-    bar::<felt252,felt252>();
+    bar::<1, 1, 1, 1>();
+    bar::<felt252, felt252>();
     bar::<felt252>();
-    // TODO(spapini): -1 should give a bounds check error.
-    bar::<usize,-1, A>();
+    bar::<usize, -1, A>();
+    1_felt252.method_no_generics::<felt252>();
+    1_felt252.method_one_generic::<felt252, felt252>();
+    1_felt252.method_two_generics::<felt252, felt252, felt252>();
 }
 
 //! > module_code
-fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
+fn bar<A, const B: usize, impl C: MyTrait<felt252>>() {}
+
+#[generate_trait]
+impl MyImpl of Generics {
+    fn method_no_generics(self: felt252) {}
+    fn method_one_generic<T>(self: felt252) {}
+    fn method_two_generics<T, S>(self: felt252) {}
+}
 
 //! > function_name
 foo
 
 //! > expected_diagnostics
-error: Const generic args are not allowed in this context.
- --> lib.cairo:1:11
-fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
-          ^************^
-
 error: Trait not found.
  --> lib.cairo:1:35
-fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
+fn bar<A, const B: usize, impl C: MyTrait<felt252>>() {}
                                   ^*****^
 
-error: Wrong number of generic arguments. Expected 3, found: 4
- --> lib.cairo:3:5
-    bar::<1,1,1,1>();
-    ^*^
+error: Expected 3 generic arguments, found 4.
+ --> lib.cairo:10:20
+    bar::<1, 1, 1, 1>();
+                   ^
 
-error: Unknown type.
- --> lib.cairo:3:11
-    bar::<1,1,1,1>();
-          ^
+error: Expected variable or constant, found type.
+ --> lib.cairo:11:20
+    bar::<felt252, felt252>();
+                   ^*****^
 
-error: Unknown impl.
- --> lib.cairo:3:15
-    bar::<1,1,1,1>();
-              ^
-
-error: Unknown literal.
- --> lib.cairo:4:19
-    bar::<felt252,felt252>();
-                  ^*****^
-
-error: Const generic inference not yet supported.
- --> lib.cairo:5:5
-    bar::<felt252>();
-    ^*^
+error: The value does not fit within the range of type core::integer::u32.
+ --> lib.cairo:13:18
+    bar::<usize, -1, A>();
+                 ^^
 
 error: Impl not found.
- --> lib.cairo:7:21
-    bar::<usize,-1, A>();
-                    ^
+ --> lib.cairo:13:22
+    bar::<usize, -1, A>();
+                     ^
+
+error: Expected 0 generic arguments, found 1.
+ --> lib.cairo:14:36
+    1_felt252.method_no_generics::<felt252>();
+                                   ^*****^
+
+error: Expected 1 generic arguments, found 2.
+ --> lib.cairo:15:45
+    1_felt252.method_one_generic::<felt252, felt252>();
+                                            ^*****^
+
+error: Expected 2 generic arguments, found 3.
+ --> lib.cairo:16:55
+    1_felt252.method_two_generics::<felt252, felt252, felt252>();
+                                                      ^*****^
 
 //! > ==========================================================================
 
 //! > Test generic impl
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -156,24 +165,28 @@ fn foo() {
 
 //! > module_code
 trait MyTrait<T> {}
-impl MyImpl of MyTrait::<felt252> {}
-fn bar<impl C: MyTrait::<felt252>>(){}
-extern fn hoo<impl C: MyTrait::<felt252>>() nopanic;
+impl MyImpl of MyTrait<felt252> {}
+fn bar<impl C: MyTrait<felt252>>() {}
+extern type A<impl C: MyTrait<felt252>>;
+extern type B<T>;
+extern fn hoo<impl C: MyTrait<felt252>>() nopanic;
+extern fn ioo<T, impl C: MyTrait<felt252>, S>() nopanic;
+
 
 trait AnotherTrait<T> {}
-impl AnotherImpl of AnotherTrait::<felt252> {}
+impl AnotherImpl of AnotherTrait<felt252> {}
 
 //! > function_name
 foo
 
 //! > expected_diagnostics
-error: Extern items with impl generics are not supported
+error: Extern types with impl generics are not supported.
  --> lib.cairo:4:15
-extern fn hoo<impl C: MyTrait::<felt252>>() nopanic;
-              ^************************^
+extern type A<impl C: MyTrait<felt252>>;
+              ^**********************^
 
-error: Supplied impl does not match the required trait
- --> lib.cairo:10:11
+error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::AnotherTrait::<core::felt252>`.
+ --> lib.cairo:14:11
     bar::<AnotherImpl>();
           ^*********^
 
@@ -182,13 +195,13 @@ error: Supplied impl does not match the required trait
 //! > Test generic impl params usage
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn f(){}
+fn f() {}
 
 //! > module_code
-fn foo<T, impl GenericImpl: MyTrait::<T>>(x: T) {
+fn foo<T, impl GenericImpl: MyTrait<T>>(x: T) {
     GenericImpl::foo(x);
     MyImpl::foo(4);
     MyTrait::foo(x);
@@ -196,29 +209,27 @@ fn foo<T, impl GenericImpl: MyTrait::<T>>(x: T) {
     foo::<T, GenericImpl>(x);
     bar::<T, GenericImpl>();
 }
-fn bar<T, impl GenericImpl: MyTrait::<felt252>>() {}
+fn bar<T, impl GenericImpl: MyTrait<felt252>>() {}
 
 trait MyTrait<T> {
     fn foo(self: T);
 }
-impl MyImpl of MyTrait::<felt252> {
-    fn foo(self: felt252) {
-    }
+impl MyImpl of MyTrait<felt252> {
+    fn foo(self: felt252) {}
 }
 
 trait AnotherTrait<T> {
     fn foo(self: T);
 }
-impl AnotherImpl of AnotherTrait::<felt252> {
-    fn foo(self: felt252) {
-    }
+impl AnotherImpl of AnotherTrait<felt252> {
+    fn foo(self: felt252) {}
 }
 
 //! > function_name
 f
 
 //! > expected_diagnostics
-error: Supplied impl does not match the required trait
+error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::MyTrait::<T>`.
  --> lib.cairo:7:14
     bar::<T, GenericImpl>();
              ^*********^
@@ -228,10 +239,10 @@ error: Supplied impl does not match the required trait
 //! > Test generic impl params on generic impl
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn f(){
+fn f() {
     MyImpl::<MyImpl2>::foo();
 }
 
@@ -248,8 +259,7 @@ impl MyImpl<impl Imp: MyTrait2> of MyTrait {
     }
 }
 impl MyImpl2 of MyTrait2 {
-    fn foo2() {
-    }
+    fn foo2() {}
 }
 
 //! > function_name
@@ -262,7 +272,7 @@ f
 //! > Test generic deduction
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -285,3 +295,417 @@ error: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core
  --> lib.cairo:8:9
     x = bar::<u16, u32>();
         ^***************^
+
+//! > ==========================================================================
+
+//! > Test out of order generics.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait ATrait<T> {}
+trait ATrait2<T, impl Timpl: ATrait<T>> {}
+
+struct B<impl Timpl1: ATrait<T>, T, impl Timpl2: ATrait2<T>> {
+    t: T
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test out of order generic impls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait ATrait<T> {}
+trait ATrait2<T, impl Timpl: ATrait<T>> {}
+
+struct B<T, impl Timpl2: ATrait2<T>, impl Timpl1: ATrait<T>> {
+    t: T
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test named generics
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    // Failures.
+    bar::<felt252, G: felt252>();
+    bar::<T: felt252, u32>();
+    bar::<T: felt252, T: u32>();
+    bar::<felt252, T: u32>();
+    bar::<felt252, u32, AFelt, BUint, u64>();
+    bar::<S: felt252, T: u32>();
+
+    // Successes.
+    bar::<felt252, S: u32>();
+    bar::<felt252, S: u32, X: _>();
+    bar::<S: _, X: AFelt, Y: BUint>();
+    bar::<felt252, u32, X: AFelt, Y: BUint>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait ATrait<T> {}
+impl AFelt of ATrait<felt252> {}
+trait BTrait<T> {}
+impl BUint of BTrait<u32> {}
+
+fn bar<T, S, impl X: ATrait<T>, impl Y: BTrait<S>>() {}
+
+//! > expected_diagnostics
+error: Unknown generic parameter `G`.
+ --> lib.cairo:9:20
+    bar::<felt252, G: felt252>();
+                   ^********^
+
+error: Positional generic parameters must come before named generic parameters.
+ --> lib.cairo:10:23
+    bar::<T: felt252, u32>();
+                      ^*^
+
+error: Generic argument `T` is specified more than once.
+ --> lib.cairo:11:23
+    bar::<T: felt252, T: u32>();
+                      ^****^
+
+error: Generic argument `T` is specified more than once.
+ --> lib.cairo:12:20
+    bar::<felt252, T: u32>();
+                   ^****^
+
+error: Expected 4 generic arguments, found 5.
+ --> lib.cairo:13:39
+    bar::<felt252, u32, AFelt, BUint, u64>();
+                                      ^*^
+
+error: Generic argument `T` is out of order.
+ --> lib.cairo:14:23
+    bar::<S: felt252, T: u32>();
+                      ^****^
+
+//! > ==========================================================================
+
+//! > Unknown unnamed impl generic parameter.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<+unknown>() {}
+
+//! > expected_diagnostics
+error: Trait not found.
+ --> lib.cairo:1:9
+fn bar<+unknown>() {}
+        ^*****^
+
+//! > ==========================================================================
+
+//! > Unknown named impl generic parameter.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<impl X: unknown>() {}
+
+//! > expected_diagnostics
+error: Trait not found.
+ --> lib.cairo:1:16
+fn bar<impl X: unknown>() {}
+               ^*****^
+
+//! > ==========================================================================
+
+//! > Test impl infernce cycle
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+trait Introspect<T> {}
+
+#[derive(Drop)]
+struct Generic<T, +Introspect<T>> {
+    value: T,
+}
+
+fn foo() {
+    let _generic = Generic { value: 123 };
+}
+
+impl GenericStructIntrospect<T, impl IntrospectTImp: Introspect<T>> of Introspect<Generic<T>> {}
+impl Felt252Introspect of Introspect<felt252> {}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+ --> lib.cairo:12:72
+impl GenericStructIntrospect<T, impl IntrospectTImp: Introspect<T>> of Introspect<Generic<T>> {}
+                                                                       ^********************^
+
+//! > ==========================================================================
+
+//! > Generic param depends on the next generic param
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<+Drop<T>, T> {}
+
+//! > function_body
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Missing generic param
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<+Drop<T>, +Copy<T>> {}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Type not found.
+ --> lib.cairo:1:21
+trait MyTrait<+Drop<T>, +Copy<T>> {}
+                    ^
+
+error: Type not found.
+ --> lib.cairo:1:31
+trait MyTrait<+Drop<T>, +Copy<T>> {}
+                              ^
+
+//! > ==========================================================================
+
+//! > Pass type instead of impl to trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T, +Drop<T>> {}
+
+impl MyImpl<T> of MyTrait<T, T> {}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unknown impl.
+ --> lib.cairo:3:30
+impl MyImpl<T> of MyTrait<T, T> {}
+                             ^
+
+//! > ==========================================================================
+
+//! > Pass const expressions.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar::<{ 1 + 2 }>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar<const M: felt252>() nopanic;
+
+//! > function_body
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > evaluate const expressions arguments.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _s: S<{ 1 - 2 }> = bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type S<const N: felt252>;
+extern fn bar() -> S<{ 3 + 8 }> nopanic;
+const K: felt252 = 98;
+mod A {
+    fn f() {
+        let _x: super::S<{ super::K + 9 }> = super::bar();
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test::S::<-1>", found: "test::S::<11>".
+ --> lib.cairo:10:28
+    let _s: S<{ 1 - 2 }> = bar();
+                           ^***^
+
+error: Unexpected argument type. Expected: "test::S::<107>", found: "test::S::<11>".
+ --> lib.cairo:6:46
+        let _x: super::S<{ super::K + 9 }> = super::bar();
+                                             ^**********^
+
+//! > ==========================================================================
+
+//! > generic param in expression
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    bar::<1>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const N: felt252>() -> felt252 {
+    N + 5
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > generic param in argument
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> S<1> {
+    bar::<1>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<const N: felt252>() -> S<{ 3 - 2 }> {
+    S::<N> { field: 1 }
+}
+struct S<const N: felt252> {
+    field: felt252
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "test::S::<1>", found: "test::S::<N>".
+ --> lib.cairo:1:44
+fn bar<const N: felt252>() -> S<{ 3 - 2 }> {
+                                           ^
+
+//! > ==========================================================================
+
+//! > const generic types
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> MyStruct<1> {
+    let s = new();
+    bar1(s);
+    bar2(s);
+    s
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct<const N: felt252> {}
+fn new<const N: felt252>() -> MyStruct<N> {
+    MyStruct::<N> {}
+}
+
+fn bar1(s: MyStruct::<1>) {}
+fn bar2(s: MyStruct::<2>) {}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test::MyStruct::<2>", found: "test::MyStruct::<1>".
+ --> lib.cairo:11:10
+    bar2(s);
+         ^

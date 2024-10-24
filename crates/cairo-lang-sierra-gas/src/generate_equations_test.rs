@@ -6,10 +6,10 @@ use cairo_lang_sierra::program::StatementIdx;
 use indoc::indoc;
 use test_case::test_case;
 
-use super::generate_equations;
+use super::{generate_equations, get_reverse_topological_ordering};
+use crate::CostError;
 use crate::core_libfunc_cost_expr::CostExprMap;
 use crate::cost_expr::{CostExpr, Var};
-use crate::CostError;
 
 /// Returns a cost expression for a statement future variable.
 fn future_statement_cost(idx: usize) -> CostExpr {
@@ -111,6 +111,27 @@ fn generate(
                 .map(|x| CostExprMap::from_iter([(CostTokenType::Const, x.clone())]))
                 .collect()
         },
-    )?[CostTokenType::Const]
+    )?[&CostTokenType::Const]
         .clone())
+}
+
+#[test]
+fn test_reverse_topological_ordering() {
+    let code = indoc! {"
+    branch() { 2() 4() 6() };
+    return();
+    jump() { 4() };
+    return();
+    jump() { 0() };
+    return();
+    return();
+    foo_a@0() -> ();
+    foo_b@2() -> ();
+    foo_c@4() -> ();
+    foo_d@6() -> ();
+"};
+    let program = cairo_lang_sierra::ProgramParser::new().parse(code).unwrap();
+    let ordering: Vec<usize> =
+        get_reverse_topological_ordering(&program).unwrap().into_iter().map(|x| x.0).collect();
+    assert_eq!(ordering, vec![4, 2, 6, 0]);
 }

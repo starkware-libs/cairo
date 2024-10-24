@@ -1,168 +1,86 @@
-use cairo_lang_defs::ids::ModuleItemId;
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::test_utils::{setup_test_module, SemanticDatabaseForTesting};
-use cairo_lang_utils::extract_matches;
-use indoc::indoc;
-use pretty_assertions::assert_eq;
+use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
+use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use crate::abi::AbiBuilder;
+use super::{AbiBuilder, BuilderConfig};
+use crate::plugin::consts::CONTRACT_ATTR;
+use crate::starknet_plugin_suite;
 
-#[test]
-fn test_abi() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let module_id = setup_test_module(
-        &mut db_val,
-        indoc! {"
-            struct MyStruct<T> {
-              a: T,
-              b: felt252
-            }
+/// Helper function for testing ABI failures.
+pub fn test_abi_failure(
+    inputs: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let db = &mut RootDatabase::builder()
+        .detect_corelib()
+        .with_plugin_suite(starknet_plugin_suite())
+        .build()
+        .unwrap();
+    let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
+    let (module, diagnostics) = setup_test_module(db, &cairo_code).split();
 
-            enum MyEnum<S> {
-              a: u256,
-              b: MyStruct::<S>
-            }
+    let submodules = db.module_submodules_ids(module.module_id).unwrap();
+    let contract_submodule = submodules
+        .iter()
+        .find(|submodule| submodule.has_attr(db, CONTRACT_ATTR).unwrap())
+        .expect("No starknet::contract found in input code.");
+    let abi_error = AbiBuilder::from_submodule(db, *contract_submodule, BuilderConfig {
+        account_contract_validations: true,
+    })
+    .expect("No basic errors")
+    .finalize()
+    .unwrap_err();
 
-            trait MyAbi<T> {
-                fn foo(ref self: T, a: felt252, b: u128) -> Option::<()>;
+    let test_error = verify_diagnostics_expectation(args, &diagnostics);
 
-                #[external]
-                fn foo_external(ref self: T, a: felt252, b: u128) -> MyStruct::<u256>;
-
-                #[external]
-                fn foo_view(self: @T, a: felt252, b: u128) -> MyEnum::<u128>;
-
-                #[external]
-                fn empty(ref self: T);
-
-                #[event]
-                fn foo_event(a: felt252, b: u128);
-            }
-        "},
-    )
-    .unwrap()
-    .module_id;
-
-    let db = &db_val;
-    let trait_id = extract_matches!(
-        db.module_item_by_name(module_id, "MyAbi".into()).unwrap().unwrap(),
-        ModuleItemId::Trait
-    );
-    let abi = AbiBuilder::trait_as_interface_abi(db, trait_id).unwrap();
-    let actual_serialization = serde_json::to_string_pretty(&abi).unwrap();
-    assert_eq!(
-        actual_serialization,
-        indoc! {
-        r#"[
-            {
-              "type": "function",
-              "name": "foo",
-              "inputs": [
-                {
-                  "name": "a",
-                  "type": "core::felt252"
-                },
-                {
-                  "name": "b",
-                  "type": "core::integer::u128"
-                }
-              ],
-              "outputs": [
-                {
-                  "type": "core::option::Option::<()>"
-                }
-              ],
-              "state_mutability": "external"
-            },
-            {
-              "type": "struct",
-              "name": "test::MyStruct::<core::integer::u256>",
-              "members": [
-                {
-                  "name": "a",
-                  "type": "core::integer::u256"
-                },
-                {
-                  "name": "b",
-                  "type": "core::felt252"
-                }
-              ]
-            },
-            {
-              "type": "function",
-              "name": "foo_external",
-              "inputs": [
-                {
-                  "name": "a",
-                  "type": "core::felt252"
-                },
-                {
-                  "name": "b",
-                  "type": "core::integer::u128"
-                }
-              ],
-              "outputs": [
-                {
-                  "type": "test::MyStruct::<core::integer::u256>"
-                }
-              ],
-              "state_mutability": "external"
-            },
-            {
-              "type": "enum",
-              "name": "test::MyEnum::<core::integer::u128>",
-              "variants": [
-                {
-                  "name": "a",
-                  "type": "core::integer::u256"
-                },
-                {
-                  "name": "b",
-                  "type": "test::MyStruct::<core::integer::u128>"
-                }
-              ]
-            },
-            {
-              "type": "function",
-              "name": "foo_view",
-              "inputs": [
-                {
-                  "name": "a",
-                  "type": "core::felt252"
-                },
-                {
-                  "name": "b",
-                  "type": "core::integer::u128"
-                }
-              ],
-              "outputs": [
-                {
-                  "type": "test::MyEnum::<core::integer::u128>"
-                }
-              ],
-              "state_mutability": "view"
-            },
-            {
-              "type": "function",
-              "name": "empty",
-              "inputs": [],
-              "outputs": [],
-              "state_mutability": "external"
-            },
-            {
-              "type": "event",
-              "name": "foo_event",
-              "inputs": [
-                {
-                  "name": "a",
-                  "type": "core::felt252"
-                },
-                {
-                  "name": "b",
-                  "type": "core::integer::u128"
-                }
-              ]
-            }
-          ]"#}
-    );
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([
+            ("expected_error".into(), abi_error.to_string()),
+            ("expected_diagnostics".into(), diagnostics),
+        ]),
+        error: test_error,
+    }
 }
+
+cairo_lang_test_utils::test_file_test!(
+  abi_failures,
+  "src/test_data",
+  {
+      abi_failures: "abi_failures",
+  },
+  test_abi_failure
+);
+
+/// Helper function for testing multiple Storage path accesses to the same place.
+pub fn test_storage_path_check(
+    inputs: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let db = &mut RootDatabase::builder()
+        .detect_corelib()
+        .with_plugin_suite(starknet_plugin_suite())
+        .build()
+        .unwrap();
+    let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
+    let (_, diagnostics) = setup_test_module(db, &cairo_code).split();
+
+    let test_error = verify_diagnostics_expectation(args, &diagnostics);
+
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([("diagnostics".into(), diagnostics)]),
+        error: test_error,
+    }
+}
+
+cairo_lang_test_utils::test_file_test!(
+  storage_path_check,
+  "src/test_data",
+  {
+      storage_path_check: "storage_path_check",
+  },
+  test_storage_path_check
+);

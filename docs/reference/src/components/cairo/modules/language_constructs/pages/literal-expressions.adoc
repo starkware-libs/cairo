@@ -39,9 +39,9 @@ Examples of numeric literals of various forms:
 |===
 | Literal         | Value | Type
 | `1234`          | 1234  | `felt252`
-| `1234_felt252   | 1234  | `felt252`
-| `1234_u32       | 1234  | `i32`
-| `1234_u128      | 1234  | `u128`
+| `1234_felt252`   | 1234  | `felt252`
+| `1234_u32`       | 1234  | `i32`
+| `1234_u128`      | 1234  | `u128`
 | `0x4D2`         | 1234  | `felt252`
 | `0b10011010010` | 1234  | `felt252`
 |===

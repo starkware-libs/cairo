@@ -2,29 +2,33 @@
 
 A type alias is a new name for an existing type. It is not a new type. Type aliases are created with
 the type keyword:
-```rust
+[source,cairo]
+----
 type NewName<Generics> = ConcreteType;
-```
+----
 
 Examples:
-```rust
+[source,cairo]
+----
 type IntAlias = i32;
 type BoxIntAlias = Box<i32>;
 type BoxOption<T> = Box<Option<T>>;
-```
+----
 
 An impl alias is similar to a type alias, but for impls.
 An impl alias is a new name for an existing impl. It is not a new impl. Impl aliases are created
 with the impl keyword:
-```rust
+[source,cairo]
+----
 impl NewName<Generics> = ConcreteImpl;
-```
+----
 
 Examples:
-```rust
+[source,cairo]
+----
 // Pow implementation for any algebra.
 impl AnyAlgebraPow<A, impl AlgImp: Algebra<A>> of Pow<A> { ... }
 
 // Impl alias for Pow of i32.
 impl Int32Pow = AnyAlgebraPow<i32, I32Algebra>;
-```
+----

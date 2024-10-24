@@ -1,18 +1,20 @@
+use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::CellRef;
-use cairo_lang_casm::{casm, casm_extend};
-use cairo_lang_sierra::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
+use cairo_lang_casm::{casm, casm_build_extend, casm_extend};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
+use cairo_lang_sierra::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use cairo_lang_utils::try_extract_matches;
 use itertools::{chain, repeat_n};
 use num_bigint::BigInt;
+use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 
 use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
 };
-use crate::invocations::ProgramInfo;
+use crate::invocations::{CostValidationInfo, ProgramInfo, add_input_variables, misc};
 use crate::references::{ReferenceExpression, ReferencesError};
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -22,8 +24,11 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, num_variants, .. }) => {
-            build_enum_init(builder, *index, *num_variants)
+        EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, n_variants, .. }) => {
+            build_enum_init(builder, *index, *n_variants)
+        }
+        EnumConcreteLibfunc::FromBoundedInt(libfunc) => {
+            build_enum_from_bounded_int(builder, libfunc.n_variants)
         }
         EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_) => {
             build_enum_match(builder)
@@ -52,34 +57,11 @@ pub fn build(
 fn build_enum_init(
     builder: CompiledInvocationBuilder<'_>,
     index: usize,
-    num_variants: usize,
+    n_variants: usize,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expression] = builder.try_get_refs()?;
     let init_arg_cells = &expression.cells;
-    let variant_selector = if num_variants <= 2 {
-        // For num_branches <= 2, we use the index as the variant_selector as the `match`
-        // implementation jumps to the index 0 statement on 0, and to the index 1 statement on
-        // 1.
-        index
-    } else {
-        // For num_branches > 2, the `enum_match` libfunc is implemented using a jump table. In
-        // order to optimize `enum_match`, we define the variant_selector as the relevant
-        // relative jump in case we match the actual variant.
-        //
-        // - To jump to the variant in index 0, we skip the jump table and directly jump to it. Its
-        //   location is (2 * n - 1) CASM steps ahead, where n is the number of variants in this
-        //   enum (2 per variant but the first variant, and 1 for the first jump with a deref
-        //   operand).
-        // - To jump to the variant in index k, we add "jump rel (2 * (n - k) - 1)" as the first
-        //   jump is of size 1 and the rest of the jump instructions are with an immediate operand,
-        //   which makes them of size 2.
-        match (num_variants - index).checked_mul(2) {
-            Some(double) => double - 1,
-            None => {
-                return Err(InvocationError::IntegerOverflow);
-            }
-        }
-    };
+    let variant_selector = get_variant_selector(n_variants, index)?;
 
     let variant_size = builder
         .program_info
@@ -107,6 +89,65 @@ fn build_enum_init(
     };
     let output_expressions = [enum_val.to_reference_expression()].into_iter();
     Ok(builder.build_only_reference_changes(output_expressions))
+}
+
+/// Returns the variant selector for variant `index` out of `n_variants`.
+pub fn get_variant_selector(n_variants: usize, index: usize) -> Result<usize, InvocationError> {
+    Ok(if n_variants <= 2 {
+        // For num_branches <= 2, we use the index as the variant_selector as the `match`
+        // implementation jumps to the index 0 statement on 0, and to the index 1 statement on
+        // 1.
+        index
+    } else {
+        // For num_branches > 2, the `enum_match` libfunc is implemented using a jump table. In
+        // order to optimize `enum_match`, we define the variant_selector as the relevant
+        // relative jump in case we match the actual variant.
+        //
+        // - To jump to the variant in index 0, we skip the jump table and directly jump to it. Its
+        //   location is (2 * n - 1) CASM steps ahead, where n is the number of variants in this
+        //   enum (2 per variant but the first variant, and 1 for the first jump with a deref
+        //   operand).
+        // - To jump to the variant in index k, we add "jump rel (2 * (n - k) - 1)" as the first
+        //   jump is of size 1 and the rest of the jump instructions are with an immediate operand,
+        //   which makes them of size 2.
+        (n_variants - index).checked_mul(2).ok_or(InvocationError::IntegerOverflow)? - 1
+    })
+}
+
+fn build_enum_from_bounded_int(
+    builder: CompiledInvocationBuilder<'_>,
+    n_variants: usize,
+) -> Result<CompiledInvocation, InvocationError> {
+    if n_variants <= 2 {
+        return misc::build_identity(builder);
+    }
+
+    let [value] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref value;
+    };
+
+    // Given the number of variants, `n`, and the index of the variant `0 <= k < n`:
+    // The variant selector for enums with 3 or more variants is the relative jump to the variant
+    // handle which is `2 * (n - k) - 1`.
+    // `2 * (n - k) - 1 = 2*n - 2*k - 1 = 2 * (2*n - 1) / 2 - 2*k = 2 * ((2*n - 1) / 2 - k)`
+    // Define `(2*n - 1) / 2` as `m` - which is known in compilation time.
+    // Hence the variant selector is `2 * (m - k)` or  alternatively `-2 * (k - m)`
+
+    let m = (Felt252::from(n_variants * 2 - 1).field_div(&NonZeroFelt::TWO)).to_bigint();
+    casm_build_extend! {casm_builder,
+        const m = m;
+        const negative_two = -2;
+        tempvar value_minus_m = value - m;
+        let variant_selector = value_minus_m * negative_two;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[variant_selector]], None)],
+        CostValidationInfo::default(),
+    ))
 }
 
 /// Handles statement for matching an enum.

@@ -8,27 +8,32 @@ description = "Sierra representation."
 build = "src/build.rs" # LALRPOP preprocessing
 
 [build-dependencies]
-lalrpop = "0.19.9"
+lalrpop = "0.20.0"
 regex = "1"
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
+anyhow.workspace = true
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.4", features = ["serde", "schemars"] }
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
 derivative.workspace = true
-itertools.workspace = true
+itertools = { workspace = true, default-features = true }
 lalrpop-util.workspace = true
-num-bigint.workspace = true
-num-traits.workspace = true
+num-bigint = { workspace = true, default-features = true }
+num-integer = { workspace = true, default-features = true }
+num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
-serde.workspace = true
+starknet-types-core.workspace = true
+serde = { workspace = true, default-features = true }
+serde_json.workspace = true
 sha3.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
 
+
 [dev-dependencies]
-assert_matches.workspace = true
 bimap.workspace = true
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true

@@ -33,24 +33,18 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk3, {v0 -> v5})
+  Return(v0)
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v0)
-  (v3: core::felt252) <- 0u
+  (v2: core::felt252) <- core::felt252_add(v0, v0)
+  (v3: core::felt252) <- 0
   (v4: core::felt252) <- test::foo(v3)
 End:
-  Goto(blk3, {v6 -> v5})
-
-blk3:
-Statements:
-End:
-  Return(v5)
+  Return(v2)
 
 //! > last_use
-v5: ((BlockId(3), 0), 0)
-v6: ((BlockId(2), 3), 0)
+v2: ((BlockId(2), 3), 0)
 v3: ((BlockId(2), 2), 0)
 v0: ((BlockId(2), 0), 1)
 v0: ((BlockId(1), 0), 0)
@@ -58,4 +52,4 @@ v0: ((BlockId(1), 0), 0)
 //! > drops
 PostStatement((BlockId(2), 2)): v4
 BeginningOfBlock(BlockId(2)): v1
-BeginningOfBlock(BlockId(1)): UninitializedLocal(v6)
+BeginningOfBlock(BlockId(1)): UninitializedLocal(v2)

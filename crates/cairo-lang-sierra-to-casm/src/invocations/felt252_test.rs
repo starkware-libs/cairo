@@ -4,7 +4,7 @@ use cairo_lang_sierra::program::StatementIdx;
 use test_log::test;
 
 use crate::invocations::test_utils::{
-    compile_libfunc, ReducedBranchChanges, ReducedCompiledInvocation,
+    ReducedBranchChanges, ReducedCompiledInvocation, compile_libfunc,
 };
 use crate::ref_expr;
 use crate::relocations::{Relocation, RelocationEntry};

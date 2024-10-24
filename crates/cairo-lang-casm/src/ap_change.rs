@@ -1,7 +1,6 @@
-use std::fmt::Display;
+use core::fmt::Display;
 
 use cairo_lang_utils::casts::IntoOrPanic;
-use thiserror::Error;
 
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
 
@@ -15,7 +14,7 @@ pub enum ApChange {
     Unknown,
 }
 impl Display for ApChange {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             ApChange::Known(change) => write!(f, "ApChange::Known({change})"),
             ApChange::Unknown => write!(f, "ApChange::Unknown"),
@@ -23,13 +22,23 @@ impl Display for ApChange {
     }
 }
 
-#[derive(Debug, Error, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum ApChangeError {
-    #[error("Unknown ap change")]
     UnknownApChange,
-    #[error("Offset overflow")]
     OffsetOverflow,
 }
+
+impl Display for ApChangeError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            ApChangeError::UnknownApChange => write!(f, "Unknown ap change"),
+            ApChangeError::OffsetOverflow => write!(f, "Offset overflow"),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for ApChangeError {}
 
 /// Trait for applying ap changes.
 pub trait ApplyApChange: Sized {

@@ -57,7 +57,7 @@ less ergonomic. These can be added in a later phase.
 Examples:
 * Generate impl for X, from any impl for Y.
 ```
-impl CloneFromCopy<T, CopyImpl: impl Copy<T>> for Clone<T> {}
+impl CloneFromCopy<T, CopyImpl: impl Copy<T>> of Clone<T> {}
 ```
 roughly equivalent to Rust's
 ```

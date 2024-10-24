@@ -1,0 +1,114 @@
+//! > Test index operator simple
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn test() {
+    a[1];
+}
+
+//! > top_level_kind
+ExprIndexed
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprIndexed
+    ├── expr (kind: ExprPath) <ignored>
+    ├── lbrack (kind: TokenLBrack): '['
+    ├── index_expr (kind: TokenLiteralNumber): '1'
+    └── rbrack (kind: TokenRBrack): ']'
+
+//! > ==========================================================================
+
+//! > Test index operator complex
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn test() {
+    a[x + y];
+}
+
+//! > top_level_kind
+ExprIndexed
+
+//! > ignored_kinds
+ExprPath
+ExprBinary
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprIndexed
+    ├── expr (kind: ExprPath) <ignored>
+    ├── lbrack (kind: TokenLBrack): '['
+    ├── index_expr (kind: ExprBinary) <ignored>
+    └── rbrack (kind: TokenRBrack): ']'
+
+//! > ==========================================================================
+
+//! > Test index operator block
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn test() {
+    a[{
+        x + y
+    }];
+}
+
+//! > top_level_kind
+ExprIndexed
+
+//! > ignored_kinds
+ExprPath
+ExprBinary
+ExprBlock
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprIndexed
+    ├── expr (kind: ExprPath) <ignored>
+    ├── lbrack (kind: TokenLBrack): '['
+    ├── index_expr (kind: ExprBlock) <ignored>
+    └── rbrack (kind: TokenRBrack): ']'
+
+//! > ==========================================================================
+
+//! > Test index operator of index
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn test() {
+    a[a[1]];
+}
+
+//! > top_level_kind
+ExprIndexed
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprIndexed
+    ├── expr (kind: ExprPath) <ignored>
+    ├── lbrack (kind: TokenLBrack): '['
+    ├── index_expr (kind: ExprIndexed)
+    │   ├── expr (kind: ExprPath) <ignored>
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── index_expr (kind: TokenLiteralNumber): '1'
+    │   └── rbrack (kind: TokenRBrack): ']'
+    └── rbrack (kind: TokenRBrack): ']'

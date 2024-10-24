@@ -1,4 +1,4 @@
-//! > felt252_div
+//! > hades_permutation libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -22,19 +22,99 @@ ret;
 test::foo: OrderedHashMap({Poseidon: 1, Const: 700})
 
 //! > sierra_code
-type Poseidon = Poseidon;
-type felt252 = felt252;
-type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252>;
+type Poseidon = Poseidon [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc hades_permutation = hades_permutation;
 libfunc struct_construct<Tuple<felt252, felt252, felt252>> = struct_construct<Tuple<felt252, felt252, felt252>>;
 libfunc store_temp<Poseidon> = store_temp<Poseidon>;
 libfunc store_temp<Tuple<felt252, felt252, felt252>> = store_temp<Tuple<felt252, felt252, felt252>>;
 
-hades_permutation([0], [1], [2], [3]) -> ([4], [5], [6], [7]);
-struct_construct<Tuple<felt252, felt252, felt252>>([5], [6], [7]) -> ([8]);
-store_temp<Poseidon>([4]) -> ([9]);
-store_temp<Tuple<felt252, felt252, felt252>>([8]) -> ([10]);
-return([9], [10]);
+hades_permutation([0], [1], [2], [3]) -> ([4], [5], [6], [7]); // 0
+struct_construct<Tuple<felt252, felt252, felt252>>([5], [6], [7]) -> ([8]); // 1
+store_temp<Poseidon>([4]) -> ([4]); // 2
+store_temp<Tuple<felt252, felt252, felt252>>([8]) -> ([8]); // 3
+return([4], [8]); // 4
 
 test::foo@0([0]: Poseidon, [1]: felt252, [2]: felt252, [3]: felt252) -> (Poseidon, Tuple<felt252, felt252, felt252>);
+
+//! > ==========================================================================
+
+//! > complete tuple hash
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use hash::{HashStateTrait, HashStateExTrait};
+
+fn foo(s0: felt252, s1: felt252, s2: felt252) -> felt252 {
+    poseidon::PoseidonTrait::new().update_with((s0, s1, s2)).finalize()
+}
+
+//! > casm
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -2] + [fp + -5], ap++;
+[ap + 0] = [ap + -2] + [fp + -4], ap++;
+[ap + 0] = 0, ap++;
+[ap + -3] = [[fp + -6] + 0];
+[ap + -2] = [[fp + -6] + 1];
+[ap + -1] = [[fp + -6] + 2];
+[ap + 0] = [[fp + -6] + 3], ap++;
+[ap + 0] = [[fp + -6] + 4], ap++;
+[ap + 0] = [ap + -2] + [fp + -3], ap++;
+[ap + 0] = [ap + -2] + 1, ap++;
+[ap + 0] = [[fp + -6] + 5], ap++;
+[ap + -3] = [[fp + -6] + 6];
+[ap + -2] = [[fp + -6] + 7];
+[ap + -1] = [[fp + -6] + 8];
+[ap + 0] = [fp + -6] + 12, ap++;
+[ap + 0] = [[fp + -6] + 9], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Poseidon: 2, Const: 1800})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Poseidon = Poseidon [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc felt252_add = felt252_add;
+libfunc hades_permutation = hades_permutation;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc store_temp<Poseidon> = store_temp<Poseidon>;
+
+const_as_immediate<Const<felt252, 0>>() -> ([4]); // 0
+store_temp<felt252>([4]) -> ([4]); // 1
+felt252_add([4], [1]) -> ([5]); // 2
+const_as_immediate<Const<felt252, 0>>() -> ([6]); // 3
+store_temp<felt252>([6]) -> ([6]); // 4
+felt252_add([6], [2]) -> ([7]); // 5
+const_as_immediate<Const<felt252, 0>>() -> ([8]); // 6
+store_temp<felt252>([5]) -> ([5]); // 7
+store_temp<felt252>([7]) -> ([7]); // 8
+store_temp<felt252>([8]) -> ([8]); // 9
+hades_permutation([0], [5], [7], [8]) -> ([9], [10], [11], [12]); // 10
+store_temp<felt252>([10]) -> ([10]); // 11
+felt252_add([10], [3]) -> ([13]); // 12
+const_as_immediate<Const<felt252, 1>>() -> ([14]); // 13
+store_temp<felt252>([11]) -> ([11]); // 14
+felt252_add([11], [14]) -> ([15]); // 15
+store_temp<felt252>([13]) -> ([13]); // 16
+store_temp<felt252>([15]) -> ([15]); // 17
+store_temp<felt252>([12]) -> ([12]); // 18
+hades_permutation([9], [13], [15], [12]) -> ([16], [17], [18], [19]); // 19
+drop<felt252>([18]) -> (); // 20
+drop<felt252>([19]) -> (); // 21
+store_temp<Poseidon>([16]) -> ([16]); // 22
+store_temp<felt252>([17]) -> ([17]); // 23
+return([16], [17]); // 24
+
+test::foo@0([0]: Poseidon, [1]: felt252, [2]: felt252, [3]: felt252) -> (Poseidon, felt252);

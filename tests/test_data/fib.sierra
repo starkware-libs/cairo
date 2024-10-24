@@ -1,5 +1,6 @@
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt252> = dup<felt252>;
@@ -7,34 +8,30 @@ libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
 libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc jump = jump;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc felt252_add = felt252_add;
-libfunc felt252_const<1> = felt252_const<1>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc felt252_sub = felt252_sub;
 libfunc function_call<user@examples::fib::fib> = function_call<user@examples::fib::fib>;
-libfunc rename<felt252> = rename<felt252>;
 
-disable_ap_tracking() -> ();
-dup<felt252>([2]) -> ([2], [3]);
-felt252_is_zero([3]) { fallthrough() 8([4]) };
-branch_align() -> ();
-drop<felt252>([1]) -> ();
-drop<felt252>([2]) -> ();
-store_temp<felt252>([0]) -> ([5]);
-jump() { 19() };
-branch_align() -> ();
-drop<NonZero<felt252>>([4]) -> ();
-dup<felt252>([1]) -> ([1], [7]);
-felt252_add([0], [7]) -> ([6]);
-felt252_const<1>() -> ([8]);
-felt252_sub([2], [8]) -> ([9]);
-store_temp<felt252>([1]) -> ([11]);
-store_temp<felt252>([6]) -> ([12]);
-store_temp<felt252>([9]) -> ([13]);
-function_call<user@examples::fib::fib>([11], [12], [13]) -> ([10]);
-rename<felt252>([10]) -> ([5]);
-rename<felt252>([5]) -> ([14]);
-return([14]);
+disable_ap_tracking() -> (); // 0
+dup<felt252>([2]) -> ([2], [3]); // 1
+felt252_is_zero([3]) { fallthrough() 8([4]) }; // 2
+branch_align() -> (); // 3
+drop<felt252>([1]) -> (); // 4
+drop<felt252>([2]) -> (); // 5
+store_temp<felt252>([0]) -> ([0]); // 6
+return([0]); // 7
+branch_align() -> (); // 8
+drop<NonZero<felt252>>([4]) -> (); // 9
+dup<felt252>([1]) -> ([1], [5]); // 10
+felt252_add([0], [5]) -> ([6]); // 11
+const_as_immediate<Const<felt252, 1>>() -> ([7]); // 12
+felt252_sub([2], [7]) -> ([8]); // 13
+store_temp<felt252>([1]) -> ([1]); // 14
+store_temp<felt252>([6]) -> ([6]); // 15
+store_temp<felt252>([8]) -> ([8]); // 16
+function_call<user@examples::fib::fib>([1], [6], [8]) -> ([9]); // 17
+return([9]); // 18
 
 examples::fib::fib@0([0]: felt252, [1]: felt252, [2]: felt252) -> (felt252);

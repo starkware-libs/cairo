@@ -1,5 +1,5 @@
 // Introduction
 * Introduction
-** xref:index.adoc[Welcome to Cairo 1.0]
+** xref:index.adoc[Welcome to Cairo]
 ** xref:how-to-contribute.adoc[How to contribute]
 ** xref:roadmap.adoc[Cairo 0 feature parity]

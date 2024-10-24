@@ -10,10 +10,9 @@ test_expr_diagnostics
 #[inline(always)]
 #[inline(never)]
 #[inline(always, never)]
-#[inline(1+1)]
+#[inline(1 + 1)]
 #[inline]
-fn foo() {
-}
+fn foo() {}
 
 //! > function_body
 
@@ -35,12 +34,12 @@ error: Redundant `inline` attribute.
 
 error: Unsupported `inline` arguments.
  --> lib.cairo:4:9
-#[inline(1+1)]
-        ^***^
+#[inline(1 + 1)]
+        ^*****^
 
 error: Redundant `inline` attribute.
  --> lib.cairo:4:3
-#[inline(1+1)]
+#[inline(1 + 1)]
   ^****^
 
 error: Redundant `inline` attribute.
@@ -60,8 +59,7 @@ test_expr_diagnostics
 
 //! > module_code
 #[inline(always)]
-fn foo<impl x: MyTrait>() {
-}
+fn foo<impl x: MyTrait>() {}
 
 trait MyTrait;
 

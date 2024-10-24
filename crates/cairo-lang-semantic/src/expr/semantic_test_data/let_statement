@@ -1,0 +1,103 @@
+//! > Test let
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+{
+    let a: felt252 = 3;
+    let _b = a;
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        a,
+                    ),
+                    expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::felt252,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _b,
+                    ),
+                    expr: Var(
+                        LocalVarId(test::a),
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test fixed size array
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+{
+    let _x: [u8; 3] = [1, 2, 3];
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _x,
+                    ),
+                    expr: FixedSizeArray(
+                        ExprFixedSizeArray {
+                            items: Items(
+                                [
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 1,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 2,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                ],
+                            ),
+                            ty: [core::integer::u8; 3],
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics

@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use smol_str::SmolStr;
 
 use crate::node::db::SyntaxGroup;
-use crate::node::{ast, Terminal, TypedSyntaxNode};
+use crate::node::{Terminal, TypedSyntaxNode, ast};
 
 /// Easier to digest representation of an [ast::Attribute].
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -15,13 +15,26 @@ pub struct Attribute {
     pub args: Vec<AttributeArg>,
     pub args_stable_ptr: ast::OptionArgListParenthesizedPtr,
 }
+impl Attribute {
+    /// Checks if the given attribute has a single argument with the given name.
+    pub fn is_single_unnamed_arg(&self, db: &dyn SyntaxGroup, arg_name: &str) -> bool {
+        match &self.args[..] {
+            [arg] => match &arg.variant {
+                AttributeArgVariant::Unnamed(value) => {
+                    value.as_syntax_node().get_text_without_trivia(db) == arg_name
+                }
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+}
 
 /// Easier to digest representation of a single attribute value.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AttributeArg {
     pub variant: AttributeArgVariant,
     pub arg: ast::Arg,
-    pub arg_stable_ptr: ast::ArgPtr,
     pub modifiers: Vec<Modifier>,
 }
 
@@ -29,16 +42,25 @@ pub struct AttributeArg {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AttributeArgVariant {
     /// Just `value`.
-    Unnamed { value: ast::Expr, value_stable_ptr: ast::ExprPtr },
+    Unnamed(ast::Expr),
     /// `name: value`.
-    Named {
-        value: ast::Expr,
-        value_stable_ptr: ast::ExprPtr,
-        name: SmolStr,
-        name_stable_ptr: ast::TerminalIdentifierPtr,
-    },
+    Named { value: ast::Expr, name: NameInfo },
     /// `:name`
-    FieldInitShorthand { name: SmolStr, name_stable_ptr: ast::TerminalIdentifierPtr },
+    FieldInitShorthand(NameInfo),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+/// The data on a name part of an argument.
+pub struct NameInfo {
+    /// The name of the argument.
+    pub text: SmolStr,
+    /// The stable pointer to the name.
+    pub stable_ptr: ast::TerminalIdentifierPtr,
+}
+impl NameInfo {
+    fn from_ast(name: ast::TerminalIdentifier, db: &dyn SyntaxGroup) -> Self {
+        NameInfo { text: name.text(db), stable_ptr: name.stable_ptr() }
+    }
 }
 
 /// Easier to digest representation of a [`ast::Modifier`] attached to [`AttributeArg`].
@@ -79,10 +101,10 @@ impl AttributeStructurize for ast::Attribute {
             args: match attr_args {
                 ast::OptionArgListParenthesized::ArgListParenthesized(ref attribute_args) => {
                     attribute_args
-                        .args(db)
+                        .arguments(db)
                         .elements(db)
                         .into_iter()
-                        .map(|arg| AttributeArg::from(arg, db))
+                        .map(|arg| AttributeArg::from_ast(arg, db))
                         .collect()
                 }
                 ast::OptionArgListParenthesized::Empty(_) => vec![],
@@ -106,29 +128,16 @@ impl AttributeListStructurize for ast::AttributeList {
 
 impl AttributeArg {
     /// Build [`AttributeArg`] from [`ast::Arg`].
-    fn from(arg: ast::Arg, db: &dyn SyntaxGroup) -> AttributeArg {
+    pub fn from_ast(arg: ast::Arg, db: &dyn SyntaxGroup) -> AttributeArg {
         let variant = match arg.arg_clause(db) {
-            ast::ArgClause::Unnamed(clause) => {
-                let value = clause.value(db);
-                AttributeArgVariant::Unnamed { value_stable_ptr: value.stable_ptr(), value }
-            }
-            ast::ArgClause::Named(clause) => {
-                let identifier = clause.name(db);
-                let value = clause.value(db);
-                AttributeArgVariant::Named {
-                    value_stable_ptr: value.stable_ptr(),
-                    value,
-                    name_stable_ptr: identifier.stable_ptr(),
-                    name: identifier.text(db),
-                }
-            }
-            ast::ArgClause::FieldInitShorthand(clause) => {
-                let identifier = clause.name(db).name(db);
-                AttributeArgVariant::FieldInitShorthand {
-                    name_stable_ptr: identifier.stable_ptr(),
-                    name: identifier.text(db),
-                }
-            }
+            ast::ArgClause::Unnamed(clause) => AttributeArgVariant::Unnamed(clause.value(db)),
+            ast::ArgClause::Named(clause) => AttributeArgVariant::Named {
+                value: clause.value(db),
+                name: NameInfo::from_ast(clause.name(db), db),
+            },
+            ast::ArgClause::FieldInitShorthand(clause) => AttributeArgVariant::FieldInitShorthand(
+                NameInfo::from_ast(clause.name(db).name(db), db),
+            ),
         };
 
         let modifiers = arg
@@ -138,8 +147,21 @@ impl AttributeArg {
             .map(|modifier| Modifier::from(modifier, db))
             .collect();
 
-        let arg_stable_ptr = arg.stable_ptr();
-        AttributeArg { variant, arg, arg_stable_ptr, modifiers }
+        AttributeArg { variant, arg, modifiers }
+    }
+
+    pub fn text(&self, db: &dyn SyntaxGroup) -> String {
+        match &self.variant {
+            AttributeArgVariant::Unnamed(value) => {
+                value.as_syntax_node().get_text_without_trivia(db)
+            }
+            AttributeArgVariant::Named { value, name } => {
+                format!("{}: {}", name.text, value.as_syntax_node().get_text_without_trivia(db))
+            }
+            AttributeArgVariant::FieldInitShorthand(name) => {
+                format!(":{}", name.text)
+            }
+        }
     }
 }
 

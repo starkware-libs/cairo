@@ -1,0 +1,297 @@
+//! > Test 7
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+7
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 7,
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 0x123
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+0x123
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 291,
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 12_felt252
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+12_felt252
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 12,
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 16_u128
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+16_u128
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 16,
+        ty: core::integer::u128,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 0x16_u128
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+0x16_u128
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 22,
+        ty: core::integer::u128,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 'a'
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+'a'
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 97,
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 'B'_u128
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+'B'_u128
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 66,
+        ty: core::integer::u128,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 'hello world'_u128
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+'hello world'_u128
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 126207244316550804821666916,
+        ty: core::integer::u128,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test '\''
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+'\''
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 39,
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test '\x12\x34'_u128
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+'\x12\x34'_u128
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 4660,
+        ty: core::integer::u128,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 86_400_u128
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+86_400_u128
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 86400,
+        ty: core::integer::u128,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 8_6_4_0_0_u128
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+8_6_4_0_0_u128
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 86400,
+        ty: core::integer::u128,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 86_400
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+86_400
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 86400,
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 8_6_4_0_0
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+8_6_4_0_0
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 86400,
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test 0x1_f32
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > expr_code
+0x1_f32
+
+//! > expected_semantics
+Literal(
+    ExprLiteral {
+        value: 7986,
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics

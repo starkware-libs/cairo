@@ -2,7 +2,7 @@
 use proc_macro::TokenStream;
 use quote::__private::{Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 /// Derives a [`cairo_lang_debug::DebugWithDb`] implementation for structs and enums.
 pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
@@ -11,10 +11,9 @@ pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
     let attribute = input
         .attrs
         .iter()
-        .find(|a| a.path.segments.len() == 1 && a.path.segments[0].ident == "debug_db")
+        .find(|a| a.path().segments.len() == 1 && a.path().segments[0].ident == "debug_db")
         .expect("debug_db attribute required for deriving DebugWithDB.");
-    let db: syn::Type = syn::parse2(attribute.tokens.clone()).expect("Invalid debug_db attribute!");
-    let db = if let syn::Type::Paren(db) = db { db } else { panic!("Expected parenthesis") };
+    let db: syn::Type = attribute.parse_args().expect("Invalid debug_db attribute!");
     let db = quote! {(#db)};
     let name = input.ident;
     // TODO(yuval/shahar): extract the lifetime here and use it instead of `'a` below.
@@ -93,7 +92,7 @@ fn emit_fields_debug(
     let mut field_prints = quote! {};
     for (i, field) in fields.iter().enumerate() {
         let has_hide_attr = field.attrs.iter().any(|a| {
-            a.path.segments.len() == 1 && a.path.segments[0].ident == "hide_field_debug_with_db"
+            a.path().segments.len() == 1 && a.path().segments[0].ident == "hide_field_debug_with_db"
         });
 
         let ty = &field.ty;

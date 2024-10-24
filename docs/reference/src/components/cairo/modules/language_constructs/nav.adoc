@@ -49,6 +49,7 @@
 **** xref:comparison-operators.adoc[7.4.4 Comparison operators 🚧]
 **** xref:boolean-operators.adoc[7.4.5 Boolean operators 🚧]
 **** xref:error-propagation-operator.adoc[7.4.6 Error propagation operator 🚧]
+**** xref:operator-precedence.adoc[7.4.7 Operator precedence]
 *** xref:parentheses.adoc[7.5 Parenthesized expressions]
 *** xref:function-calls.adoc[7.6 Function calls]
 *** xref:method-calls.adoc[7.7 Method calls]

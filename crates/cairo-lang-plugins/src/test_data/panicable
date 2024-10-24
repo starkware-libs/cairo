@@ -1,7 +1,7 @@
 //! > Test expansion of panic_with.
 
 //! > test_runner_name
-test_expand_plugin
+test_expand_plugin(expect_diagnostics: false)
 
 //! > cairo_code
 #[panic_with('1', foo_improved)]
@@ -19,89 +19,85 @@ fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic {
 extern fn generic<T>(t: T, v: felt252) -> Result::<T, Err> nopanic;
 
 #[panic_with('5', wrapped_possibly_panic)]
-fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
+fn possibly_panic() -> Result::<felt252, Err> {
+    Result::<felt252, Err>::Ok(1)
+}
 
-//! > generated_cairo_code
+//! > expanded_cairo_code
 #[panic_with('1', foo_improved)]
 extern fn foo(a: felt252, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
-fn foo_improved(a: felt252, ref b: other) -> () {
-    match foo(a, ref b) {
-        Option::Some (v) => {
-            v
-        },
-        Option::None (v) => {
-            let mut data = array::array_new::<felt252>();
-            array::array_append::<felt252>(ref data, '1');
-            panic(data)
-        },
-    }
-}
-
-
 #[panic_with('2', bar_changed)]
 extern fn bar() -> Result::<felt252, Err> nopanic;
-
-fn bar_changed() -> felt252 {
-    match bar() {
-        Result::Ok (v) => {
-            v
-        },
-        Result::Err (v) => {
-            let mut data = array::array_new::<felt252>();
-            array::array_append::<felt252>(ref data, '2');
-            panic(data)
-        },
-    }
-}
-
 
 #[panic_with('3', non_extern_stuff)]
 fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic {
     (4, 56)
 }
 
+#[panic_with('4', generic_panic)]
+extern fn generic<T>(t: T, v: felt252) -> Result::<T, Err> nopanic;
+
+#[panic_with('5', wrapped_possibly_panic)]
+fn possibly_panic() -> Result::<felt252, Err> {
+    Result::<felt252, Err>::Ok(1)
+}
+fn foo_improved(a: felt252, ref b: other) -> () {
+    match foo(a, ref b) {
+        Option::Some (v) => {
+            v
+        },
+        Option::None (_v) => {
+            let mut data = core::array::ArrayTrait::<felt252>::new();
+            core::array::ArrayTrait::<felt252>::append(ref data, '1');
+            panic(data)
+        },
+    }
+}
+fn bar_changed() -> felt252 {
+    match bar() {
+        Result::Ok (v) => {
+            v
+        },
+        Result::Err (_v) => {
+            let mut data = core::array::ArrayTrait::<felt252>::new();
+            core::array::ArrayTrait::<felt252>::append(ref data, '2');
+            panic(data)
+        },
+    }
+}
 fn non_extern_stuff(_a: some_type) -> (felt252, other) {
     match non_extern(_a) {
         Option::Some (v) => {
             v
         },
-        Option::None (v) => {
-            let mut data = array::array_new::<felt252>();
-            array::array_append::<felt252>(ref data, '3');
+        Option::None (_v) => {
+            let mut data = core::array::ArrayTrait::<felt252>::new();
+            core::array::ArrayTrait::<felt252>::append(ref data, '3');
             panic(data)
         },
     }
 }
-
-
-#[panic_with('4', generic_panic)]
-extern fn generic<T>(t: T, v: felt252) -> Result::<T, Err> nopanic;
-
 fn generic_panic<T>(t: T, v: felt252) -> T {
     match generic(t, v) {
         Result::Ok (v) => {
             v
         },
-        Result::Err (v) => {
-            let mut data = array::array_new::<felt252>();
-            array::array_append::<felt252>(ref data, '4');
+        Result::Err (_v) => {
+            let mut data = core::array::ArrayTrait::<felt252>::new();
+            core::array::ArrayTrait::<felt252>::append(ref data, '4');
             panic(data)
         },
     }
 }
-
-
-#[panic_with('5', wrapped_possibly_panic)]
-fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
 fn wrapped_possibly_panic() -> felt252 {
     match possibly_panic() {
         Result::Ok (v) => {
             v
         },
-        Result::Err (v) => {
-            let mut data = array::array_new::<felt252>();
-            array::array_append::<felt252>(ref data, '5');
+        Result::Err (_v) => {
+            let mut data = core::array::ArrayTrait::<felt252>::new();
+            core::array::ArrayTrait::<felt252>::append(ref data, '5');
             panic(data)
         },
     }
@@ -114,7 +110,7 @@ fn wrapped_possibly_panic() -> felt252 {
 //! > Test diagnostics of panic with.
 
 //! > test_runner_name
-test_expand_plugin
+test_expand_plugin(expect_diagnostics: true)
 
 //! > cairo_code
 #[panic_with(123, foo_bad_err_code)]
@@ -130,18 +126,15 @@ extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
 #[panic_with('3', bar_changed)]
 extern fn bar() -> Result::<felt252, Err> nopanic;
 
-//! > generated_cairo_code
+//! > expanded_cairo_code
 #[panic_with(123, foo_bad_err_code)]
 extern fn foo(a: felt252, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
-
 
 #[panic_with(missing_args)]
 extern fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic;
 
-
 #[panic_with(missing_args)]
 extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
-
 
 #[panic_with('2', bar_changed)]
 #[panic_with('3', bar_changed)]
@@ -149,21 +142,21 @@ extern fn bar() -> Result::<felt252, Err> nopanic;
 
 //! > expected_diagnostics
 error: Failed to extract panic data attribute
- --> dummy_file.cairo:1:1
+ --> test_src/lib.cairo:1:1
 #[panic_with(123, foo_bad_err_code)]
 ^**********************************^
 
 error: Failed to extract panic data attribute
- --> dummy_file.cairo:4:1
+ --> test_src/lib.cairo:4:1
 #[panic_with(missing_args)]
 ^*************************^
 
 error: Currently only wrapping functions returning an Option<T> or Result<T, E>
- --> dummy_file.cairo:8:39
+ --> test_src/lib.cairo:8:39
 extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
                                       ^********^
 
 error: `#[panic_with]` cannot be applied multiple times to the same item.
- --> dummy_file.cairo:11:1
+ --> test_src/lib.cairo:11:1
 #[panic_with('3', bar_changed)]
 ^*****************************^

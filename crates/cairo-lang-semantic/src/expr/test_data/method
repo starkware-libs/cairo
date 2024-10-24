@@ -1,12 +1,12 @@
 //! > Test method
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option::<felt252> {
-    let x = Option::None(());
-    x.is_some();
+    let x = Option::None;
+    let _ = x.is_some();
     x
 }
 
@@ -14,19 +14,7 @@ fn foo() -> Option::<felt252> {
 foo
 
 //! > module_code
-trait OptionTrait<T>{
-    fn is_some(self: Option::<T>) -> bool;
-}
-impl OptionTraitImpl<T> of OptionTrait::<T> {
-    fn is_some(self: Option::<T>) -> bool {
-        match self {
-            Option::Some(_) => true,
-            Option::None(_) => false,
-        }
-    }
-}
-
-trait AnotherTrait{
+trait AnotherTrait {
     fn is_some(self: felt252) -> bool;
 }
 impl OtherImpl of AnotherTrait {
@@ -42,13 +30,13 @@ impl OtherImpl of AnotherTrait {
 //! > Test method failures
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Option::<felt252> {
-    let x = Option::None(());
+    let x = Option::None;
     x.is_foo();
-    x.is_some();
+    x.is_bla();
     let y = Option::Some(true);
     y.is_bar();
     y.SomeOtherPrefix::is_bar();
@@ -59,29 +47,33 @@ fn foo() -> Option::<felt252> {
 foo
 
 //! > module_code
-trait OptionTrait<T>{
-    fn is_some(self: Option::<T>) -> bool;
+trait MyTrait<T> {
+    fn is_bla(self: Option::<T>) -> bool;
     fn is_bar(self: Option::<T>) -> bool;
 }
-impl OptionTraitImpl<T> of OptionTrait::<T> {
-    fn is_some(self: Option::<T>) -> bool {
+impl MyTraitImpl<T> of MyTrait<T> {
+    fn is_bla(self: Option<T>) -> bool {
         match self {
             Option::Some(_) => true,
-            Option::None(_) => false,
+            Option::None => false,
         }
     }
-    fn is_bar(self: Option::<T>) -> bool { true }
+    fn is_bar(self: Option::<T>) -> bool {
+        true
+    }
 }
-impl AnotherOptionTraitImpl<T> of OptionTrait::<felt252> {
-    fn is_some(self: Option::<felt252>) -> bool {
+impl AnotherMyTraitImpl<T> of MyTrait<felt252> {
+    fn is_bla(self: Option::<felt252>) -> bool {
         match self {
             Option::Some(_) => true,
-            Option::None(_) => false,
+            Option::None => false,
         }
     }
-    fn is_bar(self: Option::<felt252>) -> bool { true }
+    fn is_bar(self: Option::<felt252>) -> bool {
+        true
+    }
 }
-trait AnotherTrait{
+trait AnotherTrait {
     fn is_bar(self: Option::<bool>) -> bool;
 }
 impl AnotherTraitImpl of AnotherTrait {
@@ -91,22 +83,303 @@ impl AnotherTraitImpl of AnotherTrait {
 }
 
 //! > expected_diagnostics
-error: Method `is_foo` not found on type "core::option::Option::<?0>". Did you import the correct trait and impl?
- --> lib.cairo:33:7
+error[E0002]: Method `is_foo` not found on type `core::option::Option::<?0>`. Did you import the correct trait and impl?
+ --> lib.cairo:37:7
     x.is_foo();
       ^****^
 
-error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: OptionTrait::is_bar and AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
- --> lib.cairo:36:5
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: test::MyTrait::is_bar and test::AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:40:7
     y.is_bar();
-    ^********^
+      ^****^
 
 error: Invalid member expression.
- --> lib.cairo:37:7
+ --> lib.cairo:41:7
     y.SomeOtherPrefix::is_bar();
       ^***********************^
 
-error: Trait `test::OptionTrait::<core::felt252>` has multiple implementations, in: "test::OptionTraitImpl", "test::AnotherOptionTraitImpl"
- --> lib.cairo:34:7
-    x.is_some();
-      ^*****^
+error: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic parameter.
+ --> lib.cairo:38:7
+    x.is_bla();
+      ^****^
+
+//! > ==========================================================================
+
+//! > Test calling a method of a trait from the generic arguments.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, impl CallableImpl: callable::CallableTrait<T>>(x: T) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T> {
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: u8) {}
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Calling a method of a trait from a generic argument, after an unresolved generic argument.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, +unknown, +callable::CallableTrait<T>>(x: T) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T> {
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: u8) {}
+    }
+}
+
+//! > expected_diagnostics
+error: Trait not found.
+ --> lib.cairo:1:12
+fn bar<T, +unknown, +callable::CallableTrait<T>>(x: T) {
+           ^*****^
+
+//! > ==========================================================================
+
+//! > Test calling a method of a trait from an impl in the module.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(x: u8) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T> {
+        fn call(self: T);
+    }
+}
+impl U8Callable of callable::CallableTrait<u8> {
+    fn call(self: u8) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test calling a method of a trait from an impl in the module that is not the relevant impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(x: u8) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T> {
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: u8) {}
+    }
+}
+impl U16Callable of callable::CallableTrait<u16> {
+    fn call(self: u16) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test calling a method of a trait from an impl alias in the module.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl X = callable::U8Callable;
+fn bar(x: u8) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T> {
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: u8) {}
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test calling a trait method from an impl alias in the module that is not the relevant impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl X = callable::U16Callable;
+fn bar(x: u8) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T> {
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: u8) {}
+    }
+    impl U16Callable of CallableTrait<u16> {
+        fn call(self: u16) {}
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > No impls found for method on a concrete self. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    3_u16.bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn bar(self: T);
+}
+
+//! > expected_diagnostics
+error[E0002]: Method `bar` could not be called on type `core::integer::u16`.
+Candidate `test::MyTrait::bar` inference failed with: Trait has no implementation in context: test::MyTrait::<core::integer::u16>.
+ --> lib.cairo:5:11
+    3_u16.bar();
+          ^*^
+
+//! > ==========================================================================
+
+//! > No impls found for method on a type-var self. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    (3_u16 + 3_u16).bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn bar(self: T);
+}
+
+//! > expected_diagnostics
+error[E0002]: Method `bar` could not be called on type `core::integer::u16`.
+Candidate `test::MyTrait::bar` inference failed with: Trait has no implementation in context: test::MyTrait::<core::integer::u16>.
+ --> lib.cairo:5:21
+    (3_u16 + 3_u16).bar();
+                    ^*^
+
+//! > ==========================================================================
+
+//! > Wrong num of arguments. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    0.bar(1);
+    0.bar(1, 2, 3);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn bar(self: T, a: felt252, b: felt252);
+}
+impl MyImpl of MyTrait<felt252> {
+    fn bar(self: felt252, a: felt252, b: felt252) {}
+}
+
+//! > expected_diagnostics
+error: Wrong number of arguments. Expected 3, found: 2
+ --> lib.cairo:8:7
+    0.bar(1);
+      ^****^
+
+error: Wrong number of arguments. Expected 3, found: 4
+ --> lib.cairo:9:7
+    0.bar(1, 2, 3);
+      ^**********^

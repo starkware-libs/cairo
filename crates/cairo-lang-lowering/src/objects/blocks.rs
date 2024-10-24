@@ -1,6 +1,7 @@
 use std::ops::{Index, IndexMut};
 
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_utils::require;
 
 use crate::FlatBlock;
 
@@ -56,9 +57,7 @@ impl<T: Default> BlocksBuilder<T> {
     }
 
     pub fn build(self) -> Option<Blocks<T>> {
-        if self.is_empty() {
-            return None;
-        }
+        require(!self.is_empty())?;
         Some(Blocks(self.0))
     }
 }

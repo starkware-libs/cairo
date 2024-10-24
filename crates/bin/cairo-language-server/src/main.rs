@@ -1,8 +1,5 @@
-use cairo_lang_language_server::serve_language_service;
-use cairo_lang_utils::logging::init_logging;
+use std::process::ExitCode;
 
-#[tokio::main]
-async fn main() {
-    init_logging(log::LevelFilter::Warn);
-    serve_language_service().await;
+fn main() -> ExitCode {
+    cairo_lang_language_server::start()
 }

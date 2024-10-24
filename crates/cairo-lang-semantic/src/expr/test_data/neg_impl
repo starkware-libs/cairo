@@ -1,0 +1,33 @@
+//! > Negative impls
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo(a: u8) -> Option<u8> {
+    let b: Option<u8> = a.try_into();
+    b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use core::traits::TryInto;
+pub trait DowncastableInt<Type>;
+
+impl DowncastableIntU8 of DowncastableInt<u8> {}
+
+pub trait TypeEq<S, T> {}
+
+impl ImplTypeEq<T> of TypeEq<T, T> {}
+
+impl DowncastableTryInto<
+    From, To, +DowncastableInt<From>, +DowncastableInt<To>, -TypeEq<From, To>
+> of TryInto<From, To> {
+    fn try_into(self: From) -> Option<To> {
+        core::integer::downcast(self)
+    }
+}
+
+//! > expected_diagnostics

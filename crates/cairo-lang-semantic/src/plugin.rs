@@ -1,94 +1,74 @@
-use std::any::Any;
-use std::ops::Deref;
 use std::sync::Arc;
 
-use cairo_lang_defs::plugin::{GeneratedFileAuxData, MacroPlugin};
-use cairo_lang_filesystem::span::TextSpan;
+use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin, NamedPlugin, PluginDiagnostic};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SemanticGroup;
 
-pub trait SemanticPlugin: std::fmt::Debug + Sync + Send + AsDynMacroPlugin {}
-
-pub trait AsDynMacroPlugin {
-    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
-    where
-        Self: 'a;
-}
-
-/// A trait for Plugins auxiliary data.
-///
-/// The auxiliary data can assist in mapping plugin generated diagnostics to more readable
-/// diagnostics.
-pub trait PluginAuxData:
-    std::fmt::Debug + Sync + Send + GeneratedFileAuxData + AsDynGeneratedFileAuxData
-{
-    fn map_diag(
-        &self,
-        db: &(dyn SemanticGroup + 'static),
-        diag: &dyn Any,
-    ) -> Option<PluginMappedDiagnostic>;
-}
-pub trait AsDynGeneratedFileAuxData {
-    fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static);
-}
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct PluginMappedDiagnostic {
-    pub span: TextSpan,
-    pub message: String,
-}
-
-// `dyn` wrapper for `PluginAuxData`.
-#[derive(Clone, Debug)]
-pub struct DynPluginAuxData(pub Arc<dyn PluginAuxData>);
-impl DynPluginAuxData {
-    pub fn new<T: PluginAuxData + 'static>(aux_data: T) -> Self {
-        DynPluginAuxData(Arc::new(aux_data))
+/// A trait for an analyzer plugin: external plugin that generates additional diagnostics for
+/// modules.
+pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send {
+    /// Runs the plugin on a module.
+    fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic>;
+    /// Allows this plugin supplies.
+    /// Any allow the plugin supplies without declaring here are likely to cause a
+    /// compilation error for unknown allow.
+    /// If the plugin checks for patterns that you want to allow in some places, for example
+    /// `#[allow(some_pattern)]` you will need to declare it here.
+    fn declared_allows(&self) -> Vec<String> {
+        Vec::new()
     }
 }
-impl Deref for DynPluginAuxData {
-    type Target = Arc<dyn PluginAuxData>;
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+/// A suite of plugins.
+#[derive(Clone, Debug, Default)]
+pub struct PluginSuite {
+    /// The macro plugins, running on all items.
+    pub plugins: Vec<Arc<dyn MacroPlugin>>,
+    /// The inline macro plugins, running on matching inline macro expressions.
+    pub inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
+    /// The analyzer plugins, running on all modules.
+    pub analyzer_plugins: Vec<Arc<dyn AnalyzerPlugin>>,
 }
-impl GeneratedFileAuxData for DynPluginAuxData {
-    fn as_any(&self) -> &dyn Any {
+impl PluginSuite {
+    /// Adds a macro plugin.
+    pub fn add_plugin_ex(&mut self, plugin: Arc<dyn MacroPlugin>) -> &mut Self {
+        self.plugins.push(plugin);
         self
     }
-
-    fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<DynPluginAuxData>() {
-            self.0.eq(other.0.as_dyn_macro_token())
-        } else {
-            false
-        }
+    /// Adds a macro plugin.
+    pub fn add_plugin<T: MacroPlugin + Default + 'static>(&mut self) -> &mut Self {
+        self.add_plugin_ex(Arc::new(T::default()))
     }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct TrivialPluginAuxData {}
-impl GeneratedFileAuxData for TrivialPluginAuxData {
-    fn as_any(&self) -> &dyn Any {
+    /// Adds an inline macro plugin.
+    pub fn add_inline_macro_plugin_ex(
+        &mut self,
+        name: &str,
+        plugin: Arc<dyn InlineMacroExprPlugin>,
+    ) -> &mut Self {
+        self.inline_macro_plugins.insert(name.into(), plugin);
         self
     }
-
-    fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
-    }
-}
-impl AsDynGeneratedFileAuxData for TrivialPluginAuxData {
-    fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
+    /// Adds an inline macro plugin.
+    pub fn add_inline_macro_plugin<T: NamedPlugin + InlineMacroExprPlugin>(&mut self) -> &mut Self {
+        self.add_inline_macro_plugin_ex(T::NAME, Arc::new(T::default()));
         self
     }
-}
-impl PluginAuxData for TrivialPluginAuxData {
-    fn map_diag(
-        &self,
-        _db: &dyn SemanticGroup,
-        _diag: &dyn std::any::Any,
-    ) -> Option<PluginMappedDiagnostic> {
-        None
+    /// Adds an analyzer plugin.
+    pub fn add_analyzer_plugin_ex(&mut self, plugin: Arc<dyn AnalyzerPlugin>) -> &mut Self {
+        self.analyzer_plugins.push(plugin);
+        self
+    }
+    /// Adds an analyzer plugin.
+    pub fn add_analyzer_plugin<T: AnalyzerPlugin + Default + 'static>(&mut self) -> &mut Self {
+        self.add_analyzer_plugin_ex(Arc::new(T::default()))
+    }
+    /// Adds another plugin suite into this suite.
+    pub fn add(&mut self, suite: PluginSuite) -> &mut Self {
+        self.plugins.extend(suite.plugins);
+        self.inline_macro_plugins.extend(suite.inline_macro_plugins);
+        self.analyzer_plugins.extend(suite.analyzer_plugins);
+        self
     }
 }

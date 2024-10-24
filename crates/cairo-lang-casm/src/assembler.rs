@@ -1,5 +1,9 @@
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+
 use num_bigint::{BigInt, ToBigInt};
 
+use crate::hints::Hint;
 use crate::instructions::{Instruction, InstructionBody};
 use crate::operand::{DerefOrImmediate, Operation, Register, ResOperand};
 
@@ -54,7 +58,6 @@ pub enum Opcode {
 }
 
 /// The low level representation of a cairo instruction.
-#[allow(dead_code)]
 #[derive(Debug, Eq, PartialEq)]
 pub struct InstructionRepr {
     pub off0: i16,
@@ -69,6 +72,14 @@ pub struct InstructionRepr {
     pub ap_update: ApUpdate,
     pub fp_update: FpUpdate,
     pub opcode: Opcode,
+}
+
+/// An assembled representation of a cairo program.
+pub struct AssembledCairoProgram {
+    /// The bytecode of the program.
+    pub bytecode: Vec<BigInt>,
+    /// The list of hints, and the instruction index they refer to.
+    pub hints: Vec<(usize, Vec<Hint>)>,
 }
 
 impl Instruction {

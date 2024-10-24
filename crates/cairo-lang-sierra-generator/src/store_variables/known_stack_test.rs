@@ -21,7 +21,7 @@ fn assert_eq_stacks(a: &KnownStack, b: &KnownStack) {
     for (var, a_index) in a.variables_on_stack.iter() {
         assert_eq!(
             a.offset - *a_index,
-            b.offset - b.variables_on_stack[var.clone()],
+            b.offset - b.variables_on_stack[var],
             "Wrong value found for {var}.\na: {a:?}\nb: {b:?}"
         );
     }

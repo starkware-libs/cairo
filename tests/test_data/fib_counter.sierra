@@ -1,51 +1,50 @@
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
-type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt252> = dup<felt252>;
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
-libfunc felt252_const<0> = felt252_const<0>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc struct_construct<Tuple<felt252, felt252>> = struct_construct<Tuple<felt252, felt252>>;
 libfunc store_temp<Tuple<felt252, felt252>> = store_temp<Tuple<felt252, felt252>>;
-libfunc jump = jump;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc felt252_add = felt252_add;
-libfunc felt252_const<1> = felt252_const<1>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc felt252_sub = felt252_sub;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@examples::fib_counter::fib> = function_call<user@examples::fib_counter::fib>;
 libfunc struct_deconstruct<Tuple<felt252, felt252>> = struct_deconstruct<Tuple<felt252, felt252>>;
-libfunc rename<Tuple<felt252, felt252>> = rename<Tuple<felt252, felt252>>;
 
-disable_ap_tracking() -> ();
-dup<felt252>([2]) -> ([2], [3]);
-felt252_is_zero([3]) { fallthrough() 10([4]) };
-branch_align() -> ();
-drop<felt252>([1]) -> ();
-drop<felt252>([2]) -> ();
-felt252_const<0>() -> ([5]);
-struct_construct<Tuple<felt252, felt252>>([0], [5]) -> ([6]);
-store_temp<Tuple<felt252, felt252>>([6]) -> ([7]);
-jump() { 25() };
-branch_align() -> ();
-drop<NonZero<felt252>>([4]) -> ();
-dup<felt252>([1]) -> ([1], [9]);
-felt252_add([0], [9]) -> ([8]);
-felt252_const<1>() -> ([10]);
-felt252_sub([2], [10]) -> ([11]);
-store_temp<felt252>([1]) -> ([13]);
-store_temp<felt252>([8]) -> ([14]);
-store_temp<felt252>([11]) -> ([15]);
-function_call<user@examples::fib_counter::fib>([13], [14], [15]) -> ([12]);
-struct_deconstruct<Tuple<felt252, felt252>>([12]) -> ([16], [17]);
-felt252_const<1>() -> ([18]);
-felt252_add([17], [18]) -> ([19]);
-struct_construct<Tuple<felt252, felt252>>([16], [19]) -> ([20]);
-store_temp<Tuple<felt252, felt252>>([20]) -> ([7]);
-rename<Tuple<felt252, felt252>>([7]) -> ([21]);
-return([21]);
+disable_ap_tracking() -> (); // 0
+dup<felt252>([2]) -> ([2], [3]); // 1
+felt252_is_zero([3]) { fallthrough() 10([4]) }; // 2
+branch_align() -> (); // 3
+drop<felt252>([1]) -> (); // 4
+drop<felt252>([2]) -> (); // 5
+const_as_immediate<Const<felt252, 0>>() -> ([5]); // 6
+struct_construct<Tuple<felt252, felt252>>([0], [5]) -> ([6]); // 7
+store_temp<Tuple<felt252, felt252>>([6]) -> ([6]); // 8
+return([6]); // 9
+branch_align() -> (); // 10
+drop<NonZero<felt252>>([4]) -> (); // 11
+dup<felt252>([1]) -> ([1], [7]); // 12
+felt252_add([0], [7]) -> ([8]); // 13
+const_as_immediate<Const<felt252, 1>>() -> ([9]); // 14
+felt252_sub([2], [9]) -> ([10]); // 15
+store_temp<felt252>([1]) -> ([1]); // 16
+store_temp<felt252>([8]) -> ([8]); // 17
+store_temp<felt252>([10]) -> ([10]); // 18
+function_call<user@examples::fib_counter::fib>([1], [8], [10]) -> ([11]); // 19
+struct_deconstruct<Tuple<felt252, felt252>>([11]) -> ([12], [13]); // 20
+const_as_immediate<Const<felt252, 1>>() -> ([14]); // 21
+felt252_add([13], [14]) -> ([15]); // 22
+struct_construct<Tuple<felt252, felt252>>([12], [15]) -> ([16]); // 23
+store_temp<Tuple<felt252, felt252>>([16]) -> ([16]); // 24
+return([16]); // 25
 
 examples::fib_counter::fib@0([0]: felt252, [1]: felt252, [2]: felt252) -> (Tuple<felt252, felt252>);

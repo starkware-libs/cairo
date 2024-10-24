@@ -1,0 +1,64 @@
+//! > Test tuple
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > function_body
+
+//! > expr_code
+(1 + 2, (2, 3))
+
+//! > expected_semantics
+Tuple(
+    ExprTuple {
+        items: [
+            FunctionCall(
+                ExprFunctionCall {
+                    function: core::Felt252Add::add,
+                    args: [
+                        Value(
+                            Literal(
+                                ExprLiteral {
+                                    value: 1,
+                                    ty: core::felt252,
+                                },
+                            ),
+                        ),
+                        Value(
+                            Literal(
+                                ExprLiteral {
+                                    value: 2,
+                                    ty: core::felt252,
+                                },
+                            ),
+                        ),
+                    ],
+                    coupon_arg: None,
+                    ty: core::felt252,
+                },
+            ),
+            Tuple(
+                ExprTuple {
+                    items: [
+                        Literal(
+                            ExprLiteral {
+                                value: 2,
+                                ty: core::felt252,
+                            },
+                        ),
+                        Literal(
+                            ExprLiteral {
+                                value: 3,
+                                ty: core::felt252,
+                            },
+                        ),
+                    ],
+                    ty: (core::felt252, core::felt252),
+                },
+            ),
+        ],
+        ty: (core::felt252, (core::felt252, core::felt252)),
+    },
+)
+
+//! > expected_diagnostics

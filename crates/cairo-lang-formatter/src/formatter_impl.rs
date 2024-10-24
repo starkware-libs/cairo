@@ -3,9 +3,12 @@ use std::fmt;
 
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
+use cairo_lang_syntax::node::ast::UsePath;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use itertools::Itertools;
+use syntax::node::helpers::QueryAttrs;
 use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
@@ -64,6 +67,8 @@ pub struct BreakLinePointProperties {
     /// Indicates that in a group of such breakpoints, only one should be broken, specifically the
     /// last one which fits in the line length.
     pub is_single_breakpoint: bool,
+    /// Indicates whether a comma should be added when the line breaks.
+    pub is_comma_broken: bool,
 }
 impl Ord for BreakLinePointProperties {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -95,7 +100,36 @@ impl BreakLinePointProperties {
             space_if_not_broken,
             is_empty_line_breakpoint: false,
             is_single_breakpoint: false,
+            is_comma_broken: false,
         }
+    }
+    /// Constructor that allows configuring whether a comma is added on line break.
+    pub fn new_with_comma(
+        precedence: usize,
+        break_indentation: BreakLinePointIndentation,
+        is_optional: bool,
+        space_if_not_broken: bool,
+        is_comma_broken: bool,
+    ) -> Self {
+        let mut properties = Self {
+            precedence,
+            break_indentation,
+            is_optional,
+            space_if_not_broken,
+            is_empty_line_breakpoint: false,
+            is_single_breakpoint: false,
+            is_comma_broken,
+        };
+        if is_comma_broken {
+            properties.set_comma_if_broken();
+        }
+        properties
+    }
+    pub fn set_comma_if_broken(&mut self) {
+        self.is_comma_broken = true;
+    }
+    pub fn is_comma_broken(&self) -> bool {
+        self.is_comma_broken
     }
     pub fn new_empty_line() -> Self {
         Self {
@@ -105,6 +139,7 @@ impl BreakLinePointProperties {
             space_if_not_broken: false,
             is_empty_line_breakpoint: true,
             is_single_breakpoint: false,
+            is_comma_broken: false,
         }
     }
     pub fn set_single_breakpoint(&mut self) {
@@ -156,6 +191,13 @@ impl LineComponent {
             }
         }
     }
+    /// Returns if the component is a trivia component, i.e. does not contain any code.
+    fn is_trivia(&self) -> bool {
+        matches!(
+            self,
+            Self::Comment { .. } | Self::Space | Self::Indent(_) | Self::BreakLinePoint(_)
+        )
+    }
 }
 impl fmt::Display for LineComponent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -180,7 +222,7 @@ struct LineBuilder {
     /// Indicates whether this builder is open, which means any new child should
     /// be (recursively) appended to it. Otherwise, new children will be appended as its sibling.
     is_open: bool,
-    /// Added break line points are temporarly collected into this vector. The vector is flushed
+    /// Added break line points are temporarily collected into this vector. The vector is flushed
     /// into the children vector if any other LineComponent is pushed. This prevents break line
     /// points being added to the end of a line.
     pending_break_line_points: Vec<LineComponent>,
@@ -211,7 +253,7 @@ impl LineBuilder {
             Self::default()
         }
     }
-    /// Adds a a sub-builder as the next child.
+    /// Adds a sub-builder as the next child.
     /// All subsequent children will be added to this sub builder until set as closed.
     fn open_sub_builder(&mut self, precedence: usize) {
         let active_builder = self.get_active_builder_mut();
@@ -262,7 +304,25 @@ impl LineBuilder {
     }
     /// Appends a comment to the line.
     pub fn push_comment(&mut self, content: &str, is_trailing: bool) {
+        // Aggregate consecutive comment lines into one.
+        let active_builder = self.get_active_builder_mut();
+        if let Some(LineComponent::Comment { content: prev_content, is_trailing }) =
+            active_builder.children.last_mut()
+        {
+            if !*is_trailing {
+                *prev_content += "\n";
+                *prev_content += content;
+                return;
+            }
+        }
         self.push_child(LineComponent::Comment { content: content.to_string(), is_trailing });
+        self.push_break_line_point(BreakLinePointProperties::new(
+            // Should be greater than any other precedence.
+            usize::MAX,
+            BreakLinePointIndentation::NotIndented,
+            false,
+            false,
+        ));
     }
     /// Appends all the pending break line points to the builder. Should be called whenever a
     /// component of another type (i.e. not a break line point) is appended.
@@ -315,7 +375,7 @@ impl LineBuilder {
         // TODO(gil): improve the complexity of this function. Right now the line builder is
         // entirely cloned for each protected zone, which results in a worst case complexity of
         // O(n*m) where n is the line length and m is the number of protected zones. The actual
-        // complexity is lower since the line is broken into smaller pieces and each one is handeled
+        // complexity is lower since the line is broken into smaller pieces and each one is handled
         // separately.
         let mut sub_builders = self.break_line_tree_single_level(max_line_width, tab_size);
         // If the line was not broken into several lines (i.e. only one sub_builder), open the
@@ -395,7 +455,17 @@ impl LineBuilder {
                 }
                 _ => 0,
             };
-            trees.push(LineBuilder::new(base_indent + added_indent));
+            // If a comment follows the last IndentedWithTail break point, it should also be
+            // indented.
+            let mut comment_only_added_indent = if let BreakLinePointIndentation::IndentedWithTail =
+                break_line_point_properties.break_indentation
+            {
+                if i == n_break_points - 1 { tab_size } else { 0 }
+            } else {
+                0
+            };
+            let cur_indent = base_indent + added_indent;
+            trees.push(LineBuilder::new(cur_indent));
             for j in current_line_start..*current_line_end {
                 match &self.children[j] {
                     LineComponent::Indent(_) => {}
@@ -405,13 +475,35 @@ impl LineBuilder {
                             trees.last_mut().unwrap().push_space();
                         }
                     }
+                    LineComponent::Comment { content, is_trailing } if !is_trailing => {
+                        trees.last_mut().unwrap().push_str(&" ".repeat(comment_only_added_indent));
+                        let formatted_comment = format_leading_comment(
+                            content,
+                            cur_indent + comment_only_added_indent,
+                            max_line_width,
+                        );
+                        trees.last_mut().unwrap().push_child(LineComponent::Comment {
+                            content: formatted_comment,
+                            is_trailing: *is_trailing,
+                        });
+                    }
                     _ => trees.last_mut().unwrap().push_child(self.children[j].clone()),
+                }
+                // Indent the comment only if it directly follows the break point.
+                if !self.children[j].is_trivia() {
+                    comment_only_added_indent = 0;
+                }
+            }
+            if break_line_point_properties.is_comma_broken() {
+                if let Some(last_line) = trees.last_mut() {
+                    last_line.append_comma_if_needed();
                 }
             }
             current_line_start = *current_line_end + 1;
         }
         trees
     }
+
     /// Returns a reference to the currently active builder.
     fn get_active_builder_mut(&mut self) -> &mut LineBuilder {
         // Split into two match statements since self is mutably borrowed in the second match,
@@ -437,7 +529,6 @@ impl LineBuilder {
     /// Creates a string of the code represented in the builder. The string may represent
     /// several lines (separated by '\n'), where each line length is
     /// less than max_line_width (if possible).
-    /// Each line is prepended by the leading
     pub fn build(&self, max_line_width: usize, tab_size: usize) -> String {
         self.break_line_tree(max_line_width, tab_size).iter().join("\n") + "\n"
     }
@@ -518,6 +609,129 @@ impl LineBuilder {
             pending_break_line_points: vec![],
         }
     }
+    pub fn append_comma_if_needed(&mut self) {
+        // List of invalid end characters and sequences to insert a comma between.
+        let invalid_endings = [",", ")", "(", "()", "}", "{", "{}", "|", ";", ":", "::"];
+        if let Some(LineComponent::Token(ref mut s)) = self
+            .children
+            .iter_mut()
+            .rev()
+            .find(|component| matches!(component, LineComponent::Token(_)))
+        {
+            if !invalid_endings.iter().any(|&ending| s.trim_end().ends_with(ending)) {
+                s.push(',');
+            }
+        }
+    }
+}
+/// Represents a comment line in the code.
+#[derive(Clone, PartialEq, Eq)]
+struct CommentLine {
+    /// The number of slashes in the comment prefix.
+    n_slashes: usize,
+    /// The number of exclamation marks in the comment prefix.
+    n_exclamations: usize,
+    /// The number of leading spaces in the comment prefix.
+    n_leading_spaces: usize,
+    /// The content of the comment.
+    content: String,
+}
+
+impl CommentLine {
+    /// Creates a new comment prefix.
+    pub fn from_string(mut comment_line: String) -> Self {
+        comment_line = comment_line.trim().to_string();
+        let n_slashes = comment_line.chars().take_while(|c| *c == '/').count();
+        comment_line = comment_line.chars().skip(n_slashes).collect();
+        let n_exclamations = comment_line.chars().take_while(|c| *c == '!').count();
+        comment_line = comment_line.chars().skip(n_exclamations).collect();
+        let n_leading_spaces = comment_line.chars().take_while(|c| *c == ' ').count();
+        let content = comment_line.chars().skip(n_leading_spaces).collect();
+        Self { n_slashes, n_exclamations, n_leading_spaces, content }
+    }
+    /// Returns true if the comment prefix is the same as the other comment prefix.
+    pub fn is_same_prefix(&self, other: &Self) -> bool {
+        self.n_slashes == other.n_slashes
+            && self.n_exclamations == other.n_exclamations
+            && self.n_leading_spaces == other.n_leading_spaces
+    }
+    /// Returns true if the comment ends with an alphanumeric character, or a comma, indicating that
+    /// the next line is probably a continuation of the comment, and thus in case of a line break it
+    /// should prepend the content of the next line.
+    pub fn is_open_line(&self) -> bool {
+        self.content.ends_with(|c: char| c.is_alphanumeric() || c == ',')
+    }
+}
+
+impl fmt::Display for CommentLine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}{}{}{}",
+            "/".repeat(self.n_slashes),
+            "!".repeat(self.n_exclamations),
+            " ".repeat(self.n_leading_spaces),
+            self.content.trim()
+        )
+    }
+}
+
+/// Formats a comment to fit in the line width. There are no merges of lines, as this is not clear
+/// when to merge two lines the user choose to write on separate lines, so all original line breaks
+/// are preserved.
+fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usize) -> String {
+    let mut formatted_comment = String::new();
+    let mut prev_comment_line = CommentLine::from_string("".to_string());
+    let append_line = |formatted_comment: &mut String, comment_line: &CommentLine| {
+        formatted_comment.push_str(&" ".repeat(cur_indent));
+        formatted_comment.push_str(&comment_line.to_string());
+        formatted_comment.push('\n');
+    };
+    let mut last_line_broken = false;
+    for line in content.lines() {
+        let orig_comment_line = CommentLine::from_string(line.to_string());
+        let max_comment_width = max_line_width
+            - cur_indent
+            - orig_comment_line.n_slashes
+            - orig_comment_line.n_exclamations
+            - orig_comment_line.n_leading_spaces;
+        // The current line is initialized with the previous line only if it was broken (to avoid
+        // merging user separated lines).
+        let mut current_line = if last_line_broken
+            && prev_comment_line.is_open_line()
+            && prev_comment_line.is_same_prefix(&orig_comment_line)
+        {
+            prev_comment_line.content += " ";
+            prev_comment_line
+        } else {
+            append_line(&mut formatted_comment, &prev_comment_line);
+            CommentLine { content: "".to_string(), ..orig_comment_line }
+        };
+        last_line_broken = false;
+        for word in orig_comment_line.content.split(' ') {
+            if current_line.content.is_empty()
+                || current_line.content.len() + word.len() <= max_comment_width
+            {
+                current_line.content.push_str(word);
+                current_line.content.push(' ');
+            } else {
+                append_line(&mut formatted_comment, &current_line);
+                last_line_broken = true;
+                current_line = CommentLine { content: word.to_string(), ..current_line };
+                current_line.content.push(' ');
+            }
+        }
+        prev_comment_line = CommentLine {
+            n_slashes: orig_comment_line.n_slashes,
+            n_exclamations: orig_comment_line.n_exclamations,
+            n_leading_spaces: orig_comment_line.n_leading_spaces,
+            content: current_line.content.trim().to_string(),
+        };
+    }
+    append_line(&mut formatted_comment, &prev_comment_line);
+    // Remove the leading spaces of the first line, as they are added by the LineBuilder for the
+    // first line.
+    formatted_comment.trim().to_string()
 }
 
 /// A struct holding all the data of the pending line to be emitted.
@@ -525,28 +739,53 @@ struct PendingLineState {
     /// Intermediate representation of the text to be emitted.
     line_buffer: LineBuilder,
     /// Should the next space between tokens be ignored.
-    force_no_space_after: bool,
+    prevent_next_space: bool,
 }
 
 impl PendingLineState {
     pub fn new() -> Self {
-        Self { line_buffer: LineBuilder::default(), force_no_space_after: true }
+        Self { line_buffer: LineBuilder::default(), prevent_next_space: true }
     }
 }
 
 /// Represents the break line points before and after a syntax node.
-pub struct WrappingBreakLinePoints {
-    pub leading: Option<BreakLinePointProperties>,
-    pub trailing: Option<BreakLinePointProperties>,
+pub enum BreakLinePointsPositions {
+    Leading(BreakLinePointProperties),
+    Trailing(BreakLinePointProperties),
+    Both { leading: BreakLinePointProperties, trailing: BreakLinePointProperties },
+    List { properties: BreakLinePointProperties, breaking_frequency: usize },
+    None,
 }
 
+impl BreakLinePointsPositions {
+    pub fn new_symmetric(break_line_point_properties: BreakLinePointProperties) -> Self {
+        Self::Both {
+            leading: break_line_point_properties.clone(),
+            trailing: break_line_point_properties,
+        }
+    }
+    pub fn leading(&self) -> Option<BreakLinePointProperties> {
+        match self {
+            Self::Leading(properties) | Self::Both { leading: properties, .. } => {
+                Some(properties.clone())
+            }
+            _ => None,
+        }
+    }
+    pub fn trailing(&self) -> Option<BreakLinePointProperties> {
+        match self {
+            Self::Trailing(properties) | Self::Both { trailing: properties, .. } => {
+                Some(properties.clone())
+            }
+            _ => None,
+        }
+    }
+}
 // TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
-    /// Only applicable for token nodes.
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns true if a token should never have a space after it.
-    /// Only applicable for token nodes.
     fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns true if the line is allowed to break after the node.
     /// Only applicable for terminal nodes.
@@ -558,11 +797,19 @@ pub trait SyntaxNodeFormat {
     fn get_wrapping_break_line_point_properties(
         &self,
         db: &dyn SyntaxGroup,
-    ) -> WrappingBreakLinePoints;
+    ) -> BreakLinePointsPositions;
+    /// Returns the breaking position between the children of a syntax node.
+    fn get_internal_break_line_point_properties(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> BreakLinePointsPositions;
     /// If self is a protected zone, returns its precedence (highest precedence == lowest number).
     /// Otherwise, returns None.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Returns the sorting kind of the syntax node. This method will be used to sections in the
+    /// syntax tree.
+    fn as_sort_kind(&self, db: &dyn SyntaxGroup) -> SortKind;
 }
 
 pub struct FormatterImpl<'a> {
@@ -589,59 +836,169 @@ impl<'a> FormatterImpl<'a> {
     }
     /// Gets a root of a syntax tree and returns the formatted string of the code it represents.
     pub fn get_formatted_string(&mut self, syntax_node: &SyntaxNode) -> String {
-        self.format_node(syntax_node, false);
+        self.format_node(syntax_node);
         self.line_state.line_buffer.build(self.config.max_line_length, self.config.tab_size)
     }
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
-    pub fn format_node(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
+    fn format_node(&mut self, syntax_node: &SyntaxNode) {
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
         let protected_zone_precedence = syntax_node.get_protected_zone_precedence(self.db);
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
-        self.append_break_line_point(node_break_points.leading);
+        self.append_break_line_point(node_break_points.leading());
         if let Some(precedence) = protected_zone_precedence {
             self.line_state.line_buffer.open_sub_builder(precedence);
         }
-        if syntax_node.kind(self.db).is_terminal() {
-            self.format_terminal(syntax_node, no_space_after);
+        if syntax_node.force_no_space_before(self.db) {
+            self.line_state.prevent_next_space = true;
+        }
+        if self.should_ignore_node_format(syntax_node) {
+            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+        } else if syntax_node.kind(self.db).is_terminal() {
+            self.format_terminal(syntax_node);
         } else {
-            self.format_internal(syntax_node, no_space_after);
+            self.format_internal(syntax_node);
+        }
+        if syntax_node.force_no_space_after(self.db) {
+            self.line_state.prevent_next_space = true;
         }
         if protected_zone_precedence.is_some() {
             self.line_state.line_buffer.close_sub_builder();
         }
-        self.append_break_line_point(node_break_points.trailing);
+        self.append_break_line_point(node_break_points.trailing());
     }
     /// Formats an internal node and appends the formatted string to the result.
-    fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
+    fn format_internal(&mut self, syntax_node: &SyntaxNode) {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
-
-        let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
-        let children = syntax_node.children(self.db);
+        let internal_break_line_points_positions =
+            syntax_node.get_internal_break_line_point_properties(self.db);
+        // TODO(ilya): consider not copying here.
+        let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();
-        for (i, child) in children.enumerate() {
+        if self.config.sort_module_level_items {
+            if let SyntaxKind::UsePathList = syntax_node.kind(self.db) {
+                self.sort_inner_use_path(&mut children);
+            } else {
+                self.sort_items_sections(&mut children);
+            }
+        }
+        for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
                 continue;
             }
-            self.format_node(&child, no_space_after && i == n_children - 1);
-
+            self.format_node(child);
+            if let BreakLinePointsPositions::List { properties, breaking_frequency } =
+                &internal_break_line_points_positions
+            {
+                if i % breaking_frequency == breaking_frequency - 1 && i < n_children - 1 {
+                    self.append_break_line_point(Some(properties.clone()));
+                }
+            }
             self.empty_lines_allowance = allowed_empty_between;
         }
     }
+
+    /// Sorting function for `UsePathMulti` children.
+    fn sort_inner_use_path(&self, children: &mut Vec<SyntaxNode>) {
+        // Filter and collect only UsePathLeaf and UsePathSingle, while excluding TokenComma.
+        let mut sorted_leaf_and_single: Vec<_> = children
+            .iter()
+            .filter(|node| {
+                matches!(
+                    node.kind(self.db),
+                    SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle | SyntaxKind::UsePathMulti
+                )
+            })
+            .cloned()
+            .collect();
+
+        // Sort the filtered nodes by comparing their `UsePath`.
+        sorted_leaf_and_single.sort_by(|a_node, b_node| {
+            let a_use_path = extract_use_path(a_node, self.db);
+            let b_use_path = extract_use_path(b_node, self.db);
+
+            match (a_use_path, b_use_path) {
+                (Some(a_path), Some(b_path)) => compare_use_paths(&a_path, &b_path, self.db),
+                (None, Some(_)) => Ordering::Less,
+                (Some(_), None) => Ordering::Greater,
+                (None, None) => Ordering::Equal,
+            }
+        });
+
+        // Filter and collect the other node types (specifically commas).
+        let other_types: Vec<_> = children
+            .iter()
+            .filter(|node| {
+                !matches!(
+                    node.kind(self.db),
+                    SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle | SyntaxKind::UsePathMulti
+                )
+            })
+            .cloned()
+            .collect();
+
+        // Intersperse sorted `UsePathLeaf` and `UsePathSingle` with other types.
+        *children =
+            itertools::Itertools::intersperse_with(sorted_leaf_and_single.into_iter(), || {
+                other_types.first().cloned().unwrap()
+            })
+            .collect();
+    }
+
+    /// Sorting function for module-level items.
+    fn sort_items_sections(&self, children: &mut [SyntaxNode]) {
+        let mut start_idx = 0;
+        while start_idx < children.len() {
+            let kind = children[start_idx].as_sort_kind(self.db);
+            let mut end_idx = start_idx + 1;
+            // Find the end of the current section.
+            while end_idx < children.len() {
+                if kind != children[end_idx].as_sort_kind(self.db) {
+                    break;
+                }
+                end_idx += 1;
+            }
+            // Sort within this section if it's `Module` or `UseItem`.
+            match kind {
+                SortKind::Module => {
+                    children[start_idx..end_idx].sort_by_key(|node| {
+                        ast::ItemModule::from_syntax_node(self.db, node.clone())
+                            .name(self.db)
+                            .text(self.db)
+                    });
+                }
+                SortKind::UseItem => {
+                    children[start_idx..end_idx].sort_by(|a, b| {
+                        compare_use_paths(
+                            &ast::ItemUse::from_syntax_node(self.db, a.clone()).use_path(self.db),
+                            &ast::ItemUse::from_syntax_node(self.db, b.clone()).use_path(self.db),
+                            self.db,
+                        )
+                    });
+                }
+                SortKind::Immovable => {
+                    // Do nothing for immovable sections.
+                }
+            }
+            start_idx = end_idx;
+        }
+    }
+
     /// Formats a terminal node and appends the formatted string to the result.
-    fn format_terminal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
+    fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
-        let mut children = syntax_node.children(self.db);
-        let leading_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
-        let token = children.next().unwrap();
-        let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
+        let children = self.db.get_children(syntax_node.clone());
+        let mut children_iter = children.iter().cloned();
+        let leading_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
+        let token = children_iter.next().unwrap();
+        let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children_iter.next().unwrap());
 
         // The first newlines is the leading trivia correspond exactly to empty lines.
         self.format_trivia(leading_trivia, true);
         if !syntax_node.should_skip_terminal(self.db) {
-            self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
+            self.format_token(&token);
         }
         self.format_trivia(trailing_trivia, false);
     }
@@ -649,7 +1006,9 @@ impl<'a> FormatterImpl<'a> {
     fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, is_leading: bool) {
         for trivium in trivia.elements(self.db) {
             match trivium {
-                ast::Trivium::SingleLineComment(_) => {
+                ast::Trivium::SingleLineComment(_)
+                | ast::Trivium::SingleLineDocComment(_)
+                | ast::Trivium::SingleLineInnerComment(_) => {
                     if !is_leading {
                         self.line_state.line_buffer.push_space();
                     }
@@ -659,16 +1018,6 @@ impl<'a> FormatterImpl<'a> {
                     );
                     self.is_current_line_whitespaces = false;
                     self.empty_lines_allowance = 1;
-
-                    self.line_state.line_buffer.push_break_line_point(
-                        BreakLinePointProperties::new(
-                            // Should be greater than any other precedence.
-                            usize::MAX,
-                            BreakLinePointIndentation::NotIndented,
-                            false,
-                            false,
-                        ),
-                    );
                 }
                 ast::Trivium::Whitespace(_) => {}
                 ast::Trivium::Newline(_) => {
@@ -679,33 +1028,217 @@ impl<'a> FormatterImpl<'a> {
                     self.is_current_line_whitespaces = true;
                 }
                 ast::Trivium::Skipped(_) => {
-                    self.format_token(&trivium.as_syntax_node(), false);
+                    self.format_token(&trivium.as_syntax_node());
+                }
+                ast::Trivium::SkippedNode(node) => {
+                    self.format_node(&node.as_syntax_node());
                 }
             }
         }
     }
     /// Formats a token node and appends it to the result.
     /// Assumes the given SyntaxNode is a token.
-    fn format_token(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
-        let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
+    fn format_token(&mut self, syntax_node: &SyntaxNode) {
         let text = syntax_node.text(self.db).unwrap();
-        if !syntax_node.force_no_space_before(self.db) && !self.line_state.force_no_space_after {
+        if !syntax_node.force_no_space_before(self.db) && !self.line_state.prevent_next_space {
             self.line_state.line_buffer.push_space();
         }
-        self.line_state.force_no_space_after = no_space_after;
-
+        self.line_state.prevent_next_space = syntax_node.force_no_space_after(self.db);
         if syntax_node.kind(self.db) != SyntaxKind::TokenWhitespace {
             self.is_current_line_whitespaces = false;
         }
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
-        self.append_break_line_point(node_break_points.leading);
+        self.append_break_line_point(node_break_points.leading());
         self.line_state.line_buffer.push_str(&text);
-        self.append_break_line_point(node_break_points.trailing);
+        self.append_break_line_point(node_break_points.trailing());
     }
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
         if let Some(properties) = properties {
             self.line_state.line_buffer.push_break_line_point(properties);
-            self.line_state.force_no_space_after = true;
+            self.line_state.prevent_next_space = true;
         }
     }
+
+    /// Gets a syntax node and returns if the node has an cairofmt::skip attribute.
+    pub fn should_ignore_node_format(&self, syntax_node: &SyntaxNode) -> bool {
+        syntax_node.has_attr(self.db, FMT_SKIP_ATTR)
+    }
+}
+
+/// Compares two `UsePath` nodes to determine their ordering.
+fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering {
+    match (a, b) {
+        // Case for multi vs non-multi: multi paths are always ordered before non-multi paths.
+        (UsePath::Multi(_), UsePath::Leaf(_) | UsePath::Single(_)) => Ordering::Greater,
+        (UsePath::Leaf(_) | UsePath::Single(_), UsePath::Multi(_)) => Ordering::Less,
+
+        // Case for multi vs multi.
+        (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
+            // Store the elements to extend their lifetimes
+            let a_elements = a_multi.use_paths(db).elements(db);
+            let b_elements = b_multi.use_paths(db).elements(db);
+            // Find the minimum elements by key.
+            // Find the minimum elements by key using the `extract_ident` method.
+            let a_min = a_elements.iter().min_by_key(|path| match path {
+                UsePath::Leaf(leaf) => leaf.extract_ident(db),
+                UsePath::Single(single) => single.extract_ident(db),
+                _ => "".to_string(),
+            });
+            let b_min = b_elements.iter().min_by_key(|path| match path {
+                UsePath::Leaf(leaf) => leaf.extract_ident(db),
+                UsePath::Single(single) => single.extract_ident(db),
+                _ => "".to_string(),
+            });
+            // If both `a_min` and `b_min` are `Some`, compare them.
+            a_min
+                .and_then(|a_min| b_min.map(|b_min| compare_use_paths(a_min, b_min, db)))
+                .unwrap_or_else(|| {
+                    // If both are equal, compare next paths if they exist.
+                    let next_a = next_use_path(a.clone(), db);
+                    let next_b = next_use_path(b.clone(), db);
+
+                    match (next_a, next_b) {
+                        (Some(new_a), Some(new_b)) => compare_use_paths(&new_a, &new_b, db),
+                        (None, Some(_)) => Ordering::Less,
+                        (Some(_), None) => Ordering::Greater,
+                        (None, None) => Ordering::Equal,
+                    }
+                })
+        }
+
+        // Case for Leaf vs Single and Single vs Leaf.
+        (UsePath::Leaf(a_leaf), UsePath::Single(b_single)) => {
+            let a_str = a_leaf.extract_ident(db);
+            let b_str = b_single.extract_ident(db);
+
+            match a_str.cmp(&b_str) {
+                Ordering::Equal => Ordering::Less, // Leaf is always ordered before Single if
+                // equal.
+                other => other,
+            }
+        }
+
+        (UsePath::Single(a_single), UsePath::Leaf(b_leaf)) => {
+            let a_str = a_single.extract_ident(db);
+            let b_str = b_leaf.extract_ident(db);
+
+            // Compare the extracted identifiers.
+            match a_str.cmp(&b_str) {
+                Ordering::Equal => Ordering::Greater, // Single is ordered after Leaf if equal.
+                other => other,
+            }
+        }
+
+        // Case for Leaf vs Leaf: compare their identifiers, and only if they are equal, compare
+        // their aliases.
+        (UsePath::Leaf(a_leaf), UsePath::Leaf(b_leaf)) => {
+            match a_leaf.extract_ident(db).cmp(&b_leaf.extract_ident(db)) {
+                Ordering::Equal => a_leaf.extract_alias(db).cmp(&b_leaf.extract_alias(db)),
+                other => other,
+            }
+        }
+
+        // Case for Single vs Single: compare their identifiers, then move to the next segment if
+        // equal.
+        (UsePath::Single(a_single), UsePath::Single(b_single)) => {
+            // this is the problem. it takes the whole path instead of only the single before the ::
+            let a_str = a_single.extract_ident(db);
+            let b_str = b_single.extract_ident(db);
+            match a_str.cmp(&b_str) {
+                Ordering::Equal => {
+                    // If the identifiers are equal, compare the next path segment if available.
+                    let next_a = next_use_path(a.clone(), db);
+                    let next_b = next_use_path(b.clone(), db);
+                    compare_use_paths(&next_a.unwrap(), &next_b.unwrap(), db)
+                }
+                other => other,
+            }
+        }
+    }
+}
+
+/// Helper function to extract `UsePath` from a `SyntaxNode`.
+fn extract_use_path(node: &SyntaxNode, db: &dyn SyntaxGroup) -> Option<ast::UsePath> {
+    match node.kind(db) {
+        SyntaxKind::UsePathLeaf => {
+            Some(ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, node.clone())))
+        }
+        SyntaxKind::UsePathSingle => {
+            Some(ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, node.clone())))
+        }
+        SyntaxKind::UsePathMulti => {
+            Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, node.clone())))
+        }
+        _ => None,
+    }
+}
+
+/// Function to get the next part of a UsePath.
+fn next_use_path(path: UsePath, db: &dyn SyntaxGroup) -> Option<UsePath> {
+    match path {
+        UsePath::Leaf(_) => None,
+        UsePath::Single(single) => match single.use_path(db) {
+            UsePath::Leaf(leaf) => Some(UsePath::Leaf(leaf)),
+            UsePath::Single(single) => Some(UsePath::Single(single)),
+            UsePath::Multi(multi) => multi
+                .use_paths(db)
+                .elements(db)
+                .iter()
+                .min_by_key(|x| match x {
+                    UsePath::Leaf(leaf) => leaf.extract_ident(db),
+                    UsePath::Single(single) => single.extract_ident(db),
+                    // We return an empty string (`""`) to ensure that `multi` paths are always
+                    // placed first in the sorted order. This is needed to avoid
+                    // complex computation involved in recursively processing nested `multi` paths.
+                    _ => "".to_string(),
+                })
+                .cloned(),
+        },
+        UsePath::Multi(_) => None,
+    }
+}
+
+/// A trait for extracting identifiers from UsePathLeaf and UsePathSingle.
+trait IdentExtractor {
+    /// Extracts the identifier and aliases from the syntax node, removing any trivia.
+    fn extract_ident(&self, db: &dyn SyntaxGroup) -> String;
+    fn extract_alias(&self, db: &dyn SyntaxGroup) -> Option<String>;
+}
+impl IdentExtractor for ast::UsePathLeaf {
+    fn extract_ident(&self, db: &dyn SyntaxGroup) -> String {
+        self.ident(db).as_syntax_node().get_text_without_trivia(db)
+    }
+
+    fn extract_alias(&self, db: &dyn SyntaxGroup) -> Option<String> {
+        match self.alias_clause(db) {
+            ast::OptionAliasClause::Empty(_) => None,
+            ast::OptionAliasClause::AliasClause(alias_clause) => {
+                Some(alias_clause.alias(db).as_syntax_node().get_text_without_trivia(db))
+            }
+        }
+    }
+}
+
+impl IdentExtractor for ast::UsePathSingle {
+    fn extract_ident(&self, db: &dyn SyntaxGroup) -> String {
+        self.ident(db).as_syntax_node().get_text_without_trivia(db)
+    }
+
+    fn extract_alias(&self, _db: &dyn SyntaxGroup) -> Option<String> {
+        None
+    }
+}
+
+/// Represents the kind of sections in the syntax tree that can be sorted.
+/// Classify consecutive nodes into sections that are eligible for sorting.
+#[derive(PartialEq, Eq)]
+pub enum SortKind {
+    /// Module items without body, e.g. `mod a;`.
+    Module,
+
+    /// Use items, e.g. `use a::b;` or `use c::{d, e as f};`.
+    UseItem,
+
+    /// Items that cannot be moved - would be skipped and not included in any sorted segment.
+    Immovable,
 }

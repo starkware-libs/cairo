@@ -1,15 +1,21 @@
 //! This module contains functions and constructs related to elliptic curve operations on the
 //! secp256k1 curve.
 
-use option::OptionTrait;
+use core::option::OptionTrait;
+use core::gas::GasBuiltin;
+#[allow(unused_imports)]
 use starknet::{
-    EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait
+    secp256_trait::{
+        Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature
+    },
+    SyscallResult, SyscallResultTrait,
 };
 
+/// A point on the Secp256k1 curve.
 #[derive(Copy, Drop)]
-extern type Secp256k1Point;
+pub extern type Secp256k1Point;
 
-impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
+pub(crate) impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
     // TODO(yuval): change to constant once u256 constants are supported.
     fn get_curve_size() -> u256 {
         0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
@@ -34,7 +40,7 @@ impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
     }
 }
 
-impl Secp256k1PointImpl of Secp256PointTrait<Secp256k1Point> {
+pub(crate) impl Secp256k1PointImpl of Secp256PointTrait<Secp256k1Point> {
     fn get_coordinates(self: Secp256k1Point) -> SyscallResult<(u256, u256)> {
         secp256k1_get_xy_syscall(self)
     }
@@ -56,13 +62,14 @@ extern fn secp256k1_new_syscall(
 extern fn secp256k1_add_syscall(
     p0: Secp256k1Point, p1: Secp256k1Point
 ) -> SyscallResult<Secp256k1Point> implicits(GasBuiltin, System) nopanic;
-/// Computes the product of a secp256k1 EC point `p` by the given scalar `m`.
+/// Computes the product of a secp256k1 EC point `p` by the given scalar `scalar`.
 extern fn secp256k1_mul_syscall(
-    p: Secp256k1Point, m: u256
+    p: Secp256k1Point, scalar: u256
 ) -> SyscallResult<Secp256k1Point> implicits(GasBuiltin, System) nopanic;
 
 /// Computes the point on the secp256k1 curve that matches the given `x` coordinate, if such exists.
 /// Out of the two possible y's, chooses according to `y_parity`.
+/// `y_parity` == true means that the y coordinate is odd.
 extern fn secp256k1_get_point_from_x_syscall(
     x: u256, y_parity: bool
 ) -> SyscallResult<Option<Secp256k1Point>> implicits(GasBuiltin, System) nopanic;
@@ -71,3 +78,14 @@ extern fn secp256k1_get_point_from_x_syscall(
 extern fn secp256k1_get_xy_syscall(
     p: Secp256k1Point
 ) -> SyscallResult<(u256, u256)> implicits(GasBuiltin, System) nopanic;
+
+impl Secp256k1PointSerde of Serde<Secp256k1Point> {
+    fn serialize(self: @Secp256k1Point, ref output: Array<felt252>) {
+        let point = (*self).get_coordinates().unwrap();
+        point.serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<Secp256k1Point> {
+        let (x, y) = Serde::<(u256, u256)>::deserialize(ref serialized)?;
+        secp256k1_new_syscall(x, y).unwrap_syscall()
+    }
+}

@@ -9,11 +9,11 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use itertools::{zip_eq, Itertools};
-use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use lowering::borrow_check::demand::DemandReporter;
+use itertools::{Itertools, zip_eq};
 use lowering::borrow_check::Demand;
-use lowering::FlatLowered;
+use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use lowering::borrow_check::demand::{AuxCombine, DemandReporter};
+use lowering::{FlatLowered, VarUsage};
 
 /// Represents the location where a drop statement for a variable should be added.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -55,6 +55,12 @@ pub enum SierraGenVar {
 impl From<VariableId> for SierraGenVar {
     fn from(var: VariableId) -> Self {
         SierraGenVar::LoweringVar(var)
+    }
+}
+
+impl From<VarUsage> for SierraGenVar {
+    fn from(var_usage: VarUsage) -> Self {
+        SierraGenVar::LoweringVar(var_usage.var_id)
     }
 }
 
@@ -100,16 +106,18 @@ pub fn find_variable_lifetime(
 ) -> Maybe<VariableLifetimeResult> {
     lowered_function.blocks.has_root()?;
     let context = VariableLifetimeContext { local_vars, res: VariableLifetimeResult::default() };
-    let mut analysis =
-        BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: context };
+    let mut analysis = BackAnalysis::new(lowered_function, context);
 
     let mut root_demands = analysis.get_root_info();
-    analysis.analyzer.introduce(
-        &mut root_demands,
+
+    // Introduce the parameters before starting the analysis.
+    root_demands.variables_introduced(
+        &mut analysis.analyzer,
         &lowered_function.parameters,
         DropLocation::BeginningOfBlock(BlockId::root()),
     );
-    for var in root_demands.vars {
+
+    for var in root_demands.vars.keys() {
         match var {
             SierraGenVar::LoweringVar(var_id) => {
                 panic!("v{} is used before it is introduced.", var_id.index())
@@ -126,27 +134,51 @@ struct VariableLifetimeContext<'a> {
     res: VariableLifetimeResult,
 }
 
-pub type SierraDemand = Demand<SierraGenVar>;
-
-impl<'a> DemandReporter<SierraGenVar> for VariableLifetimeContext<'a> {
-    type IntroducePosition = DropLocation;
-    type UsePosition = StatementLocation;
-
-    fn drop(&mut self, position: DropLocation, var: SierraGenVar) {
-        self.res.add_drop(var, position)
-    }
-
-    fn last_use(
-        &mut self,
-        statement_location: StatementLocation,
-        var_index: usize,
-        _var: SierraGenVar,
-    ) {
-        self.res.last_use.insert(UseLocation { statement_location, idx: var_index });
+/// Can this state lead to any return.
+#[derive(Clone, Default)]
+enum ReturnState {
+    /// Some return statement is reachable.
+    #[default]
+    Reachable,
+    /// No return statement is reachable.
+    /// This most likely means all flows from this state lead to a match on a never type.
+    Unreachable,
+}
+/// How to combine two return states in a flow divergence.
+impl AuxCombine for ReturnState {
+    fn merge<'a, I: Iterator<Item = &'a Self>>(iter: I) -> Self
+    where
+        Self: 'a,
+    {
+        if iter.into_iter().any(|aux| matches!(aux, ReturnState::Reachable)) {
+            Self::Reachable
+        } else {
+            Self::Unreachable
+        }
     }
 }
 
-impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
+type SierraDemand = Demand<SierraGenVar, UseLocation, ReturnState>;
+
+impl DemandReporter<SierraGenVar, ReturnState> for VariableLifetimeContext<'_> {
+    type IntroducePosition = DropLocation;
+    type UsePosition = UseLocation;
+
+    fn drop_aux(&mut self, position: DropLocation, var: SierraGenVar, aux: ReturnState) {
+        // No need for drops when no return statement is reachable, as this is what validates all
+        // variables are used. This specifically handles the case of matching on a never
+        // enum, so we won't try to drop variables containing builtins.
+        if matches!(aux, ReturnState::Reachable) {
+            self.res.add_drop(var, position);
+        }
+    }
+
+    fn last_use(&mut self, use_location: UseLocation, _var: SierraGenVar) {
+        self.res.last_use.insert(use_location);
+    }
+}
+
+impl Analyzer<'_> for VariableLifetimeContext<'_> {
     type Info = SierraDemand;
 
     fn visit_stmt(
@@ -155,8 +187,19 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         statement_location: StatementLocation,
         stmt: &lowering::Statement,
     ) {
-        self.introduce(info, &stmt.outputs(), DropLocation::PostStatement(statement_location));
-        info.variables_used(self, &stmt.inputs(), statement_location);
+        self.introduce(
+            info,
+            stmt.outputs(),
+            statement_location,
+            DropLocation::PostStatement(statement_location),
+        );
+        info.variables_used(
+            self,
+            stmt.inputs()
+                .iter()
+                .enumerate()
+                .map(|(idx, var_id)| (var_id, UseLocation { statement_location, idx })),
+        );
     }
 
     fn visit_goto(
@@ -168,13 +211,19 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     ) {
         info.apply_remapping(
             self,
-            remapping.iter().map(|(dst, src)| (*dst, *src)),
-            statement_location,
+            remapping.iter().enumerate().map(|(idx, (dst, src))| {
+                (dst, (&src.var_id, UseLocation { statement_location, idx }))
+            }),
         );
-        for (dst, _src) in remapping.iter() {
+        for (idx, (dst, _src)) in remapping.iter().enumerate() {
             if self.local_vars.contains(dst) {
                 assert!(
-                    info.vars.insert(SierraGenVar::UninitializedLocal(*dst)),
+                    info.vars
+                        .insert(SierraGenVar::UninitializedLocal(*dst), UseLocation {
+                            statement_location,
+                            idx
+                        })
+                        .is_none(),
                     "Variable introduced multiple times."
                 );
             }
@@ -185,7 +234,7 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         &mut self,
         statement_location: StatementLocation,
         match_info: &lowering::MatchInfo,
-        infos: &[Self::Info],
+        infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .map(|(arm, demand)| {
@@ -193,41 +242,59 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
                 self.introduce(
                     &mut demand,
                     &arm.var_ids,
+                    statement_location,
                     DropLocation::BeginningOfBlock(arm.block_id),
                 );
                 (demand, DropLocation::BeginningOfBlock(arm.block_id))
             })
             .collect_vec();
         let mut demand = SierraDemand::merge_demands(&arm_demands, self);
-        demand.variables_used(self, &match_info.inputs(), statement_location);
+        demand.variables_used(
+            self,
+            match_info
+                .inputs()
+                .iter()
+                .enumerate()
+                .map(|(idx, var_id)| (var_id, UseLocation { statement_location, idx })),
+        );
         demand
     }
 
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut info = SierraDemand::default();
-        info.variables_used(self, vars, statement_location);
+        info.variables_used(
+            self,
+            vars.iter().enumerate().map(|(idx, VarUsage { var_id, .. })| {
+                (var_id, UseLocation { statement_location, idx })
+            }),
+        );
         info
     }
-
-    fn info_from_panic(
-        &mut self,
-        _statement_location: StatementLocation,
-        _var: &VariableId,
-    ) -> Self::Info {
-        unreachable!("Panics should have been stripped in a previous phase.")
-    }
 }
-impl<'a> VariableLifetimeContext<'a> {
-    fn introduce(&mut self, info: &mut SierraDemand, vars: &[VariableId], location: DropLocation) {
-        info.variables_introduced(self, vars, location);
-        for var_id in vars {
+impl VariableLifetimeContext<'_> {
+    /// A wrapper for info.variables_introduced that adds demand for uninitialized locals.
+    /// Note that this function is not called for the parameters of the analyzed function.
+    fn introduce(
+        &mut self,
+        info: &mut SierraDemand,
+        vars: &[VariableId],
+        statement_location: StatementLocation,
+        drop_location: DropLocation,
+    ) {
+        info.variables_introduced(self, vars, drop_location);
+        for (idx, var_id) in vars.iter().enumerate() {
             if self.local_vars.contains(var_id) {
                 assert!(
-                    info.vars.insert(SierraGenVar::UninitializedLocal(*var_id)),
+                    info.vars
+                        .insert(SierraGenVar::UninitializedLocal(*var_id), UseLocation {
+                            statement_location,
+                            idx
+                        })
+                        .is_none(),
                     "Variable introduced multiple times."
                 );
             }

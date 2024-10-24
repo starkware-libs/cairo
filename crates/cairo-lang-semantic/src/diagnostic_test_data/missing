@@ -14,10 +14,10 @@ fn foo2() -> UnknownType {
     return 0;
 }
 fn foo3() -> felt252 {
-    UnknownType{}
+    UnknownType {}
 }
 fn foo4() -> felt252 {
-    return UnknownType{};
+    return UnknownType {};
 }
 
 //! > function_body
@@ -35,12 +35,12 @@ fn foo2() -> UnknownType {
 
 error: Type not found.
  --> lib.cairo:8:5
-    UnknownType{}
+    UnknownType {}
     ^*********^
 
 error: Type not found.
  --> lib.cairo:11:12
-    return UnknownType{};
+    return UnknownType {};
            ^*********^
 
 //! > ==========================================================================

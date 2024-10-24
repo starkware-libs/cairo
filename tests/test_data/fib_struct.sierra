@@ -1,57 +1,56 @@
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
-type Unit = Struct<ut@Tuple>;
-type examples::fib_struct::FibResult = Struct<ut@examples::fib_struct::FibResult, felt252, felt252, Unit>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type examples::fib_struct::FibResult = Struct<ut@examples::fib_struct::FibResult, felt252, felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt252> = dup<felt252>;
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
-libfunc felt252_const<0> = felt252_const<0>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc struct_construct<examples::fib_struct::FibResult> = struct_construct<examples::fib_struct::FibResult>;
 libfunc store_temp<examples::fib_struct::FibResult> = store_temp<examples::fib_struct::FibResult>;
-libfunc jump = jump;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc felt252_add = felt252_add;
-libfunc felt252_const<1> = felt252_const<1>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc felt252_sub = felt252_sub;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@examples::fib_struct::fib> = function_call<user@examples::fib_struct::fib>;
 libfunc struct_deconstruct<examples::fib_struct::FibResult> = struct_deconstruct<examples::fib_struct::FibResult>;
 libfunc drop<Unit> = drop<Unit>;
-libfunc rename<examples::fib_struct::FibResult> = rename<examples::fib_struct::FibResult>;
 
-disable_ap_tracking() -> ();
-dup<felt252>([2]) -> ([2], [3]);
-felt252_is_zero([3]) { fallthrough() 11([4]) };
-branch_align() -> ();
-drop<felt252>([1]) -> ();
-drop<felt252>([2]) -> ();
-felt252_const<0>() -> ([5]);
-struct_construct<Unit>() -> ([6]);
-struct_construct<examples::fib_struct::FibResult>([0], [5], [6]) -> ([7]);
-store_temp<examples::fib_struct::FibResult>([7]) -> ([8]);
-jump() { 28() };
-branch_align() -> ();
-drop<NonZero<felt252>>([4]) -> ();
-dup<felt252>([1]) -> ([1], [10]);
-felt252_add([0], [10]) -> ([9]);
-felt252_const<1>() -> ([11]);
-felt252_sub([2], [11]) -> ([12]);
-store_temp<felt252>([1]) -> ([14]);
-store_temp<felt252>([9]) -> ([15]);
-store_temp<felt252>([12]) -> ([16]);
-function_call<user@examples::fib_struct::fib>([14], [15], [16]) -> ([13]);
-struct_deconstruct<examples::fib_struct::FibResult>([13]) -> ([17], [18], [19]);
-drop<Unit>([19]) -> ();
-felt252_const<1>() -> ([20]);
-felt252_add([18], [20]) -> ([21]);
-struct_construct<Unit>() -> ([22]);
-struct_construct<examples::fib_struct::FibResult>([17], [21], [22]) -> ([23]);
-store_temp<examples::fib_struct::FibResult>([23]) -> ([8]);
-rename<examples::fib_struct::FibResult>([8]) -> ([24]);
-return([24]);
+disable_ap_tracking() -> (); // 0
+dup<felt252>([2]) -> ([2], [3]); // 1
+felt252_is_zero([3]) { fallthrough() 11([4]) }; // 2
+branch_align() -> (); // 3
+drop<felt252>([1]) -> (); // 4
+drop<felt252>([2]) -> (); // 5
+const_as_immediate<Const<felt252, 0>>() -> ([5]); // 6
+struct_construct<Unit>() -> ([6]); // 7
+struct_construct<examples::fib_struct::FibResult>([0], [5], [6]) -> ([7]); // 8
+store_temp<examples::fib_struct::FibResult>([7]) -> ([7]); // 9
+return([7]); // 10
+branch_align() -> (); // 11
+drop<NonZero<felt252>>([4]) -> (); // 12
+dup<felt252>([1]) -> ([1], [8]); // 13
+felt252_add([0], [8]) -> ([9]); // 14
+const_as_immediate<Const<felt252, 1>>() -> ([10]); // 15
+felt252_sub([2], [10]) -> ([11]); // 16
+store_temp<felt252>([1]) -> ([1]); // 17
+store_temp<felt252>([9]) -> ([9]); // 18
+store_temp<felt252>([11]) -> ([11]); // 19
+function_call<user@examples::fib_struct::fib>([1], [9], [11]) -> ([12]); // 20
+struct_deconstruct<examples::fib_struct::FibResult>([12]) -> ([13], [14], [15]); // 21
+drop<Unit>([15]) -> (); // 22
+const_as_immediate<Const<felt252, 1>>() -> ([16]); // 23
+felt252_add([14], [16]) -> ([17]); // 24
+struct_construct<Unit>() -> ([18]); // 25
+struct_construct<examples::fib_struct::FibResult>([13], [17], [18]) -> ([19]); // 26
+store_temp<examples::fib_struct::FibResult>([19]) -> ([19]); // 27
+return([19]); // 28
 
 examples::fib_struct::fib@0([0]: felt252, [1]: felt252, [2]: felt252) -> (examples::fib_struct::FibResult);

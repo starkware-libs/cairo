@@ -1,3 +1,4 @@
+use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
@@ -67,7 +68,7 @@ impl EquationGenerator {
         Self {
             future_costs,
             equations: OrderedHashMap::from_iter(
-                CostTokenType::iter().map(|token_type| (*token_type, vec![])),
+                CostTokenType::iter_casm_tokens().map(|token_type| (*token_type, vec![])),
             ),
         }
     }
@@ -77,7 +78,7 @@ impl EquationGenerator {
         let entry = &mut self.future_costs[idx.0];
         if let Some(other) = entry {
             for (token_type, val) in sub_maps(other.clone(), cost) {
-                self.equations[token_type].push(val);
+                self.equations[&token_type].push(val);
             }
         } else {
             *entry = Some(cost);
@@ -92,60 +93,35 @@ impl StatementFutureCost for EquationGenerator {
         if let Some(other) = entry {
             other
         } else {
-            entry.insert(CostExprMap::from_iter(CostTokenType::iter().map(|token_type| {
-                (*token_type, CostExpr::from_var(Var::StatementFuture(*idx, *token_type)))
-            })))
+            entry.insert(CostExprMap::from_iter(CostTokenType::iter_casm_tokens().map(
+                |token_type| {
+                    (*token_type, CostExpr::from_var(Var::StatementFuture(*idx, *token_type)))
+                },
+            )))
         }
     }
 }
 
 /// Returns the reverse topological ordering of the program statements.
 fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementIdx>, CostError> {
-    let mut ordering = vec![];
-    let mut visited = vec![false; program.statements.len()];
-    for f in &program.funcs {
-        calculate_reverse_topological_ordering(
-            program,
-            &mut ordering,
-            &mut visited,
-            &f.entry_point,
-        )?;
-    }
-    Ok(ordering)
-}
-
-/// Recursively calculates the topological ordering of the program.
-fn calculate_reverse_topological_ordering(
-    program: &Program,
-    ordering: &mut Vec<StatementIdx>,
-    visited: &mut Vec<bool>,
-    idx: &StatementIdx,
-) -> Result<(), CostError> {
-    match visited.get(idx.0) {
-        Some(true) => {
-            return Ok(());
-        }
-        Some(false) => {}
-        None => {
-            return Err(CostError::StatementOutOfBounds(*idx));
-        }
-    }
-    visited[idx.0] = true;
-    match program.get_statement(idx).unwrap() {
-        cairo_lang_sierra::program::Statement::Invocation(invocation) => {
-            for branch in &invocation.branches {
-                calculate_reverse_topological_ordering(
-                    program,
-                    ordering,
-                    visited,
-                    &idx.next(&branch.target),
-                )?;
-            }
-        }
-        cairo_lang_sierra::program::Statement::Return(_) => {}
-    }
-    // Adding element to ordering after visiting all children - therefore we have reverse
-    // topological ordering.
-    ordering.push(*idx);
-    Ok(())
+    get_topological_ordering(
+        false,
+        program.funcs.iter().map(|f| f.entry_point),
+        program.statements.len(),
+        |idx| {
+            Ok(match program.get_statement(&idx).unwrap() {
+                cairo_lang_sierra::program::Statement::Invocation(invocation) => invocation
+                    .branches
+                    .iter()
+                    .rev()
+                    .map(|branch| idx.next(&branch.target))
+                    .collect(),
+                cairo_lang_sierra::program::Statement::Return(_) => {
+                    vec![]
+                }
+            })
+        },
+        CostError::StatementOutOfBounds,
+        |_| unreachable!("Cycles are not detected."),
+    )
 }

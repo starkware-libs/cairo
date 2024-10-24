@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::izip;
 use thiserror::Error;
 
 use self::value::CoreValue;
-use crate::edit_state::{put_results, take_args, EditStateError};
+use crate::edit_state::{EditStateError, put_results, take_args};
 use crate::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use crate::ids::{FunctionId, VarId};
 use crate::program::{Program, Statement, StatementIdx};
@@ -22,8 +23,6 @@ pub enum LibfuncSimulationError {
     WrongNumberOfArgs,
     #[error("Expected a different type of an argument")]
     WrongArgType,
-    #[error("Expected a different memory layout")]
-    MemoryLayoutMismatch,
     #[error("Could not resolve requested symbol value")]
     UnresolvedStatementGasInfo,
     #[error("Error occurred during user function call")]
@@ -84,9 +83,8 @@ impl SimulationContext<'_> {
                 actual: inputs.len(),
             });
         }
-        let mut state = HashMap::<VarId, CoreValue>::from_iter(
-            izip!(func.params.iter(), inputs.into_iter())
-                .map(|(param, input)| (param.id.clone(), input)),
+        let mut state = OrderedHashMap::<VarId, CoreValue>::from_iter(
+            izip!(func.params.iter(), inputs).map(|(param, input)| (param.id.clone(), input)),
         );
         loop {
             let statement = self
@@ -120,13 +118,10 @@ impl SimulationContext<'_> {
                         current_statement_id,
                     )?;
                     let branch_info = &invocation.branches[chosen_branch];
-                    state = put_results(
-                        remaining,
-                        izip!(branch_info.results.iter(), outputs.into_iter()),
-                    )
-                    .map_err(|error| {
-                        SimulationError::EditStateError(error, current_statement_id)
-                    })?;
+                    state = put_results(remaining, izip!(branch_info.results.iter(), outputs))
+                        .map_err(|error| {
+                            SimulationError::EditStateError(error, current_statement_id)
+                        })?;
                     current_statement_id = current_statement_id.next(&branch_info.target);
                 }
             }

@@ -4,5 +4,5 @@ fn hash_chain(n: felt252) -> felt252 {
         return 0;
     }
 
-    pedersen(hash_chain(n - 1), n)
+    core::pedersen::pedersen(hash_chain(n - 1), n)
 }

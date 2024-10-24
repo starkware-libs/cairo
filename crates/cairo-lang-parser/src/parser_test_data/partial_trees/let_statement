@@ -1,0 +1,197 @@
+//! > Test a StatementLet syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+struct A {
+    a: felt252,
+}
+fn f(x: (A, felt252)) {
+    let (A { a: mut a }, ref mut b) = x;
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: PatternTuple)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── patterns (kind: PatternList)
+    │   │   ├── item #0 (kind: PatternStruct)
+    │   │   │   ├── path (kind: ExprPath) <ignored>
+    │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │   │   ├── params (kind: PatternStructParamList)
+    │   │   │   │   └── item #0 (kind: PatternStructParamWithExpr)
+    │   │   │   │       ├── modifiers (kind: ModifierList) []
+    │   │   │   │       ├── name (kind: TokenIdentifier): 'a'
+    │   │   │   │       ├── colon (kind: TokenColon): ':'
+    │   │   │   │       └── pattern (kind: PatternIdentifier)
+    │   │   │   │           ├── modifiers (kind: ModifierList)
+    │   │   │   │           │   └── child #0 (kind: TokenMut): 'mut'
+    │   │   │   │           └── name (kind: TokenIdentifier): 'a'
+    │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   └── item #1 (kind: PatternIdentifier)
+    │   │       ├── modifiers (kind: ModifierList)
+    │   │       │   ├── child #0 (kind: TokenRef): 'ref'
+    │   │       │   └── child #1 (kind: TokenMut): 'mut'
+    │   │       └── name (kind: TokenIdentifier): 'b'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprPath) <ignored>
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test a StatementLet with attribute syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    #[an_attribute]
+    let x = 1;
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList)
+    │   └── child #0 (kind: Attribute)
+    │       ├── hash (kind: TokenHash): '#'
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── attr (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'an_attribute'
+    │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       └── rbrack (kind: TokenRBrack): ']'
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'x'
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: TokenLiteralNumber): '1'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test fixed array expr
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let x: [u32; 4] = [1, 2, 3, 4];
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'x'
+    ├── type_clause (kind: TypeClause)
+    │   ├── colon (kind: TokenColon): ':'
+    │   └── ty (kind: ExprFixedSizeArray)
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── exprs (kind: ExprList)
+    │       │   └── item #0 (kind: ExprPath)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'u32'
+    │       ├── size (kind: FixedSizeArraySize)
+    │       │   ├── semicolon (kind: TokenSemicolon): ';'
+    │       │   └── size (kind: TokenLiteralNumber): '4'
+    │       └── rbrack (kind: TokenRBrack): ']'
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprFixedSizeArray)
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── exprs (kind: ExprList)
+    │   │   ├── item #0 (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: TokenLiteralNumber): '2'
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   ├── item #2 (kind: TokenLiteralNumber): '3'
+    │   │   ├── separator #2 (kind: TokenComma): ','
+    │   │   └── item #3 (kind: TokenLiteralNumber): '4'
+    │   ├── size (kind: OptionFixedSizeArraySizeEmpty) []
+    │   └── rbrack (kind: TokenRBrack): ']'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test fixed array pattern.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let [x, y, z] = [1, 2, 3];
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── attributes (kind: AttributeList) []
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: PatternFixedSizeArray)
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── patterns (kind: PatternList)
+    │   │   ├── item #0 (kind: ExprPath)
+    │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: ExprPath)
+    │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │       └── ident (kind: TokenIdentifier): 'y'
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   └── item #2 (kind: ExprPath)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'z'
+    │   └── rbrack (kind: TokenRBrack): ']'
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprFixedSizeArray)
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── exprs (kind: ExprList)
+    │   │   ├── item #0 (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: TokenLiteralNumber): '2'
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   └── item #2 (kind: TokenLiteralNumber): '3'
+    │   ├── size (kind: OptionFixedSizeArraySizeEmpty) []
+    │   └── rbrack (kind: TokenRBrack): ']'
+    └── semicolon (kind: TokenSemicolon): ';'

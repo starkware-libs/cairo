@@ -2,6 +2,7 @@ use cairo_lang_utils::graph_algos::graph_node::GraphNode;
 use cairo_lang_utils::graph_algos::strongly_connected_components::ComputeScc;
 
 use super::strongly_connected_components::concrete_function_with_body_scc;
+use crate::DependencyType;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 
@@ -10,45 +11,24 @@ use crate::ids::ConcreteFunctionWithBodyId;
 pub struct ConcreteFunctionWithBodyNode<'a> {
     pub function_id: ConcreteFunctionWithBodyId,
     pub db: &'a dyn LoweringGroup,
+    pub dependency_type: DependencyType,
 }
-impl<'a> GraphNode for ConcreteFunctionWithBodyNode<'a> {
+impl GraphNode for ConcreteFunctionWithBodyNode<'_> {
     type NodeId = ConcreteFunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {
-        let Ok(direct_callees) = self.db.concrete_function_with_body_direct_callees_with_body(self.function_id)
-            else { return vec![] };
+        let Ok(direct_callees) = self.db.concrete_function_with_body_direct_callees_with_body(
+            self.function_id,
+            self.dependency_type,
+        ) else {
+            return vec![];
+        };
         direct_callees
             .into_iter()
-            .map(|callee| ConcreteFunctionWithBodyNode { function_id: callee, db: self.db })
-            .collect()
-    }
-
-    fn get_id(&self) -> Self::NodeId {
-        self.function_id
-    }
-}
-impl<'a> ComputeScc for ConcreteFunctionWithBodyNode<'a> {
-    fn compute_scc(&self) -> Vec<Self::NodeId> {
-        concrete_function_with_body_scc(self.db, self.function_id)
-    }
-}
-
-#[derive(Clone)]
-pub struct ConcreteFunctionWithBodyPostPanicNode<'a> {
-    pub function_id: ConcreteFunctionWithBodyId,
-    pub db: &'a dyn LoweringGroup,
-}
-impl<'a> GraphNode for ConcreteFunctionWithBodyPostPanicNode<'a> {
-    type NodeId = ConcreteFunctionWithBodyId;
-
-    fn get_neighbors(&self) -> Vec<Self> {
-        let Ok(direct_callees) = self.db.concrete_function_with_body_postpanic_direct_callees_with_body(self.function_id)
-            else { return vec![] };
-        direct_callees
-            .into_iter()
-            .map(|callee| ConcreteFunctionWithBodyPostPanicNode {
+            .map(|callee| ConcreteFunctionWithBodyNode {
                 function_id: callee,
                 db: self.db,
+                dependency_type: self.dependency_type,
             })
             .collect()
     }
@@ -57,8 +37,46 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyPostPanicNode<'a> {
         self.function_id
     }
 }
-impl<'a> ComputeScc for ConcreteFunctionWithBodyPostPanicNode<'a> {
+impl ComputeScc for ConcreteFunctionWithBodyNode<'_> {
     fn compute_scc(&self) -> Vec<Self::NodeId> {
-        concrete_function_with_body_scc(self.db, self.function_id)
+        concrete_function_with_body_scc(self.db, self.function_id, self.dependency_type)
+    }
+}
+
+#[derive(Clone)]
+pub struct ConcreteFunctionWithBodyPostPanicNode<'a> {
+    pub function_id: ConcreteFunctionWithBodyId,
+    pub db: &'a dyn LoweringGroup,
+    pub dependency_type: DependencyType,
+}
+impl GraphNode for ConcreteFunctionWithBodyPostPanicNode<'_> {
+    type NodeId = ConcreteFunctionWithBodyId;
+
+    fn get_neighbors(&self) -> Vec<Self> {
+        let Ok(direct_callees) =
+            self.db.concrete_function_with_body_postpanic_direct_callees_with_body(
+                self.function_id,
+                self.dependency_type,
+            )
+        else {
+            return vec![];
+        };
+        direct_callees
+            .into_iter()
+            .map(|callee| ConcreteFunctionWithBodyPostPanicNode {
+                function_id: callee,
+                db: self.db,
+                dependency_type: self.dependency_type,
+            })
+            .collect()
+    }
+
+    fn get_id(&self) -> Self::NodeId {
+        self.function_id
+    }
+}
+impl ComputeScc for ConcreteFunctionWithBodyPostPanicNode<'_> {
+    fn compute_scc(&self) -> Vec<Self::NodeId> {
+        concrete_function_with_body_scc(self.db, self.function_id, self.dependency_type)
     }
 }

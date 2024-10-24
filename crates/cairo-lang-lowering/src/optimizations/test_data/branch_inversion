@@ -1,0 +1,76 @@
+//! > Test match optimizer simple scenario.
+
+//! > test_runner_name
+test_branch_inversion
+
+//! > function
+fn foo(a: bool, x: felt252) -> felt252 {
+    if !a {
+        1
+    } else {
+        x
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::bool, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::bool) <- core::bool_not_impl(v0)
+End:
+  Match(match_enum(v2) {
+    bool::False(v3) => blk1,
+    bool::True(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v1 -> v5})
+
+blk2:
+Statements:
+  (v6: core::felt252) <- 1
+End:
+  Goto(blk3, {v6 -> v5})
+
+blk3:
+Statements:
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::bool, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::bool) <- core::bool_not_impl(v0)
+End:
+  Match(match_enum(v0) {
+    bool::False(v4) => blk2,
+    bool::True(v3) => blk1,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v1 -> v5})
+
+blk2:
+Statements:
+  (v6: core::felt252) <- 1
+End:
+  Goto(blk3, {v6 -> v5})
+
+blk3:
+Statements:
+End:
+  Return(v5)

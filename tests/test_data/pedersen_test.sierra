@@ -1,29 +1,33 @@
-type felt252 = felt252;
-type Pedersen = Pedersen;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 4> = Const<felt252, 4> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 3> = Const<felt252, 3> [storable: false, drop: false, dup: false, zero_sized: false];
+type Pedersen = Pedersen [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 2> = Const<felt252, 2> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc felt252_const<1> = felt252_const<1>;
-libfunc felt252_const<2> = felt252_const<2>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
+libfunc const_as_immediate<Const<felt252, 2>> = const_as_immediate<Const<felt252, 2>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc pedersen = pedersen;
-libfunc felt252_const<3> = felt252_const<3>;
-libfunc felt252_const<4> = felt252_const<4>;
+libfunc const_as_immediate<Const<felt252, 3>> = const_as_immediate<Const<felt252, 3>>;
+libfunc const_as_immediate<Const<felt252, 4>> = const_as_immediate<Const<felt252, 4>>;
 libfunc store_temp<Pedersen> = store_temp<Pedersen>;
 
-felt252_const<1>() -> ([1]);
-felt252_const<2>() -> ([2]);
-store_temp<felt252>([1]) -> ([1]);
-store_temp<felt252>([2]) -> ([2]);
-pedersen([0], [1], [2]) -> ([3], [4]);
-felt252_const<3>() -> ([5]);
-store_temp<felt252>([4]) -> ([4]);
-store_temp<felt252>([5]) -> ([5]);
-pedersen([3], [4], [5]) -> ([6], [7]);
-felt252_const<4>() -> ([8]);
-store_temp<felt252>([7]) -> ([7]);
-store_temp<felt252>([8]) -> ([8]);
-pedersen([6], [7], [8]) -> ([9], [10]);
-store_temp<Pedersen>([9]) -> ([11]);
-store_temp<felt252>([10]) -> ([12]);
-return([11], [12]);
+const_as_immediate<Const<felt252, 1>>() -> ([1]); // 0
+const_as_immediate<Const<felt252, 2>>() -> ([2]); // 1
+store_temp<felt252>([1]) -> ([1]); // 2
+store_temp<felt252>([2]) -> ([2]); // 3
+pedersen([0], [1], [2]) -> ([3], [4]); // 4
+const_as_immediate<Const<felt252, 3>>() -> ([5]); // 5
+store_temp<felt252>([4]) -> ([4]); // 6
+store_temp<felt252>([5]) -> ([5]); // 7
+pedersen([3], [4], [5]) -> ([6], [7]); // 8
+const_as_immediate<Const<felt252, 4>>() -> ([8]); // 9
+store_temp<felt252>([7]) -> ([7]); // 10
+store_temp<felt252>([8]) -> ([8]); // 11
+pedersen([6], [7], [8]) -> ([9], [10]); // 12
+store_temp<Pedersen>([9]) -> ([9]); // 13
+store_temp<felt252>([10]) -> ([10]); // 14
+return([9], [10]); // 15
 
 examples::pedersen_test::test_pedersen@0([0]: Pedersen) -> (Pedersen, felt252);

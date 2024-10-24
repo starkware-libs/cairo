@@ -4,8 +4,6 @@
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo(x: felt252) -> Box::<felt252> {
     BoxTrait::new(x)
 }
@@ -24,15 +22,13 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt252 = felt252;
-type Box<felt252> = Box<felt252>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc into_box<felt252> = into_box<felt252>;
-libfunc rename<Box<felt252>> = rename<Box<felt252>>;
 
-into_box<felt252>([0]) -> ([1]);
-rename<Box<felt252>>([1]) -> ([2]);
-return([2]);
+into_box<felt252>([0]) -> ([1]); // 0
+return([1]); // 1
 
 test::foo@0([0]: felt252) -> (Box<felt252>);
 
@@ -44,8 +40,6 @@ test::foo@0([0]: felt252) -> (Box<felt252>);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo(x: Box::<felt252>) -> felt252 {
     x.unbox()
 }
@@ -58,15 +52,15 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt252 = felt252;
-type Box<felt252> = Box<felt252>;
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc unbox<felt252> = unbox<felt252>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-unbox<felt252>([0]) -> ([1]);
-store_temp<felt252>([1]) -> ([2]);
-return([2]);
+unbox<felt252>([0]) -> ([1]); // 0
+store_temp<felt252>([1]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0([0]: Box<felt252>) -> (felt252);
 
@@ -78,8 +72,6 @@ test::foo@0([0]: Box<felt252>) -> (felt252);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo(x: u256) -> Box::<u256> {
     BoxTrait::new(x)
 }
@@ -99,16 +91,14 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type u128 = u128;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type Box<core::integer::u256> = Box<core::integer::u256>;
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<core::integer::u256> = Box<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc into_box<core::integer::u256> = into_box<core::integer::u256>;
-libfunc rename<Box<core::integer::u256>> = rename<Box<core::integer::u256>>;
 
-into_box<core::integer::u256>([0]) -> ([1]);
-rename<Box<core::integer::u256>>([1]) -> ([2]);
-return([2]);
+into_box<core::integer::u256>([0]) -> ([1]); // 0
+return([1]); // 1
 
 test::foo@0([0]: core::integer::u256) -> (Box<core::integer::u256>);
 
@@ -120,8 +110,6 @@ test::foo@0([0]: core::integer::u256) -> (Box<core::integer::u256>);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo(x: Box::<u256>) -> u256 {
     x.unbox()
 }
@@ -135,16 +123,16 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type u128 = u128;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type Box<core::integer::u256> = Box<core::integer::u256>;
+type Box<core::integer::u256> = Box<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc unbox<core::integer::u256> = unbox<core::integer::u256>;
 libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
 
-unbox<core::integer::u256>([0]) -> ([1]);
-store_temp<core::integer::u256>([1]) -> ([2]);
-return([2]);
+unbox<core::integer::u256>([0]) -> ([1]); // 0
+store_temp<core::integer::u256>([1]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
 
@@ -156,10 +144,8 @@ test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
-fn foo() -> Box::<()> {
-    BoxTrait::new(())
+fn foo(e: ()) -> Box::<()> {
+    BoxTrait::new(e)
 }
 
 //! > casm
@@ -170,21 +156,15 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type Unit = Struct<ut@Tuple>;
-type Box<Unit> = Box<Unit>;
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc into_box<Unit> = into_box<Unit>;
-libfunc rename<Box<Unit>> = rename<Box<Unit>>;
 
-struct_construct<Unit>() -> ([0]);
-store_temp<Unit>([0]) -> ([0]);
-into_box<Unit>([0]) -> ([1]);
-rename<Box<Unit>>([1]) -> ([2]);
-return([2]);
+into_box<Unit>([0]) -> ([1]); // 0
+return([1]); // 1
 
-test::foo@0() -> (Box<Unit>);
+test::foo@0([0]: Unit) -> (Box<Unit>);
 
 //! > ==========================================================================
 
@@ -194,8 +174,6 @@ test::foo@0() -> (Box<Unit>);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo(x: Box::<()>) -> () {
     x.unbox()
 }
@@ -207,17 +185,17 @@ ret;
 test::foo: OrderedHashMap({})
 
 //! > sierra_code
-type Unit = Struct<ut@Tuple>;
-type Box<Unit> = Box<Unit>;
+type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc unbox<Unit> = unbox<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
+libfunc drop<Unit> = drop<Unit>;
 
-unbox<Unit>([0]) -> ([1]);
-store_temp<Unit>([1]) -> ([2]);
-return([2]);
+unbox<Unit>([0]) -> ([1]); // 0
+drop<Unit>([1]) -> (); // 1
+return(); // 2
 
-test::foo@0([0]: Box<Unit>) -> (Unit);
+test::foo@0([0]: Box<Unit>) -> ();
 
 //! > ==========================================================================
 
@@ -227,11 +205,9 @@ test::foo@0([0]: Box<Unit>) -> (Unit);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 struct Empty {}
-fn foo() -> Box::<Empty> {
-    BoxTrait::new(Empty{})
+fn foo(e: Empty) -> Box::<Empty> {
+    BoxTrait::new(e)
 }
 
 //! > casm
@@ -242,21 +218,15 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type test::Empty = Struct<ut@test::Empty>;
-type Box<test::Empty> = Box<test::Empty>;
+type test::Empty = Struct<ut@test::Empty> [storable: true, drop: true, dup: true, zero_sized: true];
+type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc struct_construct<test::Empty> = struct_construct<test::Empty>;
-libfunc store_temp<test::Empty> = store_temp<test::Empty>;
 libfunc into_box<test::Empty> = into_box<test::Empty>;
-libfunc rename<Box<test::Empty>> = rename<Box<test::Empty>>;
 
-struct_construct<test::Empty>() -> ([0]);
-store_temp<test::Empty>([0]) -> ([0]);
-into_box<test::Empty>([0]) -> ([1]);
-rename<Box<test::Empty>>([1]) -> ([2]);
-return([2]);
+into_box<test::Empty>([0]) -> ([1]); // 0
+return([1]); // 1
 
-test::foo@0() -> (Box<test::Empty>);
+test::foo@0([0]: test::Empty) -> (Box<test::Empty>);
 
 //! > ==========================================================================
 
@@ -266,8 +236,6 @@ test::foo@0() -> (Box<test::Empty>);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 struct Empty {}
 fn foo(x: Box::<Empty>) -> Empty {
     x.unbox()
@@ -280,14 +248,48 @@ ret;
 test::foo: OrderedHashMap({})
 
 //! > sierra_code
-type test::Empty = Struct<ut@test::Empty>;
-type Box<test::Empty> = Box<test::Empty>;
+type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true, zero_sized: false];
+type test::Empty = Struct<ut@test::Empty> [storable: true, drop: true, dup: true, zero_sized: true];
 
 libfunc unbox<test::Empty> = unbox<test::Empty>;
-libfunc store_temp<test::Empty> = store_temp<test::Empty>;
 
-unbox<test::Empty>([0]) -> ([1]);
-store_temp<test::Empty>([1]) -> ([2]);
-return([2]);
+unbox<test::Empty>([0]) -> ([1]); // 0
+return([1]); // 1
 
 test::foo@0([0]: Box<test::Empty>) -> (test::Empty);
+
+//! > ==========================================================================
+
+//! > box_forward_snapshot libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: @Box::<Array<felt252>>) -> Box<@Array<felt252>> {
+    core::box::box_forward_snapshot(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type Box<Array<felt252>> = Box<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Box<Array<felt252>>> = Snapshot<Box<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Box<Snapshot<Array<felt252>>> = Box<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc box_forward_snapshot<Array<felt252>> = box_forward_snapshot<Array<felt252>>;
+libfunc store_temp<Box<Snapshot<Array<felt252>>>> = store_temp<Box<Snapshot<Array<felt252>>>>;
+
+box_forward_snapshot<Array<felt252>>([0]) -> ([1]); // 0
+store_temp<Box<Snapshot<Array<felt252>>>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: Snapshot<Box<Array<felt252>>>) -> (Box<Snapshot<Array<felt252>>>);

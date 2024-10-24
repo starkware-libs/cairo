@@ -5,6 +5,7 @@ use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use num_bigint::ToBigInt;
 
+use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::add_input_variables;
 use crate::references::ReferenceExpression;
@@ -17,6 +18,7 @@ pub fn build(
     match libfunc {
         BoxConcreteLibfunc::Into(_) => build_into_box(builder),
         BoxConcreteLibfunc::Unbox(libfunc) => build_unbox(&libfunc.ty, builder),
+        BoxConcreteLibfunc::ForwardSnapshot(_) => build_identity(builder),
     }
 }
 

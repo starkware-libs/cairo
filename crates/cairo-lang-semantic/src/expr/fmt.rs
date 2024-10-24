@@ -11,12 +11,12 @@ pub struct ExprFormatter<'a> {
     pub function_id: FunctionWithBodyId,
 }
 
-impl<'a> Upcast<dyn SemanticGroup + 'static> for ExprFormatter<'a> {
+impl Upcast<dyn SemanticGroup + 'static> for ExprFormatter<'_> {
     fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
         self.db
     }
 }
-impl<'a> Upcast<dyn DefsGroup + 'static> for ExprFormatter<'a> {
+impl Upcast<dyn DefsGroup + 'static> for ExprFormatter<'_> {
     fn upcast(&self) -> &(dyn DefsGroup + 'static) {
         self.db.upcast()
     }

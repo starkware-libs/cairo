@@ -1,17 +1,4 @@
-[ap + 0] = 1, ap++;
-[ap + 0] = 1, ap++;
-[ap + -1] = [ap + 0] + [ap + -2], ap++;
-jmp rel 11 if [ap + -1] != 0;
-ap += 2;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
-ret;
-%{ memory[ap + 0] = segments.add() %}
-ap += 1;
-[ap + 0] = 1, ap++;
-[ap + -1] = [[ap + -2] + 0];
-[ap + 0] = 1, ap++;
-[ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -4] + 1, ap++;
 ret;

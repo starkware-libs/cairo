@@ -16,8 +16,7 @@ struct A {
     a: Array::<felt252>,
     b: felt252,
 }
-fn bar(a: @Array::<felt252>, b: @felt252) {
-}
+fn bar(a: @Array::<felt252>, b: @felt252) {}
 
 //! > expected_diagnostics
 
@@ -26,12 +25,12 @@ fn bar(a: @Array::<felt252>, b: @felt252) {
 //! > Test coercion failure.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let x: @felt252 = 5;
-    let y: felt252 = @6;
+    let _x: @felt252 = 5;
+    let _y: felt252 = @6;
 }
 
 //! > function_name
@@ -41,11 +40,37 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "@?1".
- --> lib.cairo:3:22
-    let y: felt252 = @6;
-                     ^^
+It is possible that the type inference failed because the types differ in the number of snapshots.
+Consider adding or removing snapshots.
+ --> lib.cairo:3:23
+    let _y: felt252 = @6;
+                      ^^
 
-error: Trait has no implementation in context: core::integer::NumericLiteral::<@core::felt252>
- --> lib.cairo:2:23
-    let x: @felt252 = 5;
-                      ^
+//! > ==========================================================================
+
+//! > Test coercion failure - no inference.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _x: @felt252 = 5_felt252;
+    let _y: felt252 = @6_felt252;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "@core::felt252", found: "core::felt252".
+ --> lib.cairo:2:24
+    let _x: @felt252 = 5_felt252;
+                       ^*******^
+
+error: Unexpected argument type. Expected: "core::felt252", found: "@core::felt252".
+ --> lib.cairo:3:23
+    let _y: felt252 = @6_felt252;
+                      ^********^

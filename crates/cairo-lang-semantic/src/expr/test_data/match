@@ -1,18 +1,18 @@
 //! > Test match
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(b: A) -> felt252 {
     match (b, 4) {
-        (A::a(x), _) => { 1 },
+        (A::a(_x), _) => { 1 },
         (A::b(x), 1) => { x },
         (7, 1) => { x },
         (A::b(x), 1, _) => { x },
     }
-    let x = (5,true);
-    let (y,_) = x;
+    let x = (5, true);
+    let (y, _) = x;
     y
 }
 
@@ -31,12 +31,17 @@ error: Identifier not found.
         (7, 1) => { x },
                     ^
 
-error: Wrong number of generic arguments. Expected 2, found: 3
+error: Wrong number of tuple elements in pattern. Expected: 2. Got: 3.
  --> lib.cairo:10:9
         (A::b(x), 1, _) => { x },
         ^*************^
 
-error: Trait has no implementation in context: core::integer::NumericLiteral::<test::A>
+error: Identifier not found.
+ --> lib.cairo:10:30
+        (A::b(x), 1, _) => { x },
+                             ^
+
+error: Mismatched types. The type `test::A` cannot be created from a numeric literal.
  --> lib.cairo:9:10
         (7, 1) => { x },
          ^
@@ -46,7 +51,7 @@ error: Trait has no implementation in context: core::integer::NumericLiteral::<t
 //! > Match with missing type
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: bool) -> felt252 {
@@ -69,14 +74,180 @@ enum A {
 error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
  --> lib.cairo:7:9
         A::a(_) => 0,
-        ^**^
+        ^*****^
 
 error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
  --> lib.cairo:8:9
         A::b(_) => 1,
+        ^*****^
+
+error: Trait has no implementation in context: core::traits::Add::<core::bool>.
+ --> lib.cairo:6:11
+    match a + 1 {
+          ^***^
+
+//! > ==========================================================================
+
+//! > Match incompatible arm types
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: felt252, b: bool) -> felt252 {
+    match a {
+        0 => 0_felt252,
+        _ => b,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    a: (),
+    b: felt252,
+}
+
+//! > expected_diagnostics
+error: Match arms have incompatible types: "core::felt252" and "core::bool"
+ --> lib.cairo:8:14
+        _ => b,
+             ^
+
+//! > ==========================================================================
+
+//! > Match incompatible literal bool patterns
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: A) -> felt252 {
+    match a {
+        true => 2,
+        false => 3,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    a: (),
+    b: felt252,
+}
+
+//! > expected_diagnostics
+error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
+ --> lib.cairo:7:9
+        true => 2,
         ^**^
 
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
- --> lib.cairo:6:15
-    match a + 1 {
-              ^
+error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
+ --> lib.cairo:8:9
+        false => 3,
+        ^***^
+
+//! > ==========================================================================
+
+//! > Match arm types incompatible, also with expected type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(x: Option<()>) {
+    match x {
+        Option::Some(_) => true,
+        Option::None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "()", found: "core::bool".
+ --> lib.cairo:1:23
+fn foo(x: Option<()>) {
+                      ^
+
+//! > ==========================================================================
+
+//! > Test match with or pattern inconsistent mutability
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(a: MyEnum) -> felt252 {
+    match a {
+        MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct P {
+    x: felt252,
+    y: felt252,
+    z: felt252,
+    w: felt252,
+}
+enum MyEnum {
+    A: felt252,
+    B: (felt252, felt252),
+    C: (felt252, felt252, felt252),
+    D: P,
+}
+
+//! > expected_diagnostics
+error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
+ --> lib.cairo:15:39
+        MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
+                                      ^
+
+error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
+ --> lib.cairo:16:52
+        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
+                                                   ^***^
+
+//! > ==========================================================================
+
+//! > Test conform in or pattern
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let a = MyEnum::A(5);
+    match a {
+        MyEnum::A(x) | MyEnum::B((x, _)) => x,
+    }
+    bar(a);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum<T> {
+    A: T,
+    B: (felt252, felt252),
+}
+fn bar(a: MyEnum<u32>) {}
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>", found: "test::MyEnum::<core::felt252>".
+ --> lib.cairo:11:9
+    bar(a);
+        ^

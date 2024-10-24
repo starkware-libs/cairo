@@ -1,0 +1,167 @@
+//! > Documentation
+
+//! > test_runner_name
+documentation_test_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+//! This comment refers to the crate.
+
+/// Main function comment outside.
+fn main() {
+    //! Main function comment inside.
+    println!("main");
+}
+
+/// Trait containing abc function.
+trait TraitTest {
+    /// abc function returning u32.
+    /// Default impl of abc TraitTest function.
+    fn abc() -> u32 {
+        //! Default impl of abc TraitTest function inner comment.
+        println!("default impl");
+        32
+    }
+}
+
+/// Implementation of TraitTest's abc function.
+impl TraitTestImpl of TraitTest {
+    /// Default impl of abc TraitTest function.
+    fn abc() -> u32 {
+        //! Default impl of abc TraitTest function inner comment.
+        println!("abc");
+        32
+    }
+}
+
+/// Test module used to check if the documentation is being attached to the nodes correctly.
+pub mod test_module {
+    //! Test module used to check if the documentation is being attached to the nodes correctly.
+    /// Just a function outside the test_module.
+    pub fn inner_test_module_function() -> () {
+        //! Just a function inside the test_module.
+        println!("inside inner test module inner function");
+    }
+}
+
+/// Point struct representing a point in a 2d space.
+/// Example usage:
+/// ```
+///   fn new_Point() {
+///     Point {x: 12, y: 14}
+///   }
+/// ```
+#[derive(Drop)]
+#[derive(Copy)]
+struct Point {
+    /// X coordinate.
+    pub x: u32,
+    /// Y coordinate.
+    y: u32,
+}
+
+/// Answer Enum representing an answer to a yes/no question.
+enum Answer {
+    /// Yes answer variant.
+    Yes,
+    /// No answer variant.
+    No,
+}
+
+//! > Item signature #1
+
+//! > Item documentation #1
+This comment refers to the crate.
+
+//! > Item signature #2
+fn main()
+
+//! > Item documentation #2
+Main function comment outside. Main function comment inside.
+
+//! > Item signature #3
+trait TraitTest
+
+//! > Item documentation #3
+Trait containing abc function.
+
+//! > Item signature #4
+fn abc() -> u32
+
+//! > Item documentation #4
+abc function returning u32. Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
+
+//! > Item signature #5
+impl TraitTestImpl of TraitTest
+
+//! > Item documentation #5
+Implementation of TraitTest's abc function.
+
+//! > Item signature #6
+fn abc() -> u32
+
+//! > Item documentation #6
+Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
+
+//! > Item signature #7
+
+//! > Item documentation #7
+Test module used to check if the documentation is being attached to the nodes correctly. Test module used to check if the documentation is being attached to the nodes correctly.
+
+//! > Item signature #8
+pub fn inner_test_module_function() -> ()
+
+//! > Item documentation #8
+Just a function outside the test_module. Just a function inside the test_module.
+
+//! > Item signature #9
+#[derive(Drop)]
+#[derive(Copy)]
+struct Point {
+    pub x: u32,
+    y: u32,
+}
+
+//! > Item documentation #9
+Point struct representing a point in a 2d space. Example usage: 
+```cairo
+  fn new_Point() {
+    Point {x: 12, y: 14}
+  }
+```
+
+//! > Item signature #10
+pub x: u32
+
+//! > Item documentation #10
+X coordinate.
+
+//! > Item signature #11
+y: u32
+
+//! > Item documentation #11
+Y coordinate.
+
+//! > Item signature #12
+enum Answer {
+    Yes,
+    No,
+}
+
+//! > Item documentation #12
+Answer Enum representing an answer to a yes/no question.
+
+//! > Item signature #13
+Yes
+
+//! > Item documentation #13
+Yes answer variant.
+
+//! > Item signature #14
+No
+
+//! > Item documentation #14
+No answer variant.

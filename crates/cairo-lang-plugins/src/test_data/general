@@ -1,0 +1,20 @@
+//! > Test expansion of double indirection plugin.
+
+//! > test_runner_name
+test_general_plugin(expect_diagnostics: true)
+
+//! > cairo_code
+#[first]
+struct X {}
+
+//! > expanded_cairo_code
+#[first]
+struct X {}
+#[second] struct A {}
+struct B {}
+
+//! > expected_diagnostics
+error: Double indirection diagnostic
+ --> test_src/lib.cairo[virt1][virt2]:1:1
+struct B {}
+^*********^

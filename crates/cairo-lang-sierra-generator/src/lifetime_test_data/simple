@@ -10,8 +10,8 @@ foo
 fn foo(x: felt252, y: felt252) -> felt252 {
     let a = x + x;
     let b = a + a;
-    let c = b + b;
-    let d = b + 1;
+    let _c = b + b;
+    let _d = b + 1;
     1234;
     a
 }
@@ -22,21 +22,21 @@ fn foo(x: felt252, y: felt252) -> felt252 {
 Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v8: core::felt252) <- core::felt252_add(v0, v0)
-  (v9: core::felt252) <- core::felt252_add(v8, v8)
-  (v10: core::felt252) <- core::felt252_add(v9, v9)
-  (v5: core::felt252) <- 1u
-  (v11: core::felt252) <- core::felt252_add(v9, v5)
+  (v2: core::felt252) <- core::felt252_add(v0, v0)
+  (v3: core::felt252) <- core::felt252_add(v2, v2)
+  (v4: core::felt252) <- core::felt252_add(v3, v3)
+  (v5: core::felt252) <- 1
+  (v6: core::felt252) <- core::felt252_add(v3, v5)
 End:
-  Return(v8)
+  Return(v2)
 
 //! > last_use
-v8: ((BlockId(0), 5), 0)
+v2: ((BlockId(0), 5), 0)
 v5: ((BlockId(0), 4), 1)
-v9: ((BlockId(0), 4), 0)
+v3: ((BlockId(0), 4), 0)
 v0: ((BlockId(0), 0), 1)
 
 //! > drops
-PostStatement((BlockId(0), 4)): v11
-PostStatement((BlockId(0), 2)): v10
+PostStatement((BlockId(0), 4)): v6
+PostStatement((BlockId(0), 2)): v4
 BeginningOfBlock(BlockId(0)): v1

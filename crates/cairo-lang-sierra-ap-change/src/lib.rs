@@ -2,10 +2,11 @@
 use ap_change_info::ApChangeInfo;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
-use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use core_libfunc_ap_change::InvocationApChangeInfoProvider;
 use generate_equations::{Effects, Var};
@@ -13,6 +14,8 @@ use itertools::Itertools;
 use thiserror::Error;
 
 pub mod ap_change_info;
+/// Direct linear computation of AP-Changes instead of equation solver.
+pub mod compute;
 pub mod core_libfunc_ap_change;
 mod generate_equations;
 
@@ -60,16 +63,16 @@ pub enum ApChangeError {
 /// Helper to implement the `InvocationApChangeInfoProvider` for the equation generation.
 struct InvocationApChangeInfoProviderForEqGen<'a, TokenUsages: Fn(CostTokenType) -> usize> {
     /// Registry for providing the sizes of the types.
-    registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
+    type_sizes: &'a TypeSizeMap,
     /// Closure providing the token usages for the invocation.
     token_usages: TokenUsages,
 }
 
-impl<'a, TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
-    for InvocationApChangeInfoProviderForEqGen<'a, TokenUsages>
+impl<TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
+    for InvocationApChangeInfoProviderForEqGen<'_, TokenUsages>
 {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.registry.get_type(ty).unwrap().info().size as usize
+        self.type_sizes[ty].into_or_panic()
     }
 
     fn token_usages(&self, token_type: CostTokenType) -> usize {
@@ -83,12 +86,13 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
     token_usages: TokenUsages,
 ) -> Result<ApChangeInfo, ApChangeError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
+    let type_sizes = get_type_size_map(program, &registry).unwrap();
     let equations = generate_equations::generate_equations(program, |idx, libfunc_id| {
         let libfunc = registry.get_libfunc(libfunc_id)?;
         core_libfunc_ap_change::core_libfunc_ap_change(
             libfunc,
             &InvocationApChangeInfoProviderForEqGen {
-                registry: &registry,
+                type_sizes: &type_sizes,
                 token_usages: |token_type| token_usages(idx, token_type),
             },
         )

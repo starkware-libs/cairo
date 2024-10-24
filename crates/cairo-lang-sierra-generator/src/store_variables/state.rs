@@ -1,10 +1,10 @@
 use cairo_lang_sierra as sierra;
+use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, OutputVarInfo, SierraApChange,
 };
-use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 
 use super::known_stack::KnownStack;
 
@@ -29,27 +29,41 @@ pub enum DeferredVariableKind {
     Generic,
 }
 
+/// Represents the state of Sierra variable.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum VarState {
+    /// The variable is a temporary variable with the given type.
+    TempVar { ty: sierra::ids::ConcreteTypeId },
+    /// The variable is deferred with the given DeferredVariableInfo.
+    Deferred { info: DeferredVariableInfo },
+    /// The variable is a local variable.
+    LocalVar,
+    /// The variable is of size 0.
+    ZeroSizedVar,
+    /// The variable was consumed and can no longer be used.
+    /// This state is used because there is no efficient way of removing variables
+    /// from [VariablesState::variables] without effecting their order.
+    Removed,
+}
+
 /// Represents information known about the state of the variables.
 /// For example, which variable contains a deferred value and which variable is on the stack.
 #[derive(Clone, Debug, Default)]
-pub struct State {
-    /// A map from [sierra::ids::VarId] of a deferred reference
-    /// (for example, `[ap - 1] + [ap - 2]`) to [DeferredVariableInfo].
-    pub deferred_variables: OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
-    /// A map from [sierra::ids::VarId] of temporary variables to their type.
-    pub temporary_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId>,
+pub struct VariablesState {
+    /// A map from [sierra::ids::VarId] of to its state.
+    pub variables: OrderedHashMap<sierra::ids::VarId, VarState>,
     /// The information known about the top of the stack.
     pub known_stack: KnownStack,
 }
-impl State {
-    /// Registers output variables of a libfunc. See [Self::register_outputs].
+impl VariablesState {
+    /// Registers output variables of a libfunc. See [Self::register_output].
     /// Clears the stack if needed.
     pub fn register_outputs(
         &mut self,
         results: &[sierra::ids::VarId],
         branch_signature: &BranchSignature,
         args: &[sierra::ids::VarId],
-        deferred_args: &OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
+        arg_states: &[VarState],
     ) {
         // Clear the stack if needed.
         match branch_signature.ap_change {
@@ -64,7 +78,7 @@ impl State {
         }
 
         for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {
-            self.register_output(var.clone(), var_info, args, deferred_args);
+            self.register_output(var.clone(), var_info, args, arg_states);
         }
 
         // Update `known_stack_size`. It is one more than the maximum of the indices in
@@ -72,68 +86,66 @@ impl State {
         self.known_stack.update_offset_by_max();
     }
 
-    /// Register an output variable of a libfunc.
-    ///
-    /// If the variable is marked as Deferred output by the libfunc, it is added to
-    /// [Self::deferred_variables]. Similarly for [Self::temporary_variables].
+    /// Register an output variable of a libfunc in [Self::variables].
     fn register_output(
         &mut self,
         res: sierra::ids::VarId,
         output_info: &OutputVarInfo,
         args: &[sierra::ids::VarId],
-        deferred_args: &OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
+        arg_states: &[VarState],
     ) {
-        let mut is_deferred: Option<DeferredVariableKind> = None;
-        let mut is_temp_var: bool = false;
         let mut add_to_known_stack: Option<isize> = None;
 
-        match &output_info.ref_info {
-            OutputVarReferenceInfo::Deferred(kind) => {
-                is_deferred = Some(match kind {
-                    DeferredOutputKind::Const => DeferredVariableKind::Const,
-                    DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
-                    DeferredOutputKind::Generic => DeferredVariableKind::Generic,
-                });
-            }
+        let var_state = match &output_info.ref_info {
+            OutputVarReferenceInfo::Deferred(kind) => VarState::Deferred {
+                info: DeferredVariableInfo {
+                    ty: output_info.ty.clone(),
+                    kind: match kind {
+                        DeferredOutputKind::Const => DeferredVariableKind::Const,
+                        DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
+                        DeferredOutputKind::Generic => DeferredVariableKind::Generic,
+                    },
+                },
+            },
             OutputVarReferenceInfo::NewTempVar { idx } => {
                 add_to_known_stack = Some(idx.into_or_panic::<isize>());
-                is_temp_var = true;
+                VarState::TempVar { ty: output_info.ty.clone() }
             }
             OutputVarReferenceInfo::SimpleDerefs => {
-                is_temp_var = true;
+                VarState::TempVar { ty: output_info.ty.clone() }
             }
             OutputVarReferenceInfo::SameAsParam { param_idx }
             | OutputVarReferenceInfo::PartialParam { param_idx } => {
-                let arg = &args[*param_idx];
-                if let Some(deferred_info) = deferred_args.get(arg) {
-                    is_deferred = Some(deferred_info.kind);
-                }
-                is_temp_var = self.temporary_variables.get(arg).is_some();
-                if matches!(output_info.ref_info, OutputVarReferenceInfo::SameAsParam { .. }) {
-                    add_to_known_stack = self.known_stack.get(arg);
+                // Note that the output type may differ from the param type.
+                let ty = output_info.ty.clone();
+                match &arg_states[*param_idx] {
+                    VarState::TempVar { .. } => {
+                        // A partial parameter may be smaller than its parent so it can't
+                        // replace it on the stack.
+                        if matches!(
+                            output_info.ref_info,
+                            OutputVarReferenceInfo::SameAsParam { .. }
+                        ) {
+                            add_to_known_stack = self.known_stack.get(&args[*param_idx]);
+                        }
+                        VarState::TempVar { ty }
+                    }
+                    VarState::Deferred { info } => {
+                        VarState::Deferred { info: DeferredVariableInfo { ty, kind: info.kind } }
+                    }
+                    VarState::LocalVar => VarState::LocalVar,
+                    VarState::ZeroSizedVar => VarState::ZeroSizedVar,
+                    VarState::Removed => {
+                        unreachable!("Unexpected var state.")
+                    }
                 }
             }
-            OutputVarReferenceInfo::NewLocalVar => {}
-        }
+            OutputVarReferenceInfo::ZeroSized => VarState::ZeroSizedVar,
+            OutputVarReferenceInfo::NewLocalVar => VarState::LocalVar,
+        };
+        self.variables.insert(res.clone(), var_state);
 
-        self.deferred_variables.swap_remove(&res);
-        self.temporary_variables.swap_remove(&res);
         self.known_stack.remove_variable(&res);
-
-        if let Some(deferred_variable_info_kind) = is_deferred {
-            self.deferred_variables.insert(
-                res.clone(),
-                DeferredVariableInfo {
-                    ty: output_info.ty.clone(),
-                    kind: deferred_variable_info_kind,
-                },
-            );
-        }
-
-        if is_temp_var {
-            self.temporary_variables.insert(res.clone(), output_info.ty.clone());
-        }
-
         if let Some(idx) = add_to_known_stack {
             self.known_stack.insert_signed(res, idx);
         }
@@ -146,55 +158,52 @@ impl State {
         self.known_stack.clear();
     }
 
-    /// Marks `dst` as a rename of `src`.
-    ///
-    /// Updates [Self::known_stack] and [Self::temporary_variables] if necessary.
-    pub fn rename_var(&mut self, src: &sierra::ids::VarId, dst: &sierra::ids::VarId) {
-        self.known_stack.clone_if_on_stack(src, dst);
-        if let Some(uninitialized_local_var_id) = self.temporary_variables.get(src) {
-            self.temporary_variables.insert(dst.clone(), uninitialized_local_var_id.clone());
+    /// Pops the state of `var` from self.variables and returns it.
+    pub fn pop_var_state(&mut self, var: &sierra::ids::VarId) -> VarState {
+        match self.variables.entry(var.clone()) {
+            Entry::Occupied(mut e) => std::mem::replace(e.get_mut(), VarState::Removed),
+            Entry::Vacant(_) => {
+                unreachable!("Unknown state for variable `{var}`.")
+            }
         }
     }
 }
 
-/// Merges the information from two [State]s.
+/// Merges the information from two [VariablesState]s.
 /// Used to determine the state at the merge of two code branches.
 ///
 /// If one of the given states is None, the second is returned.
-pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Option<State> {
+pub fn merge_optional_states(
+    a_opt: Option<VariablesState>,
+    b_opt: Option<VariablesState>,
+) -> Option<VariablesState> {
     match (a_opt, b_opt) {
         (None, None) => None,
         (None, Some(b)) => Some(b),
         (Some(a), None) => Some(a),
         (Some(a), Some(b)) => {
             // Merge the lists of deferred variables.
-            let mut deferred_variables = OrderedHashMap::default();
-            for (var, info_a) in a.deferred_variables {
-                if let Some(info_b) = b.deferred_variables.get(&var) {
+            let mut variables = OrderedHashMap::default();
+            for (var, var_state_a) in a.variables {
+                if matches!(var_state_a, VarState::Removed) {
+                    continue;
+                }
+
+                if let Some(var_state_b) = b.variables.get(&var) {
+                    if matches!(var_state_b, VarState::Removed) {
+                        continue;
+                    }
+
                     assert_eq!(
-                        info_a, *info_b,
+                        var_state_a, *var_state_b,
                         "Internal compiler error: Found different deferred variables."
                     );
-                    deferred_variables.insert(var, info_a);
+                    variables.insert(var, var_state_a);
                 }
             }
 
-            // Merge the lists of temporary variables.
-            let mut temporary_variables = OrderedHashMap::default();
-            for (var, ty_a) in a.temporary_variables {
-                if let Some(ty_b) = b.temporary_variables.get(&var) {
-                    assert_eq!(
-                        ty_a, *ty_b,
-                        "Internal compiler error: Found different types for the same variable: \
-                         {var}."
-                    );
-                    temporary_variables.insert(var, ty_a);
-                }
-            }
-
-            Some(State {
-                deferred_variables,
-                temporary_variables,
+            Some(VariablesState {
+                variables,
                 known_stack: a.known_stack.merge_with(&b.known_stack),
             })
         }

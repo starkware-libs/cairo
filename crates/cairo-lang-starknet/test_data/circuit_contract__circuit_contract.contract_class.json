@@ -1,0 +1,931 @@
+{
+  "sierra_program": [
+    "0x1",
+    "0x6",
+    "0x0",
+    "0x2",
+    "0x8",
+    "0x4",
+    "0xba",
+    "0x46",
+    "0x47",
+    "0x52616e6765436865636b",
+    "0x800000000000000100000000000000000000000000000000",
+    "0x436f6e7374",
+    "0x800000000000000000000000000000000000000000000002",
+    "0x1",
+    "0x44",
+    "0x2",
+    "0x4f7074696f6e3a3a756e77726170206661696c65642e",
+    "0x4e6f7420616c6c20696e707574732068617665206265656e2066696c6c6564",
+    "0x10",
+    "0x45787065637465642073756363657373",
+    "0x0",
+    "0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3",
+    "0x5539364c696d62734c7447756172616e746565",
+    "0x800000000000000100000000000000000000000000000001",
+    "0x3",
+    "0x4",
+    "0x537472756374",
+    "0x800000000000000f00000000000000000000000000000001",
+    "0x2ee1e2b1b89f8c495f200e4956278a4d47395fe262f27b52e5865c9524c08c3",
+    "0x436972637569744661696c75726547756172616e746565",
+    "0x436972637569745061727469616c4f757470757473",
+    "0x800000000000000300000000000000000000000000000001",
+    "0x1a",
+    "0x436972637569744f757470757473",
+    "0x800000000000000700000000000000000000000000000001",
+    "0x426f756e646564496e74",
+    "0x800000000000000700000000000000000000000000000002",
+    "0x12",
+    "0x4369726375697444657363726970746f72",
+    "0x21",
+    "0x6",
+    "0x416c6c20696e707574732068617665206265656e2066696c6c6564",
+    "0x4369726375697444617461",
+    "0x55393647756172616e746565",
+    "0x800000000000000100000000000000000000000000000005",
+    "0x17",
+    "0x43697263756974",
+    "0x800000000000000800000000000000000000000000000001",
+    "0x1d",
+    "0x43697263756974496e707574416363756d756c61746f72",
+    "0x496e766572736547617465",
+    "0x1e",
+    "0x800000000000000800000000000000000000000000000002",
+    "0x1c",
+    "0x4164644d6f6447617465",
+    "0x20",
+    "0x436972637569744d6f64756c7573",
+    "0x800000000000000700000000000000000000000000000000",
+    "0x23",
+    "0xffffffffffffffffffffffff",
+    "0x800000000000000700000000000000000000000000000005",
+    "0x25",
+    "0x27",
+    "0x7",
+    "0x28",
+    "0x2a",
+    "0x4f7574206f6620676173",
+    "0x2f",
+    "0x4172726179",
+    "0x536e617073686f74",
+    "0x2b",
+    "0x1baeba72e79e9db2587cf44fedb2f3700b2075a5e8e39a562584862c4b71f62",
+    "0x2c",
+    "0x2d",
+    "0x32",
+    "0x3345d4a655498609e0ae6c5766459fddeceafea89ff722792be37d477930647",
+    "0x800000000000000f00000000000000000000000000000003",
+    "0x30",
+    "0xb",
+    "0x36",
+    "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
+    "0x800000000000000300000000000000000000000000000003",
+    "0x33",
+    "0x456e756d",
+    "0x310e4ccd84d9bbb200c3c6e1bd9059d41b7231c2d22114d28eefee7b6933760",
+    "0x31",
+    "0x34",
+    "0x37",
+    "0x39",
+    "0x4275696c74696e436f737473",
+    "0x3b",
+    "0x53797374656d",
+    "0x3d",
+    "0x4d756c4d6f64",
+    "0x40",
+    "0x3f",
+    "0x4164644d6f64",
+    "0x43697263756974496e707574",
+    "0x52616e6765436865636b3936",
+    "0x9931c641b913035ae674b400b61a51476d506bbe8bba2ff8a6272790aba9e6",
+    "0x2e",
+    "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
+    "0x66656c74323532",
+    "0x426f78",
+    "0x4761734275696c74696e",
+    "0x50",
+    "0x7265766f6b655f61705f747261636b696e67",
+    "0x77697468647261775f676173",
+    "0x6272616e63685f616c69676e",
+    "0x7374727563745f6465636f6e737472756374",
+    "0x73746f72655f74656d70",
+    "0x61727261795f736e617073686f745f706f705f66726f6e74",
+    "0x64726f70",
+    "0x45",
+    "0x61727261795f6e6577",
+    "0x636f6e73745f61735f696d6d656469617465",
+    "0x43",
+    "0x61727261795f617070656e64",
+    "0x7374727563745f636f6e737472756374",
+    "0x656e756d5f696e6974",
+    "0x42",
+    "0x41",
+    "0x3e",
+    "0x3c",
+    "0x46",
+    "0x3a",
+    "0x6765745f6275696c74696e5f636f737473",
+    "0x38",
+    "0x77697468647261775f6761735f616c6c",
+    "0x66756e6374696f6e5f63616c6c",
+    "0x656e756d5f6d61746368",
+    "0x35",
+    "0x736e617073686f745f74616b65",
+    "0x29",
+    "0x26",
+    "0x24",
+    "0x22",
+    "0x7472795f696e746f5f636972637569745f6d6f64756c7573",
+    "0x696e69745f636972637569745f64617461",
+    "0x19",
+    "0x696e746f5f7539365f67756172616e746565",
+    "0x18",
+    "0x1b",
+    "0x6164645f636972637569745f696e707574",
+    "0x16",
+    "0x1f",
+    "0x15",
+    "0x14",
+    "0x6765745f636972637569745f64657363726970746f72",
+    "0x11",
+    "0xf",
+    "0x6576616c5f63697263756974",
+    "0xe",
+    "0xd",
+    "0x4ef3b3bc4d34db6611aef96d643937624ebee01d56eae5bde6f3b158e32b15",
+    "0x3ec1c84a1511eed894537833882a965abdddafab0d627a3ee76e01e6b57f37a",
+    "0x1d1238f44227bdf67f367571e4dec83368c54054d98ccf71a67381f7c51f1c4",
+    "0x6a756d70",
+    "0x7539365f67756172616e7465655f766572696679",
+    "0x5",
+    "0xf4",
+    "0xffffffffffffffff",
+    "0x8",
+    "0x4f",
+    "0x9",
+    "0xa",
+    "0xc",
+    "0x13",
+    "0xe6",
+    "0x86",
+    "0xd6",
+    "0xa3",
+    "0xbe",
+    "0xbb",
+    "0xb8",
+    "0xc0",
+    "0x48",
+    "0x49",
+    "0x4a",
+    "0x4b",
+    "0x4c",
+    "0x4d",
+    "0x4e",
+    "0x51",
+    "0x52",
+    "0x53",
+    "0x54",
+    "0x55",
+    "0x56",
+    "0x57",
+    "0x58",
+    "0x59",
+    "0x5a",
+    "0x60",
+    "0xa54",
+    "0x60504030b07060504030a0706050403090706050403080706050403020100",
+    "0x160215140c131211070f0e10070f0e07070f0e05070f0e0d07060504030c07",
+    "0xc070c071c1b0c071d050403050705071c1b05070a05040318051a19180517",
+    "0x525052505140c241202231805172221070605040320071f05040318051a1e",
+    "0x2f052c2e2d05140c2c122b05272a180517292805272610071f050403250525",
+    "0x52c2e1f051f051f051f05140c341233070c071c1b320532052c2e31302f05",
+    "0x39052c2e380538052c2e37071f050403360536052c2e0c071f050403350535",
+    "0xc1c1240053f0c1c123e051a3d0605173c3b053b052c2e3a07060504033905",
+    "0x480c1312470547052c2e46054505140c4412430c1312420542052c2e410514",
+    "0x2e3151500550052c2e4f054f052c2e4e054d054c0c494b3e054a05140c4912",
+    "0xc072759050727590258570556052c2e0255540554052c2e0253520552052c",
+    "0xc640c630c6261026006051a5f315e5d07060504034e055c055b0c494b025a",
+    "0x505666c05056b0605056a6905056840050568060505670c05056641050565",
+    "0x73050566720505667105056605077005076f4e05056e4a05056e0605056d06",
+    "0x5057a051005794505056e0c78770505660c76700505667505056674050566",
+    "0x7d05056b0c077005076f5c05056e4105056e3e0505683e05057c4d0505687b",
+    "0x848305056b180505820c81800505668005056e7f05056b7e05056b41050568",
+    "0x8905056845050568880505681805058785050566860505668505056e1f0505",
+    "0x668e05056b8d05056b1805058c8b05056b7b05056605077b05076f8a05056b",
+    "0x5680c077b05076f4d05056e4605056e900505681805058f0a0505661d0505",
+    "0x6b2005056b0c960c95250505660c940707059310070593110705930c929105",
+    "0xc0c99050c0c0c980505056b0705056b860505681005056b1105056b970505",
+    "0x3705110c460599052005100c0c99050c070c9d9c079b9a37079907110c0705",
+    "0x370c0c99059e05200c0c99050c070c900585919e0799074605970c37059905",
+    "0x8e07460c0a0599050a059d0c0a0599050c9c0c8e0599050c9a0c0c99059105",
+    "0x110c8b0599059f05900c9f0599058d1d07910c1d0599050c9e0c8d0599050a",
+    "0xc1005990510058d0c0705990507050a0c0505990505058e0c370599053705",
+    "0x979a1007053737058b0599058b058b0c9705990597059f0c9a0599059a051d",
+    "0x250c8a0599058a05880c8a0599050c8a0c0c99059005200c0c99050c070c8b",
+    "0x507050a0c180599050c850c0c99050c070c8385075725880799078a9a3710",
+    "0x2d861199051805100711830c0505990505058e0c1005990510058d0c070599",
+    "0x8905860c0c99050c070c2f057b890599072b05180c880599058805110c2b28",
+    "0x532052b0c0c99058005280c32800799051f052d0c1f0599050c9a0c0c9905",
+    "0x28058e0c880599058805110c7e05990535052f0c350599057f05890c7f0599",
+    "0x59f0c2505990525051d0c2d0599052d058d0c8605990586050a0c28059905",
+    "0x5900c0c99050c070c7e97252d86288837057e0599057e058b0c9705990597",
+    "0x8d0c8605990586050a0c2805990528058e0c880599058805110c360599052f",
+    "0x53605990536058b0c9705990597059f0c2505990525051d0c2d0599052d05",
+    "0x59d0c7d0599050c1f0c380599050c9a0c0c99050c070c3697252d86288837",
+    "0xc40059905393e07910c3e0599050c9e0c390599057d3807460c7d0599057d",
+    "0x705990507050a0c0505990505058e0c850599058505110c41059905400590",
+    "0x5990541058b0c9705990597059f0c8305990583051d0c1005990510058d0c",
+    "0xc5c0599050c9a0c0c99052005800c0c99050c070c41978310070585370541",
+    "0xc4d0599050c9e0c450599053b5c07460c3b0599053b059d0c3b0599050c1f",
+    "0x5990505058e0c9c0599059c05110c4a0599054205900c42059905454d0791",
+    "0x990597059f0c9d0599059d051d0c1005990510058d0c0705990507050a0c05",
+    "0x99050c7f0c110599050c320c4a979d1007059c37054a0599054a058b0c9705",
+    "0x9a057e0c9a0599053720971111350c370599050c7f0c200599050c7f0c9705",
+    "0x7d0c469d0799050705380c0c99050c070c0ca09c0599079a05360c9a059905",
+    "0xc7f0c8e0599059005390c900599050c7f0c910599059e05390c9e0599050c",
+    "0x91113e0c9f0599051d05390c1d0599050c7f0c8d0599050a05390c0a059905",
+    "0x9d0599059d058e0c8b0599058b05410c460599054605400c8b0599059f8d8e",
+    "0x99051005450c0c99058a053b0c0c99050c070c8805a18a0599078b46075c0c",
+    "0xc8505990585059d0c850599050c420c250599050c9a0c0c99059c054d0c0c",
+    "0x5990586054a0c86059905831807910c180599050c9e0c8305990585250746",
+    "0x99052d054e0c9d0599059d058e0c0505990505058d0c0c0599050c050a0c2d",
+    "0x7f0c2b0599052805390c280599050c7b0c0c99050c070c2d9d050c11052d05",
+    "0xc7f0c800599051f05390c1f0599050c7f0c2f0599058905390c890599050c",
+    "0x350599053505410c350599057f802f2b113e0c7f0599053205390c32059905",
+    "0x599050c4f0c380599050c470c0c99050c070c3605a27e0599073588075c0c",
+    "0x7e38050c37520c390599053905750c7d0599057d05500c390599050c770c7d",
+    "0xc540c0c99054105730c0c99050c070c4d453b5c11a341403e109907397d9c",
+    "0x8d0c3e0599053e050a0c4e0599054a05570c4a059905421007720c42059905",
+    "0xc070c4e9d403e11054e0599054e054e0c9d0599059d058e0c400599054005",
+    "0x470599050c770c7b0599050c4f0c0c99051005450c0c99054505560c0c9905",
+    "0x7b4d3b9d97710c470599054705750c7b0599057b05500c3b0599053b058d0c",
+    "0x7705990577058d0c4f0599054f058e0c5c0599055c050a0c50774f10990547",
+    "0xc070c5405a57305990775056c0c0c99050c070c5205a4750599075005700c",
+    "0x5740c560599057205690c0c99050c070c5705a6720599077305060c0c9905",
+    "0xca7050c000c710599055705740c0c99050c070c0ca7050c000c7105990556",
+    "0x55205740c0c99050c070c0ca7050c000c710599055405740c0c99050c070c",
+    "0x506059d0c060599050ca90c6c0599050c9a0c70059905714f07a80c710599",
+    "0x6907460c7405990574059d0c740599050caa0c69059905066c07460c060599",
+    "0xac0ca9059905a80007460ca8059905a8059d0ca80599050cab0c0005990574",
+    "0x910cac0599050c9e0cab059905aaa907460caa059905aa059d0caa0599050c",
+    "0x7705990577058d0c5c0599055c050a0cae059905ad054a0cad059905abac07",
+    "0x5ad0c0c99050c070cae70775c1105ae059905ae054e0c7005990570058e0c",
+    "0x599050cae0c9b0599050c9a0c0c99059c054d0c0c99051005450c0c990536",
+    "0x5afb007910cb00599050c9e0caf059905619b07460c6105990561059d0c61",
+    "0x9d058e0c0505990505058d0c0c0599050c050a0cb2059905b1054a0cb10599",
+    "0xc99051005450c0c99050c070cb29d050c1105b2059905b2054e0c9d059905",
+    "0xb5059905b4b307460cb4059905b4059d0cb40599050c9b0cb30599050c9a0c",
+    "0x599050c050a0cb8059905b7054a0cb7059905b5b607910cb60599050c9e0c",
+    "0xb807050c1105b8059905b8054e0c0705990507058e0c0505990505058d0c0c",
+    "0x1145717372110c2097111007050c7075747372710c374175747372710c3707",
+    "0xb91007050c7b717372"
+  ],
+  "sierra_program_debug_info": {
+    "type_names": [
+      [
+        0,
+        "RangeCheck"
+      ],
+      [
+        1,
+        "Const<felt252, 29721761890975875353235833581453094220424382983267374>"
+      ],
+      [
+        2,
+        "Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>"
+      ],
+      [
+        3,
+        "Const<felt252, 16>"
+      ],
+      [
+        4,
+        "Const<felt252, 92342086994883127646987903453339415411>"
+      ],
+      [
+        5,
+        "Const<felt252, 0>"
+      ],
+      [
+        6,
+        "Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>"
+      ],
+      [
+        7,
+        "U96LimbsLtGuarantee<1>"
+      ],
+      [
+        8,
+        "U96LimbsLtGuarantee<2>"
+      ],
+      [
+        9,
+        "U96LimbsLtGuarantee<3>"
+      ],
+      [
+        10,
+        "U96LimbsLtGuarantee<4>"
+      ],
+      [
+        11,
+        "Unit"
+      ],
+      [
+        12,
+        "CircuitFailureGuarantee"
+      ],
+      [
+        13,
+        "CircuitPartialOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>"
+      ],
+      [
+        14,
+        "CircuitOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>"
+      ],
+      [
+        15,
+        "Const<BoundedInt<1, 1>, 1>"
+      ],
+      [
+        16,
+        "BoundedInt<1, 1>"
+      ],
+      [
+        17,
+        "Const<BoundedInt<0, 0>, 0>"
+      ],
+      [
+        18,
+        "BoundedInt<0, 0>"
+      ],
+      [
+        19,
+        "CircuitDescriptor<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>"
+      ],
+      [
+        20,
+        "Const<BoundedInt<0, 79228162514264337593543950335>, 6>"
+      ],
+      [
+        21,
+        "Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>"
+      ],
+      [
+        22,
+        "CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>"
+      ],
+      [
+        23,
+        "U96Guarantee"
+      ],
+      [
+        24,
+        "Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>"
+      ],
+      [
+        25,
+        "Const<BoundedInt<0, 79228162514264337593543950335>, 3>"
+      ],
+      [
+        26,
+        "Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>"
+      ],
+      [
+        27,
+        "CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>"
+      ],
+      [
+        28,
+        "core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>"
+      ],
+      [
+        29,
+        "(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)"
+      ],
+      [
+        30,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>"
+      ],
+      [
+        31,
+        "CircuitModulus"
+      ],
+      [
+        32,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>"
+      ],
+      [
+        33,
+        "BoundedInt<0, 79228162514264337593543950335>"
+      ],
+      [
+        34,
+        "Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>"
+      ],
+      [
+        35,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>"
+      ],
+      [
+        36,
+        "Const<BoundedInt<0, 79228162514264337593543950335>, 0>"
+      ],
+      [
+        37,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>"
+      ],
+      [
+        38,
+        "Const<BoundedInt<0, 79228162514264337593543950335>, 7>"
+      ],
+      [
+        39,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>"
+      ],
+      [
+        40,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>"
+      ],
+      [
+        41,
+        "Const<felt252, 375233589013918064796019>"
+      ],
+      [
+        42,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>"
+      ],
+      [
+        43,
+        "Array<felt252>"
+      ],
+      [
+        44,
+        "Snapshot<Array<felt252>>"
+      ],
+      [
+        45,
+        "core::array::Span::<core::felt252>"
+      ],
+      [
+        46,
+        "Tuple<core::array::Span::<core::felt252>>"
+      ],
+      [
+        47,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>"
+      ],
+      [
+        48,
+        "cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState"
+      ],
+      [
+        49,
+        "Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>"
+      ],
+      [
+        50,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>"
+      ],
+      [
+        51,
+        "core::panics::Panic"
+      ],
+      [
+        52,
+        "Tuple<core::panics::Panic, Array<felt252>>"
+      ],
+      [
+        53,
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>"
+      ],
+      [
+        54,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>"
+      ],
+      [
+        55,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>"
+      ],
+      [
+        56,
+        "BuiltinCosts"
+      ],
+      [
+        57,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>"
+      ],
+      [
+        58,
+        "System"
+      ],
+      [
+        59,
+        "core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>"
+      ],
+      [
+        60,
+        "MulMod"
+      ],
+      [
+        61,
+        "core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>"
+      ],
+      [
+        62,
+        "AddMod"
+      ],
+      [
+        63,
+        "core::circuit::CircuitInput::<1>"
+      ],
+      [
+        64,
+        "core::circuit::CircuitInput::<0>"
+      ],
+      [
+        65,
+        "RangeCheck96"
+      ],
+      [
+        66,
+        "core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>"
+      ],
+      [
+        67,
+        "Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>"
+      ],
+      [
+        68,
+        "felt252"
+      ],
+      [
+        69,
+        "Box<felt252>"
+      ],
+      [
+        70,
+        "GasBuiltin"
+      ]
+    ],
+    "libfunc_names": [
+      [
+        0,
+        "revoke_ap_tracking"
+      ],
+      [
+        1,
+        "withdraw_gas"
+      ],
+      [
+        2,
+        "branch_align"
+      ],
+      [
+        3,
+        "struct_deconstruct<core::array::Span::<core::felt252>>"
+      ],
+      [
+        4,
+        "store_temp<RangeCheck>"
+      ],
+      [
+        5,
+        "array_snapshot_pop_front<felt252>"
+      ],
+      [
+        6,
+        "drop<Snapshot<Array<felt252>>>"
+      ],
+      [
+        7,
+        "drop<Box<felt252>>"
+      ],
+      [
+        8,
+        "array_new<felt252>"
+      ],
+      [
+        9,
+        "const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>"
+      ],
+      [
+        10,
+        "store_temp<felt252>"
+      ],
+      [
+        11,
+        "array_append<felt252>"
+      ],
+      [
+        12,
+        "struct_construct<core::panics::Panic>"
+      ],
+      [
+        13,
+        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
+      ],
+      [
+        14,
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
+      ],
+      [
+        15,
+        "store_temp<RangeCheck96>"
+      ],
+      [
+        16,
+        "store_temp<AddMod>"
+      ],
+      [
+        17,
+        "store_temp<MulMod>"
+      ],
+      [
+        18,
+        "store_temp<GasBuiltin>"
+      ],
+      [
+        19,
+        "store_temp<System>"
+      ],
+      [
+        20,
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+      ],
+      [
+        21,
+        "get_builtin_costs"
+      ],
+      [
+        22,
+        "store_temp<BuiltinCosts>"
+      ],
+      [
+        23,
+        "withdraw_gas_all"
+      ],
+      [
+        24,
+        "struct_construct<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>"
+      ],
+      [
+        25,
+        "function_call<user@cairo_level_tests::contracts::circuit_contract::circuit_contract::circuit_builtins>"
+      ],
+      [
+        26,
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>"
+      ],
+      [
+        27,
+        "drop<Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>>"
+      ],
+      [
+        28,
+        "snapshot_take<Array<felt252>>"
+      ],
+      [
+        29,
+        "drop<Array<felt252>>"
+      ],
+      [
+        30,
+        "struct_construct<core::array::Span::<core::felt252>>"
+      ],
+      [
+        31,
+        "struct_construct<Tuple<core::array::Span::<core::felt252>>>"
+      ],
+      [
+        32,
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
+      ],
+      [
+        33,
+        "const_as_immediate<Const<felt252, 375233589013918064796019>>"
+      ],
+      [
+        34,
+        "drop<core::array::Span::<core::felt252>>"
+      ],
+      [
+        35,
+        "const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 7>>"
+      ],
+      [
+        36,
+        "const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 0>>"
+      ],
+      [
+        37,
+        "struct_construct<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>"
+      ],
+      [
+        38,
+        "store_temp<Tuple<BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>, BoundedInt<0, 79228162514264337593543950335>>>"
+      ],
+      [
+        39,
+        "try_into_circuit_modulus"
+      ],
+      [
+        40,
+        "init_circuit_data<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>"
+      ],
+      [
+        41,
+        "const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 3>>"
+      ],
+      [
+        42,
+        "into_u96_guarantee<BoundedInt<0, 79228162514264337593543950335>>"
+      ],
+      [
+        43,
+        "struct_construct<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>"
+      ],
+      [
+        44,
+        "store_temp<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>"
+      ],
+      [
+        45,
+        "store_temp<Tuple<U96Guarantee, U96Guarantee, U96Guarantee, U96Guarantee>>"
+      ],
+      [
+        46,
+        "add_circuit_input<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>"
+      ],
+      [
+        47,
+        "drop<CircuitData<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>"
+      ],
+      [
+        48,
+        "drop<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState>"
+      ],
+      [
+        49,
+        "drop<CircuitModulus>"
+      ],
+      [
+        50,
+        "const_as_immediate<Const<felt252, 26913677086973030051406221357623718750637972950955665348321109348>>"
+      ],
+      [
+        51,
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 1>"
+      ],
+      [
+        52,
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>>"
+      ],
+      [
+        53,
+        "const_as_immediate<Const<BoundedInt<0, 79228162514264337593543950335>, 6>>"
+      ],
+      [
+        54,
+        "get_circuit_descriptor<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>"
+      ],
+      [
+        55,
+        "const_as_immediate<Const<BoundedInt<0, 0>, 0>>"
+      ],
+      [
+        56,
+        "const_as_immediate<Const<BoundedInt<1, 1>, 1>>"
+      ],
+      [
+        57,
+        "store_temp<BoundedInt<0, 0>>"
+      ],
+      [
+        58,
+        "store_temp<BoundedInt<1, 1>>"
+      ],
+      [
+        59,
+        "eval_circuit<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>"
+      ],
+      [
+        60,
+        "drop<CircuitOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>"
+      ],
+      [
+        61,
+        "struct_construct<Unit>"
+      ],
+      [
+        62,
+        "struct_construct<Tuple<cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, Unit>>"
+      ],
+      [
+        63,
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::circuit_contract::circuit_contract::ContractState, ())>, 0>"
+      ],
+      [
+        64,
+        "drop<CircuitPartialOutputs<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>"
+      ],
+      [
+        65,
+        "circuit_failure_guarantee_verify"
+      ],
+      [
+        66,
+        "u96_limbs_less_than_guarantee_verify<4>"
+      ],
+      [
+        67,
+        "u96_limbs_less_than_guarantee_verify<3>"
+      ],
+      [
+        68,
+        "u96_limbs_less_than_guarantee_verify<2>"
+      ],
+      [
+        69,
+        "u96_single_limb_less_than_guarantee_verify"
+      ],
+      [
+        70,
+        "store_temp<U96Guarantee>"
+      ],
+      [
+        71,
+        "jump"
+      ],
+      [
+        72,
+        "u96_guarantee_verify"
+      ],
+      [
+        73,
+        "const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>"
+      ],
+      [
+        74,
+        "const_as_immediate<Const<felt252, 0>>"
+      ],
+      [
+        75,
+        "const_as_immediate<Const<felt252, 92342086994883127646987903453339415411>>"
+      ],
+      [
+        76,
+        "const_as_immediate<Const<felt252, 16>>"
+      ],
+      [
+        77,
+        "drop<CircuitInputAccumulator<Circuit<(core::circuit::InverseGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>, core::circuit::AddModGate::<core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>, core::circuit::AddModGate::<core::circuit::CircuitInput::<0>, core::circuit::CircuitInput::<1>>>>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>, ...>>,)>>>"
+      ],
+      [
+        78,
+        "const_as_immediate<Const<felt252, 138583295661092166701491297054433349032460315956105119041111996301516236132>>"
+      ],
+      [
+        79,
+        "const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>"
+      ]
+    ],
+    "user_func_names": [
+      [
+        0,
+        "cairo_level_tests::contracts::circuit_contract::circuit_contract::__wrapper__circuit_builtins"
+      ],
+      [
+        1,
+        "cairo_level_tests::contracts::circuit_contract::circuit_contract::circuit_builtins"
+      ]
+    ]
+  },
+  "contract_class_version": "0.1.0",
+  "entry_points_by_type": {
+    "EXTERNAL": [
+      {
+        "selector": "0x27a2c41b81707058c38be31b3bce488399fc4ffc708764cb7507561a78de785",
+        "function_idx": 0
+      }
+    ],
+    "L1_HANDLER": [],
+    "CONSTRUCTOR": []
+  },
+  "abi": [
+    {
+      "type": "function",
+      "name": "circuit_builtins",
+      "inputs": [],
+      "outputs": [],
+      "state_mutability": "external"
+    },
+    {
+      "type": "event",
+      "name": "cairo_level_tests::contracts::circuit_contract::circuit_contract::Event",
+      "kind": "enum",
+      "variants": []
+    }
+  ]
+}

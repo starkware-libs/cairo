@@ -1,0 +1,257 @@
+//! > Test if let
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > function_body
+let a = MyEnum::A(9);
+
+//! > expr_code
+if let MyEnum::A(x) | MyEnum::B(x) = a {
+    x
+} else {
+    1
+}
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > expected_semantics
+If(
+    ExprIf {
+        condition: Let(
+            Var(
+                LocalVarId(test::a),
+            ),
+            [
+                EnumVariant(
+                    PatternEnumVariant {
+                        variant: MyEnum::A,
+                        inner_pattern: Some(
+                            Variable(
+                                x,
+                            ),
+                        ),
+                        ty: test::MyEnum,
+                    },
+                ),
+                EnumVariant(
+                    PatternEnumVariant {
+                        variant: MyEnum::B,
+                        inner_pattern: Some(
+                            Variable(
+                                x,
+                            ),
+                        ),
+                        ty: test::MyEnum,
+                    },
+                ),
+            ],
+        ),
+        if_block: Block(
+            ExprBlock {
+                statements: [],
+                tail: Some(
+                    Var(
+                        LocalVarId(test::x),
+                    ),
+                ),
+                ty: core::felt252,
+            },
+        ),
+        else_block: Some(
+            Block(
+                ExprBlock {
+                    statements: [],
+                    tail: Some(
+                        Literal(
+                            ExprLiteral {
+                                value: 1,
+                                ty: core::felt252,
+                            },
+                        ),
+                    ),
+                    ty: core::felt252,
+                },
+            ),
+        ),
+        ty: core::felt252,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > `if` with type mismatch.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+
+//! > function_body
+let a: bool = true;
+
+//! > expr_code
+if a {
+    3_u32
+} else {
+    3_u16
+}
+
+//! > expected_semantics
+If(
+    ExprIf {
+        condition: BoolExpr(
+            Var(
+                LocalVarId(test::a),
+            ),
+        ),
+        if_block: Block(
+            ExprBlock {
+                statements: [],
+                tail: Some(
+                    Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u32,
+                        },
+                    ),
+                ),
+                ty: core::integer::u32,
+            },
+        ),
+        else_block: Some(
+            Block(
+                ExprBlock {
+                    statements: [],
+                    tail: Some(
+                        Literal(
+                            ExprLiteral {
+                                value: 3,
+                                ty: core::integer::u16,
+                            },
+                        ),
+                    ),
+                    ty: core::integer::u16,
+                },
+            ),
+        ),
+        ty: core::integer::u32,
+    },
+)
+
+//! > expected_diagnostics
+error: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
+ --> lib.cairo:2:1
+if a {
+^****^
+
+//! > ==========================================================================
+
+//! > `if` with type mismatch with inference.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+
+//! > function_body
+let a: bool = true;
+
+//! > expr_code
+if a {
+    3 + 3_u32
+} else {
+    3 + 3_u16
+}
+
+//! > expected_semantics
+If(
+    ExprIf {
+        condition: BoolExpr(
+            Var(
+                LocalVarId(test::a),
+            ),
+        ),
+        if_block: Block(
+            ExprBlock {
+                statements: [],
+                tail: Some(
+                    FunctionCall(
+                        ExprFunctionCall {
+                            function: ?0::add,
+                            args: [
+                                Value(
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u32,
+                                        },
+                                    ),
+                                ),
+                                Value(
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u32,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            coupon_arg: None,
+                            ty: core::integer::u32,
+                        },
+                    ),
+                ),
+                ty: core::integer::u32,
+            },
+        ),
+        else_block: Some(
+            Block(
+                ExprBlock {
+                    statements: [],
+                    tail: Some(
+                        FunctionCall(
+                            ExprFunctionCall {
+                                function: ?3::add,
+                                args: [
+                                    Value(
+                                        Literal(
+                                            ExprLiteral {
+                                                value: 3,
+                                                ty: core::integer::u16,
+                                            },
+                                        ),
+                                    ),
+                                    Value(
+                                        Literal(
+                                            ExprLiteral {
+                                                value: 3,
+                                                ty: core::integer::u16,
+                                            },
+                                        ),
+                                    ),
+                                ],
+                                coupon_arg: None,
+                                ty: core::integer::u16,
+                            },
+                        ),
+                    ),
+                    ty: core::integer::u16,
+                },
+            ),
+        ),
+        ty: core::integer::u32,
+    },
+)
+
+//! > expected_diagnostics
+error: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
+ --> lib.cairo:2:1
+if a {
+^****^

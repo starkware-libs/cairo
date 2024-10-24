@@ -6,15 +6,16 @@ pub mod corelib;
 pub mod db;
 pub mod diagnostic;
 pub mod expr;
+pub mod inline_macros;
 pub mod items;
 pub mod literals;
 pub mod lookup_item;
 pub mod lsp_helpers;
-pub mod patcher;
 pub mod plugin;
 pub mod resolve;
 pub mod substitution;
 pub mod types;
+pub mod usage;
 
 mod semantic;
 

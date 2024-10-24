@@ -2,7 +2,7 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 
-use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError, misc};
 use crate::invocations::add_input_variables;
 
 /// Builds instructions for Sierra bool operations.
@@ -15,7 +15,6 @@ pub fn build(
         BoolConcreteLibfunc::Not(_) => build_bool_not(builder),
         BoolConcreteLibfunc::Xor(_) => build_bool_xor(builder),
         BoolConcreteLibfunc::Or(_) => build_bool_or(builder),
-        BoolConcreteLibfunc::Equal(_) => misc::build_cell_eq(builder),
         BoolConcreteLibfunc::ToFelt252(_) => misc::build_identity(builder),
     }
 }

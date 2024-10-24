@@ -1,0 +1,505 @@
+//! > Test an ItemInlineMacro with parentheses syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+inline_macro!(1, 2);
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: ArgListParenthesized)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── arguments (kind: ArgList)
+    │   │   ├── item #0 (kind: Arg)
+    │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │       └── value (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   └── item #1 (kind: Arg)
+    │   │       ├── modifiers (kind: ModifierList) []
+    │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │           └── value (kind: TokenLiteralNumber): '2'
+    │   └── rparen (kind: TokenRParen): ')'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro with brackets syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+inline_macro![1, 2];
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: ArgListBracketed)
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── arguments (kind: ArgList)
+    │   │   ├── item #0 (kind: Arg)
+    │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │       └── value (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   └── item #1 (kind: Arg)
+    │   │       ├── modifiers (kind: ModifierList) []
+    │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │           └── value (kind: TokenLiteralNumber): '2'
+    │   └── rbrack (kind: TokenRBrack): ']'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro with braces syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+inline_macro!{1, 2};
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: ArgListBraced)
+    │   ├── lbrace (kind: TokenLBrace): '{'
+    │   ├── arguments (kind: ArgList)
+    │   │   ├── item #0 (kind: Arg)
+    │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │       └── value (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   └── item #1 (kind: Arg)
+    │   │       ├── modifiers (kind: ModifierList) []
+    │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │           └── value (kind: TokenLiteralNumber): '2'
+    │   └── rbrace (kind: TokenRBrace): '}'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro with attributes syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+#[an_attr]
+inline_macro!(1, 2);
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList)
+    │   └── child #0 (kind: Attribute)
+    │       ├── hash (kind: TokenHash): '#'
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── attr (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'an_attr'
+    │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       └── rbrack (kind: TokenRBrack): ']'
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: ArgListParenthesized)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── arguments (kind: ArgList)
+    │   │   ├── item #0 (kind: Arg)
+    │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │       └── value (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   └── item #1 (kind: Arg)
+    │   │       ├── modifiers (kind: ModifierList) []
+    │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │           └── value (kind: TokenLiteralNumber): '2'
+    │   └── rparen (kind: TokenRParen): ')'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro without a `!`, with parentheses.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+inline_macro(1,2);
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Expected a '!' after the identifier 'inline_macro' to start an inline macro.
+Did you mean to write `inline_macro!(...)'?
+ --> dummy_file.cairo:1:1
+inline_macro(1,2);
+^**********^
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang: Missing
+    ├── arguments (kind: ArgListParenthesized)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── arguments (kind: ArgList)
+    │   │   ├── item #0 (kind: Arg)
+    │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │       └── value (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   └── item #1 (kind: Arg)
+    │   │       ├── modifiers (kind: ModifierList) []
+    │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │           └── value (kind: TokenLiteralNumber): '2'
+    │   └── rparen (kind: TokenRParen): ')'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro without a `!`, with braces.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+inline_macro{1,2};
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Expected a '!' after the identifier 'inline_macro' to start an inline macro.
+Did you mean to write `inline_macro!{...}'?
+ --> dummy_file.cairo:1:1
+inline_macro{1,2};
+^**********^
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang: Missing
+    ├── arguments (kind: ArgListBraced)
+    │   ├── lbrace (kind: TokenLBrace): '{'
+    │   ├── arguments (kind: ArgList)
+    │   │   ├── item #0 (kind: Arg)
+    │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │       └── value (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   └── item #1 (kind: Arg)
+    │   │       ├── modifiers (kind: ModifierList) []
+    │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │           └── value (kind: TokenLiteralNumber): '2'
+    │   └── rbrace (kind: TokenRBrace): '}'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro without a `!`, with brackets.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+inline_macro[1,2];
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Expected a '!' after the identifier 'inline_macro' to start an inline macro.
+Did you mean to write `inline_macro![...]'?
+ --> dummy_file.cairo:1:1
+inline_macro[1,2];
+^**********^
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang: Missing
+    ├── arguments (kind: ArgListBracketed)
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── arguments (kind: ArgList)
+    │   │   ├── item #0 (kind: Arg)
+    │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │       └── value (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   └── item #1 (kind: Arg)
+    │   │       ├── modifiers (kind: ModifierList) []
+    │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │           └── value (kind: TokenLiteralNumber): '2'
+    │   └── rbrack (kind: TokenRBrack): ']'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an identifier with nothing following.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+identifier
+fn foo() {}
+
+//! > top_level_kind
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> dummy_file.cairo:1:1
+identifier
+^********^
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   └── child #0 (kind: FunctionWithBody)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── function_kw (kind: TokenFunction): 'fn'
+    │       │   ├── name (kind: TokenIdentifier): 'foo'
+    │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       │   └── signature (kind: FunctionSignature)
+    │       │       ├── lparen (kind: TokenLParen): '('
+    │       │       ├── parameters (kind: ParamList) []
+    │       │       ├── rparen (kind: TokenRParen): ')'
+    │       │       ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
+    │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │       │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │       └── body (kind: ExprBlock)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── statements (kind: StatementList) []
+    │           └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test a macro with no argument list.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+macro!
+fn foo() {}
+
+//! > top_level_kind
+ModuleItemList
+
+//! > ignored_kinds
+FunctionWithBody
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
+ --> dummy_file.cairo:1:7
+macro!
+      ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:1:7
+macro!
+      ^
+
+//! > expected_tree
+└── Top level kind: ModuleItemList
+    ├── child #0 (kind: ItemInlineMacro)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── name (kind: TokenIdentifier): 'macro'
+    │   ├── bang (kind: TokenNot): '!'
+    │   ├── arguments: Missing []
+    │   └── semicolon: Missing
+    └── child #1 (kind: FunctionWithBody) <ignored>
+
+//! > ==========================================================================
+
+//! > Test a macro without right parentheses.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+identifier!(1,2
+fn foo() {}
+
+//! > top_level_kind
+ModuleItemList
+
+//! > ignored_kinds
+FunctionWithBody
+
+//! > expected_diagnostics
+error: Missing token TerminalRParen.
+ --> dummy_file.cairo:1:16
+identifier!(1,2
+               ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:1:16
+identifier!(1,2
+               ^
+
+//! > expected_tree
+└── Top level kind: ModuleItemList
+    ├── child #0 (kind: ItemInlineMacro)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── name (kind: TokenIdentifier): 'identifier'
+    │   ├── bang (kind: TokenNot): '!'
+    │   ├── arguments (kind: ArgListParenthesized)
+    │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   ├── arguments (kind: ArgList)
+    │   │   │   ├── item #0 (kind: Arg)
+    │   │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │   │       └── value (kind: TokenLiteralNumber): '1'
+    │   │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   │   └── item #1 (kind: Arg)
+    │   │   │       ├── modifiers (kind: ModifierList) []
+    │   │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │           └── value (kind: TokenLiteralNumber): '2'
+    │   │   └── rparen: Missing
+    │   └── semicolon: Missing
+    └── child #1 (kind: FunctionWithBody) <ignored>
+
+//! > ==========================================================================
+
+//! > Test a macro without a semicolon.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+identifier!(1,2)
+fn foo() {}
+
+//! > top_level_kind
+ModuleItemList
+
+//! > ignored_kinds
+FunctionWithBody
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:1:17
+identifier!(1,2)
+                ^
+
+//! > expected_tree
+└── Top level kind: ModuleItemList
+    ├── child #0 (kind: ItemInlineMacro)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── name (kind: TokenIdentifier): 'identifier'
+    │   ├── bang (kind: TokenNot): '!'
+    │   ├── arguments (kind: ArgListParenthesized)
+    │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   ├── arguments (kind: ArgList)
+    │   │   │   ├── item #0 (kind: Arg)
+    │   │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │   │       └── value (kind: TokenLiteralNumber): '1'
+    │   │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   │   └── item #1 (kind: Arg)
+    │   │   │       ├── modifiers (kind: ModifierList) []
+    │   │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │           └── value (kind: TokenLiteralNumber): '2'
+    │   │   └── rparen (kind: TokenRParen): ')'
+    │   └── semicolon: Missing
+    └── child #1 (kind: FunctionWithBody) <ignored>
+
+//! > ==========================================================================
+
+//! > Test a macro without a bang and with an identifier argument.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+identifier(x)
+fn foo() {}
+
+//! > top_level_kind
+ModuleItemList
+
+//! > ignored_kinds
+FunctionWithBody
+
+//! > expected_diagnostics
+error: Expected a '!' after the identifier 'identifier' to start an inline macro.
+Did you mean to write `identifier!(...)'?
+ --> dummy_file.cairo:1:1
+identifier(x)
+^********^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:1:14
+identifier(x)
+             ^
+
+//! > expected_tree
+└── Top level kind: ModuleItemList
+    ├── child #0 (kind: ItemInlineMacro)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── name (kind: TokenIdentifier): 'identifier'
+    │   ├── bang: Missing
+    │   ├── arguments (kind: ArgListParenthesized)
+    │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   ├── arguments (kind: ArgList)
+    │   │   │   └── item #0 (kind: Arg)
+    │   │   │       ├── modifiers (kind: ModifierList) []
+    │   │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │           └── value (kind: ExprPath)
+    │   │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │                   └── ident (kind: TokenIdentifier): 'x'
+    │   │   └── rparen (kind: TokenRParen): ')'
+    │   └── semicolon: Missing
+    └── child #1 (kind: FunctionWithBody) <ignored>

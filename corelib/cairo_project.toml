@@ -1,2 +1,10 @@
 [crate_roots]
 core = "src"
+
+[config.global]
+version = "2.8.4"
+edition = "2024_07"
+
+[config.global.experimental_features]
+negative_impls = true
+coupons = true

@@ -66,3 +66,27 @@ fn call_cycle_of_len2(x: felt252) -> felt252 {
 cycle_of_len2_a: ap_change=Ok(Unknown), has_cycles=Ok(true)
 cycle_of_len2_b: ap_change=Ok(Unknown), has_cycles=Ok(true)
 call_cycle_of_len2: ap_change=Ok(Unknown), has_cycles=Ok(true)
+
+//! > ==========================================================================
+
+//! > Cycle non-existent after optimizations.
+
+//! > test_runner_name
+contains_cycles_test
+
+//! > module_code
+fn not_cycle() {
+    cycle_if_some(Option::None)
+}
+
+#[inline(always)]
+fn cycle_if_some(x: Option<felt252>) {
+    match x {
+        Option::Some(x) => while x != 0 {},
+        Option::None => {},
+    }
+}
+
+//! > result
+not_cycle: ap_change=Ok(Known { new_vars_only: false }), has_cycles=Ok(false)
+cycle_if_some: ap_change=Ok(Unknown), has_cycles=Ok(true)

@@ -79,7 +79,7 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256AddLibfunc<T> {
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         let secp256_ec_point_type = context.get_concrete_type(T::TYPE_ID, &[])?;
 
-        // Point `p0`, point `p1`
+        // Point `p0`, point `p1`.
         Ok(vec![secp256_ec_point_type.clone(), secp256_ec_point_type])
     }
 
@@ -104,7 +104,7 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256MulLibfunc<T> {
         Ok(vec![
             // Point `p`.
             context.get_concrete_type(T::TYPE_ID, &[])?,
-            // Scalar `m`.
+            // Scalar `scalar`.
             get_u256_type(context)?,
         ])
     }
@@ -181,16 +181,13 @@ fn optional_secp256_ec_point_return_type<T: Secp256Trait>(
 
     let unit_type = get_unit_type(context)?;
     // TODO(yuval): add get_option_type to mod.rs and use it here.
-    let option_secp256_ec_point_type = context.get_concrete_type(
-        EnumType::id(),
-        &[
-            GenericArg::UserType(UserTypeId::from_string(format!(
-                "core::option::Option::<{}>",
-                T::TYPE_ID_STR
-            ))),
-            GenericArg::Type(secp256_ec_point_type),
-            GenericArg::Type(unit_type),
-        ],
-    )?;
+    let option_secp256_ec_point_type = context.get_concrete_type(EnumType::id(), &[
+        GenericArg::UserType(UserTypeId::from_string(format!(
+            "core::option::Option::<{}>",
+            T::TYPE_ID_STR
+        ))),
+        GenericArg::Type(secp256_ec_point_type),
+        GenericArg::Type(unit_type),
+    ])?;
     Ok(vec![option_secp256_ec_point_type])
 }

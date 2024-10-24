@@ -24,16 +24,15 @@ fn bar(x: felt252, y: felt252, z: felt252) -> felt252 {
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label_test::foo::0:
 disable_ap_tracking() -> ()
 drop<felt252>([1]) -> ()
-felt252_const<5>() -> ([2])
+const_as_immediate<Const<felt252, 5>>() -> ([2])
 felt252_add([0], [2]) -> ([3])
-store_temp<felt252>([3]) -> ([5])
-dup<felt252>([5]) -> ([5], [3])
-dup<felt252>([3]) -> ([3], [6])
-store_temp<felt252>([6]) -> ([6])
-store_temp<felt252>([3]) -> ([7])
-function_call<user@test::bar>([5], [6], [7]) -> ([4])
-rename<felt252>([4]) -> ([8])
-return([8])
+store_temp<felt252>([3]) -> ([4])
+dup<felt252>([4]) -> ([4], [3])
+dup<felt252>([3]) -> ([3], [5])
+store_temp<felt252>([5]) -> ([5])
+store_temp<felt252>([3]) -> ([3])
+function_call<user@test::bar>([4], [5], [3]) -> ([6])
+return([6])

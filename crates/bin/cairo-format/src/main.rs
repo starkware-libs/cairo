@@ -18,8 +18,8 @@ fn eprintln_if_verbose(s: &str, verbose: bool) {
     }
 }
 
-/// Sierra to casm compiler.
-/// Exits with 0/1 if the compilation fails.
+/// Formats a file or directory with the Cairo formatter.
+/// Exits with 0/1 if the input is formatted correctly/incorrectly.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct FormatterArgs {
@@ -36,13 +36,16 @@ struct FormatterArgs {
     /// Print parsing errors.
     #[arg(short, long, default_value_t = false)]
     print_parsing_errors: bool,
+    /// Enable sorting the module level items (imports, mod definitions...).
+    #[arg(short, long, default_value_t = false)]
+    sort_mod_level_items: bool,
     /// A list of files and directories to format. Use "-" for stdin.
     files: Vec<String>,
 }
 
-fn print_error(error: anyhow::Error, path: String, args: &FormatterArgs) {
+fn print_error(error: String, path: String, args: &FormatterArgs) {
     let parsed_errors = if args.print_parsing_errors {
-        format!("{error}").red()
+        error.red()
     } else {
         "Run with '--print-parsing-errors' to see error details.".red()
     };
@@ -84,7 +87,7 @@ fn check_file_formatting(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path
             false
         }
         Err(parsing_error) => {
-            print_error(parsing_error, path.display().to_string(), args);
+            print_error(parsing_error.to_string(), path.display().to_string(), args);
             false
         }
     }
@@ -92,14 +95,14 @@ fn check_file_formatting(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path
 
 fn format_file_in_place(fmt: &CairoFormatter, args: &FormatterArgs, path: &Path) -> bool {
     if let Err(parsing_error) = fmt.format_in_place(&path) {
-        print_error(parsing_error, path.display().to_string(), args);
+        print_error(parsing_error.to_string(), path.display().to_string(), args);
         false
     } else {
         true
     }
 }
 
-impl<'t> ParallelVisitor for PathFormatter<'t> {
+impl ParallelVisitor for PathFormatter<'_> {
     fn visit(&mut self, dir_entry_res: Result<DirEntry, Error>) -> WalkState {
         let dir_entry = if let Ok(dir_entry) = dir_entry_res {
             dir_entry
@@ -169,7 +172,7 @@ fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
             }
         }
         Err(parsing_error) => {
-            print_error(parsing_error, String::from("standard input"), args);
+            print_error(parsing_error.to_string(), String::from("standard input"), args);
             false
         }
     }
@@ -180,7 +183,7 @@ fn main() -> ExitCode {
     log::info!("Starting formatting.");
 
     let args = FormatterArgs::parse();
-    let config = FormatterConfig::default();
+    let config = FormatterConfig::default().sort_module_level_items(args.sort_mod_level_items);
     let fmt = CairoFormatter::new(config);
 
     eprintln_if_verbose(
@@ -198,5 +201,5 @@ fn main() -> ExitCode {
         // Input comes from walk of listed locations
         args.files.iter().all(|file| format_path(file, &args, &fmt))
     };
-    if !all_correct && args.check { ExitCode::FAILURE } else { ExitCode::SUCCESS }
+    if all_correct { ExitCode::SUCCESS } else { ExitCode::FAILURE }
 }

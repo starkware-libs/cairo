@@ -1,6 +1,7 @@
-type felt252 = felt252;
-type Box<felt252> = Box<felt252>;
-type NonZero<felt252> = NonZero<felt252>;
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc unbox<felt252> = unbox<felt252>;
@@ -11,46 +12,42 @@ libfunc branch_align = branch_align;
 libfunc drop<Box<felt252>> = drop<Box<felt252>>;
 libfunc drop<felt252> = drop<felt252>;
 libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
-libfunc jump = jump;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc dup<Box<felt252>> = dup<Box<felt252>>;
 libfunc felt252_add = felt252_add;
 libfunc into_box<felt252> = into_box<felt252>;
-libfunc felt252_const<1> = felt252_const<1>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc felt252_sub = felt252_sub;
 libfunc function_call<user@examples::fib_box::fib> = function_call<user@examples::fib_box::fib>;
-libfunc rename<Box<felt252>> = rename<Box<felt252>>;
 
-disable_ap_tracking() -> ();
-unbox<felt252>([2]) -> ([3]);
-store_temp<felt252>([3]) -> ([3]);
-dup<felt252>([3]) -> ([3], [4]);
-felt252_is_zero([4]) { fallthrough() 10([5]) };
-branch_align() -> ();
-drop<Box<felt252>>([1]) -> ();
-drop<felt252>([3]) -> ();
-store_temp<Box<felt252>>([0]) -> ([6]);
-jump() { 29() };
-branch_align() -> ();
-drop<NonZero<felt252>>([5]) -> ();
-unbox<felt252>([0]) -> ([7]);
-dup<Box<felt252>>([1]) -> ([1], [9]);
-unbox<felt252>([9]) -> ([8]);
-store_temp<felt252>([7]) -> ([7]);
-store_temp<felt252>([8]) -> ([8]);
-felt252_add([7], [8]) -> ([10]);
-store_temp<felt252>([10]) -> ([10]);
-into_box<felt252>([10]) -> ([11]);
-felt252_const<1>() -> ([12]);
-felt252_sub([3], [12]) -> ([13]);
-store_temp<felt252>([13]) -> ([13]);
-into_box<felt252>([13]) -> ([14]);
-store_temp<Box<felt252>>([1]) -> ([16]);
-store_temp<Box<felt252>>([11]) -> ([17]);
-store_temp<Box<felt252>>([14]) -> ([18]);
-function_call<user@examples::fib_box::fib>([16], [17], [18]) -> ([15]);
-rename<Box<felt252>>([15]) -> ([6]);
-rename<Box<felt252>>([6]) -> ([19]);
-return([19]);
+disable_ap_tracking() -> (); // 0
+unbox<felt252>([2]) -> ([3]); // 1
+store_temp<felt252>([3]) -> ([3]); // 2
+dup<felt252>([3]) -> ([3], [4]); // 3
+felt252_is_zero([4]) { fallthrough() 10([5]) }; // 4
+branch_align() -> (); // 5
+drop<Box<felt252>>([1]) -> (); // 6
+drop<felt252>([3]) -> (); // 7
+store_temp<Box<felt252>>([0]) -> ([0]); // 8
+return([0]); // 9
+branch_align() -> (); // 10
+drop<NonZero<felt252>>([5]) -> (); // 11
+unbox<felt252>([0]) -> ([6]); // 12
+dup<Box<felt252>>([1]) -> ([1], [7]); // 13
+unbox<felt252>([7]) -> ([8]); // 14
+store_temp<felt252>([6]) -> ([6]); // 15
+store_temp<felt252>([8]) -> ([8]); // 16
+felt252_add([6], [8]) -> ([9]); // 17
+store_temp<felt252>([9]) -> ([9]); // 18
+into_box<felt252>([9]) -> ([10]); // 19
+const_as_immediate<Const<felt252, 1>>() -> ([11]); // 20
+felt252_sub([3], [11]) -> ([12]); // 21
+store_temp<felt252>([12]) -> ([12]); // 22
+into_box<felt252>([12]) -> ([13]); // 23
+store_temp<Box<felt252>>([1]) -> ([1]); // 24
+store_temp<Box<felt252>>([10]) -> ([10]); // 25
+store_temp<Box<felt252>>([13]) -> ([13]); // 26
+function_call<user@examples::fib_box::fib>([1], [10], [13]) -> ([14]); // 27
+return([14]); // 28
 
 examples::fib_box::fib@0([0]: Box<felt252>, [1]: Box<felt252>, [2]: Box<felt252>) -> (Box<felt252>);

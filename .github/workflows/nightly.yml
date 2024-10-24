@@ -1,0 +1,61 @@
+name: Nightly
+
+on:
+  schedule:
+    # Runs the end of every day.
+    - cron: "0 0 * * *"
+
+env:
+  RUSTUP_TOOLCHAIN: nightly
+
+jobs:
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: scripts/rust_fmt.sh --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: >
+          scripts/clippy.sh
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - run: >
+          scripts/docs.sh
+
+  starknet_sierra_validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - run: >
+          scripts/starknet_sierra_validate.sh https://starknet-mainnet.public.blastapi.io
+      - run: >
+          scripts/starknet_sierra_validate.sh https://starknet-sepolia.public.blastapi.io
+
+  vscode-cairo-check-cairo-snippets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+      - run: >
+          scripts/vscode-cairo-check-cairo-snippets.sh

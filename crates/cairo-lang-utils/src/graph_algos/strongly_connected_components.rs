@@ -10,10 +10,7 @@ use crate::unordered_hash_map::UnorderedHashMap;
 mod strongly_connected_components_test;
 
 /// A trait for a type that can compute its strongly-connected-component.
-pub trait ComputeScc
-where
-    Self: GraphNode,
-{
+pub trait ComputeScc: GraphNode {
     fn compute_scc(&self) -> Vec<Self::NodeId>;
 }
 
@@ -84,16 +81,16 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
                 // neighbor was not visited yet. Visit it and maybe apply its lowlink to root.
                 compute_scc_recursive(ctx, &neighbor);
                 // Now neighbor should be in known_nodes.
-                current_wrapper_node.lowlink = std::cmp::min(
+                current_wrapper_node.lowlink = core::cmp::min(
                     current_wrapper_node.lowlink,
-                    ctx.known_nodes[neighbor_id].lowlink,
+                    ctx.known_nodes[&neighbor_id].lowlink,
                 );
             }
             Some(neighbor_node) => {
-                if ctx.known_nodes[neighbor_id].on_stack {
+                if ctx.known_nodes[&neighbor_id].on_stack {
                     // This is a back edge, meaning neighbor is in current_node's SCC.
                     current_wrapper_node.lowlink =
-                        std::cmp::min(current_wrapper_node.lowlink, neighbor_node.index);
+                        core::cmp::min(current_wrapper_node.lowlink, neighbor_node.index);
                 } else {
                     // If neighbor is known but not on stack, it's in a concluded dropped SCC.
                     // Ignore it.

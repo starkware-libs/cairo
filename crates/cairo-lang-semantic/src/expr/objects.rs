@@ -1,19 +1,31 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{ConstantId, MemberId, VarId};
+use cairo_lang_defs::ids::{MemberId, NamedLanguageElementId, StatementUseId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
-use id_arena::Id;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use id_arena::{Arena, Id};
 use num_bigint::BigInt;
 
 use super::fmt::ExprFormatter;
 use super::pattern::Pattern;
-use crate::items::imp::ImplId;
-use crate::{semantic, ConcreteStructId, FunctionId, TypeId};
+use crate::db::SemanticGroup;
+use crate::items::constant::ConstValueId;
+use crate::{ConcreteStructId, FunctionId, TypeId, semantic};
 
+pub type PatternId = Id<Pattern>;
 pub type ExprId = Id<Expr>;
 pub type StatementId = Id<Statement>;
 
+impl DebugWithDb<ExprFormatter<'_>> for PatternId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        expr_formatter: &ExprFormatter<'_>,
+    ) -> std::fmt::Result {
+        expr_formatter.db.pattern_semantic(expr_formatter.function_id, *self).fmt(f, expr_formatter)
+    }
+}
 impl DebugWithDb<ExprFormatter<'_>> for ExprId {
     fn fmt(
         &self,
@@ -44,6 +56,7 @@ pub enum Statement {
     Continue(StatementContinue),
     Return(StatementReturn),
     Break(StatementBreak),
+    Item(StatementItem),
 }
 impl Statement {
     pub fn stable_ptr(&self) -> ast::StatementPtr {
@@ -53,7 +66,14 @@ impl Statement {
             Statement::Continue(stmt) => stmt.stable_ptr,
             Statement::Return(stmt) => stmt.stable_ptr,
             Statement::Break(stmt) => stmt.stable_ptr,
+            Statement::Item(stmt) => stmt.stable_ptr,
         }
+    }
+}
+
+impl From<&Statement> for SyntaxStablePtrId {
+    fn from(statement: &Statement) -> Self {
+        statement.stable_ptr().into()
     }
 }
 
@@ -69,7 +89,7 @@ pub struct StatementExpr {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct StatementLet {
-    pub pattern: Pattern,
+    pub pattern: PatternId,
     pub expr: ExprId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -102,6 +122,14 @@ pub struct StatementBreak {
     pub stable_ptr: ast::StatementPtr,
 }
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct StatementItem {
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::StatementPtr,
+}
+
 // Expressions.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
@@ -113,16 +141,21 @@ pub enum Expr {
     LogicalOperator(ExprLogicalOperator),
     Block(ExprBlock),
     Loop(ExprLoop),
+    While(ExprWhile),
+    For(ExprFor),
     FunctionCall(ExprFunctionCall),
     Match(ExprMatch),
     If(ExprIf),
     Var(ExprVar),
     Literal(ExprLiteral),
+    StringLiteral(ExprStringLiteral),
     MemberAccess(ExprMemberAccess),
     StructCtor(ExprStructCtor),
     EnumVariantCtor(ExprEnumVariantCtor),
     PropagateError(ExprPropagateError),
     Constant(ExprConstant),
+    FixedSizeArray(ExprFixedSizeArray),
+    ExprClosure(ExprClosure),
     Missing(ExprMissing),
 }
 impl Expr {
@@ -135,17 +168,22 @@ impl Expr {
             Expr::LogicalOperator(expr) => expr.ty,
             Expr::Block(expr) => expr.ty,
             Expr::Loop(expr) => expr.ty,
+            Expr::While(expr) => expr.ty,
+            Expr::For(expr) => expr.ty,
             Expr::FunctionCall(expr) => expr.ty,
             Expr::Match(expr) => expr.ty,
             Expr::If(expr) => expr.ty,
             Expr::Var(expr) => expr.ty,
             Expr::Literal(expr) => expr.ty,
+            Expr::StringLiteral(expr) => expr.ty,
             Expr::MemberAccess(expr) => expr.ty,
             Expr::StructCtor(expr) => expr.ty,
             Expr::EnumVariantCtor(expr) => expr.ty,
             Expr::PropagateError(expr) => expr.ok_variant.ty,
             Expr::Constant(expr) => expr.ty,
             Expr::Missing(expr) => expr.ty,
+            Expr::FixedSizeArray(expr) => expr.ty,
+            Expr::ExprClosure(expr) => expr.ty,
         }
     }
     pub fn stable_ptr(&self) -> ast::ExprPtr {
@@ -157,17 +195,22 @@ impl Expr {
             Expr::LogicalOperator(expr) => expr.stable_ptr,
             Expr::Block(expr) => expr.stable_ptr,
             Expr::Loop(expr) => expr.stable_ptr,
+            Expr::While(expr) => expr.stable_ptr,
+            Expr::For(expr) => expr.stable_ptr,
             Expr::FunctionCall(expr) => expr.stable_ptr,
             Expr::Match(expr) => expr.stable_ptr,
             Expr::If(expr) => expr.stable_ptr,
             Expr::Var(expr) => expr.stable_ptr,
             Expr::Literal(expr) => expr.stable_ptr,
+            Expr::StringLiteral(expr) => expr.stable_ptr,
             Expr::MemberAccess(expr) => expr.stable_ptr,
             Expr::StructCtor(expr) => expr.stable_ptr,
             Expr::EnumVariantCtor(expr) => expr.stable_ptr,
             Expr::PropagateError(expr) => expr.stable_ptr,
             Expr::Constant(expr) => expr.stable_ptr,
             Expr::Missing(expr) => expr.stable_ptr,
+            Expr::FixedSizeArray(expr) => expr.stable_ptr,
+            Expr::ExprClosure(expr) => expr.stable_ptr,
         }
     }
 
@@ -180,6 +223,12 @@ impl Expr {
     }
 }
 
+impl From<&Expr> for SyntaxStablePtrId {
+    fn from(expr: &Expr) -> Self {
+        expr.stable_ptr().into()
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprTuple {
@@ -188,6 +237,25 @@ pub struct ExprTuple {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprFixedSizeArray {
+    pub items: FixedSizeArrayItems,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+/// Either a vector of items, if all was written in the code i.e. ([10, 11, 12] or [10, 10, 10]), or
+/// a value and a size, if the array was written as ([10; 3]).
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub enum FixedSizeArrayItems {
+    Items(Vec<ExprId>),
+    ValueAndSize(ExprId, ConstValueId),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
@@ -228,6 +296,32 @@ pub struct ExprBlock {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprLoop {
+    pub body: ExprId,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprWhile {
+    pub condition: Condition,
+    pub body: ExprId,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprFor {
+    pub into_iter: FunctionId,
+    pub into_iter_member_path: ExprVarMemberPath,
+    pub next_function_id: FunctionId,
+    pub expr_id: ExprId,
+    pub pattern: PatternId,
     pub body: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
@@ -279,6 +373,16 @@ impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVarMemberPath {
         }
     }
 }
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprClosure {
+    pub body: ExprId,
+    pub params: Vec<semantic::Parameter>,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+    pub ty: TypeId,
+}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
@@ -292,6 +396,10 @@ pub enum ExprFunctionCallArg {
 pub struct ExprFunctionCall {
     pub function: FunctionId,
     pub args: Vec<ExprFunctionCallArg>,
+    /// The `__coupon__` argument of the function call, if used. Attaching a coupon to a function
+    /// means that the coupon is used instead of reducing the cost of the called function from the
+    /// gas wallet. In particular, the cost of such a call is constant.
+    pub coupon_arg: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -312,7 +420,7 @@ pub struct ExprMatch {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprIf {
-    pub condition: ExprId,
+    pub condition: Condition,
     pub if_block: ExprId,
     pub else_block: Option<ExprId>,
     pub ty: semantic::TypeId,
@@ -323,8 +431,15 @@ pub struct ExprIf {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
+pub enum Condition {
+    BoolExpr(ExprId),
+    Let(ExprId, Vec<PatternId>),
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct MatchArm {
-    pub pattern: Pattern,
+    pub patterns: Vec<PatternId>,
     pub expression: ExprId,
 }
 
@@ -373,13 +488,23 @@ impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVar {
     }
 }
 
+// TODO(yuval): rename to ExprNumericLiteral.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprLiteral {
     #[dont_rewrite]
     pub value: BigInt,
+    pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub numeric_impl: ImplId,
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprStringLiteral {
+    #[dont_rewrite]
+    pub value: String,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -408,6 +533,9 @@ pub struct ExprMemberAccess {
 pub struct ExprStructCtor {
     pub concrete_struct_id: ConcreteStructId,
     pub members: Vec<(MemberId, ExprId)>,
+    /// The base struct to copy missing members from if provided.
+    /// For example `let x = MyStruct { a: 1, ..base }`.
+    pub base_struct: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -440,7 +568,17 @@ pub struct ExprPropagateError {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprConstant {
-    pub constant_id: ConstantId,
+    pub const_value_id: ConstValueId,
+    pub ty: semantic::TypeId,
+    #[dont_rewrite]
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprUse {
+    pub const_value_id: StatementUseId,
     pub ty: semantic::TypeId,
     #[dont_rewrite]
     #[hide_field_debug_with_db]
@@ -457,4 +595,13 @@ pub struct ExprMissing {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub diag_added: DiagnosticAdded,
+}
+
+/// Arena for semantic expressions, patterns, and statements.
+#[derive(Clone, Debug, Default, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct Arenas {
+    pub exprs: Arena<semantic::Expr>,
+    pub patterns: Arena<semantic::Pattern>,
+    pub statements: Arena<semantic::Statement>,
 }

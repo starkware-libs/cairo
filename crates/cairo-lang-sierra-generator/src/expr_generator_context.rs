@@ -1,13 +1,14 @@
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
-use cairo_lang_semantic::TypeId;
-use cairo_lang_sierra::extensions::uninitialized::UninitializedType;
 use cairo_lang_sierra::extensions::NamedType;
+use cairo_lang_sierra::extensions::uninitialized::UninitializedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use lowering::ids::ConcreteFunctionWithBodyId;
-use lowering::{BlockId, FlatLowered, VariableId};
+use lowering::{BlockId, FlatLowered};
 
 use crate::ap_tracking::ApTrackingConfiguration;
 use crate::db::SierraGenGroup;
@@ -31,6 +32,11 @@ pub struct ExprGeneratorContext<'a> {
     ap_tracking_enabled: bool,
     /// Information about where AP tracking should be enabled and disabled.
     ap_tracking_configuration: ApTrackingConfiguration,
+
+    /// The current location for adding statements.
+    pub curr_cairo_location: Vec<StableLocation>,
+    /// The accumulated statements for the expression.
+    statements: Vec<pre_sierra::StatementWithLocation>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -52,6 +58,8 @@ impl<'a> ExprGeneratorContext<'a> {
             block_labels: OrderedHashMap::default(),
             ap_tracking_enabled: true,
             ap_tracking_configuration,
+            statements: vec![],
+            curr_cairo_location: vec![],
         }
     }
 
@@ -121,10 +129,14 @@ impl<'a> ExprGeneratorContext<'a> {
             SierraGenVar::UninitializedLocal(lowering_var) => {
                 let inner_type =
                     self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?;
-                self.db.intern_concrete_type(ConcreteTypeLongId {
-                    generic_id: UninitializedType::ID,
-                    generic_args: vec![GenericArg::Type(inner_type)],
-                })
+                crate::db::SierraGeneratorTypeLongId::Regular(
+                    ConcreteTypeLongId {
+                        generic_id: UninitializedType::ID,
+                        generic_args: vec![GenericArg::Type(inner_type)],
+                    }
+                    .into(),
+                )
+                .intern(self.db)
             }
         })
     }
@@ -145,11 +157,6 @@ impl<'a> ExprGeneratorContext<'a> {
     /// it will not be used after the current statement).
     pub fn is_last_use(&self, use_location: &UseLocation) -> bool {
         self.lifetime.last_use.contains(use_location)
-    }
-
-    /// Returns the type of the variable given by `var_id`.
-    pub fn get_var_type(&self, var_id: VariableId) -> TypeId {
-        self.lowered.variables[var_id].ty
     }
 
     /// Gets the current ap tracking state.
@@ -173,6 +180,26 @@ impl<'a> ExprGeneratorContext<'a> {
         self.ap_tracking_enabled
             && self.ap_tracking_configuration.disable_ap_tracking.contains(block_id)
     }
+
+    /// Adds a statement for the expression.
+    pub fn push_statement(&mut self, statement: pre_sierra::Statement) {
+        self.statements.push(pre_sierra::StatementWithLocation {
+            statement,
+            location: self.curr_cairo_location.clone(),
+        });
+    }
+
+    /// Sets up a location for the next pushed statements.
+    pub fn maybe_set_cairo_location(&mut self, location: Vec<StableLocation>) {
+        if !location.is_empty() {
+            self.curr_cairo_location = location;
+        }
+    }
+
+    /// Returns the statements generated for the expression.
+    pub fn statements(self) -> Vec<pre_sierra::StatementWithLocation> {
+        self.statements
+    }
 }
 
 /// A variant of ExprGeneratorContext::alloc_label_id that allows the caller to avoid
@@ -182,8 +209,5 @@ pub fn alloc_label_id(
     function_id: ConcreteFunctionWithBodyId,
     label_id_allocator: &mut IdAllocator,
 ) -> pre_sierra::LabelId {
-    db.intern_label_id(pre_sierra::LabelLongId {
-        parent: function_id,
-        id: label_id_allocator.allocate(),
-    })
+    pre_sierra::LabelLongId { parent: function_id, id: label_id_allocator.allocate() }.intern(db)
 }

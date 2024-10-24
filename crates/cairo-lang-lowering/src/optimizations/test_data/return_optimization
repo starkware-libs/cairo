@@ -1,0 +1,809 @@
+//! > Test return optimizer simple scenario.
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(ref a: (), v: Option<u16>) -> Option<u16> {
+    match v {
+        Option::Some(x) => { return Option::Some(x); },
+        Option::None => { return Option::None; },
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: (), v1: core::option::Option::<core::integer::u16>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
+End:
+  Return(v0, v4)
+
+blk2:
+Statements:
+  (v5: ()) <- struct_construct()
+  (v6: core::option::Option::<core::integer::u16>) <- Option::None(v5)
+End:
+  Return(v0, v6)
+
+//! > after
+Parameters: v0: (), v1: core::option::Option::<core::integer::u16>
+blk0 (root):
+Statements:
+End:
+  Return(v0, v1)
+
+blk1:
+Statements:
+  (v4: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
+End:
+  Return(v0, v4)
+
+blk2:
+Statements:
+  (v5: ()) <- struct_construct()
+  (v6: core::option::Option::<core::integer::u16>) <- Option::None(v5)
+End:
+  Return(v0, v6)
+
+//! > ==========================================================================
+
+//! > Test that the optimization is skipped if a ref argument is modified.
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(ref a: (), v: Option<u16>) -> Option<u16> {
+    match v {
+        Option::Some(x) => {
+            a = ();
+            return Option::Some(x);
+        },
+        Option::None => { return Option::None; },
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: (), v1: core::option::Option::<core::integer::u16>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
+End:
+  Return(v4, v5)
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: core::option::Option::<core::integer::u16>) <- Option::None(v6)
+End:
+  Return(v0, v7)
+
+//! > after
+Parameters: v0: (), v1: core::option::Option::<core::integer::u16>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
+End:
+  Return(v4, v5)
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: core::option::Option::<core::integer::u16>) <- Option::None(v6)
+End:
+  Return(v0, v7)
+
+//! > ==========================================================================
+
+//! > Test optimization with remappings.
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(v: Option<u16>) -> Option<u16> {
+    match v {
+        Option::Some(x) => Option::Some(x),
+        Option::None => Option::None,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::option::Option::<core::integer::u16>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk2:
+Statements:
+  (v5: ()) <- struct_construct()
+  (v6: core::option::Option::<core::integer::u16>) <- Option::None(v5)
+End:
+  Goto(blk3, {v6 -> v4})
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::option::Option::<core::integer::u16>
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+blk1:
+Statements:
+  (v3: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
+End:
+  Return(v3)
+
+blk2:
+Statements:
+  (v5: ()) <- struct_construct()
+  (v6: core::option::Option::<core::integer::u16>) <- Option::None(v5)
+End:
+  Return(v6)
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > Test with Destruct/Construct (Typical in the panic case)
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(v: Option<(u16,)>) -> Option<(u16,)> {
+    match v {
+        Option::Some(tuple) => {
+            let (x,) = tuple;
+            return Option::Some((x,));
+        },
+        Option::None => { return Option::None; },
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::option::Option::<(core::integer::u16,)>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::integer::u16) <- struct_destructure(v1)
+  (v4: (core::integer::u16,)) <- struct_construct(v3)
+  (v5: core::option::Option::<(core::integer::u16,)>) <- Option::Some(v4)
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: core::option::Option::<(core::integer::u16,)>) <- Option::None(v6)
+End:
+  Return(v7)
+
+//! > after
+Parameters: v0: core::option::Option::<(core::integer::u16,)>
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+blk1:
+Statements:
+  (v3: core::integer::u16) <- struct_destructure(v1)
+  (v4: (core::integer::u16,)) <- struct_construct(v3)
+  (v5: core::option::Option::<(core::integer::u16,)>) <- Option::Some(v4)
+End:
+  Return(v5)
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: core::option::Option::<(core::integer::u16,)>) <- Option::None(v6)
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Test optimization with modified ref argument.
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(ref a: MyStruct, v: Option<u16>) -> Option<u16> {
+    match v {
+        Option::Some(x) => {
+            a = MyStruct {};
+            Option::Some(x)
+        },
+        Option::None => Option::None,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct MyStruct {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: test::MyStruct, v1: core::option::Option::<core::integer::u16>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: test::MyStruct) <- struct_construct()
+  (v5: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
+End:
+  Goto(blk3, {v4 -> v6, v5 -> v7})
+
+blk2:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<core::integer::u16>) <- Option::None(v8)
+End:
+  Goto(blk3, {v0 -> v6, v9 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v6, v7)
+
+//! > after
+Parameters: v0: test::MyStruct, v1: core::option::Option::<core::integer::u16>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: test::MyStruct) <- struct_construct()
+  (v5: core::option::Option::<core::integer::u16>) <- Option::Some(v2)
+End:
+  Return(v4, v5)
+
+blk2:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<core::integer::u16>) <- Option::None(v8)
+End:
+  Return(v0, v9)
+
+blk3:
+Statements:
+End:
+  Return(v6, v7)
+
+//! > ==========================================================================
+
+//! > Test replacement of unitlike types in struct construct/deconstruct.
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(v: Option<(u16, ())>) -> Option<(u16, ())> {
+    match v {
+        Option::Some(v) => {
+            let (x, _) = v;
+            Option::Some((x, ()))
+        },
+        Option::None => { Option::None },
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::option::Option::<(core::integer::u16, ())>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::integer::u16, v4: ()) <- struct_destructure(v1)
+  (v5: ()) <- struct_construct()
+  (v6: (core::integer::u16, ())) <- struct_construct(v3, v5)
+  (v7: core::option::Option::<(core::integer::u16, ())>) <- Option::Some(v6)
+End:
+  Goto(blk3, {v7 -> v8})
+
+blk2:
+Statements:
+  (v9: ()) <- struct_construct()
+  (v10: core::option::Option::<(core::integer::u16, ())>) <- Option::None(v9)
+End:
+  Goto(blk3, {v10 -> v8})
+
+blk3:
+Statements:
+End:
+  Return(v8)
+
+//! > after
+Parameters: v0: core::option::Option::<(core::integer::u16, ())>
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+blk1:
+Statements:
+  (v3: core::integer::u16, v4: ()) <- struct_destructure(v1)
+  (v5: ()) <- struct_construct()
+  (v6: (core::integer::u16, ())) <- struct_construct(v3, v5)
+  (v7: core::option::Option::<(core::integer::u16, ())>) <- Option::Some(v6)
+End:
+  Return(v7)
+
+blk2:
+Statements:
+  (v9: ()) <- struct_construct()
+  (v10: core::option::Option::<(core::integer::u16, ())>) <- Option::None(v9)
+End:
+  Return(v10)
+
+blk3:
+Statements:
+End:
+  Return(v8)
+
+//! > ==========================================================================
+
+//! > Returning the arm introduced variable prevents the optimization.
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(ref a: u16, v: MyEnum) -> MyEnum {
+    match v {
+        MyEnum::MyVariant(val) => {
+            a = val;
+            return MyEnum::MyVariant(val);
+        }
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+enum MyEnum {
+    MyVariant: u16,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u16, v1: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    MyEnum::MyVariant(v2) => blk1,
+  })
+
+blk1:
+Statements:
+  (v3: test::MyEnum) <- MyEnum::MyVariant(v2)
+End:
+  Return(v2, v3)
+
+//! > after
+Parameters: v0: core::integer::u16, v1: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    MyEnum::MyVariant(v2) => blk1,
+  })
+
+blk1:
+Statements:
+  (v3: test::MyEnum) <- MyEnum::MyVariant(v2)
+End:
+  Return(v2, v3)
+
+//! > ==========================================================================
+
+//! > Test match with consumed non-droppable enum (optimization applies)
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(ref a: felt252, b: MyEnum) -> MyEnum {
+    match b {
+        MyEnum::A(x) => MyEnum::A(x),
+        MyEnum::B(x) => MyEnum::B(x),
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: test::MyEnum) <- MyEnum::A(v2)
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk2:
+Statements:
+  (v6: test::MyEnum) <- MyEnum::B(v3)
+End:
+  Goto(blk3, {v6 -> v5})
+
+blk3:
+Statements:
+End:
+  Return(v0, v5)
+
+//! > after
+Parameters: v0: core::felt252, v1: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Return(v0, v1)
+
+blk1:
+Statements:
+  (v4: test::MyEnum) <- MyEnum::A(v2)
+End:
+  Return(v0, v4)
+
+blk2:
+Statements:
+  (v6: test::MyEnum) <- MyEnum::B(v3)
+End:
+  Return(v0, v6)
+
+blk3:
+Statements:
+End:
+  Return(v0, v5)
+
+//! > ==========================================================================
+
+//! > Test match with non consumed non-droppable enum (optimization does not apply).
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(ref a: felt252, b: MyEnum) -> felt252 {
+    // TODO: find a better solution for the following workaround.
+    // Need to produce the return value before the match to allow the optimization.
+    let res = 3;
+    match b {
+        MyEnum::A(x) => x,
+        MyEnum::B(x) => x,
+    };
+    res
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: test::MyEnum
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 3
+End:
+  Match(match_enum(v1) {
+    MyEnum::A(v3) => blk1,
+    MyEnum::B(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Return(v0, v2)
+
+//! > after
+Parameters: v0: core::felt252, v1: test::MyEnum
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 3
+End:
+  Match(match_enum(v1) {
+    MyEnum::A(v3) => blk1,
+    MyEnum::B(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v0, v2)
+
+blk2:
+Statements:
+End:
+  Return(v0, v2)
+
+blk3:
+Statements:
+End:
+  Return(v0, v2)
+
+//! > ==========================================================================
+
+//! > Deconstruct + construct with different type (optimization does not apply).
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(a: felt252, b: (felt252,)) -> FeltWrap {
+    // create goto, since the return optimization works on block boundaries.
+    let (value,) = match a {
+        0 => b,
+        _ => b,
+    };
+
+    FeltWrap { value }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct FeltWrap {
+    value: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: (core::felt252,)
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v3: core::felt252) <- struct_destructure(v1)
+  (v4: test::FeltWrap) <- struct_construct(v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::felt252, v1: (core::felt252,)
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v3: core::felt252) <- struct_destructure(v1)
+  (v4: test::FeltWrap) <- struct_construct(v3)
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > return inside a block
+
+//! > test_runner_name
+test_return_optimizer
+
+//! > function
+fn foo(a: (felt252,)) -> (felt252,) {
+    let (v,) = a;
+    (v,)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: (core::felt252,)
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- struct_destructure(v0)
+  (v2: (core::felt252,)) <- struct_construct(v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: (core::felt252,)
+blk0 (root):
+Statements:
+End:
+  Return(v0)

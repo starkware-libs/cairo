@@ -1,8 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_sierra::program;
-use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::{LookupIntern, extract_matches};
 
-use crate::db::SierraGenGroup;
+use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra::{self, PushValue};
 
 pub trait SierraIdReplacer {
@@ -78,6 +78,7 @@ pub trait SierraIdReplacer {
 
 /// Replaces `cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId}` with a dummy
 /// ids whose debug string is the string representing the expanded information about the id.
+///
 /// For Libfuncs and Types - that would be recursively opening their generic arguments, for
 /// functions - that would be getting their original name. For example, while the original debug
 /// string may be `[6]`, the resulting debug string may be:
@@ -92,7 +93,7 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         id: &cairo_lang_sierra::ids::ConcreteLibfuncId,
     ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-        let mut long_id = self.db.lookup_intern_concrete_lib_func(id.clone());
+        let mut long_id = id.lookup_intern(self.db);
         self.replace_generic_args(&mut long_id.generic_args);
         cairo_lang_sierra::ids::ConcreteLibfuncId {
             id: id.id,
@@ -104,25 +105,31 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         id: &cairo_lang_sierra::ids::ConcreteTypeId,
     ) -> cairo_lang_sierra::ids::ConcreteTypeId {
-        let mut long_id = self.db.lookup_intern_concrete_type(id.clone());
-        self.replace_generic_args(&mut long_id.generic_args);
-        if long_id.generic_id == "Enum".into() || long_id.generic_id == "Struct".into() {
-            long_id.generic_id =
-                extract_matches!(&long_id.generic_args[0], program::GenericArg::UserType)
-                    .to_string()
-                    .into();
-            if long_id.generic_id == "Tuple".into() {
-                long_id.generic_args = long_id.generic_args.into_iter().skip(1).collect();
-                if long_id.generic_args.is_empty() {
-                    long_id.generic_id = "Unit".into();
+        match id.lookup_intern(self.db) {
+            SierraGeneratorTypeLongId::Phantom(ty)
+            | SierraGeneratorTypeLongId::CycleBreaker(ty) => ty.format(self.db.upcast()).into(),
+            SierraGeneratorTypeLongId::Regular(long_id) => {
+                let mut long_id = long_id.as_ref().clone();
+                self.replace_generic_args(&mut long_id.generic_args);
+                if long_id.generic_id == "Enum".into() || long_id.generic_id == "Struct".into() {
+                    long_id.generic_id =
+                        extract_matches!(&long_id.generic_args[0], program::GenericArg::UserType)
+                            .to_string()
+                            .into();
+                    if long_id.generic_id == "Tuple".into() {
+                        long_id.generic_args = long_id.generic_args.into_iter().skip(1).collect();
+                        if long_id.generic_args.is_empty() {
+                            long_id.generic_id = "Unit".into();
+                        }
+                    } else {
+                        long_id.generic_args.clear();
+                    }
                 }
-            } else {
-                long_id.generic_args.clear();
+                cairo_lang_sierra::ids::ConcreteTypeId {
+                    id: id.id,
+                    debug_name: Some(long_id.to_string().into()),
+                }
             }
-        }
-        cairo_lang_sierra::ids::ConcreteTypeId {
-            id: id.id,
-            debug_name: Some(long_id.to_string().into()),
         }
     }
 
@@ -131,43 +138,64 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         sierra_id: &cairo_lang_sierra::ids::FunctionId,
     ) -> cairo_lang_sierra::ids::FunctionId {
-        let semantic_id = self.db.lookup_intern_sierra_function(sierra_id.clone());
+        let semantic_id = sierra_id.lookup_intern(self.db);
         cairo_lang_sierra::ids::FunctionId {
             id: sierra_id.id,
             debug_name: Some(
-                format!("{:?}", semantic_id.lookup(self.db.upcast()).debug(self.db.upcast()))
-                    .into(),
+                format!("{:?}", semantic_id.lookup_intern(self.db).debug(self.db.upcast())).into(),
             ),
+        }
+    }
+}
+
+impl DebugReplacer<'_> {
+    /// Enriches the function entries with their full function name. Required for tests and cairo
+    /// running.
+    pub fn enrich_function_names(&self, program: &mut cairo_lang_sierra::program::Program) {
+        for function in &mut program.funcs {
+            function.id = self.replace_function_id(&function.id);
         }
     }
 }
 
 pub fn replace_sierra_ids(
     db: &dyn SierraGenGroup,
-    statement: &pre_sierra::Statement,
-) -> pre_sierra::Statement {
+    statement: &pre_sierra::StatementWithLocation,
+) -> pre_sierra::StatementWithLocation {
     let replacer = DebugReplacer { db };
-    match statement {
+    match &statement.statement {
         pre_sierra::Statement::Sierra(cairo_lang_sierra::program::GenStatement::Invocation(p)) => {
-            pre_sierra::Statement::Sierra(cairo_lang_sierra::program::GenStatement::Invocation(
-                cairo_lang_sierra::program::GenInvocation {
-                    libfunc_id: replacer.replace_libfunc_id(&p.libfunc_id),
-                    ..p.clone()
-                },
-            ))
+            pre_sierra::StatementWithLocation {
+                statement: pre_sierra::Statement::Sierra(
+                    cairo_lang_sierra::program::GenStatement::Invocation(
+                        cairo_lang_sierra::program::GenInvocation {
+                            libfunc_id: replacer.replace_libfunc_id(&p.libfunc_id),
+                            ..p.clone()
+                        },
+                    ),
+                ),
+                ..statement.clone()
+            }
         }
-        pre_sierra::Statement::PushValues(values) => pre_sierra::Statement::PushValues(
-            values
-                .iter()
-                .map(|value| PushValue { ty: replacer.replace_type_id(&value.ty), ..value.clone() })
-                .collect(),
-        ),
+        pre_sierra::Statement::PushValues(values) => pre_sierra::StatementWithLocation {
+            statement: pre_sierra::Statement::PushValues(
+                values
+                    .iter()
+                    .map(|value| PushValue {
+                        ty: replacer.replace_type_id(&value.ty),
+                        ..value.clone()
+                    })
+                    .collect(),
+            ),
+            ..statement.clone()
+        },
         _ => statement.clone(),
     }
 }
 
 /// Replaces `cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId}` with a dummy
 /// ids whose debug string is the string representing the expanded information about the id.
+///
 /// For Libfuncs and Types - that would be recursively opening their generic arguments, for
 /// functions - that would be getting their original name. For example, while the original debug
 /// string may be `[6]`, the resulting debug string may be:

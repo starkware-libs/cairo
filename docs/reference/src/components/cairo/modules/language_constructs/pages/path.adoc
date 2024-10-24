@@ -7,10 +7,11 @@ If a path has multiple segments, it always refers to an item.
 
 Two examples of paths consisting of only identifier segments:
 
-```rust
+[source,cairo]
+----
 x;
 x::y::z;
-```
+----
 
 There are two kinds of paths: generic and concrete.
 
@@ -22,7 +23,7 @@ Generic paths are used at:
 * Enum variant pattern.
 
 == Concrete paths
-Concrete paths are composed of concrete segments, which are identifers that may be followed by a
+Concrete paths are composed of concrete segments, which are identifiers that may be followed by a
 xref:generics.adoc[generic] argument clause like this:
 
 ```
@@ -36,7 +37,8 @@ When the generic arguments clause is not provided, or less generic arguments are
 the item expects, the compiler xref:inference.adoc[infers] the missing generic arguments.
 Examples:
 
-```rust
+[source,cairo]
+----
 fn foo<A, B>(a: A, b: B) { ... }
 
 fn main() {
@@ -45,27 +47,31 @@ fn main() {
     foo::<bool>(false, 3_u2);       // OK, B is inferred to be u32
     foo(false, 3_u2);               // OK, A, B are inferred as bool and u32 respectively
 }
-```
+----
 
 Concrete paths are used at:
 
 * xref:expressions.adoc[Expressions]
-```rust
++
+[source,cairo]
+----
 foo::bar::<bool>() // Function call expression
 Option::<bool>::Some(true) // Enum variant expression
-```
+----
 
 * Type expressions
 - `let x: Option<bool> = None; // Let statement type clause`
 - `Option::<Option::<bool>>    // Generic type argument`
 
 * Trait expressions
-```rust
++
+[source,cairo]
+----
 impl MyImpl of MyTrait<usize> { // trait expression after `of` keyword
     ...
 }
 fn foo<impl Imp: MyTrait<usize>>() { ... } // trait expression after `:` in an impl generic argument
-```
+----
 
 == Path resolution
 The path is resolved by looking up the first segment identifier in the current local scope. This

@@ -10,6 +10,7 @@ fn foo(a: Array::<felt252>) -> Array::<felt252> {
     bar(@a);
     a
 }
+#[inline(never)]
 fn bar(a: @Array::<felt252>) {
 }
 
@@ -27,33 +28,27 @@ test::foo: OrderedHashMap({Const: 600})
 test::bar: OrderedHashMap({})
 
 //! > sierra_code
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type Unit = Struct<ut@Tuple>;
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc snapshot_take<Array<felt252>> = snapshot_take<Array<felt252>>;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
 libfunc function_call<user@test::bar> = function_call<user@test::bar>;
-libfunc drop<Unit> = drop<Unit>;
 libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
 libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 
-snapshot_take<Array<felt252>>([0]) -> ([1], [2]);
-store_temp<Snapshot<Array<felt252>>>([2]) -> ([4]);
-function_call<user@test::bar>([4]) -> ([3]);
-drop<Unit>([3]) -> ();
-store_temp<Array<felt252>>([1]) -> ([5]);
-return([5]);
-drop<Snapshot<Array<felt252>>>([0]) -> ();
-struct_construct<Unit>() -> ([1]);
-store_temp<Unit>([1]) -> ([2]);
-return([2]);
+snapshot_take<Array<felt252>>([0]) -> ([1], [2]); // 0
+store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]); // 1
+function_call<user@test::bar>([2]) -> (); // 2
+store_temp<Array<felt252>>([1]) -> ([1]); // 3
+return([1]); // 4
+drop<Snapshot<Array<felt252>>>([0]) -> (); // 5
+return(); // 6
 
 test::foo@0([0]: Array<felt252>) -> (Array<felt252>);
-test::bar@6([0]: Snapshot<Array<felt252>>) -> (Unit);
+test::bar@5([0]: Snapshot<Array<felt252>>) -> ();
 
 //! > ==========================================================================
 
@@ -75,6 +70,7 @@ fn foo(orig: @A) -> @A{
     bar(a, b);
     orig
 }
+#[inline(never)]
 fn bar(a: @Array::<felt252>, b: @felt252) {
 }
 
@@ -98,12 +94,12 @@ test::foo: OrderedHashMap({Const: 1300})
 test::bar: OrderedHashMap({})
 
 //! > sierra_code
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type test::A = Struct<ut@test::A, Array<felt252>, felt252>;
-type Snapshot<test::A> = Snapshot<test::A>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type Unit = Struct<ut@Tuple>;
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::A = Struct<ut@test::A, Array<felt252>, felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<test::A> = Snapshot<test::A> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc dup<Snapshot<test::A>> = dup<Snapshot<test::A>>;
 libfunc struct_snapshot_deconstruct<test::A> = struct_snapshot_deconstruct<test::A>;
@@ -112,37 +108,30 @@ libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@test::bar> = function_call<user@test::bar>;
-libfunc drop<Unit> = drop<Unit>;
 libfunc store_temp<Snapshot<test::A>> = store_temp<Snapshot<test::A>>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 
-dup<Snapshot<test::A>>([0]) -> ([0], [1]);
-struct_snapshot_deconstruct<test::A>([1]) -> ([2], [3]);
-drop<felt252>([3]) -> ();
-dup<Snapshot<test::A>>([0]) -> ([0], [4]);
-struct_snapshot_deconstruct<test::A>([4]) -> ([5], [6]);
-drop<Snapshot<Array<felt252>>>([5]) -> ();
-store_temp<Snapshot<Array<felt252>>>([2]) -> ([8]);
-store_temp<felt252>([6]) -> ([9]);
-function_call<user@test::bar>([8], [9]) -> ([7]);
-drop<Unit>([7]) -> ();
-dup<Snapshot<test::A>>([0]) -> ([0], [10]);
-struct_snapshot_deconstruct<test::A>([10]) -> ([11], [12]);
-store_temp<Snapshot<Array<felt252>>>([11]) -> ([14]);
-store_temp<felt252>([12]) -> ([15]);
-function_call<user@test::bar>([14], [15]) -> ([13]);
-drop<Unit>([13]) -> ();
-store_temp<Snapshot<test::A>>([0]) -> ([16]);
-return([16]);
-drop<Snapshot<Array<felt252>>>([0]) -> ();
-drop<felt252>([1]) -> ();
-struct_construct<Unit>() -> ([2]);
-store_temp<Unit>([2]) -> ([3]);
-return([3]);
+dup<Snapshot<test::A>>([0]) -> ([0], [1]); // 0
+struct_snapshot_deconstruct<test::A>([1]) -> ([2], [3]); // 1
+drop<felt252>([3]) -> (); // 2
+dup<Snapshot<test::A>>([0]) -> ([0], [4]); // 3
+struct_snapshot_deconstruct<test::A>([4]) -> ([5], [6]); // 4
+drop<Snapshot<Array<felt252>>>([5]) -> (); // 5
+store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]); // 6
+store_temp<felt252>([6]) -> ([6]); // 7
+function_call<user@test::bar>([2], [6]) -> (); // 8
+dup<Snapshot<test::A>>([0]) -> ([0], [7]); // 9
+struct_snapshot_deconstruct<test::A>([7]) -> ([8], [9]); // 10
+store_temp<Snapshot<Array<felt252>>>([8]) -> ([8]); // 11
+store_temp<felt252>([9]) -> ([9]); // 12
+function_call<user@test::bar>([8], [9]) -> (); // 13
+store_temp<Snapshot<test::A>>([0]) -> ([0]); // 14
+return([0]); // 15
+drop<Snapshot<Array<felt252>>>([0]) -> (); // 16
+drop<felt252>([1]) -> (); // 17
+return(); // 18
 
 test::foo@0([0]: Snapshot<test::A>) -> (Snapshot<test::A>);
-test::bar@18([0]: Snapshot<Array<felt252>>, [1]: felt252) -> (Unit);
+test::bar@16([0]: Snapshot<Array<felt252>>, [1]: felt252) -> ();
 
 //! > ==========================================================================
 
@@ -158,8 +147,10 @@ enum A {
     A: Array::<felt252>,
     B: felt252,
 }
+#[inline(never)]
 fn bar0(a: @Array::<felt252>) {
 }
+#[inline(never)]
 fn bar1(b: @felt252) {
 }
 fn foo(orig: @A) -> @A {
@@ -173,14 +164,17 @@ fn foo(orig: @A) -> @A {
 //! > casm
 ret;
 ret;
-jmp rel 8 if [fp + -5] != 0;
+jmp rel 10 if [fp + -5] != 0;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel -6;
-jmp rel 7;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
 ap += 1;
 [ap + 0] = [fp + -3], ap++;
-call rel -12;
+call rel -14;
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -4], ap++;
 [ap + 0] = [fp + -3], ap++;
@@ -189,53 +183,44 @@ ret;
 //! > function_costs
 test::bar0: OrderedHashMap({})
 test::bar1: OrderedHashMap({})
-test::foo: OrderedHashMap({Const: 900})
+test::foo: OrderedHashMap({Const: 810})
 
 //! > sierra_code
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type Unit = Struct<ut@Tuple>;
-type test::A = Enum<ut@test::A, Array<felt252>, felt252>;
-type Snapshot<test::A> = Snapshot<test::A>;
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::A = Enum<ut@test::A, Array<felt252>, felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<test::A> = Snapshot<test::A> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc drop<felt252> = drop<felt252>;
 libfunc dup<Snapshot<test::A>> = dup<Snapshot<test::A>>;
 libfunc enum_snapshot_match<test::A> = enum_snapshot_match<test::A>;
 libfunc branch_align = branch_align;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
 libfunc function_call<user@test::bar0> = function_call<user@test::bar0>;
-libfunc drop<Unit> = drop<Unit>;
-libfunc jump = jump;
+libfunc store_temp<Snapshot<test::A>> = store_temp<Snapshot<test::A>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc function_call<user@test::bar1> = function_call<user@test::bar1>;
-libfunc store_temp<Snapshot<test::A>> = store_temp<Snapshot<test::A>>;
 
-drop<Snapshot<Array<felt252>>>([0]) -> ();
-struct_construct<Unit>() -> ([1]);
-store_temp<Unit>([1]) -> ([2]);
-return([2]);
-drop<felt252>([0]) -> ();
-struct_construct<Unit>() -> ([1]);
-store_temp<Unit>([1]) -> ([2]);
-return([2]);
-dup<Snapshot<test::A>>([0]) -> ([0], [1]);
-enum_snapshot_match<test::A>([1]) { fallthrough([2]) 15([3]) };
-branch_align() -> ();
-store_temp<Snapshot<Array<felt252>>>([2]) -> ([5]);
-function_call<user@test::bar0>([5]) -> ([4]);
-drop<Unit>([4]) -> ();
-jump() { 19() };
-branch_align() -> ();
-store_temp<felt252>([3]) -> ([7]);
-function_call<user@test::bar1>([7]) -> ([6]);
-drop<Unit>([6]) -> ();
-store_temp<Snapshot<test::A>>([0]) -> ([8]);
-return([8]);
+drop<Snapshot<Array<felt252>>>([0]) -> (); // 0
+return(); // 1
+drop<felt252>([0]) -> (); // 2
+return(); // 3
+dup<Snapshot<test::A>>([0]) -> ([0], [1]); // 4
+enum_snapshot_match<test::A>([1]) { fallthrough([2]) 11([3]) }; // 5
+branch_align() -> (); // 6
+store_temp<Snapshot<Array<felt252>>>([2]) -> ([2]); // 7
+function_call<user@test::bar0>([2]) -> (); // 8
+store_temp<Snapshot<test::A>>([0]) -> ([0]); // 9
+return([0]); // 10
+branch_align() -> (); // 11
+store_temp<felt252>([3]) -> ([3]); // 12
+function_call<user@test::bar1>([3]) -> (); // 13
+store_temp<Snapshot<test::A>>([0]) -> ([0]); // 14
+return([0]); // 15
 
-test::bar0@0([0]: Snapshot<Array<felt252>>) -> (Unit);
-test::bar1@4([0]: felt252) -> (Unit);
-test::foo@8([0]: Snapshot<test::A>) -> (Snapshot<test::A>);
+test::bar0@0([0]: Snapshot<Array<felt252>>) -> ();
+test::bar1@2([0]: felt252) -> ();
+test::foo@4([0]: Snapshot<test::A>) -> (Snapshot<test::A>);

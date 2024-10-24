@@ -1,0 +1,151 @@
+//! > Test member access
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+struct A {
+    a: (felt252,),
+    b: felt252,
+    c: B,
+}
+struct B {
+    a: felt252
+}
+
+//! > function_body
+let a = A {
+    a: (1,),
+    b: 2,
+    c: B { a: 3 },
+};
+
+//! > expr_code
+{
+    (a).a;
+    a.b;
+    a.c;
+    a.c.a;
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Expr(
+                StatementExpr {
+                    expr: MemberAccess(
+                        ExprMemberAccess {
+                            expr: Var(
+                                LocalVarId(test::a),
+                            ),
+                            concrete_struct_id: test::A,
+                            member: MemberId(test::a),
+                            ty: (core::felt252,),
+                        },
+                    ),
+                },
+            ),
+            Expr(
+                StatementExpr {
+                    expr: MemberAccess(
+                        ExprMemberAccess {
+                            expr: Var(
+                                LocalVarId(test::a),
+                            ),
+                            concrete_struct_id: test::A,
+                            member: MemberId(test::b),
+                            ty: core::felt252,
+                        },
+                    ),
+                },
+            ),
+            Expr(
+                StatementExpr {
+                    expr: MemberAccess(
+                        ExprMemberAccess {
+                            expr: Var(
+                                LocalVarId(test::a),
+                            ),
+                            concrete_struct_id: test::A,
+                            member: MemberId(test::c),
+                            ty: test::B,
+                        },
+                    ),
+                },
+            ),
+            Expr(
+                StatementExpr {
+                    expr: MemberAccess(
+                        ExprMemberAccess {
+                            expr: MemberAccess(
+                                ExprMemberAccess {
+                                    expr: Var(
+                                        LocalVarId(test::a),
+                                    ),
+                                    concrete_struct_id: test::A,
+                                    member: MemberId(test::c),
+                                    ty: test::B,
+                                },
+                            ),
+                            concrete_struct_id: test::B,
+                            member: MemberId(test::a),
+                            ty: core::felt252,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test struct constructor
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+struct A {
+    a: felt252,
+    b: felt252,
+}
+
+//! > function_body
+let b = 2;
+
+//! > expr_code
+A { a: 1, b }
+
+//! > expected_semantics
+StructCtor(
+    ExprStructCtor {
+        concrete_struct_id: test::A,
+        members: [
+            (
+                MemberId(test::a),
+                Literal(
+                    ExprLiteral {
+                        value: 1,
+                        ty: core::felt252,
+                    },
+                ),
+            ),
+            (
+                MemberId(test::b),
+                Var(
+                    LocalVarId(test::b),
+                ),
+            ),
+        ],
+        base_struct: None,
+        ty: test::A,
+    },
+)
+
+//! > expected_diagnostics

@@ -22,9 +22,9 @@ impl GreenNode {
             GreenNodeDetails::Node { width, .. } => *width,
         }
     }
-    pub fn children(self) -> Vec<GreenId> {
-        match self.details {
-            GreenNodeDetails::Token(_text) => Vec::new(),
+    pub fn children(&self) -> &[GreenId] {
+        match &self.details {
+            GreenNodeDetails::Token(_text) => &[],
             GreenNodeDetails::Node { children, .. } => children,
         }
     }

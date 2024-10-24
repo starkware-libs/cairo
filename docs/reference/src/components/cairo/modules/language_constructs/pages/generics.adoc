@@ -101,6 +101,14 @@ some restrictions to the generic types used by the item.
 For example, `foo` from the above example can't have a concrete form in which `T` is `u128`
 as there is no impl of `MulTrait` for `u128`.
 
+In this case, you can also use anonymous impl generic parameters:
+[source,rust]
+----
+fn foo<T, +MyTrait<T>>(x: T) -> T {
+    MyTrait::mul(x)
+}
+----
+
 Note that in many cases generic arguments can be inferred and thus can be omitted from the
 use of the item.
 
@@ -118,3 +126,14 @@ Each kind of generic parameter has its own kind of generic arguments:
 * Type generic parameters are instantiated with type expressions.
 * Impl generic parameters are instantiated with impl expressions.
 * Const generic parameters are instantiated with const expressions. These are not supported yet.
+
+=== Named Generic Arguments
+
+Generic arguments can be named.
+This allows specifying them in any order, and also allows specifying only some of them.
+For example, the following two statements are equivalent:
+[source,rust]
+----
+let x = foo::<T: u32, S: u64>(5);
+let x = foo::<S: u64, T: u32>(5);
+----

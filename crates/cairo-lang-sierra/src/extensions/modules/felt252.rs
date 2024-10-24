@@ -24,7 +24,7 @@ impl NoGenericArgsGenericType for Felt252Type {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 define_libfunc_hierarchy! {
@@ -67,10 +67,10 @@ impl Felt252BinaryOperationWithVarLibfunc {
     fn new(operator: Felt252BinaryOperator) -> Self {
         Self { operator }
     }
-    const ADD: &str = "felt252_add";
-    const SUB: &str = "felt252_sub";
-    const MUL: &str = "felt252_mul";
-    const DIV: &str = "felt252_div";
+    const ADD: &'static str = "felt252_add";
+    const SUB: &'static str = "felt252_sub";
+    const MUL: &'static str = "felt252_mul";
+    const DIV: &'static str = "felt252_div";
 }
 impl GenericLibfunc for Felt252BinaryOperationWithVarLibfunc {
     type Concrete = Felt252BinaryOpConcreteLibfunc;
@@ -144,10 +144,10 @@ impl Felt252BinaryOperationWithConstLibfunc {
     fn new(operator: Felt252BinaryOperator) -> Self {
         Self { operator }
     }
-    const ADD: &str = "felt252_add_const";
-    const SUB: &str = "felt252_sub_const";
-    const MUL: &str = "felt252_mul_const";
-    const DIV: &str = "felt252_div_const";
+    const ADD: &'static str = "felt252_add_const";
+    const SUB: &'static str = "felt252_sub_const";
+    const MUL: &'static str = "felt252_mul_const";
+    const DIV: &'static str = "felt252_div_const";
 }
 impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
     type Concrete = Felt252OperationWithConstConcreteLibfunc;
@@ -179,16 +179,18 @@ impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
         let ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         match args {
             [GenericArg::Value(c)] => {
-                if matches!(self.operator, Felt252BinaryOperator::Div) && c.is_zero() {
-                    return Err(SpecializationError::UnsupportedGenericArg);
-                }
+                let output_ref_info = if matches!(self.operator, Felt252BinaryOperator::Div) {
+                    if c.is_zero() {
+                        return Err(SpecializationError::UnsupportedGenericArg);
+                    }
+                    OutputVarReferenceInfo::NewTempVar { idx: 0 }
+                } else {
+                    OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
+                };
 
                 Ok(LibfuncSignature::new_non_branch(
                     vec![ty.clone()],
-                    vec![OutputVarInfo {
-                        ty,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                    }],
+                    vec![OutputVarInfo { ty, ref_info: output_ref_info }],
                     SierraApChange::Known { new_vars_only: true },
                 ))
             }

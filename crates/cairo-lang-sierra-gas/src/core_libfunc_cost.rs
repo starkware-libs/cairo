@@ -5,10 +5,10 @@ use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 
-use crate::core_libfunc_cost_base::{core_libfunc_postcost, core_libfunc_precost, CostOperations};
+use crate::core_libfunc_cost_base::{CostOperations, core_libfunc_postcost, core_libfunc_precost};
 pub use crate::core_libfunc_cost_base::{
-    InvocationCostInfoProvider, DICT_SQUASH_FIXED_COST, DICT_SQUASH_REPEATED_ACCESS_COST,
-    DICT_SQUASH_UNIQUE_KEY_COST, SEGMENT_ARENA_ALLOCATION_COST,
+    DICT_SQUASH_FIXED_COST, DICT_SQUASH_REPEATED_ACCESS_COST, DICT_SQUASH_UNIQUE_KEY_COST,
+    InvocationCostInfoProvider, SEGMENT_ARENA_ALLOCATION_COST,
 };
 use crate::gas_info::GasInfo;
 pub use crate::starknet_libfunc_cost_base::SYSTEM_CALL_COST;
@@ -61,14 +61,14 @@ pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<Option<OrderedHashMap<CostTokenType, i64>>> {
-    let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc);
+    let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
     let postcost = core_libfunc_postcost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
     zip_eq(precost, postcost)
         .map(|(precost, postcost)| {
             let precost = precost?;
             let postcost = postcost?;
             Some(
-                CostTokenType::iter()
+                CostTokenType::iter_casm_tokens()
                     .map(|token| {
                         (
                             *token,

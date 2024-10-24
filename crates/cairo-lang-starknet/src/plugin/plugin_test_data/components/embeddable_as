@@ -1,0 +1,794 @@
+//! > Test `embeddable_as` with Drop<TContractState>.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[starknet::component]
+mod component {
+    use super::MyTrait;
+
+    #[storage]
+    struct Storage {}
+
+    #[embeddable_as(MyImpl)]
+    impl MyInnerImpl<
+        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+    > of MyTrait<ComponentState<TContractState>> {
+        fn do_nothing(self: @ComponentState<TContractState>) {}
+    }
+}
+
+#[starknet::interface]
+trait MyTrait<T> {
+    fn do_nothing(self: @T);
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::component]
+mod component {
+    use super::MyTrait;
+
+    #[storage]
+    struct Storage {}
+
+    #[embeddable_as(MyImpl)]
+    impl MyInnerImpl<
+        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+    > of MyTrait<ComponentState<TContractState>> {
+        fn do_nothing(self: @ComponentState<TContractState>) {}
+    }
+}
+
+#[starknet::interface]
+trait MyTrait<T> {
+    fn do_nothing(self: @T);
+}
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+MyTraitDispatcherTrait:
+
+trait MyTraitDispatcherTrait<T> {
+    fn do_nothing(self: T);
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct MyTraitDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
+    fn do_nothing(self: MyTraitDispatcher) {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("do_nothing"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct MyTraitLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispatcher> {
+    fn do_nothing(self: MyTraitLibraryDispatcher) {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("do_nothing"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+
+}
+
+trait MyTraitSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
+    fn do_nothing(self: T) -> starknet::SyscallResult<()>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct MyTraitSafeLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+impl MyTraitSafeLibraryDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeLibraryDispatcher> {
+    fn do_nothing(self: MyTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("do_nothing"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct MyTraitSafeDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatcher> {
+    fn do_nothing(self: MyTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("do_nothing"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+
+}
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitDispatcherCopy of core::traits::Copy::<MyTraitDispatcher>;
+impl MyTraitDispatcherDrop of core::traits::Drop::<MyTraitDispatcher>;
+impl MyTraitDispatcherSerde of core::serde::Serde::<MyTraitDispatcher> {
+    fn serialize(self: @MyTraitDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<MyTraitDispatcher> {
+        core::option::Option::Some(MyTraitDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+starknet_derive:
+
+impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<MyTraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            MyTraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: MyTraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            MyTraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: MyTraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct MyTraitDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl MyTraitDispatcherSubPointersImpl of starknet::storage::SubPointers<MyTraitDispatcher> {
+    type SubPointersType = MyTraitDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<MyTraitDispatcher>) -> MyTraitDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                MyTraitDispatcherSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct MyTraitDispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl MyTraitDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<MyTraitDispatcher> {
+    type SubPointersType = MyTraitDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<MyTraitDispatcher>>) -> MyTraitDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                MyTraitDispatcherSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitLibraryDispatcherCopy of core::traits::Copy::<MyTraitLibraryDispatcher>;
+impl MyTraitLibraryDispatcherDrop of core::traits::Drop::<MyTraitLibraryDispatcher>;
+impl MyTraitLibraryDispatcherSerde of core::serde::Serde::<MyTraitLibraryDispatcher> {
+    fn serialize(self: @MyTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<MyTraitLibraryDispatcher> {
+        core::option::Option::Some(MyTraitLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+starknet_derive:
+
+impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<MyTraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            MyTraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: MyTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            MyTraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: MyTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct MyTraitLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+#[doc(hidden)]
+impl MyTraitLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<MyTraitLibraryDispatcher> {
+    type SubPointersType = MyTraitLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<MyTraitLibraryDispatcher>) -> MyTraitLibraryDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                MyTraitLibraryDispatcherSubPointers {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct MyTraitLibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+#[doc(hidden)]
+impl MyTraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<MyTraitLibraryDispatcher> {
+    type SubPointersType = MyTraitLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<MyTraitLibraryDispatcher>>) -> MyTraitLibraryDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                MyTraitLibraryDispatcherSubPointersMut {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitSafeLibraryDispatcherCopy of core::traits::Copy::<MyTraitSafeLibraryDispatcher>;
+impl MyTraitSafeLibraryDispatcherDrop of core::traits::Drop::<MyTraitSafeLibraryDispatcher>;
+impl MyTraitSafeLibraryDispatcherSerde of core::serde::Serde::<MyTraitSafeLibraryDispatcher> {
+    fn serialize(self: @MyTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<MyTraitSafeLibraryDispatcher> {
+        core::option::Option::Some(MyTraitSafeLibraryDispatcher {
+            class_hash: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+starknet_derive:
+
+impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<MyTraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            MyTraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: MyTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            MyTraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: MyTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct MyTraitSafeLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+#[doc(hidden)]
+impl MyTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<MyTraitSafeLibraryDispatcher> {
+    type SubPointersType = MyTraitSafeLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<MyTraitSafeLibraryDispatcher>) -> MyTraitSafeLibraryDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                MyTraitSafeLibraryDispatcherSubPointers {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct MyTraitSafeLibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+#[doc(hidden)]
+impl MyTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<MyTraitSafeLibraryDispatcher> {
+    type SubPointersType = MyTraitSafeLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<MyTraitSafeLibraryDispatcher>>) -> MyTraitSafeLibraryDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                MyTraitSafeLibraryDispatcherSubPointersMut {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitSafeDispatcherCopy of core::traits::Copy::<MyTraitSafeDispatcher>;
+impl MyTraitSafeDispatcherDrop of core::traits::Drop::<MyTraitSafeDispatcher>;
+impl MyTraitSafeDispatcherSerde of core::serde::Serde::<MyTraitSafeDispatcher> {
+    fn serialize(self: @MyTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<MyTraitSafeDispatcher> {
+        core::option::Option::Some(MyTraitSafeDispatcher {
+            contract_address: core::serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+starknet_derive:
+
+impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<MyTraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            MyTraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: MyTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            MyTraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: MyTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct MyTraitSafeDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl MyTraitSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<MyTraitSafeDispatcher> {
+    type SubPointersType = MyTraitSafeDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<MyTraitSafeDispatcher>) -> MyTraitSafeDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                MyTraitSafeDispatcherSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct MyTraitSafeDispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl MyTraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<MyTraitSafeDispatcher> {
+    type SubPointersType = MyTraitSafeDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<MyTraitSafeDispatcher>>) -> MyTraitSafeDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                MyTraitSafeDispatcherSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitDispatcherSubPointersDrop of core::traits::Drop::<MyTraitDispatcherSubPointers>;
+impl MyTraitDispatcherSubPointersCopy of core::traits::Copy::<MyTraitDispatcherSubPointers>;
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitDispatcherSubPointersMutDrop of core::traits::Drop::<MyTraitDispatcherSubPointersMut>;
+impl MyTraitDispatcherSubPointersMutCopy of core::traits::Copy::<MyTraitDispatcherSubPointersMut>;
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitLibraryDispatcherSubPointersDrop of core::traits::Drop::<MyTraitLibraryDispatcherSubPointers>;
+impl MyTraitLibraryDispatcherSubPointersCopy of core::traits::Copy::<MyTraitLibraryDispatcherSubPointers>;
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<MyTraitLibraryDispatcherSubPointersMut>;
+impl MyTraitLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<MyTraitLibraryDispatcherSubPointersMut>;
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitSafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<MyTraitSafeLibraryDispatcherSubPointers>;
+impl MyTraitSafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<MyTraitSafeLibraryDispatcherSubPointers>;
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitSafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<MyTraitSafeLibraryDispatcherSubPointersMut>;
+impl MyTraitSafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<MyTraitSafeLibraryDispatcherSubPointersMut>;
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitSafeDispatcherSubPointersDrop of core::traits::Drop::<MyTraitSafeDispatcherSubPointers>;
+impl MyTraitSafeDispatcherSubPointersCopy of core::traits::Copy::<MyTraitSafeDispatcherSubPointers>;
+
+
+lib.cairo:16:1
+#[starknet::interface]
+^********************^
+impls:
+
+impl MyTraitSafeDispatcherSubPointersMutDrop of core::traits::Drop::<MyTraitSafeDispatcherSubPointersMut>;
+impl MyTraitSafeDispatcherSubPointersMutCopy of core::traits::Copy::<MyTraitSafeDispatcherSubPointersMut>;
+
+
+lib.cairo:1:1
+#[starknet::component]
+^********************^
+component:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+#[phantom]
+pub struct Storage {
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBase {
+}
+#[doc(hidden)]
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBaseMut {
+}
+#[doc(hidden)]
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
+        }
+    }
+}
+
+pub struct ComponentState<TContractState> {
+}
+
+impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+ 
+impl ComponentStateDeref<TContractState> of core::ops::SnapshotDeref<ComponentState<TContractState>> {
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+impl ComponentStateDerefMut<TContractState> of core::ops::DerefMut<ComponentState<TContractState>> {
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ComponentState<TContractState>) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+pub fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+    ComponentState::<TContractState> {
+    }
+}
+#[cfg(target: 'test')]
+#[inline(always)]
+pub fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+    unsafe_new_component_state::<TContractState>()
+}
+
+
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+#[allow(unused_imports)]
+use starknet::storage::Map as LegacyMap;
+pub trait HasComponent<TContractState> {
+    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
+    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
+    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
+    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
+    fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+}
+
+#[starknet::embeddable]
+pub impl MyImpl<
+            TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+
+> of MyTrait<TContractState> {
+    
+    fn do_nothing(self: @TContractState) {
+        let component = HasComponent::get_component(self);
+        MyInnerImpl::do_nothing(component)
+    }
+}
+
+lib.cairo:1:1
+#[starknet::component]
+^********************^
+impls:
+
+impl EventDrop of core::traits::Drop::<Event>;
+
+
+lib.cairo:1:1
+#[starknet::component]
+^********************^
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+
+
+lib.cairo:5:5
+    #[storage]
+    ^********^
+impls:
+
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+
+
+lib.cairo:5:5
+    #[storage]
+    ^********^
+impls:
+
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+
+
+lib.cairo:8:5
+    #[embeddable_as(MyImpl)]
+    ^**********************^
+embeddable:
+
+pub trait UnsafeNewContractStateTraitForMyImpl<
+    TContractState
+> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__MyImpl__do_nothing<TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    MyImpl::<TContractState, X, _>::do_nothing(@contract_state, );
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+
+
+pub mod __external_MyImpl {
+    pub use super::__wrapper__MyImpl__do_nothing as do_nothing;
+}
+
+pub mod __l1_handler_MyImpl {
+}
+
+pub mod __constructor_MyImpl {
+}
+
+//! > expected_diagnostics

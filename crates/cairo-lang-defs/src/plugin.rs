@@ -2,9 +2,14 @@ use std::any::Any;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use cairo_lang_diagnostics::Severity;
+use cairo_lang_filesystem::cfg::CfgSet;
+use cairo_lang_filesystem::db::Edition;
+use cairo_lang_filesystem::ids::CodeMapping;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
 
 /// A trait for arbitrary data that a macro generates along with a generated file.
@@ -40,9 +45,11 @@ pub struct PluginGeneratedFile {
     pub name: SmolStr,
     /// Code content for the file.
     pub content: String,
-    /// A diagnostics mapper, to allow more readable diagnostics that originate in plugin generated
+    /// A code mapper, to allow more readable diagnostics that originate in plugin generated
     /// virtual files.
-    pub aux_data: DynGeneratedFileAuxData,
+    pub code_mappings: Vec<CodeMapping>,
+    /// Arbitrary data that the plugin generates along with the file.
+    pub aux_data: Option<DynGeneratedFileAuxData>,
 }
 
 /// Result of plugin code generation.
@@ -60,6 +67,28 @@ pub struct PluginResult {
 pub struct PluginDiagnostic {
     pub stable_ptr: SyntaxStablePtrId,
     pub message: String,
+    pub severity: Severity,
+}
+impl PluginDiagnostic {
+    pub fn error(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
+        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Error }
+    }
+    pub fn warning(stable_ptr: impl Into<SyntaxStablePtrId>, message: String) -> PluginDiagnostic {
+        PluginDiagnostic { stable_ptr: stable_ptr.into(), message, severity: Severity::Warning }
+    }
+}
+
+/// A structure containing additional info about the current module item on which macro plugin
+/// operates.
+pub struct MacroPluginMetadata<'a> {
+    /// Config set of the crate to which the current item belongs.
+    pub cfg_set: &'a CfgSet,
+    /// The possible derives declared by any plugin.
+    pub declared_derives: &'a OrderedHashSet<String>,
+    /// The allowed features at the macro activation site.
+    pub allowed_features: &'a OrderedHashSet<SmolStr>,
+    /// The edition of the crate to which the current item belongs.
+    pub edition: Edition,
 }
 
 // TOD(spapini): Move to another place.
@@ -68,5 +97,72 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
     /// with that name and content should be created.
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult;
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult;
+
+    /// Attributes this plugin uses.
+    /// Attributes the plugin uses without declaring here are likely to cause a compilation error
+    /// for unknown attribute.
+    /// Note: They may not cause a diagnostic if some other plugin declares such attribute, but
+    /// plugin writers should not rely on that.
+    fn declared_attributes(&self) -> Vec<String>;
+
+    /// Derives this plugin supplies.
+    /// Any derived classes the plugin supplies without declaring here are likely to cause a
+    /// compilation error for unknown derive.
+    /// Note: They may not cause a diagnostic if some other plugin declares such derive, but
+    /// plugin writers should not rely on that.
+    fn declared_derives(&self) -> Vec<String> {
+        Vec::new()
+    }
+
+    /// Attributes that should mark the function as an executable.
+    /// Functions marked with executable attributes will be listed
+    /// in a dedicated field in the generated program.
+    /// Must return a subset of `declared_attributes`.
+    /// This mechanism is optional.
+    fn executable_attributes(&self) -> Vec<String> {
+        Vec::new()
+    }
+
+    /// Attributes that mark a type as a phantom type. Must return a subset of
+    /// `declared_attributes`.
+    /// This mechanism is optional.
+    fn phantom_type_attributes(&self) -> Vec<String> {
+        Vec::new()
+    }
+}
+
+/// Result of plugin code generation.
+#[derive(Default)]
+pub struct InlinePluginResult {
+    pub code: Option<PluginGeneratedFile>,
+    /// Diagnostics.
+    pub diagnostics: Vec<PluginDiagnostic>,
+}
+
+pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
+    /// Generates code for an item. If no code should be generated returns None.
+    /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
+    /// with that name and content should be created.
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: &ast::ExprInlineMacro,
+        metadata: &MacroPluginMetadata<'_>,
+    ) -> InlinePluginResult;
+
+    /// Allows for the plugin to provide documentation for an inline macro.
+    fn documentation(&self) -> Option<String> {
+        None
+    }
+}
+
+/// A trait for easier addition of macro plugins.
+pub trait NamedPlugin: Default + 'static {
+    const NAME: &'static str;
 }

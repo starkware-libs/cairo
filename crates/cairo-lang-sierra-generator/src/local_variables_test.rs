@@ -1,14 +1,9 @@
-use std::sync::Arc;
-
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_filesystem::db::FilesGroupEx;
-use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::UpcastMut;
 use itertools::Itertools;
 use lowering::ids::ConcreteFunctionWithBodyId;
 
@@ -34,13 +29,11 @@ cairo_lang_test_utils::test_file_test!(
 
 fn check_find_local_variables(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
-    let db = &mut SierraGenDatabaseForTesting::default();
-
+    _args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
-    let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
-    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+    let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
 
     // Parse code and create semantic model.
     let test_function = setup_test_function(
@@ -57,10 +50,9 @@ fn check_find_local_variables(
 
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-    let lowered_function = &*db.concrete_function_with_body_lowered(function_id).unwrap();
+    let lowered_function = &*db.final_concrete_function_with_body_lowered(function_id).unwrap();
 
-    let lowered_formatter =
-        lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
+    let lowered_formatter = lowering::fmt::LoweredFormatter::new(db, &lowered_function.variables);
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
     let AnalyzeApChangesResult { known_ap_change: _, local_variables, .. } =
@@ -71,10 +63,10 @@ fn check_find_local_variables(
         .map(|var_id| format!("{:?}", var_id.debug(&lowered_formatter)))
         .join(", ");
 
-    OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("lowering_format".into(), lowered_str),
         ("local_variables".into(), local_variables_str),
-    ])
+    ]))
 }
 
 cairo_lang_test_utils::test_file_test!(

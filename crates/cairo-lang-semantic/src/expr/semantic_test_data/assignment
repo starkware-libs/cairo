@@ -1,0 +1,42 @@
+//! > Test assignment
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > function_body
+let mut a = 5;
+
+//! > expr_code
+a = a * 3
+
+//! > expected_semantics
+Assignment(
+    ExprAssignment {
+        ref_arg: LocalVarId(test::a),
+        rhs: FunctionCall(
+            ExprFunctionCall {
+                function: core::Felt252Mul::mul,
+                args: [
+                    Value(
+                        Var(
+                            LocalVarId(test::a),
+                        ),
+                    ),
+                    Value(
+                        Literal(
+                            ExprLiteral {
+                                value: 3,
+                                ty: core::felt252,
+                            },
+                        ),
+                    ),
+                ],
+                coupon_arg: None,
+                ty: core::felt252,
+            },
+        ),
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics

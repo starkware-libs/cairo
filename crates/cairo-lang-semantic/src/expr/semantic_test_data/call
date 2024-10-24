@@ -1,0 +1,24 @@
+//! > Test call
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+fn foo() {
+    6;
+}
+
+//! > expr_code
+foo()
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: test::foo,
+        args: [],
+        coupon_arg: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics

@@ -8,9 +8,9 @@ foo
 
 //! > function_code
 fn foo(x: MyStruct) -> MyStruct {
-    let s = MyStruct{ a: x.a, b: x.b };
-    let w = MyStruct{ a: s.a, b: s.b };
-    MyStruct{ a: 10, b: 20 }
+    let s = immovable(MyStruct { a: immovable(x.a), b: x.b });
+    let _w = immovable(MyStruct { a: s.a, b: immovable(s.b) });
+    MyStruct { a: 10, b: 20 }
 }
 
 //! > module_code
@@ -20,32 +20,45 @@ struct MyStruct {
     b: felt252,
 }
 
-impl MyStructDrop of Drop::<MyStruct>;
+impl MyStructDrop of Drop<MyStruct>;
+
+#[inline(never)]
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > lowering_format
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
   (v1: core::felt252, v2: core::felt252) <- struct_destructure(v0)
-  (v3: test::MyStruct) <- struct_construct(v1, v2)
-  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
-  (v6: test::MyStruct) <- struct_construct(v4, v5)
-  (v7: core::felt252) <- 10u
-  (v8: core::felt252) <- 20u
-  (v9: test::MyStruct) <- struct_construct(v7, v8)
+  (v3: core::felt252) <- test::immovable::<core::felt252>(v1)
+  (v4: test::MyStruct) <- struct_construct(v3, v2)
+  (v5: test::MyStruct) <- test::immovable::<test::MyStruct>(v4)
+  (v6: core::felt252, v7: core::felt252) <- struct_destructure(v5)
+  (v8: core::felt252) <- test::immovable::<core::felt252>(v7)
+  (v9: test::MyStruct) <- struct_construct(v6, v8)
+  (v10: test::MyStruct) <- test::immovable::<test::MyStruct>(v9)
+  (v11: core::felt252) <- 10
+  (v12: core::felt252) <- 20
+  (v13: test::MyStruct) <- struct_construct(v11, v12)
 End:
-  Return(v9)
+  Return(v13)
 
 //! > last_use
+v13: ((BlockId(0), 11), 0)
+v12: ((BlockId(0), 10), 1)
+v11: ((BlockId(0), 10), 0)
 v9: ((BlockId(0), 7), 0)
 v8: ((BlockId(0), 6), 1)
-v7: ((BlockId(0), 6), 0)
-v5: ((BlockId(0), 3), 1)
+v6: ((BlockId(0), 6), 0)
+v7: ((BlockId(0), 5), 0)
+v5: ((BlockId(0), 4), 0)
 v4: ((BlockId(0), 3), 0)
+v2: ((BlockId(0), 2), 1)
 v3: ((BlockId(0), 2), 0)
-v2: ((BlockId(0), 1), 1)
 v1: ((BlockId(0), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(0), 3)): v6
+PostStatement((BlockId(0), 7)): v10

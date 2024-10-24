@@ -1,4 +1,4 @@
 #[starknet::interface]
-trait IContract<TStorage> {
-    fn foo(self: @TStorage, calldata: felt252);
+trait IContract<TContractState> {
+    fn foo(self: @TContractState, calldata: felt252);
 }

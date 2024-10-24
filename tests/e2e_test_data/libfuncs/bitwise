@@ -1,3 +1,179 @@
+//! > u8_bitwise libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u8, b: u8) -> (u8, u8, u8) {
+    integer::u8_bitwise(a, b)
+}
+
+//! > casm
+[fp + -4] = [[fp + -5] + 0];
+[fp + -3] = [[fp + -5] + 1];
+[ap + 0] = [fp + -5] + 5, ap++;
+[ap + 0] = [[fp + -5] + 2], ap++;
+[ap + 0] = [[fp + -5] + 3], ap++;
+[ap + 0] = [[fp + -5] + 4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
+
+//! > sierra_code
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u8, u8, u8> = Struct<ut@Tuple, u8, u8, u8> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc u8_bitwise = u8_bitwise;
+libfunc struct_construct<Tuple<u8, u8, u8>> = struct_construct<Tuple<u8, u8, u8>>;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc store_temp<Tuple<u8, u8, u8>> = store_temp<Tuple<u8, u8, u8>>;
+
+u8_bitwise([0], [1], [2]) -> ([3], [4], [5], [6]); // 0
+struct_construct<Tuple<u8, u8, u8>>([4], [5], [6]) -> ([7]); // 1
+store_temp<Bitwise>([3]) -> ([3]); // 2
+store_temp<Tuple<u8, u8, u8>>([7]) -> ([7]); // 3
+return([3], [7]); // 4
+
+test::foo@0([0]: Bitwise, [1]: u8, [2]: u8) -> (Bitwise, Tuple<u8, u8, u8>);
+
+//! > ==========================================================================
+
+//! > u16_bitwise libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u16, b: u16) -> (u16, u16, u16) {
+    integer::u16_bitwise(a, b)
+}
+
+//! > casm
+[fp + -4] = [[fp + -5] + 0];
+[fp + -3] = [[fp + -5] + 1];
+[ap + 0] = [fp + -5] + 5, ap++;
+[ap + 0] = [[fp + -5] + 2], ap++;
+[ap + 0] = [[fp + -5] + 3], ap++;
+[ap + 0] = [[fp + -5] + 4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
+
+//! > sierra_code
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u16 = u16 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u16, u16, u16> = Struct<ut@Tuple, u16, u16, u16> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc u16_bitwise = u16_bitwise;
+libfunc struct_construct<Tuple<u16, u16, u16>> = struct_construct<Tuple<u16, u16, u16>>;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc store_temp<Tuple<u16, u16, u16>> = store_temp<Tuple<u16, u16, u16>>;
+
+u16_bitwise([0], [1], [2]) -> ([3], [4], [5], [6]); // 0
+struct_construct<Tuple<u16, u16, u16>>([4], [5], [6]) -> ([7]); // 1
+store_temp<Bitwise>([3]) -> ([3]); // 2
+store_temp<Tuple<u16, u16, u16>>([7]) -> ([7]); // 3
+return([3], [7]); // 4
+
+test::foo@0([0]: Bitwise, [1]: u16, [2]: u16) -> (Bitwise, Tuple<u16, u16, u16>);
+
+//! > ==========================================================================
+
+//! > u32_bitwise libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u32, b: u32) -> (u32, u32, u32) {
+    integer::u32_bitwise(a, b)
+}
+
+//! > casm
+[fp + -4] = [[fp + -5] + 0];
+[fp + -3] = [[fp + -5] + 1];
+[ap + 0] = [fp + -5] + 5, ap++;
+[ap + 0] = [[fp + -5] + 2], ap++;
+[ap + 0] = [[fp + -5] + 3], ap++;
+[ap + 0] = [[fp + -5] + 4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
+
+//! > sierra_code
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u32, u32, u32> = Struct<ut@Tuple, u32, u32, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc u32_bitwise = u32_bitwise;
+libfunc struct_construct<Tuple<u32, u32, u32>> = struct_construct<Tuple<u32, u32, u32>>;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc store_temp<Tuple<u32, u32, u32>> = store_temp<Tuple<u32, u32, u32>>;
+
+u32_bitwise([0], [1], [2]) -> ([3], [4], [5], [6]); // 0
+struct_construct<Tuple<u32, u32, u32>>([4], [5], [6]) -> ([7]); // 1
+store_temp<Bitwise>([3]) -> ([3]); // 2
+store_temp<Tuple<u32, u32, u32>>([7]) -> ([7]); // 3
+return([3], [7]); // 4
+
+test::foo@0([0]: Bitwise, [1]: u32, [2]: u32) -> (Bitwise, Tuple<u32, u32, u32>);
+
+//! > ==========================================================================
+
+//! > u64_bitwise libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u64, b: u64) -> (u64, u64, u64) {
+    integer::u64_bitwise(a, b)
+}
+
+//! > casm
+[fp + -4] = [[fp + -5] + 0];
+[fp + -3] = [[fp + -5] + 1];
+[ap + 0] = [fp + -5] + 5, ap++;
+[ap + 0] = [[fp + -5] + 2], ap++;
+[ap + 0] = [[fp + -5] + 3], ap++;
+[ap + 0] = [[fp + -5] + 4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
+
+//! > sierra_code
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u64, u64, u64> = Struct<ut@Tuple, u64, u64, u64> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc u64_bitwise = u64_bitwise;
+libfunc struct_construct<Tuple<u64, u64, u64>> = struct_construct<Tuple<u64, u64, u64>>;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc store_temp<Tuple<u64, u64, u64>> = store_temp<Tuple<u64, u64, u64>>;
+
+u64_bitwise([0], [1], [2]) -> ([3], [4], [5], [6]); // 0
+struct_construct<Tuple<u64, u64, u64>>([4], [5], [6]) -> ([7]); // 1
+store_temp<Bitwise>([3]) -> ([3]); // 2
+store_temp<Tuple<u64, u64, u64>>([7]) -> ([7]); // 3
+return([3], [7]); // 4
+
+test::foo@0([0]: Bitwise, [1]: u64, [2]: u64) -> (Bitwise, Tuple<u64, u64, u64>);
+
+//! > ==========================================================================
+
 //! > bitwise libfunc
 
 //! > test_comments
@@ -23,19 +199,19 @@ ret;
 test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
-type Bitwise = Bitwise;
-type u128 = u128;
-type Tuple<u128, u128, u128> = Struct<ut@Tuple, u128, u128, u128>;
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u128, u128, u128> = Struct<ut@Tuple, u128, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc bitwise = bitwise;
 libfunc struct_construct<Tuple<u128, u128, u128>> = struct_construct<Tuple<u128, u128, u128>>;
 libfunc store_temp<Bitwise> = store_temp<Bitwise>;
 libfunc store_temp<Tuple<u128, u128, u128>> = store_temp<Tuple<u128, u128, u128>>;
 
-bitwise([0], [1], [2]) -> ([3], [4], [5], [6]);
-struct_construct<Tuple<u128, u128, u128>>([4], [5], [6]) -> ([7]);
-store_temp<Bitwise>([3]) -> ([8]);
-store_temp<Tuple<u128, u128, u128>>([7]) -> ([9]);
-return([8], [9]);
+bitwise([0], [1], [2]) -> ([3], [4], [5], [6]); // 0
+struct_construct<Tuple<u128, u128, u128>>([4], [5], [6]) -> ([7]); // 1
+store_temp<Bitwise>([3]) -> ([3]); // 2
+store_temp<Tuple<u128, u128, u128>>([7]) -> ([7]); // 3
+return([3], [7]); // 4
 
 test::foo@0([0]: Bitwise, [1]: u128, [2]: u128) -> (Bitwise, Tuple<u128, u128, u128>);

@@ -2,6 +2,7 @@ use crate::extensions::NoGenericArgsGenericType;
 use crate::ids::GenericTypeId;
 
 /// Type for the Segment Arena builtin.
+///
 /// This type should be initialized and destructed by the OS.
 /// It is assumed to be a pointer to a segment containing the following struct:
 /// A data segment start.
@@ -20,5 +21,5 @@ impl NoGenericArgsGenericType for SegmentArenaType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }

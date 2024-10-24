@@ -86,7 +86,7 @@ pub trait NoGenericArgsGenericType: Default {
     const STORABLE: bool;
     const DUPLICATABLE: bool;
     const DROPPABLE: bool;
-    const SIZE: i16;
+    const ZERO_SIZED: bool;
 }
 impl<T: NoGenericArgsGenericType> NamedType for T {
     type Concrete = InfoOnlyConcreteType;
@@ -104,7 +104,7 @@ impl<T: NoGenericArgsGenericType> NamedType for T {
                     storable: T::STORABLE,
                     droppable: T::DROPPABLE,
                     duplicatable: T::DUPLICATABLE,
-                    size: T::SIZE,
+                    zero_sized: T::ZERO_SIZED,
                 },
             })
         } else {
@@ -120,6 +120,7 @@ pub trait GenericTypeArgGenericType: Default {
     /// Returns the type info of the wrapping type.
     fn calc_info(
         &self,
+        context: &dyn TypeSpecializationContext,
         long_id: ConcreteTypeLongId,
         wrapped_info: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError>;
@@ -140,7 +141,7 @@ impl<T: GenericTypeArgGenericType> NamedType for GenericTypeArgGenericTypeWrappe
         let ty = args_as_single_type(args)?;
         let long_id = Self::concrete_type_long_id(args);
         let wrapped_info = context.get_type_info(ty.clone())?;
-        Ok(Self::Concrete { info: self.0.calc_info(long_id, wrapped_info)?, ty })
+        Ok(Self::Concrete { info: self.0.calc_info(context, long_id, wrapped_info)?, ty })
     }
 }
 
@@ -155,8 +156,8 @@ pub struct TypeInfo {
     pub droppable: bool,
     /// Can the type be (trivially) duplicated.
     pub duplicatable: bool,
-    /// The size of an element of this type.
-    pub size: i16,
+    /// Is the type zero sized.
+    pub zero_sized: bool,
 }
 
 /// Trait for a specialized type.

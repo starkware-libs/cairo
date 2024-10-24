@@ -1,0 +1,29 @@
+//! > Test that impl generics are ignored in extern functions.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo() -> @Array<felt252> {
+    span_from_tuple(BoxTrait::new(@(10, 20, 30)))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+// Function needs to be a real libfunc for the test
+extern fn span_from_tuple<T, +Copy<T>>(x: Box<@T>) -> @Array<felt252> nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+const_as_box<Const<Tuple<felt252, felt252, felt252>, Const<felt252, 10>, Const<felt252, 20>, Const<felt252, 30>>, 0>() -> ([0])
+span_from_tuple<Tuple<felt252, felt252, felt252>>([0]) -> ([1])
+store_temp<Snapshot<Array<felt252>>>([1]) -> ([1])
+return([1])

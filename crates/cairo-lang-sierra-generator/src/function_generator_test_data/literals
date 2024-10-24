@@ -16,7 +16,9 @@ fn foo() -> () {
 foo
 
 //! > module_code
-fn bar(x: felt252) { bar(x) }
+fn bar(x: felt252) {
+    bar(x)
+}
 
 //! > semantic_diagnostics
 
@@ -25,19 +27,15 @@ fn bar(x: felt252) { bar(x) }
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label_test::foo::0:
 disable_ap_tracking() -> ()
-felt252_const<5>() -> ([0])
-dup<felt252>([0]) -> ([0], [2])
-store_temp<felt252>([2]) -> ([2])
-function_call<user@test::bar>([2]) -> ([1])
-drop<Unit>([1]) -> ()
-store_temp<felt252>([0]) -> ([4])
-function_call<user@test::bar>([4]) -> ([3])
-drop<Unit>([3]) -> ()
-struct_construct<Unit>() -> ([5])
-store_temp<Unit>([5]) -> ([6])
-return([6])
+const_as_immediate<Const<felt252, 5>>() -> ([0])
+dup<felt252>([0]) -> ([0], [1])
+store_temp<felt252>([1]) -> ([1])
+function_call<user@test::bar>([1]) -> ()
+store_temp<felt252>([0]) -> ([0])
+function_call<user@test::bar>([0]) -> ()
+return()
 
 //! > comment
 When fixing this test, Make sure that the added dups are on the const, and not the temps.

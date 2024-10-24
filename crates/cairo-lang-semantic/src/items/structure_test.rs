@@ -6,20 +6,18 @@ use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;
-use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
+use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 
 #[test]
 fn test_struct() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
-    let (test_module, diagnostics) = setup_test_module(
-        db,
-        indoc::indoc! {"
-            #[contract(MyImpl1, MyImpl2)]
+    let db_val = SemanticDatabaseForTesting::default();
+    let db = &db_val;
+    let (test_module, diagnostics) = setup_test_module(db, indoc::indoc! {"
+            #[inline(MyImpl1, MyImpl2)]
             struct A {
                 a: felt252,
-                b: (felt252, felt252),
-                c: (),
+                pub b: (felt252, felt252),
+                pub(crate) c: (),
                 a: (),
                 a: ()
             }
@@ -27,12 +25,9 @@ fn test_struct() {
             fn foo(a: A) {
                 5;
             }
-        "},
-    )
+        "})
     .split();
-    assert_eq!(
-        diagnostics,
-        indoc! {r#"
+    assert_eq!(diagnostics, indoc! {r#"
         error: Redefinition of member "a" on struct "test::A".
          --> lib.cairo:6:5
             a: (),
@@ -43,8 +38,7 @@ fn test_struct() {
             a: ()
             ^***^
 
-        "#}
-    );
+        "#});
     let module_id = test_module.module_id;
 
     let struct_id = extract_matches!(
@@ -58,13 +52,10 @@ fn test_struct() {
         .map(|(name, member)| format!("{name}: {:?}", member.debug(db)))
         .collect::<Vec<_>>()
         .join(",\n");
-    assert_eq!(
-        actual,
-        indoc! {"
-            a: Member { id: MemberId(test::a), ty: () },
-            b: Member { id: MemberId(test::b), ty: (core::felt252, core::felt252) },
-            c: Member { id: MemberId(test::c), ty: () }"}
-    );
+    assert_eq!(actual, indoc! {"
+            a: Member { id: MemberId(test::a), ty: (), visibility: Private },
+            b: Member { id: MemberId(test::b), ty: (core::felt252, core::felt252), visibility: Public },
+            c: Member { id: MemberId(test::c), ty: (), visibility: PublicInCrate }"});
 
     assert_eq!(
         db.struct_attributes(struct_id)
@@ -73,6 +64,6 @@ fn test_struct() {
             .map(|attr| format!("{:?}", attr.debug(db)))
             .collect::<Vec<_>>()
             .join(",\n"),
-        r#"Attribute { id: "contract", args: ["MyImpl1", "MyImpl2", ] }"#
+        r#"Attribute { id: "inline", args: ["MyImpl1", "MyImpl2", ] }"#
     );
 }

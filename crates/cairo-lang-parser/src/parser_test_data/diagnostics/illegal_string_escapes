@@ -1,0 +1,51 @@
+//! > Illegally escaped short string.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo() {
+    let a = '\p';
+}
+
+//! > expected_diagnostics
+error: Invalid string escaping.
+ --> dummy_file.cairo:2:13
+    let a = '\p';
+            ^**^
+
+//! > ==========================================================================
+
+//! > Short string containing unicode characters.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo() {
+    let a = '\u{1024}';
+}
+
+//! > expected_diagnostics
+error: Short string literals can only include ASCII characters.
+ --> dummy_file.cairo:2:13
+    let a = '\u{1024}';
+            ^********^
+
+//! > ==========================================================================
+
+//! > String containing unicode characters.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo() {
+    let a = "\u{1024}";
+}
+
+//! > expected_diagnostics
+error: String literals can only include ASCII characters.
+ --> dummy_file.cairo:2:13
+    let a = "\u{1024}";
+            ^********^

@@ -2,12 +2,10 @@
 #[path = "collection_arithmetics_test.rs"]
 mod test;
 
-use std::hash::Hash;
-use std::ops::{Add, Sub};
+use core::hash::{BuildHasher, Hash};
+use core::ops::{Add, Sub};
 
-use indexmap::map::Entry;
-
-use crate::ordered_hash_map::OrderedHashMap;
+use crate::ordered_hash_map::{Entry, OrderedHashMap};
 
 /// A trait for types which have a zero value.
 ///
@@ -35,10 +33,11 @@ pub fn add_maps<
     Key: Hash + Eq,
     Value: HasZero + Add<Output = Value> + Clone + Eq,
     Rhs: IntoIterator<Item = (Key, Value)>,
+    BH: BuildHasher,
 >(
-    lhs: OrderedHashMap<Key, Value>,
+    lhs: OrderedHashMap<Key, Value, BH>,
     rhs: Rhs,
-) -> OrderedHashMap<Key, Value> {
+) -> OrderedHashMap<Key, Value, BH> {
     merge_maps(lhs, rhs, |a, b| a + b)
 }
 
@@ -49,10 +48,11 @@ pub fn sub_maps<
     Key: Hash + Eq,
     Value: HasZero + Sub<Output = Value> + Clone + Eq,
     Rhs: IntoIterator<Item = (Key, Value)>,
+    BH: BuildHasher,
 >(
-    lhs: OrderedHashMap<Key, Value>,
+    lhs: OrderedHashMap<Key, Value, BH>,
     rhs: Rhs,
-) -> OrderedHashMap<Key, Value> {
+) -> OrderedHashMap<Key, Value, BH> {
     merge_maps(lhs, rhs, |a, b| a - b)
 }
 
@@ -65,11 +65,12 @@ fn merge_maps<
     Value: HasZero + Clone + Eq,
     Rhs: IntoIterator<Item = (Key, Value)>,
     Action: Fn(Value, Value) -> Value,
+    BH: BuildHasher,
 >(
-    lhs: OrderedHashMap<Key, Value>,
+    lhs: OrderedHashMap<Key, Value, BH>,
     rhs: Rhs,
     action: Action,
-) -> OrderedHashMap<Key, Value> {
+) -> OrderedHashMap<Key, Value, BH> {
     let mut res = lhs;
     for (key, rhs_val) in rhs {
         match res.entry(key) {

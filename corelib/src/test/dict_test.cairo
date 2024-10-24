@@ -1,8 +1,6 @@
-use box::BoxTrait;
-use dict::{Felt252DictTrait, Felt252DictEntryTrait};
-use nullable::NullableTrait;
-use traits::Index;
-use test::test_utils::{assert_eq, assert_ne};
+use crate::dict::{Felt252DictEntryTrait, Felt252Dict};
+use crate::test::test_utils::assert_eq;
+use crate::nullable;
 
 #[test]
 fn test_dict_new() -> Felt252Dict<felt252> {
@@ -12,14 +10,14 @@ fn test_dict_new() -> Felt252Dict<felt252> {
 #[test]
 fn test_dict_squash_empty() {
     let mut dict: Felt252Dict<felt252> = Default::default();
-    let squashed_dict = dict.squash();
+    let _squashed_dict = dict.squash();
 }
 
 #[test]
 fn test_dict_default_val() {
-    let mut dict = Default::default();
+    let mut dict: Felt252Dict = Default::default();
     let default_val = dict.get(0);
-    assert_eq(default_val, 0, 'default_val == 0');
+    assert_eq!(default_val, 0);
 }
 
 #[test]
@@ -27,47 +25,45 @@ fn test_dict_write_read() {
     let mut dict = Default::default();
     dict.insert(10, 110);
     dict.insert(11, 111);
-    // TODO(spapini): Use indexing operator.
-    let val10 = dict.index(10);
-    let val11 = dict.index(11);
-    let val12 = dict.index(12);
-    assert_eq(val10, 110, 'dict[10] == 110');
-    assert_eq(val11, 111, 'dict[11] == 111');
-    assert_eq(val12, 0, 'default_val == 0');
+    let val10 = dict[10];
+    let val11 = dict[11];
+    let val12 = dict[12];
+    assert_eq!(val10, 110);
+    assert_eq!(val11, 111);
+    assert_eq!(val12, 0);
 }
 
 #[test]
 fn test_dict_entry() {
-    // TODO(Gil): remove type annotation once dict index is fixed.
-    let mut dict: Felt252Dict<felt252> = Default::default();
+    let mut dict = Default::default();
     dict.insert(10, 110);
     let (entry, value) = dict.entry(10);
-    assert_eq(value, 110, 'dict[10] == 110');
+    assert_eq!(value, 110);
     let mut dict = entry.finalize(11);
-    assert_eq(dict[10], 11, 'dict[10] == 11');
+    assert_eq!(dict[10], 11);
 }
 
 #[test]
 fn test_dict_entry_uninitialized() {
-    let mut dict: Felt252Dict<felt252> = Default::default();
+    let mut dict = Default::default();
     let (entry, value) = dict.entry(10);
-    assert_eq(value, 0_felt252, 'dict[10] == 0');
+    assert_eq!(value, 0_felt252);
     let mut dict = entry.finalize(110);
-    assert_eq(dict[10], 110, 'dict[10] == 110');
+    assert_eq!(dict[10], 110);
 }
 
 #[test]
 fn test_dict_update_twice() {
-    let mut dict: Felt252Dict<felt252> = Default::default();
+    let mut dict = Default::default();
     dict.insert(10, 110);
     let (entry, value) = dict.entry(10);
-    assert_eq(value, 110, 'dict[10] == 110');
+    assert_eq!(value, 110);
     dict = entry.finalize(11);
-    assert_eq(dict[10], 11, 'dict[10] == 11');
+    assert_eq!(dict[10], 11);
     let (entry, value) = dict.entry(10);
-    assert_eq(value, 11, 'dict[10] == 11');
+    assert_eq!(value, 11);
     dict = entry.finalize(12);
-    assert_eq(dict[10], 12, 'dict[10] == 12');
+    assert_eq(@dict[10], @12, 'dict[10] == 12');
 }
 
 
@@ -76,9 +72,9 @@ fn test_dict_update_twice() {
 /// Calls the destructor of the entry, which in turn calls the destructor of the `Felt252Dict`.
 #[test]
 fn test_dict_entry_destruct() {
-    let mut dict: Felt252Dict<felt252> = Default::default();
+    let mut dict = Default::default();
     dict.insert(10, 110);
-    let (entry, value) = dict.entry(10);
+    let (_entry, _value) = dict.entry(10);
 }
 
 const KEY1: felt252 = 10;
@@ -102,42 +98,53 @@ fn test_dict_big_keys() {
     dict.insert(KEY4, 4);
     dict.insert(KEY5, 5);
 
-    // TODO(spapini): Use indexing operator.
-    assert_eq(dict.index(KEY1), 1, 'KEY1');
-    assert_eq(dict.index(KEY2), 2, 'KEY2');
-    assert_eq(dict.index(KEY3), 3, 'KEY3');
-    assert_eq(dict.index(KEY4), 4, 'KEY4');
-    assert_eq(dict.index(KEY5), 5, 'KEY5');
+    assert_eq(@dict[KEY1], @1, 'KEY1');
+    assert_eq(@dict[KEY2], @2, 'KEY2');
+    assert_eq(@dict[KEY3], @3, 'KEY3');
+    assert_eq(@dict[KEY4], @4, 'KEY4');
+    assert_eq(@dict[KEY5], @5, 'KEY5');
 }
 
 #[test]
 fn test_dict_of_nullable() {
     let mut dict = Default::default();
-    dict.insert(10, nullable_from_box(BoxTrait::new(1)));
-    dict.insert(11, nullable_from_box(BoxTrait::new(2)));
-    // TODO(spapini): Use indexing operator.
-    let val10 = dict.index(10).deref();
-    let val11 = dict.index(11).deref();
-    let val12 = dict.index(12);
-    assert_eq(val10, 1, 'dict[10] == 1');
-    assert_eq(val11, 2, 'dict[11] == 2');
+    dict.insert(10, nullable::nullable_from_box(BoxTrait::new(1)));
+    dict.insert(11, nullable::nullable_from_box(BoxTrait::new(2)));
+    let val10 = dict[10].deref();
+    let val11 = dict[11].deref();
+    let val12 = dict[12];
+    assert_eq(@val10, @1, 'dict[10] == 1');
+    assert_eq(@val11, @2, 'dict[11] == 2');
     assert(
         match nullable::match_nullable(val12) {
-            nullable::FromNullableResult::Null(()) => true,
+            nullable::FromNullableResult::Null => true,
             nullable::FromNullableResult::NotNull(_) => false,
         },
         'default_val == null'
     );
 }
-// TODO(lior): Re-enable the test once Dict of bools are supported.
-// #[test]
-// fn test_bool_dict() {
-//     let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
-//     let squashed_dict = bool_dict.squash();
-//     let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
-//     assert(!bool_dict.get(0), 'default_val != false');
-//     bool_dict.insert(1, true);
-//     assert(bool_dict.get(1), 'bool_dict[1] != true');
-// }
 
+#[test]
+fn test_bool_dict() {
+    let mut bool_dict: Felt252Dict<bool> = Default::default();
+    let _squashed_dict = bool_dict.squash();
+    let mut bool_dict: Felt252Dict<bool> = Default::default();
+    assert(!bool_dict.get(0), 'default_val != false');
+    bool_dict.insert(1, true);
+    assert(bool_dict.get(1), 'bool_dict[1] != true');
+}
+
+#[test]
+fn test_array_dict() {
+    let mut dict = Default::default();
+    dict.insert(10, NullableTrait::new(array![1, 2, 3]));
+    let (entry, value) = dict.entry(10);
+    assert_eq(@value.deref(), @array![1, 2, 3], 'dict[10] == [1, 2, 3]');
+    dict = entry.finalize(NullableTrait::new(array![4, 5]));
+    let (entry, value) = dict.entry(10);
+    assert_eq(@value.deref(), @array![4, 5], 'dict[10] == [4, 5]');
+    dict = entry.finalize(nullable::null());
+    let (_entry, value) = dict.entry(10);
+    assert(value.is_null(), 'dict[10] == null');
+}
 

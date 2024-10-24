@@ -1,0 +1,77 @@
+//! > Test external_attributes_validation plugin.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: true)
+
+//! > cairo_code
+#[doc]
+fn f0() -> felt252 {
+    0
+}
+
+#[doc(hidden: true)]
+fn f1() -> felt252 {
+    0
+}
+
+#[doc(:hidden)]
+fn f2() -> felt252 {
+    0
+}
+
+#[doc(hidden_true)]
+fn f3() -> felt252 {
+    0
+}
+
+#[doc(hidden)]
+fn f4() -> felt252 {
+    0
+}
+
+//! > expanded_cairo_code
+#[doc]
+fn f0() -> felt252 {
+    0
+}
+
+#[doc(hidden: true)]
+fn f1() -> felt252 {
+    0
+}
+
+#[doc(:hidden)]
+fn f2() -> felt252 {
+    0
+}
+
+#[doc(hidden_true)]
+fn f3() -> felt252 {
+    0
+}
+
+#[doc(hidden)]
+fn f4() -> felt252 {
+    0
+}
+
+//! > expected_diagnostics
+error: Expected arguments. Supported args: hidden
+ --> test_src/lib.cairo:1:1
+#[doc]
+^****^
+
+error: This argument is not supported. Supported args: hidden
+ --> test_src/lib.cairo:6:7
+#[doc(hidden: true)]
+      ^**********^
+
+error: This argument is not supported. Supported args: hidden
+ --> test_src/lib.cairo:11:7
+#[doc(:hidden)]
+      ^*****^
+
+error: Wrong type of argument. Currently only #[doc(hidden)] is supported.
+ --> test_src/lib.cairo:16:7
+#[doc(hidden_true)]
+      ^*********^

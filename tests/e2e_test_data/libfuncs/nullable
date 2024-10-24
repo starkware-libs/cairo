@@ -16,15 +16,15 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt252 = felt252;
-type Nullable<felt252> = Nullable<felt252>;
+type Nullable<felt252> = Nullable<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc null<felt252> = null<felt252>;
 libfunc store_temp<Nullable<felt252>> = store_temp<Nullable<felt252>>;
 
-null<felt252>() -> ([0]);
-store_temp<Nullable<felt252>>([0]) -> ([1]);
-return([1]);
+null<felt252>() -> ([0]); // 0
+store_temp<Nullable<felt252>>([0]) -> ([0]); // 1
+return([0]); // 2
 
 test::foo@0() -> (Nullable<felt252>);
 
@@ -48,16 +48,16 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt252 = felt252;
-type Box<felt252> = Box<felt252>;
-type Nullable<felt252> = Nullable<felt252>;
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Nullable<felt252> = Nullable<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc nullable_from_box<felt252> = nullable_from_box<felt252>;
 libfunc store_temp<Nullable<felt252>> = store_temp<Nullable<felt252>>;
 
-nullable_from_box<felt252>([0]) -> ([1]);
-store_temp<Nullable<felt252>>([1]) -> ([2]);
-return([2]);
+nullable_from_box<felt252>([0]) -> ([1]); // 0
+store_temp<Nullable<felt252>>([1]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0([0]: Box<felt252>) -> (Nullable<felt252>);
 
@@ -69,7 +69,7 @@ test::foo@0([0]: Box<felt252>) -> (Nullable<felt252>);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(x: Nullable::<felt252>, y: Box::<felt252>) -> Box::<felt252> {
+fn foo(x: Nullable<felt252>, y: Box<felt252>) -> Box<felt252> {
     match match_nullable::<felt252>(x) {
         nullable::FromNullableResult::Null(_) => y,
         nullable::FromNullableResult::NotNull(x) => x,
@@ -77,38 +77,123 @@ fn foo(x: Nullable::<felt252>, y: Box::<felt252>) -> Box::<felt252> {
 }
 
 //! > casm
-jmp rel 5 if [fp + -4] != 0;
+jmp rel 4 if [fp + -4] != 0;
 [ap + 0] = [fp + -3], ap++;
-jmp rel 3;
+ret;
 [ap + 0] = [fp + -4], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt252 = felt252;
-type Nullable<felt252> = Nullable<felt252>;
-type Box<felt252> = Box<felt252>;
+type Nullable<felt252> = Nullable<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc match_nullable<felt252> = match_nullable<felt252>;
 libfunc branch_align = branch_align;
 libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
-libfunc jump = jump;
 libfunc drop<Box<felt252>> = drop<Box<felt252>>;
-libfunc rename<Box<felt252>> = rename<Box<felt252>>;
 
-match_nullable<felt252>([0]) { fallthrough() 4([2]) };
-branch_align() -> ();
-store_temp<Box<felt252>>([1]) -> ([3]);
-jump() { 7() };
-branch_align() -> ();
-drop<Box<felt252>>([1]) -> ();
-store_temp<Box<felt252>>([2]) -> ([3]);
-rename<Box<felt252>>([3]) -> ([4]);
-return([4]);
+match_nullable<felt252>([0]) { fallthrough() 4([2]) }; // 0
+branch_align() -> (); // 1
+store_temp<Box<felt252>>([1]) -> ([1]); // 2
+return([1]); // 3
+branch_align() -> (); // 4
+drop<Box<felt252>>([1]) -> (); // 5
+store_temp<Box<felt252>>([2]) -> ([2]); // 6
+return([2]); // 7
 
 test::foo@0([0]: Nullable<felt252>, [1]: Box<felt252>) -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > nullable_forward_snapshot libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: @Nullable::<Array<felt252>>) -> Nullable<@Array<felt252>> {
+    core::nullable::nullable_forward_snapshot(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type Nullable<Array<felt252>> = Nullable<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Nullable<Array<felt252>>> = Snapshot<Nullable<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Nullable<Snapshot<Array<felt252>>> = Nullable<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc nullable_forward_snapshot<Array<felt252>> = nullable_forward_snapshot<Array<felt252>>;
+libfunc store_temp<Nullable<Snapshot<Array<felt252>>>> = store_temp<Nullable<Snapshot<Array<felt252>>>>;
+
+nullable_forward_snapshot<Array<felt252>>([0]) -> ([1]); // 0
+store_temp<Nullable<Snapshot<Array<felt252>>>>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: Snapshot<Nullable<Array<felt252>>>) -> (Nullable<Snapshot<Array<felt252>>>);
+
+//! > ==========================================================================
+
+//! > nullable snapshot matching libfuncs
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(x: @Nullable::<Array<felt252>>, y: Box::<@Array<felt252>>) -> Box::<@Array<felt252>> {
+    match core::nullable::match_nullable(core::nullable::nullable_forward_snapshot(x)) {
+        nullable::FromNullableResult::Null(_) => y,
+        nullable::FromNullableResult::NotNull(x) => x,
+    }
+}
+
+//! > casm
+jmp rel 4 if [fp + -4] != 0;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+
+//! > sierra_code
+type Nullable<Array<felt252>> = Nullable<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Nullable<Array<felt252>>> = Snapshot<Nullable<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Snapshot<Array<felt252>>> = Box<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Nullable<Snapshot<Array<felt252>>> = Nullable<Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc nullable_forward_snapshot<Array<felt252>> = nullable_forward_snapshot<Array<felt252>>;
+libfunc match_nullable<Snapshot<Array<felt252>>> = match_nullable<Snapshot<Array<felt252>>>;
+libfunc branch_align = branch_align;
+libfunc store_temp<Box<Snapshot<Array<felt252>>>> = store_temp<Box<Snapshot<Array<felt252>>>>;
+libfunc drop<Box<Snapshot<Array<felt252>>>> = drop<Box<Snapshot<Array<felt252>>>>;
+
+nullable_forward_snapshot<Array<felt252>>([0]) -> ([2]); // 0
+match_nullable<Snapshot<Array<felt252>>>([2]) { fallthrough() 5([3]) }; // 1
+branch_align() -> (); // 2
+store_temp<Box<Snapshot<Array<felt252>>>>([1]) -> ([1]); // 3
+return([1]); // 4
+branch_align() -> (); // 5
+drop<Box<Snapshot<Array<felt252>>>>([1]) -> (); // 6
+store_temp<Box<Snapshot<Array<felt252>>>>([3]) -> ([3]); // 7
+return([3]); // 8
+
+test::foo@0([0]: Snapshot<Nullable<Array<felt252>>>, [1]: Box<Snapshot<Array<felt252>>>) -> (Box<Snapshot<Array<felt252>>>);
 
 //! > ==========================================================================
 
@@ -118,65 +203,57 @@ test::foo@0([0]: Nullable<felt252>, [1]: Box<felt252>) -> (Box<felt252>);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
-fn foo() -> felt252 {
-    match match_nullable::<felt252>(nullable_from_box::<felt252>(BoxTrait::new(1234))) {
+fn foo(v: felt252) -> felt252 {
+    match match_nullable::<felt252>(nullable_from_box::<felt252>(BoxTrait::new(v))) {
         nullable::FromNullableResult::Null(_) => 555,
         nullable::FromNullableResult::NotNull(x) => x.unbox(),
     }
 }
 
 //! > casm
-[ap + 0] = 1234, ap++;
 %{
 if '__boxed_segment' not in globals():
     __boxed_segment = segments.add()
 memory[ap + 0] = __boxed_segment
 __boxed_segment += 1
 %}
-[ap + -1] = [[ap + 0] + 0], ap++;
-jmp rel 6 if [ap + -1] != 0;
+[fp + -3] = [[ap + 0] + 0], ap++;
+jmp rel 5 if [ap + -1] != 0;
 [ap + 0] = 555, ap++;
-jmp rel 3;
+ret;
 [ap + 0] = [[ap + -1] + 0], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type felt252 = felt252;
-type Box<felt252> = Box<felt252>;
-type Nullable<felt252> = Nullable<felt252>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 555> = Const<felt252, 555> [storable: false, drop: false, dup: false, zero_sized: false];
+type Nullable<felt252> = Nullable<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc felt252_const<1234> = felt252_const<1234>;
-libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc into_box<felt252> = into_box<felt252>;
 libfunc nullable_from_box<felt252> = nullable_from_box<felt252>;
 libfunc match_nullable<felt252> = match_nullable<felt252>;
 libfunc branch_align = branch_align;
-libfunc felt252_const<555> = felt252_const<555>;
-libfunc jump = jump;
+libfunc const_as_immediate<Const<felt252, 555>> = const_as_immediate<Const<felt252, 555>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc unbox<felt252> = unbox<felt252>;
-libfunc rename<felt252> = rename<felt252>;
 
-felt252_const<1234>() -> ([0]);
-store_temp<felt252>([0]) -> ([0]);
-into_box<felt252>([0]) -> ([1]);
-nullable_from_box<felt252>([1]) -> ([2]);
-match_nullable<felt252>([2]) { fallthrough() 9([3]) };
-branch_align() -> ();
-felt252_const<555>() -> ([4]);
-store_temp<felt252>([4]) -> ([5]);
-jump() { 12() };
-branch_align() -> ();
-unbox<felt252>([3]) -> ([6]);
-store_temp<felt252>([6]) -> ([5]);
-rename<felt252>([5]) -> ([7]);
-return([7]);
+into_box<felt252>([0]) -> ([1]); // 0
+nullable_from_box<felt252>([1]) -> ([2]); // 1
+match_nullable<felt252>([2]) { fallthrough() 7([3]) }; // 2
+branch_align() -> (); // 3
+const_as_immediate<Const<felt252, 555>>() -> ([4]); // 4
+store_temp<felt252>([4]) -> ([4]); // 5
+return([4]); // 6
+branch_align() -> (); // 7
+unbox<felt252>([3]) -> ([5]); // 8
+store_temp<felt252>([5]) -> ([5]); // 9
+return([5]); // 10
 
-test::foo@0() -> (felt252);
+test::foo@0([0]: felt252) -> (felt252);
 
 //! > ==========================================================================
 
@@ -186,57 +263,52 @@ test::foo@0() -> (felt252);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo() -> felt252 {
-    match match_nullable(nullable_from_box(BoxTrait::new(()))) {
+fn foo(e: ()) -> felt252 {
+    match match_nullable(nullable_from_box(BoxTrait::new(e))) {
         nullable::FromNullableResult::Null(_) => 0,
-        nullable::FromNullableResult::NotNull(x) => 1,
+        nullable::FromNullableResult::NotNull(_x) => 1,
     }
 }
 
 //! > casm
 [ap + 0] = 1, ap++;
-jmp rel 6 if [ap + -1] != 0;
+jmp rel 5 if [ap + -1] != 0;
 [ap + 0] = 0, ap++;
-jmp rel 4;
+ret;
 [ap + 0] = 1, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 400})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type Unit = Struct<ut@Tuple>;
-type Box<Unit> = Box<Unit>;
-type Nullable<Unit> = Nullable<Unit>;
-type felt252 = felt252;
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Nullable<Unit> = Nullable<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc into_box<Unit> = into_box<Unit>;
 libfunc nullable_from_box<Unit> = nullable_from_box<Unit>;
 libfunc match_nullable<Unit> = match_nullable<Unit>;
 libfunc branch_align = branch_align;
-libfunc felt252_const<0> = felt252_const<0>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc jump = jump;
 libfunc drop<Box<Unit>> = drop<Box<Unit>>;
-libfunc felt252_const<1> = felt252_const<1>;
-libfunc rename<felt252> = rename<felt252>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 
-struct_construct<Unit>() -> ([0]);
-store_temp<Unit>([0]) -> ([0]);
-into_box<Unit>([0]) -> ([1]);
-nullable_from_box<Unit>([1]) -> ([2]);
-match_nullable<Unit>([2]) { fallthrough() 9([3]) };
-branch_align() -> ();
-felt252_const<0>() -> ([4]);
-store_temp<felt252>([4]) -> ([5]);
-jump() { 13() };
-branch_align() -> ();
-drop<Box<Unit>>([3]) -> ();
-felt252_const<1>() -> ([6]);
-store_temp<felt252>([6]) -> ([5]);
-rename<felt252>([5]) -> ([7]);
-return([7]);
+into_box<Unit>([0]) -> ([1]); // 0
+nullable_from_box<Unit>([1]) -> ([2]); // 1
+match_nullable<Unit>([2]) { fallthrough() 7([3]) }; // 2
+branch_align() -> (); // 3
+const_as_immediate<Const<felt252, 0>>() -> ([4]); // 4
+store_temp<felt252>([4]) -> ([4]); // 5
+return([4]); // 6
+branch_align() -> (); // 7
+drop<Box<Unit>>([3]) -> (); // 8
+const_as_immediate<Const<felt252, 1>>() -> ([5]); // 9
+store_temp<felt252>([5]) -> ([5]); // 10
+return([5]); // 11
 
-test::foo@0() -> (felt252);
+test::foo@0([0]: Unit) -> (felt252);

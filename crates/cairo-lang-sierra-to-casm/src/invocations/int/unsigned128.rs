@@ -1,13 +1,16 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::int::IntOperator;
+use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
+use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
-use num_traits::One;
+use num_traits::{Num, One};
 
+use super::{bounded, build_128bit_diff, build_const};
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, misc, CompiledInvocation,
-    CompiledInvocationBuilder, CostValidationInfo, InvocationError,
+    BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
+    InvocationError, add_input_variables, bitwise, get_non_fallthrough_statement_id, misc,
 };
 
 /// Builds instructions for Sierra u128 operations.
@@ -18,18 +21,23 @@ pub fn build(
     match libfunc {
         Uint128Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => build_u128_overflowing_add(builder),
-            IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
+            IntOperator::OverflowingSub => build_128bit_diff(builder),
         },
-        Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
+        Uint128Concrete::Divmod(_) => bounded::build_div_rem(
+            builder,
+            &Range::closed(0, u128::MAX),
+            &Range::closed(1, u128::MAX),
+        ),
         Uint128Concrete::GuaranteeMul(_) => build_u128_guarantee_mul(builder),
         Uint128Concrete::MulGuaranteeVerify(_) => build_u128_mul_guarantee_verify(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
-        Uint128Concrete::Const(libfunc) => super::unsigned::build_const(libfunc, builder),
+        Uint128Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint128Concrete::FromFelt252(_) => build_u128_from_felt252(builder),
         Uint128Concrete::ToFelt252(_) => misc::build_identity(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint128Concrete::SquareRoot(_) => super::unsigned::build_sqrt(builder),
         Uint128Concrete::ByteReverse(_) => build_u128_byte_reverse(builder),
+        Uint128Concrete::Bitwise(_) => bitwise::build(builder),
     }
 }
 
@@ -53,7 +61,7 @@ fn build_u128_overflowing_add(
             hint TestLessThan {lhs: a_plus_b, rhs: u128_limit} into {dst: no_overflow};
             jump NoOverflow if no_overflow != 0;
             // Overflow:
-            // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
+            // Here we know that 2**128 <= a + b < 2 * 2**128 - 1.
             tempvar wrapping_a_plus_b = a_plus_b - u128_limit;
             assert wrapping_a_plus_b = *(range_check++);
             jump Target;
@@ -67,116 +75,11 @@ fn build_u128_overflowing_add(
             ("Target", &[&[range_check], &[wrapping_a_plus_b]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
-            extra_costs: None,
-        },
-    ))
-}
-
-/// Handles a u128 overflowing sub operation.
-fn build_u128_overflowing_sub(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let [range_check, a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        buffer(0) range_check;
-        deref a;
-        deref b;
-    };
-    casm_build_extend! {casm_builder,
-            let orig_range_check = range_check;
-            tempvar a_ge_b;
-            tempvar a_minus_b = a - b;
-            const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-            hint TestLessThanOrEqual {lhs: b, rhs: a} into {dst: a_ge_b};
-            jump NoOverflow if a_ge_b != 0;
-            // Overflow (negative):
-            // Here we know that 0 - (2**128 - 1) <= a - b < 0.
-            tempvar wrapping_a_minus_b = a_minus_b + u128_limit;
-            assert wrapping_a_minus_b = *(range_check++);
-            jump Target;
-        NoOverflow:
-            assert a_minus_b = *(range_check++);
-    };
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [
-            ("Fallthrough", &[&[range_check], &[a_minus_b]], None),
-            ("Target", &[&[range_check], &[wrapping_a_minus_b]], Some(failure_handle_statement_id)),
-        ],
-        CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
-            extra_costs: None,
-        },
-    ))
-}
-
-/// Handles a u128 divmod operation.
-fn build_u128_divmod(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check, a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        buffer(3) range_check;
-        deref a;
-        deref b;
-    };
-    casm_build_extend! {casm_builder,
-            let orig_range_check = range_check;
-            tempvar r_plus_1;
-            tempvar b_minus_r_minus_1;
-            tempvar q_is_small;
-            tempvar b_or_q_bound_rc_value;
-            tempvar bq;
-            tempvar q;
-            tempvar r;
-            hint DivMod { lhs: a, rhs: b } into { quotient: q, remainder: r };
-            // Both `q` and `r` must be uint128.
-            // We must check `r` explicitly: we later check that `0 <= b - (r + 1)` and
-            // `b * q + r = a`, however, if `r = -1` we may pass both of these checks (say, if
-            // `b = a + 1` and `q = 1`).
-            // We must also check `q` explicitly; the only arithmetic constraint on `q` is
-            // `b * q + r = a`, and if `b = 2`, `a = 1` and `r = 0`, we can take `q` to be the
-            // inverse of 2 (`(PRIME + 1) / 2`, much larger than 2^128) and pass this
-            // constraint.
-            assert q = *(range_check++);
-            assert r = *(range_check++);
-            // Verify `r < b` by constraining `0 <= b - (r + 1)`.
-            const one = 1;
-            assert r_plus_1 = r + one;
-            assert b = b_minus_r_minus_1 + r_plus_1;
-            assert b_minus_r_minus_1 = *(range_check++);
-            // Verify `b * q + r = a`.
-            // Since both `b` and `q` can be 2^128-1, we may overflow on `b * q`. To verify this
-            // is not the case, use the fact that `b * q` must be less than 2^128. We know
-            // `min(b, q)` must be less than 2^64. We guess which is less and verify.
-            const u64_bound = u64::MAX as u128 + 1;
-            hint TestLessThan {lhs: q, rhs: u64_bound} into {dst: q_is_small};
-            const u128_bound_minus_u64_bound = u128::MAX - u64::MAX as u128;
-            jump QIsSmall if q_is_small != 0;
-            // `q >= 2^64`, so to verify `b < 2^64` we assert `2^128 - 2^64 + b` is in the range
-            // check bound.
-            assert b_or_q_bound_rc_value = b + u128_bound_minus_u64_bound;
-            jump VerifyBQ;
-        QIsSmall:
-            // `q < 2^64`, compute `2^64 - q`.
-            assert b_or_q_bound_rc_value = q + u128_bound_minus_u64_bound;
-        VerifyBQ:
-            // Now, b_or_q_bound_rc_value contains either `2^128 - 2^64 + q` or
-            // `2^128 - 2^64 + b`. Verify this value is in [0, 2^128).
-            assert b_or_q_bound_rc_value = *(range_check++);
-            // Range validations done; verify `b * q + r = a` and that's it.
-            assert bq = b * q;
-            assert a = bq + r;
-    };
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
-        CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))
@@ -317,7 +220,11 @@ fn build_u128_mul_guarantee_verify(
         casm_builder,
         [("Fallthrough", &[&[range_check]], None)],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))
@@ -380,7 +287,7 @@ fn build_u128_from_felt252(
             assert rced_value = *(range_check++);
             // If x != 0, jump to the end.
             jump FailureHandle if x != 0;
-            // Otherwise, fail.
+            // Otherwise, fail. As `x` must be non-zero in the overflow case, this is unreachable.
             fail;
         NoOverflow:
             assert value = *(range_check++);
@@ -392,12 +299,16 @@ fn build_u128_from_felt252(
             ("FailureHandle", &[&[range_check], &[x], &[y]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
             extra_costs: None,
         },
     ))
 }
-/// Handles instruction for reverseing the bytes of a u128.
+/// Handles instruction for reversing the bytes of a u128.
 pub fn build_u128_byte_reverse(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -466,10 +377,11 @@ pub fn build_u128_byte_reverse(
     // two 64-bit words.
 
     // Right align the value.
-    let shift = 1_u128 << (8 + 16 + 32 + 64);
     casm_build_extend! {casm_builder,
-        const shift_imm = shift;
-        tempvar result = temp / shift_imm;
+        // The inverse of `2**(8 + 16 + 32 + 64)` in the field.
+        const shift_inverse =
+            -BigInt::from_str_radix("800000000000011000000000000000000", 16).unwrap();
+        let result = temp * shift_inverse;
     }
 
     Ok(builder.build_from_casm_builder(

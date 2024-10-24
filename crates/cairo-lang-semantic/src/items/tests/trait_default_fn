@@ -1,0 +1,85 @@
+//! > Test default implementation with basic implementation and override.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    MyTrait::foo(5_u64);
+    MyTrait::foo(3_u32);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn foo(t: T) -> T {
+        t
+    }
+}
+impl MyImplU64 of MyTrait<u64>;
+impl MyImplU32 of MyTrait<u32> {
+    fn foo(t: u32) -> u32 {
+        t + 1
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test default implementation with a self reference.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn inner(x: T, y: T) -> T;
+    fn foo<+Copy<T>>(x: T) -> T {
+        Self::inner(x, x)
+    }
+}
+impl MyImplU32 of MyTrait<u32> {
+    fn inner(x: u32, y: u32) -> u32 {
+        x + y
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test default implementation with mut.
+
+//! > TODO(oziv): Support mut in default implementations.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn foo(mut x: u32) -> u32 {
+        x += 1;
+        x
+    }
+}
+
+//! > expected_diagnostics
+error: Parameter of trait function `MyTrait::foo` can't be defined as mutable.
+ --> lib.cairo:2:12
+    fn foo(mut x: u32) -> u32 {
+           ^*^

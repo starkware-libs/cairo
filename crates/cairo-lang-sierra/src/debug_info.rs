@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -13,7 +14,7 @@ use crate::program::{GenericArg, Program, Statement};
 mod test;
 
 /// Debug information for a Sierra program, to get readable names.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Default, Serialize, Deserialize)]
 pub struct DebugInfo {
     #[serde(
         serialize_with = "serialize_map::<ConcreteTypeId, _>",
@@ -30,7 +31,39 @@ pub struct DebugInfo {
         deserialize_with = "deserialize_map::<FunctionId, _>"
     )]
     pub user_func_names: HashMap<FunctionId, SmolStr>,
+    /// Non-crucial information about the program, for use by external libraries and tool.
+    ///
+    /// See [`Annotations`] type documentation for more information about this field.
+    #[serde(default, skip_serializing_if = "Annotations::is_empty")]
+    pub annotations: Annotations,
+    /// List of functions marked as executable.
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub executables: HashMap<SmolStr, Vec<FunctionId>>,
 }
+
+/// Store for non-crucial information about the program, for use by external libraries and tool.
+///
+/// Keys represent tool namespaces, and values are tool-specific annotations themselves.
+/// Annotation values are JSON values, so they can be arbitrarily complex.
+///
+/// ## Namespaces
+///
+/// In order to avoid collisions between tools, namespaces should be URL-like, contain tool name.
+/// It is not required for namespace URLs to exist, but it is preferable nonetheless.
+///
+/// A single tool might want to use multiple namespaces, for example to group together annotations
+/// coming from different subcomponents of the tool. In such case, namespaces should use path-like
+/// notation (e.g. `example.com/sub-namespace`).
+///
+/// For future-proofing, it might be a good idea to version namespaces, e.g. `example.com/v1`.
+///
+/// ### Example well-formed namespaces
+///
+/// - `scarb.swmansion.com`
+/// - `scarb.swmansion.com/v1`
+/// - `scarb.swmansion.com/build-info/v1`
+pub type Annotations = OrderedHashMap<String, serde_json::Value>;
+
 impl DebugInfo {
     /// Extracts the existing debug info from a program.
     pub fn extract(program: &Program) -> Self {
@@ -59,6 +92,8 @@ impl DebugInfo {
                     func.id.debug_name.clone().map(|name| (FunctionId::new(func.id.id), name))
                 })
                 .collect(),
+            annotations: Default::default(),
+            executables: Default::default(),
         }
     }
 

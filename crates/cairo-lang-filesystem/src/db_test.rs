@@ -5,26 +5,27 @@ use test_log::test;
 
 use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};
-use crate::db::FilesGroupEx;
+use crate::db::{CrateConfiguration, FilesGroupEx};
 use crate::flag::Flag;
-use crate::ids::{CrateLongId, Directory, FlagId};
+use crate::ids::{CrateId, Directory, FlagId};
 use crate::test_utils::FilesDatabaseForTesting;
 
 #[test]
 fn test_filesystem() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let crt = db.intern_crate(CrateLongId("my_crate".into()));
-    let crt2 = db.intern_crate(CrateLongId("my_crate2".into()));
-    let directory = Directory("src".into());
+    let crt = CrateId::plain(&db, "my_crate");
+    let crt2 = CrateId::plain(&db, "my_crate2");
+    let directory = Directory::Real("src".into());
     let file_id = directory.file(&db, "child.cairo".into());
-    db.override_file_content(file_id, Some(Arc::new("content\n".into())));
-    db.set_crate_root(crt, Some(directory.clone()));
+    let config = CrateConfiguration::default_for_root(directory);
+    db.override_file_content(file_id, Some("content\n".into()));
+    db.set_crate_config(crt, Some(config.clone()));
 
-    assert_eq!(db.crate_root_dir(crt), Some(directory));
-    assert!(db.crate_root_dir(crt2).is_none());
+    assert_eq!(db.crate_config(crt), Some(config));
+    assert!(db.crate_config(crt2).is_none());
 
-    assert_eq!(*db.file_content(file_id).unwrap(), "content\n");
+    assert_eq!(db.file_content(file_id).unwrap().as_ref(), "content\n");
 }
 
 #[test]

@@ -1,6 +1,6 @@
+use super::SyntaxNode;
 use super::db::SyntaxGroup;
 use super::kind::SyntaxKind;
-use super::SyntaxNode;
 
 /// Checks whether the given node has a parent of the given kind.
 pub fn is_parent_of_kind(db: &dyn SyntaxGroup, node: &SyntaxNode, kind: SyntaxKind) -> bool {

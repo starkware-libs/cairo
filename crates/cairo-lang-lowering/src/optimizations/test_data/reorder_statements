@@ -1,0 +1,320 @@
+//! > Check that literals are moved to the right arm.
+
+//! > test_runner_name
+test_reorder_statements
+
+//! > function
+fn foo() -> felt252 {
+    let opt = get_option();
+
+    let _unused = 17;
+    let _unused2 = ();
+
+    let one = 1;
+    let two = 2;
+    let three = 3;
+
+    match opt {
+        Option::Some(_) => one + two,
+        Option::None => {
+            let four = 4;
+            match opt {
+                Option::Some(_) => three + four,
+                Option::None => one,
+            }
+        }
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn get_option() -> Option<u16> nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Match(match test::get_option() {
+    Option::Some(v0) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v1: core::option::Option::<core::integer::u16>) <- Option::Some(v0)
+End:
+  Goto(blk3, {v1 -> v2})
+
+blk2:
+Statements:
+  (v3: ()) <- struct_construct()
+  (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
+End:
+  Goto(blk3, {v4 -> v2})
+
+blk3:
+Statements:
+  (v5: core::felt252) <- 17
+  (v6: ()) <- struct_construct()
+  (v7: core::felt252) <- 1
+  (v8: core::felt252) <- 2
+  (v9: core::felt252) <- 3
+End:
+  Match(match_enum(v2) {
+    Option::Some(v10) => blk4,
+    Option::None(v11) => blk5,
+  })
+
+blk4:
+Statements:
+  (v12: core::felt252) <- core::felt252_add(v7, v8)
+End:
+  Goto(blk9, {v12 -> v13})
+
+blk5:
+Statements:
+  (v14: core::felt252) <- 4
+End:
+  Match(match_enum(v2) {
+    Option::Some(v15) => blk6,
+    Option::None(v16) => blk7,
+  })
+
+blk6:
+Statements:
+  (v17: core::felt252) <- core::felt252_add(v9, v14)
+End:
+  Goto(blk8, {v17 -> v18})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {v7 -> v18})
+
+blk8:
+Statements:
+End:
+  Goto(blk9, {v18 -> v13})
+
+blk9:
+Statements:
+End:
+  Return(v13)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Match(match test::get_option() {
+    Option::Some(v0) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v1: core::option::Option::<core::integer::u16>) <- Option::Some(v0)
+End:
+  Goto(blk3, {v1 -> v2})
+
+blk2:
+Statements:
+  (v3: ()) <- struct_construct()
+  (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
+End:
+  Goto(blk3, {v4 -> v2})
+
+blk3:
+Statements:
+  (v7: core::felt252) <- 1
+End:
+  Match(match_enum(v2) {
+    Option::Some(v10) => blk4,
+    Option::None(v11) => blk5,
+  })
+
+blk4:
+Statements:
+  (v8: core::felt252) <- 2
+  (v12: core::felt252) <- core::felt252_add(v7, v8)
+End:
+  Goto(blk9, {v12 -> v13})
+
+blk5:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Option::Some(v15) => blk6,
+    Option::None(v16) => blk7,
+  })
+
+blk6:
+Statements:
+  (v9: core::felt252) <- 3
+  (v14: core::felt252) <- 4
+  (v17: core::felt252) <- core::felt252_add(v9, v14)
+End:
+  Goto(blk8, {v17 -> v18})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {v7 -> v18})
+
+blk8:
+Statements:
+End:
+  Goto(blk9, {v18 -> v13})
+
+blk9:
+Statements:
+End:
+  Return(v13)
+
+//! > ==========================================================================
+
+//! > Check that not statements are moved to the right arm or removed.
+
+//! > test_runner_name
+test_reorder_statements
+
+//! > function
+fn foo() {
+    let a = true;
+
+    let b = !a;
+    !!a;
+
+    match get_option() {
+        Option::Some(_) => a,
+        Option::None => false ^ b,
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn get_option() -> Option<u16> nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::bool) <- bool::True(v0)
+  (v2: core::bool) <- core::bool_not_impl(v1)
+  (v3: core::bool) <- core::bool_not_impl(v1)
+  (v4: core::bool) <- core::bool_not_impl(v3)
+End:
+  Match(match test::get_option() {
+    Option::Some(v5) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: core::bool) <- bool::False(v6)
+  (v8: core::bool) <- core::bool_xor_impl(v7, v2)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v9: ()) <- struct_construct()
+End:
+  Return(v9)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Match(match test::get_option() {
+    Option::Some(v5) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::bool) <- bool::True(v0)
+  (v2: core::bool) <- core::bool_not_impl(v1)
+  (v6: ()) <- struct_construct()
+  (v7: core::bool) <- bool::False(v6)
+  (v8: core::bool) <- core::bool_xor_impl(v7, v2)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v9: ()) <- struct_construct()
+End:
+  Return(v9)
+
+//! > ==========================================================================
+
+//! > Test non-droppable struct
+
+//! > test_runner_name
+test_reorder_statements
+
+//! > function
+fn foo(a: felt252) {
+    let b = NonDupStruct { a };
+    let NonDupStruct { a: _ } = b;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct NonDupStruct {
+    a: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: test::NonDupStruct) <- struct_construct(v0)
+  (v2: core::felt252) <- struct_destructure(v1)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v3)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: test::NonDupStruct) <- struct_construct(v0)
+  (v2: core::felt252) <- struct_destructure(v1)
+  (v3: ()) <- struct_construct()
+End:
+  Return(v3)

@@ -1,0 +1,178 @@
+//! > bytes31_const libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo() -> bytes31 {
+    bytes31_const::<0x100>()
+}
+
+//! > casm
+[ap + 0] = 256, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type bytes31 = bytes31 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bytes31_const<256> = bytes31_const<256>;
+libfunc store_temp<bytes31> = store_temp<bytes31>;
+
+bytes31_const<256>() -> ([0]); // 0
+store_temp<bytes31>([0]) -> ([0]); // 1
+return([0]); // 2
+
+test::foo@0() -> (bytes31);
+
+//! > ==========================================================================
+
+//! > bytes31_try_from_felt252 libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: felt252) -> Option<bytes31> {
+    bytes_31::bytes31_try_from_felt252(value)
+}
+
+//! > casm
+%{ memory[ap + 4] = memory[fp + -3] < 452312848583266388373324160190187140051835877600158453279131187530910662656 %}
+jmp rel 14 if [ap + 4] != 0, ap++;
+[fp + -3] = [ap + 4] + 452312848583266388373324160190187140051835877600158453279131187530910662656, ap++;
+%{
+(value, scalar) = (memory[ap + 3], 9304595970494411423921298675024789504)
+x = min(value // scalar, 340282366920938463463374607431768211455)
+y = value - x * scalar
+memory[ap + -2] = x
+memory[ap + -1] = y
+%}
+[ap + 0] = [ap + -2] * 9304595970494411423921298675024789504, ap++;
+[ap + 2] = [ap + -1] + [ap + -2], ap++;
+[ap + -4] = [[fp + -4] + 0], ap++;
+[ap + -4] = [[fp + -4] + 1], ap++;
+[ap + -3] = [ap + -5] + 330977770950444052039453308756743421951;
+[ap + -3] = [[fp + -4] + 2];
+jmp rel 18;
+%{
+(value, scalar) = (memory[fp + -3], 1329227995784915872903807060280344576)
+x = min(value // scalar, 340282366920938463463374607431768211455)
+y = value - x * scalar
+memory[ap + -1] = x
+memory[ap + 0] = y
+%}
+[ap + 1] = [ap + -1] * 1329227995784915872903807060280344576, ap++;
+[fp + -3] = [ap + 0] + [ap + -1], ap++;
+[ap + -3] = [[fp + -4] + 0], ap++;
+[ap + -3] = [[fp + -4] + 1], ap++;
+[ap + -2] = [ap + -4] + 338953138925153547590470800371487866880;
+[ap + -2] = [[fp + -4] + 2];
+ap += 1;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1410})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type bytes31 = bytes31 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::bytes_31::bytes31> = Enum<ut@core::option::Option::<core::bytes_31::bytes31>, bytes31, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bytes31_try_from_felt252 = bytes31_try_from_felt252;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::bytes_31::bytes31>, 0> = enum_init<core::option::Option::<core::bytes_31::bytes31>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<core::bytes_31::bytes31>> = store_temp<core::option::Option::<core::bytes_31::bytes31>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::bytes_31::bytes31>, 1> = enum_init<core::option::Option::<core::bytes_31::bytes31>, 1>;
+
+bytes31_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<core::bytes_31::bytes31>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<core::option::Option::<core::bytes_31::bytes31>>([5]) -> ([5]); // 4
+return([2], [5]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([6]); // 7
+enum_init<core::option::Option::<core::bytes_31::bytes31>, 1>([6]) -> ([7]); // 8
+store_temp<RangeCheck>([4]) -> ([4]); // 9
+store_temp<core::option::Option::<core::bytes_31::bytes31>>([7]) -> ([7]); // 10
+return([4], [7]); // 11
+
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::bytes_31::bytes31>);
+
+//! > ==========================================================================
+
+//! > bytes31_to_felt252 libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: bytes31) -> felt252 {
+    bytes_31::bytes31_to_felt252(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type bytes31 = bytes31 [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bytes31_to_felt252 = bytes31_to_felt252;
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+bytes31_to_felt252([0]) -> ([1]); // 0
+store_temp<felt252>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: bytes31) -> (felt252);
+
+//! > ==========================================================================
+
+//! > upcast<u8, bytes31>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: u8) -> bytes31 {
+    integer::upcast::<u8, bytes31>(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type bytes31 = bytes31 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc upcast<u8, bytes31> = upcast<u8, bytes31>;
+libfunc store_temp<bytes31> = store_temp<bytes31>;
+
+upcast<u8, bytes31>([0]) -> ([1]); // 0
+store_temp<bytes31>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: u8) -> (bytes31);

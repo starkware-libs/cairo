@@ -1,7 +1,7 @@
 //! > Incompatible types in loop breaks
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -10,7 +10,7 @@ fn foo() {
             break true;
         } else {
             break 0;
-        };
+        }
     };
 }
 
@@ -20,17 +20,46 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:19
             break 0;
                   ^
 
 //! > ==========================================================================
 
+//! > Loop break types incompatible, also with expected type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(x: Option<()>) {
+    loop {
+        if true {
+            break true;
+        } else {
+            break 0;
+        }
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "()", found: "core::bool".
+ --> lib.cairo:1:23
+fn foo(x: Option<()>) {
+                      ^
+
+//! > ==========================================================================
+
 //! > Continue outside a loop.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -43,7 +72,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Continue only allowed inside a `loop`.
+error: `continue` only allowed inside a `loop`.
  --> lib.cairo:2:5
     continue;
     ^*******^
@@ -53,7 +82,7 @@ error: Continue only allowed inside a `loop`.
 //! > Break outside a loop.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -66,7 +95,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Break only allowed inside a `loop`.
+error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break 5;
     ^******^
@@ -76,7 +105,7 @@ error: Break only allowed inside a `loop`.
 //! > Return inside a loop
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool {
@@ -101,7 +130,7 @@ error: `return` not allowed inside a `loop`.
 //! > Valid loop
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> bool {
@@ -122,10 +151,10 @@ foo
 //! > Invalid return in regard to the return type
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() -> bool{
+fn foo() -> bool {
     return;
 }
 
@@ -145,7 +174,7 @@ error: Unexpected return type. Expected: "core::bool", found: "()".
 //! > Valid empty return
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -164,7 +193,7 @@ foo
 //! > Empty return inside a loop
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool {
@@ -189,10 +218,10 @@ error: `return` not allowed inside a `loop`.
 //! > Invalid break in regard to the return type
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo() -> bool{
+fn foo() -> bool {
     loop {
         break;
     }
@@ -205,16 +234,16 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::bool", found: "()".
- --> lib.cairo:1:17
-fn foo() -> bool{
-                ^
+ --> lib.cairo:1:18
+fn foo() -> bool {
+                 ^
 
 //! > ==========================================================================
 
 //! > Valid empty break 
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -235,7 +264,7 @@ foo
 //! > Empty break outside of a loop
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -248,7 +277,109 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Break only allowed inside a `loop`.
+error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break;
     ^****^
+
+//! > ==========================================================================
+
+//! > Error propagation inside a loop.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> Option<bool> {
+    loop {
+        let res = Option::Some(true);
+        res?;
+        break;
+    };
+    Option::None
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use option::Option;
+
+//! > expected_diagnostics
+error: `?` not allowed inside a `loop`.
+ --> lib.cairo:5:9
+        res?;
+        ^**^
+
+//! > ==========================================================================
+
+//! > Loop with a felt252 tail expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> Option<bool> {
+    loop {
+        1
+    };
+    Option::None
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use option::Option;
+
+//! > expected_diagnostics
+error: Tail expression not allowed in a `loop` block.
+ --> lib.cairo:4:9
+        1
+        ^
+
+//! > ==========================================================================
+
+//! > Loop with a unit tail expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> Option<bool> {
+    loop {
+        ()
+    };
+    Option::None
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use option::Option;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Loop with a never tail expression.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> Option<bool> {
+    loop {
+        panic_with_felt252('no return')
+    };
+    Option::None
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use option::Option;
+
+//! > expected_diagnostics

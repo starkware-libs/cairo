@@ -1,0 +1,69 @@
+//! > Test submodule syntax tree.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+mod my_mod;
+
+//! > top_level_kind
+ItemModule
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemModule
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── module_kw (kind: TokenModule): 'mod'
+    ├── name (kind: TokenIdentifier): 'my_mod'
+    └── body (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test inline module syntax tree.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+mod my_mod {
+    trait Foo<T>;
+    impl FooImpl<S> of Foo<S> {
+        fn foo(a: int) -> felt252 {
+            return a;
+        }
+    }
+
+    fn test() {}
+
+    struct MyStruct {}
+}
+
+//! > top_level_kind
+ItemModule
+
+//! > ignored_kinds
+FunctionWithBody
+ItemTrait
+ItemImpl
+ItemStruct
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemModule
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── module_kw (kind: TokenModule): 'mod'
+    ├── name (kind: TokenIdentifier): 'my_mod'
+    └── body (kind: ModuleBody)
+        ├── lbrace (kind: TokenLBrace): '{'
+        ├── items (kind: ModuleItemList)
+        │   ├── child #0 (kind: ItemTrait) <ignored>
+        │   ├── child #1 (kind: ItemImpl) <ignored>
+        │   ├── child #2 (kind: FunctionWithBody) <ignored>
+        │   └── child #3 (kind: ItemStruct) <ignored>
+        └── rbrace (kind: TokenRBrace): '}'

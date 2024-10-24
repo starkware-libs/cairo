@@ -1,0 +1,70 @@
+//! > Unused coupon - only buy
+
+//! > test_runner_name
+test_program_generator
+
+//! > cairo
+extern fn coupon_buy<T>() -> T nopanic;
+
+fn foo() -> bar::<u8>::Coupon {
+    coupon_buy()
+}
+
+fn bar<T>() -> felt252 {
+    10
+}
+
+//! > sierra_code
+type Coupon<user@test::bar::<core::integer::u8>> = Coupon<user@test::bar::<core::integer::u8>> [storable: true, drop: true, dup: false, zero_sized: true];
+type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc coupon_buy<Coupon<user@test::bar::<core::integer::u8>>> = coupon_buy<Coupon<user@test::bar::<core::integer::u8>>>;
+libfunc const_as_immediate<Const<felt252, 10>> = const_as_immediate<Const<felt252, 10>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+coupon_buy<Coupon<user@test::bar::<core::integer::u8>>>() -> ([0]); // 0
+return([0]); // 1
+const_as_immediate<Const<felt252, 10>>() -> ([0]); // 2
+store_temp<felt252>([0]) -> ([0]); // 3
+return([0]); // 4
+
+test::foo@0() -> (Coupon<user@test::bar::<core::integer::u8>>);
+test::bar::<core::integer::u8>@2() -> (felt252);
+
+//! > ==========================================================================
+
+//! > Unused coupon - only refund
+
+//! > test_runner_name
+test_program_generator
+
+//! > cairo
+extern fn coupon_refund<T>(c: T) nopanic;
+
+fn foo(c: bar::<u8>::Coupon) {
+    coupon_refund(c);
+}
+
+fn bar<T>() -> felt252 {
+    10
+}
+
+//! > sierra_code
+type Coupon<user@test::bar::<core::integer::u8>> = Coupon<user@test::bar::<core::integer::u8>> [storable: true, drop: true, dup: false, zero_sized: true];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc coupon_refund<Coupon<user@test::bar::<core::integer::u8>>> = coupon_refund<Coupon<user@test::bar::<core::integer::u8>>>;
+libfunc const_as_immediate<Const<felt252, 10>> = const_as_immediate<Const<felt252, 10>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+coupon_refund<Coupon<user@test::bar::<core::integer::u8>>>([0]) -> (); // 0
+return(); // 1
+const_as_immediate<Const<felt252, 10>>() -> ([0]); // 2
+store_temp<felt252>([0]) -> ([0]); // 3
+return([0]); // 4
+
+test::foo@0([0]: Coupon<user@test::bar::<core::integer::u8>>) -> ();
+test::bar::<core::integer::u8>@2() -> (felt252);

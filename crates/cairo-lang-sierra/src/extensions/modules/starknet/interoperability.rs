@@ -4,14 +4,12 @@ use super::felt252_span_ty;
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt252::Felt252Type;
-use crate::extensions::lib_func::{
-    LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
-};
+use crate::extensions::lib_func::{LibfuncSignature, SignatureSpecializationContext};
 use crate::extensions::modules::get_bool_type;
 use crate::extensions::try_from_felt252::TryFromFelt252;
+use crate::extensions::utils::reinterpret_cast_signature;
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
-    SpecializationError,
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, SpecializationError,
 };
 use crate::ids::GenericTypeId;
 
@@ -23,7 +21,7 @@ impl NoGenericArgsGenericType for ContractAddressType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 /// Libfunc for creating a constant storage address.
@@ -58,18 +56,9 @@ impl NoGenericArgsGenericLibfunc for ContractAddressToFelt252Libfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature {
-                ty: context.get_concrete_type(ContractAddressType::id(), &[])?,
-                allow_deferred: true,
-                allow_add_const: true,
-                allow_const: true,
-            }],
-            vec![OutputVarInfo {
-                ty: context.get_concrete_type(Felt252Type::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
+        Ok(reinterpret_cast_signature(
+            context.get_concrete_type(ContractAddressType::id(), &[])?,
+            context.get_concrete_type(Felt252Type::id(), &[])?,
         ))
     }
 }
@@ -82,7 +71,7 @@ impl NoGenericArgsGenericType for ClassHashType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 /// Libfunc for creating a constant storage address.
@@ -117,18 +106,9 @@ impl NoGenericArgsGenericLibfunc for ClassHashToFelt252Libfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature {
-                ty: context.get_concrete_type(ClassHashType::id(), &[])?,
-                allow_deferred: true,
-                allow_add_const: true,
-                allow_const: true,
-            }],
-            vec![OutputVarInfo {
-                ty: context.get_concrete_type(Felt252Type::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
+        Ok(reinterpret_cast_signature(
+            context.get_concrete_type(ClassHashType::id(), &[])?,
+            context.get_concrete_type(Felt252Type::id(), &[])?,
         ))
     }
 }

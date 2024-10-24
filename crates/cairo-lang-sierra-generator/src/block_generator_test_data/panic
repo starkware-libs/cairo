@@ -5,29 +5,27 @@ block_generator_test
 
 //! > function
 fn foo(opt: Option<felt252>) -> felt252 {
-  expect(opt)
+    expect(opt)
 }
 
 //! > function_name
 foo
 
 //! > module_code
-use array::ArrayTrait;
-
 #[inline(always)]
 fn expect(opt: Option<felt252>) -> felt252 {
-   match opt {
-      Option::Some(x) => x,
-      Option::None(_) => no_inline_panic(),
-  }
+    match opt {
+        Option::Some(x) => x,
+        Option::None => no_inline_panic(),
+    }
 }
 
 
 #[inline(never)]
 fn no_inline_panic() -> never {
-  let mut data = Default::default();
-  data.append(1);
-  panic(data)
+    let mut data = array![];
+    data.append(1);
+    panic(data)
 }
 
 //! > semantic_diagnostics
@@ -42,60 +40,60 @@ blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    Option::Some(v2) => blk1,
-    Option::None(v3) => blk2,
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v6: (core::felt252,)) <- struct_construct(v2)
-  (v7: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v6)
+  (v3: (core::felt252,)) <- struct_construct(v1)
+  (v4: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v3)
 End:
-  Return(v7)
+  Return(v4)
 
 blk2:
 Statements:
-  (v8: core::PanicResult::<(core::never,)>) <- test::no_inline_panic()
+  (v5: core::panics::PanicResult::<(core::never,)>) <- test::no_inline_panic()
 End:
-  Match(match_enum(v8) {
-    PanicResult::Ok(v9) => blk3,
-    PanicResult::Err(v11) => blk4,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk3,
+    PanicResult::Err(v7) => blk4,
   })
 
 blk3:
 Statements:
-  (v10: core::never) <- struct_destructure(v9)
+  (v8: core::never) <- struct_destructure(v6)
 End:
-  Match(match_enum(v10) {
+  Match(match_enum(v8) {
   })
 
 blk4:
 Statements:
-  (v12: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v11)
+  (v9: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
 End:
-  Return(v12)
+  Return(v9)
 
 //! > sierra_code
-enum_match<core::option::Option::<core::felt252>>([0]) { fallthrough([1]) label0([2]) }
+enum_match<core::option::Option::<core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
 branch_align() -> ()
 struct_construct<Tuple<felt252>>([1]) -> ([3])
-enum_init<core::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])
-PushValues([4]: core::PanicResult::<(core::felt252,)>) -> ([5])
-return([5])
-label0:
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])
+PushValues([4]: core::panics::PanicResult::<(core::felt252,)>) -> ([4])
+return([4])
+label_test::foo::0:
 branch_align() -> ()
 drop<Unit>([2]) -> ()
 PushValues() -> ()
-function_call<user@test::no_inline_panic>() -> ([6])
-enum_match<core::PanicResult::<(core::never,)>>([6]) { fallthrough([7]) label3([8]) }
+function_call<user@test::no_inline_panic>() -> ([5])
+enum_match<core::panics::PanicResult::<(core::never,)>>([5]) { fallthrough([6]) label_test::foo::2([7]) }
 branch_align() -> ()
-struct_deconstruct<Tuple<core::never>>([7]) -> ([9])
-enum_match<core::never>([9]) { }
-label5:
-label3:
+struct_deconstruct<Tuple<core::never>>([6]) -> ([8])
+enum_match<core::never>([8]) { }
+label_test::foo::4:
+label_test::foo::2:
 branch_align() -> ()
-enum_init<core::PanicResult::<(core::felt252,)>, 1>([8]) -> ([10])
-PushValues([10]: core::PanicResult::<(core::felt252,)>) -> ([11])
-return([11])
-label4:
-label1:
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([7]) -> ([9])
+PushValues([9]: core::panics::PanicResult::<(core::felt252,)>) -> ([9])
+return([9])
+label_test::foo::3:
+label_test::foo::1:

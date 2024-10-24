@@ -1,0 +1,49 @@
+//! > Unknown types in trait/impl methods.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn foo(x: u8, y: T, z: u8) -> u8;
+    fn bar() -> T;
+}
+
+impl MyImpl of MyTrait {
+    fn foo(x: T, y: u8, z: u16) -> T {}
+    fn bar() -> u8 {
+        0
+    }
+}
+
+//! > expected_diagnostics
+error: Type not found.
+ --> lib.cairo:2:22
+    fn foo(x: u8, y: T, z: u8) -> u8;
+                     ^
+
+error: Type not found.
+ --> lib.cairo:3:17
+    fn bar() -> T;
+                ^
+
+error: Type not found.
+ --> lib.cairo:7:15
+    fn foo(x: T, y: u8, z: u16) -> T {}
+              ^
+
+error: Type not found.
+ --> lib.cairo:7:36
+    fn foo(x: T, y: u8, z: u16) -> T {}
+                                   ^
+
+error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u8`, actual: `core::integer::u16`.
+ --> lib.cairo:7:28
+    fn foo(x: T, y: u8, z: u16) -> T {}
+                           ^*^

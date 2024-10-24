@@ -1,7 +1,7 @@
 //! > Test unexpected argument types for operators.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: MyType) {
@@ -15,26 +15,25 @@ foo
 extern type MyType;
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Mul::<test::MyType>
- --> lib.cairo:3:9
+error: Trait has no implementation in context: core::traits::Add::<test::MyType>.
+ --> lib.cairo:3:5
     a + a * a;
-        ^***^
+    ^*******^
 
 //! > ==========================================================================
 
 //! > Test operators.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
     // Valid.
     a + a * a - a;
-    (b & b) | (b & ((a == a) | (a > a)))
-    & (a<a) & (a<=a) & (a>=a);
+    (b & b) | (b & ((a == a) | (a > a))) & (a < a) & (a <= a) & (a >= a);
     // Errors.
-    a>a>a;
+    a > a > a;
     a - b
 }
 
@@ -44,32 +43,32 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::bool", found: "core::integer::u128".
- --> lib.cairo:7:9
-    a>a>a;
+error: Consecutive comparison operators are not allowed: '>' followed by '>'
+ --> lib.cairo:6:9
+    a > a > a;
         ^
 
+error: Unexpected argument type. Expected: "core::bool", found: "core::integer::u128".
+ --> lib.cairo:6:13
+    a > a > a;
+            ^
+
 error: Unexpected argument type. Expected: "core::integer::u128", found: "core::bool".
- --> lib.cairo:8:9
+ --> lib.cairo:7:9
     a - b
         ^
 
-error: Unexpected return type. Expected: "()", found: "?17".
+error: Unexpected return type. Expected: "()", found: "core::integer::u128".
  --> lib.cairo:1:48
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
                                                ^
-
-error: Trait has no implementation in context: core::traits::PartialOrd::<core::bool>
- --> lib.cairo:7:5
-    a>a>a;
-    ^***^
 
 //! > ==========================================================================
 
 //! > Test unary operators.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -84,7 +83,58 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Neg::<core::bool>
+error: Trait has no implementation in context: core::traits::Neg::<core::bool>.
  --> lib.cairo:2:5
     -(1 == 2);
     ^*******^
+
+//! > ==========================================================================
+
+//! > Test index operator
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let x1 = Struct1 { x: 0 };
+    let _y1 = x1[0];
+    let x2 = Struct2 { x: 0 };
+    let _y2 = x2[0];
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Struct1 {
+    x: felt252
+}
+struct Struct2 {
+    x: felt252
+}
+
+
+impl Struct2IndexView of IndexView<Struct2, usize, @felt252> {
+    fn index(self: @Struct2, index: usize) -> @felt252 {
+        self.x
+    }
+}
+impl Struct2Index of Index<Struct2, usize, felt252> {
+    fn index(ref self: Struct2, index: usize) -> felt252 {
+        self.x
+    }
+}
+
+//! > expected_diagnostics
+error: Type `test::Struct1` could not be indexed.
+Candidate `core::ops::index::Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<test::Struct1, ?2>.
+Candidate `core::ops::index::IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<test::Struct1, ?2>.
+ --> lib.cairo:21:15
+    let _y1 = x1[0];
+              ^***^
+
+error: Type "test::Struct2" implements both the "Index" trait and the "IndexView" trait.
+ --> lib.cairo:23:15
+    let _y2 = x2[0];
+              ^***^

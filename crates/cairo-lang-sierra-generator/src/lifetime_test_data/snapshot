@@ -8,7 +8,7 @@ foo
 
 //! > function_code
 fn foo(a: felt252) -> @felt252 {
-   @a
+    @a
 }
 
 //! > module_code

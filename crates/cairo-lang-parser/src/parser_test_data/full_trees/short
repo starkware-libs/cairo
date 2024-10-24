@@ -1,0 +1,145 @@
+//! > Test parsing of a short code.
+
+//! > test_runner_name
+test_full_parser_tree(expect_diagnostics: *)
+
+//! > cairo_code
+>>> file: src/parser_test_data/cairo_test_files/short.cairo
+
+//! > print_trivia
+false
+
+//! > print_colors
+false
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ModuleItemList)
+    │   ├── child #0 (kind: ItemUse)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
+    │   │   ├── use_kw (kind: TokenUse): 'use'
+    │   │   ├── use_path (kind: UsePathSingle)
+    │   │   │   ├── ident (kind: PathSegmentSimple)
+    │   │   │   │   └── ident (kind: TokenIdentifier): 'std'
+    │   │   │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   │   │   └── use_path (kind: UsePathLeaf)
+    │   │   │       ├── ident (kind: PathSegmentSimple)
+    │   │   │       │   └── ident (kind: TokenIdentifier): 'format'
+    │   │   │       └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   └── child #1 (kind: FunctionWithBody)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── function_kw (kind: TokenFunction): 'fn'
+    │       │   ├── name (kind: TokenIdentifier): 'foo'
+    │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       │   └── signature (kind: FunctionSignature)
+    │       │       ├── lparen (kind: TokenLParen): '('
+    │       │       ├── parameters (kind: ParamList)
+    │       │       │   └── item #0 (kind: Param)
+    │       │       │       ├── modifiers (kind: ModifierList) []
+    │       │       │       ├── name (kind: TokenIdentifier): 'a'
+    │       │       │       └── type_clause (kind: TypeClause)
+    │       │       │           ├── colon (kind: TokenColon): ':'
+    │       │       │           └── ty (kind: ExprPath)
+    │       │       │               └── item #0 (kind: PathSegmentSimple)
+    │       │       │                   └── ident (kind: TokenIdentifier): 'int'
+    │       │       ├── rparen (kind: TokenRParen): ')'
+    │       │       ├── ret_ty (kind: ReturnTypeClause)
+    │       │       │   ├── arrow (kind: TokenArrow): '->'
+    │       │       │   └── ty (kind: ExprPath)
+    │       │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │       │           └── ident (kind: TokenIdentifier): 'felt252'
+    │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │       │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │       └── body (kind: ExprBlock)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── statements (kind: StatementList)
+    │           │   └── child #0 (kind: StatementReturn)
+    │           │       ├── attributes (kind: AttributeList) []
+    │           │       ├── return_kw (kind: TokenReturn): 'return'
+    │           │       ├── expr_clause (kind: ExprClause)
+    │           │       │   └── expr (kind: ExprPath)
+    │           │       │       └── item #0 (kind: PathSegmentSimple)
+    │           │       │           └── ident (kind: TokenIdentifier): 'a'
+    │           │       └── semicolon (kind: TokenSemicolon): ';'
+    │           └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test parsing of a short code, colored.
+
+//! > test_runner_name
+test_full_parser_tree(expect_diagnostics: *)
+
+//! > cairo_code
+>>> file: src/parser_test_data/cairo_test_files/short.cairo
+
+//! > print_trivia
+false
+
+//! > print_colors
+true
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── [36mroot[0m (kind: SyntaxFile)
+    ├── [36mitems[0m (kind: ModuleItemList)
+    │   ├── [36mchild #0[0m (kind: ItemUse)
+    │   │   ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
+    │   │   ├── [36mvisibility[0m (kind: VisibilityDefault)[95m [][0m
+    │   │   ├── [34muse_kw[0m (kind: TokenUse): '[1;32muse[0m'
+    │   │   ├── [36muse_path[0m (kind: UsePathSingle)
+    │   │   │   ├── [36mident[0m (kind: PathSegmentSimple)
+    │   │   │   │   └── [34mident[0m (kind: TokenIdentifier): '[1;32mstd[0m'
+    │   │   │   ├── [34mcolon_colon[0m (kind: TokenColonColon): '[1;32m::[0m'
+    │   │   │   └── [36muse_path[0m (kind: UsePathLeaf)
+    │   │   │       ├── [36mident[0m (kind: PathSegmentSimple)
+    │   │   │       │   └── [34mident[0m (kind: TokenIdentifier): '[1;32mformat[0m'
+    │   │   │       └── [36malias_clause[0m (kind: OptionAliasClauseEmpty)[95m [][0m
+    │   │   └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
+    │   └── [36mchild #1[0m (kind: FunctionWithBody)
+    │       ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
+    │       ├── [36mvisibility[0m (kind: VisibilityDefault)[95m [][0m
+    │       ├── [36mdeclaration[0m (kind: FunctionDeclaration)
+    │       │   ├── [34mfunction_kw[0m (kind: TokenFunction): '[1;32mfn[0m'
+    │       │   ├── [34mname[0m (kind: TokenIdentifier): '[1;32mfoo[0m'
+    │       │   ├── [36mgeneric_params[0m (kind: OptionWrappedGenericParamListEmpty)[95m [][0m
+    │       │   └── [36msignature[0m (kind: FunctionSignature)
+    │       │       ├── [34mlparen[0m (kind: TokenLParen): '[1;32m([0m'
+    │       │       ├── [36mparameters[0m (kind: ParamList)
+    │       │       │   └── [36mitem #0[0m (kind: Param)
+    │       │       │       ├── [36mmodifiers[0m (kind: ModifierList)[95m [][0m
+    │       │       │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32ma[0m'
+    │       │       │       └── [36mtype_clause[0m (kind: TypeClause)
+    │       │       │           ├── [34mcolon[0m (kind: TokenColon): '[1;32m:[0m'
+    │       │       │           └── [36mty[0m (kind: ExprPath)
+    │       │       │               └── [36mitem #0[0m (kind: PathSegmentSimple)
+    │       │       │                   └── [34mident[0m (kind: TokenIdentifier): '[1;32mint[0m'
+    │       │       ├── [34mrparen[0m (kind: TokenRParen): '[1;32m)[0m'
+    │       │       ├── [36mret_ty[0m (kind: ReturnTypeClause)
+    │       │       │   ├── [34marrow[0m (kind: TokenArrow): '[1;32m->[0m'
+    │       │       │   └── [36mty[0m (kind: ExprPath)
+    │       │       │       └── [36mitem #0[0m (kind: PathSegmentSimple)
+    │       │       │           └── [34mident[0m (kind: TokenIdentifier): '[1;32mfelt252[0m'
+    │       │       ├── [36mimplicits_clause[0m (kind: OptionImplicitsClauseEmpty)[95m [][0m
+    │       │       └── [36moptional_no_panic[0m (kind: OptionTerminalNoPanicEmpty)[95m [][0m
+    │       └── [36mbody[0m (kind: ExprBlock)
+    │           ├── [34mlbrace[0m (kind: TokenLBrace): '[1;32m{[0m'
+    │           ├── [36mstatements[0m (kind: StatementList)
+    │           │   └── [36mchild #0[0m (kind: StatementReturn)
+    │           │       ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
+    │           │       ├── [34mreturn_kw[0m (kind: TokenReturn): '[1;32mreturn[0m'
+    │           │       ├── [36mexpr_clause[0m (kind: ExprClause)
+    │           │       │   └── [36mexpr[0m (kind: ExprPath)
+    │           │       │       └── [36mitem #0[0m (kind: PathSegmentSimple)
+    │           │       │           └── [34mident[0m (kind: TokenIdentifier): '[1;32ma[0m'
+    │           │       └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
+    │           └── [34mrbrace[0m (kind: TokenRBrace): '[1;32m}[0m'
+    └── [34meof[0m (kind: TokenEndOfFile).

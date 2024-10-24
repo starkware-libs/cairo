@@ -1,0 +1,107 @@
+//! > Test lbrace in match
+
+//! > test_comments
+// TODO(Gil): Improve diagnostics in case of braces in a match argument.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    match MyStruct{a: 1} {
+    }
+    match x {
+      1 => {},
+      Struct{a, b: _, .., a: A::Variant(4)} => {},
+      x => {},
+      bool::False() => {}
+    }
+}
+
+//! > expected_diagnostics
+error: Missing token TerminalOr.
+ --> dummy_file.cairo:2:21
+    match MyStruct{a: 1} {
+                    ^
+
+error: Skipped tokens. Expected: pattern.
+ --> dummy_file.cairo:2:21
+    match MyStruct{a: 1} {
+                    ^
+
+error: Missing token TerminalMatchArrow.
+ --> dummy_file.cairo:2:24
+    match MyStruct{a: 1} {
+                       ^
+
+error: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:24
+    match MyStruct{a: 1} {
+                       ^
+
+error: Missing token TerminalUnderscore.
+ --> dummy_file.cairo:8:19
+      bool::False() => {}
+                  ^
+
+//! > ==========================================================================
+
+//! > Test missing arrow in match
+
+//! > test_comments
+// TODO(TomerStarkware): Improve diagnostics.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    let x = 5;
+    match x {
+        0 = 1,
+        _ => 2,
+    };
+}
+
+//! > expected_diagnostics
+error: Missing token TerminalOr.
+ --> dummy_file.cairo:4:10
+        0 = 1,
+         ^
+
+error: Skipped tokens. Expected: pattern.
+ --> dummy_file.cairo:4:11
+        0 = 1,
+          ^
+
+error: Missing token TerminalOr.
+ --> dummy_file.cairo:4:14
+        0 = 1,
+             ^
+
+error: Skipped tokens. Expected: pattern.
+ --> dummy_file.cairo:4:14
+        0 = 1,
+             ^
+
+//! > ==========================================================================
+
+//! > Test or trailing in match
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    let x = 5;
+    match x {
+        0 | 1 | => 1,
+        _ => 2,
+    };
+}
+
+//! > expected_diagnostics
+error: A trailing `|` is not allowed in an or-pattern.
+ --> dummy_file.cairo:4:15
+        0 | 1 | => 1,
+              ^

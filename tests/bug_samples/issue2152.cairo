@@ -1,25 +1,17 @@
-use array::ArrayTrait;
-use hash::LegacyHash;
-use integer::u256_from_felt252;
-use option::OptionTrait;
+use core::integer::u256_from_felt252;
 
 #[test]
-#[available_gas(100000)]
 fn reproduce_bug() {
-    match gas::withdraw_gas_all(get_builtin_costs()) {
+    match core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) {
         Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = Default::default();
-            data.append('OOG');
-            panic(data);
-        }
+        Option::None => { panic(array!['OOG']); }
     }
     let a = 1;
     let b = 2;
     let mut c = 0;
     if u256_from_felt252(a) < u256_from_felt252(b) {
-        c = LegacyHash::hash(a, b);
+        c = core::pedersen::pedersen(a, b);
     } else {
-        c = LegacyHash::hash(b, a);
+        c = core::pedersen::pedersen(b, a);
     }
 }

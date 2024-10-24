@@ -1,7 +1,7 @@
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::SyntaxNode;
 use colored::{ColoredString, Colorize};
 use smol_str::SmolStr;
 
@@ -11,15 +11,15 @@ struct ColoredPrinter<'a> {
     verbose: bool,
     result: String,
 }
-impl<'a> ColoredPrinter<'a> {
+impl ColoredPrinter<'_> {
     fn print(&mut self, syntax_node: &SyntaxNode) {
         let node = syntax_node.green_node(self.db);
-        match node.details {
+        match &node.details {
             GreenNodeDetails::Token(text) => {
                 if self.verbose && node.kind == SyntaxKind::TokenMissing {
                     self.result.push_str(format!("{}", "<m>".red()).as_str());
                 } else {
-                    self.result.push_str(set_color(text, node.kind).to_string().as_str());
+                    self.result.push_str(set_color(text.clone(), node.kind).to_string().as_str());
                 }
             }
             GreenNodeDetails::Node { .. } => {
@@ -28,8 +28,8 @@ impl<'a> ColoredPrinter<'a> {
                 } else if self.verbose && is_empty_kind(node.kind) {
                     self.result.push_str(format!("{}", "<e>".red()).as_str());
                 } else {
-                    for child in syntax_node.children(self.db) {
-                        self.print(&child);
+                    for child in self.db.get_children(syntax_node.clone()).iter() {
+                        self.print(child);
                     }
                 }
             }
@@ -68,7 +68,8 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
         SyntaxKind::TokenLiteralNumber
         | SyntaxKind::TokenFalse
         | SyntaxKind::TokenTrue
-        | SyntaxKind::TokenShortString => text.bright_cyan(),
+        | SyntaxKind::TokenShortString
+        | SyntaxKind::TokenString => text.bright_cyan(),
         SyntaxKind::TokenExtern
         | SyntaxKind::TokenType
         | SyntaxKind::TokenFunction
@@ -125,7 +126,8 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
         SyntaxKind::TokenSkipped => text.on_red(), // red background
         SyntaxKind::TokenSingleLineComment
         | SyntaxKind::TokenWhitespace
-        | SyntaxKind::TokenNewline => text.clear(),
+        | SyntaxKind::TokenNewline
+        | SyntaxKind::TokenEmpty => text.clear(),
         // TODO(yuval): Can this be made exhaustive?
         _ => panic!("Unexpected syntax kind: {kind:?}"),
     }

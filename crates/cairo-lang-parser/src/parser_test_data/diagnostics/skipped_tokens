@@ -1,0 +1,83 @@
+//! > Test consecutive skipped tokens diagnostic.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+skipped tokens
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> dummy_file.cairo:1:1
+skipped tokens
+^************^
+
+//! > ==========================================================================
+
+//! > Test consecutive skipped tokens diagnostic surrounded by good tokens.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo() {}
+skipped tokens
+fn bar() {}
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> dummy_file.cairo:2:1
+skipped tokens
+^************^
+
+//! > ==========================================================================
+
+//! > Test consecutive skipped tokens diagnostic with multiple trivia between them.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+skipped   tokens
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> dummy_file.cairo:1:1
+skipped   tokens
+^**************^
+
+//! > ==========================================================================
+
+//! > Test consecutive skipped tokens diagnostic with trailing and leading trivia between them.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+skipped  \\ Comment
+
+  tokens
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> dummy_file.cairo:1:1
+skipped  \\ Comment
+^*****************^
+
+//! > ==========================================================================
+
+//! > Test consecutive skipped tokens diagnostic with trailing and leading trivia between them and good tokens tokens after them.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+skipped  \\ Comment
+
+  tokens  fn foo() {}
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> dummy_file.cairo:1:1
+skipped  \\ Comment
+^*****************^

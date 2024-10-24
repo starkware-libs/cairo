@@ -5,21 +5,19 @@ use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;
-use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
+use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 
 #[test]
 fn test_trait() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
-    let test_module = setup_test_module(
-        db,
-        indoc::indoc! {"
-            #[contract]
+    let db_val = SemanticDatabaseForTesting::default();
+    let db = &db_val;
+    let test_module = setup_test_module(db, indoc::indoc! {"
+            // `inline` is used just to have an allowed attribute.
+            #[inline]
             trait MyContract {
                 fn foo(a: felt252);
             }
-        "},
-    )
+        "})
     .unwrap();
 
     let trait_id = extract_matches!(
@@ -30,7 +28,7 @@ fn test_trait() {
     assert_eq!(format!("{:?}", db.trait_generic_params(trait_id).unwrap()), "[]");
     assert_eq!(
         format!("{:?}", db.trait_attributes(trait_id).unwrap().debug(db)),
-        "[Attribute { id: \"contract\" }]"
+        "[Attribute { id: \"inline\" }]"
     );
 
     let trait_functions = db.trait_functions(trait_id).unwrap();

@@ -1,4 +1,4 @@
-use ecdsa::check_ecdsa_signature;
+use core::ecdsa::check_ecdsa_signature;
 
 const message_hash: felt252 = 0x2d6479c0758efbb5aa07d35ed5454d728637fceab7ba544d3ea95403a5630a8;
 
@@ -8,7 +8,6 @@ const s: felt252 = 0x23a9747ed71abc5cb956c0df44ee8638b65b3e9407deade65de62247b8f
 
 
 #[test]
-#[available_gas(2000000)]
 fn test_check_ecdsa_signature() {
     check_ecdsa_signature(message_hash, pubkey, r, s);
 }

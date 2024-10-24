@@ -1,14 +1,18 @@
+use std::path::PathBuf;
+
+use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
+use cairo_lang_utils::Intern;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
 use super::ast::{
     ExprBinary, ExprPath, PathSegmentGreen, PathSegmentSimple, SyntaxFileGreen, TerminalIdentifier,
-    TerminalLiteralNumber, TerminalPlus, TokenIdentifier, TokenLiteralNumber, TokenPlus,
-    TokenWhitespace, Trivia,
+    TerminalPlus, TokenIdentifier, TokenPlus, TokenWhitespace, Trivia,
 };
 use super::kind::SyntaxKind;
 use super::{SyntaxNode, Terminal, Token};
+use crate::node::ast::{TerminalLiteralNumber, TokenLiteralNumber};
 use crate::node::test_utils::DatabaseForTesting;
 
 #[test]
@@ -135,7 +139,7 @@ fn test_stable_ptr() {
     let root = setup(db);
     for node in root.descendants(db) {
         let ptr = node.stable_ptr();
-        let looked_up_node = root.lookup_ptr(db, ptr);
+        let looked_up_node = ptr.lookup(db);
         assert_eq!(node, looked_up_node);
     }
 }
@@ -150,7 +154,7 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     let token5 = TokenLiteralNumber::new_green(db, "5".into());
     assert_eq!(token_whitespace1, token_whitespace2);
     let no_trivia = Trivia::new_green(db, vec![]);
-    let triviums = vec![token_whitespace1, token_whitespace2];
+    let triviums = [token_whitespace1, token_whitespace2];
     assert_eq!(triviums[0], triviums[1]);
     let terminal_foo = TerminalIdentifier::new_green(
         db,
@@ -167,10 +171,9 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     let terminal5 = TerminalLiteralNumber::new_green(db, no_trivia, token5, no_trivia);
     let expr = ExprBinary::new_green(
         db,
-        ExprPath::new_green(
-            db,
-            vec![PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
-        )
+        ExprPath::new_green(db, vec![
+            PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into(),
+        ])
         .into(),
         terminal_plus.into(),
         terminal5.into(),
@@ -178,5 +181,6 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     // SyntaxNode::new_root only accepts ast::SyntaxFileGreen, but we only have an expression.
     // This is a hack to crate a green id of "SyntaxFile" from "Expr".
     let root = SyntaxFileGreen(expr.0);
-    SyntaxNode::new_root(db, root)
+    let file_id = FileLongId::OnDisk(PathBuf::default()).intern(db);
+    SyntaxNode::new_root(db, file_id, root.0)
 }

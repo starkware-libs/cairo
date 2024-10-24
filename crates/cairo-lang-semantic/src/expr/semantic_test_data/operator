@@ -1,0 +1,108 @@
+//! > Test operators.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > function_body
+
+//! > expr_code
+!(-5 + 9 * 3 == 0)
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: core::BoolNot::not,
+        args: [
+            Value(
+                FunctionCall(
+                    ExprFunctionCall {
+                        function: core::Felt252PartialEq::eq,
+                        args: [
+                            Value(
+                                Snapshot(
+                                    ExprSnapshot {
+                                        inner: FunctionCall(
+                                            ExprFunctionCall {
+                                                function: core::Felt252Add::add,
+                                                args: [
+                                                    Value(
+                                                        FunctionCall(
+                                                            ExprFunctionCall {
+                                                                function: core::Felt252Neg::neg,
+                                                                args: [
+                                                                    Value(
+                                                                        Literal(
+                                                                            ExprLiteral {
+                                                                                value: 5,
+                                                                                ty: core::felt252,
+                                                                            },
+                                                                        ),
+                                                                    ),
+                                                                ],
+                                                                coupon_arg: None,
+                                                                ty: core::felt252,
+                                                            },
+                                                        ),
+                                                    ),
+                                                    Value(
+                                                        FunctionCall(
+                                                            ExprFunctionCall {
+                                                                function: core::Felt252Mul::mul,
+                                                                args: [
+                                                                    Value(
+                                                                        Literal(
+                                                                            ExprLiteral {
+                                                                                value: 9,
+                                                                                ty: core::felt252,
+                                                                            },
+                                                                        ),
+                                                                    ),
+                                                                    Value(
+                                                                        Literal(
+                                                                            ExprLiteral {
+                                                                                value: 3,
+                                                                                ty: core::felt252,
+                                                                            },
+                                                                        ),
+                                                                    ),
+                                                                ],
+                                                                coupon_arg: None,
+                                                                ty: core::felt252,
+                                                            },
+                                                        ),
+                                                    ),
+                                                ],
+                                                coupon_arg: None,
+                                                ty: core::felt252,
+                                            },
+                                        ),
+                                        ty: @core::felt252,
+                                    },
+                                ),
+                            ),
+                            Value(
+                                Snapshot(
+                                    ExprSnapshot {
+                                        inner: Literal(
+                                            ExprLiteral {
+                                                value: 0,
+                                                ty: core::felt252,
+                                            },
+                                        ),
+                                        ty: @core::felt252,
+                                    },
+                                ),
+                            ),
+                        ],
+                        coupon_arg: None,
+                        ty: core::bool,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: None,
+        ty: core::bool,
+    },
+)
+
+//! > expected_diagnostics

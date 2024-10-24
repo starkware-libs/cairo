@@ -1,0 +1,30 @@
+//! > Test enum diagnostics
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+enum MyEnum {
+    A(felt252),
+}
+
+//! > expected_diagnostics
+error: Missing token TerminalComma.
+ --> dummy_file.cairo:2:6
+    A(felt252),
+     ^
+
+error: Skipped tokens. Expected: variant.
+ --> dummy_file.cairo:2:6
+    A(felt252),
+     ^
+
+error: Missing token TerminalRBrace.
+ --> dummy_file.cairo:2:14
+    A(felt252),
+             ^
+
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+ --> dummy_file.cairo:2:14
+    A(felt252),
+             ^^

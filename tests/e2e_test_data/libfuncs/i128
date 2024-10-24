@@ -1,0 +1,474 @@
+//! > i128_to_felt252 libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(v: i128) -> felt252 {
+    integer::i128_to_felt252(v)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i128_to_felt252 = i128_to_felt252;
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+i128_to_felt252([0]) -> ([1]); // 0
+store_temp<felt252>([1]) -> ([1]); // 1
+return([1]); // 2
+
+test::foo@0([0]: i128) -> (felt252);
+
+//! > ==========================================================================
+
+//! > i128_try_from_felt252 libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(v: felt252) -> Option<i128> {
+    integer::i128_try_from_felt252(v)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 170141183460469231731687303715884105728) % PRIME < 340282366920938463463374607431768211456 %}
+jmp rel 18 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + 170141183460469231731687303715884105728, ap++;
+%{
+(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134079)
+x = min(value // scalar, 340282366920938463463374607431768211454)
+y = value - x * scalar
+memory[ap + 0] = x
+memory[ap + 1] = y
+%}
+[ap + 2] = [ap + 0] * 10633823966279327296825105735305134079, ap++;
+[ap + -2] = [ap + 1] + [ap + 0], ap++;
+[ap + -1] = [[fp + -4] + 0], ap++;
+[ap + 0] = [ap + -2] + 319014718988379808869724395961157943297, ap++;
+[ap + -1] = [[fp + -4] + 1], ap++;
+[ap + -5] = [[fp + -4] + 2];
+[ap + -5] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 15 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+[ap + 0] = [fp + -3] + 170141183460469231731687303715884105728, ap++;
+[ap + -1] = [[fp + -4] + 0];
+ap += 5;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1510})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::integer::i128> = Enum<ut@core::option::Option::<core::integer::i128>, i128, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i128_try_from_felt252 = i128_try_from_felt252;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::integer::i128>, 0> = enum_init<core::option::Option::<core::integer::i128>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<core::integer::i128>> = store_temp<core::option::Option::<core::integer::i128>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::integer::i128>, 1> = enum_init<core::option::Option::<core::integer::i128>, 1>;
+
+i128_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<core::integer::i128>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<core::option::Option::<core::integer::i128>>([5]) -> ([5]); // 4
+return([2], [5]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([6]); // 7
+enum_init<core::option::Option::<core::integer::i128>, 1>([6]) -> ([7]); // 8
+store_temp<RangeCheck>([4]) -> ([4]); // 9
+store_temp<core::option::Option::<core::integer::i128>>([7]) -> ([7]); // 10
+return([4], [7]); // 11
+
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::i128>);
+
+//! > ==========================================================================
+
+//! > i128_eq libfunc (a deref, b deref)
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i128, b: i128) -> bool {
+    integer::i128_eq(a, b)
+}
+
+//! > casm
+[fp + -4] = [ap + 0] + [fp + -3], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 5;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 400})
+
+//! > sierra_code
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i128_eq = i128_eq;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+
+i128_eq([0], [1]) { fallthrough() 6() }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::bool, 0>([2]) -> ([3]); // 3
+store_temp<core::bool>([3]) -> ([3]); // 4
+return([3]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([4]); // 7
+enum_init<core::bool, 1>([4]) -> ([5]); // 8
+store_temp<core::bool>([5]) -> ([5]); // 9
+return([5]); // 10
+
+test::foo@0([0]: i128, [1]: i128) -> (core::bool);
+
+//! > ==========================================================================
+
+//! > i128_eq libfunc (a immediate, b immediate)
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo() -> bool {
+    integer::i128_eq(11_i128, 12_i128)
+}
+
+//! > casm
+[ap + 0] = 11, ap++;
+[ap + -1] = [ap + 0] + 12, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 5;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > sierra_code
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<i128, 12> = Const<i128, 12> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<i128, 11> = Const<i128, 11> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<i128, 11>> = const_as_immediate<Const<i128, 11>>;
+libfunc const_as_immediate<Const<i128, 12>> = const_as_immediate<Const<i128, 12>>;
+libfunc store_temp<i128> = store_temp<i128>;
+libfunc i128_eq = i128_eq;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+
+const_as_immediate<Const<i128, 11>>() -> ([0]); // 0
+const_as_immediate<Const<i128, 12>>() -> ([1]); // 1
+store_temp<i128>([0]) -> ([0]); // 2
+i128_eq([0], [1]) { fallthrough() 9() }; // 3
+branch_align() -> (); // 4
+struct_construct<Unit>() -> ([2]); // 5
+enum_init<core::bool, 0>([2]) -> ([3]); // 6
+store_temp<core::bool>([3]) -> ([3]); // 7
+return([3]); // 8
+branch_align() -> (); // 9
+struct_construct<Unit>() -> ([4]); // 10
+enum_init<core::bool, 1>([4]) -> ([5]); // 11
+store_temp<core::bool>([5]) -> ([5]); // 12
+return([5]); // 13
+
+test::foo@0() -> (core::bool);
+
+//! > ==========================================================================
+
+//! > i128_overflowing_add_impl libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i128, b: i128) -> integer::SignedIntegerResult<i128> {
+    integer::i128_overflowing_add_impl(a, b)
+}
+
+//! > casm
+[ap + 0] = [fp + -4] + [fp + -3], ap++;
+%{ memory[ap + 0] = (memory[ap + -1] + 170141183460469231731687303715884105728) % PRIME < 340282366920938463463374607431768211456 %}
+jmp rel 14 if [ap + 0] != 0, ap++;
+%{ memory[ap + 0] = memory[ap + -2] < 340282366920938463463374607431768211456 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -3] + 510423550381407695195061911147652317184, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 18;
+[ap + -3] = [ap + 0] + 170141183460469231731687303715884105728, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 20;
+[ap + 0] = [ap + -2] + 170141183460469231731687303715884105728, ap++;
+[ap + -1] = [[fp + -5] + 0];
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 5, ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 3, ap++;
+[ap + 0] = [ap + -6] + 340282366920938463463374607431768211456, ap++;
+ret;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + -6] = [ap + 0] + 340282366920938463463374607431768211456, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 970})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::SignedIntegerResult::<core::integer::i128> = Enum<ut@core::integer::SignedIntegerResult::<core::integer::i128>, i128, i128, i128> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i128_overflowing_add_impl = i128_overflowing_add_impl;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 0> = enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::integer::SignedIntegerResult::<core::integer::i128>> = store_temp<core::integer::SignedIntegerResult::<core::integer::i128>>;
+libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 1> = enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 1>;
+libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 2> = enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 2>;
+
+i128_overflowing_add_impl([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) 11([7], [8]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 0>([4]) -> ([9]); // 2
+store_temp<RangeCheck>([3]) -> ([3]); // 3
+store_temp<core::integer::SignedIntegerResult::<core::integer::i128>>([9]) -> ([9]); // 4
+return([3], [9]); // 5
+branch_align() -> (); // 6
+enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 1>([6]) -> ([10]); // 7
+store_temp<RangeCheck>([5]) -> ([5]); // 8
+store_temp<core::integer::SignedIntegerResult::<core::integer::i128>>([10]) -> ([10]); // 9
+return([5], [10]); // 10
+branch_align() -> (); // 11
+enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 2>([8]) -> ([11]); // 12
+store_temp<RangeCheck>([7]) -> ([7]); // 13
+store_temp<core::integer::SignedIntegerResult::<core::integer::i128>>([11]) -> ([11]); // 14
+return([7], [11]); // 15
+
+test::foo@0([0]: RangeCheck, [1]: i128, [2]: i128) -> (RangeCheck, core::integer::SignedIntegerResult::<core::integer::i128>);
+
+//! > ==========================================================================
+
+//! > i128_overflowing_sub_impl libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i128, b: i128) -> integer::SignedIntegerResult<i128> {
+    integer::i128_overflowing_sub_impl(a, b)
+}
+
+//! > casm
+[fp + -4] = [ap + 0] + [fp + -3], ap++;
+%{ memory[ap + 0] = (memory[ap + -1] + 170141183460469231731687303715884105728) % PRIME < 340282366920938463463374607431768211456 %}
+jmp rel 14 if [ap + 0] != 0, ap++;
+%{ memory[ap + 0] = memory[ap + -2] < 340282366920938463463374607431768211456 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -3] + 510423550381407695195061911147652317184, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 18;
+[ap + -3] = [ap + 0] + 170141183460469231731687303715884105728, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 20;
+[ap + 0] = [ap + -2] + 170141183460469231731687303715884105728, ap++;
+[ap + -1] = [[fp + -5] + 0];
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 5, ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 3, ap++;
+[ap + 0] = [ap + -6] + 340282366920938463463374607431768211456, ap++;
+ret;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + -6] = [ap + 0] + 340282366920938463463374607431768211456, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 970})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::SignedIntegerResult::<core::integer::i128> = Enum<ut@core::integer::SignedIntegerResult::<core::integer::i128>, i128, i128, i128> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i128_overflowing_sub_impl = i128_overflowing_sub_impl;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 0> = enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::integer::SignedIntegerResult::<core::integer::i128>> = store_temp<core::integer::SignedIntegerResult::<core::integer::i128>>;
+libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 1> = enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 1>;
+libfunc enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 2> = enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 2>;
+
+i128_overflowing_sub_impl([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) 11([7], [8]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 0>([4]) -> ([9]); // 2
+store_temp<RangeCheck>([3]) -> ([3]); // 3
+store_temp<core::integer::SignedIntegerResult::<core::integer::i128>>([9]) -> ([9]); // 4
+return([3], [9]); // 5
+branch_align() -> (); // 6
+enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 1>([6]) -> ([10]); // 7
+store_temp<RangeCheck>([5]) -> ([5]); // 8
+store_temp<core::integer::SignedIntegerResult::<core::integer::i128>>([10]) -> ([10]); // 9
+return([5], [10]); // 10
+branch_align() -> (); // 11
+enum_init<core::integer::SignedIntegerResult::<core::integer::i128>, 2>([8]) -> ([11]); // 12
+store_temp<RangeCheck>([7]) -> ([7]); // 13
+store_temp<core::integer::SignedIntegerResult::<core::integer::i128>>([11]) -> ([11]); // 14
+return([7], [11]); // 15
+
+test::foo@0([0]: RangeCheck, [1]: i128, [2]: i128) -> (RangeCheck, core::integer::SignedIntegerResult::<core::integer::i128>);
+
+//! > ==========================================================================
+
+//! > i128_is_zero libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use zeroable::IsZeroResult;
+fn foo(a: i128) -> i128 {
+    match integer::i128_is_zero(a) {
+        IsZeroResult::Zero => 123_i128,
+        IsZeroResult::NonZero(x) => x.into(),
+    }
+}
+
+//! > casm
+jmp rel 5 if [fp + -3] != 0;
+[ap + 0] = 123, ap++;
+ret;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+
+//! > sierra_code
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<i128, 123> = Const<i128, 123> [storable: false, drop: false, dup: false, zero_sized: false];
+type NonZero<i128> = NonZero<i128> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i128_is_zero = i128_is_zero;
+libfunc branch_align = branch_align;
+libfunc const_as_immediate<Const<i128, 123>> = const_as_immediate<Const<i128, 123>>;
+libfunc store_temp<i128> = store_temp<i128>;
+libfunc unwrap_non_zero<i128> = unwrap_non_zero<i128>;
+
+i128_is_zero([0]) { fallthrough() 5([1]) }; // 0
+branch_align() -> (); // 1
+const_as_immediate<Const<i128, 123>>() -> ([2]); // 2
+store_temp<i128>([2]) -> ([2]); // 3
+return([2]); // 4
+branch_align() -> (); // 5
+unwrap_non_zero<i128>([1]) -> ([3]); // 6
+store_temp<i128>([3]) -> ([3]); // 7
+return([3]); // 8
+
+test::foo@0([0]: i128) -> (i128);
+
+//! > ==========================================================================
+
+//! > i128_diff libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i128, b: i128) -> Result<u128, u128> {
+    integer::i128_diff(a, b)
+}
+
+//! > casm
+[fp + -4] = [ap + 1] + [fp + -3], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 11;
+[ap + -1] = [[fp + -5] + 0];
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -4], ap++;
+ret;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 870})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc i128_diff = i128_diff;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::result::Result::<core::integer::u128, core::integer::u128>> = store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>;
+libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>;
+
+i128_diff([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>([4]) -> ([7]); // 2
+store_temp<RangeCheck>([3]) -> ([3]); // 3
+store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([7]) -> ([7]); // 4
+return([3], [7]); // 5
+branch_align() -> (); // 6
+enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>([6]) -> ([8]); // 7
+store_temp<RangeCheck>([5]) -> ([5]); // 8
+store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([8]) -> ([8]); // 9
+return([5], [8]); // 10
+
+test::foo@0([0]: RangeCheck, [1]: i128, [2]: i128) -> (RangeCheck, core::result::Result::<core::integer::u128, core::integer::u128>);

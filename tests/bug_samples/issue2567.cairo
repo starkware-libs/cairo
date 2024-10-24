@@ -1,7 +1,5 @@
-use array::ArrayTrait;
-
-fn throw(err_code: felt252) -> never {
-    let mut data = Default::default();
+fn throw(err_code: felt252) -> core::never {
+    let mut data = array![];
     data.append(err_code);
     panic(data)
 }

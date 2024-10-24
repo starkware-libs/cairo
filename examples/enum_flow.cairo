@@ -1,16 +1,16 @@
 enum MyEnumShort {
     a: felt252,
-    b: felt252
+    b: felt252,
 }
 enum MyEnumLong {
     a: felt252,
     b: felt252,
-    c: felt252
+    c: felt252,
 }
 enum MyEnumGeneric<S, T> {
     a: T,
     b: S,
-    c: T
+    c: T,
 }
 
 impl MyEnumGenericDrop of Drop<MyEnumGeneric<(), felt252>>;
@@ -26,33 +26,23 @@ fn main() -> felt252 {
     match_long(el1);
     let el2 = MyEnumLong::c(22);
     match_long(el2);
-    let eg1: MyEnumGeneric<(), felt252> = MyEnumGeneric::<(), felt252>::a(30);
-    let eg2: MyEnumGeneric<(), felt252> = MyEnumGeneric::<(), felt252>::b(());
-    let eg3: MyEnumGeneric<(), felt252> = MyEnumGeneric::<(), felt252>::c(32);
+    let _eg1: MyEnumGeneric<(), felt252> = MyEnumGeneric::<(), felt252>::a(30);
+    let _eg2: MyEnumGeneric<(), felt252> = MyEnumGeneric::<(), felt252>::b;
+    let _eg3: MyEnumGeneric<(), felt252> = MyEnumGeneric::<(), felt252>::c(32);
     300
 }
 
 fn match_short(e: MyEnumShort) -> felt252 {
     match e {
-        MyEnumShort::a(x) => {
-            x
-        },
-        MyEnumShort::b(x) => {
-            x
-        },
+        MyEnumShort::a(x) => { x },
+        MyEnumShort::b(x) => { x },
     }
 }
 
 fn match_long(e: MyEnumLong) -> felt252 {
     match e {
-        MyEnumLong::a(x) => {
-            x
-        },
-        MyEnumLong::b(x) => {
-            x
-        },
-        MyEnumLong::c(x) => {
-            x
-        },
+        MyEnumLong::a(x) => { x },
+        MyEnumLong::b(x) => { x },
+        MyEnumLong::c(x) => { x },
     }
 }

@@ -5,28 +5,22 @@ use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;
-use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
+use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 
 #[test]
 fn test_impl() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
-    let (test_module, diagnostics) = setup_test_module(
-        db,
-        indoc::indoc! {"
-            #[ABI]
+    let db_val = SemanticDatabaseForTesting::default();
+    let db = &db_val;
+    let (test_module, diagnostics) = setup_test_module(db, indoc::indoc! {"
             trait IContract {
                 fn foo(a: felt252);
             }
 
-
-            #[Contract]
             impl Contract of IContract {
                 fn foo(a: felt252) {
                 }
             }
-        "},
-    )
+        "})
     .split();
 
     assert!(diagnostics.is_empty());
@@ -47,8 +41,5 @@ fn test_impl() {
          mutability: Immutable }], return_type: (), implicits: [], panicable: true }"
     );
 
-    assert_eq!(
-        format!("{:?}", db.impl_def_concrete_trait(impl_def_id).unwrap()),
-        "ConcreteTraitId(0)"
-    );
+    db.impl_def_concrete_trait(impl_def_id).unwrap();
 }

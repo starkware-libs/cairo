@@ -1,4 +1,4 @@
 #!/bin/bash
 
-cargo run --bin cairo-test -- corelib/ && \
-cargo run --bin cairo-test -- tests/bug_samples/ --starknet
+cargo run --profile=ci-dev --bin cairo-test -- corelib/ &&
+    cargo run --profile=ci-dev --bin cairo-test -- tests/bug_samples/ --starknet

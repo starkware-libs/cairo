@@ -1,0 +1,41 @@
+//! > Function call
+
+//! > test_runner_name
+test_program_generator
+
+//! > cairo
+fn foo(a: felt252) -> felt252 {
+    bar(5)
+}
+
+#[inline(never)]
+fn bar(a: felt252) -> felt252 {
+    felt252_add(felt252_add(a, a), a)
+}
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 5> = Const<felt252, 5> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc drop<felt252> = drop<felt252>;
+libfunc const_as_immediate<Const<felt252, 5>> = const_as_immediate<Const<felt252, 5>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc function_call<user@test::bar> = function_call<user@test::bar>;
+libfunc dup<felt252> = dup<felt252>;
+libfunc felt252_add = felt252_add;
+
+drop<felt252>([0]) -> (); // 0
+const_as_immediate<Const<felt252, 5>>() -> ([1]); // 1
+store_temp<felt252>([1]) -> ([1]); // 2
+function_call<user@test::bar>([1]) -> ([2]); // 3
+return([2]); // 4
+dup<felt252>([0]) -> ([0], [1]); // 5
+dup<felt252>([0]) -> ([0], [2]); // 6
+felt252_add([1], [2]) -> ([3]); // 7
+store_temp<felt252>([3]) -> ([3]); // 8
+felt252_add([3], [0]) -> ([4]); // 9
+store_temp<felt252>([4]) -> ([4]); // 10
+return([4]); // 11
+
+test::foo@0([0]: felt252) -> (felt252);
+test::bar@5([0]: felt252) -> (felt252);

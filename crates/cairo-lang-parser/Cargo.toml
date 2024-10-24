@@ -6,27 +6,22 @@ repository.workspace = true
 license-file.workspace = true
 description = "Cairo parser."
 
-[features]
-fix_parser_tests = ["cairo-lang-utils/testing"]
-
 [dependencies]
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.1.0" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.1.0" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0" }
-cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "1.1.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.8.4" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.8.4" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.8.4" }
+cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "~2.8.4" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.4" }
 colored.workspace = true
-itertools.workspace = true
-log.workspace = true
-num-bigint.workspace = true
-num-traits.workspace = true
+itertools = { workspace = true, default-features = true }
+num-bigint = { workspace = true, default-features = true }
+num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
 smol_str.workspace = true
 unescaper.workspace = true
 
 [dev-dependencies]
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.1.0" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 env_logger.workspace = true
 pretty_assertions.workspace = true
-test-case.workspace = true
 test-log.workspace = true

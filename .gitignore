@@ -1,6 +1,11 @@
 /target
-.vscode/
+/.vscode
 .idea/
 .spr.yml
 node_modules
 .DS_Store
+perf.data*
+flamegraph.svg
+
+ensure-no_std/Cargo.lock
+ensure-no_std/target/

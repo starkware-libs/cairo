@@ -20,7 +20,7 @@ jobs:
             asset_name: release-aarch64-apple-darwin.tar
             target: aarch64-apple-darwin
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install musl
         run: |
           if [ "${{ matrix.target }}" == "x86_64-unknown-linux-musl" ]

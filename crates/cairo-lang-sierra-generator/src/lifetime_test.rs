@@ -1,19 +1,14 @@
-use std::sync::Arc;
-
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_filesystem::db::FilesGroupEx;
-use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::UpcastMut;
 use itertools::Itertools;
 use lowering::ids::ConcreteFunctionWithBodyId;
 
 use super::find_variable_lifetime;
-use crate::local_variables::{analyze_ap_changes, AnalyzeApChangesResult};
+use crate::local_variables::{AnalyzeApChangesResult, analyze_ap_changes};
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -35,13 +30,11 @@ cairo_lang_test_utils::test_file_test!(
 
 fn check_variable_lifetime(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
-    let db = &mut SierraGenDatabaseForTesting::default();
-
+    _args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
-    let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
-    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+    let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
 
     // Parse code and create semantic model.
     let test_function = setup_test_function(
@@ -58,10 +51,9 @@ fn check_variable_lifetime(
 
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-    let lowered_function = &*db.concrete_function_with_body_lowered(function_id).unwrap();
+    let lowered_function = &*db.final_concrete_function_with_body_lowered(function_id).unwrap();
 
-    let lowered_formatter =
-        lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
+    let lowered_formatter = lowering::fmt::LoweredFormatter::new(db, &lowered_function.variables);
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
     let AnalyzeApChangesResult { known_ap_change: _, local_variables, .. } =
@@ -77,17 +69,19 @@ fn check_variable_lifetime(
             let var_id = if location.statement_location.1 == statements.len() {
                 match &block.end {
                     lowering::FlatBlockEnd::Goto(_, remapping) => {
-                        *remapping.values().nth(location.idx).unwrap()
+                        remapping.values().nth(location.idx).unwrap().var_id
                     }
-                    lowering::FlatBlockEnd::Return(returns) => returns[location.idx],
+                    lowering::FlatBlockEnd::Return(returns, _location) => {
+                        returns[location.idx].var_id
+                    }
                     lowering::FlatBlockEnd::Panic(_) => {
                         unreachable!("Panics should have been stripped in a previous phase.")
                     }
                     lowering::FlatBlockEnd::NotSet => unreachable!(),
-                    lowering::FlatBlockEnd::Match { info } => info.inputs()[location.idx],
+                    lowering::FlatBlockEnd::Match { info } => info.inputs()[location.idx].var_id,
                 }
             } else {
-                statements[location.statement_location.1].inputs()[location.idx]
+                statements[location.statement_location.1].inputs()[location.idx].var_id
             };
             format!("v{}: {location:?}", var_id.index())
         })
@@ -100,9 +94,9 @@ fn check_variable_lifetime(
         })
         .join("\n");
 
-    OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("lowering_format".into(), lowered_str),
         ("last_use".into(), last_use_str),
         ("drops".into(), drop_str),
-    ])
+    ]))
 }

@@ -2,72 +2,36 @@
 //!
 //! A failed validation emits a diagnostic.
 
-use cairo_lang_diagnostics::{DiagnosticsBuilder, Maybe};
+use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_filesystem::span::TextSpan;
 use num_bigint::BigInt;
 use num_traits::Num;
+use smol_str::SmolStr;
 use unescaper::unescape;
 
-use crate::diagnostic::ParserDiagnosticKind;
 use crate::ParserDiagnostic;
-
-/// Validate syntax nodes for aspects that are not handled by the parser.
-///
-/// This includes things like:
-/// 1. Validating string escape sequences.
-/// 2. Validating numeric literals that they indeed represent valid values (untyped).
-///
-/// Not all usage places of the parser require this pass. Primary example is Cairo formatter - it
-/// should work even if strings contain invalid escape sequences in strings.
-pub fn validate(
-    root: SyntaxNode,
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
-    file_id: FileId,
-) -> Maybe<()> {
-    root.descendants(db).fold(Ok(()), |result, node| {
-        result.and(match node.kind(db) {
-            SyntaxKind::TerminalLiteralNumber => {
-                let node = ast::TerminalLiteralNumber::from_syntax_node(db, node);
-                validate_literal_number(node, db, diagnostics, file_id)
-            }
-
-            SyntaxKind::TerminalShortString => {
-                let node = ast::TerminalShortString::from_syntax_node(db, node);
-                validate_short_string(node, db, diagnostics, file_id)
-            }
-
-            _ => Ok(()),
-        })
-    })
-}
+use crate::diagnostic::ParserDiagnosticKind;
 
 /// Validate that the numeric literal is valid, after it is consumed by the parser.
 ///
 /// Cairo parser tries to consume even not proper tokens in order to support code editions in IDEs.
 /// This means that it omits some crucial details in the literals that make the code uncompilable.
 /// This function validates that the literal:
-/// 1. Is parseable according to its radix.
+/// 1. Is parsable according to its radix.
 /// 2. Has properly formatted suffix.
-fn validate_literal_number(
-    node: ast::TerminalLiteralNumber,
-    db: &dyn SyntaxGroup,
+pub fn validate_literal_number(
     diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+    text: SmolStr,
+    span: TextSpan,
     file_id: FileId,
-) -> Maybe<()> {
-    let mut result = Ok(());
-
-    let text = node.text(db);
-
+) {
     let (text, ty) = match text.split_once('_') {
         Some((text, ty)) => (text, Some(ty)),
         None => (text.as_str(), None),
     };
 
-    // Verify number value is parseable.
+    // Verify number value is parsable.
     {
         let (text, radix) = if let Some(num_no_prefix) = text.strip_prefix("0x") {
             (num_no_prefix, 16)
@@ -80,94 +44,119 @@ fn validate_literal_number(
         };
 
         if BigInt::from_str_radix(text, radix).is_err() {
-            result = Err(diagnostics.add(ParserDiagnostic {
+            diagnostics.add(ParserDiagnostic {
                 file_id,
-                span: node.as_syntax_node().span(db),
+                span,
                 kind: ParserDiagnosticKind::InvalidNumericLiteralValue,
-            }));
+            });
         }
     }
 
     // Verify suffix.
     if let Some(ty) = ty {
         if ty.is_empty() {
-            result = Err(diagnostics.add(ParserDiagnostic {
+            diagnostics.add(ParserDiagnostic {
                 file_id,
-                span: node.as_syntax_node().span(db).after(),
+                span: span.after(),
                 kind: ParserDiagnosticKind::MissingLiteralSuffix,
-            }));
+            });
         }
     }
-
-    result
 }
 
-/// Validate that the short string literal is valid, after it is consumed by the parser.
+/// Validates that the short string literal is valid, after it is consumed by the parser.
 ///
 /// Cairo parser tries to consume even not proper tokens in order to support code editions in IDEs.
 /// This means that it omits some crucial details in the literals that make the code uncompilable.
 /// This function validates that the literal:
-/// 1. Has single quotes on both sides (parser accepts unterminated literals).
+/// 1. Ends with a quote (parser accepts unterminated literals).
 /// 2. Has all escape sequences valid.
 /// 3. Is entirely ASCII.
-fn validate_short_string(
-    node: ast::TerminalShortString,
-    db: &dyn SyntaxGroup,
+pub fn validate_short_string(
     diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+    text: SmolStr,
+    span: TextSpan,
     file_id: FileId,
-) -> Maybe<()> {
-    let mut result = Ok(());
+) {
+    validate_any_string(
+        diagnostics,
+        text,
+        span,
+        file_id,
+        '\'',
+        ParserDiagnosticKind::UnterminatedShortString,
+        ParserDiagnosticKind::ShortStringMustBeAscii,
+    )
+}
 
-    let text = node.text(db);
-    let mut text = text.as_str();
+/// Validates that the string literal is valid, after it is consumed by the parser.
+///
+/// Cairo parser tries to consume even not proper tokens in order to support code editions in IDEs.
+/// This means that it omits some crucial details in the literals that make the code uncompilable.
+/// This function validates that the literal:
+/// 1. Ends with double quotes (parser accepts unterminated literals).
+/// 2. Has all escape sequences valid.
+/// 3. Is entirely ASCII.
+pub fn validate_string(
+    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+    text: SmolStr,
+    span: TextSpan,
+    file_id: FileId,
+) {
+    validate_any_string(
+        diagnostics,
+        text,
+        span,
+        file_id,
+        '"',
+        ParserDiagnosticKind::UnterminatedString,
+        ParserDiagnosticKind::StringMustBeAscii,
+    )
+}
 
-    if text.starts_with('\'') {
-        (_, text) = text.split_once('\'').unwrap();
-    } else {
-        // NOTE: This is a very paranoid case, but let's try to recover anyway here instead of
-        //   panicking.
-        result = Err(diagnostics.add(ParserDiagnostic {
+/// Validates a short-string/string.
+fn validate_any_string(
+    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+    text: SmolStr,
+    span: TextSpan,
+    file_id: FileId,
+    delimiter: char,
+    unterminated_string_diagnostic_kind: ParserDiagnosticKind,
+    ascii_only_diagnostic_kind: ParserDiagnosticKind,
+) {
+    let (_, text) = text.split_once(delimiter).unwrap();
+
+    let Some((body, _suffix)) = text.rsplit_once(delimiter) else {
+        diagnostics.add(ParserDiagnostic {
             file_id,
-            span: node.as_syntax_node().span(db),
-            kind: ParserDiagnosticKind::UnterminatedString,
-        }));
-    }
-
-    let (body, _suffix) = match text.rsplit_once('\'') {
-        Some((body, suffix)) => (body, (!suffix.is_empty()).then_some(suffix)),
-        None => {
-            result = Err(diagnostics.add(ParserDiagnostic {
-                file_id,
-                span: node.as_syntax_node().span(db),
-                kind: ParserDiagnosticKind::UnterminatedString,
-            }));
-
-            (text, None)
-        }
+            span,
+            kind: unterminated_string_diagnostic_kind,
+        });
+        return;
     };
 
-    let body = match unescape(body) {
-        Ok(body) => body,
-        Err(_) => {
-            // TODO(mkaput): Try to always provide full position for entire escape sequence.
-            result = Err(diagnostics.add(ParserDiagnostic {
-                file_id,
-                span: node.as_syntax_node().span(db),
-                kind: ParserDiagnosticKind::IllegalStringEscaping,
-            }));
+    validate_string_body(diagnostics, body, span, file_id, ascii_only_diagnostic_kind)
+}
 
-            String::new()
-        }
+fn validate_string_body(
+    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+    body: &str,
+    span: TextSpan,
+    file_id: FileId,
+    ascii_only_diagnostic_kind: ParserDiagnosticKind,
+) {
+    let Ok(body) = unescape(body) else {
+        // TODO(mkaput): Try to always provide full position for entire escape sequence.
+        diagnostics.add(ParserDiagnostic {
+            file_id,
+            span,
+            kind: ParserDiagnosticKind::IllegalStringEscaping,
+        });
+        return;
     };
 
     if !body.is_ascii() {
         // TODO(mkaput): Try to always provide position of culprit character/escape sequence.
-        result = Err(diagnostics.add(ParserDiagnostic {
-            file_id,
-            span: node.as_syntax_node().span(db),
-            kind: ParserDiagnosticKind::ShortStringMustBeAscii,
-        }));
+        diagnostics.add(ParserDiagnostic { file_id, span, kind: ascii_only_diagnostic_kind });
     }
-
-    result
 }

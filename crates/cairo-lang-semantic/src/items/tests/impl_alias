@@ -1,7 +1,7 @@
 //! > Test simple impl alias.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> usize {
@@ -29,7 +29,7 @@ impl MyImpl1 = MyImpl;
 //! > Test impl alias inference
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> usize {
@@ -61,10 +61,10 @@ impl MyImplAlias = other_mod::other_other_mod::MyImpl;
 //! > Test impl alias inference with generics
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
-fn foo(x:Option<Box<usize>>) -> usize {
+fn foo(x: Option<Box<usize>>) -> usize {
     MyTrait::foo(x)
 }
 
@@ -93,10 +93,10 @@ impl MyImplAlias<T> = other_mod::other_other_mod::MyImpl<Box<T>>;
 //! > Test impl alias inference with generics failures
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
-fn foo(x:Option<Box<usize>>) -> usize {
+fn foo(x: Option<Box<usize>>) -> usize {
     MyTrait::foo(x)
 }
 
@@ -119,7 +119,7 @@ mod other_mod {
 impl MyImplAlias<T> = other_mod::other_other_mod::MyImpl<Option<T>>;
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: test::MyTrait::<core::option::Option::<core::box::Box::<core::integer::u32>>>
+error: Trait has no implementation in context: test::MyTrait::<core::option::Option::<core::box::Box::<core::integer::u32>>>.
  --> lib.cairo:15:14
     MyTrait::foo(x)
              ^*^

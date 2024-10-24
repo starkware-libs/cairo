@@ -4,19 +4,19 @@
 test_generic_item_id
 
 //! > module_code
-fn f0<A>(){}
+fn f0<A>() {}
 mod m {
-    fn f0<A>(){}
+    fn f0<A>() {}
 }
 extern fn f1<A>();
-struct MyStruct<A>{}
-enum MyEnum<A>{}
+struct MyStruct<A> {}
+enum MyEnum<A> {}
 extern type MyType<const A: felt252>;
-trait MyTrait<A>{
+trait MyTrait<A> {
     fn foo<B>();
 }
-impl MyImpl<A> of MyTrait::<A>{
-    fn foo<B>(){}
+impl MyImpl<A> of MyTrait<A> {
+    fn foo<B>() {}
 }
 type MyAlias<A> = MyStruct::<A>;
 
@@ -31,4 +31,4 @@ GenericParamType(test::MyTrait::A) -> TraitId(test::MyTrait)
 GenericParamType(test::foo::B) -> TraitFunctionId(test::foo)
 GenericParamType(test::MyImpl::A) -> ImplDefId(test::MyImpl)
 GenericParamType(test::foo::B) -> ImplFunctionId(test::foo)
-GenericParamType(test::MyAlias::A) -> TypeAliasId(test::MyAlias)
+GenericParamType(test::MyAlias::A) -> ModuleTypeAliasId(test::MyAlias)

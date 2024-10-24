@@ -1,5 +1,7 @@
 use bimap::BiMap;
 use itertools::chain;
+use num_bigint::BigInt;
+use starknet_types_core::felt::Felt as Felt252;
 
 use crate::ids::ConcreteTypeId;
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -10,6 +12,7 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("u32".into(), as_type_long_id("u32", &[]));
     elements.insert("u64".into(), as_type_long_id("u64", &[]));
     elements.insert("u128".into(), as_type_long_id("u128", &[]));
+    elements.insert("bytes31".into(), as_type_long_id("bytes31", &[]));
     elements.insert("felt252".into(), as_type_long_id("felt252", &[]));
     elements.insert("Tuple<>".into(), as_named_type_long_id("Struct", "Tuple", &[]));
     elements.insert(
@@ -21,6 +24,27 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("NonZeroFelt252".into(), as_type_long_id("NonZero", &["felt252"]));
     elements.insert("NonZeroU128".into(), as_type_long_id("NonZero", &["u128"]));
     elements.insert("ArrayFelt252".into(), as_type_long_id("Array", &["felt252"]));
+    elements.insert("ArrayFelt252".into(), as_type_long_id("Array", &["felt252"]));
+    elements.insert(
+        "BoundedInt0_3".into(),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(0), BigInt::from(3)]),
+    );
+    elements.insert(
+        "BoundedInt0_-1".into(),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(0), Felt252::from(-1).to_bigint()]),
+    );
+    elements.insert(
+        "BoundedInt0_10".into(),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(0), BigInt::from(10)]),
+    );
+    elements.insert(
+        "BoundedInt0_0".into(),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(0), BigInt::from(0)]),
+    );
+    elements.insert(
+        "BoundedInt2_3".into(),
+        as_type_long_id_value_args("BoundedInt", &[BigInt::from(2), BigInt::from(3)]),
+    );
     elements.insert("ArrayU128".into(), as_type_long_id("Array", &["u128"]));
     elements.insert("BoxU128".into(), as_type_long_id("Box", &["u128"]));
     elements.insert("UninitializedFelt252".into(), as_type_long_id("Uninitialized", &["felt252"]));
@@ -54,9 +78,16 @@ fn as_type_long_id(name: &str, args: &[&str]) -> ConcreteTypeLongId {
     }
 }
 
-fn as_named_type_long_id(genetic_name: &str, user_name: &str, args: &[&str]) -> ConcreteTypeLongId {
+fn as_type_long_id_value_args(name: &str, args: &[BigInt]) -> ConcreteTypeLongId {
     ConcreteTypeLongId {
-        generic_id: genetic_name.into(),
+        generic_id: name.into(),
+        generic_args: args.iter().map(|b| GenericArg::Value(b.clone())).collect(),
+    }
+}
+
+fn as_named_type_long_id(generic_name: &str, user_name: &str, args: &[&str]) -> ConcreteTypeLongId {
+    ConcreteTypeLongId {
+        generic_id: generic_name.into(),
         generic_args: chain!(
             [GenericArg::UserType(user_name.into())],
             args.iter().map(|s| GenericArg::Type(ConcreteTypeId::from(*s)))

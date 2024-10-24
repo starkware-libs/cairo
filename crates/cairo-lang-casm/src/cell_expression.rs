@@ -13,6 +13,17 @@ pub enum CellOperator {
     Div,
 }
 
+impl core::fmt::Display for CellOperator {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            CellOperator::Add => write!(f, "+"),
+            CellOperator::Sub => write!(f, "-"),
+            CellOperator::Mul => write!(f, "*"),
+            CellOperator::Div => write!(f, "/"),
+        }
+    }
+}
+
 /// The expression representing a cell in the casm memory.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CellExpression {
@@ -115,6 +126,17 @@ impl ApplyApChange for CellExpression {
             }
             CellExpression::Immediate(_) => true,
             CellExpression::BinOp { a, b, .. } => a.can_apply_unknown() && b.can_apply_unknown(),
+        }
+    }
+}
+
+impl core::fmt::Display for CellExpression {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            CellExpression::Deref(cell) => write!(f, "{cell}"),
+            CellExpression::DoubleDeref(cell, offset) => write!(f, "[{cell} + {offset}]"),
+            CellExpression::Immediate(imm) => write!(f, "{}", imm),
+            CellExpression::BinOp { op, a, b } => write!(f, "{a} {op} {b}"),
         }
     }
 }

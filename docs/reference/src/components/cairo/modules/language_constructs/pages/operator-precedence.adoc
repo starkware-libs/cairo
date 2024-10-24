@@ -1,0 +1,28 @@
+= Operator precedence
+
+Below is the table of operator precedence.
+
+The higher an operator is in the table, the earlier it is evaluated.
+
+[cols="1,1,1",options="header"]
+|===
+| Group                                 | Operators                     | Comments
+| Method calls, struct member access    | `.`                           |
+| Postfix unary                         | `?` `[]`                      |
+| Prefix unary                          | `@` `*` `!` `~` `-`           |
+.4+| Bitwise                            | `<<` `>>`                     | Not yet supported.
+                                        | `&`                           |
+                                        | `^`                           |
+                                        | `\|`                          |
+.2+| Arithmetic                         | `*` `/` `%`                   .2+| * Preceded by bitwise operators starting  +
+                                                                                from next major Cairo version (3).
+
+                                                                                See https://github.com/starkware-libs/cairo/discussions/3552[discussion].
+                                        | `+` `-`
+| Comparison                            | `==` `!=` `<` `\<=` `>` `>=`   |
+.2+| Logical                            | `&&`                          |
+                                        | `\|\|`                        |
+| Assignment                            | `=` `+=` `-=` `*=` `/=` `%=`
+
+                                          `<\<=` `>>=` `&=` `^=` `\|=`   | Second line not yet supported.
+|===

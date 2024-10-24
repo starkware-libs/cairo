@@ -9,7 +9,7 @@ foo
 //! > function_code
 fn foo(x: felt252) -> felt252 {
     match felt252_is_zero(x) {
-        IsZeroResult::Zero(_) => 1,
+        IsZeroResult::Zero => 1,
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             // y is not revoked, since it's the same as x, which is local.
@@ -18,7 +18,7 @@ fn foo(x: felt252) -> felt252 {
     }
     let x2 = x + x;
     match felt252_is_zero(x2) {
-        IsZeroResult::Zero(_) => 1,
+        IsZeroResult::Zero => 1,
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             // x2 is revoked, since y is identical to x2.
@@ -29,8 +29,6 @@ fn foo(x: felt252) -> felt252 {
 
 //! > module_code
 use zeroable::IsZeroResult;
-use zeroable::NonZeroIntoImpl;
-use traits::Into;
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()
@@ -43,7 +41,7 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
@@ -53,40 +51,35 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt252) <- test::revoke_ap()
-  (v12: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v2)
+  (v2: core::felt252) <- test::revoke_ap()
+  (v3: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v1)
 End:
   Goto(blk3, {})
 
 blk3:
 Statements:
-  (v13: core::felt252) <- core::felt252_add(v0, v0)
+  (v4: core::felt252) <- core::felt252_add(v0, v0)
 End:
-  Match(match core::felt252_is_zero(v13) {
+  Match(match core::felt252_is_zero(v4) {
     IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero(v8) => blk5,
+    IsZeroResult::NonZero(v5) => blk5,
   })
 
 blk4:
 Statements:
-  (v7: core::felt252) <- 1u
+  (v6: core::felt252) <- 1
 End:
-  Goto(blk6, {v7 -> v11})
+  Return(v6)
 
 blk5:
 Statements:
-  (v9: core::felt252) <- test::revoke_ap()
-  (v14: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v8)
+  (v7: core::felt252) <- test::revoke_ap()
+  (v8: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v5)
 End:
-  Goto(blk6, {v14 -> v11})
-
-blk6:
-Statements:
-End:
-  Return(v11)
+  Return(v8)
 
 //! > local_variables
-v13
+v4
 
 //! > ==========================================================================
 
@@ -102,10 +95,18 @@ foo
 fn foo(x: felt252) -> felt252 {
     let x1 = x + x;
     let x2 = x1 + x1;
-    let x3 = if x2 == 0 { 1 } else { 2 };
+    let x3 = if x2 == 0 {
+        1
+    } else {
+        2
+    };
     // The "if" revokes "x1".
     x1 + x3;
-    let x4 = if x1 == 0 { 1 } else { 2 };
+    let x4 = if x1 == 0 {
+        1
+    } else {
+        2
+    };
     revoke_ap();
     x4
 }
@@ -120,55 +121,55 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v13: core::felt252) <- core::felt252_add(v0, v0)
-  (v15: core::felt252) <- core::felt252_add(v13, v13)
+  (v1: core::felt252) <- core::felt252_add(v0, v0)
+  (v2: core::felt252) <- core::felt252_add(v1, v1)
 End:
-  Match(match core::felt252_is_zero(v15) {
+  Match(match core::felt252_is_zero(v2) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk2,
+    IsZeroResult::NonZero(v3) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
+  (v4: core::felt252) <- 1
 End:
-  Goto(blk3, {v3 -> v6})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v5: core::felt252) <- 2u
+  (v6: core::felt252) <- 2
 End:
-  Goto(blk3, {v5 -> v6})
+  Goto(blk3, {v6 -> v5})
 
 blk3:
 Statements:
-  (v14: core::felt252) <- core::felt252_add(v13, v6)
+  (v7: core::felt252) <- core::felt252_add(v1, v5)
 End:
-  Match(match core::felt252_is_zero(v13) {
+  Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero(v9) => blk5,
+    IsZeroResult::NonZero(v8) => blk5,
   })
 
 blk4:
 Statements:
-  (v8: core::felt252) <- 1u
+  (v9: core::felt252) <- 1
 End:
-  Goto(blk6, {v8 -> v11})
+  Goto(blk6, {v9 -> v10})
 
 blk5:
 Statements:
-  (v10: core::felt252) <- 2u
+  (v11: core::felt252) <- 2
 End:
-  Goto(blk6, {v10 -> v11})
+  Goto(blk6, {v11 -> v10})
 
 blk6:
 Statements:
   (v12: core::felt252) <- test::revoke_ap()
 End:
-  Return(v11)
+  Return(v10)
 
 //! > local_variables
-v11
+v10
 
 //! > ==========================================================================
 
@@ -185,8 +186,8 @@ fn foo(x: felt252) -> felt252 {
     let w1 = x + x;
 
     match felt252_is_zero(x) {
-        IsZeroResult::Zero(_) => 1,
-        IsZeroResult::NonZero(y) => {
+        IsZeroResult::Zero => 1,
+        IsZeroResult::NonZero(_y) => {
             revoke_ap();
             return 0;
         },
@@ -196,8 +197,8 @@ fn foo(x: felt252) -> felt252 {
     let w2 = w1 + x;
 
     match felt252_is_zero(x) {
-        IsZeroResult::Zero(_) => 1,
-        IsZeroResult::NonZero(y) => {
+        IsZeroResult::Zero => 1,
+        IsZeroResult::NonZero(_y) => {
             // Same as above, without revoke_ap() and without an early return.
             2
         },
@@ -218,20 +219,20 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v13: core::felt252) <- core::felt252_add(v0, v0)
+  (v1: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v3) => blk5,
+    IsZeroResult::NonZero(v2) => blk5,
   })
 
 blk1:
 Statements:
-  (v14: core::felt252) <- core::felt252_add(v13, v0)
+  (v3: core::felt252) <- core::felt252_add(v1, v0)
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v9) => blk3,
+    IsZeroResult::NonZero(v4) => blk3,
   })
 
 blk2:
@@ -246,15 +247,15 @@ End:
 
 blk4:
 Statements:
-  (v15: core::felt252) <- core::felt252_add(v14, v0)
+  (v5: core::felt252) <- core::felt252_add(v3, v0)
 End:
-  Return(v15)
+  Return(v5)
 
 blk5:
 Statements:
-  (v4: core::felt252) <- test::revoke_ap()
-  (v5: core::felt252) <- 0u
+  (v6: core::felt252) <- test::revoke_ap()
+  (v7: core::felt252) <- 0
 End:
-  Return(v5)
+  Return(v7)
 
 //! > local_variables

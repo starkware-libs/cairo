@@ -1,0 +1,134 @@
+//! > Test Match
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let x = 5;
+    match x {
+        0 => 1,
+        _ => 2,
+    };
+}
+
+//! > top_level_kind
+ExprMatch
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprMatch
+    ├── match_kw (kind: TokenMatch): 'match'
+    ├── expr (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'x'
+    ├── lbrace (kind: TokenLBrace): '{'
+    ├── arms (kind: MatchArms)
+    │   ├── item #0 (kind: MatchArm)
+    │   │   ├── patterns (kind: PatternListOr)
+    │   │   │   └── item #0 (kind: TokenLiteralNumber): '0'
+    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   └── expression (kind: TokenLiteralNumber): '1'
+    │   ├── separator #0 (kind: TokenComma): ','
+    │   ├── item #1 (kind: MatchArm)
+    │   │   ├── patterns (kind: PatternListOr)
+    │   │   │   └── item #0 (kind: TokenUnderscore): '_'
+    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   └── expression (kind: TokenLiteralNumber): '2'
+    │   └── separator #1 (kind: TokenComma): ','
+    └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test Match Simple Or
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f(x: felt252,) {
+    let x = 5;
+    match x {
+        0 | 1 => 1,
+        _ => 2,
+    };
+}
+
+//! > top_level_kind
+ExprMatch
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprMatch
+    ├── match_kw (kind: TokenMatch): 'match'
+    ├── expr (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'x'
+    ├── lbrace (kind: TokenLBrace): '{'
+    ├── arms (kind: MatchArms)
+    │   ├── item #0 (kind: MatchArm)
+    │   │   ├── patterns (kind: PatternListOr)
+    │   │   │   ├── item #0 (kind: TokenLiteralNumber): '0'
+    │   │   │   ├── separator #0 (kind: TokenOr): '|'
+    │   │   │   └── item #1 (kind: TokenLiteralNumber): '1'
+    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   └── expression (kind: TokenLiteralNumber): '1'
+    │   ├── separator #0 (kind: TokenComma): ','
+    │   ├── item #1 (kind: MatchArm)
+    │   │   ├── patterns (kind: PatternListOr)
+    │   │   │   └── item #0 (kind: TokenUnderscore): '_'
+    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   └── expression (kind: TokenLiteralNumber): '2'
+    │   └── separator #1 (kind: TokenComma): ','
+    └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test match on bool in match
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let x = true;
+    match x {
+        true => 1,
+        false => 2,
+    };
+}
+
+//! > top_level_kind
+ExprMatch
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprMatch
+    ├── match_kw (kind: TokenMatch): 'match'
+    ├── expr (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'x'
+    ├── lbrace (kind: TokenLBrace): '{'
+    ├── arms (kind: MatchArms)
+    │   ├── item #0 (kind: MatchArm)
+    │   │   ├── patterns (kind: PatternListOr)
+    │   │   │   └── item #0 (kind: TokenTrue): 'true'
+    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   └── expression (kind: TokenLiteralNumber): '1'
+    │   ├── separator #0 (kind: TokenComma): ','
+    │   ├── item #1 (kind: MatchArm)
+    │   │   ├── patterns (kind: PatternListOr)
+    │   │   │   └── item #0 (kind: TokenFalse): 'false'
+    │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │   └── expression (kind: TokenLiteralNumber): '2'
+    │   └── separator #1 (kind: TokenComma): ','
+    └── rbrace (kind: TokenRBrace): '}'

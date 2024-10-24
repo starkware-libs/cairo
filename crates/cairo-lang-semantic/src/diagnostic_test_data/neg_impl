@@ -1,0 +1,76 @@
+//! > Test negative impl diagnostics.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+    Bad::<u128, core::NegImpl>::bad();
+    Bad::<u128, _>::bad();
+}
+
+//! > module_code
+pub trait NegImpl {}
+
+pub trait Bad<T, -NegImpl> {
+    fn bad() -> T;
+}
+
+pub impl ImplBad<T, -NegImpl> of Bad<T, _> {
+    fn bad() -> T {
+        panic!("Bad::bad() called")
+    }
+}
+
+pub impl ImplBad2<T> of Bad<T, T> {
+    fn bad() -> T {
+        panic!("Bad::bad() called")
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Negative impls supported only in impl definitions.
+ --> lib.cairo:3:18
+pub trait Bad<T, -NegImpl> {
+                 ^******^
+
+error: Only `_` is valid as a negative impl argument.
+ --> lib.cairo:13:32
+pub impl ImplBad2<T> of Bad<T, T> {
+                               ^
+
+error: Only `_` is valid as a negative impl argument.
+ --> lib.cairo:20:17
+    Bad::<u128, core::NegImpl>::bad();
+                ^***********^
+
+//! > ==========================================================================
+
+//! > Test cycles
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+    NegImpl::bar()
+}
+
+//! > module_code
+pub trait NegImpl {
+    fn bar();
+}
+
+impl BadImpl<-NegImpl> of NegImpl {
+    fn bar() {}
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Inference cycle detected
+ --> lib.cairo:8:16
+fn test_func() {  {
+               ^**^

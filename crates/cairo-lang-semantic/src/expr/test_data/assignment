@@ -1,14 +1,14 @@
 //! > Test assignment.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(p: felt252) {
     p = 7;
     a = 1 + 2;
     let b = 1;
-    let c : felt252 = (b = 5);
+    let _c: felt252 = (b = 5);
     let mut x = 1;
     x = true;
 }
@@ -37,15 +37,94 @@ error: Invalid left-hand side of assignment.
 
 error: Cannot assign to an immutable variable.
  --> lib.cairo:6:24
-    let c : felt252 = (b = 5);
+    let _c: felt252 = (b = 5);
                        ^***^
 
 error: Unexpected argument type. Expected: "core::felt252", found: "()".
  --> lib.cairo:6:23
-    let c : felt252 = (b = 5);
+    let _c: felt252 = (b = 5);
                       ^*****^
 
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
- --> lib.cairo:7:17
-    let mut x = 1;
-                ^
+//! > ==========================================================================
+
+//! > Test a valid let statement with a string literal.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let _x: ByteArray = "error";
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type mismatch of a string literal in a let statement.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _x: felt252 = "error";
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Mismatched types. The type `core::felt252` cannot be created from a string literal.
+ --> lib.cairo:2:23
+    let _x: felt252 = "error";
+                      ^*****^
+
+//! > ==========================================================================
+
+//! > Test a valid let statement with a numeric literal.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let _x: felt252 = 252;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type mismatch of a numeric literal in a let statement.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _x: ByteArray = 252;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Mismatched types. The type `core::byte_array::ByteArray` cannot be created from a numeric literal.
+ --> lib.cairo:2:25
+    let _x: ByteArray = 252;
+                        ^*^

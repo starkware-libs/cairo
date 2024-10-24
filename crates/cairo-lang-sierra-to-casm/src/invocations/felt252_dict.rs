@@ -12,7 +12,7 @@ use cairo_lang_sierra_gas::core_libfunc_cost::{
 use cairo_lang_sierra_gas::objects::ConstCost;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{add_input_variables, CostValidationInfo};
+use crate::invocations::{CostValidationInfo, add_input_variables};
 use crate::references::ReferenceExpression;
 
 const DICT_ACCESS_SIZE: i32 = 3;
@@ -56,7 +56,7 @@ fn build_felt252_dict_new(
         casm_builder,
         [("Fallthrough", &[&[segment_arena_ptr], &[new_dict_end]], None)],
         CostValidationInfo {
-            range_check_info: None,
+            builtin_infos: vec![],
             // The segment arena finalization cost.
             extra_costs: Some([SEGMENT_ARENA_ALLOCATION_COST.cost()]),
         },
@@ -188,16 +188,12 @@ fn build_felt252_dict_squash(
         )
     };
 
-    let (squash_dict_inner_args, fixed_steps_) = build_squash_dict(
-        &mut casm_builder,
-        dict_access_size,
-        one,
-        SquashDictArgs {
+    let (squash_dict_inner_args, fixed_steps_) =
+        build_squash_dict(&mut casm_builder, dict_access_size, one, SquashDictArgs {
             squash_dict_arg_range_check_ptr: dict_squash_arg_range_check_ptr,
             squash_dict_arg_dict_accesses_start: dict_squash_arg_dict_accesses_start,
             squash_dict_arg_dict_accesses_end: dict_squash_arg_dict_accesses_end,
-        },
-    );
+        });
     fixed_steps += fixed_steps_;
 
     let (fixed_steps_, unique_key_steps_, repeated_access_steps_) =
@@ -215,7 +211,12 @@ fn build_felt252_dict_squash(
     let unique_key_range_checks = 6;
     let repeated_access_range_checks = 1;
     assert_eq!(
-        ConstCost { steps: fixed_steps, holes: 0, range_checks: fixed_range_checks },
+        ConstCost {
+            steps: fixed_steps,
+            holes: 0,
+            range_checks: fixed_range_checks,
+            range_checks96: 0
+        },
         DICT_SQUASH_FIXED_COST
     );
     assert_eq!(
@@ -223,11 +224,17 @@ fn build_felt252_dict_squash(
             steps: repeated_access_steps,
             holes: 0,
             range_checks: repeated_access_range_checks,
+            range_checks96: 0
         },
         DICT_SQUASH_REPEATED_ACCESS_COST
     );
     assert_eq!(
-        ConstCost { steps: unique_key_steps, holes: 0, range_checks: unique_key_range_checks },
+        ConstCost {
+            steps: unique_key_steps,
+            holes: 0,
+            range_checks: unique_key_range_checks,
+            range_checks96: 0
+        },
         DICT_SQUASH_UNIQUE_KEY_COST
     );
     let CasmBuildResult { instructions, branches: [(state, _)] } =
@@ -446,18 +453,15 @@ fn build_squash_dict_inner(
         // This guarantees that all the entries were visited exactly once.
         jump SquashDictInnerSkipLoop if should_skip_loop != 0;
     }
-    repeated_access_steps += build_squash_dict_inner_loop(
-        casm_builder,
-        args,
-        SquashDictInnerLoopArgs {
+    repeated_access_steps +=
+        build_squash_dict_inner_loop(casm_builder, args, SquashDictInnerLoopArgs {
             prev_loop_locals_range_check_ptr,
             prev_loop_locals_access_ptr,
             prev_loop_locals_value,
             dict_diff,
             next_key,
             new_remaining_accesses,
-        },
-    );
+        });
     casm_build_extend! {casm_builder,
         SquashDictInnerSkipLoop:
         let last_loop_locals_access_ptr = prev_loop_locals_access_ptr;
@@ -477,9 +481,9 @@ fn build_squash_dict_inner(
         #{ unique_key_steps += steps; steps = 0; }
         jump SquashDictInnerContinueRecursion if new_remaining_accesses != 0;
         // Return from squash_dict_inner, push values to the stack and return;
-        tempvar retuened_range_check_ptr = arg_range_check_ptr;
+        tempvar returned_range_check_ptr = arg_range_check_ptr;
         const dict_access_size = DICT_ACCESS_SIZE;
-        tempvar retuened_squashed_dict =
+        tempvar returned_squashed_dict =
             squash_dict_inner_arg_squashed_dict_end + dict_access_size;
         ret;
         #{ fixed_steps += steps; steps = 0; }
@@ -732,7 +736,7 @@ fn build_felt252_dict_entry_get(
         casm_builder,
         [("Fallthrough", &[&[dict_ptr], &[prev_value]], None)],
         CostValidationInfo {
-            range_check_info: None,
+            builtin_infos: vec![],
             extra_costs: Some([DICT_SQUASH_UNIQUE_KEY_COST.cost()]),
         },
     ))

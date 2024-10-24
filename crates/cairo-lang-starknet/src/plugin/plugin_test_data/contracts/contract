@@ -1,0 +1,471 @@
+//! > Test expansion of a simple starknet contract.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    use starknet::class_hash::ClassHash;
+    use starknet::contract_address::ContractAddress;
+    use starknet::storage_access::StorageAddress;
+
+    #[storage]
+    struct Storage {}
+
+    fn internal_func() -> felt252 {
+        1
+    }
+
+    #[external(v0)]
+    fn get_something(self: @ContractState, ref arg: felt252, mut num: felt252) -> felt252 {
+        num += 1;
+        num
+    }
+
+    #[external(v0)]
+    fn set_something(ref self: ContractState, ref arg: felt252, num: felt252) {}
+
+    #[l1_handler]
+    fn l1_handler_func(
+        ref self: ContractState, from_address: felt252, arg: felt252, num: felt252
+    ) {}
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        AwesomeEvent: AwesomeEvent,
+        BestEventEver: BestEventEver,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct AwesomeEvent {
+        x: felt252,
+        data: Array::<felt252>,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct BestEventEver {}
+
+    #[external(v0)]
+    fn test_serde(
+        ref self: ContractState,
+        contract_address: ContractAddress,
+        class_hash: ClassHash,
+        storage_address: StorageAddress,
+    ) {}
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    use starknet::class_hash::ClassHash;
+    use starknet::contract_address::ContractAddress;
+    use starknet::storage_access::StorageAddress;
+
+    #[storage]
+    struct Storage {}
+
+    fn internal_func() -> felt252 {
+        1
+    }
+
+    #[external(v0)]
+    fn get_something(self: @ContractState, ref arg: felt252, mut num: felt252) -> felt252 {
+        num += 1;
+        num
+    }
+
+    #[external(v0)]
+    fn set_something(ref self: ContractState, ref arg: felt252, num: felt252) {}
+
+    #[l1_handler]
+    fn l1_handler_func(
+        ref self: ContractState, from_address: felt252, arg: felt252, num: felt252
+    ) {}
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        AwesomeEvent: AwesomeEvent,
+        BestEventEver: BestEventEver,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct AwesomeEvent {
+        x: felt252,
+        data: Array::<felt252>,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct BestEventEver {}
+
+    #[external(v0)]
+    fn test_serde(
+        ref self: ContractState,
+        contract_address: ContractAddress,
+        class_hash: ClassHash,
+        storage_address: StorageAddress,
+    ) {}
+}
+
+lib.cairo:1:1
+#[starknet::contract]
+^*******************^
+contract:
+
+
+
+#[phantom]
+pub struct Storage {
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBase {
+}
+#[doc(hidden)]
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBaseMut {
+}
+#[doc(hidden)]
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
+        }
+    }
+}
+
+pub struct ContractState {
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+ 
+impl ContractStateDeref of core::ops::SnapshotDeref<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn snapshot_deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+#[cfg(target: 'test')]
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
+
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+#[allow(unused_imports)]
+use starknet::storage::Map as LegacyMap;
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: felt252 = 0x2cd967636a47442d438bb2596f3c9848f0a831f916f4bb50d807e6eb90df576;
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let mut __arg_arg = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_num = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = get_something(@contract_state, ref __arg_arg, __arg_num);
+    let mut arr = ArrayTrait::new();
+    // References.
+            core::serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
+    // Result.
+    core::serde::Serde::<felt252>::serialize(@res, ref arr);
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__set_something(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let mut __arg_arg = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_num = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    set_something(ref contract_state, ref __arg_arg, __arg_num);
+    let mut arr = ArrayTrait::new();
+    // References.
+            core::serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_from_address = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_arg = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    let __arg_num = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #3'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    l1_handler_func(ref contract_state, __arg_from_address, __arg_arg, __arg_num);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let __arg_contract_address = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_class_hash = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<ClassHash>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    let __arg_storage_address = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<StorageAddress>::deserialize(ref data),
+        'Failed to deserialize param #3'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    core::option::OptionTraitImpl::expect(
+        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    test_serde(ref contract_state, __arg_contract_address, __arg_class_hash, __arg_storage_address);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+
+pub mod __external {
+    pub use super::__wrapper__get_something as get_something;
+    pub use super::__wrapper__set_something as set_something;
+    pub use super::__wrapper__test_serde as test_serde;
+}
+pub mod __l1_handler {
+    pub use super::__wrapper__l1_handler_func as l1_handler_func;
+}
+pub mod __constructor {
+}
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+
+
+lib.cairo:29:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
+impls:
+
+impl EventDrop of core::traits::Drop::<Event>;
+
+
+lib.cairo:29:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            Event::AwesomeEvent(val) => {
+                core::array::ArrayTrait::append(ref keys, selector!("AwesomeEvent"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::BestEventEver(val) => {
+                core::array::ArrayTrait::append(ref keys, selector!("BestEventEver"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("AwesomeEvent") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::AwesomeEvent(val));
+        }
+        if __selector__ == selector!("BestEventEver") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::BestEventEver(val));
+        }
+        Option::None
+    }
+}
+impl EventAwesomeEventIntoEvent of Into<AwesomeEvent, Event> {
+    fn into(self: AwesomeEvent) -> Event {
+        Event::AwesomeEvent(self)
+    }
+}
+impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
+    fn into(self: BestEventEver) -> Event {
+        Event::BestEventEver(self)
+    }
+}
+
+
+
+lib.cairo:34:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
+impls:
+
+impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
+
+
+lib.cairo:34:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
+starknet_derive:
+
+impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
+    fn append_keys_and_data(
+        self: @AwesomeEvent, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+            core::serde::Serde::serialize(self.x, ref data);
+            core::serde::Serde::serialize(self.data, ref data);
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<AwesomeEvent> {
+                let x = core::serde::Serde::deserialize(
+                    ref data
+                )?;
+                let data = core::serde::Serde::deserialize(
+                    ref data
+                )?;
+        Option::Some(AwesomeEvent {x, data, })
+    }
+}
+
+
+lib.cairo:39:14
+    #[derive(Drop, starknet::Event)]
+             ^**^
+impls:
+
+impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
+
+
+lib.cairo:39:20
+    #[derive(Drop, starknet::Event)]
+                   ^*************^
+starknet_derive:
+
+impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
+    fn append_keys_and_data(
+        self: @BestEventEver, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<BestEventEver> {
+        Option::Some(BestEventEver {})
+    }
+}
+
+
+lib.cairo:7:5
+    #[storage]
+    ^********^
+impls:
+
+impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
+impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
+
+
+lib.cairo:7:5
+    #[storage]
+    ^********^
+impls:
+
+impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
+impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
+
+//! > expected_diagnostics

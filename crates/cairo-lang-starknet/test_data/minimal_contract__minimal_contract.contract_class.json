@@ -1,0 +1,330 @@
+{
+  "sierra_program": [
+    "0x1",
+    "0x6",
+    "0x0",
+    "0x2",
+    "0x8",
+    "0x4",
+    "0x54",
+    "0xac",
+    "0xf",
+    "0x52616e6765436865636b",
+    "0x800000000000000100000000000000000000000000000000",
+    "0x436f6e7374",
+    "0x800000000000000000000000000000000000000000000002",
+    "0x1",
+    "0xc",
+    "0x2",
+    "0x4f7574206f6620676173",
+    "0x4172726179",
+    "0x800000000000000300000000000000000000000000000001",
+    "0x536e617073686f74",
+    "0x800000000000000700000000000000000000000000000001",
+    "0x537472756374",
+    "0x800000000000000700000000000000000000000000000002",
+    "0x0",
+    "0x1baeba72e79e9db2587cf44fedb2f3700b2075a5e8e39a562584862c4b71f62",
+    "0x3",
+    "0x2ee1e2b1b89f8c495f200e4956278a4d47395fe262f27b52e5865c9524c08c3",
+    "0x4",
+    "0x4275696c74696e436f737473",
+    "0x800000000000000700000000000000000000000000000000",
+    "0x53797374656d",
+    "0x800000000000000f00000000000000000000000000000001",
+    "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
+    "0x800000000000000300000000000000000000000000000003",
+    "0x8",
+    "0x456e756d",
+    "0x9931c641b913035ae674b400b61a51476d506bbe8bba2ff8a6272790aba9e6",
+    "0x5",
+    "0x9",
+    "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
+    "0x66656c74323532",
+    "0x426f78",
+    "0x4761734275696c74696e",
+    "0x1c",
+    "0x7265766f6b655f61705f747261636b696e67",
+    "0x77697468647261775f676173",
+    "0x6272616e63685f616c69676e",
+    "0x7374727563745f6465636f6e737472756374",
+    "0x73746f72655f74656d70",
+    "0x61727261795f736e617073686f745f706f705f66726f6e74",
+    "0x64726f70",
+    "0xd",
+    "0x61727261795f6e6577",
+    "0x636f6e73745f61735f696d6d656469617465",
+    "0xb",
+    "0x61727261795f617070656e64",
+    "0x7374727563745f636f6e737472756374",
+    "0x656e756d5f696e6974",
+    "0xa",
+    "0xe",
+    "0x7",
+    "0x6765745f6275696c74696e5f636f737473",
+    "0x6",
+    "0x77697468647261775f6761735f616c6c",
+    "0x736e617073686f745f74616b65",
+    "0x41",
+    "0xffffffffffffffff",
+    "0x33",
+    "0x15",
+    "0x10",
+    "0x11",
+    "0x12",
+    "0x13",
+    "0x14",
+    "0x26",
+    "0x16",
+    "0x17",
+    "0x18",
+    "0x19",
+    "0x1a",
+    "0x1b",
+    "0x1d",
+    "0x1e",
+    "0x1f",
+    "0x20",
+    "0x21",
+    "0x22",
+    "0x23",
+    "0x24",
+    "0x25",
+    "0x27",
+    "0x28",
+    "0x2b9",
+    "0x15141305120f0e0d1105100f0e0d07050c0b06050a09080706050403020100",
+    "0x2115201f07060504031e051d051c0f191b07051a05120f190d180f170d0216",
+    "0x5052a1105052a060505290f050528130505270f260f250f2423022206050c",
+    "0x507320507311e0505301a0505300605052f060505282e05052d0605052c2b",
+    "0x505300705052a070505380f37360505280f35320505283405052833050528",
+    "0x50f07050f0f3a050f0f0f391305052a0505052d0f07320507311d05053013",
+    "0x13053a051305130f1a053a051105110f0f3a050f070f3436073b1d13073a07",
+    "0x3a053205340f0f3a051e05360f0f3a050f070f2e053c321e073a071a051d0f",
+    "0x53a052b06072e0f2b053a052b05320f2b053a050f1e0f06053a050f1a0f0f",
+    "0x3a051305130f3e053a053d05330f3d053a053300072b0f00053a050f060f33",
+    "0x71d1313053e053a053e053e0f07053a0507053d0f1d053a051d05000f1305",
+    "0x410f3f053a053f05400f3f053a050f3f0f0f3a052e05360f0f3a050f070f3e",
+    "0x544053c0f44053a050f1a0f0f3a050f070f433c07424140073a073f1d1311",
+    "0x4805460f48053a054705450f47053a054605440f0f3a054505430f4645073a",
+    "0x53e0f07053a0507053d0f41053a054105000f40053a054005130f23053a05",
+    "0x4a053a050f470f49053a050f1a0f0f3a050f070f23074140130523053a0523",
+    "0x3a054b4c072b0f4c053a050f060f4b053a054a49072e0f4a053a054a05320f",
+    "0x507053d0f43053a054305000f3c053a053c05130f4e053a054d05330f4d05",
+    "0xf0f3a051105480f0f3a050f070f4e07433c13054e053a054e053e0f07053a",
+    "0xf51053a05504f072e0f50053a055005320f50053a050f470f4f053a050f1a",
+    "0x36053a053605130f53053a055205330f52053a055142072b0f42053a050f06",
+    "0x553073436130553053a0553053e0f07053a0507053d0f34053a053405000f",
+    "0xf1107050f3234330f131334330f13"
+  ],
+  "sierra_program_debug_info": {
+    "type_names": [
+      [
+        0,
+        "RangeCheck"
+      ],
+      [
+        1,
+        "Const<felt252, 375233589013918064796019>"
+      ],
+      [
+        2,
+        "Array<felt252>"
+      ],
+      [
+        3,
+        "Snapshot<Array<felt252>>"
+      ],
+      [
+        4,
+        "core::array::Span::<core::felt252>"
+      ],
+      [
+        5,
+        "Tuple<core::array::Span::<core::felt252>>"
+      ],
+      [
+        6,
+        "BuiltinCosts"
+      ],
+      [
+        7,
+        "System"
+      ],
+      [
+        8,
+        "core::panics::Panic"
+      ],
+      [
+        9,
+        "Tuple<core::panics::Panic, Array<felt252>>"
+      ],
+      [
+        10,
+        "core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>"
+      ],
+      [
+        11,
+        "Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>"
+      ],
+      [
+        12,
+        "felt252"
+      ],
+      [
+        13,
+        "Box<felt252>"
+      ],
+      [
+        14,
+        "GasBuiltin"
+      ]
+    ],
+    "libfunc_names": [
+      [
+        0,
+        "revoke_ap_tracking"
+      ],
+      [
+        1,
+        "withdraw_gas"
+      ],
+      [
+        2,
+        "branch_align"
+      ],
+      [
+        3,
+        "struct_deconstruct<core::array::Span::<core::felt252>>"
+      ],
+      [
+        4,
+        "store_temp<RangeCheck>"
+      ],
+      [
+        5,
+        "array_snapshot_pop_front<felt252>"
+      ],
+      [
+        6,
+        "drop<Snapshot<Array<felt252>>>"
+      ],
+      [
+        7,
+        "drop<Box<felt252>>"
+      ],
+      [
+        8,
+        "array_new<felt252>"
+      ],
+      [
+        9,
+        "const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>"
+      ],
+      [
+        10,
+        "store_temp<felt252>"
+      ],
+      [
+        11,
+        "array_append<felt252>"
+      ],
+      [
+        12,
+        "struct_construct<core::panics::Panic>"
+      ],
+      [
+        13,
+        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
+      ],
+      [
+        14,
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
+      ],
+      [
+        15,
+        "store_temp<GasBuiltin>"
+      ],
+      [
+        16,
+        "store_temp<System>"
+      ],
+      [
+        17,
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+      ],
+      [
+        18,
+        "get_builtin_costs"
+      ],
+      [
+        19,
+        "store_temp<BuiltinCosts>"
+      ],
+      [
+        20,
+        "withdraw_gas_all"
+      ],
+      [
+        21,
+        "snapshot_take<Array<felt252>>"
+      ],
+      [
+        22,
+        "drop<Array<felt252>>"
+      ],
+      [
+        23,
+        "struct_construct<core::array::Span::<core::felt252>>"
+      ],
+      [
+        24,
+        "struct_construct<Tuple<core::array::Span::<core::felt252>>>"
+      ],
+      [
+        25,
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
+      ],
+      [
+        26,
+        "const_as_immediate<Const<felt252, 375233589013918064796019>>"
+      ],
+      [
+        27,
+        "drop<core::array::Span::<core::felt252>>"
+      ]
+    ],
+    "user_func_names": [
+      [
+        0,
+        "cairo_level_tests::contracts::minimal_contract::minimal_contract::__wrapper__empty"
+      ]
+    ]
+  },
+  "contract_class_version": "0.1.0",
+  "entry_points_by_type": {
+    "EXTERNAL": [
+      {
+        "selector": "0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80",
+        "function_idx": 0
+      }
+    ],
+    "L1_HANDLER": [],
+    "CONSTRUCTOR": []
+  },
+  "abi": [
+    {
+      "type": "function",
+      "name": "empty",
+      "inputs": [],
+      "outputs": [],
+      "state_mutability": "external"
+    },
+    {
+      "type": "event",
+      "name": "cairo_level_tests::contracts::minimal_contract::minimal_contract::Event",
+      "kind": "enum",
+      "variants": []
+    }
+  ]
+}

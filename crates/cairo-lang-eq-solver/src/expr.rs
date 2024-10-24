@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps, HasZero};
+use cairo_lang_utils::collection_arithmetics::{HasZero, add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 #[cfg(test)]

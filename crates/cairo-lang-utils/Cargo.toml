@@ -7,19 +7,19 @@ license-file.workspace = true
 description = "General utilities for the Cairo compiler project."
 
 [dependencies]
-indexmap.workspace = true
-itertools.workspace = true
+indexmap = { workspace = true }
+itertools = { workspace = true, features = ["use_alloc"] }
 num-bigint.workspace = true
-num-integer.workspace = true
 num-traits.workspace = true
-parity-scale-codec.workspace = true
-schemars = { workspace = true, features = ["preserve_order"] }
-serde.workspace = true
+hashbrown = { workspace = true, features = ["serde"] }
 
 # Optional
+serde = { workspace = true, features = ["alloc"], optional = true }
+schemars = { workspace = true, features = ["preserve_order"], optional = true }
 env_logger = { workspace = true, optional = true }
 time = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
+parity-scale-codec = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json.workspace = true
@@ -28,5 +28,15 @@ test-log.workspace = true
 env_logger.workspace = true
 
 [features]
+default = ["std"]
+std = [
+  "indexmap/std",
+  "num-bigint/std",
+  "num-traits/std",
+  "serde?/std"
+]
+serde = ["dep:serde", "num-bigint/serde", "indexmap/serde"]
+schemars = ["std", "serde", "dep:schemars"]
+parity-scale-codec = ["dep:parity-scale-codec"]
 testing = []
-env_logger = ["dep:env_logger", "dep:time", "dep:log"]
+env_logger = ["std", "dep:env_logger", "dep:time", "dep:log"]

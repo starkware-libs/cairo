@@ -4,7 +4,7 @@
 // TODO(spapini): Remove duplicated diagnostics.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 1 + foo()
@@ -15,30 +15,10 @@ test_expr_diagnostics
 //! > function_body
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> lib.cairo:1:1
 3 + 4 +;
-^
-
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
- --> lib.cairo:1:3
-3 + 4 +;
-  ^
-
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
- --> lib.cairo:1:5
-3 + 4 +;
-    ^
-
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
- --> lib.cairo:1:7
-3 + 4 +;
-      ^
-
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
- --> lib.cairo:1:8
-3 + 4 +;
-       ^
+^******^
 
 error: Function not found.
  --> lib.cairo:3:5
@@ -50,46 +30,48 @@ error: Function not found.
 //! > Test function lookup
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
   foo();
   core::felt252_add(1,1);
-  test::foo();
+  submod::foo();
   bad_module::foo();
   super::foo();
   test::super::foo();
 }
 
 //! > module_code
-fn foo() {
+fn foo() {}
+mod submod {
+    fn foo() {}
 }
 
 //! > function_body
 
 //! > expected_diagnostics
 error: Identifier not found.
- --> lib.cairo:8:3
+ --> lib.cairo:10:3
   bad_module::foo();
   ^********^
 
 error: 'super' cannot be used for the crate's root module.
- --> lib.cairo:9:3
+ --> lib.cairo:11:3
   super::foo();
   ^***^
 
-error: Invalid path.
- --> lib.cairo:10:9
+error: Identifier not found.
+ --> lib.cairo:12:3
   test::super::foo();
-        ^***^
+  ^**^
 
 //! > ==========================================================================
 
 //! > Test duplicate 'ref'.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -97,8 +79,8 @@ test_expr_diagnostics
 
 //! > module_code
 fn foo(ref ref v: felt252) {
-  let mut a = 1;
-  foo(ref a);
+    let mut a = 1;
+    foo(ref a);
 }
 
 //! > function_body
@@ -114,7 +96,7 @@ fn foo(ref ref v: felt252) {
 //! > Test bad argument for ref param (not a variable).
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -122,23 +104,23 @@ test_expr_diagnostics
 
 //! > module_code
 fn foo(ref v: felt252) {
-  foo(1);
+    foo(1);
 }
 
 //! > function_body
 
 //! > expected_diagnostics
 error: ref argument must be a variable.
- --> lib.cairo:2:7
-  foo(1);
-      ^
+ --> lib.cairo:2:9
+    foo(1);
+        ^
 
 //! > ==========================================================================
 
 //! > Test bad argument for ref param (variable not mutable).
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -146,82 +128,92 @@ test_expr_diagnostics
 
 //! > module_code
 fn foo(ref v: felt252) {
-  let a = 3;
-  foo(ref a);
+    let a = 3;
+    foo(ref a);
 }
 
 //! > function_body
 
 //! > expected_diagnostics
 error: ref argument must be a mutable variable.
- --> lib.cairo:3:11
-  foo(ref a);
-          ^
+ --> lib.cairo:3:13
+    foo(ref a);
+            ^
 
 //! > ==========================================================================
 
 //! > Test numerical literal of unsupported type.
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
-    let a = 123_felt252;
-    let a = 123_u128;
-    let b = 123_NonZero;
-    let b = 123_u129;
+    let _a = 123_felt252;
+    let _a = 123_u128;
+    let _b = 123_bool;
+    let _b = 123_NonZero;
+    let _b = 123_u129;
 }
 
 //! > module_code
-fn foo() {
-}
+fn foo() {}
 
 //! > function_body
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::zeroable::NonZero>
- --> lib.cairo:7:13
-    let b = 123_NonZero;
-            ^*********^
+error: Wrong number of arguments. Expected 1, found: 0
+ --> lib.cairo:7:14
+    let _b = 123_NonZero;
+             ^*********^
 
 error: Unknown type.
- --> lib.cairo:8:13
-    let b = 123_u129;
-            ^******^
+ --> lib.cairo:8:14
+    let _b = 123_u129;
+             ^******^
+
+error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+ --> lib.cairo:6:14
+    let _b = 123_bool;
+             ^******^
 
 //! > ==========================================================================
 
 //! > Test use cycle
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
 }
 
 //! > module_code
-mod A {
-  use super::B;
+mod a {
+    use super::B;
 }
 
-use A::B;
+use a::B;
 
 //! > function_body
 
 //! > expected_diagnostics
 error: Cycle detected while resolving 'use' items.
  --> lib.cairo:5:8
-use A::B;
+use a::B;
        ^
+
+error: Cycle detected while resolving 'use' items.
+ --> lib.cairo:2:16
+    use super::B;
+               ^
 
 //! > ==========================================================================
 
 //! > Test bad use
 
 //! > test_runner_name
-test_expr_diagnostics
+test_expr_diagnostics(expect_diagnostics: true)
 
 //! > expr_code
 {
@@ -237,3 +229,641 @@ error: Identifier not found.
  --> lib.cairo:1:5
 use bad_module_name;
     ^*************^
+
+//! > ==========================================================================
+
+//! > Test diagnostic after skipped attribute
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _x = y;
+}
+
+//! > module_code
+mod mod1 {
+  #[aaa]
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> lib.cairo:2:9
+  #[aaa]
+        ^
+
+error: Identifier not found.
+ --> lib.cairo:6:12
+  let _x = y;
+           ^
+
+//! > ==========================================================================
+
+//! > Test unused variable.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let x = 7;
+  let x = 3;
+  let y = 5;
+  x
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:3:7
+  let x = 7;
+      ^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:5:7
+  let y = 5;
+      ^
+
+//! > ==========================================================================
+
+//! > Test unhandled Option.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+  Option::<felt252>::None;
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` type `core::option::Option::<core::felt252>`
+ --> lib.cairo:3:3
+  Option::<felt252>::None;
+  ^*********************^
+
+//! > ==========================================================================
+
+//! > Test unhandled Result.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+  Result::<felt252, felt252>::Err(4);
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, core::felt252>`
+ --> lib.cairo:3:3
+  Result::<felt252, felt252>::Err(4);
+  ^********************************^
+
+//! > ==========================================================================
+
+//! > Test unhandled must use function.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+  must_use_function();
+}
+
+//! > module_code
+#[must_use]
+fn must_use_function() -> felt252 {
+    0
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` function.
+ --> lib.cairo:7:3
+  must_use_function();
+  ^*****************^
+
+//! > ==========================================================================
+
+//! > Test unhandled must use impl function.
+
+//! > TODO(gil): fix and change `expect_diagnostics` to true.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: *)
+
+//! > expr_code
+{
+  imp::must_use_function();
+}
+
+//! > module_code
+trait trt {
+    fn must_use_function() -> felt252;
+}
+impl imp of trt {
+    #[must_use]
+    fn must_use_function() -> felt252 {
+        0
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test unhandled must use trait function.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+  trt::must_use_function();
+}
+
+//! > module_code
+trait trt {
+    #[must_use]
+    fn must_use_function() -> felt252;
+}
+impl imp of trt {
+    fn must_use_function() -> felt252 {
+        0
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` function.
+ --> lib.cairo:12:3
+  trt::must_use_function();
+  ^**********************^
+
+//! > ==========================================================================
+
+//! > Test unhandled must use method.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+  let x: felt252 = 1;
+  x.must_use_function();
+}
+
+//! > module_code
+trait trt<T> {
+    #[must_use]
+    fn must_use_function(self: T) -> felt252;
+}
+impl imp of trt<felt252> {
+    fn must_use_function(self: felt252) -> felt252 {
+        0
+    }
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unhandled `#[must_use]` function.
+ --> lib.cairo:13:3
+  x.must_use_function();
+  ^*******************^
+
+//! > ==========================================================================
+
+//! > Test tail expression is considered a use of a must use function.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: false)
+
+//! > expr_code
+{
+  must_use_function()
+}
+
+//! > module_code
+#[must_use]
+fn must_use_function() -> felt252 {
+    0
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test usage of unstable.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+  let _fail = unstable_function();
+  #[feature("testing")]
+  let _work = unstable_function();
+  let _fail = unstable_function_with_note();
+  #[feature("testing")]
+  let _work = unstable_function_with_note();
+}
+
+//! > module_code
+#[unstable(feature: "testing")]
+fn unstable_function() -> felt252 {
+    0
+}
+
+#[unstable(feature: "testing", note: "Some reason", since: "1.0.0")]
+fn unstable_function_with_note() -> felt252 {
+    0
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
+ --> lib.cairo:12:15
+  let _fail = unstable_function();
+              ^***************^
+
+warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute. Note: "Some reason"
+ --> lib.cairo:15:15
+  let _fail = unstable_function_with_note();
+              ^*************************^
+
+//! > ==========================================================================
+
+//! > Test usage of deprecated.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: warnings_only)
+
+//! > expr_code
+{
+  let _fail = deprecated_function_with_note();
+  #[feature("deprecated")]
+  let _work = deprecated_function_with_note();
+  let _fail = deprecated_function_no_note();
+  #[feature("deprecated")]
+  let _work = deprecated_function_no_note();
+  #[allow(deprecated)]
+  let _work = deprecated_function_no_note();
+}
+
+//! > module_code
+#[deprecated(feature: "deprecated", note: "Some reason", since: "1.0.0")]
+fn deprecated_function_with_note() -> felt252 {
+    0
+}
+
+#[deprecated(feature: "deprecated")]
+fn deprecated_function_no_note() -> felt252 {
+    0
+}
+
+#[unstable(feature: "unstable-trait")]
+trait UnstableTrait;
+
+impl BadUnstableImpl of UnstableTrait;
+
+#[feature("unstable-trait")]
+impl AllowedUnstableImpl of UnstableTrait;
+
+#[unstable(feature: "unstable-member")]
+struct DisallowedType {}
+
+struct BadStructMember {
+    member: DisallowedType,
+}
+
+#[feature("unstable-member")]
+struct AllowedStructMember {
+    member: DisallowedType,
+}
+
+enum BadEnumVariant {
+    variant: DisallowedType,
+}
+
+#[feature("unstable-member")]
+enum AllowedEnumMember {
+    variant: DisallowedType,
+}
+
+trait ATrait {}
+
+impl BadATraitImpl<+UnstableTrait> of ATrait;
+
+#[feature("unstable-trait")]
+impl ATraitImpl<+UnstableTrait> of ATrait;
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
+ --> lib.cairo:14:25
+impl BadUnstableImpl of UnstableTrait;
+                        ^***********^
+
+warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+ --> lib.cairo:23:13
+    member: DisallowedType,
+            ^************^
+
+warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
+ --> lib.cairo:32:14
+    variant: DisallowedType,
+             ^************^
+
+warning: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
+ --> lib.cairo:42:21
+impl BadATraitImpl<+UnstableTrait> of ATrait;
+                    ^***********^
+
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
+ --> lib.cairo:48:15
+  let _fail = deprecated_function_with_note();
+              ^***************************^
+
+warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
+ --> lib.cairo:51:15
+  let _fail = deprecated_function_no_note();
+              ^*************************^
+
+//! > ==========================================================================
+
+//! > Test usage of internal.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _fail = internal_function_with_note();
+  #[feature("internal")]
+  let _work = internal_function_with_note();
+  let _fail = internal_function_no_note();
+  #[feature("internal")]
+  let _work = internal_function_no_note();
+}
+
+//! > module_code
+#[internal(feature: "internal", note: "Some reason", since: "1.0.0")]
+fn internal_function_with_note() -> felt252 {
+    0
+}
+
+#[internal(feature: "internal")]
+fn internal_function_no_note() -> felt252 {
+    0
+}
+
+#[internal(feature: "internal-trait")]
+trait InternalTrait;
+
+impl BadInternalImpl of InternalTrait;
+
+#[feature("internal-trait")]
+impl AllowedInternalImpl of InternalTrait;
+
+#[internal(feature: "internal-member")]
+struct DisallowedType {}
+
+struct BadStructMember {
+    member: DisallowedType,
+}
+
+#[feature("internal-member")]
+struct AllowedStructMember {
+    member: DisallowedType,
+}
+
+enum BadEnumVariant {
+    variant: DisallowedType,
+}
+
+#[feature("internal-member")]
+enum AllowedEnumMember {
+    variant: DisallowedType,
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Usage of internal feature `"internal-trait"` with no `#[feature("internal-trait")]` attribute.
+ --> lib.cairo:14:25
+impl BadInternalImpl of InternalTrait;
+                        ^***********^
+
+error: Usage of internal feature `"internal-member"` with no `#[feature("internal-member")]` attribute.
+ --> lib.cairo:23:13
+    member: DisallowedType,
+            ^************^
+
+error: Usage of internal feature `"internal-member"` with no `#[feature("internal-member")]` attribute.
+ --> lib.cairo:32:14
+    variant: DisallowedType,
+             ^************^
+
+error: Usage of internal feature `"internal"` with no `#[feature("internal")]` attribute. Note: "Some reason"
+ --> lib.cairo:41:15
+  let _fail = internal_function_with_note();
+              ^*************************^
+
+error: Usage of internal feature `"internal"` with no `#[feature("internal")]` attribute.
+ --> lib.cairo:44:15
+  let _fail = internal_function_no_note();
+              ^***********************^
+
+//! > ==========================================================================
+
+//! > Test bad feature marker declarations.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{}
+
+//! > module_code
+#[unstable]
+fn unstable_missing_feature() {}
+
+#[unstable(feature: "testing", extra)]
+fn unstable_extra_unnamed() {}
+
+#[unstable(feature: "testing", note: "extra")]
+fn unstable_extra_named() {}
+
+#[unstable(feature: "testing", feature: "other")]
+fn unstable_repeated_feature() {}
+
+#[deprecated]
+fn deprecated_missing_feature() {}
+
+#[deprecated(feature: "testing", extra)]
+fn deprecated_extra_unnamed() {}
+
+#[deprecated(feature: "testing", extra: "extra")]
+fn deprecated_extra_named() {}
+
+#[deprecated(feature: "testing", feature: "other")]
+fn deprecated_repeated_feature() {}
+
+#[deprecated(feature: "testing", , note: "extra1", note: "extra2")]
+fn deprecated_repeated_notes() {}
+
+#[unstable(feature: "testing1")]
+#[unstable(feature: "testing2")]
+fn multiple_unstable_feature_markers() {}
+
+#[deprecated(feature: "testing1")]
+#[unstable(feature: "testing2")]
+fn multiple_mixed_feature_markers() {}
+
+
+#[deprecated(feature: "testing1")]
+#[internal(feature: "testing2")]
+fn multiple_mixed_feature_markers2() {}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: argument.
+ --> lib.cairo:25:34
+#[deprecated(feature: "testing", , note: "extra1", note: "extra2")]
+                                 ^
+
+error: Missing `feature` arg for feature marker attribute.
+ --> lib.cairo:1:1
+#[unstable]
+^*********^
+
+error: Unsupported argument for feature marker attribute.
+ --> lib.cairo:4:32
+#[unstable(feature: "testing", extra)]
+                               ^***^
+
+error: Duplicated argument for feature marker attribute.
+ --> lib.cairo:10:32
+#[unstable(feature: "testing", feature: "other")]
+                               ^*****^
+
+error: Missing `feature` arg for feature marker attribute.
+ --> lib.cairo:13:1
+#[deprecated]
+^***********^
+
+error: Unsupported argument for feature marker attribute.
+ --> lib.cairo:16:34
+#[deprecated(feature: "testing", extra)]
+                                 ^***^
+
+error: Unsupported argument for feature marker attribute.
+ --> lib.cairo:19:34
+#[deprecated(feature: "testing", extra: "extra")]
+                                 ^***^
+
+error: Duplicated argument for feature marker attribute.
+ --> lib.cairo:22:34
+#[deprecated(feature: "testing", feature: "other")]
+                                 ^*****^
+
+error: Duplicated argument for feature marker attribute.
+ --> lib.cairo:25:52
+#[deprecated(feature: "testing", , note: "extra1", note: "extra2")]
+                                                   ^**^
+
+error: Multiple feature marker attributes.
+ --> lib.cairo:28:1
+#[unstable(feature: "testing1")]
+^******************************^
+
+error: Multiple feature marker attributes.
+ --> lib.cairo:32:1
+#[deprecated(feature: "testing1")]
+^********************************^
+
+error: Multiple feature marker attributes.
+ --> lib.cairo:37:1
+#[deprecated(feature: "testing1")]
+^********************************^
+
+//! > ==========================================================================
+
+//! > Test bad type usage.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _fail = array![()];
+}
+
+//! > module_code
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Cannot have array of type "()" that is zero sized.
+ --> lib.cairo:3:15
+  let _fail = array![()];
+              ^********^
+
+//! > ==========================================================================
+
+//! > Test missing '::' in path.
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+  let _fail = bar<felt252>(1);
+}
+
+//! > module_code
+fn bar<T>(_a: T) {}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Consecutive comparison operators are not allowed: '<' followed by '>'
+ --> lib.cairo:4:19
+  let _fail = bar<felt252>(1);
+                  ^
+
+error: Expected variable or constant, found function.
+ --> lib.cairo:4:15
+  let _fail = bar<felt252>(1);
+              ^*^
+
+error: Are you missing a `::`?.
+ --> lib.cairo:4:18
+  let _fail = bar<felt252>(1);
+                 ^

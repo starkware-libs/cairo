@@ -3,7 +3,8 @@
 The `use` item in the Cairo programming language is used to make an item from another module
 directly accessible in the current module.
 
-```rust
+[source,cairo]
+----
 mod foo {
     fn bar() {
         // ...
@@ -16,7 +17,7 @@ use foo::bar;
 fn main() {
     bar();
 }
-```
+----
 
 The syntax for `use` is `use path::to::item;`, where `path::to::item` is as described in
 xref:path.adoc[Paths].
@@ -27,23 +28,25 @@ them in the beginning of the module.
 
 The `use` item can also be used to alias an item:
 
-```rust
+[source,cairo]
+----
 // Bring the `bar` function into the current module and alias it to `baz`.
 use foo::bar as baz;
 
 fn main() {
     baz();
 }
-```
+----
 
 == Cycles
 The `use` item can lead to an import cycle:
 
-```rust
+[source,cairo]
+----
 mod foo {
     use super::bar;
 }
 use foo::bar;
-```
+----
 
 In this case, the compiler throws an error.

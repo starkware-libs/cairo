@@ -5,11 +5,11 @@ block_generator_test
 
 //! > function
 fn foo(a: felt252) -> felt252 {
-  if a == 2 {
-    bar(a)
-  } else {
-    a
-  }
+    if a == 2 {
+        bar(a)
+    } else {
+        a
+    }
 }
 
 //! > function_name
@@ -18,10 +18,10 @@ foo
 //! > module_code
 #[inline(always)]
 fn bar(a: felt252) -> felt252 {
-  if a == 0 {
-    return 1;
-  }
-  0
+    if a == 0 {
+        return 1;
+    }
+    0
 }
 
 //! > semantic_diagnostics
@@ -34,12 +34,12 @@ fn bar(a: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 2u
-  (v6: core::felt252) <- core::felt252_sub(v0, v1)
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- core::felt252_sub(v0, v1)
 End:
-  Match(match core::felt252_is_zero(v6) {
+  Match(match core::felt252_is_zero(v2) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk5,
+    IsZeroResult::NonZero(v3) => blk4,
   })
 
 blk1:
@@ -47,61 +47,47 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v7) => blk3,
+    IsZeroResult::NonZero(v4) => blk3,
   })
 
 blk2:
 Statements:
-  (v8: core::felt252) <- 1u
+  (v5: core::felt252) <- 1
 End:
-  Goto(blk4, {v8 -> v3})
+  Return(v5)
 
 blk3:
 Statements:
-  (v9: core::felt252) <- 0u
+  (v6: core::felt252) <- 0
 End:
-  Goto(blk4, {v9 -> v3})
+  Return(v6)
 
 blk4:
 Statements:
 End:
-  Goto(blk6, {v3 -> v5})
-
-blk5:
-Statements:
-End:
-  Goto(blk6, {v0 -> v5})
-
-blk6:
-Statements:
-End:
-  Return(v5)
+  Return(v0)
 
 //! > sierra_code
-felt252_const<2>() -> ([0])
-dup<felt252>([1]) -> ([1], [3])
-felt252_sub([3], [0]) -> ([2])
-felt252_is_zero([2]) { fallthrough() label0([4]) }
+const_as_immediate<Const<felt252, 2>>() -> ([0])
+dup<felt252>([1]) -> ([1], [2])
+felt252_sub([2], [0]) -> ([3])
+felt252_is_zero([3]) { fallthrough() label_test::foo::0([4]) }
 branch_align() -> ()
-felt252_is_zero([1]) { fallthrough() label2([5]) }
+felt252_is_zero([1]) { fallthrough() label_test::foo::2([5]) }
 branch_align() -> ()
-felt252_const<1>() -> ([6])
-PushValues([6]: felt252) -> ([7])
-jump() { label4() }
-label2:
+const_as_immediate<Const<felt252, 1>>() -> ([6])
+PushValues([6]: felt252) -> ([6])
+return([6])
+label_test::foo::2:
 branch_align() -> ()
 drop<NonZero<felt252>>([5]) -> ()
-felt252_const<0>() -> ([8])
-PushValues([8]: felt252) -> ([7])
-label4:
-PushValues([7]: felt252) -> ([9])
-jump() { label5() }
-label3:
-label0:
+const_as_immediate<Const<felt252, 0>>() -> ([7])
+PushValues([7]: felt252) -> ([7])
+return([7])
+label_test::foo::3:
+label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([4]) -> ()
-PushValues([1]: felt252) -> ([9])
-label5:
-PushValues([9]: felt252) -> ([10])
-return([10])
-label1:
+PushValues([1]: felt252) -> ([1])
+return([1])
+label_test::foo::1:

@@ -10,7 +10,7 @@ use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use itertools::{repeat_n, zip_eq};
 
-use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError, misc};
 use crate::environment::frame_state;
 use crate::references::ReferenceExpression;
 

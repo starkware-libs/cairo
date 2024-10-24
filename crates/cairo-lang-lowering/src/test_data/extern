@@ -1,14 +1,14 @@
 //! > Test extern function calling.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(ref a: felt252, b: felt252) {
-    f(ref a,b);
-    g(ref a,b);
-    h(ref a,b);
-    i(ref a,b);
+    f(ref a, b);
+    g(ref a, b);
+    h(ref a, b);
+    i(ref a, b);
 }
 
 //! > function_name
@@ -17,7 +17,7 @@ foo
 //! > module_code
 extern fn f(ref a: felt252, b: felt252) -> felt252 nopanic;
 extern fn g(ref a: felt252, b: felt252) -> (felt252,) nopanic;
-extern fn h(ref a: felt252, b: felt252) -> (felt252,felt252) nopanic;
+extern fn h(ref a: felt252, b: felt252) -> (felt252, felt252) nopanic;
 extern fn i(ref a: felt252, b: felt252) -> ((felt252,),) nopanic;
 
 //! > semantic_diagnostics
@@ -28,29 +28,28 @@ extern fn i(ref a: felt252, b: felt252) -> ((felt252,),) nopanic;
 Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::felt252, v2: core::felt252) <- test::f(v0, v1)
-  (v5: core::felt252, v4: core::felt252) <- test::g(v3, v1)
-  (v8: core::felt252, v6: core::felt252, v7: core::felt252) <- test::h(v5, v1)
-  (v10: core::felt252, v9: (core::felt252,)) <- test::i(v8, v1)
-  (v11: ()) <- struct_construct()
+  (v2: core::felt252, v3: core::felt252) <- test::f(v0, v1)
+  (v4: core::felt252, v5: core::felt252) <- test::g(v2, v1)
+  (v6: core::felt252, v7: core::felt252, v8: core::felt252) <- test::h(v4, v1)
+  (v9: core::felt252, v10: (core::felt252,)) <- test::i(v6, v1)
 End:
-  Return(v10, v11)
+  Return(v9)
 
 //! > ==========================================================================
 
 //! > Test extern function enum calling.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(ref a: felt252, b: felt252) {
-  let x = f(ref a, b);
-  match x {
-    MyEnum::A(y) => (),
-    MyEnum::B(y) => (),
-    MyEnum::C(y) => (),
-  }
+    let x = f(ref a, b);
+    match x {
+        MyEnum::A(_y) => (),
+        MyEnum::B(_y) => (),
+        MyEnum::C(_y) => (),
+    }
 }
 
 //! > function_name
@@ -58,163 +57,9 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt252,
-  B: (felt252,),
-  C: (felt252, felt252),
-}
-extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
-
-//! > semantic_diagnostics
-
-//! > lowering_diagnostics
-
-//! > lowering_flat
-Parameters: v0: core::felt252, v1: core::felt252
-blk0 (root):
-Statements:
-End:
-  Match(match test::f(v0, v1) {
-    MyEnum::A(v2, v3) => blk1,
-    MyEnum::B(v5, v6) => blk2,
-    MyEnum::C(v9, v10, v11) => blk3,
-  })
-
-blk1:
-Statements:
-  (v4: test::MyEnum) <- MyEnum::A(v3)
-End:
-  Goto(blk4, {v2 -> v15, v4 -> v14})
-
-blk2:
-Statements:
-  (v7: (core::felt252,)) <- struct_construct(v6)
-  (v8: test::MyEnum) <- MyEnum::B(v7)
-End:
-  Goto(blk4, {v5 -> v15, v8 -> v14})
-
-blk3:
-Statements:
-  (v12: (core::felt252, core::felt252)) <- struct_construct(v10, v11)
-  (v13: test::MyEnum) <- MyEnum::C(v12)
-End:
-  Goto(blk4, {v9 -> v15, v13 -> v14})
-
-blk4:
-Statements:
-End:
-  Match(match_enum(v14) {
-    MyEnum::A(v16) => blk5,
-    MyEnum::B(v17) => blk6,
-    MyEnum::C(v18) => blk7,
-  })
-
-blk5:
-Statements:
-End:
-  Goto(blk8, {})
-
-blk6:
-Statements:
-End:
-  Goto(blk8, {})
-
-blk7:
-Statements:
-End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-  (v19: ()) <- struct_construct()
-End:
-  Return(v15, v19)
-
-//! > ==========================================================================
-
-//! > Test extern function enum calling with optimization.
-
-//! > test_runner_name
-test_function_lowering
-
-//! > function
-fn foo(a: felt252, b: felt252) -> felt252 {
-  match f(a, b) {
-    MyEnum::A(y) => y,
-    MyEnum::B((y,)) => y,
-    MyEnum::C((y,_)) => y,
-  }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-  A: felt252,
-  B: (felt252,),
-  C: (felt252, felt252),
-}
-extern fn f(a: felt252, b: felt252) -> MyEnum nopanic;
-
-//! > semantic_diagnostics
-
-//! > lowering_diagnostics
-
-//! > lowering_flat
-Parameters: v0: core::felt252, v1: core::felt252
-blk0 (root):
-Statements:
-End:
-  Match(match test::f(v0, v1) {
-    MyEnum::A(v2) => blk1,
-    MyEnum::B(v3) => blk2,
-    MyEnum::C(v4, v5) => blk3,
-  })
-
-blk1:
-Statements:
-End:
-  Goto(blk4, {v2 -> v6})
-
-blk2:
-Statements:
-End:
-  Goto(blk4, {v3 -> v6})
-
-blk3:
-Statements:
-End:
-  Goto(blk4, {v4 -> v6})
-
-blk4:
-Statements:
-End:
-  Return(v6)
-
-//! > ==========================================================================
-
-//! > Test extern function enum calling with optimization with ref.
-
-//! > test_runner_name
-test_function_lowering
-
-//! > function
-fn foo(ref a: felt252, b: felt252) -> felt252 {
-  match f(ref a, b) {
-    MyEnum::A(y) => y,
-    MyEnum::B((y,)) => y,
-    MyEnum::C((y,_)) => y,
-  }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-enum MyEnum {
-  A: felt252,
-  B: (felt252,),
-  C: (felt252, felt252),
+    A: felt252,
+    B: (felt252,),
+    C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
 
@@ -236,38 +81,147 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk4, {v2 -> v10, v3 -> v9})
+  Return(v2)
 
 blk2:
 Statements:
 End:
-  Goto(blk4, {v4 -> v10, v5 -> v9})
+  Return(v4)
 
 blk3:
 Statements:
 End:
-  Goto(blk4, {v6 -> v10, v7 -> v9})
+  Return(v6)
 
-blk4:
+//! > ==========================================================================
+
+//! > Test extern function enum calling with optimization.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(a: felt252, b: felt252) -> felt252 {
+    match f(a, b) {
+        MyEnum::A(y) => y,
+        MyEnum::B((y,)) => y,
+        MyEnum::C((y, _)) => y,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: (felt252,),
+    C: (felt252, felt252),
+}
+extern fn f(a: felt252, b: felt252) -> MyEnum nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
 Statements:
 End:
-  Return(v10, v9)
+  Match(match test::f(v0, v1) {
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk2,
+    MyEnum::C(v4, v5) => blk3,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v2)
+
+blk2:
+Statements:
+End:
+  Return(v3)
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > Test extern function enum calling with optimization with ref.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(ref a: felt252, b: felt252) -> felt252 {
+    match f(ref a, b) {
+        MyEnum::A(y) => y,
+        MyEnum::B((y,)) => y,
+        MyEnum::C((y, _)) => y,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    A: felt252,
+    B: (felt252,),
+    C: (felt252, felt252),
+}
+extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match test::f(v0, v1) {
+    MyEnum::A(v2, v3) => blk1,
+    MyEnum::B(v4, v5) => blk2,
+    MyEnum::C(v6, v7, v8) => blk3,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v2, v3)
+
+blk2:
+Statements:
+End:
+  Return(v4, v5)
+
+blk3:
+Statements:
+End:
+  Return(v6, v7)
 
 //! > ==========================================================================
 
 //! > Test extern function enum calling with implicits.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(ref a: felt252, b: felt252) {
-  let x = f(ref a, b);
-  match x {
-    MyEnum::A(y) => (),
-    MyEnum::B(y) => (),
-    MyEnum::C(y) => (),
-  }
+    let x = f(ref a, b);
+    match x {
+        MyEnum::A(_y) => (),
+        MyEnum::B(_y) => (),
+        MyEnum::C(_y) => (),
+    }
 }
 
 //! > function_name
@@ -275,9 +229,9 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt252,
-  B: (felt252,),
-  C: (felt252, felt252),
+    A: felt252,
+    B: (felt252,),
+    C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
@@ -286,80 +240,45 @@ extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v20: core::RangeCheck, v0: core::felt252, v1: core::felt252
+Parameters: v0: core::RangeCheck, v1: core::felt252, v2: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match test::f(v20, v0, v1) {
-    MyEnum::A(v21, v2, v3) => blk1,
-    MyEnum::B(v22, v5, v6) => blk2,
-    MyEnum::C(v23, v9, v10, v11) => blk3,
+  Match(match test::f(v0, v1, v2) {
+    MyEnum::A(v3, v4, v5) => blk1,
+    MyEnum::B(v6, v7, v8) => blk2,
+    MyEnum::C(v9, v10, v11, v12) => blk3,
   })
 
 blk1:
 Statements:
-  (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
-  Goto(blk4, {v21 -> v24, v2 -> v15, v4 -> v14})
+  Return(v3, v4)
 
 blk2:
 Statements:
-  (v7: (core::felt252,)) <- struct_construct(v6)
-  (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Goto(blk4, {v22 -> v24, v5 -> v15, v8 -> v14})
+  Return(v6, v7)
 
 blk3:
 Statements:
-  (v12: (core::felt252, core::felt252)) <- struct_construct(v10, v11)
-  (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
-  Goto(blk4, {v23 -> v24, v9 -> v15, v13 -> v14})
-
-blk4:
-Statements:
-End:
-  Match(match_enum(v14) {
-    MyEnum::A(v16) => blk5,
-    MyEnum::B(v17) => blk6,
-    MyEnum::C(v18) => blk7,
-  })
-
-blk5:
-Statements:
-End:
-  Goto(blk8, {})
-
-blk6:
-Statements:
-End:
-  Goto(blk8, {})
-
-blk7:
-Statements:
-End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-  (v19: ()) <- struct_construct()
-End:
-  Return(v24, v15, v19)
+  Return(v9, v10)
 
 //! > ==========================================================================
 
 //! > Test extern function enum calling with optimization with implicits.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(ref a: felt252, b: felt252) -> felt252 {
-  match f(ref a, b) {
-    MyEnum::A(y) => y,
-    MyEnum::B((y,)) => y,
-    MyEnum::C((y,_)) => y,
-  }
+    match f(ref a, b) {
+        MyEnum::A(y) => y,
+        MyEnum::B((y,)) => y,
+        MyEnum::C((y, _)) => y,
+    }
 }
 
 //! > function_name
@@ -367,9 +286,9 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt252,
-  B: (felt252,),
-  C: (felt252, felt252),
+    A: felt252,
+    B: (felt252,),
+    C: (felt252, felt252),
 }
 extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
@@ -378,47 +297,42 @@ extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v11: core::RangeCheck, v0: core::felt252, v1: core::felt252
+Parameters: v0: core::RangeCheck, v1: core::felt252, v2: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match test::f(v11, v0, v1) {
-    MyEnum::A(v12, v2, v3) => blk1,
-    MyEnum::B(v13, v4, v5) => blk2,
-    MyEnum::C(v14, v6, v7, v8) => blk3,
+  Match(match test::f(v0, v1, v2) {
+    MyEnum::A(v3, v4, v5) => blk1,
+    MyEnum::B(v6, v7, v8) => blk2,
+    MyEnum::C(v9, v10, v11, v12) => blk3,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk4, {v12 -> v15, v2 -> v10, v3 -> v9})
+  Return(v3, v4, v5)
 
 blk2:
 Statements:
 End:
-  Goto(blk4, {v13 -> v15, v4 -> v10, v5 -> v9})
+  Return(v6, v7, v8)
 
 blk3:
 Statements:
 End:
-  Goto(blk4, {v14 -> v15, v6 -> v10, v7 -> v9})
-
-blk4:
-Statements:
-End:
-  Return(v15, v10, v9)
+  Return(v9, v10, v11)
 
 //! > ==========================================================================
 
 //! > Test match on libfunc call that uses the refs of the libfunc in one of the arms.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(mut arr: Array::<felt252>, mut b: (felt252,)) -> Array::<felt252> {
     let y = match f(ref arr, ref b) {
-        MyEnum::A(x) => arr
+        MyEnum::A(_x) => arr
     };
     y
 }
@@ -428,7 +342,7 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt252,
+    A: felt252,
 }
 extern fn f(ref arr: Array::<felt252>, ref b: (felt252,)) -> MyEnum nopanic;
 
@@ -455,11 +369,11 @@ End:
 //! > Test calling libfunc that returns enum but does nothing with the result.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() {
-  gas::withdraw_gas();
+    let _unused = gas::withdraw_gas();
 }
 
 //! > function_name
@@ -472,45 +386,35 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v6: core::RangeCheck, v7: core::gas::GasBuiltin
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v6, v7) {
-    Option::Some(v8, v9) => blk1,
-    Option::None(v10, v11) => blk2,
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4, v5) => blk2,
   })
 
 blk1:
 Statements:
-  (v0: ()) <- struct_construct()
-  (v1: core::option::Option::<()>) <- Option::Some(v0)
 End:
-  Goto(blk3, {v8 -> v12, v9 -> v13})
+  Return(v2, v3)
 
 blk2:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::option::Option::<()>) <- Option::None(v2)
 End:
-  Goto(blk3, {v10 -> v12, v11 -> v13})
-
-blk3:
-Statements:
-  (v5: ()) <- struct_construct()
-End:
-  Return(v12, v13, v5)
+  Return(v4, v5)
 
 //! > ==========================================================================
 
 //! > Test calling libfunc that returns enum and returns the result as a tail expression.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option::<()> {
-  gas::withdraw_gas()
+    gas::withdraw_gas()
 }
 
 //! > function_name
@@ -523,44 +427,39 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v5: core::RangeCheck, v6: core::gas::GasBuiltin
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v5, v6) {
-    Option::Some(v7, v8) => blk1,
-    Option::None(v9, v10) => blk2,
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4, v5) => blk2,
   })
 
 blk1:
 Statements:
-  (v0: ()) <- struct_construct()
-  (v1: core::option::Option::<()>) <- Option::Some(v0)
+  (v6: ()) <- struct_construct()
+  (v7: core::option::Option::<()>) <- Option::Some(v6)
 End:
-  Goto(blk3, {v7 -> v11, v8 -> v12, v1 -> v4})
+  Return(v2, v3, v7)
 
 blk2:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::option::Option::<()>) <- Option::None(v2)
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Goto(blk3, {v9 -> v11, v10 -> v12, v3 -> v4})
-
-blk3:
-Statements:
-End:
-  Return(v11, v12, v4)
+  Return(v4, v5, v9)
 
 //! > ==========================================================================
 
 //! > Test calling libfunc that returns enum and returns the result with `return`.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option::<()> {
-  return gas::withdraw_gas();
+    return gas::withdraw_gas();
 }
 
 //! > function_name
@@ -573,30 +472,25 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v5: core::RangeCheck, v6: core::gas::GasBuiltin
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v5, v6) {
-    Option::Some(v7, v8) => blk1,
-    Option::None(v9, v10) => blk2,
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4, v5) => blk2,
   })
 
 blk1:
 Statements:
-  (v0: ()) <- struct_construct()
-  (v1: core::option::Option::<()>) <- Option::Some(v0)
+  (v6: ()) <- struct_construct()
+  (v7: core::option::Option::<()>) <- Option::Some(v6)
 End:
-  Goto(blk3, {v7 -> v11, v8 -> v12, v1 -> v4})
+  Return(v2, v3, v7)
 
 blk2:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::option::Option::<()>) <- Option::None(v2)
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Goto(blk3, {v9 -> v11, v10 -> v12, v3 -> v4})
-
-blk3:
-Statements:
-End:
-  Return(v11, v12, v4)
+  Return(v4, v5, v9)

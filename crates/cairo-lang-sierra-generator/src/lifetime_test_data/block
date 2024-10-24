@@ -11,7 +11,7 @@ fn foo(x: felt252) -> felt252 {
     let a = x + x;
     let z = {
         let b = a + a;
-        let c = a + 1;
+        let _c = a + 1;
         {
             b
         };
@@ -26,20 +26,20 @@ fn foo(x: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v0)
-  (v7: core::felt252) <- core::felt252_add(v6, v6)
-  (v3: core::felt252) <- 1u
-  (v8: core::felt252) <- core::felt252_add(v6, v3)
-  (v5: core::felt252) <- 20u
+  (v1: core::felt252) <- core::felt252_add(v0, v0)
+  (v2: core::felt252) <- core::felt252_add(v1, v1)
+  (v3: core::felt252) <- 1
+  (v4: core::felt252) <- core::felt252_add(v1, v3)
+  (v5: core::felt252) <- 20
 End:
   Return(v5)
 
 //! > last_use
 v5: ((BlockId(0), 5), 0)
 v3: ((BlockId(0), 3), 1)
-v6: ((BlockId(0), 3), 0)
+v1: ((BlockId(0), 3), 0)
 v0: ((BlockId(0), 0), 1)
 
 //! > drops
-PostStatement((BlockId(0), 3)): v8
-PostStatement((BlockId(0), 1)): v7
+PostStatement((BlockId(0), 3)): v4
+PostStatement((BlockId(0), 1)): v2

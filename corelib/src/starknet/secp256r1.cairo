@@ -1,15 +1,18 @@
 //! This module contains functions and constructs related to elliptic curve operations on the
 //! secp256r1 curve.
 
-use option::OptionTrait;
+use core::option::OptionTrait;
+use core::gas::GasBuiltin;
+#[allow(unused_imports)]
 use starknet::{
     EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait
 };
 
+/// A point on the Secp256r1 curve.
 #[derive(Copy, Drop)]
-extern type Secp256r1Point;
+pub extern type Secp256r1Point;
 
-impl Secp256r1Impl of Secp256Trait<Secp256r1Point> {
+pub(crate) impl Secp256r1Impl of Secp256Trait<Secp256r1Point> {
     // TODO(yuval): change to constant once u256 constants are supported.
     fn get_curve_size() -> u256 {
         0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
@@ -34,7 +37,7 @@ impl Secp256r1Impl of Secp256Trait<Secp256r1Point> {
     }
 }
 
-impl Secp256r1PointImpl of Secp256PointTrait<Secp256r1Point> {
+pub(crate) impl Secp256r1PointImpl of Secp256PointTrait<Secp256r1Point> {
     fn get_coordinates(self: Secp256r1Point) -> SyscallResult<(u256, u256)> {
         secp256r1_get_xy_syscall(self)
     }
@@ -56,13 +59,14 @@ extern fn secp256r1_new_syscall(
 extern fn secp256r1_add_syscall(
     p0: Secp256r1Point, p1: Secp256r1Point
 ) -> SyscallResult<Secp256r1Point> implicits(GasBuiltin, System) nopanic;
-/// Computes the product of a secp256r1 EC point `p` by the given scalar `m`.
+/// Computes the product of a secp256r1 EC point `p` by the given scalar `scalar`.
 extern fn secp256r1_mul_syscall(
-    p: Secp256r1Point, m: u256
+    p: Secp256r1Point, scalar: u256
 ) -> SyscallResult<Secp256r1Point> implicits(GasBuiltin, System) nopanic;
 
 /// Computes the point on the secp256r1 curve that matches the given `x` coordinate, if such exists.
 /// Out of the two possible y's, chooses according to `y_parity`.
+/// `y_parity` == true means that the y coordinate is odd.
 extern fn secp256r1_get_point_from_x_syscall(
     x: u256, y_parity: bool
 ) -> SyscallResult<Option<Secp256r1Point>> implicits(GasBuiltin, System) nopanic;
@@ -71,3 +75,14 @@ extern fn secp256r1_get_point_from_x_syscall(
 extern fn secp256r1_get_xy_syscall(
     p: Secp256r1Point
 ) -> SyscallResult<(u256, u256)> implicits(GasBuiltin, System) nopanic;
+
+impl Secp256r1PointSerde of Serde<Secp256r1Point> {
+    fn serialize(self: @Secp256r1Point, ref output: Array<felt252>) {
+        let point = (*self).get_coordinates().unwrap();
+        point.serialize(ref output)
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<Secp256r1Point> {
+        let (x, y) = Serde::<(u256, u256)>::deserialize(ref serialized)?;
+        secp256r1_new_syscall(x, y).unwrap_syscall()
+    }
+}

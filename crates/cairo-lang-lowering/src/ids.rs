@@ -1,27 +1,38 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::UnstableSalsaId;
-use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::node::ast;
-use cairo_lang_utils::define_short_id;
-use defs::ids::FreeFunctionId;
+use cairo_lang_semantic::corelib::panic_destruct_trait_fn;
+use cairo_lang_semantic::items::functions::ImplGenericFunctionId;
+use cairo_lang_semantic::items::imp::ImplLongId;
+use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
+use cairo_lang_syntax::node::{TypedStablePtr, ast};
+use cairo_lang_utils::{
+    Intern, LookupIntern, define_short_id, extract_matches, try_extract_matches,
+};
+use defs::diagnostic_utils::StableLocation;
+use defs::ids::{ExternFunctionId, FreeFunctionId};
+use semantic::items::functions::GenericFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
+use smol_str::SmolStr;
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
+use crate::Location;
 use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FunctionWithBodyLongId {
     Semantic(defs::ids::FunctionWithBodyId),
-    Generated { parent: defs::ids::FunctionWithBodyId, element: semantic::ExprId },
+    Generated { parent: defs::ids::FunctionWithBodyId, key: GeneratedFunctionKey },
 }
 define_short_id!(
     FunctionWithBodyId,
     FunctionWithBodyLongId,
     LoweringGroup,
-    lookup_intern_lowering_function_with_body
+    lookup_intern_lowering_function_with_body,
+    intern_lowering_function_with_body
 );
 impl FunctionWithBodyLongId {
     pub fn base_semantic_function(
@@ -38,13 +49,13 @@ impl FunctionWithBodyLongId {
             FunctionWithBodyLongId::Semantic(semantic) => ConcreteFunctionWithBodyLongId::Semantic(
                 semantic::ConcreteFunctionWithBodyId::from_generic(db.upcast(), semantic)?,
             ),
-            FunctionWithBodyLongId::Generated { parent, element } => {
+            FunctionWithBodyLongId::Generated { parent, key } => {
                 ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                     parent: semantic::ConcreteFunctionWithBodyId::from_generic(
                         db.upcast(),
                         parent,
                     )?,
-                    element,
+                    key,
                 })
             }
         })
@@ -55,15 +66,13 @@ impl FunctionWithBodyId {
         &self,
         db: &dyn LoweringGroup,
     ) -> cairo_lang_defs::ids::FunctionWithBodyId {
-        db.lookup_intern_lowering_function_with_body(*self).base_semantic_function(db)
+        self.lookup_intern(db).base_semantic_function(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         Ok(db.priv_function_with_body_lowering(*self)?.signature.clone())
     }
     pub fn to_concrete(&self, db: &dyn LoweringGroup) -> Maybe<ConcreteFunctionWithBodyId> {
-        Ok(db.intern_lowering_concrete_function_with_body(
-            db.lookup_intern_lowering_function_with_body(*self).to_concrete(db)?,
-        ))
+        Ok(self.lookup_intern(db).to_concrete(db)?.intern(db))
     }
 }
 pub trait SemanticFunctionWithBodyIdEx {
@@ -71,7 +80,7 @@ pub trait SemanticFunctionWithBodyIdEx {
 }
 impl SemanticFunctionWithBodyIdEx for cairo_lang_defs::ids::FunctionWithBodyId {
     fn lowered(&self, db: &dyn LoweringGroup) -> FunctionWithBodyId {
-        db.intern_lowering_function_with_body(FunctionWithBodyLongId::Semantic(*self))
+        FunctionWithBodyLongId::Semantic(*self).intern(db)
     }
 }
 
@@ -85,8 +94,30 @@ define_short_id!(
     ConcreteFunctionWithBodyId,
     ConcreteFunctionWithBodyLongId,
     LoweringGroup,
-    lookup_intern_lowering_concrete_function_with_body
+    lookup_intern_lowering_concrete_function_with_body,
+    intern_lowering_concrete_function_with_body
 );
+
+impl ConcreteFunctionWithBodyId {
+    pub fn is_panic_destruct_fn(&self, db: &dyn LoweringGroup) -> Maybe<bool> {
+        match db.lookup_intern_lowering_concrete_function_with_body(*self) {
+            ConcreteFunctionWithBodyLongId::Semantic(semantic_func) => {
+                semantic_func.is_panic_destruct_fn(db.upcast())
+            }
+            ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
+                parent: _,
+                key: GeneratedFunctionKey::TraitFunc(function, _),
+            }) => Ok(extract_matches!(
+                function.get_concrete(db.upcast()).generic_function,
+                GenericFunctionId::Impl
+            )
+            .function
+                == panic_destruct_trait_fn(db.upcast())),
+            _ => Ok(false),
+        }
+    }
+}
+
 impl UnstableSalsaId for ConcreteFunctionWithBodyId {
     fn get_internal_id(&self) -> &salsa::InternId {
         &self.0
@@ -99,14 +130,14 @@ impl ConcreteFunctionWithBodyLongId {
             ConcreteFunctionWithBodyLongId::Semantic(id) => {
                 FunctionWithBodyLongId::Semantic(id.function_with_body_id(semantic_db))
             }
-            ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, element }) => {
+            ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, key }) => {
                 FunctionWithBodyLongId::Generated {
                     parent: parent.function_with_body_id(semantic_db),
-                    element,
+                    key,
                 }
             }
         };
-        db.intern_lowering_function_with_body(long_id)
+        long_id.intern(db)
     }
     pub fn substitution(&self, db: &dyn LoweringGroup) -> Maybe<GenericSubstitution> {
         let semantic_db = db.upcast();
@@ -127,7 +158,7 @@ impl ConcreteFunctionWithBodyLongId {
                 FunctionLongId::Generated(*generated)
             }
         };
-        Ok(db.intern_lowering_function(long_id))
+        Ok(long_id.intern(db))
     }
     pub fn base_semantic_function(
         &self,
@@ -138,24 +169,31 @@ impl ConcreteFunctionWithBodyLongId {
             ConcreteFunctionWithBodyLongId::Generated(generated) => generated.parent,
         }
     }
+    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+        match self {
+            ConcreteFunctionWithBodyLongId::Semantic(semantic) => semantic.name(db.upcast()),
+            ConcreteFunctionWithBodyLongId::Generated(generated) => generated.name(db),
+        }
+    }
 }
 impl ConcreteFunctionWithBodyId {
     pub fn from_semantic(
         db: &dyn LoweringGroup,
         semantic: semantic::ConcreteFunctionWithBodyId,
     ) -> Self {
-        db.intern_lowering_concrete_function_with_body(ConcreteFunctionWithBodyLongId::Semantic(
-            semantic,
-        ))
+        ConcreteFunctionWithBodyLongId::Semantic(semantic).intern(db)
     }
     pub fn function_with_body_id(&self, db: &dyn LoweringGroup) -> FunctionWithBodyId {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).function_with_body_id(db)
+        self.lookup_intern(db).function_with_body_id(db)
     }
     pub fn substitution(&self, db: &dyn LoweringGroup) -> Maybe<GenericSubstitution> {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).substitution(db)
+        self.lookup_intern(db).substitution(db)
     }
     pub fn function_id(&self, db: &dyn LoweringGroup) -> Maybe<FunctionId> {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).function_id(db)
+        self.lookup_intern(db).function_id(db)
+    }
+    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+        self.lookup_intern(db).name(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         let generic_signature = self.function_with_body_id(db).signature(db)?;
@@ -171,15 +209,28 @@ impl ConcreteFunctionWithBodyId {
             db.upcast(),
             free_function_id,
         )?;
-        Some(db.intern_lowering_concrete_function_with_body(
-            ConcreteFunctionWithBodyLongId::Semantic(semantic),
-        ))
+        Some(ConcreteFunctionWithBodyLongId::Semantic(semantic).intern(db))
     }
     pub fn base_semantic_function(
         &self,
         db: &dyn LoweringGroup,
     ) -> semantic::ConcreteFunctionWithBodyId {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).base_semantic_function(db)
+        self.lookup_intern(db).base_semantic_function(db)
+    }
+    pub fn stable_location(&self, db: &dyn LoweringGroup) -> Maybe<StableLocation> {
+        let semantic_db = db.upcast();
+        Ok(match self.lookup_intern(db) {
+            ConcreteFunctionWithBodyLongId::Semantic(id) => id.stable_location(semantic_db),
+            ConcreteFunctionWithBodyLongId::Generated(generated) => {
+                let parent_id = generated.parent.function_with_body_id(semantic_db);
+                match generated.key {
+                    GeneratedFunctionKey::Loop(expr_id) => StableLocation::new(
+                        db.function_body(parent_id)?.arenas.exprs[expr_id].stable_ptr().untyped(),
+                    ),
+                    GeneratedFunctionKey::TraitFunc(_, stable_location) => stable_location,
+                }
+            }
+        })
     }
 }
 
@@ -191,39 +242,107 @@ pub enum FunctionLongId {
     /// A function generated by the compiler.
     Generated(GeneratedFunction),
 }
-define_short_id!(FunctionId, FunctionLongId, LoweringGroup, lookup_intern_lowering_function);
+define_short_id!(
+    FunctionId,
+    FunctionLongId,
+    LoweringGroup,
+    lookup_intern_lowering_function,
+    intern_lowering_function
+);
 impl FunctionLongId {
     pub fn body(&self, db: &dyn LoweringGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
         let semantic_db = db.upcast();
-        let long_id = match *self {
+        Ok(Some(match *self {
             FunctionLongId::Semantic(id) => {
-                let Some(body) = id.get_concrete(semantic_db).body(semantic_db)? else {
+                let concrete_function = id.get_concrete(semantic_db);
+                if let GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }) =
+                    concrete_function.generic_function
+                {
+                    if let ImplLongId::GeneratedImpl(imp) = db.lookup_intern_impl(impl_id) {
+                        let semantic_db = db.upcast();
+                        let concrete_trait = imp.concrete_trait(semantic_db);
+
+                        assert!(
+                            [
+                                semantic::corelib::destruct_trait_fn(semantic_db),
+                                semantic::corelib::panic_destruct_trait_fn(semantic_db),
+                                semantic::corelib::fn_once_call_trait_fn(semantic_db),
+                            ]
+                            .contains(&function)
+                        );
+
+                        let generic_args = concrete_trait.generic_args(semantic_db);
+                        let Some(GenericArgumentId::Type(ty)) = generic_args.first() else {
+                            unreachable!("Expected Generated Impl to have a type argument");
+                        };
+                        let TypeLongId::Closure(ty) = ty.lookup_intern(semantic_db) else {
+                            unreachable!("Expected Generated Impl to have a closure type argument");
+                        };
+
+                        let Some(parent) =
+                            ty.parent_function?.get_concrete(semantic_db).body(semantic_db)?
+                        else {
+                            return Ok(None);
+                        };
+                        return Ok(Some(
+                            GeneratedFunction {
+                                parent,
+                                key: GeneratedFunctionKey::TraitFunc(id, ty.wrapper_location),
+                            }
+                            .body(db),
+                        ));
+                    }
+                }
+
+                let Some(body) = concrete_function.body(semantic_db)? else {
                     return Ok(None);
                 };
-                ConcreteFunctionWithBodyLongId::Semantic(body)
+                ConcreteFunctionWithBodyLongId::Semantic(body).intern(db)
             }
-            FunctionLongId::Generated(generated) => return Ok(Some(generated.body(db))),
-        };
-        Ok(Some(db.intern_lowering_concrete_function_with_body(long_id)))
+            FunctionLongId::Generated(generated) => generated.body(db),
+        }))
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         match self {
             FunctionLongId::Semantic(semantic) => {
-                Ok(db.concrete_function_signature(*semantic)?.into())
+                Ok(Signature::from_semantic(db, db.concrete_function_signature(*semantic)?))
             }
             FunctionLongId::Generated(generated) => generated.body(db).signature(db),
+        }
+    }
+    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+        match *self {
+            FunctionLongId::Semantic(semantic) => semantic.name(db.upcast()),
+            FunctionLongId::Generated(generated) => generated.name(db),
+        }
+    }
+    /// Returns the full path of the relevant semantic function:
+    /// - If the function itself is semantic (non generated), its own full path.
+    /// - If the function is generated, then its (semantic) parent's full path.
+    pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
+        match self {
+            FunctionLongId::Semantic(id) => id.full_name(db.upcast()),
+            FunctionLongId::Generated(generated) => generated.parent.full_path(db.upcast()),
         }
     }
 }
 impl FunctionId {
     pub fn body(&self, db: &dyn LoweringGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
-        db.lookup_intern_lowering_function(*self).body(db)
+        self.lookup_intern(db).body(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
-        db.lookup_intern_lowering_function(*self).signature(db)
+        self.lookup_intern(db).signature(db)
     }
-    pub fn lookup(&self, db: &dyn LoweringGroup) -> FunctionLongId {
-        db.lookup_intern_lowering_function(*self)
+    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+        self.lookup_intern(db).name(db)
+    }
+    pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
+        self.lookup_intern(db).semantic_full_path(db)
+    }
+    pub fn get_extern(&self, db: &dyn LoweringGroup) -> Option<ExternFunctionId> {
+        let semantic = try_extract_matches!(self.lookup_intern(db), FunctionLongId::Semantic)?;
+        let generic = semantic.get_concrete(db.upcast()).generic_function;
+        try_extract_matches!(generic, GenericFunctionId::Extern)
     }
 }
 pub trait SemanticFunctionIdEx {
@@ -231,7 +350,7 @@ pub trait SemanticFunctionIdEx {
 }
 impl SemanticFunctionIdEx for semantic::FunctionId {
     fn lowered(&self, db: &dyn LoweringGroup) -> FunctionId {
-        db.intern_lowering_function(FunctionLongId::Semantic(*self))
+        FunctionLongId::Semantic(*self).intern(db)
     }
 }
 impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
@@ -243,26 +362,41 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
         match self {
             FunctionLongId::Semantic(semantic) => semantic.fmt(f, db),
             FunctionLongId::Generated(generated) => {
-                // TODO(spapini): Differentiate between the generated functions according to
-                // `element`.
-                write!(f, "{:?}[expr{}]", generated.parent.debug(db), generated.element.index())
+                write!(f, "{}", generated.name(db))
             }
         }
     }
+}
+
+/// A key for a generated functions.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GeneratedFunctionKey {
+    /// Generated loop functions are identified by the loop expr_id.
+    Loop(semantic::ExprId),
+    TraitFunc(semantic::FunctionId, StableLocation),
 }
 
 /// Generated function.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct GeneratedFunction {
     pub parent: semantic::ConcreteFunctionWithBodyId,
-    pub element: semantic::ExprId,
+    pub key: GeneratedFunctionKey,
 }
 impl GeneratedFunction {
     pub fn body(&self, db: &dyn LoweringGroup) -> ConcreteFunctionWithBodyId {
-        let GeneratedFunction { parent, element } = *self;
-        let long_id =
-            ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, element });
-        db.intern_lowering_concrete_function_with_body(long_id)
+        let GeneratedFunction { parent, key } = *self;
+        let long_id = ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, key });
+        long_id.intern(db)
+    }
+    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+        match self.key {
+            GeneratedFunctionKey::Loop(expr_id) => {
+                format!("{}[expr{}]", self.parent.full_path(db.upcast()), expr_id.index()).into()
+            }
+            GeneratedFunctionKey::TraitFunc(trait_func, _) => {
+                format!("{:?}", trait_func.debug(db)).into()
+            }
+        }
     }
 }
 
@@ -281,10 +415,14 @@ pub struct Signature {
     /// Panicable.
     #[dont_rewrite]
     pub panicable: bool,
+    /// Location.
+    #[dont_rewrite]
+    #[hide_field_debug_with_db]
+    pub location: LocationId,
 }
-impl From<semantic::Signature> for Signature {
-    fn from(value: semantic::Signature) -> Self {
-        let semantic::Signature { params, return_type, implicits, panicable, .. } = value;
+impl Signature {
+    pub fn from_semantic(db: &dyn LoweringGroup, value: semantic::Signature) -> Self {
+        let semantic::Signature { params, return_type, implicits, panicable, stable_ptr } = value;
         let ref_params = params
             .iter()
             .filter(|param| param.mutability == Mutability::Reference)
@@ -292,17 +430,63 @@ impl From<semantic::Signature> for Signature {
             .collect();
         let params: Vec<semantic::ExprVarMemberPath> =
             params.into_iter().map(parameter_as_member_path).collect();
-        Self { params, extra_rets: ref_params, return_type, implicits, panicable }
+        Self {
+            params,
+            extra_rets: ref_params,
+            return_type,
+            implicits,
+            panicable,
+            location: LocationId::from_stable_location(
+                db,
+                StableLocation::new(stable_ptr.untyped()),
+            ),
+        }
+    }
+    pub fn is_fully_concrete(&self, db: &dyn LoweringGroup) -> bool {
+        let semantic_db = db.upcast();
+        self.params.iter().all(|param| param.ty().is_fully_concrete(semantic_db))
+            && self.extra_rets.iter().all(|param| param.ty().is_fully_concrete(semantic_db))
+            && self.return_type.is_fully_concrete(semantic_db)
+            && self.implicits.iter().all(|ty| ty.is_fully_concrete(semantic_db))
     }
 }
 semantic::add_rewrite!(<'a>, SubstitutionRewriter<'a>, DiagnosticAdded, Signature);
 
 /// Converts a [semantic::Parameter] to a [semantic::ExprVarMemberPath].
-fn parameter_as_member_path(param: semantic::Parameter) -> semantic::ExprVarMemberPath {
+pub(crate) fn parameter_as_member_path(param: semantic::Parameter) -> semantic::ExprVarMemberPath {
     let semantic::Parameter { id, ty, stable_ptr, .. } = param;
     semantic::ExprVarMemberPath::Var(ExprVar {
         var: semantic::VarId::Param(id),
         ty,
         stable_ptr: ast::ExprPtr(stable_ptr.0),
     })
+}
+
+define_short_id!(LocationId, Location, LoweringGroup, lookup_intern_location, intern_location);
+impl LocationId {
+    pub fn from_stable_location(
+        db: &dyn LoweringGroup,
+        stable_location: StableLocation,
+    ) -> LocationId {
+        Location::new(stable_location).intern(db)
+    }
+
+    /// Adds a note to the location.
+    pub fn with_note(&self, db: &dyn LoweringGroup, note: DiagnosticNote) -> LocationId {
+        self.lookup_intern(db).with_note(note).intern(db)
+    }
+
+    /// Adds a note that this location was generated while compiling an auto-generated function.
+    pub fn with_auto_generation_note(
+        &self,
+        db: &dyn LoweringGroup,
+        logic_name: &str,
+    ) -> LocationId {
+        self.with_note(
+            db,
+            DiagnosticNote::text_only(format!(
+                "this error originates in auto-generated {logic_name} logic."
+            )),
+        )
+    }
 }

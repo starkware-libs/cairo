@@ -5,17 +5,21 @@ test_function_generator
 
 //! > function
 fn foo(a: felt252) {
-    let (x, y) = if a == 0 {
+    let (_x, _y) = immovable(if a == 0 {
         (a, a)
     } else {
         (a, a)
-    };
+    });
 }
 
 //! > function_name
 foo
 
 //! > module_code
+#[inline(never)]
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 //! > semantic_diagnostics
 
@@ -24,22 +28,19 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label_test::foo::0:
 dup<felt252>([0]) -> ([0], [1])
-felt252_is_zero([1]) { fallthrough() label1([2]) }
+felt252_is_zero([1]) { fallthrough() label_test::foo::1([2]) }
 branch_align() -> ()
-dup<felt252>([0]) -> ([0], [3])
-struct_construct<Tuple<felt252, felt252>>([3], [0]) -> ([4])
-drop<Tuple<felt252, felt252>>([4]) -> ()
-jump() { label3() }
-label1:
+jump() { label_test::foo::3() }
+label_test::foo::1:
 branch_align() -> ()
 drop<NonZero<felt252>>([2]) -> ()
-dup<felt252>([0]) -> ([0], [5])
-struct_construct<Tuple<felt252, felt252>>([5], [0]) -> ([6])
-drop<Tuple<felt252, felt252>>([6]) -> ()
-label3:
-struct_construct<Unit>() -> ([7])
-store_temp<Unit>([7]) -> ([8])
-return([8])
-label2:
+label_test::foo::3:
+dup<felt252>([0]) -> ([0], [3])
+struct_construct<Tuple<felt252, felt252>>([3], [0]) -> ([4])
+store_temp<Tuple<felt252, felt252>>([4]) -> ([4])
+function_call<user@test::immovable::<(core::felt252, core::felt252)>>([4]) -> ([5])
+drop<Tuple<felt252, felt252>>([5]) -> ()
+return()
+label_test::foo::2:

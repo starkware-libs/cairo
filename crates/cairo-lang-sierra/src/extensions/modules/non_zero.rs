@@ -2,11 +2,12 @@ use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibfunc,
     SignatureSpecializationContext,
 };
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
 };
 use crate::extensions::{
-    args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
+    NamedType, OutputVarReferenceInfo, SpecializationError, args_as_single_type,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
@@ -19,11 +20,12 @@ impl GenericTypeArgGenericType for NonZeroTypeWrapped {
 
     fn calc_info(
         &self,
+        _context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { size, storable, droppable, duplicatable, .. }: TypeInfo,
+        TypeInfo { zero_sized, storable, droppable, duplicatable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         if storable {
-            Ok(TypeInfo { long_id, size, storable, droppable, duplicatable })
+            Ok(TypeInfo { long_id, zero_sized, storable, droppable, duplicatable })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }

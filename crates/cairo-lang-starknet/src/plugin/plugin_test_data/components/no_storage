@@ -1,0 +1,20 @@
+//! > Test expansion of a component without storage.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::component]
+mod test_component {}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::component]
+mod test_component {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Components must define a 'Storage' struct.
+ --> lib.cairo:1:1
+#[starknet::component]
+^********************^

@@ -4,9 +4,12 @@ version.workspace = true
 edition.workspace = true
 repository.workspace = true
 license-file.workspace = true
+description = "Test runner for the Cairo programming language"
 
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+serde = { workspace = true, default-features = true }
 
-cairo-lang-test-runner = { path = "../../cairo-lang-test-runner" }
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.8.4" }
+cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "~2.8.4" }

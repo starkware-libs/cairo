@@ -1,0 +1,74 @@
+//! > Test loops
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    while true {
+        1;
+    }
+}
+
+//! > top_level_kind
+ExprWhile
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprWhile
+    ├── while_kw (kind: TokenWhile): 'while'
+    ├── condition (kind: ConditionExpr)
+    │   └── expr (kind: TokenTrue): 'true'
+    └── body (kind: ExprBlock)
+        ├── lbrace (kind: TokenLBrace): '{'
+        ├── statements (kind: StatementList)
+        │   └── child #0 (kind: StatementExpr)
+        │       ├── attributes (kind: AttributeList) []
+        │       ├── expr (kind: TokenLiteralNumber): '1'
+        │       └── semicolon (kind: TokenSemicolon): ';'
+        └── rbrace (kind: TokenRBrace): '}'
+
+//! > ==========================================================================
+
+//! > Test while-let 
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    while let Some(x) = 2 {
+        break 5;
+    }
+}
+
+//! > top_level_kind
+ExprWhile
+
+//! > ignored_kinds
+ExprBlock
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprWhile
+    ├── while_kw (kind: TokenWhile): 'while'
+    ├── condition (kind: ConditionLet)
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── patterns (kind: PatternListOr)
+    │   │   └── item #0 (kind: PatternEnum)
+    │   │       ├── path (kind: ExprPath)
+    │   │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │       └── ident (kind: TokenIdentifier): 'Some'
+    │   │       └── pattern (kind: PatternEnumInnerPattern)
+    │   │           ├── lparen (kind: TokenLParen): '('
+    │   │           ├── pattern (kind: ExprPath)
+    │   │           │   └── item #0 (kind: PathSegmentSimple)
+    │   │           │       └── ident (kind: TokenIdentifier): 'x'
+    │   │           └── rparen (kind: TokenRParen): ')'
+    │   ├── eq (kind: TokenEq): '='
+    │   └── expr (kind: TokenLiteralNumber): '2'
+    └── body (kind: ExprBlock) <ignored>

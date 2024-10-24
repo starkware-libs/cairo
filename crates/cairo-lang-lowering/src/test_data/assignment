@@ -1,12 +1,17 @@
 //! > Test assignment.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: bool) -> felt252 {
     let mut x = 2;
-    if a { x = 3; } else { let mut y = 4; y = 5; }
+    if a {
+        x = 3;
+    } else {
+        let mut y = 4;
+        y = 5;
+    }
     x
 }
 
@@ -25,23 +30,18 @@ blk0 (root):
 Statements:
 End:
   Match(match_enum(v0) {
-    bool::False(v4) => blk1,
+    bool::False(v1) => blk1,
     bool::True(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 2u
+  (v3: core::felt252) <- 2
 End:
-  Goto(blk3, {v1 -> v7})
+  Return(v3)
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 3u
+  (v4: core::felt252) <- 3
 End:
-  Goto(blk3, {v3 -> v7})
-
-blk3:
-Statements:
-End:
-  Return(v7)
+  Return(v4)

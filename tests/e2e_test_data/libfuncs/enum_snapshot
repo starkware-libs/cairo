@@ -22,21 +22,22 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt252 = felt252;
-type test::SingleVariant = Enum<ut@test::SingleVariant, felt252>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::SingleVariant = Enum<ut@test::SingleVariant, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
 libfunc enum_match<test::SingleVariant> = enum_match<test::SingleVariant>;
 libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
-libfunc felt252_const<0> = felt252_const<0>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-enum_match<test::SingleVariant>([0]) -> ([1]);
-branch_align() -> ();
-drop<felt252>([1]) -> ();
-felt252_const<0>() -> ([2]);
-store_temp<felt252>([2]) -> ([3]);
-return([3]);
+enum_match<test::SingleVariant>([0]) -> ([1]); // 0
+branch_align() -> (); // 1
+drop<felt252>([1]) -> (); // 2
+const_as_immediate<Const<felt252, 0>>() -> ([2]); // 3
+store_temp<felt252>([2]) -> ([2]); // 4
+return([2]); // 5
 
 test::foo@0([0]: test::SingleVariant) -> (felt252);
 
@@ -56,47 +57,46 @@ enum Option {
 fn foo(e: @Option) -> felt252 {
     match e {
         Option::Some(_) => 0,
-        Option::None(_) => 1,
+        Option::None => 1,
     }
 }
 
 //! > casm
-jmp rel 6 if [fp + -4] != 0;
+jmp rel 5 if [fp + -4] != 0;
 [ap + 0] = 0, ap++;
-jmp rel 4;
+ret;
 [ap + 0] = 1, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 300})
+test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt252 = felt252;
-type Unit = Struct<ut@Tuple>;
-type test::Option = Enum<ut@test::Option, felt252, Unit>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::Option = Enum<ut@test::Option, felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
 libfunc enum_match<test::Option> = enum_match<test::Option>;
 libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
-libfunc felt252_const<0> = felt252_const<0>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc jump = jump;
 libfunc drop<Unit> = drop<Unit>;
-libfunc felt252_const<1> = felt252_const<1>;
-libfunc rename<felt252> = rename<felt252>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 
-enum_match<test::Option>([0]) { fallthrough([1]) 6([2]) };
-branch_align() -> ();
-drop<felt252>([1]) -> ();
-felt252_const<0>() -> ([3]);
-store_temp<felt252>([3]) -> ([4]);
-jump() { 10() };
-branch_align() -> ();
-drop<Unit>([2]) -> ();
-felt252_const<1>() -> ([5]);
-store_temp<felt252>([5]) -> ([4]);
-rename<felt252>([4]) -> ([6]);
-return([6]);
+enum_match<test::Option>([0]) { fallthrough([1]) 6([2]) }; // 0
+branch_align() -> (); // 1
+drop<felt252>([1]) -> (); // 2
+const_as_immediate<Const<felt252, 0>>() -> ([3]); // 3
+store_temp<felt252>([3]) -> ([3]); // 4
+return([3]); // 5
+branch_align() -> (); // 6
+drop<Unit>([2]) -> (); // 7
+const_as_immediate<Const<felt252, 1>>() -> ([4]); // 8
+store_temp<felt252>([4]) -> ([4]); // 9
+return([4]); // 10
 
 test::foo@0([0]: test::Option) -> (felt252);
 
@@ -124,49 +124,49 @@ fn foo(e: @Color) -> felt252 {
 
 //! > casm
 jmp rel [fp + -4];
-jmp rel 12;
-jmp rel 6;
+jmp rel 10;
+jmp rel 5;
 [ap + 0] = 0, ap++;
-jmp rel 8;
+ret;
 [ap + 0] = 1, ap++;
-jmp rel 4;
+ret;
 [ap + 0] = 2, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 400})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type felt252 = felt252;
-type test::Color = Enum<ut@test::Color, felt252, felt252, felt252>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::Color = Enum<ut@test::Color, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 2> = Const<felt252, 2> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
 libfunc enum_match<test::Color> = enum_match<test::Color>;
 libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
-libfunc felt252_const<0> = felt252_const<0>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc jump = jump;
-libfunc felt252_const<1> = felt252_const<1>;
-libfunc felt252_const<2> = felt252_const<2>;
-libfunc rename<felt252> = rename<felt252>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
+libfunc const_as_immediate<Const<felt252, 2>> = const_as_immediate<Const<felt252, 2>>;
 
-enum_match<test::Color>([0]) { fallthrough([1]) 6([2]) 11([3]) };
-branch_align() -> ();
-drop<felt252>([1]) -> ();
-felt252_const<0>() -> ([4]);
-store_temp<felt252>([4]) -> ([5]);
-jump() { 15() };
-branch_align() -> ();
-drop<felt252>([2]) -> ();
-felt252_const<1>() -> ([6]);
-store_temp<felt252>([6]) -> ([5]);
-jump() { 15() };
-branch_align() -> ();
-drop<felt252>([3]) -> ();
-felt252_const<2>() -> ([7]);
-store_temp<felt252>([7]) -> ([5]);
-rename<felt252>([5]) -> ([8]);
-return([8]);
+enum_match<test::Color>([0]) { fallthrough([1]) 6([2]) 11([3]) }; // 0
+branch_align() -> (); // 1
+drop<felt252>([1]) -> (); // 2
+const_as_immediate<Const<felt252, 0>>() -> ([4]); // 3
+store_temp<felt252>([4]) -> ([4]); // 4
+return([4]); // 5
+branch_align() -> (); // 6
+drop<felt252>([2]) -> (); // 7
+const_as_immediate<Const<felt252, 1>>() -> ([5]); // 8
+store_temp<felt252>([5]) -> ([5]); // 9
+return([5]); // 10
+branch_align() -> (); // 11
+drop<felt252>([3]) -> (); // 12
+const_as_immediate<Const<felt252, 2>>() -> ([6]); // 13
+store_temp<felt252>([6]) -> ([6]); // 14
+return([6]); // 15
 
 test::foo@0([0]: test::Color) -> (felt252);
 
@@ -194,53 +194,53 @@ fn foo(e: @Color) -> felt252 {
 
 //! > casm
 jmp rel [fp + -5];
-jmp rel 12;
-jmp rel 6;
+jmp rel 10;
+jmp rel 5;
 [ap + 0] = 0, ap++;
-jmp rel 8;
+ret;
 [ap + 0] = 1, ap++;
-jmp rel 4;
+ret;
 [ap + 0] = 2, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 400})
+test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type Unit = Struct<ut@Tuple>;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type test::Color = Enum<ut@test::Color, Unit, Unit, Array<felt252>>;
-type Snapshot<test::Color> = Snapshot<test::Color>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type test::Color = Enum<ut@test::Color, Unit, Unit, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<test::Color> = Snapshot<test::Color> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 2> = Const<felt252, 2> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc enum_snapshot_match<test::Color> = enum_snapshot_match<test::Color>;
 libfunc branch_align = branch_align;
 libfunc drop<Unit> = drop<Unit>;
-libfunc felt252_const<0> = felt252_const<0>;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc jump = jump;
-libfunc felt252_const<1> = felt252_const<1>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
 libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
-libfunc felt252_const<2> = felt252_const<2>;
-libfunc rename<felt252> = rename<felt252>;
+libfunc const_as_immediate<Const<felt252, 2>> = const_as_immediate<Const<felt252, 2>>;
 
-enum_snapshot_match<test::Color>([0]) { fallthrough([1]) 6([2]) 11([3]) };
-branch_align() -> ();
-drop<Unit>([1]) -> ();
-felt252_const<0>() -> ([4]);
-store_temp<felt252>([4]) -> ([5]);
-jump() { 15() };
-branch_align() -> ();
-drop<Unit>([2]) -> ();
-felt252_const<1>() -> ([6]);
-store_temp<felt252>([6]) -> ([5]);
-jump() { 15() };
-branch_align() -> ();
-drop<Snapshot<Array<felt252>>>([3]) -> ();
-felt252_const<2>() -> ([7]);
-store_temp<felt252>([7]) -> ([5]);
-rename<felt252>([5]) -> ([8]);
-return([8]);
+enum_snapshot_match<test::Color>([0]) { fallthrough([1]) 6([2]) 11([3]) }; // 0
+branch_align() -> (); // 1
+drop<Unit>([1]) -> (); // 2
+const_as_immediate<Const<felt252, 0>>() -> ([4]); // 3
+store_temp<felt252>([4]) -> ([4]); // 4
+return([4]); // 5
+branch_align() -> (); // 6
+drop<Unit>([2]) -> (); // 7
+const_as_immediate<Const<felt252, 1>>() -> ([5]); // 8
+store_temp<felt252>([5]) -> ([5]); // 9
+return([5]); // 10
+branch_align() -> (); // 11
+drop<Snapshot<Array<felt252>>>([3]) -> (); // 12
+const_as_immediate<Const<felt252, 2>>() -> ([6]); // 13
+store_temp<felt252>([6]) -> ([6]); // 14
+return([6]); // 15
 
 test::foo@0([0]: Snapshot<test::Color>) -> (felt252);

@@ -1,11 +1,35 @@
-[workspace]
+[profile.release]
+overflow-checks = true # Enable integer overflow checks.
 
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+
+# The profile used for CI in pull requests.
+# External dependencies are built with optimization enabled, while crates in this workspace are built
+# with `dev` profile and full debug info. This is a trade-off between build time and e2e test time.
+[profile.ci-dev]
+inherits = "dev"
+incremental = false
+[profile.ci-dev.package."*"] # external dependencies
+opt-level = 1
+[profile.ci-dev.package."tokio"]
+opt-level = 3
+[profile.ci-dev.package."bimap"]
+
+opt-level = 3
+[profile.ci-dev.package."rust-analyzer-salsa"]
+opt-level = 3
+
+[workspace]
+resolver = "2"
 members = [
     "crates/cairo-lang-casm",
     "crates/cairo-lang-compiler",
     "crates/cairo-lang-debug",
     "crates/cairo-lang-defs",
     "crates/cairo-lang-diagnostics",
+    "crates/cairo-lang-doc",
     "crates/cairo-lang-eq-solver",
     "crates/cairo-lang-filesystem",
     "crates/cairo-lang-formatter",
@@ -22,89 +46,105 @@ members = [
     "crates/cairo-lang-sierra-gas",
     "crates/cairo-lang-sierra-generator",
     "crates/cairo-lang-sierra-to-casm",
+    "crates/cairo-lang-sierra-type-size",
     "crates/cairo-lang-starknet",
+    "crates/cairo-lang-starknet-classes",
     "crates/cairo-lang-syntax",
     "crates/cairo-lang-syntax-codegen",
+    "crates/cairo-lang-test-plugin",
     "crates/cairo-lang-test-runner",
     "crates/cairo-lang-utils",
-    "crates/bin/cairo-language-server",
     "crates/bin/cairo-compile",
     "crates/bin/cairo-format",
-    "crates/bin/cairo-test",
+    "crates/bin/cairo-language-server",
     "crates/bin/cairo-run",
+    "crates/bin/cairo-test",
+    "crates/bin/generate-syntax",
     "crates/bin/sierra-compile",
     "crates/bin/starknet-compile",
     "crates/bin/starknet-sierra-compile",
-    "crates/bin/generate-syntax",
+    "crates/bin/starknet-sierra-extract-code",
+    "crates/bin/get-lowering",
+    "crates/bin/starknet-sierra-upgrade-validate",
     "tests",
 ]
+exclude = ["ensure-no_std"]
 
 [workspace.package]
-version = "1.1.0"
+version = "2.8.4"
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
 license-file = "LICENSE"
 
 [workspace.dependencies]
-anyhow = "1.0.66"
-ark-ff = "0.4.0-alpha.7"
+anyhow = "1.0.83"
+ark-ff = "0.4.2"
 ark-secp256k1 = "0.4.0"
 ark-secp256r1 = "0.4.0"
-ark-std = "0.3.0"
+ark-std = "0.4.0"
 assert_matches = "1.5"
-bimap = "0.6.2"
-cairo-felt = "0.5.1"
-cairo-vm = "0.5.1"
-clap = { version = "4.0", features = ["derive"] }
-colored = "2"
+bimap = "0.6.3"
+cairo-vm = { version = "1.0.1", features = ["mod_builtin"]}
+clap = { version = "4.5.4", features = ["derive"] }
+colored = "2.1.0"
 const-fnv1a-hash = "1.1.0"
+const_format = "0.2.32"
 convert_case = "0.6.0"
 derivative = "2.2.0"
 diffy = "0.3.0"
-env_logger = "0.9.3"
-genco = "0.17.0"
-good_lp = { version = "1.3.2", features = ["minilp"], default-features = false }
+env_logger = "0.11.3"
+genco = "0.17.8"
+good_lp = { version = "1.8.1", features = ["minilp"], default-features = false }
+hashbrown = "0.14.5"
 id-arena = "2.2.1"
-ignore = "0.4.20"
-indexmap = { version = "1.9.1", features = ["serde"] }
-indoc = "2.0.1"
-itertools = "0.10.3"
-keccak = "0.1.3"
-lalrpop-util = { version = "0.19.9", features = ["lexer"] }
-log = "0.4"
-lsp = { version = "0.93", package = "lsp-types" }
-num-bigint = "0.4"
-num-integer = "0.1"
-num-traits = "0.2"
-once_cell = "1.17.1"
-parity-scale-codec = "3.5.0"
-parity-scale-codec-derive = "3.1.4"
-path-clean = "0.1.0"
-pretty_assertions = "1.2.1"
-proc-macro2 = "1.0"
-quote = "1.0.21"
-rayon = "1.7.0"
-rstest = "0.16.0"
-salsa = "0.17.0-pre.2"
-scarb-metadata = "1.3.0"
-schemars = { version = "0.8.12", features = ["preserve_order"] }
-serde = { version = "1.0.130", features = ["derive"] }
-serde_json = "1.0"
-sha3 = "0.10.6"
+ignore = "0.4.22"
+indent = "0.1.1"
+indexmap = { version = "2.2.6", default-features = false }
+indoc = "2.0.5"
+itertools = { version = "0.12.1", default-features = false }
+keccak = "0.1.5"
+lalrpop-util = { version = "0.20.2", features = ["lexer"] }
+log = "0.4.21"
+num-bigint = { version = "0.4.5", default-features = false }
+num-integer = "0.1.46"
+num-traits = { version = "0.2.19", default-features = false }
+parity-scale-codec = { version = "3.6.9", default-features = false, features = [
+    "derive",
+] }
+path-clean = "1.0.1"
+pretty_assertions = "1.4.0"
+proc-macro2 = "1.0.82"
+quote = "1.0.36"
+rand = "0.8.5"
+rayon = "1.10.0"
+rstest = "0.19.0"
+salsa = { package = "rust-analyzer-salsa", version = "0.17.0-pre.6" }
+schemars = { version = "0.8.19", features = ["preserve_order"] }
+semver = { version = "1.0.23", features = ["serde"] }
+serde = { version = "1.0.200", default-features = false, features = ["derive"] }
+serde_json = "1.0.116"
+sha2 = "0.10.8"
+sha3 = "0.10.8"
 smol_str = { version = "0.2.0", features = ["serde"] }
-syn = { version = "1.0.99", features = ["full", "extra-traits"] }
-test-case = "2.2.2"
-test-case-macros = "2.2.2"
-test-log = "0.2.11"
-thiserror = "1.0.32"
-time = { version = "0.3.20", features = [
+starknet-types-core = { version = "0.1.0", features = [
+    "hash",
+    "prime-bigint",
+    "serde",
+] }
+syn = { version = "2.0.61", features = ["full", "extra-traits"] }
+test-case = "3.3.1"
+test-case-macros = "3.3.1"
+test-log = "0.2.16"
+thiserror = "1.0.60"
+time = { version = "0.3.36", features = [
     "formatting",
     "macros",
     "local-offset",
 ] }
-tokio = { version = "1.18.2", features = ["full", "sync"] }
-toml = "0.4.2"
-tower-lsp = "0.17.0"
-unescaper = "0.1.1"
-xshell = "0.2.2"
+tokio = { version = "1.37.0", features = ["full", "sync"] }
+toml = "0.8.12"
+unescaper = "0.1.2"
+xshell = "0.2.6"
+
+openssl = { version = "0.10.35" }

@@ -1,8 +1,6 @@
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{TokenSingleLineComment, TokenWhitespace};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::Token;
-use salsa::{InternId, InternKey};
 use test_log::test;
 
 use super::Lexer;
@@ -25,6 +23,18 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
                 "1234567890123456789012345678901234567890",
                 "11_u128",
                 "0xA2_u128",
+            ]
+        }
+        SyntaxKind::TerminalShortString => {
+            vec!["''", "'a'", "'abc'", "'1234567890123456789012345678901'"]
+        }
+        SyntaxKind::TerminalString => {
+            vec![
+                "\"\"",
+                "\"a\"",
+                "\"abc\"",
+                "\"1234567890123456789012345678901\"",
+                "\"12345678901234567890123456789012\"",
             ]
         }
         SyntaxKind::TerminalFalse => vec!["false"],
@@ -165,6 +175,8 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalArrow,
         SyntaxKind::TerminalMatchArrow,
         SyntaxKind::TerminalEndOfFile,
+        SyntaxKind::TerminalShortString,
+        SyntaxKind::TerminalString,
     ]
 }
 
@@ -184,6 +196,16 @@ fn need_separator(
         return true;
     }
     if kind0 == SyntaxKind::TerminalLiteralNumber && (kind0 == kind1 || is_identifier_like(kind1)) {
+        return true;
+    }
+    if kind0 == SyntaxKind::TerminalShortString
+        && matches!(kind1, SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalUnderscore)
+    {
+        return true;
+    }
+    if kind0 == SyntaxKind::TerminalShortString
+        && matches!(kind1, SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalUnderscore)
+    {
         return true;
     }
     if (text0 == "&" && text1.starts_with('&'))
@@ -240,16 +262,12 @@ fn trivia_texts() -> Vec<&'static str> {
     res
 }
 
-fn test_source() -> FileId {
-    FileId::from_intern_id(InternId::from(100u32))
-}
-
 #[test]
 fn test_lex_single_token() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
     for (kind, text) in terminal_kind_and_text() {
-        let mut lexer = Lexer::from_text(db, test_source(), text);
+        let mut lexer = Lexer::from_text(db, text);
         let terminal = lexer.next().unwrap();
         // TODO(spapini): Remove calling new_root on non root elements.
         assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
@@ -276,7 +294,7 @@ fn test_lex_double_token() {
             }
             for separator in separators {
                 let text = format!("{text0}{separator}{text1}");
-                let mut lexer = Lexer::from_text(db, test_source(), text.as_str());
+                let mut lexer = Lexer::from_text(db, text.as_str());
 
                 let terminal = lexer.next().unwrap();
                 let token_text = terminal.text;
@@ -321,7 +339,7 @@ fn test_lex_token_with_trivia() {
         for leading_trivia in trivia_texts() {
             for trailing_trivia in trivia_texts() {
                 let text = format!("{leading_trivia}{expected_token_text} {trailing_trivia}");
-                let mut lexer = Lexer::from_text(db, test_source(), text.as_str());
+                let mut lexer = Lexer::from_text(db, text.as_str());
                 let terminal = lexer.next().unwrap();
                 let token_text = terminal.text;
                 assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
@@ -343,76 +361,72 @@ fn test_lex_token_with_trivia() {
 fn test_cases() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
-    let res: Vec<LexerTerminal> =
-        Lexer::from_text(db, test_source(), "let x: &T = ` 6; //  5+ 3;").collect();
-    assert_eq!(
-        res,
-        vec![
-            LexerTerminal {
-                text: "let".into(),
-                kind: SyntaxKind::TerminalLet,
-                leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
-            },
-            LexerTerminal {
-                text: "x".into(),
-                kind: SyntaxKind::TerminalIdentifier,
-                leading_trivia: vec![],
-                trailing_trivia: vec![]
-            },
-            LexerTerminal {
-                text: ":".into(),
-                kind: SyntaxKind::TerminalColon,
-                leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
-            },
-            LexerTerminal {
-                text: "&".into(),
-                kind: SyntaxKind::TerminalAnd,
-                leading_trivia: vec![],
-                trailing_trivia: vec![]
-            },
-            LexerTerminal {
-                text: "T".into(),
-                kind: SyntaxKind::TerminalIdentifier,
-                leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
-            },
-            LexerTerminal {
-                text: "=".into(),
-                kind: SyntaxKind::TerminalEq,
-                leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
-            },
-            LexerTerminal {
-                text: "`".into(),
-                kind: SyntaxKind::TerminalBadCharacters,
-                leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
-            },
-            LexerTerminal {
-                text: "6".into(),
-                kind: SyntaxKind::TerminalLiteralNumber,
-                leading_trivia: vec![],
-                trailing_trivia: vec![]
-            },
-            LexerTerminal {
-                text: ";".into(),
-                kind: SyntaxKind::TerminalSemicolon,
-                leading_trivia: vec![],
-                trailing_trivia: vec![
-                    TokenWhitespace::new_green(db, " ".into()).into(),
-                    TokenSingleLineComment::new_green(db, "//  5+ 3;".into()).into()
-                ]
-            },
-            LexerTerminal {
-                text: "".into(),
-                kind: SyntaxKind::TerminalEndOfFile,
-                leading_trivia: vec![],
-                trailing_trivia: vec![]
-            }
-        ]
-    );
+    let res: Vec<LexerTerminal> = Lexer::from_text(db, "let x: &T = ` 6; //  5+ 3;").collect();
+    assert_eq!(res, vec![
+        LexerTerminal {
+            text: "let".into(),
+            kind: SyntaxKind::TerminalLet,
+            leading_trivia: vec![],
+            trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+        },
+        LexerTerminal {
+            text: "x".into(),
+            kind: SyntaxKind::TerminalIdentifier,
+            leading_trivia: vec![],
+            trailing_trivia: vec![]
+        },
+        LexerTerminal {
+            text: ":".into(),
+            kind: SyntaxKind::TerminalColon,
+            leading_trivia: vec![],
+            trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+        },
+        LexerTerminal {
+            text: "&".into(),
+            kind: SyntaxKind::TerminalAnd,
+            leading_trivia: vec![],
+            trailing_trivia: vec![]
+        },
+        LexerTerminal {
+            text: "T".into(),
+            kind: SyntaxKind::TerminalIdentifier,
+            leading_trivia: vec![],
+            trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+        },
+        LexerTerminal {
+            text: "=".into(),
+            kind: SyntaxKind::TerminalEq,
+            leading_trivia: vec![],
+            trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+        },
+        LexerTerminal {
+            text: "`".into(),
+            kind: SyntaxKind::TerminalBadCharacters,
+            leading_trivia: vec![],
+            trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+        },
+        LexerTerminal {
+            text: "6".into(),
+            kind: SyntaxKind::TerminalLiteralNumber,
+            leading_trivia: vec![],
+            trailing_trivia: vec![]
+        },
+        LexerTerminal {
+            text: ";".into(),
+            kind: SyntaxKind::TerminalSemicolon,
+            leading_trivia: vec![],
+            trailing_trivia: vec![
+                TokenWhitespace::new_green(db, " ".into()).into(),
+                TokenSingleLineComment::new_green(db, "//  5+ 3;".into()).into()
+            ]
+        },
+        LexerTerminal {
+            text: "".into(),
+            kind: SyntaxKind::TerminalEndOfFile,
+            leading_trivia: vec![],
+            trailing_trivia: vec![]
+        }
+    ]);
 }
 
 #[test]
@@ -421,7 +435,7 @@ fn test_bad_character() {
     let db = &db_val;
 
     let text = "`";
-    let mut lexer = Lexer::from_text(db, test_source(), text);
+    let mut lexer = Lexer::from_text(db, text);
     let terminal = lexer.next().unwrap();
     let token_text = terminal.text;
     assert_eq!(

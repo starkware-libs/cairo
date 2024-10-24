@@ -1,0 +1,63 @@
+//! > Test named generic arguments syntax
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    bar::<S: usize>();
+}
+
+//! > top_level_kind
+GenericArgs
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: GenericArgs
+    ├── langle (kind: TokenLT): '<'
+    ├── generic_args (kind: GenericArgList)
+    │   └── item #0 (kind: GenericArgNamed)
+    │       ├── name (kind: TokenIdentifier): 'S'
+    │       ├── colon (kind: TokenColon): ':'
+    │       └── value (kind: GenericArgValueExpr)
+    │           └── expr (kind: ExprPath)
+    │               └── item #0 (kind: PathSegmentSimple)
+    │                   └── ident (kind: TokenIdentifier): 'usize'
+    └── rangle (kind: TokenGT): '>'
+
+//! > ==========================================================================
+
+//! > Test bad named generic arguments syntax
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn foo() {
+    bar::<S: >();
+}
+
+//! > top_level_kind
+GenericArgs
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing tokens. Expected a type expression.
+ --> dummy_file.cairo:2:13
+    bar::<S: >();
+            ^
+
+//! > expected_tree
+└── Top level kind: GenericArgs
+    ├── langle (kind: TokenLT): '<'
+    ├── generic_args (kind: GenericArgList)
+    │   └── item #0 (kind: GenericArgNamed)
+    │       ├── name (kind: TokenIdentifier): 'S'
+    │       ├── colon (kind: TokenColon): ':'
+    │       └── value (kind: GenericArgValueExpr)
+    │           └── expr: Missing []
+    └── rangle (kind: TokenGT): '>'

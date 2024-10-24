@@ -1,96 +1,35 @@
-type felt252 = felt252;
-type examples::enum_flow::MyEnumShort = Enum<ut@examples::enum_flow::MyEnumShort, felt252, felt252>;
-type examples::enum_flow::MyEnumLong = Enum<ut@examples::enum_flow::MyEnumLong, felt252, felt252, felt252>;
-type Unit = Struct<ut@Tuple>;
-type examples::enum_flow::MyEnumGeneric::<(), core::felt252> = Enum<ut@examples::enum_flow::MyEnumGeneric::<(), core::felt252>, felt252, Unit, felt252>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type examples::enum_flow::MyEnumLong = Enum<ut@examples::enum_flow::MyEnumLong, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type examples::enum_flow::MyEnumShort = Enum<ut@examples::enum_flow::MyEnumShort, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 300> = Const<felt252, 300> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc felt252_const<10> = felt252_const<10>;
-libfunc enum_init<examples::enum_flow::MyEnumShort, 0> = enum_init<examples::enum_flow::MyEnumShort, 0>;
-libfunc store_temp<examples::enum_flow::MyEnumShort> = store_temp<examples::enum_flow::MyEnumShort>;
-libfunc function_call<user@examples::enum_flow::match_short> = function_call<user@examples::enum_flow::match_short>;
-libfunc drop<felt252> = drop<felt252>;
-libfunc felt252_const<11> = felt252_const<11>;
-libfunc enum_init<examples::enum_flow::MyEnumShort, 1> = enum_init<examples::enum_flow::MyEnumShort, 1>;
-libfunc felt252_const<20> = felt252_const<20>;
-libfunc enum_init<examples::enum_flow::MyEnumLong, 0> = enum_init<examples::enum_flow::MyEnumLong, 0>;
-libfunc store_temp<examples::enum_flow::MyEnumLong> = store_temp<examples::enum_flow::MyEnumLong>;
-libfunc function_call<user@examples::enum_flow::match_long> = function_call<user@examples::enum_flow::match_long>;
-libfunc felt252_const<21> = felt252_const<21>;
-libfunc enum_init<examples::enum_flow::MyEnumLong, 1> = enum_init<examples::enum_flow::MyEnumLong, 1>;
-libfunc felt252_const<22> = felt252_const<22>;
-libfunc enum_init<examples::enum_flow::MyEnumLong, 2> = enum_init<examples::enum_flow::MyEnumLong, 2>;
-libfunc felt252_const<30> = felt252_const<30>;
-libfunc enum_init<examples::enum_flow::MyEnumGeneric::<(), core::felt252>, 0> = enum_init<examples::enum_flow::MyEnumGeneric::<(), core::felt252>, 0>;
-libfunc drop<examples::enum_flow::MyEnumGeneric::<(), core::felt252>> = drop<examples::enum_flow::MyEnumGeneric::<(), core::felt252>>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<examples::enum_flow::MyEnumGeneric::<(), core::felt252>, 1> = enum_init<examples::enum_flow::MyEnumGeneric::<(), core::felt252>, 1>;
-libfunc felt252_const<32> = felt252_const<32>;
-libfunc enum_init<examples::enum_flow::MyEnumGeneric::<(), core::felt252>, 2> = enum_init<examples::enum_flow::MyEnumGeneric::<(), core::felt252>, 2>;
-libfunc felt252_const<300> = felt252_const<300>;
+libfunc const_as_immediate<Const<felt252, 300>> = const_as_immediate<Const<felt252, 300>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc enum_match<examples::enum_flow::MyEnumShort> = enum_match<examples::enum_flow::MyEnumShort>;
 libfunc branch_align = branch_align;
-libfunc jump = jump;
-libfunc rename<felt252> = rename<felt252>;
 libfunc enum_match<examples::enum_flow::MyEnumLong> = enum_match<examples::enum_flow::MyEnumLong>;
 
-felt252_const<10>() -> ([0]);
-enum_init<examples::enum_flow::MyEnumShort, 0>([0]) -> ([1]);
-store_temp<examples::enum_flow::MyEnumShort>([1]) -> ([3]);
-function_call<user@examples::enum_flow::match_short>([3]) -> ([2]);
-drop<felt252>([2]) -> ();
-felt252_const<11>() -> ([4]);
-enum_init<examples::enum_flow::MyEnumShort, 1>([4]) -> ([5]);
-store_temp<examples::enum_flow::MyEnumShort>([5]) -> ([7]);
-function_call<user@examples::enum_flow::match_short>([7]) -> ([6]);
-drop<felt252>([6]) -> ();
-felt252_const<20>() -> ([8]);
-enum_init<examples::enum_flow::MyEnumLong, 0>([8]) -> ([9]);
-store_temp<examples::enum_flow::MyEnumLong>([9]) -> ([11]);
-function_call<user@examples::enum_flow::match_long>([11]) -> ([10]);
-drop<felt252>([10]) -> ();
-felt252_const<21>() -> ([12]);
-enum_init<examples::enum_flow::MyEnumLong, 1>([12]) -> ([13]);
-store_temp<examples::enum_flow::MyEnumLong>([13]) -> ([15]);
-function_call<user@examples::enum_flow::match_long>([15]) -> ([14]);
-drop<felt252>([14]) -> ();
-felt252_const<22>() -> ([16]);
-enum_init<examples::enum_flow::MyEnumLong, 2>([16]) -> ([17]);
-store_temp<examples::enum_flow::MyEnumLong>([17]) -> ([19]);
-function_call<user@examples::enum_flow::match_long>([19]) -> ([18]);
-drop<felt252>([18]) -> ();
-felt252_const<30>() -> ([20]);
-enum_init<examples::enum_flow::MyEnumGeneric::<(), core::felt252>, 0>([20]) -> ([21]);
-drop<examples::enum_flow::MyEnumGeneric::<(), core::felt252>>([21]) -> ();
-struct_construct<Unit>() -> ([22]);
-enum_init<examples::enum_flow::MyEnumGeneric::<(), core::felt252>, 1>([22]) -> ([23]);
-drop<examples::enum_flow::MyEnumGeneric::<(), core::felt252>>([23]) -> ();
-felt252_const<32>() -> ([24]);
-enum_init<examples::enum_flow::MyEnumGeneric::<(), core::felt252>, 2>([24]) -> ([25]);
-drop<examples::enum_flow::MyEnumGeneric::<(), core::felt252>>([25]) -> ();
-felt252_const<300>() -> ([26]);
-store_temp<felt252>([26]) -> ([27]);
-return([27]);
-enum_match<examples::enum_flow::MyEnumShort>([0]) { fallthrough([1]) 41([2]) };
-branch_align() -> ();
-store_temp<felt252>([1]) -> ([3]);
-jump() { 43() };
-branch_align() -> ();
-store_temp<felt252>([2]) -> ([3]);
-rename<felt252>([3]) -> ([4]);
-return([4]);
-enum_match<examples::enum_flow::MyEnumLong>([0]) { fallthrough([1]) 49([2]) 52([3]) };
-branch_align() -> ();
-store_temp<felt252>([1]) -> ([4]);
-jump() { 54() };
-branch_align() -> ();
-store_temp<felt252>([2]) -> ([4]);
-jump() { 54() };
-branch_align() -> ();
-store_temp<felt252>([3]) -> ([4]);
-rename<felt252>([4]) -> ([5]);
-return([5]);
+const_as_immediate<Const<felt252, 300>>() -> ([0]); // 0
+store_temp<felt252>([0]) -> ([0]); // 1
+return([0]); // 2
+enum_match<examples::enum_flow::MyEnumShort>([0]) { fallthrough([1]) 7([2]) }; // 3
+branch_align() -> (); // 4
+store_temp<felt252>([1]) -> ([1]); // 5
+return([1]); // 6
+branch_align() -> (); // 7
+store_temp<felt252>([2]) -> ([2]); // 8
+return([2]); // 9
+enum_match<examples::enum_flow::MyEnumLong>([0]) { fallthrough([1]) 14([2]) 17([3]) }; // 10
+branch_align() -> (); // 11
+store_temp<felt252>([1]) -> ([1]); // 12
+return([1]); // 13
+branch_align() -> (); // 14
+store_temp<felt252>([2]) -> ([2]); // 15
+return([2]); // 16
+branch_align() -> (); // 17
+store_temp<felt252>([3]) -> ([3]); // 18
+return([3]); // 19
 
 examples::enum_flow::main@0() -> (felt252);
-examples::enum_flow::match_short@37([0]: examples::enum_flow::MyEnumShort) -> (felt252);
-examples::enum_flow::match_long@45([0]: examples::enum_flow::MyEnumLong) -> (felt252);
+examples::enum_flow::match_short@3([0]: examples::enum_flow::MyEnumShort) -> (felt252);
+examples::enum_flow::match_long@10([0]: examples::enum_flow::MyEnumLong) -> (felt252);

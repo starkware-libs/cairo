@@ -53,18 +53,18 @@ ret;
 test::foo: OrderedHashMap({Const: 1410})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type StorageBaseAddress = StorageBaseAddress;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc storage_base_address_from_felt252 = storage_base_address_from_felt252;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<StorageBaseAddress> = store_temp<StorageBaseAddress>;
 
-storage_base_address_from_felt252([0], [1]) -> ([2], [3]);
-store_temp<RangeCheck>([2]) -> ([4]);
-store_temp<StorageBaseAddress>([3]) -> ([5]);
-return([4], [5]);
+storage_base_address_from_felt252([0], [1]) -> ([2], [3]); // 0
+store_temp<RangeCheck>([2]) -> ([2]); // 1
+store_temp<StorageBaseAddress>([3]) -> ([3]); // 2
+return([2], [3]); // 3
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, StorageBaseAddress);
 
@@ -90,16 +90,16 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type StorageBaseAddress = StorageBaseAddress;
-type u8 = u8;
-type StorageAddress = StorageAddress;
+type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc storage_address_from_base_and_offset = storage_address_from_base_and_offset;
 libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
 
-storage_address_from_base_and_offset([0], [1]) -> ([2]);
-store_temp<StorageAddress>([2]) -> ([3]);
-return([3]);
+storage_address_from_base_and_offset([0], [1]) -> ([2]); // 0
+store_temp<StorageAddress>([2]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: StorageBaseAddress, [1]: u8) -> (StorageAddress);
 
@@ -134,7 +134,7 @@ memory[ap + -1] = y
 [ap + -4] = [[fp + -4] + 1], ap++;
 [ap + -3] = [ap + -5] + 340282366920938463149779958178705833983;
 [ap + -3] = [[fp + -4] + 2];
-jmp rel 19;
+jmp rel 18;
 %{
 (value, scalar) = (memory[fp + -3], 10633823966279326983230456482242756608)
 x = min(value // scalar, 340282366920938463463374607431768211455)
@@ -152,46 +152,41 @@ ap += 1;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -3], ap++;
-jmp rel 8;
+ret;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1420})
+test::foo: OrderedHashMap({Const: 1410})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type StorageAddress = StorageAddress;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::starknet::storage_access::StorageAddress> = Enum<ut@core::option::Option::<core::starknet::storage_access::StorageAddress>, StorageAddress, Unit>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::starknet::storage_access::StorageAddress> = Enum<ut@core::option::Option::<core::starknet::storage_access::StorageAddress>, StorageAddress, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc storage_address_try_from_felt252 = storage_address_try_from_felt252;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 0> = enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>> = store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>;
-libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 1> = enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::starknet::storage_access::StorageAddress>> = rename<core::option::Option::<core::starknet::storage_access::StorageAddress>>;
 
-storage_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) };
-branch_align() -> ();
-enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 0>([3]) -> ([5]);
-store_temp<RangeCheck>([2]) -> ([6]);
-store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>([5]) -> ([7]);
-jump() { 11() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([8]);
-enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 1>([8]) -> ([9]);
-store_temp<RangeCheck>([4]) -> ([6]);
-store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>([9]) -> ([7]);
-rename<RangeCheck>([6]) -> ([10]);
-rename<core::option::Option::<core::starknet::storage_access::StorageAddress>>([7]) -> ([11]);
-return([10], [11]);
+storage_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>([5]) -> ([5]); // 4
+return([2], [5]); // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([6]); // 7
+enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 1>([6]) -> ([7]); // 8
+store_temp<RangeCheck>([4]) -> ([4]); // 9
+store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>([7]) -> ([7]); // 10
+return([4], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::storage_access::StorageAddress>);

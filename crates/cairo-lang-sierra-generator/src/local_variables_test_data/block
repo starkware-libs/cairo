@@ -16,7 +16,7 @@ fn foo(x: felt252) -> felt252 {
         x1 + x1
     };
     // TODO(lior): Replace with "let w = x1 + x2 + z".
-    let w = x1 + x2;
+    let _w = x1 + x2;
     revoke_ap();
     x1 + y
 }
@@ -31,15 +31,15 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v8: core::felt252) <- core::felt252_add(v0, v0)
-  (v9: core::felt252) <- core::felt252_add(v8, v8)
+  (v1: core::felt252) <- core::felt252_add(v0, v0)
+  (v2: core::felt252) <- core::felt252_add(v1, v1)
   (v3: core::felt252) <- test::revoke_ap()
-  (v10: core::felt252) <- core::felt252_add(v8, v8)
-  (v11: core::felt252) <- core::felt252_add(v8, v9)
+  (v4: core::felt252) <- core::felt252_add(v1, v1)
+  (v5: core::felt252) <- core::felt252_add(v1, v2)
   (v6: core::felt252) <- test::revoke_ap()
-  (v12: core::felt252) <- core::felt252_add(v8, v10)
+  (v7: core::felt252) <- core::felt252_add(v1, v4)
 End:
-  Return(v12)
+  Return(v7)
 
 //! > local_variables
-v10, v8, v9
+v4, v1, v2

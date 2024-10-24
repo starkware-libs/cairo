@@ -9,13 +9,16 @@ foo
 //! > function_code
 fn foo(ref arr: Array<felt252>) {
     arr.append(5);
-    arr.span();
+    immovable(arr.span());
     revoke_ap();
     arr.append(6);
 }
 
 //! > module_code
-use array::ArrayTrait;
+#[inline(never)]
+fn immovable<T>(t: T) -> T {
+    t
+}
 
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
@@ -26,16 +29,16 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 5u
-  (v12: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
-  (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v12)
-  (v14: core::array::Span::<core::felt252>) <- struct_construct(v5)
+  (v1: core::felt252) <- 5
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v3: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v2)
+  (v5: core::array::Span::<core::felt252>) <- struct_construct(v4)
+  (v6: core::array::Span::<core::felt252>) <- test::immovable::<core::array::Span::<core::felt252>>(v5)
   (v7: core::felt252) <- test::revoke_ap()
-  (v8: core::felt252) <- 6u
-  (v15: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v8)
-  (v11: ()) <- struct_construct()
+  (v8: core::felt252) <- 6
+  (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v8)
 End:
-  Return(v15, v11)
+  Return(v9)
 
 //! > local_variables
-v12
+v2

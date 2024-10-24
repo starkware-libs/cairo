@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cargo run --bin cairo-format -- --recursive "$@"
+cargo run --profile=ci-dev --bin cairo-format -- --recursive "$@"

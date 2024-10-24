@@ -9,6 +9,7 @@ foo
 //! > function_code
 fn foo() -> bool {
     let x = true;
+    immovable(x);
     revoke_ap();
     x
 }
@@ -24,13 +25,19 @@ struct MyStruct {
     b: felt252,
 }
 
+#[inline(never)]
+fn immovable<T>(t: T) -> T {
+    t
+}
+
 //! > lowering_format
 Parameters:
 blk0 (root):
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::bool) <- bool::True(v0)
-  (v2: core::felt252) <- test::revoke_ap()
+  (v2: core::bool) <- test::immovable::<core::bool>(v1)
+  (v3: core::felt252) <- test::revoke_ap()
 End:
   Return(v1)
 

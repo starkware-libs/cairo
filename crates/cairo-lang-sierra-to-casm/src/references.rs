@@ -1,16 +1,15 @@
-use std::collections::HashMap;
-
 use cairo_lang_casm::ap_change::ApplyApChange;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{Function, StatementIdx};
+use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::casts::IntoOrPanic;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::write_comma_separated;
 use thiserror::Error;
-use {cairo_lang_casm, cairo_lang_sierra};
 
 use crate::invocations::InvocationError;
-use crate::type_sizes::TypeSizeMap;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ReferencesError {
@@ -24,11 +23,11 @@ pub enum ReferencesError {
     UnknownType(ConcreteTypeId),
 }
 
-pub type StatementRefs = HashMap<VarId, ReferenceValue>;
+pub type StatementRefs = OrderedHashMap<VarId, ReferenceValue>;
 
 /// A Sierra reference to a value.
 /// Corresponds to an argument or return value of a Sierra statement.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
@@ -59,21 +58,35 @@ pub struct IntroductionPoint {
     pub output_idx: usize,
 }
 
+impl core::fmt::Display for IntroductionPoint {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if let Some(source_statement_idx) = self.source_statement_idx {
+            write!(
+                f,
+                "#{source_statement_idx}->#{}[{}]",
+                self.destination_statement_idx, self.output_idx
+            )
+        } else {
+            write!(f, "Function@{}[{}]", self.destination_statement_idx, self.output_idx)
+        }
+    }
+}
+
 /// A Sierra reference to a value.
 /// Returned from a libfunc.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OutputReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
     /// The index of the variable on the continuous-stack.
     pub stack_idx: Option<usize>,
-    /// The statememt and output index where the value was introduced.
+    /// The statement and output index where the value was introduced.
     /// Statement may be New if it is to be populated later.
     pub introduction_point: OutputReferenceValueIntroductionPoint,
 }
 
 /// The location where a value was introduced for output reference values.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum OutputReferenceValueIntroductionPoint {
     /// A new point introduced by a libfunc. The inner value is the output index.
     New(usize),
@@ -91,6 +104,11 @@ impl ReferenceExpression {
     /// Builds a reference expression containing only a single cell
     pub fn from_cell(cell_expr: CellExpression) -> Self {
         Self { cells: vec![cell_expr] }
+    }
+
+    /// Builds a zero-sized reference expression.
+    pub fn zero_sized() -> Self {
+        Self { cells: vec![] }
     }
 
     /// If returns the cells as an array of the requested size if the size is correct.
@@ -123,37 +141,42 @@ impl ApplyApChange for ReferenceExpression {
     }
 }
 
+impl core::fmt::Display for ReferenceExpression {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "[")?;
+        write_comma_separated(f, &self.cells)?;
+        write!(f, "]")
+    }
+}
+
 /// Builds the HashMap of references to the parameters of a function.
 pub fn build_function_parameters_refs(
     func: &Function,
     type_sizes: &TypeSizeMap,
 ) -> Result<StatementRefs, ReferencesError> {
-    let mut refs = HashMap::with_capacity(func.params.len());
+    let mut refs = StatementRefs::default();
     let mut offset = -3_i16;
     for (param_idx, param) in func.params.iter().rev().enumerate() {
         let size = type_sizes
             .get(&param.ty)
             .ok_or_else(|| ReferencesError::UnknownType(param.ty.clone()))?;
         if refs
-            .insert(
-                param.id.clone(),
-                ReferenceValue {
-                    expression: ReferenceExpression {
-                        cells: ((offset - size + 1)..(offset + 1))
-                            .map(|i| {
-                                CellExpression::Deref(CellRef { register: Register::FP, offset: i })
-                            })
-                            .collect(),
-                    },
-                    ty: param.ty.clone(),
-                    stack_idx: None,
-                    introduction_point: IntroductionPoint {
-                        source_statement_idx: None,
-                        destination_statement_idx: func.entry_point,
-                        output_idx: param_idx,
-                    },
+            .insert(param.id.clone(), ReferenceValue {
+                expression: ReferenceExpression {
+                    cells: ((offset - size + 1)..(offset + 1))
+                        .map(|i| {
+                            CellExpression::Deref(CellRef { register: Register::FP, offset: i })
+                        })
+                        .collect(),
                 },
-            )
+                ty: param.ty.clone(),
+                stack_idx: None,
+                introduction_point: IntroductionPoint {
+                    source_statement_idx: None,
+                    destination_statement_idx: func.entry_point,
+                    output_idx: param_idx,
+                },
+            })
             .is_some()
         {
             return Err(ReferencesError::InvalidFunctionDeclaration(func.clone()));

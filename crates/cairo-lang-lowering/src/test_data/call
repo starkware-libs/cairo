@@ -1,19 +1,17 @@
 //! > Test function call.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(ref a: felt252) -> felt252 {
     let b = true;
     if true {
-      bar(ref a, b);
-    } else {
-    }
+        bar(ref a, b);
+    } else {}
     if false {
-      return 6;
-    } else {
-    }
+        return 6;
+    } else {}
     5
 }
 
@@ -21,8 +19,8 @@ fn foo(ref a: felt252) -> felt252 {
 foo
 
 //! > module_code
-fn bar(ref a: felt252, b: bool) {
-}
+#[inline(never)]
+fn bar(ref a: felt252, b: bool) {}
 
 //! > semantic_diagnostics
 
@@ -34,41 +32,29 @@ blk0 (root):
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v7: core::felt252, v6: ()) <- test::bar(v0, v2)
-  (v15: core::felt252) <- 5u
+  (v3: core::felt252) <- test::bar(v0, v2)
+  (v4: core::felt252) <- 5
 End:
-  Return(v7, v15)
+  Return(v3, v4)
 
 //! > ==========================================================================
 
 //! > Test method call.
 
 //! > test_runner_name
-test_function_lowering
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option::<felt252> {
-  let x = Option::None(());
-  x.is_some();
-  x
+    let x = Option::None;
+    let _ = x.is_some();
+    x
 }
 
 //! > function_name
 foo
 
 //! > module_code
-// TODO(spapini): Make this generic too.
-trait OptionTrait<T>{
-  fn is_some(self: Option::<T>) -> bool;
-}
-impl OptionTraitImpl<T, impl TDrop: Drop::<T>> of OptionTrait::<T> {
-  fn is_some(self: Option::<T>) -> bool {
-      match self {
-          Option::Some(_) => true,
-          Option::None(_) => false,
-      }
-  }
-}
 
 //! > semantic_diagnostics
 
@@ -80,6 +66,5 @@ blk0 (root):
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
-  (v2: core::bool) <- test::OptionTraitImpl::<core::felt252, core::felt252Drop>::is_some(v1)
 End:
   Return(v1)

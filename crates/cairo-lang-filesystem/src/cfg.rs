@@ -1,6 +1,6 @@
+use std::collections::BTreeSet;
 use std::fmt;
 
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 
@@ -78,15 +78,15 @@ impl<'de> Deserialize<'de> for Cfg {
 ///
 /// Behaves like a multimap, i.e. it permits storing multiple values for the same key.
 /// This allows expressing, for example, the `feature` option that Rust/Cargo does.
-#[derive(Clone, Default, Eq, PartialEq, Serialize, Deserialize)]
-pub struct CfgSet(OrderedHashSet<Cfg>);
+#[derive(Clone, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
+pub struct CfgSet(BTreeSet<Cfg>);
 
 impl CfgSet {
     /// Creates an empty `CfgSet`.
     ///
     /// This function does not allocate.
     pub fn new() -> Self {
-        Self(OrderedHashSet::new())
+        Self(BTreeSet::new())
     }
 
     /// Returns the number of elements in the set.
@@ -134,7 +134,7 @@ impl CfgSet {
 
 impl IntoIterator for CfgSet {
     type Item = Cfg;
-    type IntoIter = <OrderedHashSet<Cfg> as IntoIterator>::IntoIter;
+    type IntoIter = <BTreeSet<Cfg> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
@@ -143,7 +143,7 @@ impl IntoIterator for CfgSet {
 
 impl<'a> IntoIterator for &'a CfgSet {
     type Item = &'a Cfg;
-    type IntoIter = <&'a OrderedHashSet<Cfg> as IntoIterator>::IntoIter;
+    type IntoIter = <&'a BTreeSet<Cfg> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter()
@@ -207,7 +207,7 @@ mod tests {
 
         let json = serde_json::to_value(&cfg).unwrap();
 
-        assert_eq!(json, json!(["name", ["k", "a"], "name2", ["k", "b"]]));
+        assert_eq!(json, json!([["k", "a"], ["k", "b"], "name", "name2"]));
 
         let serde_cfg = serde_json::from_value::<CfgSet>(json).unwrap();
 

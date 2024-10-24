@@ -2,14 +2,15 @@
 #[path = "lexer_test.rs"]
 mod test;
 
-use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{
-    TokenNewline, TokenSingleLineComment, TokenWhitespace, TriviumGreen,
+    TokenNewline, TokenSingleLineComment, TokenSingleLineDocComment, TokenSingleLineInnerComment,
+    TokenWhitespace, TriviumGreen,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::Token;
+use cairo_lang_utils::require;
 use smol_str::SmolStr;
 
 pub struct Lexer<'a> {
@@ -22,7 +23,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     // Ctors.
-    pub fn from_text(db: &'a dyn SyntaxGroup, _source: FileId, text: &'a str) -> Lexer<'a> {
+    pub fn from_text(db: &'a dyn SyntaxGroup, text: &'a str) -> Lexer<'a> {
         Lexer {
             db,
             text,
@@ -104,12 +105,27 @@ impl<'a> Lexer<'a> {
 
     /// Assumes the next 2 characters are "//".
     fn match_trivium_single_line_comment(&mut self) -> TriviumGreen {
-        self.take_while(|c| c != '\n');
-        TokenSingleLineComment::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        match self.peek_nth(2) {
+            Some('/') => {
+                self.take_while(|c| c != '\n');
+                TokenSingleLineDocComment::new_green(self.db, SmolStr::from(self.consume_span()))
+                    .into()
+            }
+            Some('!') => {
+                self.take_while(|c| c != '\n');
+                TokenSingleLineInnerComment::new_green(self.db, SmolStr::from(self.consume_span()))
+                    .into()
+            }
+            _ => {
+                self.take_while(|c| c != '\n');
+                TokenSingleLineComment::new_green(self.db, SmolStr::from(self.consume_span()))
+                    .into()
+            }
+        }
     }
 
-    /// Token matchers.
-    /// =================================================================================
+    // Token matchers.
+    // =================================================================================
 
     /// Takes a number. May be decimal, hex, oct or bin.
     fn take_token_literal_number(&mut self) -> TokenKind {
@@ -144,6 +160,22 @@ impl<'a> Lexer<'a> {
 
     /// Takes a short string.
     fn take_token_short_string(&mut self) -> TokenKind {
+        self.take_token_string_helper('\'');
+
+        // Parse _type suffix.
+        if self.peek() == Some('_') {
+            self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
+        }
+        TokenKind::ShortString
+    }
+
+    /// Takes a string.
+    fn take_token_string(&mut self) -> TokenKind {
+        self.take_token_string_helper('"');
+        TokenKind::String
+    }
+
+    fn take_token_string_helper(&mut self, delimiter: char) {
         self.take();
         let mut escaped = false;
         while let Some(token) = self.peek() {
@@ -151,18 +183,12 @@ impl<'a> Lexer<'a> {
             match token {
                 _ if escaped => escaped = false,
                 '\\' => escaped = true,
-                '\'' => {
+                _ if token == delimiter => {
                     break;
                 }
                 _ => {}
             };
         }
-
-        // Parse _type suffix.
-        if self.peek() == Some('_') {
-            self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
-        }
-        TokenKind::ShortString
     }
 
     /// Assumes the next character is [a-zA-Z_].
@@ -192,11 +218,14 @@ impl<'a> Lexer<'a> {
             "continue" => TokenKind::Continue,
             "break" => TokenKind::Break,
             "else" => TokenKind::Else,
+            "while" => TokenKind::While,
             "use" => TokenKind::Use,
             "implicits" => TokenKind::Implicits,
             "ref" => TokenKind::Ref,
             "mut" => TokenKind::Mut,
+            "for" => TokenKind::For,
             "nopanic" => TokenKind::NoPanic,
+            "pub" => TokenKind::Pub,
             "_" => TokenKind::Underscore,
             _ => TokenKind::Identifier,
         }
@@ -231,6 +260,7 @@ impl<'a> Lexer<'a> {
             match current {
                 '0'..='9' => self.take_token_literal_number(),
                 '\'' => self.take_token_short_string(),
+                '"' => self.take_token_string(),
                 ',' => self.take_token_of_kind(TokenKind::Comma),
                 ';' => self.take_token_of_kind(TokenKind::Semicolon),
                 '?' => self.take_token_of_kind(TokenKind::QuestionMark),
@@ -310,9 +340,7 @@ impl Iterator for Lexer<'_> {
     /// Returns the next token. Once there are no more tokens left, returns token EOF.
     /// One should not call this after EOF was returned. If one does, None is returned.
     fn next(&mut self) -> Option<Self::Item> {
-        if self.done {
-            return None;
-        }
+        require(!self.done)?;
         let lexer_terminal = self.match_terminal();
         if lexer_terminal.kind == SyntaxKind::TerminalEndOfFile {
             self.done = true;
@@ -328,6 +356,7 @@ enum TokenKind {
     // Literals.
     LiteralNumber,
     ShortString,
+    String,
 
     // Keywords.
     As,
@@ -347,6 +376,8 @@ enum TokenKind {
     Return,
     Match,
     If,
+    While,
+    For,
     Loop,
     Continue,
     Break,
@@ -354,6 +385,7 @@ enum TokenKind {
     Use,
     Implicits,
     NoPanic,
+    Pub,
 
     // Modifiers.
     Ref,
@@ -416,6 +448,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Identifier => SyntaxKind::TerminalIdentifier,
         TokenKind::LiteralNumber => SyntaxKind::TerminalLiteralNumber,
         TokenKind::ShortString => SyntaxKind::TerminalShortString,
+        TokenKind::String => SyntaxKind::TerminalString,
         TokenKind::False => SyntaxKind::TerminalFalse,
         TokenKind::True => SyntaxKind::TerminalTrue,
         TokenKind::Extern => SyntaxKind::TerminalExtern,
@@ -431,6 +464,8 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Return => SyntaxKind::TerminalReturn,
         TokenKind::Match => SyntaxKind::TerminalMatch,
         TokenKind::If => SyntaxKind::TerminalIf,
+        TokenKind::While => SyntaxKind::TerminalWhile,
+        TokenKind::For => SyntaxKind::TerminalFor,
         TokenKind::Loop => SyntaxKind::TerminalLoop,
         TokenKind::Continue => SyntaxKind::TerminalContinue,
         TokenKind::Break => SyntaxKind::TerminalBreak,
@@ -438,6 +473,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Use => SyntaxKind::TerminalUse,
         TokenKind::Implicits => SyntaxKind::TerminalImplicits,
         TokenKind::NoPanic => SyntaxKind::TerminalNoPanic,
+        TokenKind::Pub => SyntaxKind::TerminalPub,
         TokenKind::And => SyntaxKind::TerminalAnd,
         TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
         TokenKind::At => SyntaxKind::TerminalAt,

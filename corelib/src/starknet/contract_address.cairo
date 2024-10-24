@@ -1,62 +1,80 @@
-use zeroable::Zeroable;
-use serde::Serde;
+#[allow(unused_imports)]
+use core::zeroable::Zeroable;
+use core::serde::Serde;
+#[allow(unused_imports)]
+use core::hash::{Hash, HashStateTrait};
+use core::RangeCheck;
 
+/// Represents a Starknet contract address.
+/// The value range of this type is `[0, 2**251)`.
 #[derive(Copy, Drop)]
-extern type ContractAddress;
+pub extern type ContractAddress;
 
 
-extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
-extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
+pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
+pub(crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
-extern fn contract_address_try_from_felt252(
+pub(crate) extern fn contract_address_try_from_felt252(
     address: felt252
 ) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
 
-impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
+pub(crate) impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
     fn try_into(self: felt252) -> Option<ContractAddress> {
         contract_address_try_from_felt252(self)
     }
 }
-impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
+pub(crate) impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
     fn into(self: ContractAddress) -> felt252 {
         contract_address_to_felt252(self)
     }
 }
 
-impl ContractAddressZeroable of Zeroable<ContractAddress> {
+
+impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }
-    #[inline(always)]
-    fn is_zero(self: ContractAddress) -> bool {
-        contract_address_to_felt252(self).is_zero()
+    #[inline]
+    fn is_zero(self: @ContractAddress) -> bool {
+        core::num::traits::Zero::<felt252>::is_zero(@contract_address_to_felt252(*self))
     }
-    #[inline(always)]
-    fn is_non_zero(self: ContractAddress) -> bool {
+    #[inline]
+    fn is_non_zero(self: @ContractAddress) -> bool {
         !self.is_zero()
     }
 }
 
-impl ContractAddressSerde of serde::Serde<ContractAddress> {
+pub(crate) impl ContractAddressZeroable =
+    core::zeroable::zero_based::ZeroableImpl<ContractAddress, ContractAddressZero>;
+
+impl ContractAddressSerde of Serde<ContractAddress> {
     fn serialize(self: @ContractAddress, ref output: Array<felt252>) {
         contract_address_to_felt252(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<ContractAddress> {
         Option::Some(
-            contract_address_try_from_felt252(
-                serde::Serde::<felt252>::deserialize(ref serialized)?
-            )?
+            contract_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?
         )
     }
 }
 
 impl ContractAddressPartialEq of PartialEq<ContractAddress> {
-    #[inline(always)]
-    fn eq(lhs: ContractAddress, rhs: ContractAddress) -> bool {
-        contract_address_to_felt252(lhs) == contract_address_to_felt252(rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: ContractAddress, rhs: ContractAddress) -> bool {
-        !(lhs == rhs)
+    #[inline]
+    fn eq(lhs: @ContractAddress, rhs: @ContractAddress) -> bool {
+        contract_address_to_felt252(*lhs) == contract_address_to_felt252(*rhs)
     }
 }
+
+impl ContractAddressPartialOrd of PartialOrd<ContractAddress> {
+    fn lt(lhs: ContractAddress, rhs: ContractAddress) -> bool {
+        // TODO(orizi): Check if implementing a libfunc for `felt252` ordering is more efficient.
+        let lhs: u256 = contract_address_to_felt252(lhs).into();
+        lhs < contract_address_to_felt252(rhs).into()
+    }
+}
+
+impl HashContractAddress<S, +HashStateTrait<S>, +Drop<S>> =
+    core::hash::into_felt252_based::HashImpl<ContractAddress, S>;
+
+impl DebugContractAddress = core::fmt::into_felt252_based::DebugImpl<ContractAddress>;
+impl LowerHexContractAddress = core::fmt::into_felt252_based::LowerHexImpl<ContractAddress>;

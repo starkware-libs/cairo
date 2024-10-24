@@ -24,7 +24,7 @@ libfunc store_temp_rc = store_temp<RangeCheck>;
 
 revoke_ap_tracking() -> ();
 // Statement #  1 - tests if n == 0.
-felt252_is_zero(n) { fallthrough() 9(n) };
+felt252_is_zero(n) { fallthrough() LoopSetup(n) };
 branch_align() -> ();
 // Statement #  2 - n == 0, so we return updated gb and 1.
 store_temp_rc(rc) -> (rc);
@@ -36,6 +36,7 @@ return(rc, gb, one);
 
 // Statement # 9
 // Setting up the latest memory to be of the form [n, rc, gb, a=1, b=0].
+LoopSetup:
 branch_align() -> ();
 felt252_unwrap_non_zero(n) -> (n);
 store_temp_felt252(n) -> (n);
@@ -46,8 +47,9 @@ store_temp_felt252(a) -> (a);
 felt252_const_0() -> (b);
 store_temp_felt252(b) -> (b);
 
+LoopBody:
 // Statement #18, check n.
-felt252_is_zero(n) { fallthrough() 26(n) };
+felt252_is_zero(n) { fallthrough() NNonZero(n) };
 
 // Statement # 19 - n == 0, so we can return the latest a.
 branch_align() -> ();
@@ -58,11 +60,12 @@ store_temp_gb(gb) -> (gb);
 store_temp_felt252(a) -> (a);
 return(rc, gb, a);
 
+NNonZero:
 // Statement # 26
 branch_align() -> ();
 felt252_unwrap_non_zero(n) -> (n);
 // Statement # 28 - Getting gas for the main loop.
-withdraw_gas(rc, gb) { fallthrough(rc, gb) 40(rc, gb)  };
+withdraw_gas(rc, gb) { fallthrough(rc, gb) OutOfGas(rc, gb)  };
 branch_align() -> ();
 // Statement # 30
 // The main loop - given [n, rc, gb, a, b, _, _] - adds [n-1, updated_rc, updated_gb, a+b, a]
@@ -76,9 +79,10 @@ store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 store_temp_felt252(a) -> (a);
 store_temp_felt252(b) -> (b);
-jump() { 18() };
+jump() { LoopBody() };
 
 // Statement # 40  - Ran out of gas - returning updated gb and -1.
+OutOfGas:
 branch_align() -> ();
 felt252_drop(a) -> ();
 felt252_drop(b) -> ();

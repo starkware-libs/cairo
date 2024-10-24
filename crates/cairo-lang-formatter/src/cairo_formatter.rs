@@ -1,18 +1,20 @@
 use std::fmt::{Debug, Display};
 use std::fs;
-use std::io::{stdin, Read};
+use std::io::{Read, stdin};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{Context, Result, anyhow};
+use cairo_lang_diagnostics::FormattedDiagnosticEntry;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile, CAIRO_FILE_EXTENSION};
-use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
-use diffy::{create_patch, PatchFormatter};
-use ignore::types::TypesBuilder;
+use cairo_lang_filesystem::ids::{CAIRO_FILE_EXTENSION, FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_parser::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics};
+use cairo_lang_utils::Intern;
+use diffy::{PatchFormatter, create_patch};
 use ignore::WalkBuilder;
+use ignore::types::TypesBuilder;
+use thiserror::Error;
 
-use crate::{get_formatted_file, FormatterConfig, CAIRO_FMT_IGNORE};
+use crate::{CAIRO_FMT_IGNORE, FormatterConfig, get_formatted_file};
 
 /// A struct encapsulating the changes made by the formatter in a single file.
 ///
@@ -50,7 +52,7 @@ pub struct FileDiffColoredDisplay<'a> {
     diff: &'a FileDiff,
 }
 
-impl<'a> Display for FileDiffColoredDisplay<'a> {
+impl Display for FileDiffColoredDisplay<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let patch = create_patch(&self.diff.original, &self.diff.formatted);
         let patch_formatter = PatchFormatter::new().with_color();
@@ -59,7 +61,7 @@ impl<'a> Display for FileDiffColoredDisplay<'a> {
     }
 }
 
-impl<'a> Debug for FileDiffColoredDisplay<'a> {
+impl Debug for FileDiffColoredDisplay<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "FileDiffColoredDisplay({:?})", self.diff)
     }
@@ -81,6 +83,48 @@ impl FormatOutcome {
             FormatOutcome::Identical(original) => original,
             FormatOutcome::DiffFound(diff) => diff.formatted,
         }
+    }
+}
+
+/// An error thrown while trying to format Cairo code.
+#[derive(Debug, Error)]
+pub enum FormattingError {
+    /// An parsing error has occurred. See diagnostics for context.
+    #[error(transparent)]
+    ParsingError(ParsingError),
+    /// All other errors.
+    #[error(transparent)]
+    Error(#[from] anyhow::Error),
+}
+
+/// Parsing error representation with diagnostic entries.
+#[derive(Debug, Error)]
+pub struct ParsingError(Vec<FormattedDiagnosticEntry>);
+
+impl ParsingError {
+    pub fn iter(&self) -> impl Iterator<Item = &FormattedDiagnosticEntry> {
+        self.0.iter()
+    }
+}
+
+impl From<ParsingError> for Vec<FormattedDiagnosticEntry> {
+    fn from(error: ParsingError) -> Self {
+        error.0
+    }
+}
+
+impl From<Vec<FormattedDiagnosticEntry>> for ParsingError {
+    fn from(diagnostics: Vec<FormattedDiagnosticEntry>) -> Self {
+        Self(diagnostics)
+    }
+}
+
+impl Display for ParsingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for entry in &self.0 {
+            writeln!(f, "{entry}")?;
+        }
+        Ok(())
     }
 }
 
@@ -108,11 +152,14 @@ impl FormattableInput for &Path {
 
 impl FormattableInput for String {
     fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
-        Ok(db.intern_file(FileLongId::Virtual(VirtualFile {
+        Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "string_to_format".into(),
-            content: Arc::new(self.clone()),
-        })))
+            content: self.clone().into(),
+            code_mappings: [].into(),
+            kind: FileKind::Module,
+        })
+        .intern(db))
     }
 
     fn overwrite_content(&self, _content: String) -> Result<()> {
@@ -124,11 +171,14 @@ impl FormattableInput for StdinFmt {
     fn to_file_id(&self, db: &dyn FilesGroup) -> Result<FileId> {
         let mut buffer = String::new();
         stdin().read_to_string(&mut buffer)?;
-        Ok(db.intern_file(FileLongId::Virtual(VirtualFile {
+        Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
             name: "<stdin>".into(),
-            content: Arc::new(buffer),
-        })))
+            content: buffer.into(),
+            code_mappings: [].into(),
+            kind: FileKind::Module,
+        })
+        .intern(db))
     }
     fn overwrite_content(&self, content: String) -> Result<()> {
         print!("{content}");
@@ -136,18 +186,21 @@ impl FormattableInput for StdinFmt {
     }
 }
 
-fn format_input(input: &dyn FormattableInput, config: &FormatterConfig) -> Result<FormatOutcome> {
+fn format_input(
+    input: &dyn FormattableInput,
+    config: &FormatterConfig,
+) -> Result<FormatOutcome, FormattingError> {
     let db = SimpleParserDatabase::default();
     let file_id = input.to_file_id(&db).context("Unable to create virtual file.")?;
     let original_text =
         db.file_content(file_id).ok_or_else(|| anyhow!("Unable to read from input."))?;
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
-    if !diagnostics.0.leaves.is_empty() {
-        bail!(diagnostics.format(&db));
+    if diagnostics.check_error_free().is_err() {
+        return Err(FormattingError::ParsingError(diagnostics.format_with_severity(&db).into()));
     }
     let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
 
-    if &formatted_text == original_text.as_ref() {
+    if formatted_text == original_text.as_ref() {
         Ok(FormatOutcome::Identical(original_text.to_string()))
     } else {
         let diff = FileDiff { original: original_text.to_string(), formatted: formatted_text };
@@ -187,8 +240,11 @@ impl CairoFormatter {
     }
 
     /// Formats the path in place, writing changes to the files.
-    /// The ['FormattaableInput'] trait implementation defines the method for persisting changes.
-    pub fn format_in_place(&self, input: &dyn FormattableInput) -> Result<FormatOutcome> {
+    /// The ['FormattableInput'] trait implementation defines the method for persisting changes.
+    pub fn format_in_place(
+        &self,
+        input: &dyn FormattableInput,
+    ) -> Result<FormatOutcome, FormattingError> {
         match format_input(input, &self.formatter_config)? {
             FormatOutcome::DiffFound(diff) => {
                 // Persist changes.
@@ -201,7 +257,10 @@ impl CairoFormatter {
 
     /// Formats the path and returns the formatted string.
     /// No changes are persisted. The original file is not modified.
-    pub fn format_to_string(&self, input: &dyn FormattableInput) -> Result<FormatOutcome> {
+    pub fn format_to_string(
+        &self,
+        input: &dyn FormattableInput,
+    ) -> Result<FormatOutcome, FormattingError> {
         format_input(input, &self.formatter_config)
     }
 }

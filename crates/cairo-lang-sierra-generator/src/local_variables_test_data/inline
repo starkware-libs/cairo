@@ -36,30 +36,25 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt252) <- 1u
-  (v8: core::felt252) <- core::felt252_add(v0, v3)
+  (v2: core::felt252) <- 1
+  (v3: core::felt252) <- core::felt252_add(v0, v2)
 End:
-  Goto(blk3, {v8 -> v1})
+  Return(v3)
 
 blk2:
 Statements:
-  (v9: core::felt252) <- core::felt252_add(v0, v0)
-  (v6: ()) <- test::revoke_ap()
+  (v4: core::felt252) <- core::felt252_add(v0, v0)
+  () <- test::revoke_ap()
 End:
-  Goto(blk3, {v9 -> v1})
-
-blk3:
-Statements:
-End:
-  Return(v1)
+  Return(v4)
 
 //! > local_variables
-v9
+v4
 
 //! > ==========================================================================
 
@@ -92,7 +87,7 @@ fn bar(x: felt252) -> felt252 {
 
 // Revokes ap since this function is recursive.
 fn revoke_ap() {
-  revoke_ap()
+    revoke_ap()
 }
 
 //! > lowering_format
@@ -102,32 +97,32 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v3) => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
 Statements:
-  (v4: ()) <- test::revoke_ap()
-  (v5: core::felt252) <- 1u
-  (v11: core::felt252) <- core::felt252_add(v0, v5)
+  () <- test::revoke_ap()
+  (v2: core::felt252) <- 1
+  (v3: core::felt252) <- core::felt252_add(v0, v2)
 End:
-  Goto(blk3, {v11 -> v1})
+  Goto(blk3, {v3 -> v4})
 
 blk2:
 Statements:
-  (v12: core::felt252) <- core::felt252_add(v0, v0)
-  (v8: ()) <- test::revoke_ap()
+  (v5: core::felt252) <- core::felt252_add(v0, v0)
+  () <- test::revoke_ap()
 End:
-  Goto(blk3, {v12 -> v1})
+  Goto(blk3, {v5 -> v4})
 
 blk3:
 Statements:
-  (v10: core::felt252) <- core::felt252_add(v1, v0)
+  (v6: core::felt252) <- core::felt252_add(v4, v0)
 End:
-  Return(v10)
+  Return(v6)
 
 //! > local_variables
-v12
+v5
 
 //! > ==========================================================================
 
@@ -154,18 +149,18 @@ fn bar(x: felt252) -> felt252 {
 
 // Revokes ap since this function is recursive.
 fn revoke_ap() {
-  revoke_ap()
+    revoke_ap()
 }
 
 //! > lowering_format
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1u
-  (v5: core::felt252) <- core::felt252_add(v0, v1)
-  (v4: ()) <- test::revoke_ap()
+  (v1: core::felt252) <- 1
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
+  () <- test::revoke_ap()
 End:
-  Return(v5)
+  Return(v2)
 
 //! > local_variables
-v5
+v2

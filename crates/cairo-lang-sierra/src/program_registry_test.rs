@@ -1,10 +1,10 @@
 use indoc::indoc;
 use test_log::test;
 
+use crate::ProgramParser;
 use crate::extensions::core::{CoreLibfunc, CoreType};
 use crate::program::{ConcreteTypeLongId, TypeDeclaration};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
-use crate::ProgramParser;
 
 #[test]
 fn basic_insertion() {

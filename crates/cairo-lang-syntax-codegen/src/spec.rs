@@ -1,11 +1,21 @@
 // Representation of the AST specifications.
+#[derive(Clone)]
 pub struct Node {
     pub name: String,
     pub kind: NodeKind,
 }
+
+/// The variants of an enum node.
+#[derive(Clone)]
+pub enum Variants {
+    /// Explicit list of variants.
+    List(Vec<Variant>),
+    /// The variants are all the tokens in the language.
+    AllTokens,
+}
 #[derive(Clone)]
 pub enum NodeKind {
-    Enum { variants: Vec<Variant>, missing_variant: Option<Variant> },
+    Enum { variants: Variants, missing_variant: Option<Variant> },
     Struct { members: Vec<Member> },
     Terminal { is_keyword: bool, members: Vec<Member> },
     List { element_type: String },
@@ -90,7 +100,10 @@ impl EnumBuilder {
         }
         Node {
             name: self.name,
-            kind: NodeKind::Enum { variants: self.variants, missing_variant: self.missing_variant },
+            kind: NodeKind::Enum {
+                variants: Variants::List(self.variants),
+                missing_variant: self.missing_variant,
+            },
         }
     }
 }
@@ -198,5 +211,14 @@ impl NodesAggregator {
                 .node_with_explicit_kind(name, name),
         )
         .add_struct(StructBuilder::new(format!("Option{name}Empty").as_str()))
+    }
+
+    /// Adds an enum containing all the tokens as variants.
+    pub fn add_all_tokens_enum(mut self, name: &str) -> Self {
+        self.nodes.push(Node {
+            name: name.into(),
+            kind: NodeKind::Enum { variants: Variants::AllTokens, missing_variant: None },
+        });
+        self
     }
 }

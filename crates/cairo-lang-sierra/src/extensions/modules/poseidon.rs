@@ -18,7 +18,7 @@ impl NoGenericArgsGenericType for PoseidonType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 define_libfunc_hierarchy! {
@@ -40,32 +40,23 @@ impl NoGenericArgsGenericLibfunc for HadesPermutationLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let poseidon_ty = context.get_concrete_type(PoseidonType::id(), &[])?;
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        let deferred_felt252_output_info = OutputVarInfo {
+            ty: felt252_ty.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+        };
+        let felt252_param = ParamSignature::new(felt252_ty);
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(poseidon_ty.clone()).with_allow_add_const(),
-                ParamSignature::new(felt252_ty.clone()),
-                ParamSignature::new(felt252_ty.clone()),
-                ParamSignature::new(felt252_ty.clone()),
+                felt252_param.clone(),
+                felt252_param.clone(),
+                felt252_param,
             ],
             vec![
-                OutputVarInfo {
-                    ty: poseidon_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
-                OutputVarInfo {
-                    ty: felt252_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                },
-                OutputVarInfo {
-                    ty: felt252_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                },
-                OutputVarInfo {
-                    ty: felt252_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                },
+                OutputVarInfo::new_builtin(poseidon_ty, 0),
+                deferred_felt252_output_info.clone(),
+                deferred_felt252_output_info.clone(),
+                deferred_felt252_output_info,
             ],
             SierraApChange::Known { new_vars_only: true },
         ))

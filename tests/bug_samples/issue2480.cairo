@@ -1,11 +1,11 @@
 #[derive(Copy, Drop)]
 struct A {
-    value: felt252, 
+    value: felt252,
 }
 
 #[derive(Copy, Drop)]
 struct B {
-    a: A, 
+    a: A,
 }
 
 
@@ -17,7 +17,7 @@ fn test_member_of_local_struct() {
 
 fn test_member_of_local_struct_inner(a: A) -> felt252 {
     let value = a.value;
-    internal::revoke_ap_tracking();
+    core::internal::revoke_ap_tracking();
     value
 }
 
@@ -26,7 +26,7 @@ fn test_member_of_local_struct_inner(a: A) -> felt252 {
 fn member_of_temp_struct() -> felt252 {
     let a = A { value: 12 };
     let x = a.value;
-    internal::revoke_ap_tracking();
+    core::internal::revoke_ap_tracking();
     x
 }
 
@@ -39,7 +39,7 @@ fn get_value_a(a: A) -> felt252 {
 fn member_and_struct_of_temp_struct() -> felt252 {
     let a = A { value: 12 };
     let x = a.value;
-    internal::revoke_ap_tracking();
+    core::internal::revoke_ap_tracking();
     get_value_a(a) + x
 }
 
@@ -52,7 +52,7 @@ fn test_member_of_member_of_local_struct() {
 
 fn test_member_of_member_of_local_struct_inner(b: B) -> felt252 {
     let value = b.a.value;
-    internal::revoke_ap_tracking();
+    core::internal::revoke_ap_tracking();
     value
 }
 
@@ -61,7 +61,7 @@ fn test_member_of_member_of_local_struct_inner(b: B) -> felt252 {
 fn member_of_member_of_temp_struct() -> felt252 {
     let b = B { a: A { value: 12 } };
     let x = b.a.value;
-    internal::revoke_ap_tracking();
+    core::internal::revoke_ap_tracking();
     x
 }
 
@@ -75,6 +75,6 @@ fn member_of_member_and_struct_of_temp_struct() -> felt252 {
     let b = B { a: A { value: 12 } };
     let a = b.a;
     let x = a.value;
-    internal::revoke_ap_tracking();
+    core::internal::revoke_ap_tracking();
     get_value_a(a) + get_value_b(b) + x
 }

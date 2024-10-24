@@ -1,72 +1,97 @@
-use array::ArrayTrait;
-use serde::Serde;
-use array::SpanTrait;
-
-enum Option<T> {
+#[must_use]
+#[derive(Copy, Drop, Debug, Serde, PartialEq)]
+pub enum Option<T> {
     Some: T,
-    None: (),
+    None,
 }
 
-impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<T>> {
-    fn serialize(self: @Option<T>, ref output: Array<felt252>) {
+impl OptionDefault<T> of Default<Option<T>> {
+    fn default() -> Option<T> {
+        Option::None
+    }
+}
+
+pub impl DestructOption<T, +Destruct<T>, -Drop<Option<T>>> of Destruct<Option<T>> {
+    #[inline]
+    fn destruct(self: Option<T>) nopanic {
         match self {
-            Option::Some(x) => {
-                0.serialize(ref output);
-                x.serialize(ref output)
-            },
-            Option::None(()) => 1.serialize(ref output),
-        }
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<Option<T>> {
-        let variant = *serialized.pop_front()?;
-        if variant == 0 {
-            Option::Some(Option::Some(Serde::<T>::deserialize(ref serialized)?))
-        } else if variant == 1 {
-            Option::Some(Option::None(()))
-        } else {
-            Option::None(())
-        }
+            Option::Some(x) => x.destruct(),
+            Option::None => (),
+        };
     }
 }
 
-trait OptionTrait<T> {
+pub trait OptionTrait<T> {
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect(self: Option<T>, err: felt252) -> T;
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
     fn unwrap(self: Option<T>) -> T;
+    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
+    /// `Result::Ok(v)` and `Option::None` to `Result::Err(err)`.
+    fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E>;
     /// Returns `true` if the `Option` is `Option::Some`.
+    #[must_use]
     fn is_some(self: @Option<T>) -> bool;
     /// Returns `true` if the `Option` is `Option::None`.
+    #[must_use]
     fn is_none(self: @Option<T>) -> bool;
+    /// If `self` is `Option::Some(x)`, returns `x`. Otherwise, returns the provided default.
+    fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T;
+    /// If `self` is `Option::Some(x)`, returns `x`. Otherwise, returns `Default::<T>::default()`.
+    fn unwrap_or_default<+Default<T>>(self: Option<T>) -> T;
 }
-impl OptionTraitImpl<T> of OptionTrait<T> {
+
+pub impl OptionTraitImpl<T> of OptionTrait<T> {
     #[inline(always)]
     fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
-            Option::None(_) => panic_with_felt252(err),
+            Option::None => crate::panic_with_felt252(err),
         }
     }
+
     #[inline(always)]
     fn unwrap(self: Option<T>) -> T {
         self.expect('Option::unwrap failed.')
     }
-    #[inline(always)]
+
+    #[inline]
+    fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E> {
+        match self {
+            Option::Some(v) => Result::Ok(v),
+            Option::None => Result::Err(err),
+        }
+    }
+
+    #[inline]
     fn is_some(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => true,
-            Option::None(_) => false,
+            Option::None => false,
         }
     }
-    #[inline(always)]
+
+    #[inline]
     fn is_none(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => false,
-            Option::None(_) => true,
+            Option::None => true,
+        }
+    }
+
+    #[inline]
+    fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T {
+        match self {
+            Option::Some(x) => x,
+            Option::None => default,
+        }
+    }
+
+    #[inline]
+    fn unwrap_or_default<+Default<T>>(self: Option<T>) -> T {
+        match self {
+            Option::Some(x) => x,
+            Option::None => Default::default(),
         }
     }
 }
-
-// Impls for generic types.
-impl OptionCopy<T, impl TCopy: Copy<T>> of Copy<Option<T>>;
-impl OptionDrop<T, impl TDrop: Drop<T>> of Drop<Option<T>>;

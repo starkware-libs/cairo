@@ -25,5 +25,5 @@ mod test;
 
 pub use self::objects::*;
 
-#[cfg(any(feature = "testing", test))]
+#[cfg(test)]
 pub mod test_utils;

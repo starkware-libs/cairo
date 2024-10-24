@@ -1,7 +1,7 @@
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
 use colored::{ColoredString, Colorize};
@@ -27,7 +27,8 @@ pub fn print_partial_tree(
     print_trivia: bool,
 ) -> String {
     let mut printer = Printer::new_partial(db, top_level_kind, ignored_kinds, print_trivia);
-    printer.print_tree("root", syntax_root, "", true, false);
+    let under_top_level = printer.top_level_kind.is_none();
+    printer.print_tree("root", syntax_root, "", true, under_top_level);
     printer.result
 }
 
@@ -37,6 +38,7 @@ struct Printer<'a> {
     print_colors: bool,
     print_trivia: bool,
     /// The highest SyntaxKind that is interesting. All other kinds, if not under it, are ignored.
+    /// If None, the whole tree is printed.
     top_level_kind: Option<String>,
     /// Syntax kinds to ignore when printing. In this context, "ignore" means printing the nodes
     /// themselves, but not their children.
@@ -68,7 +70,11 @@ impl<'a> Printer<'a> {
             spec: get_spec(),
             print_colors: false,
             print_trivia,
-            top_level_kind: Some(top_level_kind.to_string()),
+            top_level_kind: if top_level_kind.trim().is_empty() {
+                None
+            } else {
+                Some(top_level_kind.to_string())
+            },
             ignored_kinds: ignored_kinds.into_iter().map(|x| x.to_string()).collect(),
             result: String::new(),
         }
@@ -85,14 +91,14 @@ impl<'a> Printer<'a> {
     ) {
         let extra_head_indent = if is_last { "└── " } else { "├── " };
         let green_node = syntax_node.green_node(self.db);
-        match green_node.details {
+        match &green_node.details {
             syntax::node::green::GreenNodeDetails::Token(text) => {
                 if under_top_level {
                     self.print_token_node(
                         field_description,
                         indent,
                         extra_head_indent,
-                        text,
+                        text.clone(),
                         green_node.kind,
                     )
                 }
@@ -164,7 +170,7 @@ impl<'a> Printer<'a> {
             format!(" (kind: {kind:?})")
         };
 
-        let children: Vec<_> = syntax_node.children(self.db).collect();
+        let children = self.db.get_children(syntax_node.clone());
         let num_children = children.len();
         let suffix = if self.ignored_kinds.contains(&format!("{kind:?}")) {
             " <ignored>".to_string()
@@ -286,5 +292,13 @@ impl<'a> Printer<'a> {
 
 // TODO(yuval): autogenerate.
 fn is_missing_kind(kind: SyntaxKind) -> bool {
-    matches!(kind, SyntaxKind::ExprMissing | SyntaxKind::StatementMissing)
+    matches!(
+        kind,
+        SyntaxKind::ExprMissing
+            | SyntaxKind::WrappedArgListMissing
+            | SyntaxKind::StatementMissing
+            | SyntaxKind::ModuleItemMissing
+            | SyntaxKind::TraitItemMissing
+            | SyntaxKind::ImplItemMissing
+    )
 }

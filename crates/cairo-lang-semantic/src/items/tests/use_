@@ -1,7 +1,7 @@
 //! > Test import alias.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 use u32 as myU32;
@@ -15,3 +15,32 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > unresolved `use` does not interfere with inference.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let x = @1.into();
+    bar(x, @1);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod internal {
+    fn bar<T, +PartialEq<T>>(a: @T, b: @T) {}
+}
+use NonExisting;
+use internal::bar;
+
+//! > expected_diagnostics
+error: Identifier not found.
+ --> lib.cairo:4:5
+use NonExisting;
+    ^*********^

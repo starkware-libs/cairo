@@ -1,7 +1,7 @@
 //! > Test basic return.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -20,7 +20,7 @@ foo
 //! > Test unreachable tail statement.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -40,14 +40,14 @@ foo
 //! > Test unreachable internal return.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(x: felt252) -> felt252 {
     match x {
-        0 => {return 5;},
-        1 => {return 6;},
-        2 => {return 9;},
+        0 => { return 5; },
+        1 => { return 6; },
+        2 => { return 9; },
     }
 }
 
@@ -57,3 +57,24 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type mismatch in return.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> felt252 {}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::felt252", found: "()".
+ --> lib.cairo:1:21
+fn foo() -> felt252 {}
+                    ^^
