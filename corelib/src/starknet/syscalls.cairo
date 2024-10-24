@@ -1,6 +1,6 @@
 use starknet::{
     SyscallResult, storage_access::StorageAddress, class_hash::ClassHash,
-    contract_address::ContractAddress
+    contract_address::ContractAddress,
 };
 use core::gas::GasBuiltin;
 

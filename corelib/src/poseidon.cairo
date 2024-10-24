@@ -70,7 +70,7 @@ pub fn poseidon_hash_span(mut span: Span<felt252>) -> felt252 {
 fn _poseidon_hash_span_inner(
     builtin_costs: crate::gas::BuiltinCosts,
     state: (felt252, felt252, felt252),
-    ref span: Span<felt252>
+    ref span: Span<felt252>,
 ) -> felt252 {
     let (s0, s1, s2) = state;
     let x = *match span.pop_front() {

@@ -2,7 +2,7 @@ use crate::array::{ArrayTrait, SpanTrait};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, one_shift_left_bytes_felt252, one_shift_left_bytes_u128,
-    POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31
+    POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
 };
 use crate::clone::Clone;
 use crate::cmp::min;

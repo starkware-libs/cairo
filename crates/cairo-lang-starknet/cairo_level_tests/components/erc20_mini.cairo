@@ -185,7 +185,7 @@ pub impl ERC20HelperImpl<
         symbol: felt252,
         decimals: u8,
         initial_supply: u256,
-        recipient: ContractAddress
+        recipient: ContractAddress,
     ) {
         self.storage_mut().name.write(name);
         self.storage_mut().symbol.write(symbol);
