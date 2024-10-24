@@ -13,7 +13,6 @@ use crate::lang::inspect::defs::{MemberDef, SymbolDef};
 use crate::lang::lsp::ToLsp;
 
 /// Get declaration and documentation "definition" of an item referred by the given identifier.
-#[tracing::instrument(level = "trace", skip_all)]
 pub fn definition(
     db: &AnalysisDatabase,
     identifier: &TerminalIdentifier,

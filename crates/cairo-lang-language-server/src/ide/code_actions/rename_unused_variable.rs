@@ -7,7 +7,6 @@ use lsp_types::{CodeAction, Diagnostic, TextEdit, Url, WorkspaceEdit};
 use crate::lang::db::AnalysisDatabase;
 
 /// Create a code action that prefixes an unused variable with an `_`.
-#[tracing::instrument(level = "trace", skip_all)]
 pub fn rename_unused_variable(
     db: &AnalysisDatabase,
     node: &SyntaxNode,

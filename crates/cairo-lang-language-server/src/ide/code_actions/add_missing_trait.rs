@@ -19,7 +19,6 @@ use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
 /// Create a Quick Fix code action to add a missing trait given a `CannotCallMethod` diagnostic.
-#[tracing::instrument(level = "trace", skip_all)]
 pub fn add_missing_trait(db: &AnalysisDatabase, node: &SyntaxNode, uri: Url) -> Vec<CodeAction> {
     let file_id = db.file_for_url(&uri).unwrap();
     let lookup_items = db.collect_lookup_items_stack(node).unwrap();
