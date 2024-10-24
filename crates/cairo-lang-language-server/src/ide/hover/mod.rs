@@ -6,11 +6,6 @@ use crate::lang::lsp::{LsProtoGroup, ToCairo};
 mod render;
 
 /// Get hover information at a given text document position.
-#[tracing::instrument(
-    level = "debug",
-    skip_all,
-    fields(uri = %params.text_document_position_params.text_document.uri)
-)]
 pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
     let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri)?;
     let position = params.text_document_position_params.position.to_cairo();

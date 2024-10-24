@@ -42,7 +42,6 @@ pub struct Config {
 
 impl Config {
     /// Reloads the configuration from the language client.
-    #[tracing::instrument(name = "reload_config", level = "trace", skip_all)]
     pub fn reload(
         &mut self,
         requester: &mut Requester<'_>,

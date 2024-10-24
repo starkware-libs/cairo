@@ -369,7 +369,7 @@ impl Backend {
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(skip_all)]
     fn detect_crate_for(
         db: &mut AnalysisDatabase,
         scarb_toolchain: &ScarbToolchain,
@@ -426,7 +426,6 @@ impl Backend {
     }
 
     /// Reload crate detection for all open files.
-    #[tracing::instrument(level = "trace", skip_all)]
     fn reload(
         state: &mut State,
         notifier: &Notifier,
