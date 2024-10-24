@@ -10,7 +10,6 @@ use tracing::error;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
 /// Converts internal diagnostics to LSP format.
-#[tracing::instrument(level = "trace", skip_all)]
 pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
     db: &T::DbType,
     diags: &mut Vec<Diagnostic>,

@@ -14,7 +14,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Upcast;
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{PublishDiagnosticsParams, Url};
-use tracing::{error, trace_span};
+use tracing::{error, info_span};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
@@ -24,7 +24,7 @@ use crate::server::panic::is_cancelled;
 use crate::state::FileDiagnostics;
 
 /// Refresh diagnostics and send diffs to the client.
-#[tracing::instrument(level = "debug", skip_all)]
+#[tracing::instrument(skip_all)]
 pub fn refresh_diagnostics(
     db: &AnalysisDatabase,
     open_files: &HashSet<Url>,
@@ -35,14 +35,14 @@ pub fn refresh_diagnostics(
     let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
     let mut processed_modules: HashSet<ModuleId> = HashSet::default();
 
-    let open_files_ids = trace_span!("get_open_files_ids").in_scope(|| {
+    let open_files_ids = info_span!("get_open_files_ids").in_scope(|| {
         open_files.iter().filter_map(|uri| db.file_for_url(uri)).collect::<HashSet<FileId>>()
     });
 
     let open_files_modules = get_files_modules(db, open_files_ids.iter().copied());
 
     // Refresh open files modules first for better UX
-    trace_span!("refresh_open_files_modules").in_scope(|| {
+    info_span!("refresh_open_files_modules").in_scope(|| {
         for (file, file_modules_ids) in open_files_modules {
             refresh_file_diagnostics(
                 db,
@@ -57,7 +57,7 @@ pub fn refresh_diagnostics(
         }
     });
 
-    let rest_of_files = trace_span!("get_rest_of_files").in_scope(|| {
+    let rest_of_files = info_span!("get_rest_of_files").in_scope(|| {
         let mut rest_of_files: HashSet<FileId> = HashSet::default();
         for crate_id in db.crates() {
             for module_id in db.crate_modules(crate_id).iter() {
@@ -74,7 +74,7 @@ pub fn refresh_diagnostics(
     let rest_of_files_modules = get_files_modules(db, rest_of_files.iter().copied());
 
     // Refresh the rest of files after, since they are not viewed currently
-    trace_span!("refresh_other_files_modules").in_scope(|| {
+    info_span!("refresh_other_files_modules").in_scope(|| {
         for (file, file_modules_ids) in rest_of_files_modules {
             refresh_file_diagnostics(
                 db,
@@ -90,7 +90,7 @@ pub fn refresh_diagnostics(
     });
 
     // Clear old diagnostics
-    trace_span!("clear_old_diagnostics").in_scope(|| {
+    info_span!("clear_old_diagnostics").in_scope(|| {
         let mut removed_files = Vec::new();
 
         file_diagnostics.retain(|uri, _| {
@@ -102,12 +102,10 @@ pub fn refresh_diagnostics(
         });
 
         for file in removed_files {
-            trace_span!("publish_diagnostics").in_scope(|| {
-                notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-                    uri: file,
-                    diagnostics: vec![],
-                    version: None,
-                });
+            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+                uri: file,
+                diagnostics: vec![],
+                version: None,
             });
         }
     });
@@ -131,7 +129,7 @@ fn refresh_file_diagnostics(
 
     macro_rules! diags {
         ($db:ident. $query:ident($file_id:expr), $f:expr) => {
-            trace_span!(stringify!($query)).in_scope(|| {
+            info_span!(stringify!($query)).in_scope(|| {
                 catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
                     .map($f)
                     .map_err(|err| {
@@ -206,16 +204,15 @@ fn refresh_file_diagnostics(
         trace_macro_diagnostics,
     );
 
-    trace_span!("publish_diagnostics").in_scope(|| {
-        notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-            uri: file_uri,
-            diagnostics: diags,
-            version: None,
-        });
-    })
+    notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
+        uri: file_uri,
+        diagnostics: diags,
+        version: None,
+    });
 }
 
 /// Gets the mapping of files to their respective modules.
+#[tracing::instrument(skip_all)]
 fn get_files_modules(
     db: &AnalysisDatabase,
     files_ids: impl Iterator<Item = FileId>,

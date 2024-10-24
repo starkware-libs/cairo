@@ -55,7 +55,6 @@ pub enum ResolvedItem {
 
 impl SymbolDef {
     /// Finds definition of the symbol referred by the given identifier.
-    #[tracing::instrument(name = "SymbolDef::find", level = "trace", skip_all)]
     pub fn find(db: &AnalysisDatabase, identifier: &TerminalIdentifier) -> Option<Self> {
         if let Some(parent) = identifier.as_syntax_node().parent() {
             if parent.kind(db.upcast()) == SyntaxKind::PathSegmentSimple
@@ -292,7 +291,6 @@ impl VariableDef {
 }
 
 // TODO(mkaput): make private.
-#[tracing::instrument(level = "trace", skip_all)]
 pub fn find_definition(
     db: &AnalysisDatabase,
     identifier: &ast::TerminalIdentifier,
@@ -403,7 +401,6 @@ fn try_extract_member(
     }
 }
 
-#[tracing::instrument(level = "trace", skip_all)]
 fn resolved_concrete_item_def(
     db: &AnalysisDatabase,
     item: ResolvedConcreteItem,
@@ -427,7 +424,6 @@ fn resolved_concrete_item_def(
     }
 }
 
-#[tracing::instrument(level = "trace", skip_all)]
 fn resolved_generic_item_def(
     db: &AnalysisDatabase,
     item: ResolvedGenericItem,
