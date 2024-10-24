@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
@@ -12,18 +12,19 @@ use salsa::ParallelDatabase;
 use crate::Tricks;
 use crate::config::Config;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
+use crate::lang::diagnostics::DiagnosticsController;
 use crate::toolchain::scarb::ScarbToolchain;
 
 /// State of Language server.
 pub struct State {
     pub db: AnalysisDatabase,
     pub open_files: Owned<HashSet<Url>>,
-    pub file_diagnostics: Owned<HashMap<Url, FileDiagnostics>>,
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
     pub scarb_toolchain: ScarbToolchain,
     pub db_swapper: AnalysisDatabaseSwapper,
     pub tricks: Owned<Tricks>,
+    pub diagnostics_controller: DiagnosticsController,
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -50,23 +51,29 @@ impl State {
         Self {
             db,
             open_files: Default::default(),
-            file_diagnostics: Default::default(),
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
             scarb_toolchain,
             db_swapper: AnalysisDatabaseSwapper::new(),
             tricks: Owned::new(tricks.into()),
+            diagnostics_controller: DiagnosticsController::new(),
         }
     }
 
     pub fn snapshot(&self) -> StateSnapshot {
-        StateSnapshot { db: self.db.snapshot() }
+        StateSnapshot {
+            db: self.db.snapshot(),
+            open_files: self.open_files.snapshot(),
+            config: self.config.snapshot(),
+        }
     }
 }
 
 /// Readonly snapshot of Language server state.
 pub struct StateSnapshot {
     pub db: salsa::Snapshot<AnalysisDatabase>,
+    pub open_files: Snapshot<HashSet<Url>>,
+    pub config: Snapshot<Config>,
 }
 
 impl std::panic::UnwindSafe for StateSnapshot {}
@@ -83,6 +90,11 @@ pub struct Snapshot<T: ?Sized>(Arc<T>);
 impl<T: ?Sized> Owned<T> {
     pub fn new(inner: Arc<T>) -> Self {
         Self(inner)
+    }
+
+    /// Creates a snapshot of value's current state.
+    pub fn snapshot(&self) -> Snapshot<T> {
+        Snapshot(self.0.clone())
     }
 }
 

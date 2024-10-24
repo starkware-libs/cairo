@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
@@ -20,33 +20,38 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
-use crate::state::{FileDiagnostics, State};
+use crate::server::panic::is_cancelled;
+use crate::state::FileDiagnostics;
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(level = "debug", skip_all)]
-pub fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
+pub fn refresh_diagnostics(
+    db: &AnalysisDatabase,
+    open_files: &HashSet<Url>,
+    trace_macro_diagnostics: bool,
+    file_diagnostics: &mut HashMap<Url, FileDiagnostics>,
+    notifier: Notifier,
+) {
     let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
     let mut processed_modules: HashSet<ModuleId> = HashSet::default();
 
     let open_files_ids = trace_span!("get_open_files_ids").in_scope(|| {
-        state
-            .open_files
-            .iter()
-            .filter_map(|uri| state.db.file_for_url(uri))
-            .collect::<HashSet<FileId>>()
+        open_files.iter().filter_map(|uri| db.file_for_url(uri)).collect::<HashSet<FileId>>()
     });
 
-    let open_files_modules = get_files_modules(&state.db, open_files_ids.iter().copied());
+    let open_files_modules = get_files_modules(db, open_files_ids.iter().copied());
 
     // Refresh open files modules first for better UX
     trace_span!("refresh_open_files_modules").in_scope(|| {
         for (file, file_modules_ids) in open_files_modules {
             refresh_file_diagnostics(
-                state,
+                db,
                 &file,
                 &file_modules_ids,
+                trace_macro_diagnostics,
                 &mut processed_modules,
                 &mut files_with_set_diagnostics,
+                file_diagnostics,
                 &notifier,
             );
         }
@@ -54,9 +59,9 @@ pub fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
 
     let rest_of_files = trace_span!("get_rest_of_files").in_scope(|| {
         let mut rest_of_files: HashSet<FileId> = HashSet::default();
-        for crate_id in state.db.crates() {
-            for module_id in state.db.crate_modules(crate_id).iter() {
-                if let Ok(module_files) = state.db.module_files(*module_id) {
+        for crate_id in db.crates() {
+            for module_id in db.crate_modules(crate_id).iter() {
+                if let Ok(module_files) = db.module_files(*module_id) {
                     let unprocessed_files =
                         module_files.iter().filter(|file| !open_files_ids.contains(file));
                     rest_of_files.extend(unprocessed_files);
@@ -66,17 +71,19 @@ pub fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
         rest_of_files
     });
 
-    let rest_of_files_modules = get_files_modules(&state.db, rest_of_files.iter().copied());
+    let rest_of_files_modules = get_files_modules(db, rest_of_files.iter().copied());
 
-    // Refresh rest of files after, since they are not viewed currently
+    // Refresh the rest of files after, since they are not viewed currently
     trace_span!("refresh_other_files_modules").in_scope(|| {
         for (file, file_modules_ids) in rest_of_files_modules {
             refresh_file_diagnostics(
-                state,
+                db,
                 &file,
                 &file_modules_ids,
+                trace_macro_diagnostics,
                 &mut processed_modules,
                 &mut files_with_set_diagnostics,
+                file_diagnostics,
                 &notifier,
             );
         }
@@ -86,7 +93,7 @@ pub fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
     trace_span!("clear_old_diagnostics").in_scope(|| {
         let mut removed_files = Vec::new();
 
-        state.file_diagnostics.retain(|uri, _| {
+        file_diagnostics.retain(|uri, _| {
             let retain = files_with_set_diagnostics.contains(uri);
             if !retain {
                 removed_files.push(uri.clone());
@@ -107,15 +114,17 @@ pub fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
 }
 
 /// Refresh diagnostics for a single file.
+#[expect(clippy::too_many_arguments)]
 fn refresh_file_diagnostics(
-    state: &mut State,
+    db: &AnalysisDatabase,
     file: &FileId,
     modules_ids: &Vec<ModuleId>,
+    trace_macro_diagnostics: bool,
     processed_modules: &mut HashSet<ModuleId>,
     files_with_set_diagnostics: &mut HashSet<Url>,
+    file_diagnostics: &mut HashMap<Url, FileDiagnostics>,
     notifier: &Notifier,
 ) {
-    let db = &state.db;
     let file_uri = db.url_for_file(*file);
     let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
     let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
@@ -125,8 +134,13 @@ fn refresh_file_diagnostics(
             trace_span!(stringify!($query)).in_scope(|| {
                 catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
                     .map($f)
-                    .inspect_err(|_| {
-                        error!("caught panic when computing diagnostics for file {file_uri:?}");
+                    .map_err(|err| {
+                        if is_cancelled(&err) {
+                            resume_unwind(err);
+                        } else {
+                            error!("caught panic when computing diagnostics for file {file_uri}");
+                            err
+                        }
                     })
                     .unwrap_or_default()
             })
@@ -161,16 +175,15 @@ fn refresh_file_diagnostics(
     }
 
     // Since we are using Arcs, this comparison should be efficient.
-    if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file_uri) {
+    if let Some(old_file_diagnostics) = file_diagnostics.get(&file_uri) {
         if old_file_diagnostics == &new_file_diagnostics {
             return;
         }
 
-        state.file_diagnostics.insert(file_uri.clone(), new_file_diagnostics.clone());
+        file_diagnostics.insert(file_uri.clone(), new_file_diagnostics.clone());
     };
 
     let mut diags = Vec::new();
-    let trace_macro_diagnostics = state.config.trace_macro_diagnostics;
     map_cairo_diagnostics_to_lsp(
         (*db).upcast(),
         &mut diags,
