@@ -12,7 +12,7 @@ use lsp_server::{ErrorCode, ExtractError, Notification, Request, RequestId};
 use lsp_types::notification::{
     Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
     DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
-    Notification as NotificationTrait,
+    Notification as NotificationTrait, SetTrace,
 };
 use lsp_types::request::{
     CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
@@ -79,7 +79,6 @@ pub fn request<'a>(request: Request) -> Task<'a> {
 
 pub fn notification<'a>(notification: Notification) -> Task<'a> {
     match notification.method.as_str() {
-        Cancel::METHOD => local_notification_task::<Cancel>(notification),
         DidChangeTextDocument::METHOD => {
             local_notification_task::<DidChangeTextDocument>(notification)
         }
@@ -94,15 +93,17 @@ pub fn notification<'a>(notification: Notification) -> Task<'a> {
         }
         DidOpenTextDocument::METHOD => local_notification_task::<DidOpenTextDocument>(notification),
         DidSaveTextDocument::METHOD => local_notification_task::<DidSaveTextDocument>(notification),
+
+        // Ignore these notifications as they are meaningless for CairoLS.
+        Cancel::METHOD | SetTrace::METHOD => Ok(Task::nothing()),
+
         method => {
             warn!("received notification {method} which does not have a handler");
-
             return Task::nothing();
         }
     }
     .unwrap_or_else(|error| {
         error!("encountered error when routing notification: {error}");
-
         Task::nothing()
     })
 }
