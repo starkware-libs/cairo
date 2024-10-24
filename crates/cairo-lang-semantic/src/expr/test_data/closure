@@ -626,3 +626,23 @@ error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:5:9
         a + b
         ^
+
+//! > ==========================================================================
+
+//! > Not generating generating destruct impl when drop impl exists.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar( || {});
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, +Destruct<T>>(a: T) {}
+
+//! > expected_diagnostics
