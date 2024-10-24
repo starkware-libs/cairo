@@ -17,11 +17,6 @@ mod encoder;
 mod token_kind;
 
 /// Resolve the semantic tokens of a given file.
-#[tracing::instrument(
-    level = "debug",
-    skip_all,
-    fields(uri = %params.text_document.uri)
-)]
 pub fn semantic_highlight_full(
     params: SemanticTokensParams,
     db: &AnalysisDatabase,

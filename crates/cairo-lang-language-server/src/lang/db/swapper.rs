@@ -44,7 +44,6 @@ impl AnalysisDatabaseSwapper {
     }
 
     /// Checks if enough time has passed since last db swap, and if so, swaps the database.
-    #[tracing::instrument(level = "trace", skip_all)]
     pub fn maybe_swap(
         &mut self,
         db: &mut AnalysisDatabase,
@@ -65,6 +64,12 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
+        self.swap(db, open_files, tricks)
+    }
+
+    /// Swaps the database.
+    #[tracing::instrument(skip_all)]
+    fn swap(&mut self, db: &mut AnalysisDatabase, open_files: &HashSet<Url>, tricks: &Tricks) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
             let mut new_db = AnalysisDatabase::new(tricks);
             ensure_exists_in_db(&mut new_db, db, open_files.iter());
@@ -81,7 +86,6 @@ impl AnalysisDatabaseSwapper {
 }
 
 /// Makes sure that all open files exist in the new db, with their current changes.
-#[tracing::instrument(level = "trace", skip_all)]
 fn ensure_exists_in_db<'a>(
     new_db: &mut AnalysisDatabase,
     old_db: &AnalysisDatabase,
