@@ -9,15 +9,15 @@ use cairo_lang_filesystem::db::{
     AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use lsp_types::notification::{
-    Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
-    DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument, Notification,
+    DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
+    DidOpenTextDocument, DidSaveTextDocument, Notification,
 };
 use lsp_types::request::{
     CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
     Request, SemanticTokensFullRequest,
 };
 use lsp_types::{
-    CancelParams, CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
+    CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
     DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
     DocumentFormattingParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
@@ -129,18 +129,6 @@ impl BackgroundDocumentRequestHandler for Formatting {
         params: DocumentFormattingParams,
     ) -> LSPResult<Option<Vec<TextEdit>>> {
         Ok(ide::formatter::format(params, &snapshot.db))
-    }
-}
-
-impl SyncNotificationHandler for Cancel {
-    #[tracing::instrument(name = "$/cancelRequest", skip_all)]
-    fn run(
-        _state: &mut State,
-        _notifier: Notifier,
-        _requester: &mut Requester<'_>,
-        _params: CancelParams,
-    ) -> LSPResult<()> {
-        Ok(())
     }
 }
 
