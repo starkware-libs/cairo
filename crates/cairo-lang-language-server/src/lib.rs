@@ -152,7 +152,7 @@ fn init_logging() -> Option<impl Drop> {
     use std::io::IsTerminal;
 
     use tracing_chrome::ChromeLayerBuilder;
-    use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+    use tracing_subscriber::filter::{EnvFilter, LevelFilter, Targets};
     use tracing_subscriber::fmt::Layer;
     use tracing_subscriber::fmt::time::Uptime;
     use tracing_subscriber::prelude::*;
@@ -191,6 +191,12 @@ fn init_logging() -> Option<impl Drop> {
 
         let (profile_layer, profile_layer_guard) =
             ChromeLayerBuilder::new().writer(profile_file).include_args(true).build();
+
+        // Filter out less important Salsa logs because they are too verbose,
+        // and with them the profile file quickly grows to several GBs of data.
+        let profile_layer = profile_layer.with_filter(
+            Targets::new().with_default(LevelFilter::TRACE).with_target("salsa", LevelFilter::WARN),
+        );
 
         guard = Some(profile_layer_guard);
         Some(profile_layer)
