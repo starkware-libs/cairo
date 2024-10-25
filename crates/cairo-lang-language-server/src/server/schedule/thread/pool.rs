@@ -22,9 +22,10 @@
 //! The thread pool is implemented entirely using
 //! the threading utilities in [`crate::server::schedule::thread`].
 
-use std::num::NonZeroUsize;
+use std::cmp::min;
+use std::thread::available_parallelism;
 
-use crossbeam::channel::{Receiver, Sender};
+use crossbeam::channel::{Receiver, Sender, bounded};
 
 use super::{Builder, JoinHandle, ThreadPriority};
 
@@ -46,15 +47,25 @@ struct Job {
 }
 
 impl Pool {
-    pub fn new(threads: NonZeroUsize) -> Pool {
-        // Override OS defaults to avoid stack overflows on platforms with low stack size defaults.
+    pub fn new() -> Pool {
+        /// Custom stack size, larger than OS defaults, to avoid stack overflows on platforms with
+        /// low stack size defaults.
         const STACK_SIZE: usize = 2 * 1024 * 1024;
+
         const INITIAL_PRIORITY: ThreadPriority = ThreadPriority::Worker;
 
-        let threads = usize::from(threads);
+        /// The default number of threads in the pool in case system parallelism is not available.
+        ///
+        /// According to docs, [`available_parallelism`] (almost) only fails when the process is
+        /// running with limited permissions.
+        /// We are making an assumption here that nowadays it is more probable to run without
+        /// necessary permissions on a multicore machine than on a single-core one.
+        const DEFAULT_PARALLELISM: usize = 4;
+
+        let threads = available_parallelism().map(usize::from).unwrap_or(DEFAULT_PARALLELISM);
 
         // Channel buffer capacity is between 2 and 4, depending on the pool size.
-        let (job_sender, job_receiver) = crossbeam::channel::bounded(std::cmp::min(threads * 2, 4));
+        let (job_sender, job_receiver) = bounded(min(threads * 2, DEFAULT_PARALLELISM));
 
         let mut handles = Vec::with_capacity(threads);
         for i in 0..threads {

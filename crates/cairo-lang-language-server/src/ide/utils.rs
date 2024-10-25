@@ -11,7 +11,6 @@ use tracing::debug;
 use crate::lang::db::AnalysisDatabase;
 
 /// Finds all methods that can be called on a type.
-#[tracing::instrument(level = "trace", skip_all)]
 pub fn find_methods_for_type(
     db: &AnalysisDatabase,
     mut resolver: Resolver<'_>,

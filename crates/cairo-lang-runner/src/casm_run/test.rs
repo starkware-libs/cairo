@@ -1,10 +1,11 @@
+use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::{casm, deref};
+use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CairoProgramDebugInfo};
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
 use indoc::indoc;
 use itertools::Itertools;
-use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
@@ -14,6 +15,16 @@ use crate::casm_run::contract_address::calculate_contract_address;
 use crate::casm_run::{RunFunctionResult, run_function};
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use crate::{CairoHintProcessor, StarknetState, build_hints_dict};
+
+/// Creates a new `AssembledCairoProgram` from the given `CasmContext`.
+fn assembled(casm: CasmContext) -> AssembledCairoProgram {
+    CairoProgram {
+        instructions: casm.instructions,
+        consts_info: Default::default(),
+        debug_info: CairoProgramDebugInfo { sierra_statement_info: vec![] },
+    }
+    .assemble()
+}
 
 #[test_case(
     casm! {
@@ -109,7 +120,8 @@ use crate::{CairoHintProcessor, StarknetState, build_hints_dict};
     "simple_division"
 )]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
-    let (hints_dict, string_to_hint) = build_hints_dict(function.instructions.iter());
+    let program = assembled(function);
+    let (hints_dict, string_to_hint) = build_hints_dict(&program.hints);
     let mut hint_processor = CairoHintProcessor {
         runner: None,
         string_to_hint,
@@ -117,14 +129,9 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         run_resources: RunResources::default(),
         syscalls_used_resources: Default::default(),
     };
-    let bytecode: Vec<BigInt> = function
-        .instructions
-        .iter()
-        .flat_map(|instruction| instruction.assemble().encode())
-        .collect();
 
     let RunFunctionResult { ap, memory, .. } =
-        run_function(bytecode.iter(), vec![], |_| Ok(()), &mut hint_processor, hints_dict)
+        run_function(program.bytecode.iter(), vec![], |_| Ok(()), &mut hint_processor, hints_dict)
             .expect("Running code failed.");
     let ret_memory = memory.into_iter().skip(ap - n_returns);
     assert_eq!(
@@ -135,14 +142,13 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
 
 #[test]
 fn test_allocate_segment() {
-    let casm = casm! {
+    let program = assembled(casm! {
         [ap] = 1337, ap++;
         %{ memory[ap] = segments.add() %}
         [ap - 1] = [[&deref!([ap])]];
         ret;
-    };
-
-    let (hints_dict, string_to_hint) = build_hints_dict(casm.instructions.iter());
+    });
+    let (hints_dict, string_to_hint) = build_hints_dict(&program.hints);
     let mut hint_processor = CairoHintProcessor {
         runner: None,
         string_to_hint,
@@ -150,11 +156,9 @@ fn test_allocate_segment() {
         run_resources: RunResources::default(),
         syscalls_used_resources: Default::default(),
     };
-    let bytecode: Vec<BigInt> =
-        casm.instructions.iter().flat_map(|instruction| instruction.assemble().encode()).collect();
 
     let RunFunctionResult { ap, memory, .. } =
-        run_function(bytecode.iter(), vec![], |_| Ok(()), &mut hint_processor, hints_dict)
+        run_function(program.bytecode.iter(), vec![], |_| Ok(()), &mut hint_processor, hints_dict)
             .expect("Running code failed.");
     let ptr = memory[ap]
         .as_ref()

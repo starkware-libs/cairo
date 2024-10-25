@@ -87,7 +87,7 @@ fn find_core_at_path(root_path: &Path) -> Option<PathBuf> {
 ///
 /// Because CairoLS is tightly bound to Scarb (due to hard compiler version dependency),
 /// we can safely make this lookup once and keep it cached for the entire LS lifetime.
-#[tracing::instrument(level = "trace", skip_all)]
+#[tracing::instrument(skip_all)]
 fn find_scarb_managed_core(scarb: &ScarbToolchain) -> Option<PathBuf> {
     let lookup = || {
         let workspace = tempdir()

@@ -3,7 +3,6 @@ use std::collections::{HashMap, HashSet};
 use std::ops::{Add, Sub};
 
 use cairo_lang_casm::hints::Hint;
-use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -22,6 +21,7 @@ use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{Function, GenStatement, GenericArg, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_ap_change::ApChangeError;
+use cairo_lang_sierra_gas::CostError;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, SierraToCasmConfig};
 use cairo_lang_sierra_to_casm::metadata::{
     Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
@@ -36,8 +36,10 @@ use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::HintParams;
 use cairo_vm::types::builtin_name::BuiltinName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
+use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::runners::cairo_runner::{ExecutionResources, RunResources};
 use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
+use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::chain;
@@ -47,7 +49,7 @@ use profiling::{ProfilingInfo, user_function_idx_by_sierra_statement_idx};
 use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
-use crate::casm_run::{RunFunctionContext, RunFunctionResult};
+use crate::casm_run::RunFunctionResult;
 
 pub mod casm_run;
 pub mod profiling;
@@ -59,18 +61,13 @@ const MAX_STACK_TRACE_DEPTH_DEFAULT: usize = 100;
 pub enum RunnerError {
     #[error("Not enough gas to call function.")]
     NotEnoughGasToCall,
-    #[error("GasBuiltin is required while `available_gas` value is provided.")]
-    GasBuiltinRequired,
     #[error(
-        "Failed calculating gas usage, it is likely a call for `gas::withdraw_gas` is missing."
+        "Failed calculating gas usage, it is likely a call for `gas::withdraw_gas` is missing. \
+         Inner error: {0}"
     )]
-    FailedGasCalculation,
+    FailedGasCalculation(#[from] CostError),
     #[error("Function with suffix `{suffix}` to run not found.")]
     MissingFunction { suffix: String },
-    #[error("Function param {param_index} only partially contains argument {arg_index}.")]
-    ArgumentUnaligned { param_index: usize, arg_index: usize },
-    #[error("Function expects arguments of size {expected} and received {actual} instead.")]
-    ArgumentsSizeMismatch { expected: usize, actual: usize },
     #[error(transparent)]
     ProgramRegistryError(#[from] Box<ProgramRegistryError>),
     #[error(transparent)]
@@ -164,25 +161,19 @@ impl From<Felt252> for Arg {
 }
 
 /// Builds hints_dict required in cairo_vm::types::program::Program from instructions.
-pub fn build_hints_dict<'b>(
-    instructions: impl Iterator<Item = &'b Instruction>,
+pub fn build_hints_dict(
+    hints: &[(usize, Vec<Hint>)],
 ) -> (HashMap<usize, Vec<HintParams>>, HashMap<String, Hint>) {
     let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
     let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
 
-    let mut hint_offset = 0;
-
-    for instruction in instructions {
-        if !instruction.hints.is_empty() {
-            // Register hint with string for the hint processor.
-            for hint in instruction.hints.iter() {
-                string_to_hint.insert(hint.representing_string(), hint.clone());
-            }
-            // Add hint, associated with the instruction offset.
-            hints_dict
-                .insert(hint_offset, instruction.hints.iter().map(hint_to_hint_params).collect());
+    for (offset, offset_hints) in hints {
+        // Register hint with string for the hint processor.
+        for hint in offset_hints {
+            string_to_hint.insert(hint.representing_string(), hint.clone());
         }
-        hint_offset += instruction.body.op_size();
+        // Add hint, associated with the instruction offset.
+        hints_dict.insert(*offset, offset_hints.iter().map(hint_to_hint_params).collect());
     }
     (hints_dict, string_to_hint)
 }
@@ -243,11 +234,10 @@ impl SierraCasmRunner {
         starknet_state: StarknetState,
     ) -> Result<RunResultStarknet, RunnerError> {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
-        let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
+        let (entry_code, builtins) = self.create_entry_code(func)?;
         let footer = Self::create_code_footer();
-        let (hints_dict, string_to_hint) =
-            build_hints_dict(chain!(&entry_code, &self.casm_program.instructions));
         let assembled_program = self.casm_program.clone().assemble_ex(&entry_code, &footer);
+        let (hints_dict, string_to_hint) = build_hints_dict(&assembled_program.hints);
 
         let mut hint_processor = CairoHintProcessor {
             runner: Some(self),
@@ -259,6 +249,7 @@ impl SierraCasmRunner {
         let RunResult { gas_counter, memory, value, used_resources, profiling_info } = self
             .run_function(
                 func,
+                (initial_gas, args),
                 &mut hint_processor,
                 hints_dict,
                 assembled_program.bytecode.iter(),
@@ -442,18 +433,26 @@ impl SierraCasmRunner {
     pub fn run_function<'a, Bytecode>(
         &self,
         func: &Function,
+        (available_gas, args): (usize, &[Arg]),
         hint_processor: &mut dyn HintProcessor,
         hints_dict: HashMap<usize, Vec<HintParams>>,
         bytecode: Bytecode,
         builtins: Vec<BuiltinName>,
     ) -> Result<RunResult, RunnerError>
     where
-        Bytecode: Iterator<Item = &'a BigInt> + Clone,
+        Bytecode: ExactSizeIterator<Item = &'a BigInt> + Clone,
     {
         let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
-
+        let data_len = bytecode.len();
+        let gas = self.requires_gas_builtin(func).then_some(available_gas);
         let RunFunctionResult { ap, used_resources, memory, relocated_trace } =
-            casm_run::run_function(bytecode, builtins, initialize_vm, hint_processor, hints_dict)?;
+            casm_run::run_function(
+                bytecode,
+                builtins,
+                |vm| initialize_vm(vm, gas, args, data_len),
+                hint_processor,
+                hints_dict,
+            )?;
 
         let (results_data, gas_counter) = Self::get_results_data(&return_types, &memory, ap);
         assert!(results_data.len() <= 1);
@@ -574,6 +573,14 @@ impl SierraCasmRunner {
             .collect()
     }
 
+    /// Returns whether the gas builtin is required in the given function.
+    fn requires_gas_builtin(&self, func: &Function) -> bool {
+        func.signature
+            .param_types
+            .iter()
+            .any(|ty| self.get_info(ty).long_id.generic_id == GasBuiltinType::ID)
+    }
+
     fn get_info(
         &self,
         ty: &cairo_lang_sierra::ids::ConcreteTypeId,
@@ -583,8 +590,6 @@ impl SierraCasmRunner {
 
     pub fn create_entry_code_from_params(
         param_types: &[(GenericTypeId, i16)],
-        args: &[Arg],
-        initial_gas: usize,
         code_offset: usize,
     ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
         let mut ctx = casm! {};
@@ -614,8 +619,18 @@ impl SierraCasmRunner {
         let emulated_builtins = HashSet::from([SystemType::ID]);
 
         let mut ap_offset: i16 = 0;
-        let mut array_args_data_iter = prep_array_args(&mut ctx, args, &mut ap_offset).into_iter();
-        let after_arrays_data_offset = ap_offset;
+
+        let params_size: i16 = param_types
+            .iter()
+            .filter_map(|(ty, size)| {
+                (!builtin_offset.contains_key(ty) && !emulated_builtins.contains(ty)
+                    || ty != &SegmentArenaType::ID)
+                    .then_some(*size)
+            })
+            .sum();
+        // Giving space for the VM to fill the arguments.
+        casm_extend!(ctx, ap += params_size;);
+        ap_offset += params_size;
         if param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID) {
             casm_extend! {ctx,
                 // SegmentArena segment.
@@ -631,11 +646,8 @@ impl SierraCasmRunner {
             }
             ap_offset += 3;
         }
-        let mut expected_arguments_size = 0;
-        let mut param_index = 0;
-        let mut arg_iter = args.iter().enumerate();
-        for ty in param_types {
-            let (generic_ty, ty_size) = ty;
+        let mut used_args = 0;
+        for (generic_ty, ty_size) in param_types {
             if let Some(offset) = builtin_offset.get(generic_ty) {
                 casm_extend! {ctx,
                     [ap + 0] = [fp - offset], ap++;
@@ -647,45 +659,20 @@ impl SierraCasmRunner {
                     ap += 1;
                 }
                 ap_offset += 1;
-            } else if generic_ty == &GasBuiltinType::ID {
-                casm_extend! {ctx,
-                    [ap + 0] = initial_gas, ap++;
-                }
-                ap_offset += 1;
             } else if generic_ty == &SegmentArenaType::ID {
-                let offset = -ap_offset + after_arrays_data_offset;
+                let offset = ap_offset - params_size;
                 casm_extend! {ctx,
-                    [ap + 0] = [ap + offset] + 3, ap++;
+                    [ap + 0] = [ap - offset] + 3, ap++;
                 }
                 ap_offset += 1;
             } else {
-                let arg_size = *ty_size;
-                let param_ap_offset_end = ap_offset + arg_size;
-                expected_arguments_size += arg_size.into_or_panic::<usize>();
-                while ap_offset < param_ap_offset_end {
-                    let Some((arg_index, arg)) = arg_iter.next() else {
-                        break;
-                    };
-                    add_arg_to_stack(&mut ctx, arg, &mut ap_offset, &mut array_args_data_iter);
-                    if ap_offset > param_ap_offset_end {
-                        return Err(RunnerError::ArgumentUnaligned { param_index, arg_index });
-                    }
+                let offset = ap_offset - used_args;
+                for _ in 0..*ty_size {
+                    casm_extend!(ctx, [ap + 0] = [ap - offset], ap++;);
                 }
-                param_index += 1;
+                ap_offset += *ty_size;
+                used_args += *ty_size;
             };
-        }
-        let actual_args_size = args
-            .iter()
-            .map(|arg| match arg {
-                Arg::Value(_) => 1,
-                Arg::Array(_) => 2,
-            })
-            .sum::<usize>();
-        if expected_arguments_size != actual_args_size {
-            return Err(RunnerError::ArgumentsSizeMismatch {
-                expected: expected_arguments_size,
-                actual: actual_args_size,
-            });
         }
         let before_final_call = ctx.current_code_offset;
         let final_call_size = 3;
@@ -703,8 +690,6 @@ impl SierraCasmRunner {
     pub fn create_entry_code(
         &self,
         func: &Function,
-        args: &[Arg],
-        initial_gas: usize,
     ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
         let params = self.generic_id_and_size_from_concrete(&func.signature.param_types);
 
@@ -712,7 +697,7 @@ impl SierraCasmRunner {
         let code_offset =
             self.casm_program.debug_info.sierra_statement_info[entry_point].start_offset;
 
-        Self::create_entry_code_from_params(&params, args, initial_gas, code_offset)
+        Self::create_entry_code_from_params(&params, code_offset)
     }
 
     /// Returns the initial value for the gas counter.
@@ -796,11 +781,45 @@ impl Default for ProfilingInfoCollectionConfig {
 }
 
 /// Initializes a vm by adding a new segment with builtins cost and a necessary pointer at the end
-/// of the program
-pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRunError>> {
-    let vm = context.vm;
+/// of the program, as well as placing the arguments at the initial ap values.
+pub fn initialize_vm(
+    vm: &mut VirtualMachine,
+    gas_value: Option<usize>,
+    args: &[Arg],
+    data_len: usize,
+) -> Result<(), Box<CairoRunError>> {
     // Create the builtin cost segment, with dummy values.
     let builtin_cost_segment = vm.add_memory_segment();
+    let mut ap = vm.get_ap();
+    if let Some(value) = gas_value {
+        // Adding the gas as the first argument.
+        vm.insert_value(ap, value).map_err(|e| Box::new(e.into()))?;
+        ap += 1;
+    }
+    let mut stack = vec![(ap, args)];
+    while let Some((mut buffer, values)) = stack.pop() {
+        for value in values {
+            match value {
+                Arg::Value(v) => {
+                    vm.insert_value(buffer, v).map_err(|e| Box::new(e.into()))?;
+                    buffer += 1;
+                }
+                Arg::Array(arr) => {
+                    let arr_buffer = vm.add_memory_segment();
+                    stack.push((arr_buffer, arr));
+                    vm.insert_value(buffer, arr_buffer).map_err(|e| Box::new(e.into()))?;
+                    buffer += 1;
+                    vm.insert_value(
+                        buffer,
+                        (arr_buffer + args_size(arr))
+                            .map_err(|e| Box::new(MemoryError::Math(e).into()))?,
+                    )
+                    .map_err(|e| Box::new(e.into()))?;
+                    buffer += 1;
+                }
+            }
+        }
+    }
     for token_type in CostTokenType::iter_precost() {
         vm.insert_value(
             (builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)).unwrap(),
@@ -810,70 +829,19 @@ pub fn initialize_vm(context: RunFunctionContext<'_>) -> Result<(), Box<CairoRun
     }
     // Put a pointer to the builtin cost segment at the end of the program (after the
     // additional `ret` statement).
-    vm.insert_value((vm.get_pc() + context.data_len).unwrap(), builtin_cost_segment)
+    vm.insert_value((vm.get_pc() + data_len).unwrap(), builtin_cost_segment)
         .map_err(|e| Box::new(e.into()))?;
     Ok(())
 }
 
-/// The information on an array argument that was added to the stack.
-struct ArrayDataInfo {
-    /// The offset of the pointer to the array data in the stack.
-    ptr_offset: i16,
-    /// The size of the array data in the stack.
-    size: i16,
-}
-
-/// Adds an argument to the stack, updating the ap_offset and the array_data_iter.
-fn add_arg_to_stack(
-    ctx: &mut CasmContext,
-    arg: &Arg,
-    ap_offset: &mut i16,
-    array_data_iter: &mut impl Iterator<Item = ArrayDataInfo>,
-) {
-    match arg {
-        Arg::Value(value) => {
-            casm_extend! {ctx,
-                [ap + 0] = (value.to_bigint()), ap++;
-            }
-            *ap_offset += 1;
-        }
-        Arg::Array(_) => {
-            let info = array_data_iter.next().unwrap();
-            casm_extend! {ctx,
-                [ap + 0] = [ap + (info.ptr_offset - *ap_offset)], ap++;
-                [ap + 0] = [ap - 1] + (info.size), ap++;
-            }
-            *ap_offset += 2;
-        }
-    }
-}
-
-/// Prepares the array arguments for the stack, updating the ap_offset and returning the
-/// array_args_data.
-fn prep_array_args(ctx: &mut CasmContext, args: &[Arg], ap_offset: &mut i16) -> Vec<ArrayDataInfo> {
-    let mut array_args_data = vec![];
-    for arg in args {
-        let Arg::Array(values) = arg else { continue };
-        let mut inner_array_args_data = prep_array_args(ctx, values, ap_offset).into_iter();
-        casm_extend! {ctx,
-            %{ memory[ap + 0] = segments.add() %}
-            ap += 1;
-        }
-
-        let ptr_offset = *ap_offset;
-        *ap_offset += 1;
-        let data_offset = *ap_offset;
-        for arg in values {
-            add_arg_to_stack(ctx, arg, ap_offset, &mut inner_array_args_data);
-        }
-        let ptr = *ap_offset - ptr_offset;
-        let size = *ap_offset - data_offset;
-        for i in 0..size {
-            casm_extend! {ctx, [ap + (i - size)] = [[ap - ptr] + i]; }
-        }
-        array_args_data.push(ArrayDataInfo { ptr_offset, size });
-    }
-    array_args_data
+/// The size in memory of the arguments.
+fn args_size(args: &[Arg]) -> usize {
+    args.iter()
+        .map(|arg| match arg {
+            Arg::Value(_) => 1,
+            Arg::Array(_) => 2,
+        })
+        .sum()
 }
 
 /// Creates the metadata required for a Sierra program lowering to casm.
@@ -888,6 +856,6 @@ fn create_metadata(
     }
     .map_err(|err| match err {
         MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
-        MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
+        MetadataError::CostError(err) => RunnerError::FailedGasCalculation(err),
     })
 }

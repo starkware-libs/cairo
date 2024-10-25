@@ -10,9 +10,8 @@ use tracing::{debug, error, warn};
 
 use crate::lsp::capabilities::client::ClientCapabilitiesExt;
 use crate::lsp::result::{LSPResult, LSPResultEx};
-use crate::server::client::{Notifier, Requester};
+use crate::server::client::Requester;
 use crate::server::schedule::Task;
-use crate::state::State;
 
 // TODO(mkaput): Write a macro that will auto-generate this struct and the `reload` logic.
 // TODO(mkaput): Write a test that checks that fields in this struct are sorted alphabetically.
@@ -43,12 +42,10 @@ pub struct Config {
 
 impl Config {
     /// Reloads the configuration from the language client.
-    #[tracing::instrument(name = "reload_config", level = "trace", skip_all)]
     pub fn reload(
         &mut self,
         requester: &mut Requester<'_>,
         client_capabilities: &ClientCapabilities,
-        on_reloaded: fn(&mut State, &Notifier),
     ) -> LSPResult<()> {
         if !client_capabilities.workspace_configuration_support() {
             warn!(
@@ -80,7 +77,7 @@ impl Config {
             // This conversion is O(1), and makes popping from front also O(1).
             let mut response = VecDeque::from(response);
 
-            Task::local(move |state, notifier, _, _| {
+            Task::local(move |state, _, _, _| {
                 state.config.unmanaged_core_path = response
                     .pop_front()
                     .as_ref()
@@ -91,8 +88,6 @@ impl Config {
                     response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default();
 
                 debug!("reloaded configuration: {:#?}", state.config);
-
-                on_reloaded(state, &notifier);
             })
         };
 

@@ -106,7 +106,7 @@ impl ScarbToolchain {
     ///
     /// This method may send notifications to the language client, informing the user about
     /// the progress of the operation or any actionable issues.
-    #[tracing::instrument(level = "debug", skip(self))]
+    #[tracing::instrument(skip(self))]
     pub fn metadata(&self, manifest: &Path) -> Result<Metadata> {
         let Some(scarb_path) = self.discover() else {
             bail!("could not find scarb executable");

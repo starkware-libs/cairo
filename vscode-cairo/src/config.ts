@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 
 interface ConfigProps {
   enableLanguageServer: boolean;
+  showInStatusBar: boolean;
   languageServerPath: string;
   enableScarb: boolean;
   preferScarbLanguageServer: boolean;

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use cairo_lang_defs::ids::{TraitConstantId, TraitImplId, TraitTypeId};
+use cairo_lang_defs::ids::{TraitConstantId, TraitTypeId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
@@ -15,6 +15,7 @@ use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
+use crate::items::trt::ConcreteTraitImplId;
 use crate::substitution::SemanticRewriter;
 use crate::types::{ImplTypeId, peel_snapshots};
 use crate::{
@@ -528,13 +529,17 @@ impl Inference<'_> {
     /// Reduces an impl impl to a concrete impl.
     pub fn reduce_impl_impl(&mut self, impl_impl_id: ImplImplId) -> InferenceResult<ImplId> {
         let impl_id = impl_impl_id.impl_id();
-        let trait_impl = impl_impl_id.trait_impl_id();
+        let concrete_trait_impl = impl_impl_id
+            .concrete_trait_impl_id(self.db)
+            .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
 
         if let ImplLongId::ImplVar(var) = impl_id.lookup_intern(self.db) {
-            Ok(self.rewritten_impl_impl(var, trait_impl))
-        } else if let Ok(imp) =
-            self.db.impl_impl_concrete_implized(ImplImplId::new(impl_id, trait_impl, self.db))
-        {
+            Ok(self.rewritten_impl_impl(var, concrete_trait_impl))
+        } else if let Ok(imp) = self.db.impl_impl_concrete_implized(ImplImplId::new(
+            impl_id,
+            impl_impl_id.trait_impl_id(),
+            self.db,
+        )) {
             Ok(imp)
         } else {
             Err(self.set_impl_reduction_error(impl_id))
@@ -577,14 +582,18 @@ impl Inference<'_> {
     /// Returns the inner_impl value of an impl var's impl item.
     /// The inner_impl may be a variable itself, but it may previously exist, so may be more
     /// specific due to rewriting.
-    pub fn rewritten_impl_impl(&mut self, id: ImplVarId, trait_impl: TraitImplId) -> ImplId {
+    pub fn rewritten_impl_impl(
+        &mut self,
+        id: ImplVarId,
+        concrete_trait_impl: ConcreteTraitImplId,
+    ) -> ImplId {
         self.rewritten_impl_item(
             id,
-            trait_impl,
+            concrete_trait_impl.trait_impl(self.db),
             |m| &mut m.impls,
             |inference, stable_ptr| {
                 inference.new_impl_var(
-                    inference.db.trait_impl_concrete_trait(trait_impl).unwrap(),
+                    inference.db.concrete_trait_impl_concrete_trait(concrete_trait_impl).unwrap(),
                     stable_ptr,
                     ImplLookupContext::default(),
                 )

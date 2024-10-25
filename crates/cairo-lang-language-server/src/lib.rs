@@ -38,42 +38,26 @@
 //! }
 //! ```
 
-use std::collections::{HashMap, HashSet};
 use std::io;
-use std::panic::{AssertUnwindSafe, RefUnwindSafe, catch_unwind};
+use std::panic::RefUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use std::sync::Arc;
 use std::time::SystemTime;
 
 use anyhow::{Context, Result};
 use cairo_lang_compiler::db::validate_corelib;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileId, FileLongId};
-use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
-use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_project::ProjectConfig;
-use cairo_lang_semantic::SemanticDiagnostic;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use itertools::Itertools;
 use lsp_server::Message;
-use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{ClientCapabilities, PublishDiagnosticsParams, RegistrationParams, Url};
+use lsp_types::{ClientCapabilities, RegistrationParams};
 use server::connection::ClientSender;
-use state::FileDiagnostics;
-use tracing::{debug, error, info, trace_span, warn};
+use tracing::{debug, error, info, warn};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
@@ -85,10 +69,8 @@ use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
-use crate::server::panic::ls_catch_unwind;
-use crate::server::schedule::{
-    JoinHandle, Scheduler, Task, bounded_available_parallelism, event_loop_thread,
-};
+use crate::server::schedule::thread::JoinHandle;
+use crate::server::schedule::{Scheduler, Task, event_loop_thread};
 use crate::state::State;
 use crate::toolchain::scarb::ScarbToolchain;
 
@@ -170,9 +152,8 @@ fn init_logging() -> Option<impl Drop> {
     use std::io::IsTerminal;
 
     use tracing_chrome::ChromeLayerBuilder;
-    use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+    use tracing_subscriber::filter::{EnvFilter, LevelFilter, Targets};
     use tracing_subscriber::fmt::Layer;
-    use tracing_subscriber::fmt::format::FmtSpan;
     use tracing_subscriber::fmt::time::Uptime;
     use tracing_subscriber::prelude::*;
 
@@ -182,7 +163,6 @@ fn init_logging() -> Option<impl Drop> {
         .with_writer(io::stderr)
         .with_timer(Uptime::default())
         .with_ansi(io::stderr().is_terminal())
-        .with_span_events(FmtSpan::CLOSE)
         .with_filter(
             EnvFilter::builder()
                 .with_default_directive(LevelFilter::WARN.into())
@@ -212,6 +192,12 @@ fn init_logging() -> Option<impl Drop> {
         let (profile_layer, profile_layer_guard) =
             ChromeLayerBuilder::new().writer(profile_file).include_args(true).build();
 
+        // Filter out less important Salsa logs because they are too verbose,
+        // and with them the profile file quickly grows to several GBs of data.
+        let profile_layer = profile_layer.with_filter(
+            Targets::new().with_default(LevelFilter::TRACE).with_target("salsa", LevelFilter::WARN),
+        );
+
         guard = Some(profile_layer_guard);
         Some(profile_layer)
     } else {
@@ -224,25 +210,6 @@ fn init_logging() -> Option<impl Drop> {
     .expect("Could not set up global logger.");
 
     guard
-}
-
-/// Makes sure that all open files exist in the new db, with their current changes.
-#[tracing::instrument(level = "trace", skip_all)]
-fn ensure_exists_in_db<'a>(
-    new_db: &mut AnalysisDatabase,
-    old_db: &AnalysisDatabase,
-    open_files: impl Iterator<Item = &'a Url>,
-) {
-    let overrides = old_db.file_overrides();
-    let mut new_overrides: OrderedHashMap<FileId, Arc<str>> = Default::default();
-    for uri in open_files {
-        let Some(file_id) = old_db.file_for_url(uri) else { continue };
-        let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
-        if let Some(content) = overrides.get(&file_id) {
-            new_overrides.insert(new_file_id, content.clone());
-        }
-    }
-    new_db.set_file_overrides(Arc::new(new_overrides));
 }
 
 struct Backend {
@@ -311,13 +278,19 @@ impl Backend {
         event_loop_thread(move || {
             let Self { mut state, connection } = self;
 
-            let mut scheduler = Scheduler::new(
-                &mut state,
-                bounded_available_parallelism(4),
-                connection.make_sender(),
-            );
+            let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
 
             Self::dispatch_setup_tasks(&mut scheduler);
+
+            // Attempt to swap the database to reduce memory use.
+            // Because diagnostics are always refreshed afterwards, the fresh database state will
+            // be quickly repopulated.
+            scheduler.on_sync_task(Self::maybe_swap_database);
+
+            // Refresh diagnostics each time state changes.
+            // Although it is possible to mutate state without affecting the analysis database,
+            // we basically never hit such a case in CairoLS in happy paths.
+            scheduler.on_sync_task(Self::refresh_diagnostics);
 
             let result = Self::event_loop(&connection, scheduler);
 
@@ -329,11 +302,12 @@ impl Backend {
         })
     }
 
+    /// Runs various setup tasks before entering the main event loop.
     fn dispatch_setup_tasks(scheduler: &mut Scheduler<'_>) {
         scheduler.local(Self::register_dynamic_capabilities);
 
         scheduler.local(|state, _notifier, requester, _responder| {
-            let _ = Self::reload_config(state, requester);
+            let _ = state.config.reload(requester, &state.client_capabilities);
         });
     }
 
@@ -383,287 +357,19 @@ impl Backend {
         Ok(())
     }
 
-    /// Refresh diagnostics and send diffs to the client.
-    #[tracing::instrument(level = "debug", skip_all)]
-    fn refresh_diagnostics(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
-        // TODO(#6318): implement a pop queue of size 1 for diags
-        let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
-        let mut processed_modules: HashSet<ModuleId> = HashSet::default();
-
-        let open_files_ids = trace_span!("get_open_files_ids").in_scope(|| {
-            state
-                .open_files
-                .iter()
-                .filter_map(|uri| state.db.file_for_url(uri))
-                .collect::<HashSet<FileId>>()
-        });
-
-        let open_files_modules =
-            Backend::get_files_modules(&state.db, open_files_ids.iter().copied());
-
-        // Refresh open files modules first for better UX
-        trace_span!("refresh_open_files_modules").in_scope(|| {
-            for (file, file_modules_ids) in open_files_modules {
-                Backend::refresh_file_diagnostics(
-                    state,
-                    &file,
-                    &file_modules_ids,
-                    &mut processed_modules,
-                    &mut files_with_set_diagnostics,
-                    notifier,
-                );
-            }
-        });
-
-        let rest_of_files = trace_span!("get_rest_of_files").in_scope(|| {
-            let mut rest_of_files: HashSet<FileId> = HashSet::default();
-            for crate_id in state.db.crates() {
-                for module_id in state.db.crate_modules(crate_id).iter() {
-                    if let Ok(module_files) = state.db.module_files(*module_id) {
-                        let unprocessed_files =
-                            module_files.iter().filter(|file| !open_files_ids.contains(file));
-                        rest_of_files.extend(unprocessed_files);
-                    }
-                }
-            }
-            rest_of_files
-        });
-
-        let rest_of_files_modules =
-            Backend::get_files_modules(&state.db, rest_of_files.iter().copied());
-
-        // Refresh rest of files after, since they are not viewed currently
-        trace_span!("refresh_other_files_modules").in_scope(|| {
-            for (file, file_modules_ids) in rest_of_files_modules {
-                Backend::refresh_file_diagnostics(
-                    state,
-                    &file,
-                    &file_modules_ids,
-                    &mut processed_modules,
-                    &mut files_with_set_diagnostics,
-                    notifier,
-                );
-            }
-        });
-
-        // Clear old diagnostics
-        trace_span!("clear_old_diagnostics").in_scope(|| {
-            let mut removed_files = Vec::new();
-
-            state.file_diagnostics.retain(|uri, _| {
-                let retain = files_with_set_diagnostics.contains(uri);
-                if !retain {
-                    removed_files.push(uri.clone());
-                }
-                retain
-            });
-
-            for file in removed_files {
-                trace_span!("publish_diagnostics").in_scope(|| {
-                    notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-                        uri: file,
-                        diagnostics: vec![],
-                        version: None,
-                    });
-                });
-            }
-        });
-
-        // After handling of all diagnostics, attempting to swap the database to reduce memory
-        // consumption.
-        // This should be an independent cronjob when diagnostics are run as a background task.
-        Backend::maybe_swap_database(state, notifier)
+    /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
+    fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
+        state.db_swapper.maybe_swap(&mut state.db, &state.open_files, &state.tricks);
     }
 
-    /// Refresh diagnostics for a single file.
-    fn refresh_file_diagnostics(
-        state: &mut State,
-        file: &FileId,
-        modules_ids: &Vec<ModuleId>,
-        processed_modules: &mut HashSet<ModuleId>,
-        files_with_set_diagnostics: &mut HashSet<Url>,
-        notifier: &Notifier,
-    ) {
-        let db = &state.db;
-        let file_uri = db.url_for_file(*file);
-        let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
-        let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
-
-        macro_rules! diags {
-            ($db:ident. $query:ident($file_id:expr), $f:expr) => {
-                trace_span!(stringify!($query)).in_scope(|| {
-                    catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
-                        .map($f)
-                        .inspect_err(|_| {
-                            error!("caught panic when computing diagnostics for file {file_uri:?}");
-                        })
-                        .unwrap_or_default()
-                })
-            };
-        }
-
-        for module_id in modules_ids {
-            if !processed_modules.contains(module_id) {
-                semantic_file_diagnostics.extend(
-                    diags!(db.module_semantic_diagnostics(*module_id), Result::unwrap_or_default)
-                        .get_all(),
-                );
-                lowering_file_diagnostics.extend(
-                    diags!(db.module_lowering_diagnostics(*module_id), Result::unwrap_or_default)
-                        .get_all(),
-                );
-
-                processed_modules.insert(*module_id);
-            }
-        }
-
-        let parser_file_diagnostics = diags!(db.file_syntax_diagnostics(*file), |r| r);
-
-        let new_file_diagnostics = FileDiagnostics {
-            parser: parser_file_diagnostics,
-            semantic: Diagnostics::from_iter(semantic_file_diagnostics),
-            lowering: Diagnostics::from_iter(lowering_file_diagnostics),
-        };
-
-        if !new_file_diagnostics.is_empty() {
-            files_with_set_diagnostics.insert(file_uri.clone());
-        }
-
-        // Since we are using Arcs, this comparison should be efficient.
-        if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file_uri) {
-            if old_file_diagnostics == &new_file_diagnostics {
-                return;
-            }
-
-            state.file_diagnostics.insert(file_uri.clone(), new_file_diagnostics.clone());
-        };
-
-        let mut diags = Vec::new();
-        let trace_macro_diagnostics = state.config.trace_macro_diagnostics;
-        map_cairo_diagnostics_to_lsp(
-            (*db).upcast(),
-            &mut diags,
-            &new_file_diagnostics.parser,
-            file,
-            trace_macro_diagnostics,
-        );
-        map_cairo_diagnostics_to_lsp(
-            (*db).upcast(),
-            &mut diags,
-            &new_file_diagnostics.semantic,
-            file,
-            trace_macro_diagnostics,
-        );
-        map_cairo_diagnostics_to_lsp(
-            (*db).upcast(),
-            &mut diags,
-            &new_file_diagnostics.lowering,
-            file,
-            trace_macro_diagnostics,
-        );
-
-        trace_span!("publish_diagnostics").in_scope(|| {
-            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-                uri: file_uri,
-                diagnostics: diags,
-                version: None,
-            });
-        })
-    }
-
-    /// Gets the mapping of files to their respective modules.
-    fn get_files_modules(
-        db: &AnalysisDatabase,
-        files_ids: impl Iterator<Item = FileId>,
-    ) -> HashMap<FileId, Vec<ModuleId>> {
-        let mut result = HashMap::default();
-        for file_id in files_ids {
-            if let Ok(file_modules) = db.file_modules(file_id) {
-                result.insert(file_id, file_modules.iter().cloned().collect_vec());
-            }
-        }
-        result
-    }
-
-    /// Checks if enough time passed since last db swap, and if so, swaps the database.
-    #[tracing::instrument(level = "trace", skip_all)]
-    fn maybe_swap_database(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
-        if state.last_replace.elapsed().unwrap() <= state.db_replace_interval {
-            // Not enough time passed since last swap.
-            return Ok(());
-        }
-
-        let result = Backend::swap_database(state, notifier);
-
-        state.last_replace = SystemTime::now();
-
-        result
-    }
-
-    /// Perform database swap
-    #[tracing::instrument(level = "debug", skip_all)]
-    fn swap_database(state: &mut State, notifier: &Notifier) -> LSPResult<()> {
-        debug!("scheduled");
-        let mut new_db = ls_catch_unwind(|| {
-            let mut new_db = AnalysisDatabase::new(&state.tricks);
-            ensure_exists_in_db(&mut new_db, &state.db, state.open_files.iter());
-            new_db
-        })?;
-        debug!("initial setup done");
-        Backend::ensure_diagnostics_queries_up_to_date(
-            &mut new_db,
-            &state.scarb_toolchain,
-            &state.config,
-            state.open_files.iter(),
-            notifier,
-        );
-        debug!("initial compilation done");
-        debug!("starting");
-
-        ensure_exists_in_db(&mut new_db, &state.db, state.open_files.iter());
-        state.db = new_db;
-
-        debug!("done");
-        Ok(())
-    }
-
-    /// Ensures that all diagnostics are up to date.
-    #[tracing::instrument(level = "trace", skip_all)]
-    fn ensure_diagnostics_queries_up_to_date<'a>(
-        db: &mut AnalysisDatabase,
-        scarb_toolchain: &ScarbToolchain,
-        config: &Config,
-        open_files: impl Iterator<Item = &'a Url>,
-        notifier: &Notifier,
-    ) {
-        let query_diags = |db: &AnalysisDatabase, file_id| {
-            db.file_syntax_diagnostics(file_id);
-            let _ = db.file_semantic_diagnostics(file_id);
-            let _ = db.file_lowering_diagnostics(file_id);
-        };
-        for uri in open_files {
-            let Some(file_id) = db.file_for_url(uri) else { continue };
-            if let FileLongId::OnDisk(file_path) = file_id.lookup_intern(db) {
-                Backend::detect_crate_for(db, scarb_toolchain, config, &file_path, notifier);
-            }
-            query_diags(db, file_id);
-        }
-        for crate_id in db.crates() {
-            for module_files in db
-                .crate_modules(crate_id)
-                .iter()
-                .filter_map(|module_id| db.module_files(*module_id).ok())
-            {
-                for file_id in module_files.iter().copied() {
-                    query_diags(db, file_id);
-                }
-            }
-        }
+    /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
+    fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
+        state.diagnostics_controller.refresh(state.snapshot(), notifier);
     }
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(skip_all)]
     fn detect_crate_for(
         db: &mut AnalysisDatabase,
         scarb_toolchain: &ScarbToolchain,
@@ -720,13 +426,12 @@ impl Backend {
     }
 
     /// Reload crate detection for all open files.
-    #[tracing::instrument(level = "trace", skip_all)]
     fn reload(
         state: &mut State,
         notifier: &Notifier,
         requester: &mut Requester<'_>,
     ) -> LSPResult<()> {
-        Backend::reload_config(state, requester)?;
+        state.config.reload(requester, &state.client_capabilities)?;
 
         for uri in state.open_files.iter() {
             let Some(file_id) = state.db.file_for_url(uri) else { continue };
@@ -741,13 +446,6 @@ impl Backend {
             }
         }
 
-        Backend::refresh_diagnostics(state, notifier)
-    }
-
-    /// Reload the [`Config`] and all its dependencies.
-    fn reload_config(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
-        state.config.reload(requester, &state.client_capabilities, |state, notifier| {
-            Backend::refresh_diagnostics(state, notifier).ok();
-        })
+        Ok(())
     }
 }

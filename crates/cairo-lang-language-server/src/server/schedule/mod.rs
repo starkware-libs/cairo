@@ -5,22 +5,19 @@
 // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69  |
 // +---------------------------------------------------+
 
-use std::num::NonZeroUsize;
-
 use anyhow::Result;
-use task::BackgroundTaskBuilder;
-use thread::ThreadPriority;
 
+use self::task::BackgroundTaskBuilder;
+use self::thread::{JoinHandle, ThreadPriority};
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::ClientSender;
 use crate::state::State;
 
 mod task;
-mod thread;
+pub mod thread;
 
-pub(super) use task::BackgroundSchedule;
-pub(crate) use task::{SyncTask, Task};
-pub(crate) use thread::JoinHandle;
+pub(super) use self::task::BackgroundSchedule;
+pub use self::task::{SyncTask, Task};
 
 /// The event loop thread is actually a secondary thread that we spawn from the
 /// _actual_ main thread. This secondary thread has a larger stack size
@@ -38,18 +35,22 @@ pub fn event_loop_thread(
         .spawn(func)?)
 }
 
+type SyncTaskHook = Box<dyn Fn(&mut State, Notifier)>;
+
 pub struct Scheduler<'s> {
     state: &'s mut State,
     client: Client<'s>,
     background_pool: thread::Pool,
+    sync_task_hooks: Vec<SyncTaskHook>,
 }
 
 impl<'s> Scheduler<'s> {
-    pub fn new(state: &'s mut State, worker_threads: NonZeroUsize, sender: ClientSender) -> Self {
+    pub fn new(state: &'s mut State, sender: ClientSender) -> Self {
         Self {
             state,
-            background_pool: thread::Pool::new(worker_threads),
             client: Client::new(sender),
+            background_pool: thread::Pool::new(),
+            sync_task_hooks: Default::default(),
         }
     }
 
@@ -65,7 +66,11 @@ impl<'s> Scheduler<'s> {
             Task::Sync(SyncTask { func }) => {
                 let notifier = self.client.notifier();
                 let responder = self.client.responder();
-                func(self.state, notifier, &mut self.client.requester, responder);
+                func(self.state, notifier.clone(), &mut self.client.requester, responder);
+
+                for hook in &self.sync_task_hooks {
+                    hook(self.state, notifier.clone());
+                }
             }
             Task::Background(BackgroundTaskBuilder { schedule, builder: func }) => {
                 let static_func = func(self.state);
@@ -93,14 +98,16 @@ impl<'s> Scheduler<'s> {
     ) {
         self.dispatch(Task::local(func));
     }
-}
 
-/// Returns an estimate of the default amount of parallelism a program should use,
-/// capping or falling-back to a hardcoded _bound_.
-///
-/// ## Panics
-/// This function panics if `bound` is zero.
-pub fn bounded_available_parallelism(bound: usize) -> NonZeroUsize {
-    let bound = NonZeroUsize::new(bound).unwrap();
-    std::thread::available_parallelism().unwrap_or(bound).max(bound)
+    /// Registers a hook to be called each time a synchronous task is executed.
+    ///
+    /// All hooks are called right after task execution, in the same thread and with the same
+    /// context.
+    /// This mechanism is useful for doing various bookkeeping in reaction to user interaction
+    /// such as scheduling diagnostics computation, starting manual GC, etc.
+    /// This includes reacting to state changes, though note that this hook will be called even
+    /// after tasks that do not mutate the state.
+    pub fn on_sync_task(&mut self, hook: impl Fn(&mut State, Notifier) + 'static) {
+        self.sync_task_hooks.push(Box::new(hook));
+    }
 }
