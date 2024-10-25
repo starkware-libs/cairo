@@ -129,7 +129,7 @@ pub struct ContractEntryPoint {
 /// felt252s.
 ///
 /// Returns (sierra_version_id, compiler_version_id).
-/// See [crate::compiler_version].
+/// See [cairo_lang_sierra_to_casm::compiler_version].
 pub fn version_id_from_serialized_sierra_program(
     sierra_program: &[BigUintAsHex],
 ) -> Result<(VersionId, VersionId), Felt252SerdeError> {

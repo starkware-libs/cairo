@@ -85,7 +85,7 @@ pub fn sierra_to_felt252s(
 ///
 /// Returns (sierra_version_id, compiler_version_id, remaining),
 /// where 'remaining' are all the felts other than the ones dedicated to the version, unprocessed.
-/// See [crate::compiler_version].
+/// See [cairo_lang_sierra_to_casm::compiler_version].
 pub fn version_id_from_felt252s(
     sierra_program: &[BigUintAsHex],
 ) -> Result<(VersionId, VersionId, &[BigUintAsHex]), Felt252SerdeError> {
@@ -97,7 +97,7 @@ pub fn version_id_from_felt252s(
 /// Deserializes a Sierra program represented as a slice of felt252s.
 ///
 /// Returns (sierra_version_id, compiler_version_id, program).
-/// See [crate::compiler_version].
+/// See [cairo_lang_sierra_to_casm::compiler_version].
 pub fn sierra_from_felt252s(
     sierra_program: &[BigUintAsHex],
 ) -> Result<(VersionId, VersionId, Program), Felt252SerdeError> {
