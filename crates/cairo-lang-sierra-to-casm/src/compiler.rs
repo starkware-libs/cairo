@@ -172,8 +172,8 @@ impl CasmCairoProgram {
         sierra_program: &Program,
         cairo_program: &CairoProgram,
     ) -> Result<Self, CompilationError> {
-        let replacer = CanonicalReplacer::from_program(&sierra_program);
-        let sierra_program = &replacer.apply(&sierra_program);
+        let replacer = CanonicalReplacer::from_program(sierra_program);
+        let sierra_program = &replacer.apply(sierra_program);
 
         let prime = Felt252::prime();
 
@@ -205,9 +205,8 @@ impl CasmCairoProgram {
             MulModType::id(),
         ]);
 
-        let sierra_program_registry =
-            ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)
-                .map_err(CompilationError::ProgramRegistryError)?;
+        let sierra_program_registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(sierra_program)
+            .map_err(CompilationError::ProgramRegistryError)?;
 
         let type_sizes =
             get_type_size_map(sierra_program, &sierra_program_registry).unwrap_or_default();
@@ -253,7 +252,7 @@ impl CasmCairoProgram {
                     .filter(|type_id| {
                         !builtin_types.contains(type_resolver.get_generic_id(type_id))
                     })
-                    .and_then(|type_id| {
+                    .map(|type_id| {
                         let debug_name = type_id.debug_name.clone().map(|name| name.to_string());
                         let generic_id = type_resolver.get_generic_id(type_id).clone();
                         let size = *type_sizes.get(type_id).unwrap();
@@ -261,7 +260,7 @@ impl CasmCairoProgram {
                         let long_id = type_resolver.get_long_id(type_id);
 
                         let panic_inner_type = if generic_id == EnumType::ID {
-                            long_id.generic_args.get(0).and_then(|arg| match arg {
+                            long_id.generic_args.first().and_then(|arg| match arg {
                                 GenericArg::UserType(ut) => ut
                                     .debug_name
                                     .as_ref()
@@ -284,7 +283,7 @@ impl CasmCairoProgram {
                             None
                         };
 
-                        Some(CasmCairoOutputArg { generic_id, size, panic_inner_type, debug_name })
+                        CasmCairoOutputArg { generic_id, size, panic_inner_type, debug_name }
                     })
                     .into_iter()
                     .collect_vec();
