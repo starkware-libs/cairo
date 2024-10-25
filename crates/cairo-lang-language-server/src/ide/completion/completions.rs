@@ -26,7 +26,6 @@ use crate::ide::utils::find_methods_for_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
 use crate::lang::lsp::ToLsp;
 
-#[tracing::instrument(level = "trace", skip_all)]
 pub fn generic_completions(
     db: &AnalysisDatabase,
     module_file_id: ModuleFileId,
@@ -106,7 +105,6 @@ fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Completio
     }
 }
 
-#[tracing::instrument(level = "trace", skip_all)]
 pub fn colon_colon_completions(
     db: &AnalysisDatabase,
     module_file_id: ModuleFileId,
@@ -181,7 +179,6 @@ pub fn colon_colon_completions(
     })
 }
 
-#[tracing::instrument(level = "trace", skip_all)]
 pub fn dot_completions(
     db: &AnalysisDatabase,
     file_id: FileId,
@@ -254,7 +251,6 @@ pub fn dot_completions(
 }
 
 /// Returns a completion item for a method.
-#[tracing::instrument(level = "trace", skip_all)]
 pub fn completion_for_method(
     db: &AnalysisDatabase,
     module_id: ModuleId,
@@ -292,7 +288,6 @@ pub fn completion_for_method(
 }
 
 /// Checks if a module has a trait in scope.
-#[tracing::instrument(level = "trace", skip_all)]
 fn module_has_trait(
     db: &AnalysisDatabase,
     module_id: ModuleId,

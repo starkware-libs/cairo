@@ -121,7 +121,6 @@ impl<T> LsSemanticGroup for T where T: Upcast<dyn SemanticGroup> + ?Sized {}
 
 /// If the ast node is a lookup item, return corresponding ids. Otherwise, returns `None`.
 /// See [LookupItemId].
-#[tracing::instrument(level = "trace", skip_all)]
 fn lookup_item_from_ast(
     db: &dyn SemanticGroup,
     module_file_id: ModuleFileId,
