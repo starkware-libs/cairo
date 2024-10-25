@@ -944,7 +944,6 @@ dependencies = [
  "num-traits 0.2.19",
  "pretty_assertions",
  "serde",
- "serde_json",
  "starknet-types-core",
  "test-case",
  "test-log",
@@ -3566,9 +3565,7 @@ dependencies = [
  "anyhow",
  "cairo-lang-sierra",
  "cairo-lang-sierra-to-casm",
- "cairo-lang-utils",
  "clap",
- "serde",
  "serde_json",
 ]
 
