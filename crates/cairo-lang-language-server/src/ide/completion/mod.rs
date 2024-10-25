@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::items::us::get_use_path_segments;
 use cairo_lang_semantic::resolve::AsSegments;
 use cairo_lang_syntax::node::ast::PathSegment;
@@ -5,7 +6,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
-use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
+use completions::struct_constructor_completions;
+use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind, Position};
 use tracing::debug;
 
 use self::completions::{colon_colon_completions, dot_completions, generic_completions};
@@ -36,12 +38,16 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
     let trigger_kind =
         params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED);
 
-    match completion_kind(db, node) {
+    match completion_kind(db, node, position, file_id) {
         CompletionKind::Dot(expr) => {
             dot_completions(db, file_id, lookup_items, expr).map(CompletionResponse::Array)
         }
         CompletionKind::ColonColon(segments) if !segments.is_empty() => {
             colon_colon_completions(db, module_file_id, lookup_items, segments)
+                .map(CompletionResponse::Array)
+        }
+        CompletionKind::StructConstructor(constructor) => {
+            struct_constructor_completions(db, lookup_items, constructor)
                 .map(CompletionResponse::Array)
         }
         _ if trigger_kind == CompletionTriggerKind::INVOKED => {
@@ -54,9 +60,15 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 enum CompletionKind {
     Dot(ast::ExprBinary),
     ColonColon(Vec<PathSegment>),
+    StructConstructor(ast::ExprStructCtorCall),
 }
 
-fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
+fn completion_kind(
+    db: &AnalysisDatabase,
+    node: SyntaxNode,
+    position: Position,
+    file_id: FileId,
+) -> CompletionKind {
     debug!("node.kind: {:#?}", node.kind(db));
     match node.kind(db) {
         SyntaxKind::TerminalDot => {
@@ -134,6 +146,49 @@ fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
                 segments.pop();
                 debug!("ColonColon");
                 return CompletionKind::ColonColon(segments);
+            }
+        }
+        SyntaxKind::TerminalLBrace | SyntaxKind::TerminalRBrace | SyntaxKind::TerminalComma => {
+            if let Some(constructor_node) =
+                db.first_ancestor_of_kind(node, SyntaxKind::ExprStructCtorCall)
+            {
+                return CompletionKind::StructConstructor(
+                    ast::ExprStructCtorCall::from_syntax_node(db, constructor_node),
+                );
+            }
+        }
+        // Show completions only if struct tail is separated from the cursor by a newline.
+        // Exclude cases like: `<cursor>..id`, `.<cursor>.id`, `..<cursor>id`
+        SyntaxKind::TerminalDotDot => {
+            let dot_dot_node_trivia = ast::TerminalDotDot::from_syntax_node(db, node.clone())
+                .leading_trivia(db)
+                .elements(db);
+
+            let mut generate_completion = false;
+            let mut node_found_in_trivia = false;
+
+            if let Some(node_at_position) =
+                db.find_syntax_node_at_position(file_id, position.to_cairo())
+            {
+                for trivium in dot_dot_node_trivia {
+                    if trivium.as_syntax_node() == node_at_position {
+                        node_found_in_trivia = true;
+                    }
+
+                    if node_found_in_trivia && matches!(trivium, ast::Trivium::Newline(_)) {
+                        generate_completion = true;
+                    }
+                }
+            }
+
+            if generate_completion {
+                if let Some(constructor_node) =
+                    db.first_ancestor_of_kind(node, SyntaxKind::ExprStructCtorCall)
+                {
+                    return CompletionKind::StructConstructor(
+                        ast::ExprStructCtorCall::from_syntax_node(db, constructor_node),
+                    );
+                }
             }
         }
         _ => (),
