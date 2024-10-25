@@ -1,4 +1,4 @@
-use std::iter;
+use std::{fmt, iter};
 
 use cairo_lang_defs::ids::{
     FileIndex, GenericTypeId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, TraitItemId,
@@ -159,7 +159,11 @@ impl<'a> DocumentationCommentParser<'a> {
             &path,
         );
 
-        if let Expr::Path(expr_path) = expr { Some(expr_path) } else { None }
+        if let Expr::Path(expr_path) = expr {
+            Some(expr_path)
+        } else {
+            None
+        }
     }
 
     /// Returns a [`ModuleFileId`] containing the node.
@@ -278,6 +282,28 @@ impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
                 LookupItemId::TraitItem(TraitItemId::Function(id)),
             )),
             _ => None,
+        }
+    }
+}
+
+impl fmt::Display for CommentLinkToken {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.path.clone() {
+            Some(path) => write!(f, "[{}]({})", self.label, path),
+            None => write!(f, "[{}]", self.label),
+        }
+    }
+}
+
+impl fmt::Display for DocumentationCommentToken {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DocumentationCommentToken::Content(ref content) => {
+                write!(f, "{}", content)
+            }
+            DocumentationCommentToken::Link(ref link_token) => {
+                write!(f, "{}", link_token)
+            }
         }
     }
 }

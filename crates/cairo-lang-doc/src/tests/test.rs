@@ -8,33 +8,10 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
-use super::test_utils::{TestDatabase, set_file_content, setup_test_module};
+use super::test_utils::{set_file_content, setup_test_module, TestDatabase};
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 use crate::types::DocumentationCommentToken;
-
-impl DocumentationCommentToken {
-    pub fn to_string(&self, db: &dyn DefsGroup) -> String {
-        match self {
-            DocumentationCommentToken::Content(content) => content.clone(),
-            DocumentationCommentToken::Link(link) => match &link.path {
-                Some(path) => format!(
-                    "[{}]({})",
-                    link.label,
-                    link.resolved_item
-                        .map(|item| format!("Resolved item: {}", item.name(db).to_string()))
-                        .unwrap_or(path.clone())
-                ),
-                None => format!(
-                    "[{}]",
-                    link.resolved_item
-                        .map(|item| format!("Resolved item: {}", item.name(db).to_string()))
-                        .unwrap_or(link.label.clone())
-                ),
-            },
-        }
-    }
-}
 
 cairo_lang_test_utils::test_file_test!(
   item_documentation,
@@ -280,11 +257,9 @@ impl<'a> ResultDocBuilder<'a> {
 
     fn insert_doc_to_test_output(
         &mut self,
-        // output: &mut OrderedHashMap<String, String>,
-        // item_number: &mut u32,
         documentation: Option<String>,
         signature: String,
-        documentation_as_tokens: Vec<DocumentationCommentToken>,
+        documentation_as_tokens: Option<Vec<DocumentationCommentToken>>,
     ) {
         self.output
             .insert("Item signature #".to_string() + &self.item_counter.to_string(), signature);
@@ -294,7 +269,21 @@ impl<'a> ResultDocBuilder<'a> {
         );
         self.output.insert(
             "Item documentation tokens #".to_string() + &self.item_counter.to_string(),
-            documentation_as_tokens.iter().map(|token| token.to_string(self.db)).join(""),
+            documentation_as_tokens
+                .unwrap_or_default()
+                .iter()
+                .map(|token| match token {
+                    DocumentationCommentToken::Content(_) => token.to_string(),
+                    DocumentationCommentToken::Link(link) => match link.resolved_item {
+                        Some(resolved_item) => format!(
+                            "*** {} RESOLVED ITEM NAME: {} ***",
+                            link,
+                            resolved_item.name(self.db)
+                        ),
+                        None => link.to_string(),
+                    },
+                })
+                .join(""),
         );
         self.item_counter += 1;
     }
