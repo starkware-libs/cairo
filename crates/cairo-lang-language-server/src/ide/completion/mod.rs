@@ -5,6 +5,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
+use completions::struct_constructor_completions;
 use lsp_types::{CompletionParams, CompletionResponse, CompletionTriggerKind};
 use tracing::debug;
 
@@ -44,6 +45,10 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
             colon_colon_completions(db, module_file_id, lookup_items, segments)
                 .map(CompletionResponse::Array)
         }
+        CompletionKind::StructConstructor(constructor) => {
+            struct_constructor_completions(db, lookup_items, constructor)
+                .map(CompletionResponse::Array)
+        }
         _ if trigger_kind == CompletionTriggerKind::INVOKED => {
             Some(CompletionResponse::Array(generic_completions(db, module_file_id, lookup_items)))
         }
@@ -54,6 +59,7 @@ pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<Compl
 enum CompletionKind {
     Dot(ast::ExprBinary),
     ColonColon(Vec<PathSegment>),
+    StructConstructor(ast::ExprStructCtorCall),
 }
 
 fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
@@ -134,6 +140,20 @@ fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
                 segments.pop();
                 debug!("ColonColon");
                 return CompletionKind::ColonColon(segments);
+            }
+        }
+        SyntaxKind::TerminalLBrace
+        | SyntaxKind::TerminalRBrace
+        | SyntaxKind::StructArgExpr
+        | SyntaxKind::StructArgList
+        | SyntaxKind::StructArgTail
+        | SyntaxKind::TerminalComma => {
+            if let Some(constructor_node) =
+                db.first_ancestor_of_kind(node, SyntaxKind::ExprStructCtorCall)
+            {
+                return CompletionKind::StructConstructor(
+                    ast::ExprStructCtorCall::from_syntax_node(db, constructor_node),
+                );
             }
         }
         _ => (),
