@@ -21,19 +21,29 @@ use regex::{Captures, Regex};
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 
+/// Token representing a link to another item inside the documentation.
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub struct CommentLinkToken {
+    /// A link part that's inside "[]" brackets.
     pub label: String,
+    /// A link part that's inside "()" brackets, right after the label.
     pub path: Option<String>,
+    /// Item resolved based on the path provided by user. If resolver cannot resolve the item, we
+    /// leave it as None.
     pub resolved_item: Option<DocumentableItemId>,
 }
 
+/// Generic type for a comment token. It's either a plain content or a link.
+/// Notice that the Content type of token can store much more than just one word.
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub enum DocumentationCommentToken {
+    /// Token with plain documentation content.
     Content(String),
+    /// Link token.
     Link(CommentLinkToken),
 }
 
+/// Parses plain documentation comments into [DocumentationCommentToken]s.
 pub struct DocumentationCommentParser<'a> {
     db: &'a dyn DocGroup,
 }
@@ -43,6 +53,11 @@ impl<'a> DocumentationCommentParser<'a> {
         Self { db }
     }
 
+    /// Parses documentation comment content into vector of [DocumentationCommentToken]s, keeping
+    /// the order in which they were present in the content.
+    ///
+    /// We look for 3 types of patterns when it comes to link: "[label](path)", "[path]" or
+    /// "[`path`]".
     pub fn parse_documentation_comment(
         &self,
         item_id: DocumentableItemId,
@@ -120,6 +135,7 @@ impl<'a> DocumentationCommentParser<'a> {
         result
     }
 
+    /// Resolves item based on the provided path as a string.
     fn resolve_linked_item(
         &self,
         item_id: DocumentableItemId,
@@ -142,6 +158,7 @@ impl<'a> DocumentationCommentParser<'a> {
             .to_documentable_item_id()
     }
 
+    /// Parses the path as a string to an Path Expression, which can be later used by a resolver.
     fn prase_comment_link_path(&self, path: String) -> Option<ExprPath> {
         let virtual_file = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
@@ -159,11 +176,7 @@ impl<'a> DocumentationCommentParser<'a> {
             &path,
         );
 
-        if let Expr::Path(expr_path) = expr {
-            Some(expr_path)
-        } else {
-            None
-        }
+        if let Expr::Path(expr_path) = expr { Some(expr_path) } else { None }
     }
 
     /// Returns a [`ModuleFileId`] containing the node.
@@ -231,6 +244,9 @@ trait ToDocumentableItemId<T> {
 }
 
 impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
+    /// Converts the [ResolvedGenericItem] to [DocumentableItemId].
+    /// As for now, returns None only for a common Variable, as those are not a supported
+    /// documentable item.
     fn to_documentable_item_id(self) -> Option<DocumentableItemId> {
         match self {
             ResolvedGenericItem::GenericConstant(id) => Some(DocumentableItemId::LookupItem(
@@ -281,7 +297,17 @@ impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
             ResolvedGenericItem::TraitFunction(id) => Some(DocumentableItemId::LookupItem(
                 LookupItemId::TraitItem(TraitItemId::Function(id)),
             )),
-            _ => None,
+            ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(impl_func)) => {
+                Some(DocumentableItemId::LookupItem(LookupItemId::ImplItem(
+                    cairo_lang_defs::ids::ImplItemId::Function(impl_func.id),
+                )))
+            }
+            ResolvedGenericItem::GenericFunction(GenericFunctionId::Trait(trait_func)) => {
+                Some(DocumentableItemId::LookupItem(LookupItemId::TraitItem(
+                    TraitItemId::Function(trait_func.id),
+                )))
+            }
+            ResolvedGenericItem::Variable(_) => None,
         }
     }
 }

@@ -6,11 +6,11 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_utils::Upcast;
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain};
 
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
@@ -258,10 +258,9 @@ fn get_item_documentation_as_tokens(
     });
 
     Some(result.into_iter().flatten().collect())
-
-    // chain!(outer_comment_tokens, inner_comment_tokens, module_level_comment_tokens).collect()
 }
 
+/// Get the raw documentation content from the item.
 fn get_item_documentation_content(
     db: &dyn DocGroup,
     item_id: DocumentableItemId,
