@@ -151,7 +151,6 @@ pub struct CasmCairoEntryPoint {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmCairoArg {
-    pub generic_id: GenericTypeId,
     pub size: i16,
     #[serde(skip_serializing_if = "skip_if_none")]
     pub debug_name: Option<String>,
@@ -159,7 +158,6 @@ pub struct CasmCairoArg {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmCairoOutputArg {
-    pub generic_id: GenericTypeId,
     pub size: i16,
     #[serde(skip_serializing_if = "skip_if_none")]
     pub debug_name: Option<String>,
@@ -241,7 +239,7 @@ impl CasmCairoProgram {
                             Either::Left(generic_id.0.as_str().to_case(Case::Snake))
                         } else {
                             let size = *type_sizes.get(type_id).unwrap();
-                            Either::Right(CasmCairoArg { generic_id, size, debug_name })
+                            Either::Right(CasmCairoArg { size, debug_name })
                         }
                     });
 
@@ -270,10 +268,8 @@ impl CasmCairoProgram {
                                         GenericArg::Type(ty) => {
                                             let debug_name =
                                                 ty.debug_name.clone().map(|name| name.to_string());
-                                            let generic_id =
-                                                type_resolver.get_generic_id(ty).clone();
                                             let size = *type_sizes.get(ty).unwrap();
-                                            Some(CasmCairoArg { generic_id, size, debug_name })
+                                            Some(CasmCairoArg { size, debug_name })
                                         }
                                         _ => None,
                                     }),
@@ -283,7 +279,7 @@ impl CasmCairoProgram {
                             None
                         };
 
-                        CasmCairoOutputArg { generic_id, size, panic_inner_type, debug_name }
+                        CasmCairoOutputArg { size, panic_inner_type, debug_name }
                     })
                     .into_iter()
                     .collect_vec();
