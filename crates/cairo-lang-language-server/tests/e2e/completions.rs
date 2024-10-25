@@ -10,6 +10,7 @@ cairo_lang_test_utils::test_file_test!(
     "tests/test_data/completions",
     {
         methods_text_edits: "methods_text_edits.txt",
+        structs: "structs.txt",
     },
     test_completions_text_edits
 
