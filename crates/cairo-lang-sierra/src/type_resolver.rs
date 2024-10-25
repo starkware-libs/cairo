@@ -1,12 +1,13 @@
+use cairo_lang_utils::require;
+
+use crate::extensions::NamedType;
 use crate::extensions::array::ArrayType;
 use crate::extensions::enm::EnumType;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::snapshot::SnapshotType;
 use crate::extensions::structure::StructType;
-use crate::extensions::NamedType;
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
-use cairo_lang_utils::require;
 
 /// Context for resolving types.
 pub struct TypeResolver<'a> {

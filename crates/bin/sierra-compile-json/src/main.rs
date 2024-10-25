@@ -2,10 +2,8 @@ use std::fs;
 
 use anyhow::Context;
 use cairo_lang_sierra::ProgramParser;
-use cairo_lang_sierra_to_casm::{
-    compiler::{compile, CasmCairoProgram, SierraToCasmConfig},
-    metadata::calc_metadata,
-};
+use cairo_lang_sierra_to_casm::compiler::{CasmCairoProgram, SierraToCasmConfig, compile};
+use cairo_lang_sierra_to_casm::metadata::calc_metadata;
 use clap::Parser;
 
 /// Compiles a Sierra file (Cairo Program) into serialized CASM.

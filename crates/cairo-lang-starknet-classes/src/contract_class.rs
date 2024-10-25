@@ -1,6 +1,6 @@
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra_to_casm::compiler_version::{
-    current_compiler_version_id, current_sierra_version_id, VersionId,
+    VersionId, current_compiler_version_id, current_sierra_version_id,
 };
 use cairo_lang_utils::bigint::{BigUintAsHex, deserialize_big_uint, serialize_big_uint};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;

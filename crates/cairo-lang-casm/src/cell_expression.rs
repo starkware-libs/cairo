@@ -1,8 +1,9 @@
-use crate::ap_change::ApplyApChange;
-use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, ResOperand};
 use cairo_lang_utils::try_extract_matches;
 use num_bigint::BigInt;
 use num_traits::cast::ToPrimitive;
+
+use crate::ap_change::ApplyApChange;
+use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, ResOperand};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CellOperator {

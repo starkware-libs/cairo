@@ -4,8 +4,9 @@ use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
-use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
-use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
+use cairo_lang_sierra::extensions::circuit::{
+    AddModType, CircuitConcreteLibfunc, CircuitInfo, MulModType, VALUE_SIZE,
+};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{
     CoreConcreteLibfunc, CoreLibfunc, CoreType, CoreTypeConcrete,
@@ -13,16 +14,14 @@ use cairo_lang_sierra::extensions::core::{
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::enm::EnumType;
-use cairo_lang_sierra::extensions::gas::GasBuiltinType;
-use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
+use cairo_lang_sierra::extensions::gas::{GasBuiltinType, GasConcreteLibfunc};
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::poseidon::PoseidonType;
 use cairo_lang_sierra::extensions::range_check::{RangeCheck96Type, RangeCheckType};
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
-use cairo_lang_sierra::extensions::ConcreteLibfunc;
-use cairo_lang_sierra::extensions::NamedType;
+use cairo_lang_sierra::extensions::{ConcreteLibfunc, NamedType};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, GenericTypeId, VarId};
 use cairo_lang_sierra::program::{
     BranchTarget, GenericArg, Invocation, Program, Statement, StatementIdx,
@@ -31,15 +30,14 @@ use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError}
 use cairo_lang_sierra::type_resolver::TypeResolver;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
-use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
-use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
+use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_utils::bigint::{BigUintAsHex, deserialize_big_uint, serialize_big_uint};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-
 use convert_case::{Case, Casing};
-use itertools::{chain, zip_eq, Either, Itertools};
+use itertools::{Either, Itertools, chain, zip_eq};
 use num_bigint::{BigInt, BigUint};
 use num_integer::Integer;
 use num_traits::{Signed, ToPrimitive, Zero};
@@ -52,11 +50,11 @@ use crate::circuit::CircuitsInfo;
 use crate::compiler_version::current_compiler_version_id;
 use crate::invocations::enm::get_variant_selector;
 use crate::invocations::{
-    check_references_on_stack, compile_invocation, BranchChanges, InvocationError, ProgramInfo,
+    BranchChanges, InvocationError, ProgramInfo, check_references_on_stack, compile_invocation,
 };
 use crate::metadata::Metadata;
-use crate::references::{check_types_match, ReferenceValue, ReferencesError};
-use crate::relocations::{relocate_instructions, RelocationEntry};
+use crate::references::{ReferenceValue, ReferencesError, check_types_match};
+use crate::relocations::{RelocationEntry, relocate_instructions};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
