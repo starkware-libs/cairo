@@ -1,0 +1,126 @@
+//! > Test completing struct members upon construction.
+
+//! > test_runner_name
+test_completions_text_edits(detail: true)
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+mod some_module {
+    pub struct Struct {
+        x: u32,
+        pub y: felt252,
+        pub z: i16
+    }
+    
+    fn build_struct() {
+        let s = Struct {
+            x: 0x0,
+            y: 0x0,
+            z: 0x0
+        };
+        
+        let a = Struct {
+            <caret>
+        };
+        
+        let b = Struct {
+            x: 0x0,
+            <caret>
+        };
+        
+        let c = Struct {
+            x: 0x0,
+            <caret>
+            ..s
+        };
+    }
+}
+
+mod happy_cases {
+    use super::some_module::Struct;
+    
+    fn foo() {
+        let a = Struct {
+            <caret>
+        };
+        
+        let b = Struct {
+            y: 0x0,
+            <caret>
+        };
+        
+        let c = Struct {
+            y: 0x0,
+            x: 0x0,
+            <caret>
+        }
+    }
+}
+
+mod unhappy_cases {
+    fn foo() {
+        let a = NonexsitentStruct {
+            <caret>
+        };
+    }
+}
+
+//! > Completions #0
+            <caret>
+--------------------------
+Completion: x
+Detail: core::integer::u32
+--------------------------
+Completion: y
+Detail: core::felt252
+--------------------------
+Completion: z
+Detail: core::integer::i16
+
+//! > Completions #1
+            <caret>
+--------------------------
+Completion: y
+Detail: core::felt252
+--------------------------
+Completion: z
+Detail: core::integer::i16
+
+//! > Completions #2
+            <caret>
+--------------------------
+Completion: y
+Detail: core::felt252
+--------------------------
+Completion: z
+Detail: core::integer::i16
+
+//! > Completions #3
+            <caret>
+--------------------------
+Completion: y
+Detail: core::felt252
+--------------------------
+Completion: z
+Detail: core::integer::i16
+
+//! > Completions #4
+            <caret>
+--------------------------
+Completion: z
+Detail: core::integer::i16
+
+//! > Completions #5
+            <caret>
+--------------------------
+Completion: z
+Detail: core::integer::i16
+
+//! > Completions #6
+            <caret>
