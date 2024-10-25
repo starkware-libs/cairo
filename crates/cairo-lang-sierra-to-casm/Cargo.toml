@@ -8,7 +8,7 @@ description = "Emitting of CASM instructions from Sierra code."
 
 [dependencies]
 assert_matches.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.8.4" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.8.4", features = ["serde"] }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.8.4" }
 cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "~2.8.4" }
 cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "~2.8.4" }
