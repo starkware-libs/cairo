@@ -746,9 +746,10 @@ trait ReferenceExpressionView: Sized {
 /// conditional jump.
 pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>) -> StatementIdx {
     match builder.invocation.branches.as_slice() {
-        [BranchInfo { target: BranchTarget::Fallthrough, results: _ }, BranchInfo { target: BranchTarget::Statement(target_statement_id), results: _ }] => {
-            *target_statement_id
-        }
+        [
+            BranchInfo { target: BranchTarget::Fallthrough, results: _ },
+            BranchInfo { target: BranchTarget::Statement(target_statement_id), results: _ },
+        ] => *target_statement_id,
         _ => panic!("malformed invocation"),
     }
 }
