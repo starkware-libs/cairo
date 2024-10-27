@@ -11,14 +11,15 @@ use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
+use toml::value::Array;
 
 use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
 use super::visibility::Visibility;
-use crate::SemanticDiagnostic;
-use crate::db::{SemanticGroup, get_resolver_data_options};
+use crate::db::{get_resolver_data_options, SemanticGroup};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::resolve::ResolvedGenericItem;
+use crate::SemanticDiagnostic;
 
 /// Information per item in a module.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -32,6 +33,7 @@ pub struct ModuleItemInfo {
 pub struct ModuleSemanticData {
     /// The items in the module without duplicates.
     pub items: OrderedHashMap<SmolStr, ModuleItemInfo>,
+    pub imported_modules: Vec<ModuleId>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
 
@@ -44,6 +46,7 @@ pub fn priv_module_semantic_data(
     // We use the builder here since the items can come from different file_ids.
     let mut diagnostics = DiagnosticsBuilder::default();
     let mut items = OrderedHashMap::default();
+    let mut imported_modules = Vec::default();
     for item_id in db.module_items(module_id)?.iter().copied() {
         let (name, attributes, visibility) = match &item_id {
             ModuleItemId::Constant(item_id) => {
@@ -95,6 +98,10 @@ pub fn priv_module_semantic_data(
                 let item = &def_db.module_extern_functions(module_id)?[item_id];
                 (item_id.name(def_db), item.attributes(syntax_db), item.visibility(syntax_db))
             }
+            ModuleItemId::GlobalUse(module_id) => {
+                imported_modules.append(*module_id);
+                continue;
+            }
         };
         let visibility = Visibility::from_ast(db.upcast(), &mut diagnostics, &visibility);
         let feature_kind = FeatureKind::from_ast(db.upcast(), &mut diagnostics, &attributes);
@@ -110,7 +117,7 @@ pub fn priv_module_semantic_data(
             );
         }
     }
-    Ok(Arc::new(ModuleSemanticData { items, diagnostics: diagnostics.build() }))
+    Ok(Arc::new(ModuleSemanticData { items, imported_modules, diagnostics: diagnostics.build() }))
 }
 
 pub fn module_item_by_name(
@@ -118,8 +125,31 @@ pub fn module_item_by_name(
     module_id: ModuleId,
     name: SmolStr,
 ) -> Maybe<Option<ModuleItemId>> {
+    let modules_seen = &mut OrderedHashSet::default();
+    module_item_by_name_aux(db, module_id, name, modules_seen)
+}
+
+pub fn module_item_by_name_aux(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    name: SmolStr,
+    modules_seen: &mut OrderedHashSet<ModuleId>,
+) -> Maybe<Option<ModuleItemId>> {
+    modules_seen.insert(module_id);
     let module_data = db.priv_module_semantic_data(module_id)?;
-    Ok(module_data.items.get(&name).map(|info| info.item_id))
+    match module_data.items.get(&name).map(|info| info.item_id) {
+        Some(item) => Ok(Some(item)),
+        None => {
+            for local_module_id in module_data.imported_modules.iter().copied() {
+                if modules_seen.contains(&local_module_id) {
+                    continue;
+                }
+                if let Some(item) = db.module_item_by_name(local_module_id, name.clone())? {
+                    return Ok(Some(item));
+                }
+            }
+        }
+    }
 }
 
 pub fn module_item_info_by_name(
@@ -127,7 +157,7 @@ pub fn module_item_info_by_name(
     module_id: ModuleId,
     name: SmolStr,
 ) -> Maybe<Option<ModuleItemInfo>> {
-    let module_data = db.priv_module_semantic_data(module_id)?;
+    let module_data: Arc<ModuleSemanticData> = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).cloned())
 }
 

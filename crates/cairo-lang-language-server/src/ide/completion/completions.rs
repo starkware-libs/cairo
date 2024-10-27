@@ -309,6 +309,7 @@ fn module_has_trait(
     let prelude_submodule_name = edition.prelude_submodule_name();
     let core_prelude_submodule = core_submodule(db, "prelude");
     let prelude_submodule = get_submodule(db, core_prelude_submodule, prelude_submodule_name)?;
+    let modules_seen = &mut OrderedHashSet::default();
     for module_id in [prelude_submodule, module_id].iter().copied() {
         for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
             if db.use_resolved_item(use_id) == Ok(ResolvedGenericItem::Trait(trait_id)) {
@@ -317,4 +318,20 @@ fn module_has_trait(
         }
     }
     Some(false)
+}
+
+fn module_has_trait_aux (
+    db: &AnalysisDatabase,
+    module_id: ModuleId,
+    trait_id: cairo_lang_defs::ids::TraitId,
+    modules_seen: &mut OrderedHashSet<ModuleId>,
+) -> bool {
+    modules_seen.insert(module_id);
+    for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
+        if db.use_resolved_item(use_id) == Ok(ResolvedGenericItem::Trait(trait_id)) {
+            return true;
+        }
+    }
+    for local_module_id in module_data.imported_modules.iter().copied()
+
 }

@@ -227,3 +227,28 @@ fn nested_for_loop() {
     };
     assert_eq!(result, 21);
 }
+
+enum TestEnum {
+    A,
+    B,
+    C,
+}
+
+mod some_mod {
+    use super::TestEnum;
+    use super::TestEnum::A;
+    fn foo() {
+        let test_enum = TestEnum::A;
+        match test_enum {
+            A => {
+                assert!(true);
+            },
+            TestEnum::B => {
+                assert!(false);
+            },
+            TestEnum::C => {
+                assert!(false);
+            }
+        }
+    }
+}

@@ -14,10 +14,10 @@ use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::{TypedStablePtr, ast};
+use cairo_lang_syntax::node::{ast, TypedStablePtr};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::{LookupIntern, Upcast, require};
+use cairo_lang_utils::{require, LookupIntern, Upcast};
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -41,7 +41,7 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::{ImplTypeId, TypeSizeInformation};
 use crate::{
-    FunctionId, Parameter, SemanticDiagnostic, TypeId, corelib, items, lsp_helpers, semantic, types,
+    corelib, items, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
 };
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
@@ -254,7 +254,7 @@ pub trait SemanticGroup:
     /// Returns the semantic diagnostics of a struct definition.
     #[salsa::invoke(items::structure::struct_definition_diagnostics)]
     fn struct_definition_diagnostics(&self, struct_id: StructId)
-    -> Diagnostics<SemanticDiagnostic>;
+        -> Diagnostics<SemanticDiagnostic>;
     /// Returns the members of a struct.
     #[salsa::invoke(items::structure::struct_members)]
     fn struct_members(
@@ -276,7 +276,7 @@ pub trait SemanticGroup:
     /// Private query to compute data about an enum declaration.
     #[salsa::invoke(items::enm::priv_enum_declaration_data)]
     fn priv_enum_declaration_data(&self, enum_id: EnumId)
-    -> Maybe<items::enm::EnumDeclarationData>;
+        -> Maybe<items::enm::EnumDeclarationData>;
     /// Returns the diagnostics of an enum declaration.
     #[salsa::invoke(items::enm::enum_declaration_diagnostics)]
     fn enum_declaration_diagnostics(&self, enum_id: EnumId) -> Diagnostics<SemanticDiagnostic>;
@@ -445,7 +445,7 @@ pub trait SemanticGroup:
     /// Returns the functions of a trait.
     #[salsa::invoke(items::trt::trait_functions)]
     fn trait_functions(&self, trait_id: TraitId)
-    -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>>;
+        -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>>;
     /// Returns the function with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_function_by_name)]
     fn trait_function_by_name(
@@ -463,7 +463,7 @@ pub trait SemanticGroup:
     /// Returns the constants of a trait.
     #[salsa::invoke(items::trt::trait_constants)]
     fn trait_constants(&self, trait_id: TraitId)
-    -> Maybe<OrderedHashMap<SmolStr, TraitConstantId>>;
+        -> Maybe<OrderedHashMap<SmolStr, TraitConstantId>>;
     /// Returns the item constants with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_constant_by_name)]
     fn trait_constant_by_name(
@@ -490,7 +490,7 @@ pub trait SemanticGroup:
     /// Returns the semantic diagnostics of a trait type.
     #[salsa::invoke(items::trt::trait_type_diagnostics)]
     fn trait_type_diagnostics(&self, trait_type_id: TraitTypeId)
-    -> Diagnostics<SemanticDiagnostic>;
+        -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic params of a trait type.
     #[salsa::invoke(items::trt::trait_type_generic_params)]
     fn trait_type_generic_params(&self, trait_type_id: TraitTypeId) -> Maybe<Vec<GenericParam>>;
@@ -745,7 +745,7 @@ pub trait SemanticGroup:
     /// Returns the item of the impl, by the given `name`, if exists.
     #[salsa::invoke(items::imp::impl_item_by_name)]
     fn impl_item_by_name(&self, impl_def_id: ImplDefId, name: SmolStr)
-    -> Maybe<Option<ImplItemId>>;
+        -> Maybe<Option<ImplItemId>>;
     /// Returns the trait impl of an implicit impl if `name` exists in trait and not in the impl.
     #[salsa::invoke(items::imp::impl_implicit_impl_by_name)]
     fn impl_implicit_impl_by_name(
@@ -1663,6 +1663,7 @@ fn module_semantic_diagnostics(
             ModuleItemId::ImplAlias(type_alias) => {
                 diagnostics.extend(db.impl_alias_semantic_diagnostics(*type_alias));
             }
+            ModuleItemId::GlobalUse(_) => {}
         }
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);

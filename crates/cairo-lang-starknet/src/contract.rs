@@ -1,21 +1,22 @@
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
 use cairo_lang_defs::ids::{
     FreeFunctionId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
     NamedLanguageElementId, SubmoduleId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_semantic::Expr;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::expr::inference::canonic::ResultNoErrEx;
+use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBodyId as SemanticConcreteFunctionWithBodyId, GenericFunctionId,
 };
 use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use cairo_lang_semantic::substitution::SemanticRewriter;
+use cairo_lang_semantic::Expr;
+use cairo_lang_sierra::extensions::modules;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
@@ -23,16 +24,16 @@ use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::{
-    OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
+    deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
 };
-use cairo_lang_utils::{Intern, extract_matches};
+use cairo_lang_utils::{extract_matches, Intern};
 use itertools::chain;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::aliased::Aliased;
-use crate::compile::{SemanticEntryPoints, extract_semantic_entrypoints};
+use crate::compile::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
 use crate::plugin::consts::{ABI_ATTR, ABI_ATTR_EMBED_V0_ARG};
 
@@ -130,6 +131,8 @@ fn get_module_aliased_functions(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
 ) -> anyhow::Result<Vec<Aliased<FreeFunctionId>>> {
+    let modules_seen = &mut OrderedHashSet::default();
+    get_module_aliased_functions_aux(db, module_id, modules_seen);
     db.module_uses(module_id)
         .to_option()
         .with_context(|| "Failed to get external module uses.")?
@@ -149,6 +152,41 @@ fn get_module_aliased_functions(
             }
         })
         .collect::<Result<Vec<_>, _>>()
+}
+
+fn get_module_aliased_functions_aux(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    modules_seen: &mut OrderedHashSet<ModuleId>,
+) -> anyhow::Result<Vec<Aliased<FreeFunctionId>>> {
+    modules_seen.insert(module_id);
+    let local_uses = db
+        .module_uses(module_id)
+        .to_option()
+        .with_context(|| "Failed to get external module uses.")?
+        .iter()
+        .map(|(use_id, leaf)| {
+            if let ResolvedGenericItem::GenericFunction(GenericFunctionId::Free(function_id)) = db
+                .use_resolved_item(*use_id)
+                .to_option()
+                .with_context(|| "Failed to fetch used function.")?
+            {
+                Ok(Aliased {
+                    value: function_id,
+                    alias: leaf.stable_ptr().identifier(db.upcast()).to_string(),
+                })
+            } else {
+                bail!("Expected a free function.")
+            }
+        })
+        .collect::<Result<Vec<_>, _>>();
+    for local_module_id in module_data.imported_modules.iter().copied() {
+        if modules_seen.contains(&local_module_id) {
+            continue;
+        }
+        local_uses.extend(get_module_aliased_functions_aux(db, local_module_id, modules_seen)?);
+    }
+    local_uses
 }
 
 /// Returns the abi functions of the impl aliases embedded in the given contract.

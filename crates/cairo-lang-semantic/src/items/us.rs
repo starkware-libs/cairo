@@ -4,17 +4,17 @@ use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, ModuleItemId, UseId}
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::UsePathEx;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, UsePathEx};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 
-use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::resolve::{ResolvedGenericItem, Resolver, ResolverData};
+use crate::SemanticDiagnostic;
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -45,6 +45,7 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
         None,
     );
     let resolver_data = Arc::new(resolver.data);
+    if segments.last().unwrap().identifier(db) == "*" {}
 
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data })
 }

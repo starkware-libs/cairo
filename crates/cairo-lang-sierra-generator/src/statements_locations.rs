@@ -6,8 +6,8 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::LookupIntern;
 use itertools::Itertools;
 
 use crate::statements_code_locations::{
@@ -65,6 +65,19 @@ pub fn maybe_containing_function_identifier_for_tests(
         None
     } else {
         Some(absolute_semantic_path_to_file_module.add("::").add(&relative_semantic_path))
+    }
+}
+
+mod a {
+    pub use super::b::*;
+    pub struct A {
+        pub a: u32,
+    }
+}
+mod b {
+    pub use super::a::*;
+    pub struct B {
+        pub b: u32,
     }
 }
 

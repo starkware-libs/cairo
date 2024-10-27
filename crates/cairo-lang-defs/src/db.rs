@@ -5,21 +5,22 @@ use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
+// use cairo_lang_semantic::items::us::get_parent_single_use_path;
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR, IMPLICIT_PRECEDENCE_ATTR,
     INLINE_ATTR, INTERNAL_ATTR, MUST_USE_ATTR, PHANTOM_ATTR, STARKNET_INTERFACE_ATTR,
     UNSTABLE_ATTR,
 };
-use cairo_lang_syntax::node::ast::MaybeModuleBody;
+use cairo_lang_syntax::node::ast::{MaybeModuleBody, UsePath};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::element_list::ElementList;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{ast, Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast};
-use itertools::{Itertools, chain};
+use itertools::{chain, Itertools};
 use salsa::InternKey;
 
 use crate::ids::*;
@@ -318,7 +319,7 @@ fn module_files(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<[FileId]>>
 }
 
 fn module_file(db: &dyn DefsGroup, module_file_id: ModuleFileId) -> Maybe<FileId> {
-    Ok(db.module_files(module_file_id.0)?[module_file_id.1.0])
+    Ok(db.module_files(module_file_id.0)?[module_file_id.1 .0])
 }
 
 fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Directory> {
@@ -394,6 +395,7 @@ pub struct ModuleData {
     impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
     extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
     extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
+    global_uses: Arc<OrderedHashMap<GlobalUseId, ast::UsePathLeaf>>,
 
     files: Vec<FileId>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
@@ -453,6 +455,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let mut extern_types = OrderedHashMap::default();
     let mut extern_functions = OrderedHashMap::default();
     let mut aux_data = Vec::new();
+    let mut global_uses = OrderedHashMap::default();
     let mut files = Vec::new();
     let mut plugin_diagnostics = Vec::new();
 
@@ -483,9 +486,15 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                 }
                 ast::ModuleItem::Use(us) => {
                     for leaf in get_all_path_leaves(db.upcast(), &us) {
-                        let id = UseLongId(module_file_id, leaf.stable_ptr()).intern(db);
-                        uses.insert(id, leaf);
-                        items.push(ModuleItemId::Use(id));
+                        if leaf.ident(db.upcast()).identifier(db.upcast()) == "*" {
+                            let id = GlobalUseLongId(module_file_id, leaf.stable_ptr()).intern(db);
+                            global_uses.insert(id, leaf);
+                            items.push(ModuleItemId::GlobalUse(id));
+                        } else {
+                            let id = UseLongId(module_file_id, leaf.stable_ptr()).intern(db);
+                            uses.insert(id, leaf);
+                            items.push(ModuleItemId::Use(id));
+                        }
                     }
                 }
                 ast::ModuleItem::FreeFunction(function) => {
@@ -568,6 +577,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         impls: impls.into(),
         extern_types: extern_types.into(),
         extern_functions: extern_functions.into(),
+        global_uses: global_uses.into(),
         files,
         generated_file_aux_data: aux_data,
         plugin_diagnostics,
@@ -656,13 +666,16 @@ fn priv_module_sub_files(
                     .as_intern_id(),
                 )
                 .intern(db);
-                files.insert(generated_file_id, VirtualFile {
-                    parent: Some(file_id),
-                    name: generated.name,
-                    content: generated.content.into(),
-                    code_mappings: generated.code_mappings.into(),
-                    kind: FileKind::Module,
-                });
+                files.insert(
+                    generated_file_id,
+                    VirtualFile {
+                        parent: Some(file_id),
+                        name: generated.name,
+                        content: generated.content.into(),
+                        code_mappings: generated.code_mappings.into(),
+                        kind: FileKind::Module,
+                    },
+                );
                 aux_data.push(generated.aux_data);
             }
             if remove_original_item {
@@ -1058,5 +1071,6 @@ fn module_item_name_stable_ptr(
         ModuleItemId::ExternFunction(id) => {
             data.extern_functions[id].declaration(db).name(db).stable_ptr().untyped()
         }
+        ModuleItemId::GlobalUse(id) => data.global_uses[id].name_stable_ptr(db),
     })
 }
