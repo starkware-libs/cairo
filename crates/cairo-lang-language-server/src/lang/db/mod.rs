@@ -1,4 +1,6 @@
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, maybe_ext_as_virtual_impl};
+use cairo_lang_defs::db::{
+    DefsDatabase, DefsGroup, ext_as_virtual_impl, maybe_ext_as_virtual_impl,
+};
 use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
@@ -87,6 +89,10 @@ impl AnalysisDatabase {
 
 impl salsa::Database for AnalysisDatabase {}
 impl ExternalFiles for AnalysisDatabase {
+    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
+        ext_as_virtual_impl(self.upcast(), external_id)
+    }
+
     fn maybe_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
         maybe_ext_as_virtual_impl(self.upcast(), external_id)
     }
