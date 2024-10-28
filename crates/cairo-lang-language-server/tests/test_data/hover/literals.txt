@@ -39,7 +39,7 @@ const SOME_CONST: felt252 = 0x<caret>123;
 const SOME_CONST: felt252 = <sel>0x123</sel>;
 // = popover
 ```cairo
-felt252 
+core::felt252
 ```
 ---
 value of literal: `291 (0x123 | 0b100100011)`
