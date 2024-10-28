@@ -28,7 +28,7 @@ trait TraitTest {
     }
 }
 
-/// Implementation of TraitTest's abc function. Impements [this](TraitTest) trait.
+/// Implementation of TraitTest's abc function. Implements [this](TraitTest) trait.
 impl TraitTestImpl of TraitTest {
     /// Default impl of abc TraitTest function.
     fn abc() -> u32 {
@@ -117,10 +117,10 @@ abc function returning u32. Default impl of abc TraitTest function. Default impl
 impl TraitTestImpl of TraitTest
 
 //! > Item documentation #5
-Implementation of TraitTest's abc function. Impements [this](TraitTest) trait.
+Implementation of TraitTest's abc function. Implements [this](TraitTest) trait.
 
 //! > Item documentation tokens #5
-Implementation of TraitTest's abc function. Impements *** [this](TraitTest) RESOLVED ITEM NAME: TraitTest *** trait.
+Implementation of TraitTest's abc function. Implements *** [this](TraitTest) RESOLVED ITEM NAME: TraitTest *** trait.
 
 //! > Item signature #6
 fn abc() -> u32

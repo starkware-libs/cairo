@@ -6,11 +6,11 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_utils::Upcast;
-use itertools::{Itertools, chain};
+use itertools::{chain, Itertools};
 
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
@@ -32,7 +32,7 @@ pub trait DocGroup:
     /// Gets the documentation of an item.
     fn get_item_documentation(&self, item_id: DocumentableItemId) -> Option<String>;
 
-    /// Gets the documentation of a certain as a vector of continous [DocumentationCommentToken]s.
+    /// Gets the documentation of a certain as a vector of continuous tokens.
     fn get_item_documentation_as_tokens(
         &self,
         item_id: DocumentableItemId,

@@ -56,8 +56,8 @@ impl<'a> DocumentationCommentParser<'a> {
     /// Parses documentation comment content into vector of [DocumentationCommentToken]s, keeping
     /// the order in which they were present in the content.
     ///
-    /// We look for 3 types of patterns when it comes to link: "[label](path)", "[path]" or
-    /// "[`path`]".
+    /// We look for 3 types of patterns when it comes to link (ignore the backslash): "\[label\](path)", "\[path\]" or
+    /// "\[`path`\]".
     pub fn parse_documentation_comment(
         &self,
         item_id: DocumentableItemId,
@@ -68,10 +68,10 @@ impl<'a> DocumentationCommentParser<'a> {
 
         let docs_no_inline_links: Vec<&str> =
             inline_link_pattern.split(&documentation_comment).collect();
-        let inline_link_captures: Vec<Captures> =
+        let inline_link_captures: Vec<Captures<'_>> =
             inline_link_pattern.captures_iter(&documentation_comment).collect();
 
-        // Tokenize only plain text and inline link commnets.
+        // Tokenize only plain text and inline link comments.
         let mut docs_and_inline_links_tokenized: Vec<DocumentationCommentToken> = Vec::default();
 
         for (i, content_part) in docs_no_inline_links.iter().enumerate() {
@@ -81,7 +81,7 @@ impl<'a> DocumentationCommentParser<'a> {
             }
 
             if i < docs_no_inline_links.len() - 1 && i < inline_link_captures.len() {
-                let matched_link: &Captures = inline_link_captures.get(i).unwrap();
+                let matched_link: &Captures<'_> = inline_link_captures.get(i).unwrap();
                 docs_and_inline_links_tokenized.push(DocumentationCommentToken::Link(
                     CommentLinkToken {
                         label: matched_link["label"].to_string(),
@@ -101,7 +101,7 @@ impl<'a> DocumentationCommentParser<'a> {
                 DocumentationCommentToken::Content(content) => {
                     let content_no_implied_links: Vec<&str> =
                         implied_link_pattern.split(&content).collect();
-                    let implied_link_captures: Vec<Captures> =
+                    let implied_link_captures: Vec<Captures<'_>> =
                         implied_link_pattern.captures_iter(&content).collect();
 
                     for (i, content_part) in content_no_implied_links.iter().enumerate() {
@@ -112,7 +112,7 @@ impl<'a> DocumentationCommentParser<'a> {
 
                         if i < content_no_implied_links.len() - 1 && i < implied_link_captures.len()
                         {
-                            let matched_link: &Captures = implied_link_captures.get(i).unwrap();
+                            let matched_link: &Captures<'_> = implied_link_captures.get(i).unwrap();
                             let path_raw = matched_link["path"].to_string();
                             let path = if path_raw.starts_with("`") && path_raw.ends_with("`") {
                                 path_raw.trim_start_matches("`").trim_end_matches("`").to_string()
@@ -155,7 +155,7 @@ impl<'a> DocumentationCommentParser<'a> {
                 None,
             )
             .ok()?
-            .to_documentable_item_id()
+            .to_documentable_item_id(self.db.upcast())
     }
 
     /// Parses the path as a string to an Path Expression, which can be later used by a resolver.
@@ -176,7 +176,11 @@ impl<'a> DocumentationCommentParser<'a> {
             &path,
         );
 
-        if let Expr::Path(expr_path) = expr { Some(expr_path) } else { None }
+        if let Expr::Path(expr_path) = expr {
+            Some(expr_path)
+        } else {
+            None
+        }
     }
 
     /// Returns a [`ModuleFileId`] containing the node.
@@ -240,14 +244,14 @@ impl<'a> DocumentationCommentParser<'a> {
 }
 
 trait ToDocumentableItemId<T> {
-    fn to_documentable_item_id(self) -> Option<DocumentableItemId>;
+    fn to_documentable_item_id(self, db: &dyn SemanticGroup) -> Option<DocumentableItemId>;
 }
 
 impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
     /// Converts the [ResolvedGenericItem] to [DocumentableItemId].
     /// As for now, returns None only for a common Variable, as those are not a supported
     /// documentable item.
-    fn to_documentable_item_id(self) -> Option<DocumentableItemId> {
+    fn to_documentable_item_id(self, db: &dyn SemanticGroup) -> Option<DocumentableItemId> {
         match self {
             ResolvedGenericItem::GenericConstant(id) => Some(DocumentableItemId::LookupItem(
                 LookupItemId::ModuleItem(ModuleItemId::Constant(id)),
@@ -297,14 +301,20 @@ impl ToDocumentableItemId<DocumentableItemId> for ResolvedGenericItem {
             ResolvedGenericItem::TraitFunction(id) => Some(DocumentableItemId::LookupItem(
                 LookupItemId::TraitItem(TraitItemId::Function(id)),
             )),
-            ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(impl_func)) => {
-                Some(DocumentableItemId::LookupItem(LookupItemId::ImplItem(
-                    cairo_lang_defs::ids::ImplItemId::Function(impl_func.id),
-                )))
+            ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(generic_impl_func)) => {
+                if let Some(impl_function) = generic_impl_func.impl_function(db).ok().flatten() {
+                    Some(DocumentableItemId::LookupItem(LookupItemId::ImplItem(
+                        cairo_lang_defs::ids::ImplItemId::Function(impl_function),
+                    )))
+                } else {
+                    Some(DocumentableItemId::LookupItem(LookupItemId::TraitItem(
+                        TraitItemId::Function(generic_impl_func.function),
+                    )))
+                }
             }
             ResolvedGenericItem::GenericFunction(GenericFunctionId::Trait(trait_func)) => {
                 Some(DocumentableItemId::LookupItem(LookupItemId::TraitItem(
-                    TraitItemId::Function(trait_func.id),
+                    TraitItemId::Function(trait_func.trait_function(db)),
                 )))
             }
             ResolvedGenericItem::Variable(_) => None,
