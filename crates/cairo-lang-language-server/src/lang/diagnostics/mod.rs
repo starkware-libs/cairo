@@ -9,6 +9,7 @@ use self::slot::slot;
 use self::state::{
     DiagnosticsState, FileDiagnosticsChange, StateDiff, StateSnapshotForDiagnostics,
 };
+use crate::ide::progress::Progress;
 use crate::lang::db::AnalysisDatabase;
 use crate::server::client::{Notifier, Responder};
 use crate::server::panic::{catch_cancellation, UnwindErrorKind};
@@ -46,7 +47,6 @@ impl Diagnostics {
 
         let diagnostics_post_hook = move |state: &mut State, _notifier| {
             let message = StateSnapshotForDiagnostics::from_state(state, jobs_number);
-
             // TODO check if server is closing and send None to allow thread pool to be dropped.
 
             slot_writer.set(Some(message));
@@ -78,7 +78,12 @@ impl Diagnostics {
 
         let jobs_number = Self::jobs_number(&self.thread_pool);
         let (sender, receiver) = crossbeam::channel::bounded(jobs_number);
-
+        
+        self.notifier.report_progress(
+            "cairo/diagnostics",
+            "Analyzing",
+            Progress::Begin,
+        );
         for (worker, db) in message.db_snapshots.into_iter().enumerate() {
             let files = files.worker_files_partition(worker, jobs_number);
 
@@ -89,7 +94,11 @@ impl Diagnostics {
         let state_diff = receiver.into_iter().take(jobs_number).reduce(Add::add).unwrap();
 
         // All db snapshots should be dropped at this point.
-
+        self.notifier.report_progress(
+            "cairo/diagnostics",
+            "Analyzing",
+            Progress::End,
+        );
         self.apply_state_diff(state_diff);
     }
 
@@ -106,7 +115,7 @@ impl Diagnostics {
 
         self.thread_pool.spawn(ThreadPriority::Worker, move || {
             let mut diff = StateDiff::new(files.urls());
-
+            
             for file in files {
                 // Anything using salsa should be done in catch.
                 let result = catch_cancellation(|| {

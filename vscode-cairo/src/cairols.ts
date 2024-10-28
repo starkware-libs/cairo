@@ -11,6 +11,7 @@ import {
   registerVfsProvider,
   registerViewAnalyzedCratesProvider,
 } from "./textDocumentProviders";
+import { ProgressNotificationParams, ProgressStatusBar } from "./progressStatusBar";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
@@ -61,6 +62,17 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
   );
 
   client.registerFeature(new SemanticTokensFeature(client));
+  
+  let progressStatusBar = new ProgressStatusBar(ctx); 
+  client.onNotification(new lc.NotificationType<ProgressNotificationParams>("cairo/progress"), (params) => {
+    if (params.value == "ProgressEnd") {
+      progressStatusBar.endProgress();
+    }
+    if (typeof params.value == "object") {
+      let title =  params.value.ProgressBegin.title;
+      progressStatusBar.startProgress(title);
+    }
+  });
 
   registerVfsProvider(client, ctx);
   registerMacroExpandProvider(client, ctx);

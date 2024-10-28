@@ -1,6 +1,7 @@
 mod analysis;
 mod code_actions;
 mod completions;
+mod diagnostics;
 mod goto;
 mod hover;
 mod macro_expand;

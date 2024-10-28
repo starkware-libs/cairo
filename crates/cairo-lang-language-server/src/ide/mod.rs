@@ -6,3 +6,4 @@ pub mod macros;
 pub mod navigation;
 pub mod semantic_highlighting;
 pub mod utils;
+pub mod progress;
