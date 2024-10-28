@@ -164,6 +164,11 @@ pub trait ExternalFiles {
     fn ext_as_virtual(&self, _external_id: salsa::InternId) -> VirtualFile {
         panic!("Should not be called, unless specifically implemented!");
     }
+
+    /// Returns the virtual file matching the external id if found.
+    fn maybe_ext_as_virtual(&self, _external_id: salsa::InternId) -> Option<VirtualFile> {
+        panic!("Should not be called, unless specifically implemented!");
+    }
 }
 
 // Salsa database interface.
