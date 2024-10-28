@@ -97,24 +97,32 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
 
             let dependencies = component
                 .dependencies
-                .as_ref()
-                .expect("dependencies are guaranteed to exist")
+                .as_deref()
+                .unwrap_or_else(|| {
+                    error!(
+                        "dependencies of component {crate_name} with id {:?} not found in metadata",
+                        component.id
+                    );
+                    &[]
+                })
                 .iter()
-                .map(|CompilationUnitComponentDependencyMetadata { id, .. }| {
+                .filter_map(|CompilationUnitComponentDependencyMetadata { id, .. }| {
                     let dependency_component = compilation_unit
                         .components
                         .iter()
-                        .find(|component| component.id.as_ref().unwrap() == id)
-                        .expect(
-                            "dependency of a component is guaranteed to exist in compilation unit \
-                             components",
-                        );
-                    (dependency_component.name.clone(), DependencySettings {
-                        discriminator: dependency_component
-                            .discriminator
-                            .as_ref()
-                            .map(ToSmolStr::to_smolstr),
-                    })
+                        .find(|component| component.id.as_ref() == Some(id));
+
+                    if let Some(dependency_component) = dependency_component {
+                        Some((dependency_component.name.clone(), DependencySettings {
+                            discriminator: dependency_component
+                                .discriminator
+                                .as_ref()
+                                .map(ToSmolStr::to_smolstr),
+                        }))
+                    } else {
+                        error!("component not found in metadata");
+                        None
+                    }
                 })
                 .collect();
 
