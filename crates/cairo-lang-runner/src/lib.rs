@@ -68,6 +68,10 @@ pub enum RunnerError {
     FailedGasCalculation(#[from] CostError),
     #[error("Function with suffix `{suffix}` to run not found.")]
     MissingFunction { suffix: String },
+    #[error("Function param {param_index} only partially contains argument {arg_index}.")]
+    ArgumentUnaligned { param_index: usize, arg_index: usize },
+    #[error("Function expects arguments of size {expected} and received {actual} instead.")]
+    ArgumentsSizeMismatch { expected: usize, actual: usize },
     #[error(transparent)]
     ProgramRegistryError(#[from] Box<ProgramRegistryError>),
     #[error(transparent)]
@@ -153,6 +157,15 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
 pub enum Arg {
     Value(Felt252),
     Array(Vec<Arg>),
+}
+impl Arg {
+    /// Returns the size of the argument in the vm.
+    pub fn size(&self) -> usize {
+        match self {
+            Self::Value(_) => 1,
+            Self::Array(_) => 2,
+        }
+    }
 }
 impl From<Felt252> for Arg {
     fn from(value: Felt252) -> Self {
@@ -442,6 +455,7 @@ impl SierraCasmRunner {
     where
         Bytecode: ExactSizeIterator<Item = &'a BigInt> + Clone,
     {
+        self.validate_args(func, args)?;
         let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
         let data_len = bytecode.len();
         let gas = self.requires_gas_builtin(func).then_some(available_gas);
@@ -473,6 +487,52 @@ impl SierraCasmRunner {
             .map(|config| self.collect_profiling_info(&relocated_trace, config.clone()));
 
         Ok(RunResult { gas_counter, memory, value, used_resources, profiling_info })
+    }
+
+    /// Validates the arguments given shallowly matches the parameters of a function.
+    fn validate_args(&self, func: &Function, args: &[Arg]) -> Result<(), RunnerError> {
+        let non_args_params = HashSet::from([
+            AddModType::ID,
+            BitwiseType::ID,
+            GasBuiltinType::ID,
+            EcOpType::ID,
+            MulModType::ID,
+            PedersenType::ID,
+            PoseidonType::ID,
+            RangeCheck96Type::ID,
+            RangeCheckType::ID,
+            SegmentArenaType::ID,
+            SystemType::ID,
+        ]);
+        let mut expected_arguments_size = 0;
+        let mut arg_iter = args.iter().enumerate();
+        for (param_index, (_, param_size)) in self
+            .generic_id_and_size_from_concrete(&func.signature.param_types)
+            .into_iter()
+            .filter(|(ty, _)| !non_args_params.contains(ty))
+            .enumerate()
+        {
+            let param_size: usize = param_size.into_or_panic();
+            expected_arguments_size += param_size;
+            let mut taken_size = 0;
+            while taken_size < param_size {
+                let Some((arg_index, arg)) = arg_iter.next() else {
+                    break;
+                };
+                taken_size += arg.size();
+                if taken_size > param_size {
+                    return Err(RunnerError::ArgumentUnaligned { param_index, arg_index });
+                }
+            }
+        }
+        let actual_args_size = args_size(args);
+        if expected_arguments_size != actual_args_size {
+            return Err(RunnerError::ArgumentsSizeMismatch {
+                expected: expected_arguments_size,
+                actual: actual_args_size,
+            });
+        }
+        Ok(())
     }
 
     /// Handling the main return value to create a `RunResultValue`.
@@ -836,12 +896,7 @@ pub fn initialize_vm(
 
 /// The size in memory of the arguments.
 fn args_size(args: &[Arg]) -> usize {
-    args.iter()
-        .map(|arg| match arg {
-            Arg::Value(_) => 1,
-            Arg::Array(_) => 2,
-        })
-        .sum()
+    args.iter().map(Arg::size).sum()
 }
 
 /// Creates the metadata required for a Sierra program lowering to casm.
