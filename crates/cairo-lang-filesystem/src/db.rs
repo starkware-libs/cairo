@@ -161,8 +161,8 @@ pub struct ExperimentalFeaturesConfig {
 /// A trait for defining files external to the `filesystem` crate.
 pub trait ExternalFiles {
     /// Returns the virtual file matching the external id.
-    fn ext_as_virtual(&self, _external_id: salsa::InternId) -> VirtualFile {
-        panic!("Should not be called, unless specifically implemented!");
+    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
+        self.maybe_ext_as_virtual(external_id).unwrap()
     }
 
     /// Returns the virtual file matching the external id if found.
