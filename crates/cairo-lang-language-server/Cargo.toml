@@ -34,7 +34,7 @@ lsp-server = "0.7.7"
 lsp-types = "=0.95.0"
 rustc-hash = "1.1.0"
 salsa.workspace = true
-scarb-metadata = "1.12"
+scarb-metadata = { git = "https://github.com/software-mansion/scarb", rev = "d3929e1c46e42bd63698053f6efc8fc2b8586e21" }
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 smol_str.workspace = true

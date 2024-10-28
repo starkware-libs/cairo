@@ -1,14 +1,14 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
 use anyhow::{Context, Result, bail, ensure};
 use cairo_lang_filesystem::db::{
-    CORELIB_CRATE_NAME, CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig,
+    CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig,
 };
 use itertools::Itertools;
-use scarb_metadata::{CompilationUnitComponentMetadata, Metadata, PackageMetadata};
-use smol_str::{SmolStr, ToSmolStr};
+use scarb_metadata::{CompilationUnitComponentDependencyMetadata, Metadata, PackageMetadata};
+use smol_str::ToSmolStr;
 use tracing::{debug, error, warn};
 
 use crate::lang::db::AnalysisDatabase;
@@ -95,52 +95,28 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
                     .map(|cfg_set| cfg_set.union(&AnalysisDatabase::initial_cfg_set_for_deps()))
             };
 
-            let dependencies = {
-                let direct_dependencies = package
-                    .map(|p| p.dependencies.iter().map(|dep| &*dep.name).collect::<HashSet<_>>())
-                    .unwrap_or_default();
-
-                compilation_unit
-                    .components
-                    .iter()
-                    .filter(|component_as_dependency| {
-                        direct_dependencies.contains(&*component_as_dependency.name) || {
-                            // This is a hacky way of accommodating integration test components,
-                            // which need to depend on the tested package.
-                            if let Some(package) = metadata
-                                .packages
-                                .iter()
-                                .find(|package| package.id == component_as_dependency.package)
-                            {
-                                package.targets.iter().filter(|target| target.kind == "test").any(
-                                    |target| {
-                                        let group_name = target
-                                            .params
-                                            .get("group-id")
-                                            .and_then(|g| g.as_str())
-                                            .unwrap_or(&target.name);
-                                        group_name == component.name
-                                    },
-                                )
-                            } else {
-                                false
-                            }
-                        }
+            let dependencies = component
+                .dependencies
+                .as_ref()
+                .expect("dependencies are guaranteed to exist")
+                .iter()
+                .map(|CompilationUnitComponentDependencyMetadata { id, .. }| {
+                    let dependency_component = compilation_unit
+                        .components
+                        .iter()
+                        .find(|component| component.id.as_ref().unwrap() == id)
+                        .expect(
+                            "dependency of a component is guaranteed to exist in compilation unit \
+                             components",
+                        );
+                    (dependency_component.name.clone(), DependencySettings {
+                        discriminator: dependency_component
+                            .discriminator
+                            .as_ref()
+                            .map(ToSmolStr::to_smolstr),
                     })
-                    .map(|component| {
-                        let settings = DependencySettings {
-                            discriminator: component_discriminator(component),
-                        };
-                        (component.name.clone(), settings)
-                    })
-                    .chain([
-                        // Add the component itself to dependencies.
-                        (crate_name.into(), DependencySettings {
-                            discriminator: component_discriminator(component),
-                        }),
-                    ])
-                    .collect()
-            };
+                })
+                .collect();
 
             let settings = CrateSettings {
                 name: Some(crate_name.into()),
@@ -155,7 +131,7 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
 
             let cr = Crate {
                 name: crate_name.into(),
-                discriminator: component_discriminator(component),
+                discriminator: component.discriminator.as_ref().map(ToSmolStr::to_smolstr),
                 root: root.into(),
                 custom_main_file_stems,
                 settings,
@@ -318,11 +294,4 @@ fn scarb_package_experimental_features(
         negative_impls: contains("negative_impls"),
         coupons: contains("coupons"),
     }
-}
-
-/// Get crate discriminator from component metadata.
-///
-/// This function properly handles the fact that the `core` crate cannot have a discriminator.
-fn component_discriminator(component: &CompilationUnitComponentMetadata) -> Option<SmolStr> {
-    (component.name != CORELIB_CRATE_NAME).then(|| component.package.to_smolstr())
 }
