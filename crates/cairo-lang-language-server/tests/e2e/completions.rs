@@ -11,6 +11,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         methods_text_edits: "methods_text_edits.txt",
         structs: "structs.txt",
+        module_items: "module_items.txt",
     },
     test_completions_text_edits
 
