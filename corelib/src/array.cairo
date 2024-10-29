@@ -41,17 +41,17 @@ extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 #[generate_trait]
 pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// Returns a new empty array.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let first_arr: Array<u32> = ArrayTrait::new();
     /// let second_arr = ArrayTrait::<u128>::new();
     /// ```
-    /// 
-    /// It is generally more straightforward to use the `array!` macro to create a new array, 
+    ///
+    /// It is generally more straightforward to use the `array!` macro to create a new array,
     /// calling the `new` function under the hood:
-    /// 
+    ///
     /// ```
     /// let arr: Array<bool> = array![];
     /// ```
@@ -73,7 +73,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     fn append(ref self: Array<T>, value: T) nopanic {
         array_append(ref self, value)
     }
-    
+
     /// Adds a span to the end of the array.
     /// Requires that the values of the span implement `Clone` and `Drop` traits.
     ///
@@ -122,7 +122,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// ```
     /// let arr = array![2, 3, 4];
     /// assert!(arr.pop_front_consume() == Option::Some((array![3, 4], 2)));
-    /// 
+    ///
     /// let arr: Array<felt252> = array![];
     /// assert!(arr.pop_front_consume() == Option::None);
     /// ```
@@ -196,9 +196,9 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     }
 
     /// Returns a span of the array.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let arr: Array<u8> = array![1, 2, 3];
     /// let span: Span<u8> = arr.span();
@@ -213,9 +213,9 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
 /// `Default` trait implementation to create a new empty array.
 impl ArrayDefault<T> of Default<Array<T>> {
     /// Returns a new empty array.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let arr: Array<u8> = Default::default();
     /// ```
@@ -225,13 +225,14 @@ impl ArrayDefault<T> of Default<Array<T>> {
     }
 }
 
-/// `IndexView` trait implementation to access an item contained in type `Array<T>` with an index of type `usize`.
+/// `IndexView` trait implementation to access an item contained in type `Array<T>` with an index of
+/// type `usize`.
 impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     /// Returns a snapshot of the element at the given index.
     /// `IndexView` needs to be explicitly imported with `use core::ops::IndexView;`
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let arr: @Array<u8> = @array![1, 2, 3];
     /// let element: @u8 = arr.index(0);
@@ -244,9 +245,9 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
 /// `Serde` trait implementation to serialize and deserialize an `Array<T>`.
 impl ArraySerde<T, +Serde<T>, +Drop<T>> of Serde<Array<T>> {
     /// Serializes an `Array<T>` into an `Array<felt252>`.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let arr: Array<u8> = array![1, 2, 3];
     /// let mut output: Array<felt252> = array![];
@@ -258,9 +259,9 @@ impl ArraySerde<T, +Serde<T>, +Drop<T>> of Serde<Array<T>> {
     }
 
     /// Deserializes a `Span<felt252>` into an `Array<T>` and returns an option to an `Array<T>`.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let mut span: Span<felt252> = array![2, 0, 1].span();
     /// let arr:  Array<u8> = Serde::deserialize(ref span).unwrap();
@@ -309,9 +310,9 @@ impl SpanDrop<T> of Drop<Span<T>>;
 /// `Into` trait implementation to convert an array into a span.
 impl ArrayIntoSpan<T, +Drop<T>> of Into<Array<T>, Span<T>> {
     /// Takes an array and returns a span of that array.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let arr: Array<u8> = array![1, 2, 3];
     /// let span: Span<u8> = arr.into();
@@ -324,9 +325,9 @@ impl ArrayIntoSpan<T, +Drop<T>> of Into<Array<T>, Span<T>> {
 /// `Into` trait implementation to convert a span into an array.
 impl SpanIntoArray<T, +Drop<T>, +Clone<T>> of Into<Span<T>, Array<T>> {
     /// Takes a span and returns an array.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let span: Span<u8> = array![1, 2, 3].span();
     /// let arr: Array<u8> = span.into();
@@ -341,9 +342,9 @@ impl SpanIntoArray<T, +Drop<T>, +Clone<T>> of Into<Span<T>, Array<T>> {
 /// `Into` trait implementation to convert a span into a snapshot of an array.
 impl SpanIntoArraySnap<T> of Into<Span<T>, @Array<T>> {
     /// Takes a span and returns a snapshot of an array.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let span: Span<u8> = array![1, 2, 3].span();
     /// let arr: @Array<u8> = span.into();
@@ -356,9 +357,9 @@ impl SpanIntoArraySnap<T> of Into<Span<T>, @Array<T>> {
 /// `Serde` trait implementation to serialize and deserialize a `Span<felt252>`.
 impl SpanFelt252Serde of Serde<Span<felt252>> {
     /// Serializes a `Span<felt252>` into an `Array<felt252>`.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let span: Span<felt252> = array![1, 2, 3].span();
     /// let mut output: Array<felt252> = array![];
@@ -369,10 +370,11 @@ impl SpanFelt252Serde of Serde<Span<felt252>> {
         serialize_array_helper(*self, ref output)
     }
 
-    /// Deserializes a `Span<felt252>` into an `Span<felt252>` and returns an option to a `Span<felt252>`.
-    /// 
+    /// Deserializes a `Span<felt252>` into an `Span<felt252>` and returns an option to a
+    /// `Span<felt252>`.
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let mut span: Span<felt252> = array![2, 0, 1].span();
     /// let result:  Span<felt252> = Serde::deserialize(ref span).unwrap();
@@ -390,9 +392,9 @@ impl SpanFelt252Serde of Serde<Span<felt252>> {
 /// `Serde` trait implementation to serialize and deserialize a `Span<T>`.
 impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>> {
     /// Serializes a `Span<T>` into an `Array<felt252>`.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let span: Span<u8> = array![1, 2, 3].span();
     /// let mut output: Array<felt252> = array![];
@@ -404,9 +406,9 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>>
     }
 
     /// Deserializes a `Span<felt252>` into an `Span<T>` and returns an option to a `Span<T>`.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let mut span: Span<felt252> = array![2, 0, 1].span();
     /// let result:  Span<u8> = Serde::deserialize(ref span).unwrap();
@@ -427,7 +429,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// Returns `Option::Some(@value)` if the array is not empty, `Option::None` otherwise.
     ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let mut span = array![1, 2, 3].span();
     /// assert!(span.pop_front() == Option::Some(@1));
@@ -463,11 +465,11 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     }
 
     /// Pops multiple values from the front of the span.
-    /// Returns an option containing a snapshot of a box that contains the values as a fixed-size array
-    /// if the action completed successfully, 'Option::None' otherwise.
+    /// Returns an option containing a snapshot of a box that contains the values as a fixed-size
+    /// array if the action completed successfully, 'Option::None' otherwise.
     ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let mut span = array![1, 2, 3].span();
     /// let result = *(span.multi_pop_front::<2>().unwrap());
@@ -479,11 +481,11 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     }
 
     /// Pops multiple values from the back of the span.
-    /// Returns an option containing a snapshot of a box that contains the values as a fixed-size array
-    /// if the action completed successfully, 'Option::None' otherwise.
+    /// Returns an option containing a snapshot of a box that contains the values as a fixed-size
+    /// array if the action completed successfully, 'Option::None' otherwise.
     ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let mut span = array![1, 2, 3].span();
     /// let result = *(span.multi_pop_back::<2>().unwrap());
@@ -526,7 +528,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// amount equal to 'length'.
     ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let span = array![1, 2, 3].span();
     /// assert!(span.slice(1, 2) == array![2, 3].span());
@@ -571,13 +573,14 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     }
 }
 
-/// `IndexView` trait implementation to access an item contained in type `Span<T>` with an index of type `usize`.
+/// `IndexView` trait implementation to access an item contained in type `Span<T>` with an index of
+/// type `usize`.
 pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     /// Returns a snapshot of the element at the given index.
     /// `IndexView` needs to be explicitly imported with `use core::ops::IndexView;`
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let span: @Span<u8> = @array![1, 2, 3].span();
     /// let element: @u8 = span.index(0);
@@ -620,9 +623,9 @@ extern fn span_from_tuple<T, impl Info: FixedSizedArrayInfo<T>>(
 /// `ToSpanTrait` implementation for a box containing a snapshot of a fixed-size array.
 impl FixedSizeArrayBoxToSpan<T, const SIZE: usize> of ToSpanTrait<Box<@[T; SIZE]>, T> {
     /// Returns a `Span<T>` corresponding to a view into the given fixed-size array.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let boxed_arr: Box<@[u32; 3]> = BoxTrait::new(@[1, 2, 3]);
     /// let span: Span<u32> = (@boxed_arr).span();
@@ -637,9 +640,9 @@ impl FixedSizeArrayToSpan<
     T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
 > of ToSpanTrait<[T; SIZE], T> {
     /// Returns a `Span<T>` corresponding to a view into the given fixed-size array.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let arr: [u32; 3] = [1, 2, 3];
     /// let span: Span<u32> = (@arr).span();
@@ -653,9 +656,9 @@ impl FixedSizeArrayToSpan<
 /// `ToSpanTrait` implementation for a snapshot of an empty fixed-size array.
 impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
     /// Returns a `Span<T>` corresponding to a view into the given empty fixed-size array.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let arr: [u32; 0] = [];
     /// let span: Span<u32> = (@arr).span();
@@ -675,9 +678,9 @@ impl SpanTryIntoFixedSizedArray<
     T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
 > of TryInto<Span<T>, @Box<[T; SIZE]>> {
     /// Returns an option to a snapshot of a box that contains a fixed-size array.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let span = array![1, 2, 3].span();
     /// let result: Option<@Box<[felt252; 3]>> = span.try_into();
@@ -690,11 +693,11 @@ impl SpanTryIntoFixedSizedArray<
 
 /// `TryInto` implementation from a span to an empty fixed-size array.
 impl SpanTryIntoEmptyFixedSizedArray<T, +Drop<T>> of TryInto<Span<T>, @Box<[T; 0]>> {
-    /// Returns an option to a snapshot of a box that contains an empty fixed-size array if the span is empty,
-    /// and `Option::None` otherwise.
-    /// 
+    /// Returns an option to a snapshot of a box that contains an empty fixed-size array if the span
+    /// is empty, and `Option::None` otherwise.
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let span = array![].span();
     /// let result: Option<@Box<[felt252; 0]>> = span.try_into();
@@ -715,7 +718,7 @@ impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
     /// Returns a clone of `self`.
     ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let arr = array![1, 2, 3];
     /// let arr_clone = arr.clone();
@@ -736,9 +739,9 @@ impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
 /// `PartialEq` implementation for `Array<T>`.
 impl ArrayPartialEq<T, +PartialEq<T>> of PartialEq<Array<T>> {
     /// Returns `true` if the two arrays contain the same elements, false otherwise.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let arr_1 = array![1, 2, 3];
     /// let arr_2 = array![1, 2, 3];
@@ -752,9 +755,9 @@ impl ArrayPartialEq<T, +PartialEq<T>> of PartialEq<Array<T>> {
 /// `PartialEq` implementation for `Span<T>`.
 impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
     /// Returns `true` if the two spans contain the same elements, false otherwise.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let span_1 = array![1, 2, 3].span();
     /// let span_2 = array![1, 2, 3].span();
@@ -791,7 +794,9 @@ impl SpanIterCopy<T> of Copy<SpanIter<T>>;
 
 /// `Iterator` trait implementation for `SpanIter<T>` struct.
 impl SpanIterator<T> of Iterator<SpanIter<T>> {
+    /// Type of the values contained in the span.
     type Item = @T;
+    /// Returns an option to a snapshot of a span element if it exist, and `Option::None` otherwise.
     fn next(ref self: SpanIter<T>) -> Option<@T> {
         self.span.pop_front()
     }
@@ -813,6 +818,7 @@ pub struct ArrayIter<T> {
 
 /// `Clone` trait implementation for `ArrayIter<T>` struct.
 impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone<ArrayIter<T>> {
+    /// Returns a clone of `self`.
     fn clone(self: @ArrayIter<T>) -> ArrayIter<T> {
         ArrayIter { array: crate::clone::Clone::clone(self.array), }
     }
@@ -820,7 +826,9 @@ impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone
 
 /// `Iterator` trait implementation for `ArrayIter<T>` struct.
 impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
+    /// Type of the values contained in the array.
     type Item = T;
+    /// Returns an option to an element of the array if it exist, and `Option::None` otherwise.
     fn next(ref self: ArrayIter<T>) -> Option<T> {
         self.array.pop_front()
     }
