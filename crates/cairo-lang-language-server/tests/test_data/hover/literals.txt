@@ -12,6 +12,7 @@ edition = "2023_11"
 
 //! > cairo_code
 const SOME_CONST: felt252 = 0x<caret>123;
+const WRONG_TYPE_CONST: u8 = 123_<caret>felt252;
 
 /// Declares many variables and does nothing.
 fn many_variables() {
@@ -46,6 +47,18 @@ value of literal: `291 (0x123 | 0b100100011)`
 
 //! > hover #1
 // = source context
+const WRONG_TYPE_CONST: u8 = 123_<caret>felt252;
+// = highlight
+const WRONG_TYPE_CONST: u8 = <sel>123_felt252</sel>;
+// = popover
+```cairo
+core::felt252
+```
+---
+value of literal: `123 (0x7b | 0b1111011)`
+
+//! > hover #2
+// = source context
     let a = 'short<caret>_string';
 // = highlight
     let a = <sel>'short_string'</sel>;
@@ -56,7 +69,7 @@ core::felt252
 ---
 value of literal: `'short_string' (0x73686f72745f737472696e67)`
 
-//! > hover #2
+//! > hover #3
 // = source context
     let b: ByteArray = "normal_string<caret>";
 // = highlight
@@ -66,7 +79,7 @@ value of literal: `'short_string' (0x73686f72745f737472696e67)`
 core::byte_array::ByteArray
 ```
 
-//! > hover #3
+//! > hover #4
 // = source context
     let c = <caret>0x21_felt252;
 // = highlight
@@ -78,7 +91,7 @@ core::felt252
 ---
 value of literal: `33 (0x21 | 0b100001)`
 
-//! > hover #4
+//! > hover #5
 // = source context
     let d = 0x3<caret>3_u32;
 // = highlight
@@ -90,7 +103,7 @@ core::integer::u32
 ---
 value of literal: `51 (0x33 | 0b110011)`
     
-//! > hover #5
+//! > hover #6
 // = source context
     let e = 5<caret>0;
 // = highlight
@@ -102,7 +115,7 @@ core::felt252
 ---
 value of literal: `50 (0x32 | 0b110010)`
 
-//! > hover #6
+//! > hover #7
 // = source context
     let f = 0b<caret>1111;
 // = highlight
@@ -114,7 +127,7 @@ core::felt252
 ---
 value of literal: `15 (0xf | 0b1111)`
 
-//! > hover #7
+//! > hover #8
 // = source context
     let g = 0o<caret>77;
 // = highlight
@@ -126,7 +139,7 @@ core::felt252
 ---
 value of literal: `63 (0x3f | 0b111111)`
 
-//! > hover #8
+//! > hover #9
 // = source context
     let a: u32 = 0x<caret>170_felt252;
 // = highlight
@@ -138,7 +151,7 @@ core::felt252
 ---
 value of literal: `368 (0x170 | 0b101110000)`
 
-//! > hover #9
+//! > hover #10
 // = source context
     let b: u8 = "some_st<caret>ring";
 // = highlight
@@ -148,7 +161,7 @@ value of literal: `368 (0x170 | 0b101110000)`
 core::integer::u8
 ```
 
-//! > hover #10
+//! > hover #11
 // = source context
     let c: u8 = 0x<caret>fff;
 // = highlight
