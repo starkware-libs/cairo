@@ -17,7 +17,7 @@ fn main() {
     println!("main");
 }
 
-/// Trait containing abc function. Below a [main] function
+/// Trait containing abc function. Below a [`main`] function
 trait TraitTest {
     /// abc function returning u32.
     /// Default impl of abc TraitTest function.
@@ -78,6 +78,15 @@ enum Answer {
     No
 }
 
+/// Example usage:
+/// ```
+///   fn new_circle() {
+///     // [Circle] <- this should not tokenize as a link (neither be resolved), we're inside code
+///     block.
+///   }
+/// ```
+struct Circle {}
+
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -99,10 +108,10 @@ Main function comment outside. Below there is a *** [`TraitTest`] RESOLVED ITEM 
 trait TraitTest
 
 //! > Item documentation #3
-Trait containing abc function. Below a [main] function
+Trait containing abc function. Below a [`main`] function
 
 //! > Item documentation tokens #3
-Trait containing abc function. Below a *** [main] RESOLVED ITEM NAME: main *** function
+Trait containing abc function. Below a *** [`main`] RESOLVED ITEM NAME: main *** function
 
 //! > Item signature #4
 fn abc() -> u32
@@ -166,7 +175,7 @@ Point struct representing a point in a 2d space. Example usage:
 [Point::bang]
 
 //! > Item documentation tokens #9
-Point struct representing a point in a 2d space. Example usage: 
+Point struct representing a point in a 2d space. Example usage:
 ```cairo
   fn new_Point() {
     Point {x: 12, y: 14}
@@ -221,3 +230,24 @@ No answer variant.
 
 //! > Item documentation tokens #14
 No answer variant.
+
+//! > Item signature #15
+struct Circle {}
+
+//! > Item documentation #15
+Example usage: 
+```cairo
+  fn new_circle() {
+    // [Circle] <- this should not tokenize as a link (neither be resolved), we're inside code
+    block.
+  }
+```
+
+//! > Item documentation tokens #15
+Example usage:
+```cairo
+  fn new_circle() {
+    // [Circle] <- this should not tokenize as a link (neither be resolved), we're inside code
+    block.
+  }
+```

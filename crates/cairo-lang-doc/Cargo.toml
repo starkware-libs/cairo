@@ -16,7 +16,7 @@ cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.8.4" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.8.4" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version ="~2.8.4"}
 smol_str.workspace = true
-regex = { version = "~1.11.0"}
+pulldown-cmark = "0.12.2"
 salsa.workspace = true
 itertools.workspace = true
 

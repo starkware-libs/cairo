@@ -27,6 +27,7 @@ impl DocumentableItemId {
         }
     }
 
+    /// Gets the name of the item.
     pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         match self {
             DocumentableItemId::LookupItem(LookupItemId::ModuleItem(id)) => id.name(db),

@@ -16,7 +16,9 @@ use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
-use regex::{Captures, Regex};
+use pulldown_cmark::{
+    BrokenLink, CodeBlockKind, Event, LinkType, Options, Parser as MarkdownParser, Tag, TagEnd,
+};
 
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
@@ -56,83 +58,86 @@ impl<'a> DocumentationCommentParser<'a> {
     /// Parses documentation comment content into vector of [DocumentationCommentToken]s, keeping
     /// the order in which they were present in the content.
     ///
-    /// We look for 3 types of patterns when it comes to link (ignore the backslash): "\[label\](path)", "\[path\]" or
-    /// "\[`path`\]".
+    /// We look for 3 types of patterns when it comes to link (ignore the backslash):
+    /// "\[label\](path)", "\[path\]" or "\[`path`\]".
     pub fn parse_documentation_comment(
         &self,
         item_id: DocumentableItemId,
         documentation_comment: String,
     ) -> Vec<DocumentationCommentToken> {
-        let inline_link_pattern = Regex::new(r"\[(?<label>[^\[]*?)\]\((?<path>.*?)\)").unwrap();
-        let implied_link_pattern = Regex::new(r"\[(?<path>.*?)\]").unwrap();
-
-        let docs_no_inline_links: Vec<&str> =
-            inline_link_pattern.split(&documentation_comment).collect();
-        let inline_link_captures: Vec<Captures<'_>> =
-            inline_link_pattern.captures_iter(&documentation_comment).collect();
-
-        // Tokenize only plain text and inline link comments.
-        let mut docs_and_inline_links_tokenized: Vec<DocumentationCommentToken> = Vec::default();
-
-        for (i, content_part) in docs_no_inline_links.iter().enumerate() {
-            if !content_part.is_empty() {
-                docs_and_inline_links_tokenized
-                    .push(DocumentationCommentToken::Content(content_part.to_string()));
+        let mut tokens = Vec::new();
+        let mut current_link: Option<CommentLinkToken> = None;
+        let mut replacer = |broken_link: BrokenLink<'_>| {
+            if matches!(broken_link.link_type, LinkType::ShortcutUnknown | LinkType::Shortcut) {
+                return Some((broken_link.reference.to_string().into(), "".into()));
             }
+            None
+        };
 
-            if i < docs_no_inline_links.len() - 1 && i < inline_link_captures.len() {
-                let matched_link: &Captures<'_> = inline_link_captures.get(i).unwrap();
-                docs_and_inline_links_tokenized.push(DocumentationCommentToken::Link(
-                    CommentLinkToken {
-                        label: matched_link["label"].to_string(),
-                        path: Some(matched_link["path"].to_string()),
-                        resolved_item: self
-                            .resolve_linked_item(item_id, matched_link["path"].to_string()),
-                    },
-                ))
-            }
-        }
+        let parser = MarkdownParser::new_with_broken_link_callback(
+            &documentation_comment,
+            Options::empty(),
+            Some(&mut replacer),
+        );
 
-        // Stores all plain text, inline and implied link comments.
-        let mut result: Vec<DocumentationCommentToken> = Vec::default();
+        for event in parser {
+            match event {
+                Event::Text(text) => {
+                    if let Some(link) = current_link.as_mut() {
+                        link.label.push_str(&text);
+                    } else {
+                        tokens.push(DocumentationCommentToken::Content(text.into_string()));
+                    }
+                }
 
-        for comment in docs_and_inline_links_tokenized.into_iter() {
-            match comment {
-                DocumentationCommentToken::Content(content) => {
-                    let content_no_implied_links: Vec<&str> =
-                        implied_link_pattern.split(&content).collect();
-                    let implied_link_captures: Vec<Captures<'_>> =
-                        implied_link_pattern.captures_iter(&content).collect();
-
-                    for (i, content_part) in content_no_implied_links.iter().enumerate() {
-                        if !content_part.is_empty() {
-                            result
-                                .push(DocumentationCommentToken::Content(content_part.to_string()));
-                        }
-
-                        if i < content_no_implied_links.len() - 1 && i < implied_link_captures.len()
-                        {
-                            let matched_link: &Captures<'_> = implied_link_captures.get(i).unwrap();
-                            let path_raw = matched_link["path"].to_string();
-                            let path = if path_raw.starts_with("`") && path_raw.ends_with("`") {
-                                path_raw.trim_start_matches("`").trim_end_matches("`").to_string()
+                Event::Code(code) => {
+                    let complete_code = format!("`{}`", code);
+                    if let Some(link) = current_link.as_mut() {
+                        link.label.push_str(&complete_code);
+                    } else {
+                        tokens.push(DocumentationCommentToken::Content(complete_code));
+                    }
+                }
+                Event::Start(Tag::Link { link_type, dest_url, title: _title, id: _id }) => {
+                    match link_type {
+                        LinkType::ShortcutUnknown | LinkType::Shortcut => {
+                            let path = if dest_url.starts_with("`") && dest_url.ends_with("`") {
+                                dest_url.trim_start_matches("`").trim_end_matches("`").to_string()
                             } else {
-                                path_raw.clone()
+                                dest_url.clone().to_string()
                             };
-
-                            result.push(DocumentationCommentToken::Link(CommentLinkToken {
-                                label: path_raw,
+                            current_link = Some(CommentLinkToken {
+                                label: "".to_string(),
                                 path: None,
-                                resolved_item: self.resolve_linked_item(item_id, path.clone()),
-                            }))
+                                resolved_item: self.resolve_linked_item(item_id, path), /* Or resolve item here */
+                            });
+                        }
+                        _ => {
+                            current_link = Some(CommentLinkToken {
+                                label: "".to_string(),
+                                path: Some(dest_url.clone().into_string()),
+                                resolved_item: self
+                                    .resolve_linked_item(item_id, dest_url.clone().into_string()), /* Or resolve item here */
+                            });
                         }
                     }
                 }
-                link => result.push(link),
+                Event::End(TagEnd::Link { .. }) => {
+                    if let Some(link) = current_link.take() {
+                        tokens.push(DocumentationCommentToken::Link(link));
+                    }
+                }
+                Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(language))) => {
+                    tokens.push(DocumentationCommentToken::Content(format!("\n```{}\n", language)));
+                }
+                Event::End(TagEnd::CodeBlock) => {
+                    tokens.push(DocumentationCommentToken::Content("```\n".to_string()));
+                }
+                _ => {}
             }
         }
 
-        result
+        tokens
     }
 
     /// Resolves item based on the provided path as a string.
@@ -176,11 +181,7 @@ impl<'a> DocumentationCommentParser<'a> {
             &path,
         );
 
-        if let Expr::Path(expr_path) = expr {
-            Some(expr_path)
-        } else {
-            None
-        }
+        if let Expr::Path(expr_path) = expr { Some(expr_path) } else { None }
     }
 
     /// Returns a [`ModuleFileId`] containing the node.

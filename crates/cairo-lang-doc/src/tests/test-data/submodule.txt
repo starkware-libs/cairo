@@ -59,7 +59,7 @@ This is a testing crate file. It's for the tests purposes only.
 This is also testing crate. After the code example. We don't take responsibility for compiling this file. So don't even try.
 
 //! > Item documentation tokens #1
-This is a testing crate file. It's for the tests purposes only. 
+This is a testing crate file. It's for the tests purposes only.
 ```cairo
   let a = 5;
 ```
@@ -75,7 +75,7 @@ This is a submodule regarding the module_level_comments. It's used to make sure 
 As mentioned above.
 
 //! > Item documentation tokens #2
-This one is just a prefix comment for a module. 
+This one is just a prefix comment for a module.
 ```rust
   let a = String::from("This also works fine");
 ```
@@ -107,6 +107,6 @@ Main function. Uses [cairo_submodule_code::inner_sub_module]. Empty code example
 ```
 
 //! > Item documentation tokens #5
-Main function. Uses *** [cairo_submodule_code::inner_sub_module] RESOLVED ITEM NAME: inner_sub_module ***. Empty code example. 
+Main function. Uses *** [cairo_submodule_code::inner_sub_module] RESOLVED ITEM NAME: inner_sub_module ***. Empty code example.
 ```rust
 ```

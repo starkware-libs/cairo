@@ -1,7 +1,7 @@
 pub mod db;
 pub mod documentable_item;
 mod markdown;
-mod types;
+pub mod parser;
 
 #[cfg(test)]
 mod tests;

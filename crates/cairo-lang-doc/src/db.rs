@@ -6,15 +6,15 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_utils::Upcast;
-use itertools::{chain, Itertools};
+use itertools::{Itertools, chain, intersperse};
 
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
-use crate::types::{DocumentationCommentParser, DocumentationCommentToken};
+use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
 
 #[salsa::query_group(DocDatabase)]
 pub trait DocGroup:
@@ -213,35 +213,27 @@ fn get_item_documentation_as_tokens(
         outer_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
 
     if let Some(outer_comment_tokens) = &mut outer_comment_tokens {
-        if let Some(DocumentationCommentToken::Content(token)) = outer_comment_tokens.last_mut() {
-            *token = token.trim_end().to_string();
-        }
+        trim_last_token(outer_comment_tokens);
     }
 
     let mut inner_comment_tokens =
         inner_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
 
     if let Some(inner_comment_tokens) = &mut inner_comment_tokens {
-        if let Some(DocumentationCommentToken::Content(token)) = inner_comment_tokens.last_mut() {
-            *token = token.trim_end().to_string();
-        }
+        trim_last_token(inner_comment_tokens);
     }
 
     let mut module_level_comment_tokens = module_level_comment
         .map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
 
     if let Some(module_level_comment_tokens) = &mut module_level_comment_tokens {
-        if let Some(DocumentationCommentToken::Content(token)) =
-            module_level_comment_tokens.last_mut()
-        {
-            *token = token.trim_end().to_string();
-        }
+        trim_last_token(module_level_comment_tokens);
     }
 
-    let separator_token = DocumentationCommentToken::Content(" ".to_string());
+    let separator_token = vec![DocumentationCommentToken::Content(" ".to_string())];
 
-    let mut result: Vec<Vec<DocumentationCommentToken>> =
-        vec![outer_comment_tokens, inner_comment_tokens, module_level_comment_tokens]
+    let result: Vec<Vec<DocumentationCommentToken>> =
+        [outer_comment_tokens, inner_comment_tokens, module_level_comment_tokens]
             .into_iter()
             .flatten()
             .collect();
@@ -250,14 +242,7 @@ fn get_item_documentation_as_tokens(
         return None;
     }
 
-    let result_len = result.len();
-    result.iter_mut().enumerate().for_each(|(index, array)| {
-        if index < result_len - 1 {
-            array.push(separator_token.clone());
-        }
-    });
-
-    Some(result.into_iter().flatten().collect())
+    Some(intersperse(result, separator_token).flatten().collect())
 }
 
 /// Get the raw documentation content from the item.
@@ -455,4 +440,10 @@ fn join_lines_of_comments(lines: &Vec<String>) -> String {
         }
     }
     result.trim_end().to_string()
+}
+
+fn trim_last_token(tokens: &mut [DocumentationCommentToken]) {
+    if let Some(DocumentationCommentToken::Content(token)) = tokens.last_mut() {
+        *token = token.trim_end().to_string();
+    }
 }

@@ -11,7 +11,7 @@ use itertools::Itertools;
 use super::test_utils::{TestDatabase, set_file_content, setup_test_module};
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
-use crate::types::DocumentationCommentToken;
+use crate::parser::DocumentationCommentToken;
 
 cairo_lang_test_utils::test_file_test!(
   item_documentation,
