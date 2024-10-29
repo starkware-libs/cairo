@@ -77,6 +77,7 @@ pub struct FormatterConfig {
     sort_module_level_items: bool,
     tuple_breaking_behavior: CollectionsBreakingBehavior,
     fixed_array_breaking_behavior: CollectionsBreakingBehavior,
+    merge_use_statements: bool,
 }
 
 // Config params
@@ -87,10 +88,13 @@ const MAX_LINE_LENGTH: usize = 100;
 impl FormatterConfig {
     pub fn new(
         tab_size: usize,
+
         max_line_length: usize,
+
         sort_module_level_items: bool,
         tuple_breaking_behavior: CollectionsBreakingBehavior,
         fixed_array_breaking_behavior: CollectionsBreakingBehavior,
+        merge_use_statements: bool,
     ) -> Self {
         Self {
             tab_size,
@@ -98,6 +102,7 @@ impl FormatterConfig {
             sort_module_level_items,
             tuple_breaking_behavior,
             fixed_array_breaking_behavior,
+            merge_use_statements,
         }
     }
 
@@ -115,6 +120,10 @@ impl FormatterConfig {
         self.fixed_array_breaking_behavior = behavior;
         self
     }
+    pub fn merge_use_statements(mut self, merge: bool) -> Self {
+        self.merge_use_statements = merge;
+        self
+    }
 }
 impl Default for FormatterConfig {
     fn default() -> Self {
@@ -124,6 +133,7 @@ impl Default for FormatterConfig {
             sort_module_level_items: false,
             tuple_breaking_behavior: CollectionsBreakingBehavior::LineByLine,
             fixed_array_breaking_behavior: CollectionsBreakingBehavior::SingleBreakPoint,
+            merge_use_statements: false,
         }
     }
 }

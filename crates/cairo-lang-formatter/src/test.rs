@@ -29,11 +29,13 @@ impl Upcast<dyn FilesGroup> for DatabaseImpl {
     "test_data/expected_results/test1.cairo",
     false,
     false,
+    false,
     false
 )]
 #[test_case(
     "test_data/cairo_files/linebreaking.cairo",
     "test_data/expected_results/linebreaking.cairo",
+    false,
     false,
     false,
     false
@@ -43,6 +45,7 @@ impl Upcast<dyn FilesGroup> for DatabaseImpl {
     "test_data/expected_results/attrs.cairo",
     false,
     false,
+    false,
     false
 )]
 #[test_case(
@@ -50,11 +53,13 @@ impl Upcast<dyn FilesGroup> for DatabaseImpl {
     "test_data/expected_results/use_sorting.cairo",
     true,
     false,
+    false,
     false
 )]
 #[test_case(
     "test_data/cairo_files/fmt_skip.cairo",
     "test_data/expected_results/fmt_skip.cairo",
+    false,
     false,
     false,
     false
@@ -64,12 +69,14 @@ impl Upcast<dyn FilesGroup> for DatabaseImpl {
     "test_data/expected_results/sorted_mod_use.cairo",
     true,
     false,
+    false,
     false
 )]
 #[test_case(
     "test_data/cairo_files/sort_inner_use.cairo",
     "test_data/expected_results/sort_inner_use.cairo",
     true,
+    false,
     false,
     false
 )]
@@ -79,6 +86,7 @@ impl Upcast<dyn FilesGroup> for DatabaseImpl {
     "test_data/expected_results/sort_single_line.cairo",
     true,
     false,
+    false,
     false
 )]
 #[test_case(
@@ -86,6 +94,15 @@ impl Upcast<dyn FilesGroup> for DatabaseImpl {
     "test_data/expected_results/sort_line_by_line.cairo",
     true,
     true,
+    true,
+    false
+)]
+#[test_case(
+    "test_data/cairo_files/use_merge.cairo",
+    "test_data/expected_results/use_merge.cairo",
+    true,
+    false,
+    false,
     true
 )]
 fn format_and_compare_file(
@@ -94,6 +111,7 @@ fn format_and_compare_file(
     use_sorting: bool,
     tuple_line_breaking: bool,
     fixed_array_line_breaking: bool,
+    merge_use_statements: bool,
 ) {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
@@ -118,7 +136,8 @@ fn format_and_compare_file(
             CollectionsBreakingBehavior::LineByLine
         } else {
             CollectionsBreakingBehavior::SingleBreakPoint
-        });
+        })
+        .merge_use_statements(merge_use_statements);
 
     let formatted_file = get_formatted_file(db, &syntax_root, config);
     let expected_file =

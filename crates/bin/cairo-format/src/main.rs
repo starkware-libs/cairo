@@ -52,6 +52,9 @@ struct FormatterArgs {
     #[arg(long, default_value_t = true)]
     fixed_array_line_breaking: bool,
     /// A list of files and directories to format. Use "-" for stdin.
+    #[arg(long, default_value_t = false)]
+    merge_use_statements: bool,
+    /// Enable merging of `use` statements.
     files: Vec<String>,
 }
 
@@ -206,8 +209,8 @@ fn main() -> ExitCode {
             CollectionsBreakingBehavior::LineByLine
         } else {
             CollectionsBreakingBehavior::SingleBreakPoint
-        });
-
+        })
+        .merge_use_statements(args.merge_use_statements);
     let fmt = CairoFormatter::new(config);
 
     eprintln_if_verbose(
