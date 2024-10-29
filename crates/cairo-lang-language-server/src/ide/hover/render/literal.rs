@@ -13,7 +13,7 @@ use indoc::formatdoc;
 use lsp_types::Hover;
 
 use crate::ide::hover::markdown_contents;
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::lsp::ToLsp;
 
 /// Narrows down [`SyntaxNode`] to [`TerminalLiteralNumber`], [`TerminalString`] or
@@ -46,9 +46,7 @@ pub fn literal(db: &AnalysisDatabase, node: &SyntaxNode, file_id: FileId) -> Opt
 
 /// Gets the type of an expression associated with [`SyntaxNode`].
 fn find_type(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
-    let lookup_item = db.find_lookup_item(&node)?;
-
-    if let Some(function_id) = lookup_item.function_with_body() {
+    if let Some(function_id) = db.find_lookup_item(&node)?.function_with_body() {
         find_type_in_function_context(db, node.clone(), function_id)
     } else {
         find_type_in_const_declaration(db, node)
@@ -71,16 +69,11 @@ fn find_type_in_function_context(
 fn find_type_in_const_declaration(db: &AnalysisDatabase, node: SyntaxNode) -> Option<String> {
     let module_file_id = db.find_module_file_containing_node(&node)?;
 
-    let mut node = node;
+    let const_node = db.first_ancestor_of_kind(node, SyntaxKind::ItemConstant)?;
+    let const_item = ItemConstant::from_syntax_node(db, const_node);
+    let const_item_id = ConstantLongId(module_file_id, const_item.stable_ptr()).intern(db);
 
-    while node.kind(db) != SyntaxKind::ItemConstant {
-        node = node.parent()?;
-    }
-
-    let const_item = ItemConstant::from_syntax_node(db, node);
-    let item_id = ConstantLongId(module_file_id, const_item.stable_ptr()).intern(db);
-
-    Some(db.constant_const_type(item_id).ok()?.format(db))
+    Some(db.constant_const_type(const_item_id).ok()?.format(db))
 }
 
 /// Formats the number literal writing its decimal, hexadecimal and binary value and type.
