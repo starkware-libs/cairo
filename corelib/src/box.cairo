@@ -64,7 +64,7 @@ impl BoxDeref<T> of crate::ops::Deref<Box<T>> {
     /// Takes a `Box<T>`, deferences it and returns a value of type `T`.
     ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// let boxed_value: Box<u32> = BoxTrait::new(1);
     /// let value: u32 = boxed_value.deref();
