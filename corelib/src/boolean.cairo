@@ -1,6 +1,8 @@
+/// `BoolTrait` generic implementation.
+/// Explicit import of `BoolTrait` is required with `use core::boolean::BoolTrait;`.
 #[generate_trait]
 pub impl BoolImpl<T, +Drop<T>> of BoolTrait<T> {
-    /// Returns `Some(t)` if the `bool` is `true`, or `None` otherwise.
+    /// Returns `Option::Some(t)` if the `bool` is `true`, `Option::None` otherwise.
     ///
     /// # Examples
     ///
