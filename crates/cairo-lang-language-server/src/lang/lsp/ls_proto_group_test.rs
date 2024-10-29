@@ -14,7 +14,7 @@ fn file_url() {
         let expected_file = db.intern_file(expected_file_long);
 
         assert_eq!(db.file_for_url(&expected_url), Some(expected_file));
-        assert_eq!(db.url_for_file(expected_file), expected_url);
+        assert_eq!(db.url_for_file(expected_file), Some(expected_url));
     };
 
     check("file:///foo/bar", FileLongId::OnDisk("/foo/bar".into()));
