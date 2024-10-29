@@ -12,6 +12,7 @@ use crate::iter::Iterator;
 use crate::RangeCheck;
 
 /// A collection of elements of the same type continuous in memory.
+/// `Array<T>` derives `Drop` trait.
 #[derive(Drop)]
 pub extern type Array<T>;
 
@@ -300,7 +301,9 @@ pub struct Span<T> {
     pub(crate) snapshot: @Array<T>
 }
 
+/// `Copy` trait implementation for `Span<T>`.
 impl SpanCopy<T> of Copy<Span<T>>;
+/// `Drop` trait implementation for `Span<T>`.
 impl SpanDrop<T> of Drop<Span<T>>;
 
 /// `Into` trait implementation to convert an array into a span.
@@ -781,9 +784,12 @@ pub struct SpanIter<T> {
     span: Span<T>,
 }
 
+/// `Drop` trait implementation for `SpanIter<T>` struct.
 impl SpanIterDrop<T> of Drop<SpanIter<T>>;
+/// `Copy` trait implementation for `SpanIter<T>` struct.
 impl SpanIterCopy<T> of Copy<SpanIter<T>>;
 
+/// `Iterator` trait implementation for `SpanIter<T>` struct.
 impl SpanIterator<T> of Iterator<SpanIter<T>> {
     type Item = @T;
     fn next(ref self: SpanIter<T>) -> Option<@T> {
@@ -791,6 +797,7 @@ impl SpanIterator<T> of Iterator<SpanIter<T>> {
     }
 }
 
+/// `IntoIterator` trait implementation for `Span<T>`.
 impl SpanIntoIterator<T> of crate::iter::IntoIterator<Span<T>> {
     type IntoIter = SpanIter<T>;
     fn into_iter(self: Span<T>) -> SpanIter<T> {
@@ -804,12 +811,14 @@ pub struct ArrayIter<T> {
     array: Array<T>,
 }
 
+/// `Clone` trait implementation for `ArrayIter<T>` struct.
 impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone<ArrayIter<T>> {
     fn clone(self: @ArrayIter<T>) -> ArrayIter<T> {
         ArrayIter { array: crate::clone::Clone::clone(self.array), }
     }
 }
 
+/// `Iterator` trait implementation for `ArrayIter<T>` struct.
 impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
     type Item = T;
     fn next(ref self: ArrayIter<T>) -> Option<T> {
@@ -817,6 +826,7 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
     }
 }
 
+/// `IntoIterator` trait implementation for `Array<T>`.
 impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
     fn into_iter(self: Array<T>) -> ArrayIter<T> {
