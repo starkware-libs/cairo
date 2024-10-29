@@ -805,6 +805,7 @@ impl SpanIterator<T> of Iterator<SpanIter<T>> {
 /// `IntoIterator` trait implementation for `Span<T>`.
 impl SpanIntoIterator<T> of crate::iter::IntoIterator<Span<T>> {
     type IntoIter = SpanIter<T>;
+    /// Returns a `SpanIter<T>` given a `Span<T>`.
     fn into_iter(self: Span<T>) -> SpanIter<T> {
         SpanIter { span: self }
     }
@@ -837,6 +838,7 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
 /// `IntoIterator` trait implementation for `Array<T>`.
 impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
+    /// Returns an `ArrayIter<T>` given a `Array<T>`.
     fn into_iter(self: Array<T>) -> ArrayIter<T> {
         ArrayIter { array: self }
     }
