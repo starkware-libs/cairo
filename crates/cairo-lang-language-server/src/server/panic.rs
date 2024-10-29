@@ -15,3 +15,26 @@ pub fn is_cancelled(err: &Box<dyn Any + Send>) -> bool {
             msg.contains("assertion failed: old_memo.revisions.changed_at <= revisions.changed_at")
         })
 }
+
+/// Attempts to convert Salsa cancellation to meaningful [`anyhow::Error`].
+///
+/// The `context` parameter is used to provide additional context to the error.
+pub fn cancelled_anyhow(
+    err: Box<dyn Any + Send>,
+    context: &'static str,
+) -> Result<anyhow::Error, Box<dyn Any + Send>> {
+    match err.downcast::<Cancelled>() {
+        Ok(err) => Ok(anyhow::Error::new(err).context(context)),
+        Err(err) => match err.downcast::<&str>() {
+            Ok(msg)
+                if msg.contains(
+                    "assertion failed: old_memo.revisions.changed_at <= revisions.changed_at",
+                ) =>
+            {
+                Ok(anyhow::Error::msg(msg).context(context))
+            }
+            Ok(msg) => Err(Box::new(msg)),
+            Err(err) => Err(err),
+        },
+    }
+}

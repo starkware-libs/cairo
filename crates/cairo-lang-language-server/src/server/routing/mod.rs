@@ -18,12 +18,12 @@ use lsp_types::request::{
     CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
     Request as RequestTrait, SemanticTokensFullRequest,
 };
-use tracing::{debug, error, warn};
+use tracing::{error, trace, warn};
 
 use super::client::Responder;
 use crate::lsp::ext::{ExpandMacro, ProvideVirtualFile, ViewAnalyzedCrates};
 use crate::lsp::result::{LSPError, LSPResult, LSPResultEx};
-use crate::server::panic::is_cancelled;
+use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::{BackgroundSchedule, Task};
 use crate::state::State;
 
@@ -136,14 +136,9 @@ fn background_request_task<'a, R: traits::BackgroundDocumentRequestHandler>(
                 R::run_with_snapshot(state_snapshot, notifier, params)
             }))
             .map_err(|err| {
-                if is_cancelled(&err) {
-                    debug!("LSP worker thread was cancelled");
-                    LSPError::new(
-                        anyhow!("LSP worker thread was cancelled"),
-                        ErrorCode::ServerCancelled,
-                    )
+                if let Ok(err) = cancelled_anyhow(err, "LSP worker thread was cancelled") {
+                    LSPError::new(err, ErrorCode::ServerCancelled)
                 } else {
-                    error!("caught panic in LSP worker thread");
                     LSPError::new(
                         anyhow!("caught panic in LSP worker thread"),
                         ErrorCode::InternalError,
@@ -191,10 +186,14 @@ fn cast_request<R: RequestTrait>(request: Request) -> Result<(RequestId, R::Para
 /// Sends back a response to the lsp_server using a [`Responder`].
 fn respond<R: RequestTrait>(id: RequestId, result: LSPResult<R::Result>, responder: &Responder) {
     if let Err(err) = &result {
-        error!("an error occurred with result ID {id}: {err}");
+        match err.code {
+            ErrorCode::ServerCancelled => trace!("request {id} was cancelled: {err:?}"),
+            _ => error!("request {id} errored: {err:?}"),
+        }
     }
-    if let Err(err) = responder.respond(id, result) {
-        error!("failed to send response: {err}");
+
+    if let Err(err) = responder.respond(id.clone(), result) {
+        error!("failed to respond to request {id}: {err}");
     }
 }
 

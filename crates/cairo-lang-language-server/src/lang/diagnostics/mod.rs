@@ -7,7 +7,7 @@ use tracing::{error, trace};
 use self::trigger::trigger;
 use crate::lang::diagnostics::refresh::refresh_diagnostics;
 use crate::server::client::Notifier;
-use crate::server::panic::is_cancelled;
+use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 use crate::state::{FileDiagnostics, StateSnapshot};
 
@@ -65,8 +65,9 @@ impl DiagnosticsController {
                     notifier,
                 );
             })) {
-                if is_cancelled(&err) {
-                    trace!("diagnostics refreshing has been cancelled");
+                if let Ok(err) = cancelled_anyhow(err, "diagnostics refreshing has been cancelled")
+                {
+                    trace!("{err:?}");
                 } else {
                     error!("caught panic while refreshing diagnostics");
                 }
