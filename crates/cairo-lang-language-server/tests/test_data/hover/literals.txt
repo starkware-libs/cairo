@@ -65,8 +65,6 @@ value of literal: `'short_string' (0x73686f72745f737472696e67)`
 ```cairo
 core::byte_array::ByteArray
 ```
----
-value of literal: `"normal_string"`
 
 //! > hover #3
 // = source context
@@ -149,8 +147,6 @@ value of literal: `368 (0x170 | 0b101110000)`
 ```cairo
 core::integer::u8
 ```
----
-value of literal: `"some_string"`
 
 //! > hover #10
 // = source context

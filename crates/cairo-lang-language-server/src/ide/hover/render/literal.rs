@@ -119,15 +119,11 @@ fn string_hover(
     ty: &str,
     file_id: FileId,
 ) -> Option<Hover> {
-    let string = literal.string_value(db)?;
-
     let representation = formatdoc!(
         r#"
         ```cairo
         {ty}
         ```
-        ---
-        value of literal: `"{string}"`
         "#
     );
 
