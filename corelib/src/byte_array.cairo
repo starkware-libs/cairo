@@ -15,42 +15,52 @@ use crate::serde::Serde;
 #[allow(unused_imports)]
 use crate::zeroable::NonZeroIntoImpl;
 
-/// A magic constant for identifying serialization of ByteArrays. An array of felt252s with this
-/// magic as one of the felt252s indicates that right after it you should expect a serialized
-/// ByteArray. This is currently used mainly for prints and panics.
+/// A magic constant for identifying serialization of `ByteArray`. An array of `felt252` with this
+/// magic value as one of the `felt252` indicates that you should expect right after it a serialized
+/// `ByteArray`. This is currently used mainly for prints and panics.
 pub const BYTE_ARRAY_MAGIC: felt252 =
     0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
+/// An array of `bytes31` defined as a structure containing 3 fields.
 #[derive(Drop, Clone, PartialEq, Serde, Default)]
 pub struct ByteArray {
-    // Full "words" of 31 bytes each. The first byte of each word in the byte array
-    // is the most significant byte in the word.
+    /// `data` field is an array of full "words" of 31 bytes each.
+    /// The first byte of each word in the byte array is the most significant byte in the word.
     pub(crate) data: Array<bytes31>,
-    // This felt252 actually represents a bytes31, with < 31 bytes.
-    // It is represented as a felt252 to improve performance of building the byte array.
-    // The number of bytes in here is specified in `pending_word_len`.
+    /// `pending_word` field is a `felt252` that actually represents a `bytes31`, with < 31 bytes.
+    /// It is represented as a felt252 to improve performance of building the `ByteArray`.
     // The first byte is the most significant byte among the `pending_word_len` bytes in the word.
     pub(crate) pending_word: felt252,
-    // Should be in range [0, 30].
+    /// `pending_word_len` represents the number of bytes in `pending_word`.
+    /// Its value should be in the range [0, 30].
     pub(crate) pending_word_len: usize,
 }
 
 pub(crate) impl ByteArrayStringLiteral of crate::string::StringLiteral<ByteArray>;
 
+/// Basic trait for the `ByteArray` type.
 #[generate_trait]
 pub impl ByteArrayImpl of ByteArrayTrait {
     // TODO(yuval): add a `new` function for initialization.
 
-    /// Appends a single word of `len` bytes to the end of the ByteArray.
-    /// Note: this function assumes that:
+    /// Appends a single word of `len` bytes to the end of the `ByteArray`.
+    /// This function assumes that:
     /// 1. `word` could be validly converted to a `bytes31` which has no more than `len` bytes
     ///    of data.
     /// 2. len <= BYTES_IN_BYTES31.
+    ///
     /// If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
     /// private function. We could add masking/assertions but it would be more expensive.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut byte_array = "";
+    /// byte_array.append_word('word', 4);
+    /// ```
     fn append_word(ref self: ByteArray, word: felt252, len: usize) {
         if len == 0 {
             return;
@@ -88,7 +98,14 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         self.pending_word_len = split_index;
     }
 
-    /// Appends a byte array to the end of `self`.
+    /// Appends a `ByteArray` to the end of another `ByteArray`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut byte_array: ByteArray = "first";
+    /// byte_array.append(@"second");
+    /// ```
     fn append(ref self: ByteArray, mut other: @ByteArray) {
         let mut other_data = other.data.span();
 
@@ -141,14 +158,29 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         self.append_word(*other.pending_word, *other.pending_word_len);
     }
 
-    /// Concatenates two byte arrays and returns the result.
+    /// Concatenates two `ByteArray` and returns the result.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let first_byte_array = "first";
+    /// let second_byte_array = "second";
+    /// let result = ByteArrayTrait::concat(@first_byte_array, @second_byte_array);
+    /// ```
     fn concat(left: @ByteArray, right: @ByteArray) -> ByteArray {
         let mut result = left.clone();
         result.append(right);
         result
     }
 
-    /// Appends a single byte to the end of `self`.
+    /// Appends a single byte to the end of the `ByteArray`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut byte_array = "";
+    /// byte_array.append_byte(0);
+    /// ```
     fn append_byte(ref self: ByteArray, byte: u8) {
         if self.pending_word_len == 0 {
             self.pending_word = byte.into();
@@ -170,12 +202,28 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         self.pending_word_len = 0;
     }
 
+    /// Returns the length of the `ByteArray` as a `usize` value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let byte_array: ByteArray = "byte array";
+    /// let len = byte_array.len();
+    /// ```
     #[must_use]
     fn len(self: @ByteArray) -> usize {
         self.data.len() * BYTES_IN_BYTES31.into() + (*self.pending_word_len).into()
     }
 
-    /// Returns the byte at the given index, or None if the index is out of bounds.
+    /// Returns an option of the byte at the given index of `self`
+    /// or `Option::None` if the index is out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let byte_array: ByteArray = "byte array";
+    /// let byte = byte_array.at(0).unwrap();
+    /// ```
     fn at(self: @ByteArray, index: usize) -> Option<u8> {
         let (word_index, index_in_word) = DivRem::div_rem(
             index, BYTES_IN_BYTES31.try_into().unwrap()
@@ -202,7 +250,14 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         Option::Some(self.data.at(word_index).at(index_from_lsb))
     }
 
-    /// Returns a ByteArray with the reverse order of `self`.
+    /// Returns a `ByteArray` with the reverse order of `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let byte_array: ByteArray = "123";
+    /// let rev_byte_array = byte_array.rev();
+    /// ```
     fn rev(self: @ByteArray) -> ByteArray {
         let mut result = Default::default();
 
@@ -220,10 +275,17 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         result
     }
 
-    /// Appends the reverse of the given word to the end `self`.
-    /// Assumptions:
+    /// Appends the reverse of the given word to the end of `self`.
+    /// This function assumes that:
     /// 1. len < 31
     /// 2. word is validly convertible to bytes31 of length `len`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut byte_array: ByteArray = "";
+    /// byte_array.append_word_rev('123', 3);
+    /// ```
     fn append_word_rev(ref self: ByteArray, word: felt252, len: usize) {
         let mut index = 0;
 
@@ -256,11 +318,11 @@ pub impl ByteArrayImpl of ByteArrayTrait {
 
     // === Helpers ===
 
-    /// Appends a single word of `len` bytes to the end of the ByteArray, assuming there
+    /// Appends a single word of `len` bytes to the end of the `ByteArray`, assuming there
     /// is enough space in the pending word (`self.pending_word_len + len < BYTES_IN_BYTES31`).
     ///
-    /// `word` is of type felt252 but actually represents a bytes31.
-    /// It is represented as a felt252 to improve performance of building the byte array.
+    /// `word` is of type `felt252` but actually represents a `bytes31`.
+    /// It is represented as a `felt252` to improve performance of building the `ByteArray`.
     #[inline]
     fn append_word_fits_into_pending(ref self: ByteArray, word: felt252, len: usize) {
         if self.pending_word_len == 0 {
@@ -279,7 +341,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// `split_index` is the number of bytes left in `self.pending_word` after this function.
     /// This is the index of the split (LSB's index is 0).
     ///
-    /// Note: this function doesn't update the new pending length of self. It's the caller's
+    /// Note: this function doesn't update the new pending length of `self`. It's the caller's
     /// responsibility.
     #[inline]
     fn append_split_index_lt_16(ref self: ByteArray, word: felt252, split_index: usize) {
@@ -300,7 +362,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// `split_index` is the number of bytes left in `self.pending_word` after this function.
     /// This is the index of the split (LSB's index is 0).
     ///
-    /// Note: this function doesn't update the new pending length of self. It's the caller's
+    /// Note: this function doesn't update the new pending length of `self`. It's the caller's
     /// responsibility.
     #[inline]
     fn append_split_index_16(ref self: ByteArray, word: felt252) {
@@ -314,7 +376,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// `split_index` is the number of bytes left in `self.pending_word` after this function.
     /// This is the index of the split (LSB's index is 0).
     ///
-    /// Note: this function doesn't update the new pending length of self. It's the caller's
+    /// Note: this function doesn't update the new pending length of `self`. It's the caller's
     /// responsibility.
     #[inline]
     fn append_split_index_gt_16(ref self: ByteArray, word: felt252, split_index: usize) {
@@ -328,13 +390,13 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         self.append_split(high_quotient.into(), right);
     }
 
-    /// A helper function to append a remainder to self, by:
+    /// A helper function to append a remainder to `self`, by:
     /// 1. completing `self.pending_word` to a full word using `complete_full_word`, assuming it's
     ///    validly convertible to a `bytes31` of length exactly `BYTES_IN_BYTES31 -
     ///    self.pending_word_len`.
     /// 2. Setting `self.pending_word` to `new_pending`.
     ///
-    /// Note: this function doesn't update the new pending length of self. It's the caller's
+    /// Note: this function doesn't update the new pending length of `self`. It's the caller's
     /// responsibility.
     #[inline]
     fn append_split(ref self: ByteArray, complete_full_word: felt252, new_pending: felt252) {
@@ -346,14 +408,35 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     }
 }
 
+/// `Add` trait implementation for the `ByteArray` type.
 impl ByteArrayAdd of Add<ByteArray> {
+    /// Concatenates two `ByteArray` and returns the resulting `ByteArray`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let first_byte_array: ByteArray = "first";
+    /// let second_byte_array: ByteArray = "second";
+    /// let result = Add::add(first_byte_array, second_byte_array);
+    /// ```
     #[inline]
     fn add(lhs: ByteArray, rhs: ByteArray) -> ByteArray {
         ByteArrayTrait::concat(@lhs, @rhs)
     }
 }
+
+/// `AddEq` trait implementation for the `ByteArray` type.
 #[feature("deprecated-op-assign-traits")]
 impl ByteArrayAddEq of crate::traits::AddEq<ByteArray> {
+    /// Appends a `ByteArray` to another `ByteArray`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut first_byte_array: ByteArray = "first";
+    /// let second_byte_array: ByteArray = "second";
+    /// let result = first_byte_array.add_eq(second_byte_array);
+    /// ```
     #[inline]
     fn add_eq(ref self: ByteArray, other: ByteArray) {
         self.append(@other);
