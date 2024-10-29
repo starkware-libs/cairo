@@ -15,9 +15,9 @@ use crate::serde::Serde;
 #[allow(unused_imports)]
 use crate::zeroable::NonZeroIntoImpl;
 
-/// A magic constant for identifying serialization of `ByteArray` variables. An array of `felt252` with this
-/// magic value as one of the `felt252` indicates that you should expect right after it a serialized
-/// `ByteArray`. This is currently used mainly for prints and panics.
+/// A magic constant for identifying serialization of `ByteArray` variables. An array of `felt252`
+/// with this magic value as one of the `felt252` indicates that you should expect right after it a
+/// serialized `ByteArray`. This is currently used mainly for prints and panics.
 pub const BYTE_ARRAY_MAGIC: felt252 =
     0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
