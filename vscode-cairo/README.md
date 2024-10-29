@@ -93,10 +93,10 @@ If you have a problem that you think should be fixed, please follow steps below:
 2. Choose [`ide` label][cairo-ide-label]
 3. Fill out the issue template
 4. Attach all relevant screenshots, logs with trace (obtained with steps in [Troubleshooting])
-5. Don't forget to attach context like:
-   - Scarb version (which version or which nightly?), or commit reference (if built locally)
-   - Relevant `Cairo` extension VSCode configuration
-   - `Cairo` extension version
+5. Do not forget to attach context like:
+   - Scarb version (which version or which nightly?), or commit reference (if built locally),
+   - relevant `Cairo` extension VSCode configuration,
+   - `Cairo` extension version.
 
 [cairo]: https://www.cairo-lang.org/
 [cairo-ide-label]: https://github.com/starkware-libs/cairo/labels/ide
