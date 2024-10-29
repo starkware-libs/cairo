@@ -51,6 +51,12 @@ struct FormatterArgs {
     /// same line (as space permits). Defaults to single line.
     #[arg(long, default_value_t = true)]
     fixed_array_line_breaking: bool,
+    /// Enable merging of `use` items.
+    #[arg(long, default_value_t = false)]
+    merge_use_items: bool,
+    ///  Enable duplicates in `use` items.
+    #[arg(long, default_value_t = false)]
+    allow_duplicates: bool,
     /// A list of files and directories to format. Use "-" for stdin.
     files: Vec<String>,
 }
@@ -206,8 +212,9 @@ fn main() -> ExitCode {
             CollectionsBreakingBehavior::LineByLine
         } else {
             CollectionsBreakingBehavior::SingleBreakPoint
-        });
-
+        })
+        .merge_use_items(args.merge_use_items)
+        .allow_duplicate_uses(args.allow_duplicates);
     let fmt = CairoFormatter::new(config);
 
     eprintln_if_verbose(
