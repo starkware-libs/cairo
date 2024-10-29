@@ -576,12 +576,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
 }
 
 /// Returns the `VirtualFile` matching the given external id.
-pub fn ext_as_virtual_impl(db: &dyn DefsGroup, external_id: salsa::InternId) -> VirtualFile {
-    maybe_ext_as_virtual_impl(db, external_id).unwrap()
-}
-
-/// Returns the `VirtualFile` matching the given external id.
-pub fn maybe_ext_as_virtual_impl(
+pub fn try_ext_as_virtual_impl(
     db: &dyn DefsGroup,
     external_id: salsa::InternId,
 ) -> Option<VirtualFile> {

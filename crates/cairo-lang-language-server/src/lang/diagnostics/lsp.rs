@@ -35,7 +35,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
                     continue;
                 };
                 let Some(uri) = db.url_for_file(file_id) else {
-                    trace!("url for file {:?} not found", file_id.lookup_intern(db));
+                    trace!("url for file not found: {:?}", file_id.lookup_intern(db));
                     continue;
                 };
                 related_information.push(DiagnosticRelatedInformation {

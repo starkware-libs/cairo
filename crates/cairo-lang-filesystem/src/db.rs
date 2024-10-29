@@ -162,11 +162,11 @@ pub struct ExperimentalFeaturesConfig {
 pub trait ExternalFiles {
     /// Returns the virtual file matching the external id.
     fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
-        self.maybe_ext_as_virtual(external_id).unwrap()
+        self.try_ext_as_virtual(external_id).unwrap()
     }
 
     /// Returns the virtual file matching the external id if found.
-    fn maybe_ext_as_virtual(&self, _external_id: salsa::InternId) -> Option<VirtualFile> {
+    fn try_ext_as_virtual(&self, _external_id: salsa::InternId) -> Option<VirtualFile> {
         panic!("Should not be called, unless specifically implemented!");
     }
 }

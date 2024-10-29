@@ -45,7 +45,7 @@ pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
         let vf = match self.upcast().lookup_intern_file(file_id) {
             FileLongId::OnDisk(path) => return Some(Url::from_file_path(path).unwrap()),
             FileLongId::Virtual(vf) => vf,
-            FileLongId::External(id) => self.upcast().maybe_ext_as_virtual(id)?,
+            FileLongId::External(id) => self.upcast().try_ext_as_virtual(id)?,
         };
         // NOTE: The URL is constructed using setters and path segments in order to
         //   url-encode any funky characters in parts that LS is not controlling.
