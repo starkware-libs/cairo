@@ -1,6 +1,5 @@
-/// A Box is a type that points to a wrapped value.
-///
-/// Allows for cheap moving around of the value, as its size is small, and may wrap a large size.
+/// A `Box` is a type that points to a wrapped value.
+/// It allows for cheap moving around of the value, as its size is small, and may wrap a large size.
 #[derive(Copy, Drop)]
 pub extern type Box<T>;
 
@@ -11,12 +10,13 @@ extern fn into_box<T>(value: T) -> Box<T> nopanic;
 extern fn unbox<T>(box: Box<T>) -> T nopanic;
 extern fn box_forward_snapshot<T>(value: @Box<T>) -> Box<@T> nopanic;
 
-/// Basic trait for the Box type.
+/// Basic trait for the `Box` type.
 #[generate_trait]
 pub impl BoxImpl<T> of BoxTrait<T> {
-    /// Creates a new Box with the given value.
+    /// Creates a new `Box` with the given value.
     ///
-    /// Example:
+    /// # Examples
+    ///
     /// ```
     /// let x = 42;
     /// let boxed_x = BoxTrait::new(x);
@@ -26,9 +26,11 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     fn new(value: T) -> Box<T> nopanic {
         into_box(value)
     }
-    /// Unboxes the given Box.
+
+    /// Unboxes the given `Box` and returns the wrapped value.
     ///
-    /// Example:
+    /// # Examples
+    ///
     /// ```
     /// let boxed = BoxTrait::new(42);
     /// assert_eq!(boxed.unbox(), 42);
@@ -38,10 +40,12 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     fn unbox(self: Box<T>) -> T nopanic {
         unbox(self)
     }
-    /// Converts the given snapshot of a Box into a Box of a snapshot.
-    ///
+
+    /// Converts the given snapshot of a `Box` into a `Box` of a snapshot.
     /// Useful for structures that aren't copyable.
-    /// Example:
+    ///
+    /// # Examples
+    ///
     /// ```
     /// let snap_boxed_arr = @BoxTraits::new(array![1, 2, 3]);
     /// let boxed_snap_arr = snap_boxed_arr.as_snapshot();
@@ -53,14 +57,33 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     }
 }
 
+/// `Deref` trait implementation for the `Box` type.
 impl BoxDeref<T> of crate::ops::Deref<Box<T>> {
+    /// The target type after dereferencing.
     type Target = T;
+    /// Takes a `Box<T>`, deferences it and returns a value of type `T`.
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// let boxed_value: Box<u32> = BoxTrait::new(1);
+    /// let value: u32 = boxed_value.deref();
+    /// ```
     fn deref(self: Box<T>) -> T {
         self.unbox()
     }
 }
 
+/// `Debug` trait implementation for the `Box` type.
 impl BoxDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Box<T>> {
+    /// Formats a `Box` type, allowing to print `Box` instances for debugging purposes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let boxed_value: Box<u32> = BoxTrait::new(1);
+    /// println!("{:?}", boxed_value);
+    /// ```
     fn fmt(self: @Box<T>, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
         write!(f, "&")?;
         TDebug::fmt(self.as_snapshot().unbox(), ref f)
