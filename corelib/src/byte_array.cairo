@@ -15,7 +15,7 @@ use crate::serde::Serde;
 #[allow(unused_imports)]
 use crate::zeroable::NonZeroIntoImpl;
 
-/// A magic constant for identifying serialization of `ByteArray`. An array of `felt252` with this
+/// A magic constant for identifying serialization of `ByteArray` variables. An array of `felt252` with this
 /// magic value as one of the `felt252` indicates that you should expect right after it a serialized
 /// `ByteArray`. This is currently used mainly for prints and panics.
 pub const BYTE_ARRAY_MAGIC: felt252 =
@@ -32,7 +32,7 @@ pub struct ByteArray {
     pub(crate) data: Array<bytes31>,
     /// `pending_word` field is a `felt252` that actually represents a `bytes31`, with < 31 bytes.
     /// It is represented as a felt252 to improve performance of building the `ByteArray`.
-    // The first byte is the most significant byte among the `pending_word_len` bytes in the word.
+    /// The first byte is the most significant byte among the `pending_word_len` bytes in the word.
     pub(crate) pending_word: felt252,
     /// `pending_word_len` represents the number of bytes in `pending_word`.
     /// Its value should be in the range [0, 30].
