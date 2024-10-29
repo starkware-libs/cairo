@@ -829,7 +829,7 @@ impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone
 impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
     /// Type of the values contained in the array.
     type Item = T;
-    /// Returns an option to an element of the array if it exist, and `Option::None` otherwise.
+    /// Returns an option to an element of the array if it exists, and `Option::None` otherwise.
     fn next(ref self: ArrayIter<T>) -> Option<T> {
         self.array.pop_front()
     }
@@ -838,7 +838,7 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
 /// `IntoIterator` trait implementation for `Array<T>`.
 impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
-    /// Returns an `ArrayIter<T>` given a `Array<T>`.
+    /// Returns an `ArrayIter<T>` given an `Array<T>`.
     fn into_iter(self: Array<T>) -> ArrayIter<T> {
         ArrayIter { array: self }
     }
