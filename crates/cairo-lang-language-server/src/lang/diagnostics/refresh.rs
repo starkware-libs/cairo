@@ -124,7 +124,7 @@ fn refresh_file_diagnostics(
     notifier: &Notifier,
 ) {
     let Some(file_uri) = db.url_for_file(*file) else {
-        trace!("url for file {:?} not found", file.lookup_intern(db));
+        trace!("url for file not found: {:?}", file.lookup_intern(db));
         return;
     };
 
