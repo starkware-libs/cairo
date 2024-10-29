@@ -34,7 +34,7 @@ lsp-server = "0.7.7"
 lsp-types = "=0.95.0"
 rustc-hash = "1.1.0"
 salsa.workspace = true
-scarb-metadata = "1.12"
+scarb-metadata = "1.13"
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 smol_str.workspace = true
