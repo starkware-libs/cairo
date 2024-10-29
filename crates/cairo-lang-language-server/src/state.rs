@@ -48,13 +48,14 @@ impl State {
         scarb_toolchain: ScarbToolchain,
         tricks: Tricks,
     ) -> Self {
+        let db_swapper = AnalysisDatabaseSwapper::new(scarb_toolchain.clone());
         Self {
             db,
             open_files: Default::default(),
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
             scarb_toolchain,
-            db_swapper: AnalysisDatabaseSwapper::new(),
+            db_swapper,
             tricks: Owned::new(tricks.into()),
             diagnostics_controller: DiagnosticsController::new(),
         }
