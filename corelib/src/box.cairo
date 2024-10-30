@@ -1,3 +1,24 @@
+//! A type that points to a wrapped value, using a dedicated memory segment.
+//!
+//! `Box<T>` is a smart pointer that allows to store values of arbitrary size
+//! while keeping a fixed-size pointer during operations.
+//!
+//! # Examples
+//!
+//! Creating a new box:
+//!
+//! ```
+//! let boxed = BoxTrait::new(42);
+//! let unboxed = boxed.unbox();
+//! ```
+//!
+//! Working with larger structures:
+//!
+//! ```
+//! let large_array = array![1, 2, 3, 4, 5];
+//! let boxed_array = BoxTrait::new(large_array);
+//! ```
+
 /// A `Box` is a type that points to a wrapped value.
 /// It allows for cheap moving around of the value, as its size is small, and may wrap a large size.
 #[derive(Copy, Drop)]
@@ -33,7 +54,7 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     ///
     /// ```
     /// let boxed = BoxTrait::new(42);
-    /// assert_eq!(boxed.unbox(), 42);
+    /// assert!(boxed.unbox() == 42);
     /// ```
     #[inline]
     #[must_use]
@@ -68,6 +89,7 @@ impl BoxDeref<T> of crate::ops::Deref<Box<T>> {
     /// ```
     /// let boxed_value: Box<u32> = BoxTrait::new(1);
     /// let value: u32 = boxed_value.deref();
+    /// assert!(value == 1);
     /// ```
     fn deref(self: Box<T>) -> T {
         self.unbox()
