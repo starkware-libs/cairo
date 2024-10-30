@@ -1,3 +1,47 @@
+//! A dynamic, growable array of bytes where bytes are stored in multiples of 31 bytes,
+//! with a `felt252` pending word used for bytes that don't complete a full `bytes31` word.
+//!
+//! `ByteArray` is designed to handle large sequences of bytes with operations like appending,
+//! concatenation, and accessing individual bytes. It uses a structure that combines an `Array` of
+//! `bytes31` for full words and a `felt252` for handling partial words, optimizing for both space
+//! and performance.
+//!
+//! # Examples
+//!
+//! Creating a new `ByteArray`:
+//!
+//! ```
+//! let mut ba: ByteArray = "";
+//! ba.append_byte(0x41); // Appending a single byte 'A'
+//! ```
+//!
+//! Appending another `ByteArray` with [`ByteArrayTrait::append`]:
+//!
+//! ```
+//! let mut ba: ByteArray = "";
+//! let mut other_ba: ByteArray = "";
+//! ba.append(@other_ba);
+//! ```
+//!
+//! Accessing a byte with [`ByteArrayTrait::at`]:
+//!
+//! ```
+//! let mut ba: ByteArray = "";
+//! ba.append_byte(0x41);
+//! if let Option::Some(byte) = ba.at(0) {
+//!     assert!(byte == 0x41);
+//! }
+//! ```
+//!
+//! The `ByteArray` type also supports operations like addition, which can be used for
+//! concatenation:
+//!
+//! ```
+//! let mut ba: ByteArray = "";
+//! let mut other_ba: ByteArray = "";
+//! let concatenated = ba + other_ba;
+//! ```
+
 use crate::array::{ArrayTrait, SpanTrait};
 #[allow(unused_imports)]
 use crate::bytes_31::{
@@ -58,8 +102,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// # Examples
     ///
     /// ```
-    /// let mut byte_array = "";
-    /// byte_array.append_word('word', 4);
+    /// let mut ba = "";
+    /// ba.append_word('word', 4);
+    /// assert!(ba == "word");
     /// ```
     fn append_word(ref self: ByteArray, word: felt252, len: usize) {
         if len == 0 {
@@ -103,8 +148,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// # Examples
     ///
     /// ```
-    /// let mut byte_array: ByteArray = "first";
-    /// byte_array.append(@"second");
+    /// let mut ba: ByteArray = "1";
+    /// ba.append(@"2");
+    /// assert!(ba == "12");
     /// ```
     fn append(ref self: ByteArray, mut other: @ByteArray) {
         let mut other_data = other.data.span();
@@ -163,9 +209,10 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// # Examples
     ///
     /// ```
-    /// let first_byte_array = "first";
-    /// let second_byte_array = "second";
-    /// let result = ByteArrayTrait::concat(@first_byte_array, @second_byte_array);
+    /// let ba = "1";
+    /// let other_ba = "2";
+    /// let result = ByteArrayTrait::concat(@ba, @other_ba);
+    /// assert!(result =="12")
     /// ```
     fn concat(left: @ByteArray, right: @ByteArray) -> ByteArray {
         let mut result = left.clone();
@@ -178,8 +225,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// # Examples
     ///
     /// ```
-    /// let mut byte_array = "";
-    /// byte_array.append_byte(0);
+    /// let mut ba = "";
+    /// ba.append_byte(0);
+    /// assert!(ba == "0");
     /// ```
     fn append_byte(ref self: ByteArray, byte: u8) {
         if self.pending_word_len == 0 {
@@ -207,8 +255,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// # Examples
     ///
     /// ```
-    /// let byte_array: ByteArray = "byte array";
-    /// let len = byte_array.len();
+    /// let ba: ByteArray = "byte array";
+    /// let len = ba.len();
+    /// assert!(len == 10);
     /// ```
     #[must_use]
     fn len(self: @ByteArray) -> usize {
@@ -221,8 +270,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// # Examples
     ///
     /// ```
-    /// let byte_array: ByteArray = "byte array";
-    /// let byte = byte_array.at(0).unwrap();
+    /// let ba: ByteArray = "byte array";
+    /// let byte = ba.at(0).unwrap();
+    /// assert!(byte == 98);
     /// ```
     fn at(self: @ByteArray, index: usize) -> Option<u8> {
         let (word_index, index_in_word) = DivRem::div_rem(
@@ -255,8 +305,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// # Examples
     ///
     /// ```
-    /// let byte_array: ByteArray = "123";
-    /// let rev_byte_array = byte_array.rev();
+    /// let ba: ByteArray = "123";
+    /// let rev_ba = ba.rev();
+    /// assert!(rev_ba == "321");
     /// ```
     fn rev(self: @ByteArray) -> ByteArray {
         let mut result = Default::default();
@@ -283,8 +334,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// # Examples
     ///
     /// ```
-    /// let mut byte_array: ByteArray = "";
-    /// byte_array.append_word_rev('123', 3);
+    /// let mut ba: ByteArray = "";
+    /// ba.append_word_rev('123', 3);
+    /// assert!(ba == "321");
     /// ```
     fn append_word_rev(ref self: ByteArray, word: felt252, len: usize) {
         let mut index = 0;
@@ -415,9 +467,10 @@ impl ByteArrayAdd of Add<ByteArray> {
     /// # Examples
     ///
     /// ```
-    /// let first_byte_array: ByteArray = "first";
-    /// let second_byte_array: ByteArray = "second";
-    /// let result = Add::add(first_byte_array, second_byte_array);
+    /// let ba: ByteArray = "1";
+    /// let other_ba: ByteArray = "2";
+    /// let result = Add::add(ba, other_ba);
+    /// assert!(result == "12")
     /// ```
     #[inline]
     fn add(lhs: ByteArray, rhs: ByteArray) -> ByteArray {
@@ -433,9 +486,10 @@ impl ByteArrayAddEq of crate::traits::AddEq<ByteArray> {
     /// # Examples
     ///
     /// ```
-    /// let mut first_byte_array: ByteArray = "first";
-    /// let second_byte_array: ByteArray = "second";
-    /// let result = first_byte_array.add_eq(second_byte_array);
+    /// let mut ba: ByteArray = "1";
+    /// let other_ba: ByteArray = "2";
+    /// ba.add_eq(other_ba);
+    /// assert!(ba == "12");
     /// ```
     #[inline]
     fn add_eq(ref self: ByteArray, other: ByteArray) {
