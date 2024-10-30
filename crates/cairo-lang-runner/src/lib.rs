@@ -2,9 +2,12 @@
 use std::collections::{HashMap, HashSet};
 use std::ops::{Add, Sub};
 
+use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::{casm, casm_extend};
+use cairo_lang_casm::operand::{CellRef, Register};
+use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
@@ -42,7 +45,7 @@ use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
-use itertools::chain;
+use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use profiling::{ProfilingInfo, user_function_idx_by_sierra_statement_idx};
@@ -652,7 +655,7 @@ impl SierraCasmRunner {
         param_types: &[(GenericTypeId, i16)],
         code_offset: usize,
     ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
-        let mut ctx = casm! {};
+        let mut ctx = CasmBuilder::default();
         // The builtins in the formatting expected by the runner.
         let builtins = vec![
             BuiltinName::pedersen,
@@ -665,84 +668,79 @@ impl SierraCasmRunner {
             BuiltinName::mul_mod,
         ];
         // The offset [fp - i] for each of this builtins in this configuration.
-        let builtin_offset: HashMap<GenericTypeId, i16> = HashMap::from([
-            (PedersenType::ID, 10),
-            (RangeCheckType::ID, 9),
-            (BitwiseType::ID, 8),
-            (EcOpType::ID, 7),
-            (PoseidonType::ID, 6),
-            (RangeCheck96Type::ID, 5),
-            (AddModType::ID, 4),
-            (MulModType::ID, 3),
-        ]);
+        let mut builtin_vars: HashMap<GenericTypeId, Var> = HashMap::from(
+            [
+                (PedersenType::ID, 10),
+                (RangeCheckType::ID, 9),
+                (BitwiseType::ID, 8),
+                (EcOpType::ID, 7),
+                (PoseidonType::ID, 6),
+                (RangeCheck96Type::ID, 5),
+                (AddModType::ID, 4),
+                (MulModType::ID, 3),
+            ]
+            .map(|(k, v)| {
+                (
+                    k,
+                    ctx.add_var(CellExpression::Deref(CellRef {
+                        register: Register::FP,
+                        offset: -v,
+                    })),
+                )
+            }),
+        );
 
         let emulated_builtins = HashSet::from([SystemType::ID]);
 
-        let mut ap_offset: i16 = 0;
-
-        let params_size: i16 = param_types
-            .iter()
-            .filter_map(|(ty, size)| {
-                (!builtin_offset.contains_key(ty) && !emulated_builtins.contains(ty)
-                    || ty != &SegmentArenaType::ID)
-                    .then_some(*size)
-            })
-            .sum();
-        // Giving space for the VM to fill the arguments.
-        casm_extend!(ctx, ap += params_size;);
-        ap_offset += params_size;
-        if param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID) {
-            casm_extend! {ctx,
-                // SegmentArena segment.
-                %{ memory[ap + 0] = segments.add() %}
-                // Infos segment.
-                %{ memory[ap + 1] = segments.add() %}
-                ap += 2;
-                [ap + 0] = 0, ap++;
-                // Write Infos segment, n_constructed (0), and n_destructed (0) to the segment.
-                [ap - 2] = [[ap - 3]];
-                [ap - 1] = [[ap - 3] + 1];
-                [ap - 1] = [[ap - 3] + 2];
+        let mut args_vars = vec![];
+        for (ty, size) in param_types {
+            if !builtin_vars.contains_key(ty)
+                && !emulated_builtins.contains(ty)
+                && ty != &SegmentArenaType::ID
+            {
+                args_vars.push((0..*size).map(|_| ctx.alloc_var(false)).collect_vec());
             }
-            ap_offset += 3;
         }
-        let mut used_args = 0;
-        for (generic_ty, ty_size) in param_types {
-            if let Some(offset) = builtin_offset.get(generic_ty) {
-                casm_extend! {ctx,
-                    [ap + 0] = [fp - offset], ap++;
-                }
-                ap_offset += 1;
+        // Giving space for the VM to fill the arguments.
+        casm_build_extend!(ctx, ap += args_vars.iter().map(Vec::len).sum(););
+        if param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID) {
+            casm_build_extend! {ctx,
+                tempvar segment_arena;
+                tempvar infos;
+                hint AllocSegment {} into {dst: segment_arena};
+                hint AllocSegment {} into {dst: infos};
+                const czero = 0;
+                tempvar zero = czero;
+                // Write Infos segment, n_constructed (0), and n_destructed (0) to the segment.
+                assert infos = *(segment_arena++);
+                assert zero = *(segment_arena++);
+                assert zero = *(segment_arena++);
+            }
+            // Adding the segment arena to the builtins var map.
+            builtin_vars.insert(SegmentArenaType::ID, segment_arena);
+        }
+        let mut args_vars_iter = args_vars.into_iter();
+        for (generic_ty, _) in param_types {
+            if let Some(var) = builtin_vars.get(generic_ty).cloned() {
+                casm_build_extend!(ctx, tempvar _builtin = var;);
             } else if emulated_builtins.contains(generic_ty) {
-                casm_extend! {ctx,
-                    %{ memory[ap + 0] = segments.add() %}
+                casm_build_extend! {ctx,
+                    tempvar system;
+                    hint AllocSegment {} into {dst: system};
                     ap += 1;
-                }
-                ap_offset += 1;
-            } else if generic_ty == &SegmentArenaType::ID {
-                let offset = ap_offset - params_size;
-                casm_extend! {ctx,
-                    [ap + 0] = [ap - offset] + 3, ap++;
-                }
-                ap_offset += 1;
+                };
             } else {
-                let offset = ap_offset - used_args;
-                for _ in 0..*ty_size {
-                    casm_extend!(ctx, [ap + 0] = [ap - offset], ap++;);
+                for cell in args_vars_iter.next().unwrap() {
+                    casm_build_extend!(ctx, tempvar _cell = cell;);
                 }
-                ap_offset += *ty_size;
-                used_args += *ty_size;
             };
         }
-        let before_final_call = ctx.current_code_offset;
-        let final_call_size = 3;
-        let offset = final_call_size + code_offset;
-        casm_extend! {ctx,
-            call rel offset;
+        casm_build_extend! {ctx,
+            let () = call FUNCTION;
             ret;
-        }
-        assert_eq!(before_final_call + final_call_size, ctx.current_code_offset);
-        Ok((ctx.instructions, builtins))
+        };
+        ctx.future_label("FUNCTION".into(), code_offset);
+        Ok((ctx.build([]).instructions, builtins))
     }
 
     /// Returns the instructions to add to the beginning of the code to successfully call the main

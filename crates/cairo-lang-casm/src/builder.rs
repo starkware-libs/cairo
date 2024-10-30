@@ -101,8 +101,9 @@ enum Statement {
     Final(Instruction),
     /// A jump or call command, requires fixing the actual target label.
     Jump(String, Instruction),
-    /// A target label for jumps.
-    Label(String),
+    /// A target label for jumps, additionally with an offset for defining the label in a position relative to the
+    /// current statement.
+    Label(String, usize),
 }
 
 /// The builder result.
@@ -188,7 +189,7 @@ impl CasmBuilder {
                     offset += inst.body.op_size();
                     instructions.push(inst);
                 }
-                Statement::Label(name) => {
+                Statement::Label(name, _) => {
                     self.label_state.remove(&name);
                 }
             }
@@ -221,8 +222,8 @@ impl CasmBuilder {
                 Statement::Final(inst) | Statement::Jump(_, inst) => {
                     offset += inst.body.op_size();
                 }
-                Statement::Label(name) => {
-                    label_offsets.insert(name.clone(), offset);
+                Statement::Label(name, extra_offset) => {
+                    label_offsets.insert(name.clone(), offset + extra_offset);
                 }
             }
         }
@@ -492,8 +493,14 @@ impl CasmBuilder {
             .get(&name)
             .unwrap_or_else(|| panic!("No known value for state on reaching {name}."))
             .clone();
-        self.statements.push(Statement::Label(name));
+        self.statements.push(Statement::Label(name, 0));
         self.reachable = true;
+    }
+
+    /// Adds a label `name` in distance `offset` from the current point.
+    /// Useful for calling code outside of the builder's context.
+    pub fn future_label(&mut self, name: String, offset: usize) {
+        self.statements.push(Statement::Label(name, offset));
     }
 
     /// Rescoping the values, while ignoring all vars not stated in `vars` and giving the vars on
