@@ -1,3 +1,16 @@
+//! `BoolTrait` implementation.
+//!
+//! # Examples
+//!
+//! You can return an option of value with [`BoolTrait::then_some`]
+//! depending on whether the `bool` is `true` or `false`
+//!
+//! ```
+//! let bool = true;
+//! let result = bool.then_some(0_u8);
+//! assert!(result == Option::Some(0));
+//! ```
+
 /// `BoolTrait` generic implementation.
 /// Explicit import of `BoolTrait` is required with `use core::boolean::BoolTrait;`.
 #[generate_trait]
