@@ -27,7 +27,7 @@
 //!
 //! It also possible to use the [`Felt252DictTrait::entry`] method to retrieve the last entry given
 //! a certain key.
-//! In this case, the method takes ownerhsip of the dictionary and returns the entry to update.
+//! In this case, the method takes ownership of the dictionary and returns the entry to update.
 //! After that, using the [`Felt252DictEntryTrait::finalize`] allows to create a new entry in the
 //! dictionary.
 //!
@@ -63,7 +63,7 @@ pub extern type Felt252Dict<T>;
 pub extern type SquashedFelt252Dict<T>;
 
 /// A type that is returned after calling `entry` method, on which it is possible to call `finalize`
-/// method in order to regain ownerhsip of a dictionary after adding a new entry.
+/// method in order to regain ownership of a dictionary after adding a new entry.
 pub extern type Felt252DictEntry<T>;
 
 impl SquashedFelt252DictDrop<T, +Drop<T>> of Drop<SquashedFelt252Dict<T>>;
@@ -154,7 +154,7 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
     }
 
     /// Retrieves the last entry given a certain key.
-    /// This method takes ownerhsip of the dictionary and returns the entry to update
+    /// This method takes ownership of the dictionary and returns the entry to update
     /// as well as the previous value at the given key.
     ///
     /// # Examples
