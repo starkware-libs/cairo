@@ -61,10 +61,12 @@ pub fn refresh_diagnostics(
         let mut rest_of_files: HashSet<FileId> = HashSet::default();
         for crate_id in db.crates() {
             for module_id in db.crate_modules(crate_id).iter() {
-                if let Ok(module_files) = db.module_files(*module_id) {
-                    let unprocessed_files =
-                        module_files.iter().filter(|file| !open_files_ids.contains(file));
-                    rest_of_files.extend(unprocessed_files);
+                // Schedule only module main files for refreshing.
+                // All other related files will be refreshed along with it in a single job.
+                if let Ok(file) = db.module_main_file(*module_id) {
+                    if !open_files_ids.contains(&file) {
+                        rest_of_files.insert(file);
+                    }
                 }
             }
         }
