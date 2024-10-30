@@ -137,7 +137,6 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     }
 
     /// Adds a span to the end of the array.
-    /// Requires that the values of the span implement `Clone` and `Drop` traits.
     ///
     /// # Examples
     ///
