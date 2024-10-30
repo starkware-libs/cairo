@@ -1,25 +1,32 @@
+//! Debug module for debugging purposes, primarily focusing on printing different
+//! types to aid in development and troubleshooting. The `PrintTrait` allows various types to be
+//! printed, either directly or through conversion to a `felt252`.
+//!
+//! All implementations of the `PrintTrait` are not accessible outside the core library,
+//! and one should use `print!` and `println!` macros in order to print compatible types.
+//!
+//! `{:?}` is a placeholder allowing to print values using the `Debug` trait.
+//!
+//! This module includes only one public function available outside the core library:
+//! `print_byte_array_as_string``
+//!
+//! # Examples
+//!
+//! ```
+//! let value = 0_u8
+//! print!("{:?}", value);
+//! println!("{:?}", value);
+//!
+//! let ba: ByteArray = "123";
+//! print_byte_array_as_string(@ba);
+//! ```
+
 #[allow(unused_imports)]
 use crate::array::ArrayTrait;
 use crate::traits::Into;
 #[allow(unused_imports)]
 use crate::option::Option;
 
-/// Usage:
-/// ```
-/// use crate::debug::PrintTrait;
-///
-/// 1.print();
-///
-/// (1 == 2).print();
-///
-/// get_caller_address().print();
-///
-/// let mut arr = array![];
-/// arr.append('1234567890123456789012345678901');
-/// arr.append('Sca');
-/// arr.append('SomeVeryLongMessage');
-/// arr.print();
-/// ```
 pub(crate) extern fn print(message: Array<felt252>) nopanic;
 
 fn print_felt252(message: felt252) {
@@ -125,7 +132,14 @@ pub(crate) impl ArrayGenericPrintImpl of PrintTrait<Array<felt252>> {
     }
 }
 
-/// Prints a byte array as a string.
+/// Prints a `ByteArray` as a string.
+///
+/// # Examples
+///
+/// ```
+/// let ba: ByteArray = "123";
+/// print_byte_array_as_string(@ba);
+/// ```
 pub fn print_byte_array_as_string(self: @ByteArray) {
     let mut serialized = array![crate::byte_array::BYTE_ARRAY_MAGIC];
     self.serialize(ref serialized);
