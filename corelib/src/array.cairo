@@ -1,3 +1,66 @@
+//! A contiguous collection of elements of the same type in memory, written
+//! `Array<T>`.
+//!
+//! Arrays have *O*(1) indexing, *O*(1) push and *O*(1) pop
+//! (from the front).
+//!
+//! Arrays can only be mutated by appending to the end or popping from the front.
+//!
+//! # Examples
+//!
+//! You can explicitly create an [`Array`] with [`ArrayTrait::new`]:
+//!
+//! ```
+//! let arr: Array<usize> = ArrayTrait::new();
+//! ```
+//!
+//! ...or by using the `array!` macro:
+//!
+//! ```
+//! let arr: Array<usize> = array![];
+//!
+//! let arr: Array<usize> = array![1, 2, 3, 4, 5];
+//! ```
+//!
+//! You can [`append`] values onto the end of an array:
+//!
+//! ```
+//! let mut arr = array![1, 2];
+//! arr.append(3);
+//! ```
+//!
+//! Popping values from the front works like this:
+//!
+//! ```
+//! let mut arr = array![1, 2];
+//! let one = arr.pop_front(); // Returns Option::Some(1)
+//! ```
+//!
+//! Arrays support indexing (through the [`IndexView`] trait):
+//!
+//! ```
+//! let arr = array![1, 2, 3];
+//! let three = arr[2]; // Returns a snapshot (@T)
+//! ```
+//!
+//! Arrays can be converted to [`Span`]s for read-only access:
+//!
+//! ```
+//! let arr = array![1, 2, 3];
+//! let span = arr.span();
+//! ```
+//!
+//! A span can be manipulated without affecting the original array:
+//!
+//! ```
+//! let mut arr = array![1, 2, 3];
+//! let mut span = arr.span();
+//! span.pop_back();
+//! assert!(arr == array![1, 2, 3]);
+//! ```
+//!
+//! [`append`]: ArrayTrait::append
+
 #[feature("deprecated-index-traits")]
 use crate::traits::IndexView;
 
@@ -39,17 +102,17 @@ extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 /// Basic trait for the `Array` type.
 #[generate_trait]
 pub impl ArrayImpl<T> of ArrayTrait<T> {
-    /// Returns a new empty array.
+    /// Constructs a new, empty `Array<T>`.
     ///
     /// # Examples
     ///
     /// ```
-    /// let first_arr: Array<u32> = ArrayTrait::new();
-    /// let second_arr = ArrayTrait::<u128>::new();
+    /// let arr: Array<u32> = ArrayTrait::new();
+    /// 
+    /// let arr = ArrayTrait::<u128>::new();
     /// ```
     ///
-    /// It is generally more straightforward to use the `array!` macro to create a new array,
-    /// calling the `new` function under the hood:
+    /// It is also possible to use the `array!` macro to create a new array.
     ///
     /// ```
     /// let arr: Array<bool> = array![];
@@ -64,9 +127,9 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let mut arr: Array<u8> = array![];
-    /// arr.append(1);
-    /// arr.append(2);
+    /// let mut arr: Array<u8> = array![1, 2];
+    /// arr.append(3);
+    /// assert!(arr == array![1, 2, 3]);
     /// ```
     #[inline]
     fn append(ref self: Array<T>, value: T) nopanic {
@@ -79,8 +142,9 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let mut arr: Array<felt252> = array![];
-    /// arr.append_span(array![3, 4, 5].span());
+    /// let mut arr: Array<u8> = array![];
+    /// arr.append_span(array![1, 2, 3].span());
+    /// assert!(arr == array![1, 2, 3]);
     /// ```
     fn append_span<+Clone<T>, +Drop<T>>(ref self: Array<T>, mut span: Span<T>) {
         match span.pop_front() {
