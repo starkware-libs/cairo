@@ -1,9 +1,42 @@
+//! The `Clone` module provides functionality for creating duplicate instances of types,
+//! specifically through the [`Clone`] trait. This trait allows for explicit duplication of
+//! values, which can be particularly useful when working with types that do not implement
+//! the `Copy` trait or when you need to ensure deep copying of complex structures.
+//!
+//! # Examples
+//!
+//! ```
+//! let arr = array![1, 2, 3];
+//! let cloned_arr = arr.clone();
+//! assert!(arr == cloned_arr);
+//! ```
+
+/// `Clone` trait defines the interface for cloning values.
 pub trait Clone<T> {
     #[must_use]
     fn clone(self: @T) -> T;
 }
 
+/// Generic `Clone` implementation.
 impl TCopyClone<T, +Copy<T>> of Clone<T> {
+    /// Takes a snapshot of a copyable value and returns a clone of that value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let value: u8 = 0;
+    /// let clone = (@value).clone();
+    /// assert!(clone == value);
+    /// ```
+    ///
+    /// Note that explicitly passing a snapshot to `clone` is not mandatory, as the compiler is able
+    /// to infer that a snapshot is passed.
+    ///
+    /// ```
+    /// let value: u8 = 0;
+    /// let clone = value.clone();
+    /// assert!(clone == value);
+    /// ```
     fn clone(self: @T) -> T {
         *self
     }
@@ -16,6 +49,24 @@ impl TupleClone<
     impl CH: CloneHelper<TSF::SnapForward, T>,
     -Copy<T>,
 > of Clone<T> {
+    /// Takes a snapshot of a tuple and returns a clone of the viewed tuple.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let tuple: (u8, u32) = (0, 1);
+    /// let clone = (@tuple).clone();
+    /// assert!(clone == tuple);
+    /// ```
+    ///
+    /// Note that explicitly passing a snapshot to `clone` is not mandatory, as the compiler is able
+    /// to infer that a snapshot is passed.
+    ///
+    /// ```
+    /// let tuple: (u8, u32) = (0, 1);
+    /// let clone = tuple.clone();
+    /// assert!(clone == tuple);
+    /// ```
     fn clone(self: @T) -> T {
         CH::clone(TSF::snap_forward(self))
     }
