@@ -12,7 +12,6 @@ use crate::iter::Iterator;
 use crate::RangeCheck;
 
 /// A collection of elements of the same type continuous in memory.
-/// `Array<T>` derives `Drop` trait.
 #[derive(Drop)]
 pub extern type Array<T>;
 
