@@ -108,7 +108,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     ///
     /// ```
     /// let arr: Array<u32> = ArrayTrait::new();
-    /// 
+    ///
     /// let arr = ArrayTrait::<u128>::new();
     /// ```
     ///
@@ -165,7 +165,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// assert!(arr.pop_front() == Option::Some(2));
     /// assert!(arr.pop_front() == Option::Some(3));
     /// assert!(arr.pop_front() == Option::Some(4));
-    /// assert!(arr.pop_front() == Option::None);
+    /// assert!(arr.pop_front().is_none());
     /// ```
     #[inline]
     fn pop_front(ref self: Array<T>) -> Option<T> nopanic {
@@ -185,8 +185,8 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// let arr = array![2, 3, 4];
     /// assert!(arr.pop_front_consume() == Option::Some((array![3, 4], 2)));
     ///
-    /// let arr: Array<felt252> = array![];
-    /// assert!(arr.pop_front_consume() == Option::None);
+    /// let arr: Array<u8> = array![];
+    /// assert!(arr.pop_front_consume().is_none());
     /// ```
     #[inline]
     fn pop_front_consume(self: Array<T>) -> Option<(Array<T>, T)> nopanic {
@@ -196,8 +196,10 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
         }
     }
 
-    /// Returns an option containing a box of a snapshot of the value at the given 'index'
+    /// Returns an option containing a box of a snapshot of the element at the given 'index'
     /// if the array contains this index, 'Option::None' otherwise.
+    ///
+    /// Element at index 0 is the front of the array.
     ///
     /// # Examples
     ///
@@ -210,14 +212,19 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
         array_get(self, index)
     }
 
-    /// Returns a snapshot of the value at the given 'index' if the array contains this index,
-    /// panics with an 'Index out of bounds' error otherwise.
+    /// Returns a snapshot of the element at the given index.
+    ///
+    /// Element at index 0 is the front of the array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     ///
     /// # Examples
     ///
     /// ```
-    /// let arr = array![2, 3, 4];
-    /// assert!(arr.at(1) == @3);
+    /// let mut arr: Array<usize> = array![3,4,5,6];
+    /// assert!(arr.at(1) == @4);
     /// ```
     fn at(self: @Array<T>, index: usize) -> @T {
         array_at(self, index).unbox()
@@ -298,6 +305,7 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     /// ```
     /// let arr: @Array<u8> = @array![1, 2, 3];
     /// let element: @u8 = arr.index(0);
+    /// assert!(element == @1)
     /// ```
     fn index(self: @Array<T>, index: usize) -> @T {
         array_at(self, index).unbox()
@@ -314,21 +322,21 @@ impl ArraySerde<T, +Serde<T>, +Drop<T>> of Serde<Array<T>> {
     /// let arr: Array<u8> = array![1, 2, 3];
     /// let mut output: Array<felt252> = array![];
     /// arr.serialize(ref output);
+    /// assert!(output == array![3, 1, 2, 3])
     /// ```
     fn serialize(self: @Array<T>, ref output: Array<felt252>) {
         self.len().serialize(ref output);
         serialize_array_helper(self.span(), ref output);
     }
 
-    /// Deserializes a `Span<felt252>` into an `Array<T>` and returns an option to an `Array<T>`.
+    /// Deserializes a `Span<felt252>` into an `Array<T>` and returns an option of an `Array<T>`.
     ///
     /// # Examples
     ///
     /// ```
     /// let mut span: Span<felt252> = array![2, 0, 1].span();
     /// let arr:  Array<u8> = Serde::deserialize(ref span).unwrap();
-    /// assert!(*arr.at(0) == 0);
-    /// assert!(*arr.at(1) == 1);
+    /// assert!(arr == array![0, 1]);
     /// ```
     fn deserialize(ref serialized: Span<felt252>) -> Option<Array<T>> {
         let length = *serialized.pop_front()?;
@@ -369,7 +377,6 @@ impl SpanCopy<T> of Copy<Span<T>>;
 /// `Drop` trait implementation for `Span<T>`.
 impl SpanDrop<T> of Drop<Span<T>>;
 
-/// `Into` trait implementation to convert an array into a span.
 impl ArrayIntoSpan<T, +Drop<T>> of Into<Array<T>, Span<T>> {
     /// Takes an array and returns a span of that array.
     ///
@@ -384,15 +391,19 @@ impl ArrayIntoSpan<T, +Drop<T>> of Into<Array<T>, Span<T>> {
     }
 }
 
-/// `Into` trait implementation to convert a span into an array.
+
 impl SpanIntoArray<T, +Drop<T>, +Clone<T>> of Into<Span<T>, Array<T>> {
-    /// Takes a span and returns an array.
+    /// Turns a span into an array.
+    ///
+    /// This needs to allocate a new memory segment for the returned array, and *O*(*n*) operations
+    /// to populate the array with the content of the span.
     ///
     /// # Examples
     ///
     /// ```
-    /// let span: Span<u8> = array![1, 2, 3].span();
-    /// let arr: Array<u8> = span.into();
+    /// let input: Span<u8> = array![1, 2, 3].span();
+    /// let output: Array<u8> = input.into();
+    /// assert!(input == output.span());
     /// ```
     fn into(self: Span<T>) -> Array<T> {
         let mut arr = array![];
@@ -401,7 +412,6 @@ impl SpanIntoArray<T, +Drop<T>, +Clone<T>> of Into<Span<T>, Array<T>> {
     }
 }
 
-/// `Into` trait implementation to convert a span into a snapshot of an array.
 impl SpanIntoArraySnap<T> of Into<Span<T>, @Array<T>> {
     /// Takes a span and returns a snapshot of an array.
     ///
@@ -426,13 +436,14 @@ impl SpanFelt252Serde of Serde<Span<felt252>> {
     /// let span: Span<felt252> = array![1, 2, 3].span();
     /// let mut output: Array<felt252> = array![];
     /// arr.serialize(ref output);
+    /// assert!(output == array![3, 1, 2, 3].span());
     /// ```
     fn serialize(self: @Span<felt252>, ref output: Array<felt252>) {
         (*self).len().serialize(ref output);
         serialize_array_helper(*self, ref output)
     }
 
-    /// Deserializes a `Span<felt252>` into an `Span<felt252>` and returns an option to a
+    /// Deserializes a `Span<felt252>` into an `Span<felt252>` and returns an option of a
     /// `Span<felt252>`.
     ///
     /// # Examples
@@ -440,8 +451,7 @@ impl SpanFelt252Serde of Serde<Span<felt252>> {
     /// ```
     /// let mut span: Span<felt252> = array![2, 0, 1].span();
     /// let result:  Span<felt252> = Serde::deserialize(ref span).unwrap();
-    /// assert!(*result.at(0) == 0);
-    /// assert!(*result.at(1) == 1);
+    /// assert!(result == array![0, 1]);
     /// ```
     fn deserialize(ref serialized: Span<felt252>) -> Option<Span<felt252>> {
         let length: u32 = (*serialized.pop_front()?).try_into()?;
@@ -461,21 +471,21 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>>
     /// let span: Span<u8> = array![1, 2, 3].span();
     /// let mut output: Array<felt252> = array![];
     /// arr.serialize(ref output);
+    /// assert!(output == array![3, 1, 2, 3].span());
     /// ```
     fn serialize(self: @Span<T>, ref output: Array<felt252>) {
         (*self).len().serialize(ref output);
         serialize_array_helper(*self, ref output)
     }
 
-    /// Deserializes a `Span<felt252>` into an `Span<T>` and returns an option to a `Span<T>`.
+    /// Deserializes a `Span<felt252>` into an `Span<T>` and returns an option of a `Span<T>`.
     ///
     /// # Examples
     ///
     /// ```
     /// let mut span: Span<felt252> = array![2, 0, 1].span();
     /// let result:  Span<u8> = Serde::deserialize(ref span).unwrap();
-    /// assert!(*result.at(0) == 0);
-    /// assert!(*result.at(1) == 1);
+    /// assert!(result == array![0, 1].span());
     /// ```
     fn deserialize(ref serialized: Span<felt252>) -> Option<Span<T>> {
         let length = *serialized.pop_front()?;
@@ -558,8 +568,10 @@ pub impl SpanImpl<T> of SpanTrait<T> {
         array_snapshot_multi_pop_back(ref self.snapshot)
     }
 
-    /// Returns an option containing a box of a snapshot of the value at the given 'index'
+    /// Returns an option containing a box of a snapshot of the element at the given 'index'
     /// if the span contains this index, 'Option::None' otherwise.
+    ///
+    /// Element at index 0 is the front of the array.
     ///
     /// # Examples
     ///
@@ -572,8 +584,13 @@ pub impl SpanImpl<T> of SpanTrait<T> {
         array_get(self.snapshot, index)
     }
 
-    /// Returns a snapshot of the value at the given 'index' if the span contains this index,
-    /// panics with an 'Index out of bounds' error otherwise.
+    /// Returns a snapshot of the element at the given index.
+    ///
+    /// Element at index 0 is the front of the array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     ///
     /// # Examples
     ///
@@ -646,6 +663,7 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     /// ```
     /// let span: @Span<u8> = @array![1, 2, 3].span();
     /// let element: @u8 = span.index(0);
+    /// assert!(element == @1);
     /// ```
     #[inline]
     fn index(self: @Span<T>, index: usize) -> @T {
@@ -669,8 +687,6 @@ impl ArrayToSpan<T> of ToSpanTrait<Array<T>, T> {
     }
 }
 
-/// `Into` trait implementation to convert a data structure into a span.
-/// The data structure needs to implement the `ToSpanTrait` trait.
 impl SnapIntoSpanWhereToSpanTrait<C, T, +ToSpanTrait<C, T>> of Into<@C, Span<T>> {
     /// Returns a `Span<T>` corresponding to a view into the given data structure.
     fn into(self: @C) -> Span<T> {
@@ -739,7 +755,7 @@ extern fn tuple_from_span<T, impl Info: FixedSizedArrayInfo<T>>(
 impl SpanTryIntoFixedSizedArray<
     T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
 > of TryInto<Span<T>, @Box<[T; SIZE]>> {
-    /// Returns an option to a snapshot of a box that contains a fixed-size array.
+    /// Returns an option of a snapshot of a box that contains a fixed-size array.
     ///
     /// # Examples
     ///
@@ -755,7 +771,7 @@ impl SpanTryIntoFixedSizedArray<
 
 /// `TryInto` implementation from a span to an empty fixed-size array.
 impl SpanTryIntoEmptyFixedSizedArray<T, +Drop<T>> of TryInto<Span<T>, @Box<[T; 0]>> {
-    /// Returns an option to a snapshot of a box that contains an empty fixed-size array if the span
+    /// Returns an option of a snapshot of a box that contains an empty fixed-size array if the span
     /// is empty, and `Option::None` otherwise.
     ///
     /// # Examples
@@ -775,7 +791,6 @@ impl SpanTryIntoEmptyFixedSizedArray<T, +Drop<T>> of TryInto<Span<T>, @Box<[T; 0
 }
 
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
-/// `Clone` implementation for `Array<T>`.
 impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
     /// Returns a clone of `self`.
     ///
@@ -798,7 +813,6 @@ impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
     }
 }
 
-/// `PartialEq` implementation for `Array<T>`.
 impl ArrayPartialEq<T, +PartialEq<T>> of PartialEq<Array<T>> {
     /// Returns `true` if the two arrays contain the same elements, false otherwise.
     ///
@@ -807,14 +821,13 @@ impl ArrayPartialEq<T, +PartialEq<T>> of PartialEq<Array<T>> {
     /// ```
     /// let arr_1 = array![1, 2, 3];
     /// let arr_2 = array![1, 2, 3];
-    /// assert!(PartialEq::eq(@arr_1, @arr_2) == true);
+    /// assert!(PartialEq::eq(@arr_1, @arr_2));
     /// ```
     fn eq(lhs: @Array<T>, rhs: @Array<T>) -> bool {
         lhs.span() == rhs.span()
     }
 }
 
-/// `PartialEq` implementation for `Span<T>`.
 impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
     /// Returns `true` if the two spans contain the same elements, false otherwise.
     ///
@@ -823,7 +836,7 @@ impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
     /// ```
     /// let span_1 = array![1, 2, 3].span();
     /// let span_2 = array![1, 2, 3].span();
-    /// assert!(PartialEq::eq(@span_1, @span_2) == true);
+    /// assert!(PartialEq::eq(@span_1, @span_2));
     /// ```
     fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
         if (*lhs).len() != (*rhs).len() {
@@ -856,9 +869,9 @@ impl SpanIterCopy<T> of Copy<SpanIter<T>>;
 
 /// `Iterator` trait implementation for `SpanIter<T>` struct.
 impl SpanIterator<T> of Iterator<SpanIter<T>> {
-    /// Type of the values contained in the span.
+    /// Type of the elements contained in the span.
     type Item = @T;
-    /// Returns an option to a snapshot of a span element if it exist, and `Option::None` otherwise.
+    /// Returns an option of a snapshot of a span element if it exist, and `Option::None` otherwise.
     fn next(ref self: SpanIter<T>) -> Option<@T> {
         self.span.pop_front()
     }
@@ -889,9 +902,9 @@ impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone
 
 /// `Iterator` trait implementation for `ArrayIter<T>` struct.
 impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
-    /// Type of the values contained in the array.
+    /// Type of the elements contained in the array.
     type Item = T;
-    /// Returns an option to an element of the array if it exists, and `Option::None` otherwise.
+    /// Returns an option of an element of the array if it exists, and `Option::None` otherwise.
     fn next(ref self: ArrayIter<T>) -> Option<T> {
         self.array.pop_front()
     }
