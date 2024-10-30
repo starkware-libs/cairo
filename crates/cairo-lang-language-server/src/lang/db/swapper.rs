@@ -10,9 +10,12 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_types::Url;
 use tracing::{error, warn};
 
+use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
-use crate::{Tricks, env_config};
+use crate::server::client::Notifier;
+use crate::toolchain::scarb::ScarbToolchain;
+use crate::{Backend, Tricks, env_config};
 
 /// Swaps entire [`AnalysisDatabase`] with empty one periodically.
 ///
@@ -32,14 +35,16 @@ use crate::{Tricks, env_config};
 pub struct AnalysisDatabaseSwapper {
     last_replace: SystemTime,
     db_replace_interval: Duration,
+    scarb_toolchain: ScarbToolchain,
 }
 
 impl AnalysisDatabaseSwapper {
     /// Creates a new `AnalysisDatabaseSwapper`.
-    pub fn new() -> Self {
+    pub fn new(scarb_toolchain: ScarbToolchain) -> Self {
         Self {
             last_replace: SystemTime::now(),
             db_replace_interval: env_config::db_replace_interval(),
+            scarb_toolchain,
         }
     }
 
@@ -48,7 +53,9 @@ impl AnalysisDatabaseSwapper {
         &mut self,
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
+        config: &Config,
         tricks: &Tricks,
+        notifier: &Notifier,
     ) {
         let Ok(elapsed) = self.last_replace.elapsed() else {
             warn!("system time went backwards, skipping db swap");
@@ -64,15 +71,23 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
-        self.swap(db, open_files, tricks)
+        self.swap(db, open_files, config, tricks, notifier)
     }
 
     /// Swaps the database.
     #[tracing::instrument(skip_all)]
-    fn swap(&mut self, db: &mut AnalysisDatabase, open_files: &HashSet<Url>, tricks: &Tricks) {
+    fn swap(
+        &mut self,
+        db: &mut AnalysisDatabase,
+        open_files: &HashSet<Url>,
+        config: &Config,
+        tricks: &Tricks,
+        notifier: &Notifier,
+    ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
             let mut new_db = AnalysisDatabase::new(tricks);
-            ensure_exists_in_db(&mut new_db, db, open_files.iter());
+            self.migrate_file_overrides(&mut new_db, db, open_files);
+            self.detect_crates_for_open_files(&mut new_db, open_files, config, notifier);
             new_db
         })) else {
             error!("caught panic when preparing new db for swap");
@@ -83,26 +98,46 @@ impl AnalysisDatabaseSwapper {
 
         self.last_replace = SystemTime::now();
     }
-}
 
-/// Makes sure that all open files exist in the new db, with their current changes.
-fn ensure_exists_in_db<'a>(
-    new_db: &mut AnalysisDatabase,
-    old_db: &AnalysisDatabase,
-    open_files: impl Iterator<Item = &'a Url>,
-) {
-    let overrides = old_db.file_overrides();
-    let mut new_overrides: OrderedHashMap<FileId, Arc<str>> = Default::default();
-    for uri in open_files {
-        let Some(file_id) = old_db.file_for_url(uri) else {
-            // This branch is hit for open files that have never been seen by the old db.
-            // This is a strange condition, but it is OK to just not think about such files here.
-            continue;
-        };
-        let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
-        if let Some(content) = overrides.get(&file_id) {
-            new_overrides.insert(new_file_id, content.clone());
+    /// Makes sure that all open files exist in the new db, with their current changes.
+    fn migrate_file_overrides(
+        &self,
+        new_db: &mut AnalysisDatabase,
+        old_db: &AnalysisDatabase,
+        open_files: &HashSet<Url>,
+    ) {
+        let overrides = old_db.file_overrides();
+        let mut new_overrides: OrderedHashMap<FileId, Arc<str>> = Default::default();
+        for uri in open_files {
+            let Some(file_id) = old_db.file_for_url(uri) else {
+                // This branch is hit for open files that have never been seen by the old db.
+                // This is a strange condition, but it is OK to just not think about such files
+                // here.
+                continue;
+            };
+            let new_file_id = file_id.lookup_intern(old_db).intern(new_db);
+            if let Some(content) = overrides.get(&file_id) {
+                new_overrides.insert(new_file_id, content.clone());
+            }
+        }
+        new_db.set_file_overrides(Arc::new(new_overrides));
+    }
+
+    /// Ensures all open files have their crates detected to regenerate crates state.
+    fn detect_crates_for_open_files(
+        &self,
+        new_db: &mut AnalysisDatabase,
+        open_files: &HashSet<Url>,
+        config: &Config,
+        notifier: &Notifier,
+    ) {
+        for uri in open_files {
+            let Ok(file_path) = uri.to_file_path() else {
+                // We are only interested in physical files.
+                continue;
+            };
+
+            Backend::detect_crate_for(new_db, &self.scarb_toolchain, config, &file_path, notifier);
         }
     }
-    new_db.set_file_overrides(Arc::new(new_overrides));
 }

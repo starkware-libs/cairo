@@ -11,10 +11,10 @@ use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{PublishDiagnosticsParams, Url};
-use tracing::{error, info_span};
+use tracing::{error, info_span, trace};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
@@ -123,7 +123,11 @@ fn refresh_file_diagnostics(
     file_diagnostics: &mut HashMap<Url, FileDiagnostics>,
     notifier: &Notifier,
 ) {
-    let file_uri = db.url_for_file(*file);
+    let Some(file_uri) = db.url_for_file(*file) else {
+        trace!("url for file not found: {:?}", file.lookup_intern(db));
+        return;
+    };
+
     let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
     let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
 

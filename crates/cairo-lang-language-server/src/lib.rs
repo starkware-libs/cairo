@@ -358,8 +358,14 @@ impl Backend {
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
-        state.db_swapper.maybe_swap(&mut state.db, &state.open_files, &state.tricks);
+    fn maybe_swap_database(state: &mut State, notifier: Notifier) {
+        state.db_swapper.maybe_swap(
+            &mut state.db,
+            &state.open_files,
+            &state.config,
+            &state.tricks,
+            &notifier,
+        );
     }
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.

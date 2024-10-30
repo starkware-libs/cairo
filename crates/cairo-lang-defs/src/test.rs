@@ -17,7 +17,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
 
-use crate::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
+use crate::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use crate::ids::{
     FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, NamedLanguageElementId,
     SubmoduleLongId,
@@ -32,8 +32,8 @@ pub struct DatabaseForTesting {
 }
 impl salsa::Database for DatabaseForTesting {}
 impl ExternalFiles for DatabaseForTesting {
-    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
-        ext_as_virtual_impl(self.upcast(), external_id)
+    fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
+        try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
 impl Default for DatabaseForTesting {

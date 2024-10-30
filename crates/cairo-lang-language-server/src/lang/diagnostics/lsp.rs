@@ -1,11 +1,11 @@
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use lsp_types::{
     Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Range,
 };
-use tracing::error;
+use tracing::{error, trace};
 
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
@@ -34,8 +34,12 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
                 ) else {
                     continue;
                 };
+                let Some(uri) = db.url_for_file(file_id) else {
+                    trace!("url for file not found: {:?}", file_id.lookup_intern(db));
+                    continue;
+                };
                 related_information.push(DiagnosticRelatedInformation {
-                    location: Location { uri: db.url_for_file(file_id), range },
+                    location: Location { uri, range },
                     message: note.text.clone(),
                 });
             } else {
@@ -83,7 +87,7 @@ fn get_mapped_range_and_add_mapping_note(
         if *orig != mapped {
             if let Some(range) = get_lsp_range(db.upcast(), orig) {
                 related_info.push(DiagnosticRelatedInformation {
-                    location: Location { uri: db.url_for_file(orig.file_id), range },
+                    location: Location { uri: db.url_for_file(orig.file_id)?, range },
                     message: message.to_string(),
                 });
             }
