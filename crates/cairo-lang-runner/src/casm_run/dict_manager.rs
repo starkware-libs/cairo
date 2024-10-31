@@ -32,7 +32,13 @@ impl DictManagerExecScope {
 
     /// Allocates a new segment for a new dictionary and return the start of the segment.
     pub fn new_default_dict(&mut self, vm: &mut VirtualMachine) -> Relocatable {
-        let dict_segment = vm.add_memory_segment();
+        // If we are not on the first segment - using a temporary segments to later be merged into
+        // the previous segments.
+        let dict_segment = if self.trackers.is_empty() {
+            vm.add_memory_segment()
+        } else {
+            vm.add_temporary_segment()
+        };
         assert!(
             self.trackers
                 .insert(dict_segment.segment_index, DictTrackerExecScope::new(self.trackers.len()))
