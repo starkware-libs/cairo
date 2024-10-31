@@ -1004,36 +1004,19 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
 
         // Case for multi vs multi.
         (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
-            // Store the elements to extend their lifetimes
-            let a_elements = a_multi.use_paths(db).elements(db);
-            let b_elements = b_multi.use_paths(db).elements(db);
-            // Find the minimum elements by key.
-            // Find the minimum elements by key using the `extract_ident` method.
-            let a_min = a_elements.iter().min_by_key(|path| match path {
-                UsePath::Leaf(leaf) => leaf.extract_ident(db),
-                UsePath::Single(single) => single.extract_ident(db),
-                _ => "".to_string(),
-            });
-            let b_min = b_elements.iter().min_by_key(|path| match path {
-                UsePath::Leaf(leaf) => leaf.extract_ident(db),
-                UsePath::Single(single) => single.extract_ident(db),
-                _ => "".to_string(),
-            });
-            // If both `a_min` and `b_min` are `Some`, compare them.
-            a_min
-                .and_then(|a_min| b_min.map(|b_min| compare_use_paths(a_min, b_min, db)))
-                .unwrap_or_else(|| {
-                    // If both are equal, compare next paths if they exist.
-                    let next_a = next_use_path(a.clone(), db);
-                    let next_b = next_use_path(b.clone(), db);
-
-                    match (next_a, next_b) {
-                        (Some(new_a), Some(new_b)) => compare_use_paths(&new_a, &new_b, db),
-                        (None, Some(_)) => Ordering::Less,
-                        (Some(_), None) => Ordering::Greater,
-                        (None, None) => Ordering::Equal,
-                    }
+            let get_min_child = |multi: &ast::UsePathMulti| {
+                multi.use_paths(db).elements(db).into_iter().min_by_key(|child| match child {
+                    UsePath::Leaf(leaf) => leaf.extract_ident(db),
+                    UsePath::Single(single) => single.extract_ident(db),
+                    _ => "".to_string(),
                 })
+            };
+            match (get_min_child(a_multi), get_min_child(b_multi)) {
+                (Some(a_min), Some(b_min)) => compare_use_paths(&a_min, &b_min, db),
+                (None, Some(_)) => Ordering::Less,
+                (Some(_), None) => Ordering::Greater,
+                (None, None) => Ordering::Equal,
+            }
         }
 
         // Case for Leaf vs Single and Single vs Leaf.
@@ -1076,10 +1059,8 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
             let b_str = b_single.extract_ident(db);
             match a_str.cmp(&b_str) {
                 Ordering::Equal => {
-                    // If the identifiers are equal, compare the next path segment if available.
-                    let next_a = next_use_path(a.clone(), db);
-                    let next_b = next_use_path(b.clone(), db);
-                    compare_use_paths(&next_a.unwrap(), &next_b.unwrap(), db)
+                    // If the identifiers are equal, compare the next path segment.
+                    compare_use_paths(&a_single.use_path(db), &b_single.use_path(db), db)
                 }
                 other => other,
             }
@@ -1100,31 +1081,6 @@ fn extract_use_path(node: &SyntaxNode, db: &dyn SyntaxGroup) -> Option<ast::UseP
             Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, node.clone())))
         }
         _ => None,
-    }
-}
-
-/// Function to get the next part of a UsePath.
-fn next_use_path(path: UsePath, db: &dyn SyntaxGroup) -> Option<UsePath> {
-    match path {
-        UsePath::Leaf(_) => None,
-        UsePath::Single(single) => match single.use_path(db) {
-            UsePath::Leaf(leaf) => Some(UsePath::Leaf(leaf)),
-            UsePath::Single(single) => Some(UsePath::Single(single)),
-            UsePath::Multi(multi) => multi
-                .use_paths(db)
-                .elements(db)
-                .iter()
-                .min_by_key(|x| match x {
-                    UsePath::Leaf(leaf) => leaf.extract_ident(db),
-                    UsePath::Single(single) => single.extract_ident(db),
-                    // We return an empty string (`""`) to ensure that `multi` paths are always
-                    // placed first in the sorted order. This is needed to avoid
-                    // complex computation involved in recursively processing nested `multi` paths.
-                    _ => "".to_string(),
-                })
-                .cloned(),
-        },
-        UsePath::Multi(_) => None,
     }
 }
 
