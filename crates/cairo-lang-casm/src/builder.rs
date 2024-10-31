@@ -628,7 +628,7 @@ impl CasmBuilder {
     }
 
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
-    fn get_value(&self, var: Var, adjust_ap: bool) -> CellExpression {
+    pub fn get_value(&self, var: Var, adjust_ap: bool) -> CellExpression {
         if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
     }
 
