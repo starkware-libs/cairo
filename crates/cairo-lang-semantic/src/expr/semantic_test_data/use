@@ -1022,3 +1022,76 @@ Block(
 )
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star without implementation in Semantic
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+pub mod generic_type {
+    pub struct S {
+        pub x: u8,
+    }
+    pub enum E {
+        A: u8,
+        B: u16,
+    }
+}
+
+use generic_type::*;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    let _s = S { x: 3 };
+    let _e = E::A(1);
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _s,
+                    ),
+                    expr: Missing(
+                        ExprMissing {
+                            ty: <missing>,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _e,
+                    ),
+                    expr: Missing(
+                        ExprMissing {
+                            ty: <missing>,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+error: Type not found.
+ --> lib.cairo:14:14
+    let _s = S { x: 3 };
+             ^
+
+error: Identifier not found.
+ --> lib.cairo:15:14
+    let _e = E::A(1);
+             ^

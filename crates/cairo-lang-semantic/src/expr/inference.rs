@@ -8,9 +8,9 @@ use std::ops::{Deref, DerefMut};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
-    ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LanguageElementId, LocalVarId,
-    LookupItemId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId, TraitId,
-    TraitImplId, TraitTypeId, VarId, VariantId,
+    GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LanguageElementId,
+    LocalVarId, LookupItemId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId,
+    TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -86,6 +86,7 @@ pub enum InferenceId {
     ImplAliasImplDef(ImplAliasId),
     GenericParam(GenericParamId),
     GenericImplParamTrait(GenericParamId),
+    GlobalUseStar(GlobalUseId),
     Canonical,
     /// For resolving that will not be used anywhere in the semantic model.
     NoContext,
