@@ -852,20 +852,13 @@ impl<'a> FormatterImpl<'a> {
 
     /// Sorting function for `UsePathMulti` children.
     fn sort_inner_use_path(&self, children: &mut Vec<SyntaxNode>) {
-        // Filter and collect only UsePathLeaf and UsePathSingle, while excluding TokenComma.
-        let mut sorted_leaf_and_single: Vec<_> = children
-            .iter()
-            .filter(|node| {
-                matches!(
-                    node.kind(self.db),
-                    SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle | SyntaxKind::UsePathMulti
-                )
-            })
-            .cloned()
-            .collect();
+        // Split list into `use` path parts and TokenComma.
+        let (mut sorted_elements, commas): (Vec<_>, Vec<_>) = std::mem::take(children)
+            .into_iter()
+            .partition(|node| node.kind(self.db) != SyntaxKind::TerminalComma);
 
         // Sort the filtered nodes by comparing their `UsePath`.
-        sorted_leaf_and_single.sort_by(|a_node, b_node| {
+        sorted_elements.sort_by(|a_node, b_node| {
             let a_use_path = extract_use_path(a_node, self.db);
             let b_use_path = extract_use_path(b_node, self.db);
 
@@ -877,24 +870,11 @@ impl<'a> FormatterImpl<'a> {
             }
         });
 
-        // Filter and collect the other node types (specifically commas).
-        let other_types: Vec<_> = children
-            .iter()
-            .filter(|node| {
-                !matches!(
-                    node.kind(self.db),
-                    SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle | SyntaxKind::UsePathMulti
-                )
-            })
-            .cloned()
-            .collect();
-
-        // Intersperse sorted `UsePathLeaf` and `UsePathSingle` with other types.
-        *children =
-            itertools::Itertools::intersperse_with(sorted_leaf_and_single.into_iter(), || {
-                other_types.first().cloned().unwrap()
-            })
-            .collect();
+        // Intersperse the sorted elements with commas.
+        *children = itertools::Itertools::intersperse_with(sorted_elements.into_iter(), || {
+            commas.first().cloned().unwrap()
+        })
+        .collect();
     }
 
     /// Sorting function for module-level items.
