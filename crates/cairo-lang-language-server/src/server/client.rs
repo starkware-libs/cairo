@@ -38,7 +38,7 @@ pub struct Requester<'s> {
     response_handlers: FxHashMap<RequestId, ResponseBuilder<'s>>,
 }
 
-impl<'s> Client<'s> {
+impl Client<'_> {
     pub fn new(sender: ClientSender) -> Self {
         Self {
             notifier: Notifier(sender.clone()),
