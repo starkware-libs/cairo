@@ -77,60 +77,51 @@ mod unhappy_cases {
 --------------------------
 Completion: x
 Detail: core::integer::u32
-Insert text: x
 --------------------------
 Completion: y
 Detail: core::felt252
-Insert text: y
 --------------------------
 Completion: z
 Detail: core::integer::i16
-Insert text: z
 
 //! > Completions #1
             <caret>
 --------------------------
 Completion: y
 Detail: core::felt252
-Insert text: y
 --------------------------
 Completion: z
 Detail: core::integer::i16
-Insert text: z
 
 //! > Completions #2
             <caret>
 --------------------------
 Completion: y
 Detail: core::felt252
-Insert text: y
 --------------------------
 Completion: z
 Detail: core::integer::i16
-Insert text: z
 
 //! > Completions #3
             <caret>
 --------------------------
 Completion: y
 Detail: core::felt252
-Insert text: y
 --------------------------
 Completion: z
 Detail: core::integer::i16
-Insert text: z
 
 //! > Completions #4
             <caret>
 --------------------------
-Completion: y
-Detail: core::felt252
-Insert text: y
+Completion: z
+Detail: core::integer::i16
 
 //! > Completions #5
             <caret>
 --------------------------
+Completion: z
+Detail: core::integer::i16
 
 //! > Completions #6
             <caret>
---------------------------
