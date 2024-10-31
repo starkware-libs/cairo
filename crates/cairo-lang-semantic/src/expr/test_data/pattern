@@ -65,7 +65,7 @@ struct MyStruct {
 }
 
 //! > expected_diagnostics
-error: Missing member "b".
+error[E0003]: Missing member "b".
  --> lib.cairo:6:9
     let MyStruct { a: _ } = s;
         ^***************^
@@ -163,7 +163,7 @@ error: Redefinition of member "a" on struct "test::MyStruct".
     let MyStruct { a: _, c: _, a: _ } = s;
                                ^
 
-error: Missing member "b".
+error[E0003]: Missing member "b".
  --> lib.cairo:6:9
     let MyStruct { a: _, c: _, a: _ } = s;
         ^***************************^
