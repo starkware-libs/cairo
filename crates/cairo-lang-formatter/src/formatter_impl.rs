@@ -858,7 +858,10 @@ impl<'a> FormatterImpl<'a> {
             .filter(|node| {
                 matches!(
                     node.kind(self.db),
-                    SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle | SyntaxKind::UsePathMulti
+                    SyntaxKind::UsePathLeaf
+                        | SyntaxKind::UsePathSingle
+                        | SyntaxKind::UsePathMulti
+                        | SyntaxKind::UsePathStar
                 )
             })
             .cloned()
@@ -883,7 +886,10 @@ impl<'a> FormatterImpl<'a> {
             .filter(|node| {
                 !matches!(
                     node.kind(self.db),
-                    SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle | SyntaxKind::UsePathMulti
+                    SyntaxKind::UsePathLeaf
+                        | SyntaxKind::UsePathSingle
+                        | SyntaxKind::UsePathMulti
+                        | SyntaxKind::UsePathStar
                 )
             })
             .cloned()
@@ -1036,11 +1042,13 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
             let a_min = a_elements.iter().min_by_key(|path| match path {
                 UsePath::Leaf(leaf) => leaf.extract_ident(db),
                 UsePath::Single(single) => single.extract_ident(db),
+                UsePath::Star(_) => "*".to_string(),
                 _ => "".to_string(),
             });
             let b_min = b_elements.iter().min_by_key(|path| match path {
                 UsePath::Leaf(leaf) => leaf.extract_ident(db),
                 UsePath::Single(single) => single.extract_ident(db),
+                UsePath::Star(_) => "*".to_string(),
                 _ => "".to_string(),
             });
             // If both `a_min` and `b_min` are `Some`, compare them.
@@ -1108,14 +1116,14 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
                 other => other,
             }
         }
-        // TODO(Tomer-StarkWare): Handle these cases
-        (UsePath::Star(_), UsePath::Star(_) | UsePath::Leaf(_) | UsePath::Single(_)) => {
-            todo!()
-        }
-        // TODO(Tomer-StarkWare): Handle these cases
-        (UsePath::Leaf(_) | UsePath::Single(_), UsePath::Star(_)) => {
-            todo!()
-        }
+        // Case for Star vs Star: they are equal, this happens when comparing the same path.
+        (UsePath::Star(_), UsePath::Star(_)) => Ordering::Equal,
+
+        // Case for Star vs Leaf, Single: star paths are always ordered before others.
+        (UsePath::Star(_), UsePath::Leaf(_) | UsePath::Single(_)) => Ordering::Less,
+
+        // Case for Leaf, Single vs Star: star paths are always ordered before others.
+        (UsePath::Leaf(_) | UsePath::Single(_), UsePath::Star(_)) => Ordering::Greater,
     }
 }
 
@@ -1131,7 +1139,9 @@ fn extract_use_path(node: &SyntaxNode, db: &dyn SyntaxGroup) -> Option<ast::UseP
         SyntaxKind::UsePathMulti => {
             Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, node.clone())))
         }
-        SyntaxKind::UsePathStar => todo!(),
+        SyntaxKind::UsePathStar => {
+            Some(ast::UsePath::Star(ast::UsePathStar::from_syntax_node(db, node.clone())))
+        }
         _ => None,
     }
 }
@@ -1139,7 +1149,6 @@ fn extract_use_path(node: &SyntaxNode, db: &dyn SyntaxGroup) -> Option<ast::UseP
 /// Function to get the next part of a UsePath.
 fn next_use_path(path: UsePath, db: &dyn SyntaxGroup) -> Option<UsePath> {
     match path {
-        UsePath::Leaf(_) => None,
         UsePath::Single(single) => match single.use_path(db) {
             UsePath::Leaf(leaf) => Some(UsePath::Leaf(leaf)),
             UsePath::Single(single) => Some(UsePath::Single(single)),
@@ -1156,10 +1165,9 @@ fn next_use_path(path: UsePath, db: &dyn SyntaxGroup) -> Option<UsePath> {
                     _ => "".to_string(),
                 })
                 .cloned(),
-            UsePath::Star(_) => todo!(),
+            UsePath::Star(star) => Some(UsePath::Star(star)),
         },
-        UsePath::Multi(_) => None,
-        UsePath::Star(_) => todo!(),
+        UsePath::Leaf(_) | UsePath::Multi(_) | UsePath::Star(_) => None,
     }
 }
 
