@@ -1278,6 +1278,13 @@ impl CairoHintProcessor<'_> {
                     res_segment.write_data(payload.iter())?;
                 }
             }
+            "add_relocation_rule" => {
+                vm.add_relocation_rule(
+                    get_ptr(vm, output_start, &Felt252::ZERO)?,
+                    get_ptr(vm, output_end, &Felt252::ONE)?,
+                )?;
+                return Ok(());
+            }
             _ => Err(HintError::CustomHint(Box::from(format!(
                 "Unknown cheatcode selector: {selector}"
             ))))?,
