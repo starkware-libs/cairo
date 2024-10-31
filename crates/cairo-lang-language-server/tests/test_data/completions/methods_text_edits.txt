@@ -1,7 +1,7 @@
 //! > Test adding simple trait.
 
 //! > test_runner_name
-test_completions_text_edits
+test_completions_text_edits(edit: true, insert: true)
 
 //! > cairo_project.toml
 [crate_roots]
@@ -135,7 +135,7 @@ Text edit: use super::ATrait1;
 //! > Test adding non directly visible traits.
 
 //! > test_runner_name
-test_completions_text_edits
+test_completions_text_edits(edit: true, insert: true)
 
 //! > cairo_project.toml
 [crate_roots]
