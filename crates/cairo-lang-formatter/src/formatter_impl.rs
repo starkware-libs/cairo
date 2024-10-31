@@ -1019,8 +1019,12 @@ impl<'a> FormatterImpl<'a> {
 fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering {
     match (a, b) {
         // Case for multi vs non-multi: multi paths are always ordered before non-multi paths.
-        (UsePath::Multi(_), UsePath::Leaf(_) | UsePath::Single(_)) => Ordering::Greater,
-        (UsePath::Leaf(_) | UsePath::Single(_), UsePath::Multi(_)) => Ordering::Less,
+        (UsePath::Multi(_), UsePath::Leaf(_) | UsePath::Single(_) | UsePath::Star(_)) => {
+            Ordering::Greater
+        }
+        (UsePath::Leaf(_) | UsePath::Single(_) | UsePath::Star(_), UsePath::Multi(_)) => {
+            Ordering::Less
+        }
 
         // Case for multi vs multi.
         (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
@@ -1104,6 +1108,14 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
                 other => other,
             }
         }
+        // TODO(Tomer-StarkWare): Handle these cases
+        (UsePath::Star(_), UsePath::Star(_) | UsePath::Leaf(_) | UsePath::Single(_)) => {
+            todo!()
+        }
+        // TODO(Tomer-StarkWare): Handle these cases
+        (UsePath::Leaf(_) | UsePath::Single(_), UsePath::Star(_)) => {
+            todo!()
+        }
     }
 }
 
@@ -1119,6 +1131,7 @@ fn extract_use_path(node: &SyntaxNode, db: &dyn SyntaxGroup) -> Option<ast::UseP
         SyntaxKind::UsePathMulti => {
             Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, node.clone())))
         }
+        SyntaxKind::UsePathStar => todo!(),
         _ => None,
     }
 }
@@ -1143,8 +1156,10 @@ fn next_use_path(path: UsePath, db: &dyn SyntaxGroup) -> Option<UsePath> {
                     _ => "".to_string(),
                 })
                 .cloned(),
+            UsePath::Star(_) => todo!(),
         },
         UsePath::Multi(_) => None,
+        UsePath::Star(_) => todo!(),
     }
 }
 

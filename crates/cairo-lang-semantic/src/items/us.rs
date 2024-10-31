@@ -67,6 +67,7 @@ pub fn get_use_path_segments(
         ast::UsePath::Multi(_) => {
             panic!("Only `UsePathLeaf` and `UsePathSingle` are supported.")
         }
+        ast::UsePath::Star(_) => todo!(),
     }];
     let mut current_use_path = use_path;
     while let Some(parent_use_path) = get_parent_single_use_path(db, &current_use_path) {

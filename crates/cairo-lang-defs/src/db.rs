@@ -773,6 +773,7 @@ pub fn get_all_path_leaves(db: &dyn SyntaxGroup, use_item: &ast::ItemUse) -> Vec
             ast::UsePath::Multi(use_path) => {
                 stack.extend(use_path.use_paths(db).elements(db).into_iter().rev())
             }
+            ast::UsePath::Star(_) => todo!(),
         }
     }
     res
