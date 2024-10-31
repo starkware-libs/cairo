@@ -38,11 +38,11 @@
 //! }
 //! ```
 
-use std::io;
 use std::panic::RefUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::SystemTime;
+use std::{io, panic};
 
 use anyhow::{Context, Result};
 use cairo_lang_compiler::db::validate_corelib;
@@ -69,6 +69,7 @@ use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
+use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
 use crate::state::State;
@@ -114,6 +115,7 @@ pub fn start() -> ExitCode {
 /// [lib]: crate#running-with-customizations
 pub fn start_with_tricks(tricks: Tricks) -> ExitCode {
     let _log_guard = init_logging();
+    set_panic_hook();
 
     info!("language server starting");
     env_config::report_to_logs();
@@ -210,6 +212,16 @@ fn init_logging() -> Option<impl Drop> {
     .expect("Could not set up global logger.");
 
     guard
+}
+
+/// Sets a special panic hook that skips execution for Salsa cancellation panics.
+fn set_panic_hook() {
+    let previous_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
+        if !is_cancelled(info.payload()) {
+            previous_hook(info);
+        }
+    }))
 }
 
 struct Backend {

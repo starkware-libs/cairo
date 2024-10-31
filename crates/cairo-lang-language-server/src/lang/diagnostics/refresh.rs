@@ -139,7 +139,7 @@ fn refresh_file_diagnostics(
                 catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
                     .map($f)
                     .map_err(|err| {
-                        if is_cancelled(&err) {
+                        if is_cancelled(err.as_ref()) {
                             resume_unwind(err);
                         } else {
                             error!("caught panic when computing diagnostics for file {file_uri}");
