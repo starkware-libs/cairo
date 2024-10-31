@@ -2,7 +2,7 @@
 use std::collections::{HashMap, HashSet};
 use std::ops::{Add, Sub};
 
-use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
@@ -656,39 +656,33 @@ impl SierraCasmRunner {
         code_offset: usize,
     ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
         let mut ctx = CasmBuilder::default();
-        // The builtins in the formatting expected by the runner.
-        let builtins = vec![
-            BuiltinName::pedersen,
-            BuiltinName::range_check,
-            BuiltinName::bitwise,
-            BuiltinName::ec_op,
-            BuiltinName::poseidon,
-            BuiltinName::range_check96,
-            BuiltinName::add_mod,
-            BuiltinName::mul_mod,
-        ];
-        // The offset [fp - i] for each of this builtins in this configuration.
-        let mut builtin_vars: HashMap<GenericTypeId, Var> = HashMap::from(
-            [
-                (PedersenType::ID, 10),
-                (RangeCheckType::ID, 9),
-                (BitwiseType::ID, 8),
-                (EcOpType::ID, 7),
-                (PoseidonType::ID, 6),
-                (RangeCheck96Type::ID, 5),
-                (AddModType::ID, 4),
-                (MulModType::ID, 3),
-            ]
-            .map(|(k, v)| {
-                (
-                    k,
+        let mut builtin_offset = 3;
+        let mut builtin_vars = HashMap::new();
+        let mut builtins = vec![];
+        for (builtin_name, builtin_ty) in [
+            (BuiltinName::mul_mod, MulModType::ID),
+            (BuiltinName::add_mod, AddModType::ID),
+            (BuiltinName::range_check96, RangeCheck96Type::ID),
+            (BuiltinName::poseidon, PoseidonType::ID),
+            (BuiltinName::ec_op, EcOpType::ID),
+            (BuiltinName::bitwise, BitwiseType::ID),
+            (BuiltinName::range_check, RangeCheckType::ID),
+            (BuiltinName::pedersen, PedersenType::ID),
+        ] {
+            if param_types.iter().any(|(ty, _)| ty == &builtin_ty) {
+                // The offset [fp - i] for each of this builtins in this configuration.
+                builtin_vars.insert(
+                    builtin_ty,
                     ctx.add_var(CellExpression::Deref(CellRef {
                         register: Register::FP,
-                        offset: -v,
+                        offset: -builtin_offset,
                     })),
-                )
-            }),
-        );
+                );
+                builtin_offset += 1;
+                builtins.push(builtin_name);
+            }
+        }
+        builtins.reverse();
 
         let emulated_builtins = HashSet::from([SystemType::ID]);
 
