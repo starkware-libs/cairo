@@ -60,15 +60,21 @@ fn test_completions_text_edits(
                 lsp_types::CompletionResponse::List(list) => list.items,
             };
             for completion in completion_items {
-                if let Some(text_edit) = completion.additional_text_edits {
-                    report.push_str("--------------------------\n");
-                    report.push_str(format!("Completion: {}\n", completion.label).as_str());
-                    if let Some(text) = completion.insert_text {
-                        report.push_str(format!("Insert text: {text}\n").as_str());
-                    }
-                    for edit in text_edit {
-                        report.push_str(format!("Text edit: {}", edit.new_text).as_str());
-                    }
+                let text_edit = completion.additional_text_edits.unwrap_or_default();
+
+                report.push_str("--------------------------\n");
+                report.push_str(format!("Completion: {}\n", completion.label).as_str());
+
+                if let Some(detail) = completion.detail {
+                    report.push_str(format!("Detail: {detail}\n").as_str());
+                }
+
+                if let Some(text) = completion.insert_text {
+                    report.push_str(format!("Insert text: {text}\n").as_str());
+                }
+
+                for edit in text_edit {
+                    report.push_str(format!("Text edit: {}", edit.new_text).as_str());
                 }
             }
         }
