@@ -559,6 +559,7 @@ name = "cairo-lang-doc"
 version = "2.8.4"
 dependencies = [
  "anyhow",
+ "cairo-lang-debug",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",

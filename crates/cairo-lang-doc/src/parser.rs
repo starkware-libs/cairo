@@ -1,5 +1,6 @@
 use std::{fmt, iter};
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FileIndex, GenericTypeId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, TraitItemId,
 };
@@ -98,7 +99,7 @@ impl<'a> DocumentationCommentParser<'a> {
                         tokens.push(DocumentationCommentToken::Content(complete_code));
                     }
                 }
-                Event::Start(Tag::Link { link_type, dest_url, title: _title, id: _id }) => {
+                Event::Start(Tag::Link { link_type, dest_url, .. }) => {
                     match link_type {
                         LinkType::ShortcutUnknown | LinkType::Shortcut => {
                             let path = if dest_url.starts_with("`") && dest_url.ends_with("`") {
@@ -342,5 +343,17 @@ impl fmt::Display for DocumentationCommentToken {
                 write!(f, "{}", link_token)
             }
         }
+    }
+}
+
+impl DebugWithDb<dyn DocGroup> for CommentLinkToken {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn DocGroup) -> fmt::Result {
+        write!(
+            f,
+            "CommentLinkToken( label: {:?}, path: {:?}, resolved item name: {:?})",
+            self.label,
+            self.path,
+            self.resolved_item.map(|item| item.name(db.upcast()))
+        )
     }
 }

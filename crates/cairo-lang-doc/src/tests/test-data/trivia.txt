@@ -61,7 +61,7 @@ const a: u32 = 123;
 Const comment
 
 //! > Item documentation tokens #2
-Const comment
+Content("Const comment")
 
 //! > Item signature #3
 #[derive(Drop)]
@@ -75,7 +75,7 @@ pub struct Pair<T, U> {
 Test Pair
 
 //! > Item documentation tokens #3
-Test Pair
+Content("Test Pair")
 
 //! > Item signature #4
 first: T
@@ -84,7 +84,7 @@ first: T
 first field
 
 //! > Item documentation tokens #4
-first field
+Content("first field")
 
 //! > Item signature #5
 second: U
@@ -93,7 +93,7 @@ second: U
 second field
 
 //! > Item documentation tokens #5
-second field
+Content("second field")
 
 //! > Item signature #6
 #[derive(Clone)]
@@ -114,7 +114,7 @@ pub first: T
 First field
 
 //! > Item documentation tokens #7
-First field
+Content("First field")
 
 //! > Item signature #8
 second: U
@@ -123,7 +123,7 @@ second: U
 Second field
 
 //! > Item documentation tokens #8
-Second field
+Content("Second field")
 
 //! > Item signature #9
 pub enum TestEnum {
@@ -142,7 +142,7 @@ Var1
 First variant
 
 //! > Item documentation tokens #10
-First variant
+Content("First variant")
 
 //! > Item signature #11
 Var2
@@ -151,7 +151,7 @@ Var2
 Second variant
 
 //! > Item documentation tokens #11
-Second variant
+Content("Second variant")
 
 //! > Item signature #12
 pub extern type S<T>
@@ -160,4 +160,4 @@ pub extern type S<T>
 extern type comment
 
 //! > Item documentation tokens #12
-extern type comment
+Content("extern type comment")

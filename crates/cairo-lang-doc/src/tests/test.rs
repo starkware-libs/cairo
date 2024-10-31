@@ -1,3 +1,4 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumId, ImplDefId, ImplItemId, LookupItemId, ModuleId, ModuleItemId, StructId, TraitId,
@@ -273,17 +274,12 @@ impl<'a> ResultDocBuilder<'a> {
                 .unwrap_or_default()
                 .iter()
                 .map(|token| match token {
-                    DocumentationCommentToken::Content(_) => token.to_string(),
-                    DocumentationCommentToken::Link(link) => match link.resolved_item {
-                        Some(resolved_item) => format!(
-                            "*** {} RESOLVED ITEM NAME: {} ***",
-                            link,
-                            resolved_item.name(self.db)
-                        ),
-                        None => link.to_string(),
-                    },
+                    DocumentationCommentToken::Content(_) => format!("{:?}", token),
+                    DocumentationCommentToken::Link(link_token) => {
+                        format!("{:?}", link_token.debug(self.db))
+                    }
                 })
-                .join(""),
+                .join("\n"),
         );
         self.item_counter += 1;
     }
