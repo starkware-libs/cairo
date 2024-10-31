@@ -10,6 +10,7 @@ use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod add_missing_trait;
 mod expand_macro;
+mod fill_struct_fields;
 mod rename_unused_variable;
 
 /// Compute commands for a given text document and range. These commands are typically code fixes to
@@ -25,7 +26,15 @@ pub fn code_actions(params: CodeActionParams, db: &AnalysisDatabase) -> Option<C
                 .map(CodeActionOrCommand::from),
         );
     }
-    actions.extend(expand_macro::expand_macro(db, node).into_iter().map(CodeActionOrCommand::from));
+
+    actions.extend(
+        expand_macro::expand_macro(db, node.clone()).into_iter().map(CodeActionOrCommand::from),
+    );
+    actions.extend(
+        fill_struct_fields::fill_struct_fields(db, node.clone(), &params)
+            .into_iter()
+            .map(CodeActionOrCommand::from),
+    );
 
     Some(actions)
 }

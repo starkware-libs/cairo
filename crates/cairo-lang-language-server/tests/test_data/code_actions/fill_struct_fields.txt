@@ -1,0 +1,233 @@
+//! > Test filling missing members in struct constructor.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+mod some_module {
+    pub struct Struct {
+        x: u32,
+        pub y: felt252,
+        pub z: i16
+    }
+
+    fn build_struct() {
+        let s = Struct {
+            x: 0x0,
+            y: 0x0,
+            z: 0x0
+        };
+
+        let a = Struct { <caret> };
+
+        let b = Struct { x: 0x0, <caret> };
+
+        let c = Struct { <caret>..s };
+    }
+}
+
+mod happy_cases {
+    use super::some_module::Struct;
+
+    fn foo() {
+        let a = Struct { <caret> };
+        let b = Struct { y: 0x0, <caret> };
+        let c = Struct { y: 0x0, x: 0x0, <caret> }
+    }
+}
+
+mod unhappy_cases {
+    fn foo() {
+        let a = NonexsitentStruct { <caret> };
+    }
+}
+
+//! > Code action #0
+        let a = Struct { <caret> };
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 14, character: 12 }, end: Position { line: 14, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 16, character: 12 }, end: Position { line: 16, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 18, character: 12 }, end: Position { line: 18, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 26, character: 12 }, end: Position { line: 26, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 27, character: 12 }, end: Position { line: 27, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 28, character: 12 }, end: Position { line: 28, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 34, character: 12 }, end: Position { line: 34, character: 13 } }
+Title: Fill struct fields
+Add new text: " x: (), y: (), z: ()"
+At: Range { start: Position { line: 14, character: 24 }, end: Position { line: 14, character: 24 } }
+
+//! > Code action #1
+        let b = Struct { x: 0x0, <caret> };
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 14, character: 12 }, end: Position { line: 14, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 16, character: 12 }, end: Position { line: 16, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 18, character: 12 }, end: Position { line: 18, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 26, character: 12 }, end: Position { line: 26, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 27, character: 12 }, end: Position { line: 27, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 28, character: 12 }, end: Position { line: 28, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 34, character: 12 }, end: Position { line: 34, character: 13 } }
+Title: Fill struct fields
+Add new text: " y: (), z: ()"
+At: Range { start: Position { line: 16, character: 32 }, end: Position { line: 16, character: 32 } }
+
+//! > Code action #2
+        let c = Struct { <caret>..s };
+Title: Rename to `_..`
+Add new text: "_"
+At: Range { start: Position { line: 14, character: 12 }, end: Position { line: 14, character: 13 } }
+Title: Rename to `_..`
+Add new text: "_"
+At: Range { start: Position { line: 16, character: 12 }, end: Position { line: 16, character: 13 } }
+Title: Rename to `_..`
+Add new text: "_"
+At: Range { start: Position { line: 18, character: 12 }, end: Position { line: 18, character: 13 } }
+Title: Rename to `_..`
+Add new text: "_"
+At: Range { start: Position { line: 26, character: 12 }, end: Position { line: 26, character: 13 } }
+Title: Rename to `_..`
+Add new text: "_"
+At: Range { start: Position { line: 27, character: 12 }, end: Position { line: 27, character: 13 } }
+Title: Rename to `_..`
+Add new text: "_"
+At: Range { start: Position { line: 28, character: 12 }, end: Position { line: 28, character: 13 } }
+Title: Rename to `_..`
+Add new text: "_"
+At: Range { start: Position { line: 34, character: 12 }, end: Position { line: 34, character: 13 } }
+
+//! > Code action #3
+        let a = Struct { <caret> };
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 14, character: 12 }, end: Position { line: 14, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 16, character: 12 }, end: Position { line: 16, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 18, character: 12 }, end: Position { line: 18, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 26, character: 12 }, end: Position { line: 26, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 27, character: 12 }, end: Position { line: 27, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 28, character: 12 }, end: Position { line: 28, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 34, character: 12 }, end: Position { line: 34, character: 13 } }
+Title: Fill struct fields
+Add new text: " y: (), z: ()"
+At: Range { start: Position { line: 26, character: 24 }, end: Position { line: 26, character: 24 } }
+
+//! > Code action #4
+        let b = Struct { y: 0x0, <caret> };
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 14, character: 12 }, end: Position { line: 14, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 16, character: 12 }, end: Position { line: 16, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 18, character: 12 }, end: Position { line: 18, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 26, character: 12 }, end: Position { line: 26, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 27, character: 12 }, end: Position { line: 27, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 28, character: 12 }, end: Position { line: 28, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 34, character: 12 }, end: Position { line: 34, character: 13 } }
+Title: Fill struct fields
+Add new text: " z: ()"
+At: Range { start: Position { line: 27, character: 32 }, end: Position { line: 27, character: 32 } }
+
+//! > Code action #5
+        let c = Struct { y: 0x0, x: 0x0, <caret> }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 14, character: 12 }, end: Position { line: 14, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 16, character: 12 }, end: Position { line: 16, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 18, character: 12 }, end: Position { line: 18, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 26, character: 12 }, end: Position { line: 26, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 27, character: 12 }, end: Position { line: 27, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 28, character: 12 }, end: Position { line: 28, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 34, character: 12 }, end: Position { line: 34, character: 13 } }
+Title: Fill struct fields
+Add new text: " z: ()"
+At: Range { start: Position { line: 28, character: 40 }, end: Position { line: 28, character: 40 } }
+
+//! > Code action #6
+        let a = NonexsitentStruct { <caret> };
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 14, character: 12 }, end: Position { line: 14, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 16, character: 12 }, end: Position { line: 16, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 18, character: 12 }, end: Position { line: 18, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 26, character: 12 }, end: Position { line: 26, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 27, character: 12 }, end: Position { line: 27, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 28, character: 12 }, end: Position { line: 28, character: 13 } }
+Title: Rename to `_  `
+Add new text: "_"
+At: Range { start: Position { line: 34, character: 12 }, end: Position { line: 34, character: 13 } }
