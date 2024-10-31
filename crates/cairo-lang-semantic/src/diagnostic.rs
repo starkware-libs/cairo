@@ -20,7 +20,7 @@ use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
-use crate::resolve::ResolvedConcreteItem;
+use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use crate::types::peel_snapshots;
 use crate::{ConcreteTraitId, semantic};
 
@@ -1299,6 +1299,25 @@ impl From<&ResolvedConcreteItem> for ElementKind {
             ResolvedConcreteItem::Variant(_) => ElementKind::Variant,
             ResolvedConcreteItem::Trait(_) => ElementKind::Trait,
             ResolvedConcreteItem::Impl(_) => ElementKind::Impl,
+        }
+    }
+}
+impl From<&ResolvedGenericItem> for ElementKind {
+    fn from(val: &ResolvedGenericItem) -> Self {
+        match val {
+            ResolvedGenericItem::GenericConstant(_) => ElementKind::Constant,
+            ResolvedGenericItem::Module(_) => ElementKind::Module,
+            ResolvedGenericItem::GenericFunction(_) => ElementKind::Function,
+            ResolvedGenericItem::TraitFunction(_) => ElementKind::TraitFunction,
+            ResolvedGenericItem::GenericType(_) | ResolvedGenericItem::GenericTypeAlias(_) => {
+                ElementKind::Type
+            }
+            ResolvedGenericItem::Variant(_) => ElementKind::Variant,
+            ResolvedGenericItem::Trait(_) => ElementKind::Trait,
+            ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
+                ElementKind::Impl
+            }
+            ResolvedGenericItem::Variable(_) => ElementKind::Variable,
         }
     }
 }
