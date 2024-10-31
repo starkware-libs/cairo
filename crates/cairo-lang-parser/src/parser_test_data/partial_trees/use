@@ -82,7 +82,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn foo() {
-    use X:: *;
+    use X::*;
 }
 
 //! > top_level_kind
@@ -115,7 +115,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 //! > cairo_code
 fn foo() {
     #[attribute]
-    use X:: *;
+    use X::*;
 }
 
 //! > top_level_kind
@@ -155,7 +155,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn foo() {
-    use X::{A,  *, B};
+    use X::{A, *, B};
 }
 
 //! > top_level_kind

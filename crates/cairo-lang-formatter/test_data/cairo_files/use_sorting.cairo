@@ -1,6 +1,7 @@
 //! Header comment, should not be moved by the formatter.
 /// Doc comment, should be moved by the formatter.
 use openzeppelin::introspection::interface;
+use openzeppelin::*;
 use openzeppelin::introspection::first;
 
 #[starknet::contract]
@@ -9,6 +10,7 @@ mod SRC5 {
     /// Doc comment, should be moved by the formatter.
     use openzeppelin::introspection::interface;
     use openzeppelin::introspection::{interface, AB};
+    use openzeppelin::introspection::*;
 
     #[storage]
     struct Storage {
