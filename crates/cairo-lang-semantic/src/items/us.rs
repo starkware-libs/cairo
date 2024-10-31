@@ -64,7 +64,7 @@ pub fn get_use_path_segments(
     let mut rev_segments = vec![match &use_path {
         ast::UsePath::Leaf(use_ast) => use_ast.ident(db),
         ast::UsePath::Single(use_ast) => use_ast.ident(db),
-        ast::UsePath::Multi(_) => {
+        ast::UsePath::Multi(_) | ast::UsePath::Star(_) => {
             panic!("Only `UsePathLeaf` and `UsePathSingle` are supported.")
         }
     }];

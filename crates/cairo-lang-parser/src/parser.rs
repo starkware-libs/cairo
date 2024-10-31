@@ -568,8 +568,10 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a UsePath kind or TryParseFailure if can't parse a UsePath.
     fn try_parse_use_path(&mut self) -> TryParseResult<UsePathGreen> {
-        if !matches!(self.peek().kind, SyntaxKind::TerminalLBrace | SyntaxKind::TerminalIdentifier)
-        {
+        if !matches!(
+            self.peek().kind,
+            SyntaxKind::TerminalLBrace | SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalMul
+        ) {
             return Err(TryParseFailure::SkipToken);
         }
         Ok(self.parse_use_path())
@@ -577,9 +579,10 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a UsePath kind.
     fn parse_use_path(&mut self) -> UsePathGreen {
-        if self.peek().kind == SyntaxKind::TerminalLBrace {
-            let lbrace = self.parse_token::<TerminalLBrace>();
-            let items = UsePathList::new_green(self.db,
+        match self.peek().kind {
+            SyntaxKind::TerminalLBrace => {
+                let lbrace = self.parse_token::<TerminalLBrace>();
+                let items = UsePathList::new_green(self.db,
                     self.parse_separated_list::<
                         UsePath, TerminalComma, UsePathListElementOrSeparatorGreen
                     >(
@@ -587,38 +590,46 @@ impl<'a> Parser<'a> {
                         is_of_kind!(rbrace, module_item_kw),
                         "path segment",
                     ));
-            let rbrace = self.parse_token::<TerminalRBrace>();
-            UsePathMulti::new_green(self.db, lbrace, items, rbrace).into()
-        } else if let Ok(ident) = self.try_parse_identifier() {
-            let ident = PathSegmentSimple::new_green(self.db, ident).into();
-            match self.peek().kind {
-                SyntaxKind::TerminalColonColon => {
-                    let colon_colon = self.parse_token::<TerminalColonColon>();
-                    let use_path = self.parse_use_path();
-                    UsePathSingle::new_green(self.db, ident, colon_colon, use_path).into()
-                }
-                SyntaxKind::TerminalAs => {
-                    let as_kw = self.take::<TerminalAs>();
-                    let alias = self.parse_identifier();
-                    let alias_clause = AliasClause::new_green(self.db, as_kw, alias).into();
-                    UsePathLeaf::new_green(self.db, ident, alias_clause).into()
-                }
-                _ => {
-                    let alias_clause = OptionAliasClauseEmpty::new_green(self.db).into();
-                    UsePathLeaf::new_green(self.db, ident, alias_clause).into()
+                let rbrace = self.parse_token::<TerminalRBrace>();
+                UsePathMulti::new_green(self.db, lbrace, items, rbrace).into()
+            }
+            SyntaxKind::TerminalMul => {
+                let star = self.parse_token::<TerminalMul>();
+                UsePathStar::new_green(self.db, star).into()
+            }
+            _ => {
+                if let Ok(ident) = self.try_parse_identifier() {
+                    let ident = PathSegmentSimple::new_green(self.db, ident).into();
+                    match self.peek().kind {
+                        SyntaxKind::TerminalColonColon => {
+                            let colon_colon = self.parse_token::<TerminalColonColon>();
+                            let use_path = self.parse_use_path();
+                            UsePathSingle::new_green(self.db, ident, colon_colon, use_path).into()
+                        }
+                        SyntaxKind::TerminalAs => {
+                            let as_kw = self.take::<TerminalAs>();
+                            let alias = self.parse_identifier();
+                            let alias_clause = AliasClause::new_green(self.db, as_kw, alias).into();
+                            UsePathLeaf::new_green(self.db, ident, alias_clause).into()
+                        }
+                        _ => {
+                            let alias_clause = OptionAliasClauseEmpty::new_green(self.db).into();
+                            UsePathLeaf::new_green(self.db, ident, alias_clause).into()
+                        }
+                    }
+                } else {
+                    let missing = self.create_and_report_missing::<TerminalIdentifier>(
+                        ParserDiagnosticKind::MissingPathSegment,
+                    );
+                    let ident = PathSegmentSimple::new_green(self.db, missing).into();
+                    UsePathLeaf::new_green(
+                        self.db,
+                        ident,
+                        OptionAliasClauseEmpty::new_green(self.db).into(),
+                    )
+                    .into()
                 }
             }
-        } else {
-            let missing = self.create_and_report_missing::<TerminalIdentifier>(
-                ParserDiagnosticKind::MissingPathSegment,
-            );
-            let ident = PathSegmentSimple::new_green(self.db, missing).into();
-            UsePathLeaf::new_green(
-                self.db,
-                ident,
-                OptionAliasClauseEmpty::new_green(self.db).into(),
-            )
-            .into()
         }
     }
 

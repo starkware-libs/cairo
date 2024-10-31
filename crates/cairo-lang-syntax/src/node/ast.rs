@@ -16520,6 +16520,7 @@ pub enum UsePath {
     Leaf(UsePathLeaf),
     Single(UsePathSingle),
     Multi(UsePathMulti),
+    Star(UsePathStar),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct UsePathPtr(pub SyntaxStablePtrId);
@@ -16552,6 +16553,11 @@ impl From<UsePathMultiPtr> for UsePathPtr {
         Self(value.0)
     }
 }
+impl From<UsePathStarPtr> for UsePathPtr {
+    fn from(value: UsePathStarPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<UsePathLeafGreen> for UsePathGreen {
     fn from(value: UsePathLeafGreen) -> Self {
         Self(value.0)
@@ -16564,6 +16570,11 @@ impl From<UsePathSingleGreen> for UsePathGreen {
 }
 impl From<UsePathMultiGreen> for UsePathGreen {
     fn from(value: UsePathMultiGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathStarGreen> for UsePathGreen {
+    fn from(value: UsePathStarGreen) -> Self {
         Self(value.0)
     }
 }
@@ -16582,6 +16593,7 @@ impl TypedSyntaxNode for UsePath {
             SyntaxKind::UsePathLeaf => UsePath::Leaf(UsePathLeaf::from_syntax_node(db, node)),
             SyntaxKind::UsePathSingle => UsePath::Single(UsePathSingle::from_syntax_node(db, node)),
             SyntaxKind::UsePathMulti => UsePath::Multi(UsePathMulti::from_syntax_node(db, node)),
+            SyntaxKind::UsePathStar => UsePath::Star(UsePathStar::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "UsePath"),
         }
     }
@@ -16590,6 +16602,7 @@ impl TypedSyntaxNode for UsePath {
             UsePath::Leaf(x) => x.as_syntax_node(),
             UsePath::Single(x) => x.as_syntax_node(),
             UsePath::Multi(x) => x.as_syntax_node(),
+            UsePath::Star(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -16606,7 +16619,10 @@ impl UsePath {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         matches!(
             kind,
-            SyntaxKind::UsePathLeaf | SyntaxKind::UsePathSingle | SyntaxKind::UsePathMulti
+            SyntaxKind::UsePathLeaf
+                | SyntaxKind::UsePathSingle
+                | SyntaxKind::UsePathMulti
+                | SyntaxKind::UsePathStar
         )
     }
 }
@@ -16915,6 +16931,89 @@ impl TypedSyntaxNode for UsePathMulti {
 }
 impl From<&UsePathMulti> for SyntaxStablePtrId {
     fn from(node: &UsePathMulti) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct UsePathStar {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl UsePathStar {
+    pub const INDEX_STAR: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, star: TerminalMulGreen) -> UsePathStarGreen {
+        let children: Vec<GreenId> = vec![star.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        UsePathStarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::UsePathStar,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl UsePathStar {
+    pub fn star(&self, db: &dyn SyntaxGroup) -> TerminalMul {
+        TerminalMul::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathStarPtr(pub SyntaxStablePtrId);
+impl UsePathStarPtr {}
+impl TypedStablePtr for UsePathStarPtr {
+    type SyntaxNode = UsePathStar;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> UsePathStar {
+        UsePathStar::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<UsePathStarPtr> for SyntaxStablePtrId {
+    fn from(ptr: UsePathStarPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathStarGreen(pub GreenId);
+impl TypedSyntaxNode for UsePathStar {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathStar);
+    type StablePtr = UsePathStarPtr;
+    type Green = UsePathStarGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        UsePathStarGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::UsePathStar,
+                details: GreenNodeDetails::Node {
+                    children: vec![TerminalMul::missing(db).0],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::UsePathStar,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::UsePathStar
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathStarPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&UsePathStar> for SyntaxStablePtrId {
+    fn from(node: &UsePathStar) -> Self {
         node.stable_ptr().untyped()
     }
 }
