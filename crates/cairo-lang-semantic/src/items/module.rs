@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, TraitId,
+    GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -32,6 +33,7 @@ pub struct ModuleItemInfo {
 pub struct ModuleSemanticData {
     /// The items in the module without duplicates.
     pub items: OrderedHashMap<SmolStr, ModuleItemInfo>,
+    pub global_uses: Vec<GlobalUseId>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
 
@@ -110,7 +112,8 @@ pub fn priv_module_semantic_data(
             );
         }
     }
-    Ok(Arc::new(ModuleSemanticData { items, diagnostics: diagnostics.build() }))
+    let global_uses = db.module_global_uses(module_id)?.keys().copied().collect::<Vec<_>>();
+    Ok(Arc::new(ModuleSemanticData { items, global_uses, diagnostics: diagnostics.build() }))
 }
 
 pub fn module_item_by_name(
