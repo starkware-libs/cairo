@@ -1256,6 +1256,7 @@ impl SemanticDiagnosticKind {
             Self::CannotCallMethod { .. } => {
                 error_code!(E0002)
             }
+            Self::MissingMember(_) => error_code!(E0003),
             _ => return None,
         })
     }
