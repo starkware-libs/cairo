@@ -127,6 +127,7 @@ pub enum SyntaxKind {
     UsePathLeaf,
     UsePathSingle,
     UsePathMulti,
+    UsePathStar,
     UsePathList,
     AliasClause,
     OptionAliasClauseEmpty,
