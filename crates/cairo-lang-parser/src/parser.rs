@@ -572,8 +572,10 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a UsePath kind or TryParseFailure if can't parse a UsePath.
     fn try_parse_use_path(&mut self) -> TryParseResult<UsePathGreen> {
-        if !matches!(self.peek().kind, SyntaxKind::TerminalLBrace | SyntaxKind::TerminalIdentifier)
-        {
+        if !matches!(
+            self.peek().kind,
+            SyntaxKind::TerminalLBrace | SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalMul
+        ) {
             return Err(TryParseFailure::SkipToken);
         }
         Ok(self.parse_use_path())
@@ -581,7 +583,8 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with a UsePath kind.
     fn parse_use_path(&mut self) -> UsePathGreen {
-        if self.peek().kind == SyntaxKind::TerminalLBrace {
+        let next_kind = self.peek().kind;
+        if next_kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.parse_token::<TerminalLBrace>();
             let items = UsePathList::new_green(self.db,
                     self.parse_separated_list::<
@@ -593,6 +596,9 @@ impl<'a> Parser<'a> {
                     ));
             let rbrace = self.parse_token::<TerminalRBrace>();
             UsePathMulti::new_green(self.db, lbrace, items, rbrace).into()
+        } else if next_kind == SyntaxKind::TerminalMul {
+            let star = self.parse_token::<TerminalMul>();
+            UsePathStar::new_green(self.db, star).into()
         } else if let Ok(ident) = self.try_parse_identifier() {
             let ident = PathSegmentSimple::new_green(self.db, ident).into();
             match self.peek().kind {
