@@ -572,9 +572,8 @@ fn complex(
         MyTrait::Impl1::InputType,
         Option<
             @Result<
-                [
-                    Option<MyTrait::Impl2::InputType>
-                ; 3], (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
+                [Option<MyTrait::Impl2::InputType>; 3],
+                (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
             >
         >
     )
@@ -636,9 +635,8 @@ fn complex(
         MyTrait::Impl1::InputType,
         Option<
             @Result<
-                [
-                    Option<MyTrait::Impl2::InputType>
-                ; 3], (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
+                [Option<MyTrait::Impl2::InputType>; 3],
+                (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
             >
         >
     )
@@ -648,7 +646,7 @@ fn complex(
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u16>; 3], (@core::integer::u16, core::integer::u16)>>)".
- --> lib.cairo:45:61
+ --> lib.cairo:44:61
 ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
                                                             ^
 

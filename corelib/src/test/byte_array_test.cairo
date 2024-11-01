@@ -472,7 +472,8 @@ fn test_serde() {
             0x4c6f6e6720737472696e672c206d6f7265207468616e203331206368617261, // data
             0x63746572732e, // pending_word
             6 // pending_word_len
-        ].span()
+        ]
+            .span()
     );
 }
 
