@@ -329,6 +329,9 @@ impl SierraCasmRunner {
         // runner). The header is not counted, and the footer is, but then the relevant
         // entry is removed.
         let mut sierra_statement_weights = UnorderedHashMap::default();
+        // Total weight of Sierra statements grouped by the respective (collapsed) user function
+        // call stack.
+        let mut scoped_sierra_statement_weights = OrderedHashMap::default();
         for step in trace.iter() {
             // Skip the header.
             if step.pc < real_pc_0 {
@@ -358,6 +361,16 @@ impl SierraCasmRunner {
             );
 
             *sierra_statement_weights.entry(sierra_statement_idx).or_insert(0) += 1;
+
+            // The current stack trace, including the current function (recursive calls collapsed).
+            let cur_stack: Vec<usize> =
+                chain!(function_stack.iter().map(|&(idx, _)| idx), [user_function_idx])
+                    .dedup()
+                    .collect();
+
+            *scoped_sierra_statement_weights
+                .entry((cur_stack, sierra_statement_idx))
+                .or_insert(0) += 1;
 
             let Some(gen_statement) = self.sierra_program.statements.get(sierra_statement_idx.0)
             else {
@@ -402,7 +415,11 @@ impl SierraCasmRunner {
         // Remove the footer.
         sierra_statement_weights.remove(&StatementIdx(sierra_len));
 
-        ProfilingInfo { sierra_statement_weights, stack_trace_weights }
+        ProfilingInfo {
+            sierra_statement_weights,
+            stack_trace_weights,
+            scoped_sierra_statement_weights,
+        }
     }
 
     fn sierra_statement_index_by_pc(&self, pc: usize) -> StatementIdx {
