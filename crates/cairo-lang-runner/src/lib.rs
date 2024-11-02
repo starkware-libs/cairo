@@ -1,38 +1,17 @@
 //! Basic runner for running a Sierra program on the vm.
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::ops::{Add, Sub};
-use std::sync::LazyLock;
 
-use cairo_lang_casm::builder::CasmBuilder;
-use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::hints::{Hint, StarknetHint};
-use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::operand::ResOperand;
-use cairo_lang_casm::{casm, casm_build_extend, deref};
-use cairo_lang_sierra::extensions::bitwise::BitwiseType;
-use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
-use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
-use cairo_lang_sierra::extensions::ec::EcOpType;
+use cairo_lang_casm::hints::Hint;
+use cairo_lang_runnable_utils::builder::{BuildError, RunnableBuilder};
+use cairo_lang_sierra::extensions::NamedType;
+use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasBuiltinType};
-use cairo_lang_sierra::extensions::pedersen::PedersenType;
-use cairo_lang_sierra::extensions::poseidon::PoseidonType;
-use cairo_lang_sierra::extensions::range_check::{RangeCheck96Type, RangeCheckType};
-use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
-use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
-use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{Function, GenStatement, GenericArg, StatementIdx};
-use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
-use cairo_lang_sierra_ap_change::ApChangeError;
-use cairo_lang_sierra_gas::CostError;
-use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError, SierraToCasmConfig};
-use cairo_lang_sierra_to_casm::metadata::{
-    Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
-};
-use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
-use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -47,7 +26,7 @@ use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
-use itertools::{Itertools, chain};
+use itertools::chain;
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use profiling::{ProfilingInfo, user_function_idx_by_sierra_statement_idx};
@@ -64,25 +43,14 @@ const MAX_STACK_TRACE_DEPTH_DEFAULT: usize = 100;
 
 #[derive(Debug, Error)]
 pub enum RunnerError {
+    #[error(transparent)]
+    BuildError(#[from] BuildError),
     #[error("Not enough gas to call function.")]
     NotEnoughGasToCall,
-    #[error(
-        "Failed calculating gas usage, it is likely a call for `gas::withdraw_gas` is missing. \
-         Inner error: {0}"
-    )]
-    FailedGasCalculation(#[from] CostError),
-    #[error("Function with suffix `{suffix}` to run not found.")]
-    MissingFunction { suffix: String },
     #[error("Function param {param_index} only partially contains argument {arg_index}.")]
     ArgumentUnaligned { param_index: usize, arg_index: usize },
     #[error("Function expects arguments of size {expected} and received {actual} instead.")]
     ArgumentsSizeMismatch { expected: usize, actual: usize },
-    #[error(transparent)]
-    ProgramRegistryError(#[from] Box<ProgramRegistryError>),
-    #[error(transparent)]
-    SierraCompilationError(#[from] Box<CompilationError>),
-    #[error(transparent)]
-    ApChangeError(#[from] ApChangeError),
     #[error(transparent)]
     CairoRunError(#[from] Box<CairoRunError>),
 }
@@ -198,16 +166,8 @@ pub fn build_hints_dict(
 
 /// Runner enabling running a Sierra program on the vm.
 pub struct SierraCasmRunner {
-    /// The sierra program.
-    sierra_program: cairo_lang_sierra::program::Program,
-    /// Metadata for the Sierra program.
-    metadata: Metadata,
-    /// Program registry for the Sierra program.
-    sierra_program_registry: ProgramRegistry<CoreType, CoreLibfunc>,
-    /// Program registry for the Sierra program.
-    type_sizes: TypeSizeMap,
-    /// The casm program matching the Sierra code.
-    casm_program: CairoProgram,
+    /// Builder for runnable functions.
+    builder: RunnableBuilder,
     /// Mapping from class_hash to contract info.
     starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     /// Whether to run the profiler when running using this runner.
@@ -220,24 +180,9 @@ impl SierraCasmRunner {
         starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
         run_profiler: Option<ProfilingInfoCollectionConfig>,
     ) -> Result<Self, RunnerError> {
-        let gas_usage_check = metadata_config.is_some();
-        let metadata = create_metadata(&sierra_program, metadata_config)?;
-        let sierra_program_registry =
-            ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)?;
-        let type_sizes = get_type_size_map(&sierra_program, &sierra_program_registry).unwrap();
-        let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
-            &sierra_program,
-            &metadata,
-            SierraToCasmConfig { gas_usage_check, max_bytecode_size: usize::MAX },
-        )?;
-
         // Find all contracts.
         Ok(Self {
-            sierra_program,
-            metadata,
-            sierra_program_registry,
-            type_sizes,
-            casm_program,
+            builder: RunnableBuilder::new(sierra_program, metadata_config)?,
             starknet_contracts_info,
             run_profiler,
         })
@@ -251,10 +196,7 @@ impl SierraCasmRunner {
         available_gas: Option<usize>,
         starknet_state: StarknetState,
     ) -> Result<RunResultStarknet, RunnerError> {
-        let initial_gas = self.get_initial_available_gas(func, available_gas)?;
-        let (entry_code, builtins) = self.create_entry_code(func)?;
-        let footer = Self::create_code_footer();
-        let assembled_program = self.casm_program.clone().assemble_ex(&entry_code, &footer);
+        let (assembled_program, builtins) = self.builder.assemble_function_program(func)?;
         let (hints_dict, string_to_hint) = build_hints_dict(&assembled_program.hints);
 
         let mut hint_processor = CairoHintProcessor {
@@ -267,7 +209,7 @@ impl SierraCasmRunner {
         let RunResult { gas_counter, memory, value, used_resources, profiling_info } = self
             .run_function(
                 func,
-                (initial_gas, args),
+                (self.get_initial_available_gas(func, available_gas)?, args),
                 &mut hint_processor,
                 hints_dict,
                 assembled_program.bytecode.iter(),
@@ -275,10 +217,6 @@ impl SierraCasmRunner {
             )?;
         let mut all_used_resources = hint_processor.syscalls_used_resources;
         all_used_resources.basic_resources += &used_resources;
-        // Remove the used resources of generated entry code - as it isn't a real part of the run.
-        // The used resources of the code is just its length, as it is a simple param setup, and a
-        // call and ret.
-        all_used_resources.basic_resources.n_steps -= entry_code.len();
         Ok(RunResultStarknet {
             gas_counter,
             memory,
@@ -295,9 +233,9 @@ impl SierraCasmRunner {
         trace: &[RelocatedTraceEntry],
         profiling_config: ProfilingInfoCollectionConfig,
     ) -> ProfilingInfo {
-        let sierra_len = self.casm_program.debug_info.sierra_statement_info.len();
-        let bytecode_len =
-            self.casm_program.debug_info.sierra_statement_info.last().unwrap().end_offset;
+        let sierra_statement_info = &self.builder.casm_program().debug_info.sierra_statement_info;
+        let sierra_len = sierra_statement_info.len();
+        let bytecode_len = sierra_statement_info.last().unwrap().end_offset;
         // The CASM program starts with a header of instructions to wrap the real program.
         // `real_pc_0` is the PC in the trace that points to the same CASM instruction which is in
         // the real PC=0 in the original CASM program. That is, all trace's PCs need to be
@@ -355,13 +293,14 @@ impl SierraCasmRunner {
             // save lookups.
             let sierra_statement_idx = self.sierra_statement_index_by_pc(real_pc);
             let user_function_idx = user_function_idx_by_sierra_statement_idx(
-                &self.sierra_program,
+                self.builder.sierra_program(),
                 sierra_statement_idx,
             );
 
             *sierra_statement_weights.entry(sierra_statement_idx).or_insert(0) += 1;
 
-            let Some(gen_statement) = self.sierra_program.statements.get(sierra_statement_idx.0)
+            let Some(gen_statement) =
+                self.builder.sierra_program().statements.get(sierra_statement_idx.0)
             else {
                 panic!("Failed fetching statement index {}", sierra_statement_idx.0);
             };
@@ -369,7 +308,7 @@ impl SierraCasmRunner {
             match gen_statement {
                 GenStatement::Invocation(invocation) => {
                     if matches!(
-                        self.sierra_program_registry.get_libfunc(&invocation.libfunc_id),
+                        self.builder.registry().get_libfunc(&invocation.libfunc_id),
                         Ok(CoreConcreteLibfunc::FunctionCall(_))
                     ) {
                         // Push to the stack.
@@ -412,7 +351,8 @@ impl SierraCasmRunner {
         // offset 0, so it is always on the left side of the
         // partition, and thus the partition index is >0.
         StatementIdx(
-            self.casm_program
+            self.builder
+                .casm_program()
                 .debug_info
                 .sierra_statement_info
                 .partition_point(|x| x.start_offset <= pc)
@@ -426,21 +366,22 @@ impl SierraCasmRunner {
         ty: &GenericTypeId,
         func: &Function,
     ) -> Option<ConcreteTypeId> {
-        let info = func
+        let generic_args = &func
             .signature
             .ret_types
             .iter()
             .find_map(|rt| {
-                let info = self.get_info(rt);
-                (info.long_id.generic_id == *ty).then_some(info)
+                let long_id = self.builder.type_long_id(rt);
+                (long_id.generic_id == *ty).then_some(long_id)
             })
-            .unwrap();
+            .unwrap()
+            .generic_args;
 
         if *ty == EnumType::ID
-            && matches!(&info.long_id.generic_args[0], GenericArg::UserType(ut)
+            && matches!(&generic_args[0], GenericArg::UserType(ut)
                 if ut.debug_name.as_ref().unwrap().starts_with("core::panics::PanicResult::"))
         {
-            return Some(extract_matches!(&info.long_id.generic_args[1], GenericArg::Type).clone());
+            return Some(extract_matches!(&generic_args[1], GenericArg::Type).clone());
         }
         None
     }
@@ -461,10 +402,11 @@ impl SierraCasmRunner {
         Bytecode: ExactSizeIterator<Item = &'a BigInt> + Clone,
     {
         self.validate_args(func, args)?;
-        let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
+        let return_types =
+            self.builder.generic_id_and_size_from_concrete(&func.signature.ret_types);
         let data_len = bytecode.len();
         let gas = self.requires_gas_builtin(func).then_some(available_gas);
-        let RunFunctionResult { ap, used_resources, memory, relocated_trace } =
+        let RunFunctionResult { ap, mut used_resources, memory, relocated_trace } =
             casm_run::run_function(
                 bytecode,
                 builtins,
@@ -472,8 +414,13 @@ impl SierraCasmRunner {
                 hint_processor,
                 hints_dict,
             )?;
+        let header_end = relocated_trace.last().unwrap().pc;
+        used_resources.n_steps -=
+            relocated_trace.iter().position(|e| e.pc > header_end).unwrap() - 1;
+        used_resources.n_steps -=
+            relocated_trace.iter().rev().position(|e| e.pc > header_end).unwrap() - 1;
 
-        let (results_data, gas_counter) = Self::get_results_data(&return_types, &memory, ap);
+        let (results_data, gas_counter) = self.get_results_data(&return_types, &memory, ap);
         assert!(results_data.len() <= 1);
 
         let value = if results_data.is_empty() {
@@ -482,7 +429,7 @@ impl SierraCasmRunner {
         } else {
             let (ty, values) = results_data[0].clone();
             let inner_ty =
-                self.inner_type_from_panic_wrapper(&ty, func).map(|it| self.type_sizes[&it]);
+                self.inner_type_from_panic_wrapper(&ty, func).map(|it| self.builder.type_size(&it));
             Self::handle_main_return_value(inner_ty, values, &memory)
         };
 
@@ -499,9 +446,10 @@ impl SierraCasmRunner {
         let mut expected_arguments_size = 0;
         let mut arg_iter = args.iter().enumerate();
         for (param_index, (_, param_size)) in self
+            .builder
             .generic_id_and_size_from_concrete(&func.signature.param_types)
             .into_iter()
-            .filter(|(ty, _)| !NON_ARGS_TYPES.contains(ty))
+            .filter(|(ty, _)| self.builder.is_user_arg_type(ty))
             .enumerate()
         {
             let param_size: usize = param_size.into_or_panic();
@@ -560,6 +508,7 @@ impl SierraCasmRunner {
 
     /// Returns the final values and type of all `func`s returning variables.
     pub fn get_results_data(
+        &self,
         return_types: &[(GenericTypeId, i16)],
         cells: &[Option<Felt252>],
         mut ap: usize,
@@ -582,7 +531,7 @@ impl SierraCasmRunner {
                 assert!(values.is_empty());
                 false
             } else {
-                !NON_ARGS_TYPES.contains(generic_ty)
+                self.builder.is_user_arg_type(generic_ty)
             }
         });
 
@@ -591,29 +540,7 @@ impl SierraCasmRunner {
 
     /// Finds first function ending with `name_suffix`.
     pub fn find_function(&self, name_suffix: &str) -> Result<&Function, RunnerError> {
-        self.sierra_program
-            .funcs
-            .iter()
-            .find(|f| {
-                if let Some(name) = &f.id.debug_name { name.ends_with(name_suffix) } else { false }
-            })
-            .ok_or_else(|| RunnerError::MissingFunction { suffix: name_suffix.to_owned() })
-    }
-
-    /// Converts array of `ConcreteTypeId`s into corresponding `GenericTypeId`s and their sizes
-    fn generic_id_and_size_from_concrete(
-        &self,
-        types: &[ConcreteTypeId],
-    ) -> Vec<(GenericTypeId, i16)> {
-        types
-            .iter()
-            .map(|pt| {
-                let info = self.get_info(pt);
-                let generic_id = &info.long_id.generic_id;
-                let size = self.type_sizes[pt];
-                (generic_id.clone(), size)
-            })
-            .collect()
+        Ok(self.builder.find_function(name_suffix)?)
     }
 
     /// Returns whether the gas builtin is required in the given function.
@@ -621,226 +548,7 @@ impl SierraCasmRunner {
         func.signature
             .param_types
             .iter()
-            .any(|ty| self.get_info(ty).long_id.generic_id == GasBuiltinType::ID)
-    }
-
-    fn get_info(&self, ty: &ConcreteTypeId) -> &cairo_lang_sierra::extensions::types::TypeInfo {
-        self.sierra_program_registry.get_type(ty).unwrap().info()
-    }
-
-    /// Returns the entry code to call the function with `param_types` as its inputs and
-    /// `return_types` as outputs, located at `code_offset`. If `finalize_for_proof` is true,
-    /// will make sure to remove the segment arena after the calling the function. For testing
-    /// purposes, `finalize_for_proof` can be set to false, to avoid a failure of the segment arena
-    /// validation.
-    pub fn create_entry_code_from_params(
-        param_types: &[(GenericTypeId, i16)],
-        return_types: &[(GenericTypeId, i16)],
-        code_offset: usize,
-        finalize_for_proof: bool,
-    ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
-        let mut ctx = CasmBuilder::default();
-        let mut builtin_offset = 3;
-        let mut builtin_vars = HashMap::new();
-        let mut builtins = vec![];
-        for (builtin_name, builtin_ty) in [
-            (BuiltinName::mul_mod, MulModType::ID),
-            (BuiltinName::add_mod, AddModType::ID),
-            (BuiltinName::range_check96, RangeCheck96Type::ID),
-            (BuiltinName::poseidon, PoseidonType::ID),
-            (BuiltinName::ec_op, EcOpType::ID),
-            (BuiltinName::bitwise, BitwiseType::ID),
-            (BuiltinName::range_check, RangeCheckType::ID),
-            (BuiltinName::pedersen, PedersenType::ID),
-        ] {
-            if param_types.iter().any(|(ty, _)| ty == &builtin_ty) {
-                // The offset [fp - i] for each of this builtins in this configuration.
-                builtin_vars.insert(
-                    builtin_ty,
-                    ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset]))),
-                );
-                builtin_offset += 1;
-                builtins.push(builtin_name);
-            }
-        }
-        builtins.reverse();
-
-        let emulated_builtins = HashSet::from([SystemType::ID]);
-
-        let mut args_vars = vec![];
-        for (ty, size) in param_types {
-            if !builtin_vars.contains_key(ty)
-                && !emulated_builtins.contains(ty)
-                && ty != &SegmentArenaType::ID
-            {
-                args_vars.push((0..*size).map(|_| ctx.alloc_var(false)).collect_vec());
-            }
-        }
-        let got_segment_arena = param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID);
-        let has_post_calculation_loop = got_segment_arena && finalize_for_proof;
-
-        // Giving space for the VM to fill the arguments, as well as local params.
-        let params_size: usize = args_vars.iter().map(Vec::len).sum();
-        let mut local_exprs = vec![];
-        if has_post_calculation_loop {
-            for (ty, size) in return_types {
-                if ty != &SegmentArenaType::ID {
-                    for _ in 0..*size {
-                        casm_build_extend!(ctx, localvar local;);
-                        local_exprs.push(ctx.get_value(local, false));
-                    }
-                }
-            }
-        }
-        casm_build_extend!(ctx, ap += params_size + local_exprs.len(););
-        if got_segment_arena {
-            casm_build_extend! {ctx,
-                tempvar segment_arena;
-                tempvar infos;
-                hint AllocSegment {} into {dst: segment_arena};
-                hint AllocSegment {} into {dst: infos};
-                const czero = 0;
-                tempvar zero = czero;
-                // Write Infos segment, n_constructed (0), and n_destructed (0) to the segment.
-                assert infos = *(segment_arena++);
-                assert zero = *(segment_arena++);
-                assert zero = *(segment_arena++);
-            }
-            // Adding the segment arena to the builtins var map.
-            builtin_vars.insert(SegmentArenaType::ID, segment_arena);
-        }
-        let mut args_vars_iter = args_vars.into_iter();
-        for (generic_ty, _) in param_types {
-            if let Some(var) = builtin_vars.get(generic_ty).cloned() {
-                casm_build_extend!(ctx, tempvar _builtin = var;);
-            } else if emulated_builtins.contains(generic_ty) {
-                casm_build_extend! {ctx,
-                    tempvar system;
-                    hint AllocSegment {} into {dst: system};
-                    ap += 1;
-                };
-            } else {
-                for cell in args_vars_iter.next().unwrap() {
-                    casm_build_extend!(ctx, tempvar _cell = cell;);
-                }
-            };
-        }
-        casm_build_extend! (ctx, let () = call FUNCTION;);
-        let mut unprocessed_return_size = return_types.iter().map(|(_, size)| size).sum::<i16>();
-        let mut return_data = vec![];
-        for (ret_ty, size) in return_types {
-            if let Some(var) = builtin_vars.get_mut(ret_ty) {
-                *var = ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
-                unprocessed_return_size -= 1;
-            } else {
-                for _ in 0..*size {
-                    return_data.push(
-                        ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size]))),
-                    );
-                    unprocessed_return_size -= 1;
-                }
-            }
-        }
-        assert_eq!(unprocessed_return_size, 0);
-        if has_post_calculation_loop {
-            // Storing local data on FP - as we have a loop now:
-            for (cell, local_expr) in return_data.iter().cloned().zip(&local_exprs) {
-                let local_cell = ctx.add_var(local_expr.clone());
-                casm_build_extend!(ctx, assert local_cell = cell;);
-            }
-        }
-        if got_segment_arena && finalize_for_proof {
-            let segment_arena = builtin_vars[&SegmentArenaType::ID];
-            // Validating the segment arena's segments are one after the other.
-            casm_build_extend! {ctx,
-                tempvar n_segments = segment_arena[-2];
-                tempvar n_finalized = segment_arena[-1];
-                assert n_segments = n_finalized;
-                jump STILL_LEFT_PRE if n_segments != 0;
-                rescope{};
-                jump DONE_VALIDATION;
-                STILL_LEFT_PRE:
-                const one = 1;
-                tempvar infos = segment_arena[-3];
-                tempvar remaining_segments = n_segments - one;
-                rescope{infos = infos, remaining_segments = remaining_segments};
-                LOOP_START:
-                jump STILL_LEFT_LOOP if remaining_segments != 0;
-                rescope{};
-                jump DONE_VALIDATION;
-                STILL_LEFT_LOOP:
-                tempvar prev_end = infos[1];
-                tempvar curr_start = infos[3];
-            };
-            ctx.add_hint(
-                |[], [curr_start, prev_end]| StarknetHint::Cheatcode {
-                    selector: BigIntAsHex {
-                        value: BigInt::from_bytes_be(
-                            num_bigint::Sign::Plus,
-                            b"add_relocation_rule",
-                        ),
-                    },
-                    // Ignored inputs, to be handled as an empty list.
-                    input_start: ResOperand::Deref(curr_start),
-                    input_end: ResOperand::Deref(curr_start),
-                    // The actual data for the hint.
-                    output_start: curr_start,
-                    output_end: prev_end,
-                },
-                [],
-                [curr_start, prev_end],
-            );
-            casm_build_extend! {ctx,
-                const one = 1;
-                const three = 3;
-                assert curr_start = prev_end + one;
-                tempvar next_infos = infos + three;
-                tempvar next_remaining_segments = remaining_segments - one;
-                rescope{infos = next_infos, remaining_segments = next_remaining_segments};
-                #{ steps = 0; }
-                jump LOOP_START;
-                DONE_VALIDATION:
-            };
-        }
-        if has_post_calculation_loop {
-            for (_, local_expr) in return_data.iter().zip(&local_exprs) {
-                let local_cell = ctx.add_var(local_expr.clone());
-                casm_build_extend! {ctx,
-                    tempvar _cell = local_cell;
-                };
-            }
-        }
-        casm_build_extend! (ctx, ret;);
-        ctx.future_label("FUNCTION".into(), code_offset);
-        Ok((ctx.build([]).instructions, builtins))
-    }
-
-    /// Returns the instructions to add to the beginning of the code to successfully call the main
-    /// function, as well as the builtins required to execute the program.
-    pub fn create_entry_code(
-        &self,
-        func: &Function,
-    ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
-        let param_types = self.generic_id_and_size_from_concrete(&func.signature.param_types);
-        let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
-
-        let entry_point = func.entry_point.0;
-        let code_offset =
-            self.casm_program.debug_info.sierra_statement_info[entry_point].start_offset;
-        // Finalizing for proof only if all returned values are builtins or droppable.
-        // (To handle cases such as a function returning a non-squashed dict, which can't be
-        // provable by itself)
-        let finalize_for_proof = func.signature.ret_types.iter().all(|ty| {
-            let info = self.get_info(ty);
-            info.droppable || NON_ARGS_TYPES.contains(&info.long_id.generic_id)
-        });
-
-        Self::create_entry_code_from_params(
-            &param_types,
-            &return_types,
-            code_offset,
-            finalize_for_proof,
-        )
+            .any(|ty| self.builder.type_long_id(ty).generic_id == GasBuiltinType::ID)
     }
 
     /// Returns the initial value for the gas counter.
@@ -865,46 +573,16 @@ impl SierraCasmRunner {
     }
 
     pub fn initial_required_gas(&self, func: &Function) -> Option<usize> {
-        require(!self.metadata.gas_info.function_costs.is_empty())?;
+        let gas_info = &self.builder.metadata().gas_info;
+        require(!gas_info.function_costs.is_empty())?;
         Some(
-            self.metadata.gas_info.function_costs[&func.id]
+            gas_info.function_costs[&func.id]
                 .iter()
                 .map(|(token_type, val)| val.into_or_panic::<usize>() * token_gas_cost(*token_type))
                 .sum(),
         )
     }
-
-    /// Creates a list of instructions that will be appended to the program's bytecode.
-    pub fn create_code_footer() -> Vec<Instruction> {
-        casm! {
-            // Add a `ret` instruction used in libfuncs that retrieve the current value of the `fp`
-            // and `pc` registers.
-            ret;
-        }
-        .instructions
-    }
-
-    pub fn get_casm_program(&self) -> &CairoProgram {
-        &self.casm_program
-    }
 }
-
-/// The types that are not user defined arguments.
-static NON_ARGS_TYPES: LazyLock<HashSet<GenericTypeId>> = LazyLock::new(|| {
-    HashSet::from([
-        AddModType::ID,
-        BitwiseType::ID,
-        GasBuiltinType::ID,
-        EcOpType::ID,
-        MulModType::ID,
-        PedersenType::ID,
-        PoseidonType::ID,
-        RangeCheck96Type::ID,
-        RangeCheckType::ID,
-        SegmentArenaType::ID,
-        SystemType::ID,
-    ])
-});
 
 /// Configuration for the profiling info collection phase.
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -997,20 +675,4 @@ pub fn initialize_vm(
 /// The size in memory of the arguments.
 fn args_size(args: &[Arg]) -> usize {
     args.iter().map(Arg::size).sum()
-}
-
-/// Creates the metadata required for a Sierra program lowering to casm.
-fn create_metadata(
-    sierra_program: &cairo_lang_sierra::program::Program,
-    metadata_config: Option<MetadataComputationConfig>,
-) -> Result<Metadata, RunnerError> {
-    if let Some(metadata_config) = metadata_config {
-        calc_metadata(sierra_program, metadata_config)
-    } else {
-        calc_metadata_ap_change_only(sierra_program)
-    }
-    .map_err(|err| match err {
-        MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
-        MetadataError::CostError(err) => RunnerError::FailedGasCalculation(err),
-    })
 }
