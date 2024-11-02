@@ -761,6 +761,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-lang-runnable-utils"
+version = "2.8.4"
+dependencies = [
+ "cairo-lang-casm",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-ap-change",
+ "cairo-lang-sierra-gas",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-sierra-type-size",
+ "cairo-lang-utils",
+ "cairo-vm",
+ "itertools 0.12.1",
+ "num-bigint",
+ "thiserror",
+]
+
+[[package]]
 name = "cairo-lang-runner"
 version = "2.8.4"
 dependencies = [
@@ -770,13 +787,11 @@ dependencies = [
  "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-lowering",
+ "cairo-lang-runnable-utils",
  "cairo-lang-semantic",
  "cairo-lang-sierra",
- "cairo-lang-sierra-ap-change",
- "cairo-lang-sierra-gas",
  "cairo-lang-sierra-generator",
  "cairo-lang-sierra-to-casm",
- "cairo-lang-sierra-type-size",
  "cairo-lang-starknet",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
