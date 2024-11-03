@@ -809,7 +809,7 @@ fn bar(a: @usize) {}
 
 #[derive(Drop)]
 struct A {
-    x: usize
+    x: usize,
 }
 
 //! > semantic_diagnostics
@@ -861,7 +861,7 @@ fn foo(mut x: MyStruct) -> MyStruct {
         x.a = 17;
         x.a += 1;
         5
-    },];
+    }];
     return x;
 }
 

@@ -26,21 +26,21 @@ mod comp {
 
     #[embeddable_as(I1I1)]
     impl Interface1_Implementation1<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface1<ComponentState<TContractState>> {
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 
     #[embeddable_as(I1I2)]
     impl Interface1_Implementation2<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface1<ComponentState<TContractState>> {
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 
     #[embeddable_as(I2I)]
     impl Interface2_Implementation<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface2<ComponentState<TContractState>> {
         fn foo(ref self: ComponentState<TContractState>) {}
     }
@@ -53,13 +53,13 @@ mod counter_contract {
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        comp_storage: super::comp::Storage
+        comp_storage: super::comp::Storage,
     }
 
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        CompEvent: super::comp::Event
+        CompEvent: super::comp::Event,
     }
 
     #[abi(embed_v0)]
@@ -1278,8 +1278,8 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl I1I1<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>
 > of super::Interface1<TContractState> {
     
     fn foo(ref self: TContractState) {
@@ -1288,8 +1288,8 @@ pub impl I1I1<
     }
 }#[starknet::embeddable]
 pub impl I1I2<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>
 > of super::Interface1<TContractState> {
     
     fn foo(ref self: TContractState) {
@@ -1298,8 +1298,8 @@ pub impl I1I2<
     }
 }#[starknet::embeddable]
 pub impl I2I<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>
 > of super::Interface2<TContractState> {
     
     fn foo(ref self: TContractState) {
@@ -1369,8 +1369,8 @@ pub trait UnsafeNewContractStateTraitForI1I1<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__I1I1__foo<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I1<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__I1I1__foo<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I1<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -1413,8 +1413,8 @@ pub trait UnsafeNewContractStateTraitForI1I2<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__I1I2__foo<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I2<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__I1I2__foo<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I2<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -1457,8 +1457,8 @@ pub trait UnsafeNewContractStateTraitForI2I<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__I2I__foo<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI2I<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__I2I__foo<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI2I<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -1569,7 +1569,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x1086dfc31bbcf268e659eae270c18772df580a79d61a03d56056059861c874a;
+pub const TEST_CLASS_HASH: felt252 = 0x22aa9f2c832fb18ac0ec19b508b86f5fc9d78a62b4d7a72ee2a8c7c11a786b5;
 
 impl ContractStateI1I1 of
     super::comp::UnsafeNewContractStateTraitForI1I1<ContractState> {

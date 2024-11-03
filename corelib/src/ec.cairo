@@ -74,7 +74,7 @@ extern fn ec_state_init() -> EcState nopanic;
 extern fn ec_state_add(ref s: EcState, p: NonZeroEcPoint) nopanic;
 /// Adds the product p * scalar to the state.
 extern fn ec_state_add_mul(
-    ref s: EcState, scalar: felt252, p: NonZeroEcPoint
+    ref s: EcState, scalar: felt252, p: NonZeroEcPoint,
 ) implicits(EcOp) nopanic;
 /// Finalizes the EC computation and returns the result (returns `None` if the result is the
 /// zero point).

@@ -44,7 +44,7 @@ pub trait Secp256Trait<Secp256Point> {
 
     fn secp256_ec_new_syscall(x: u256, y: u256) -> SyscallResult<Option<Secp256Point>>;
     fn secp256_ec_get_point_from_x_syscall(
-        x: u256, y_parity: bool
+        x: u256, y_parity: bool,
     ) -> SyscallResult<Option<Secp256Point>>;
 }
 
@@ -56,9 +56,9 @@ pub trait Secp256PointTrait<Secp256Point> {
 
 /// Checks whether `value` is in the range [1, N), where N is the size of the curve.
 pub fn is_signature_entry_valid<
-    Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>
+    Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>,
 >(
-    value: u256
+    value: u256,
 ) -> bool {
     value != 0_u256 && value < Secp256Impl::get_curve_size()
 }
@@ -67,9 +67,9 @@ pub fn is_valid_signature<
     Secp256Point,
     +Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
-    +Secp256PointTrait<Secp256Point>
+    +Secp256PointTrait<Secp256Point>,
 >(
-    msg_hash: u256, r: u256, s: u256, public_key: Secp256Point
+    msg_hash: u256, r: u256, s: u256, public_key: Secp256Point,
 ) -> bool {
     if !is_signature_entry_valid::<Secp256Point>(r)
         || !is_signature_entry_valid::<Secp256Point>(s) {
@@ -96,9 +96,9 @@ pub fn recover_public_key<
     Secp256Point,
     +Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
-    +Secp256PointTrait<Secp256Point>
+    +Secp256PointTrait<Secp256Point>,
 >(
-    msg_hash: u256, signature: Signature
+    msg_hash: u256, signature: Signature,
 ) -> Option<Secp256Point> {
     let Signature { r, s, y_parity } = signature;
     let r_point = Secp256Impl::secp256_ec_get_point_from_x_syscall(x: r, :y_parity)
@@ -125,9 +125,9 @@ pub fn recover_public_key<
 
 /// Computes the negation of a scalar modulo N (the size of the curve).
 fn secp256_ec_negate_scalar<
-    Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>
+    Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>,
 >(
-    c: u256
+    c: u256,
 ) -> u256 {
     Secp256Impl::get_curve_size() - c
 }

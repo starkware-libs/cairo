@@ -59,7 +59,7 @@ test_function_lowering(expect_diagnostics: false)
 fn foo(x: felt252) {
     match core::gas::withdraw_gas() {
         Option::Some(_) => foo(x),
-        Option::None => {}
+        Option::None => {},
     }
 }
 
@@ -104,7 +104,7 @@ test_function_lowering(expect_diagnostics: false)
 fn foo(x: felt252, costs: core::gas::BuiltinCosts) nopanic {
     match core::gas::withdraw_gas_all(costs) {
         Option::Some(_) => foo(x, costs),
-        Option::None => {}
+        Option::None => {},
     }
 }
 

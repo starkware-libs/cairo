@@ -28,7 +28,7 @@ mod contract_with_messages_sent_to_l1 {
             let value_ = self.value.read();
 
             starknet::syscalls::send_message_to_l1_syscall(
-                to_address: value_.into(), payload: generate_payload(n: value_).span()
+                to_address: value_.into(), payload: generate_payload(n: value_).span(),
             )
                 .unwrap_syscall();
             self.value.write(value_ + 1);
@@ -75,7 +75,7 @@ fn test_l2_to_l1_messages() {
     assert_eq!(testing::pop_l2_to_l1_message(contract_address), Option::Some((0, [0].span())));
     assert_eq!(testing::pop_l2_to_l1_message(contract_address), Option::Some((1, [0, 1].span())));
     assert_eq!(
-        testing::pop_l2_to_l1_message(contract_address), Option::Some((2, [0, 1, 2].span()))
+        testing::pop_l2_to_l1_message(contract_address), Option::Some((2, [0, 1, 2].span())),
     );
 
     // Assert all messages have been popped.
@@ -94,9 +94,9 @@ fn test_pop_l2_to_l1_message() {
     starknet::syscalls::send_message_to_l1_syscall(to_address, payload).unwrap_syscall();
 
     assert_eq!(
-        testing::pop_l2_to_l1_message(contract_address), Option::Some((to_address, payload))
+        testing::pop_l2_to_l1_message(contract_address), Option::Some((to_address, payload)),
     );
     assert_eq!(
-        testing::pop_l2_to_l1_message(contract_address), Option::Some((to_address, payload))
+        testing::pop_l2_to_l1_message(contract_address), Option::Some((to_address, payload)),
     );
 }

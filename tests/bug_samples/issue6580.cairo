@@ -1,6 +1,6 @@
 #[derive(Drop, Debug)]
 struct SomeStruct {
-    num: felt252
+    num: felt252,
 }
 
 #[test]
@@ -10,7 +10,7 @@ fn inner_index_access() {
     let arr_of_arrays_of_structs: Array<Array<SomeStruct>> = array![
         array![SomeStruct { num: 8 }],
         array![SomeStruct { num: 2 }],
-        array![SomeStruct { num: 9 }, SomeStruct { num: 10 }, SomeStruct { num: 11 }]
+        array![SomeStruct { num: 9 }, SomeStruct { num: 10 }, SomeStruct { num: 11 }],
     ];
 
     let index_1 = 2_usize;

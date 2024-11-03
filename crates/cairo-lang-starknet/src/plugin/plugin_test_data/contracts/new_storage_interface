@@ -17,7 +17,7 @@ trait HelloStarknetTrait<TContractState> {
     fn set_legacy_user_balance(ref self: TContractState, user_id: usize, balance: usize);
 
     fn get_user_balance_subbalance(
-        self: @TContractState, user_id: usize, subbalance_id: usize
+        self: @TContractState, user_id: usize, subbalance_id: usize,
     ) -> usize;
     fn get_balance_pair_balance1(self: @TContractState) -> u256;
     fn get_balance_pair_balance2(self: @TContractState) -> felt252;
@@ -66,11 +66,11 @@ enum QueryableEnum {
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref, Vec, VecTrait,
-        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward
+        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward,
     };
     use super::{
         BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList, QueryableEnum,
-        QueryableEnumVariants
+        QueryableEnumVariants,
     };
 
     #[storage]
@@ -109,7 +109,7 @@ mod hello_starknet {
             self.legacy_map_balace.write(user_id, balance);
         }
         fn get_user_balance_subbalance(
-            self: @ContractState, user_id: usize, subbalance_id: usize
+            self: @ContractState, user_id: usize, subbalance_id: usize,
         ) -> usize {
             self.user_balance_subbalance.as_path().entry(user_id).entry(subbalance_id).read()
         }
@@ -162,7 +162,7 @@ trait HelloStarknetTrait<TContractState> {
     fn set_legacy_user_balance(ref self: TContractState, user_id: usize, balance: usize);
 
     fn get_user_balance_subbalance(
-        self: @TContractState, user_id: usize, subbalance_id: usize
+        self: @TContractState, user_id: usize, subbalance_id: usize,
     ) -> usize;
     fn get_balance_pair_balance1(self: @TContractState) -> u256;
     fn get_balance_pair_balance2(self: @TContractState) -> felt252;
@@ -211,11 +211,11 @@ enum QueryableEnum {
 mod hello_starknet {
     use starknet::storage::{
         StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref, Vec, VecTrait,
-        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward
+        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward,
     };
     use super::{
         BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList, QueryableEnum,
-        QueryableEnumVariants
+        QueryableEnumVariants,
     };
 
     #[storage]
@@ -254,7 +254,7 @@ mod hello_starknet {
             self.legacy_map_balace.write(user_id, balance);
         }
         fn get_user_balance_subbalance(
-            self: @ContractState, user_id: usize, subbalance_id: usize
+            self: @ContractState, user_id: usize, subbalance_id: usize,
         ) -> usize {
             self.user_balance_subbalance.as_path().entry(user_id).entry(subbalance_id).read()
         }
@@ -308,7 +308,7 @@ trait HelloStarknetTraitDispatcherTrait<T> {
     fn set_legacy_user_balance(self: T, user_id: usize, balance: usize);
 
     fn get_user_balance_subbalance(
-self: T, user_id: usize, subbalance_id: usize
+self: T, user_id: usize, subbalance_id: usize,
     ) -> usize;
     fn get_balance_pair_balance1(self: T) -> u256;
     fn get_balance_pair_balance2(self: T) -> felt252;
@@ -414,12 +414,11 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
     }
 
     fn get_user_balance_subbalance(
-self: HelloStarknetTraitDispatcher, user_id: usize, subbalance_id: usize
+self: HelloStarknetTraitDispatcher, user_id: usize, subbalance_id: usize,
     ) -> usize {
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
-        core::serde::Serde::<usize
->::serialize(@subbalance_id, ref __calldata__);
+        core::serde::Serde::<usize>::serialize(@subbalance_id, ref __calldata__);
 
         let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
@@ -649,12 +648,11 @@ impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrai
     }
 
     fn get_user_balance_subbalance(
-self: HelloStarknetTraitLibraryDispatcher, user_id: usize, subbalance_id: usize
+self: HelloStarknetTraitLibraryDispatcher, user_id: usize, subbalance_id: usize,
     ) -> usize {
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
-        core::serde::Serde::<usize
->::serialize(@subbalance_id, ref __calldata__);
+        core::serde::Serde::<usize>::serialize(@subbalance_id, ref __calldata__);
 
         let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
@@ -810,7 +808,7 @@ trait HelloStarknetTraitSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
 
     fn get_user_balance_subbalance(
-self: T, user_id: usize, subbalance_id: usize
+self: T, user_id: usize, subbalance_id: usize,
     ) -> starknet::SyscallResult<usize>;
     #[unstable(feature: "safe_dispatcher")]
     fn get_balance_pair_balance1(self: T) -> starknet::SyscallResult<u256>;
@@ -931,12 +929,11 @@ impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispat
     }
 
     fn get_user_balance_subbalance(
-self: HelloStarknetTraitSafeLibraryDispatcher, user_id: usize, subbalance_id: usize
+self: HelloStarknetTraitSafeLibraryDispatcher, user_id: usize, subbalance_id: usize,
     ) -> starknet::SyscallResult<usize> {
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
-        core::serde::Serde::<usize
->::serialize(@subbalance_id, ref __calldata__);
+        core::serde::Serde::<usize>::serialize(@subbalance_id, ref __calldata__);
 
         let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
@@ -1187,12 +1184,11 @@ impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTra
     }
 
     fn get_user_balance_subbalance(
-self: HelloStarknetTraitSafeDispatcher, user_id: usize, subbalance_id: usize
+self: HelloStarknetTraitSafeDispatcher, user_id: usize, subbalance_id: usize,
     ) -> starknet::SyscallResult<usize> {
         let mut __calldata__ = core::traits::Default::default();
         core::serde::Serde::<usize>::serialize(@user_id, ref __calldata__);
-        core::serde::Serde::<usize
->::serialize(@subbalance_id, ref __calldata__);
+        core::serde::Serde::<usize>::serialize(@subbalance_id, ref __calldata__);
 
         let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
@@ -2624,7 +2620,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x13345f027182b66c8c6896fb7d81cff14cbe9cf251ecb0de870f4dd7fc5f8ce;
+pub const TEST_CLASS_HASH: felt252 = 0x1a68a3a571fad80df57476d9fabeb1f73c276067243a61aceb1727204a0bfb0;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
