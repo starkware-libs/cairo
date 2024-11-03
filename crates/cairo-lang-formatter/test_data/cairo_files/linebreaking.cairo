@@ -59,6 +59,20 @@ fn small_tuple() {
 fn big_tuple() {
     (11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111,)
 }
+fn foo() {
+    let arr1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let arr2 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+
+}
+
+use long_use::{a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a};
+fn many_arguments(very_long_argument_1: T, very_long_argument_2: T, very_long_argument_3: T, very_long_argument_4: T, very_long_argument_5: T) {}
+fn small_tuple() {
+    (1,)
+}
+fn big_tuple() {
+    (11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111,)
+}
 fn comment_remains_after_last_comma() {
     let mut arr = array![
         1, // First comment.

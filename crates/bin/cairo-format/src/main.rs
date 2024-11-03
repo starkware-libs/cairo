@@ -3,7 +3,9 @@ use std::path::Path;
 use std::process::ExitCode;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use cairo_lang_formatter::{CairoFormatter, FormatOutcome, FormatterConfig, StdinFmt};
+use cairo_lang_formatter::{
+    CairoFormatter, CollectionsBreakingBehavior, FormatOutcome, FormatterConfig, StdinFmt,
+};
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 use colored::Colorize;
@@ -39,6 +41,16 @@ struct FormatterArgs {
     /// Enable sorting the module level items (imports, mod definitions...).
     #[arg(short, long, default_value_t = false)]
     sort_mod_level_items: bool,
+    /// Controls tuple breaking behavior. Set to 'line-by-line' (default) to format each
+    /// tuple item on a new line, or 'single-break-point' to keep all items on the same line (if
+    /// space permits). Defaults to single line.
+    #[arg(long, default_value_t = false)]
+    tuple_line_breaking: bool,
+    /// Controls fixed array breaking behavior. Set to 'single-break-point' (default) to format
+    /// each array item on a new line, or 'line-by-line' to keep items on a single line (if
+    /// space permits). Defaults to line-by-line.
+    #[arg(long, default_value_t = true)]
+    fixed_array_line_breaking: bool,
     /// A list of files and directories to format. Use "-" for stdin.
     files: Vec<String>,
 }
@@ -183,7 +195,19 @@ fn main() -> ExitCode {
     log::info!("Starting formatting.");
 
     let args = FormatterArgs::parse();
-    let config = FormatterConfig::default().sort_module_level_items(args.sort_mod_level_items);
+    let config = FormatterConfig::default()
+        .sort_module_level_items(args.sort_mod_level_items)
+        .tuple_breaking_behavior(if args.tuple_line_breaking {
+            CollectionsBreakingBehavior::SingleBreakPoint
+        } else {
+            CollectionsBreakingBehavior::LineByLine
+        })
+        .fixed_array_breaking_behavior(if args.fixed_array_line_breaking {
+            CollectionsBreakingBehavior::LineByLine
+        } else {
+            CollectionsBreakingBehavior::SingleBreakPoint
+        });
+
     let fmt = CairoFormatter::new(config);
 
     eprintln_if_verbose(

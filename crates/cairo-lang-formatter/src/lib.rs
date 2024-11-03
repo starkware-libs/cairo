@@ -58,12 +58,20 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
     get_formatted_file(db, &syntax_root, FormatterConfig::default())
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CollectionsBreakingBehavior {
+    SingleBreakPoint,
+    LineByLine,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct FormatterConfig {
     tab_size: usize,
     max_line_length: usize,
     sort_module_level_items: bool,
+    tuple_breaking_behavior: CollectionsBreakingBehavior,
+    fixed_array_breaking_behavior: CollectionsBreakingBehavior,
 }
 
 // Config params
@@ -72,17 +80,45 @@ const TAB_SIZE: usize = 4;
 const MAX_LINE_LENGTH: usize = 100;
 
 impl FormatterConfig {
-    pub fn new(tab_size: usize, max_line_length: usize, sort_module_level_items: bool) -> Self {
-        Self { tab_size, max_line_length, sort_module_level_items }
+    pub fn new(
+        tab_size: usize,
+        max_line_length: usize,
+        sort_module_level_items: bool,
+        tuple_breaking_behavior: CollectionsBreakingBehavior,
+        fixed_array_breaking_behavior: CollectionsBreakingBehavior,
+    ) -> Self {
+        Self {
+            tab_size,
+            max_line_length,
+            sort_module_level_items,
+            tuple_breaking_behavior,
+            fixed_array_breaking_behavior,
+        }
     }
 
     pub fn sort_module_level_items(mut self, sort_module_level_items: bool) -> Self {
         self.sort_module_level_items = sort_module_level_items;
         self
     }
+
+    pub fn tuple_breaking_behavior(mut self, behavior: CollectionsBreakingBehavior) -> Self {
+        self.tuple_breaking_behavior = behavior;
+        self
+    }
+
+    pub fn fixed_array_breaking_behavior(mut self, behavior: CollectionsBreakingBehavior) -> Self {
+        self.fixed_array_breaking_behavior = behavior;
+        self
+    }
 }
 impl Default for FormatterConfig {
     fn default() -> Self {
-        Self::new(TAB_SIZE, MAX_LINE_LENGTH, false)
+        Self {
+            tab_size: TAB_SIZE,
+            max_line_length: MAX_LINE_LENGTH,
+            sort_module_level_items: false,
+            tuple_breaking_behavior: CollectionsBreakingBehavior::LineByLine,
+            fixed_array_breaking_behavior: CollectionsBreakingBehavior::SingleBreakPoint,
+        }
     }
 }
