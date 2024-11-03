@@ -53,6 +53,7 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-starknet
           - test --profile=ci-dev -p cairo-lang-syntax
           - test --profile=ci-dev -p cairo-lang-syntax-codegen
+          - test --profile=ci-dev -p cairo-lang-test-plugin
           - test --profile=ci-dev -p cairo-lang-test-runner
           - test --profile=ci-dev -p cairo-lang-test-utils
           - test --profile=ci-dev -p cairo-lang-utils --features=serde,parity-scale-codec,schemars,testing,env_logger
@@ -68,6 +69,19 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Install nextest
         uses: taiki-e/install-action@nextest
+      # Validates that the number of commands in the matrix is equal to the number of crates in the
+      # workspace + 2 (for the crates which have multiple commands) + 1 (for "tests" which is not 
+      # in crates/) - 11 (the number of crates that are not tested in the parallel tests job, all
+      # the crates which only exposed a binary).
+      - run: |
+          CRATES_COUNT=$(find crates/ -name Cargo.toml | wc -l)
+          COMMANDS_COUNT=${{ strategy.job-total }}
+          if [ $((CRATES_COUNT + 2 + 1 - 12)) -ne $COMMANDS_COUNT ]; then
+            echo "CRATES_COUNT: $CRATES_COUNT"
+            echo "COMMANDS_COUNT: $COMMANDS_COUNT"
+            echo "The number of commands in the matrix is not equal to the number of crates in the workspace + 2 + 1 - 12"
+            exit 1
+          fi
       - run: |
           cargo ${{ matrix.cmd }}
   test:
