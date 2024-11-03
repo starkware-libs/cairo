@@ -65,12 +65,12 @@ pub trait StoragePointerWriteAccess<T> {
 /// Simple implementation of `StoragePointerReadAccess` for any type that implements `Store` for 0
 /// offset.
 impl StorableStoragePointer0OffsetReadAccess<
-    T, +starknet::Store<T>
+    T, +starknet::Store<T>,
 > of StoragePointerReadAccess<StoragePointer0Offset<T>> {
     type Value = T;
     fn read(self: @StoragePointer0Offset<T>) -> T {
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<T>::read(0, *self.__storage_pointer_address__)
+            starknet::Store::<T>::read(0, *self.__storage_pointer_address__),
         )
     }
 }
@@ -78,14 +78,14 @@ impl StorableStoragePointer0OffsetReadAccess<
 /// Simple implementation of `StoragePointerReadAccess` for any type that implements `Store` for 0
 /// offset.
 impl MutableStorableStoragePointer0OffsetReadAccess<
-    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>
+    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>,
 > of StoragePointerReadAccess<StoragePointer0Offset<T>> {
     type Value = MutableTrait::<T>::InnerType;
     fn read(self: @StoragePointer0Offset<T>) -> MutableTrait::<T>::InnerType {
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<
-                MutableTrait::<T>::InnerType
-            >::read(0, *self.__storage_pointer_address__)
+                MutableTrait::<T>::InnerType,
+            >::read(0, *self.__storage_pointer_address__),
         )
     }
 }
@@ -93,14 +93,14 @@ impl MutableStorableStoragePointer0OffsetReadAccess<
 /// Simple implementation of `StoragePointerWriteAccess` for any type that implements `Store` for 0
 /// offset.
 impl StorableStoragePointer0OffsetWriteAccess<
-    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>
+    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>,
 > of StoragePointerWriteAccess<StoragePointer0Offset<T>> {
     type Value = MutableTrait::<T>::InnerType;
     fn write(self: StoragePointer0Offset<T>, value: MutableTrait::<T>::InnerType) {
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<
-                MutableTrait::<T>::InnerType
-            >::write(0, self.__storage_pointer_address__, value)
+                MutableTrait::<T>::InnerType,
+            >::write(0, self.__storage_pointer_address__, value),
         )
     }
 }
@@ -108,32 +108,32 @@ impl StorableStoragePointer0OffsetWriteAccess<
 /// Simple implementation of `StoragePointerReadAccess` for any type that implements `Store` for any
 /// offset.
 pub impl StorableStoragePointerReadAccess<
-    T, +starknet::Store<T>
+    T, +starknet::Store<T>,
 > of StoragePointerReadAccess<StoragePointer<T>> {
     type Value = T;
     fn read(self: @StoragePointer<T>) -> T {
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<
-                T
+                T,
             >::read_at_offset(
-                0, *self.__storage_pointer_address__, *self.__storage_pointer_offset__
-            )
+                0, *self.__storage_pointer_address__, *self.__storage_pointer_offset__,
+            ),
         )
     }
 }
 
 /// Simple implementation of `StoragePointerReadAccess` for any mutable type that implements `Store`
 impl MutableStorableStoragePointerReadAccess<
-    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>
+    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>,
 > of StoragePointerReadAccess<StoragePointer<T>> {
     type Value = MutableTrait::<T>::InnerType;
     fn read(self: @StoragePointer<T>) -> MutableTrait::<T>::InnerType {
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<
-                MutableTrait::<T>::InnerType
+                MutableTrait::<T>::InnerType,
             >::read_at_offset(
-                0, *self.__storage_pointer_address__, *self.__storage_pointer_offset__
-            )
+                0, *self.__storage_pointer_address__, *self.__storage_pointer_offset__,
+            ),
         )
     }
 }
@@ -141,16 +141,16 @@ impl MutableStorableStoragePointerReadAccess<
 /// Simple implementation of `StoragePointerWriteAccess` for any mutable type that implements
 /// `Store`.
 impl MutableStorableStoragePointerWriteAccess<
-    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>
+    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>,
 > of StoragePointerWriteAccess<StoragePointer<T>> {
     type Value = MutableTrait::<T>::InnerType;
     fn write(self: StoragePointer<T>, value: MutableTrait::<T>::InnerType) {
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<
-                MutableTrait::<T>::InnerType
+                MutableTrait::<T>::InnerType,
             >::write_at_offset(
-                0, self.__storage_pointer_address__, self.__storage_pointer_offset__, value
-            )
+                0, self.__storage_pointer_address__, self.__storage_pointer_offset__, value,
+            ),
         )
     }
 }
@@ -199,7 +199,7 @@ trait StoragePathUpdateTrait<SourceType, TargetType, Value> {
 
 /// Trait for converting a storage path of type `SourceType` to a storage path of type `TargetType`.
 impl StoragePathUpdateImpl<
-    SourceType, TargetType, Value, impl HashImpl: core::hash::Hash<Value, StoragePathHashState>
+    SourceType, TargetType, Value, impl HashImpl: core::hash::Hash<Value, StoragePathHashState>,
 > of StoragePathUpdateTrait<SourceType, TargetType, Value> {
     fn update(self: StoragePath<SourceType>, value: Value) -> StoragePath<TargetType> {
         StoragePath { __hash_state__: HashImpl::update_state(self.__hash_state__, value) }
@@ -207,7 +207,7 @@ impl StoragePathUpdateImpl<
 }
 
 impl StoragePathSIntoStoragePathTImpl<
-    SourceType, TargetType
+    SourceType, TargetType,
 > of Into<StoragePath<SourceType>, StoragePath<TargetType>> {
     fn into(self: StoragePath<SourceType>) -> StoragePath<TargetType> {
         StoragePath { __hash_state__: self.__hash_state__ }
@@ -233,7 +233,7 @@ impl StorableStoragePathAsPointer<T, +starknet::Store<T>> of StorageAsPointer<St
 /// An implementation of `StorageAsPointer` for any `StoragePath` with inner type that implements
 /// `Store`.
 impl MutableStorableStoragePathAsPointer<
-    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>
+    T, +MutableTrait<T>, +starknet::Store<MutableTrait::<T>::InnerType>,
 > of StorageAsPointer<StoragePath<T>> {
     type Value = T;
     fn as_ptr(self: @StoragePath<T>) -> StoragePointer0Offset<T> {
@@ -243,7 +243,7 @@ impl MutableStorableStoragePathAsPointer<
 
 /// Implement deref for storage paths that implements StorageAsPointer.
 impl StoragePathDeref<
-    T, impl PointerImpl: StorageAsPointer<StoragePath<T>>
+    T, impl PointerImpl: StorageAsPointer<StoragePath<T>>,
 > of core::ops::Deref<StoragePath<T>> {
     type Target = StoragePointer0Offset<PointerImpl::Value>;
     fn deref(self: StoragePath<T>) -> StoragePointer0Offset<PointerImpl::Value> {
@@ -256,10 +256,10 @@ impl StoragePointer0OffsetDeref<T> of core::ops::Deref<StoragePointer0Offset<T>>
     type Target = StoragePointer<T>;
     fn deref(self: StoragePointer0Offset<T>) -> StoragePointer<T> {
         StoragePointer::<
-            T
+            T,
         > {
             __storage_pointer_address__: self.__storage_pointer_address__,
-            __storage_pointer_offset__: 0
+            __storage_pointer_offset__: 0,
         }
     }
 }
@@ -280,7 +280,7 @@ pub trait PendingStoragePathTrait<T, S> {
 impl PendingStoragePathImpl<T, S> of PendingStoragePathTrait<T, S> {
     fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T> {
         PendingStoragePath {
-            __hash_state__: *storage_path.__hash_state__, __pending_key__: pending_key
+            __hash_state__: *storage_path.__hash_state__, __pending_key__: pending_key,
         }
     }
 }
@@ -293,11 +293,11 @@ impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
     type Value = T;
     fn as_path(self: @PendingStoragePath<T>) -> StoragePath<T> {
         StoragePath::<
-            T
+            T,
         > {
             __hash_state__: core::hash::HashStateTrait::update(
-                *self.__hash_state__, *self.__pending_key__
-            )
+                *self.__hash_state__, *self.__pending_key__,
+            ),
         }
     }
 }

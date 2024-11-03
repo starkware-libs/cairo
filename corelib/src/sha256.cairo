@@ -20,7 +20,7 @@ const SHA256_INITIAL_STATE: [u32; 8] = [
 /// last_input_num_bytes is the number of bytes in the last input word (must be less than 4).
 /// return the SHA-256 hash of the `input array` + `last_input_word` as big endian.
 pub fn compute_sha256_u32_array(
-    mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u32
+    mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u32,
 ) -> [u32; 8] {
     add_sha256_padding(ref input, last_input_word, last_input_num_bytes);
 

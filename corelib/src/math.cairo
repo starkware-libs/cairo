@@ -27,7 +27,7 @@ pub fn egcd<
     +core::num::traits::One<T>,
     +TryInto<T, NonZero<T>>,
 >(
-    a: NonZero<T>, b: NonZero<T>
+    a: NonZero<T>, b: NonZero<T>,
 ) -> (T, T, T, bool) {
     let (q, r) = DivRem::<T>::div_rem(a.into(), b);
 
@@ -62,7 +62,7 @@ pub fn inv_mod<
     +core::num::traits::One<T>,
     +TryInto<T, NonZero<T>>,
 >(
-    a: NonZero<T>, n: NonZero<T>
+    a: NonZero<T>, n: NonZero<T>,
 ) -> Option<T> {
     if core::num::traits::One::<T>::is_one(@n.into()) {
         return Option::Some(core::num::traits::Zero::zero());
@@ -90,7 +90,7 @@ pub fn inv_mod<
 /// Additionally returns several `U128MulGuarantee`s that are required for validating the
 /// calculation.
 extern fn u256_guarantee_inv_mod_n(
-    b: u256, n: NonZero<u256>
+    b: u256, n: NonZero<u256>,
 ) -> Result<
     (
         NonZero<u256>,
@@ -101,9 +101,9 @@ extern fn u256_guarantee_inv_mod_n(
         U128MulGuarantee,
         U128MulGuarantee,
         U128MulGuarantee,
-        U128MulGuarantee
+        U128MulGuarantee,
     ),
-    (U128MulGuarantee, U128MulGuarantee)
+    (U128MulGuarantee, U128MulGuarantee),
 > implicits(RangeCheck) nopanic;
 
 /// Returns the inverse of `a` modulo `n`, or None if `a` is not invertible modulo `n`.
@@ -112,7 +112,7 @@ extern fn u256_guarantee_inv_mod_n(
 pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     match u256_guarantee_inv_mod_n(a, n) {
         Result::Ok((inv_a, _, _, _, _, _, _, _, _)) => Option::Some(inv_a),
-        Result::Err(_) => Option::None(())
+        Result::Err(_) => Option::None(()),
     }
 }
 
@@ -143,7 +143,7 @@ trait Oneable<T> {
 
 pub(crate) mod one_based {
     pub(crate) impl OneableImpl<
-        T, impl OneImpl: crate::num::traits::One<T>, +Drop<T>, +Copy<T>
+        T, impl OneImpl: crate::num::traits::One<T>, +Drop<T>, +Copy<T>,
     > of super::Oneable<T> {
         fn one() -> T {
             OneImpl::one()

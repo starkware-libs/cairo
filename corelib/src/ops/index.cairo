@@ -14,7 +14,7 @@ pub trait IndexView<C, I> {
     fn index(self: @C, index: I) -> Self::Target;
 }
 impl DeprecatedIndexViewImpl<
-    C, I, V, impl Deprecated: DeprecatedIndexView<C, I, V>
+    C, I, V, impl Deprecated: DeprecatedIndexView<C, I, V>,
 > of crate::ops::IndexView<C, I> {
     type Target = V;
     fn index(self: @C, index: I) -> Self::Target {
@@ -31,7 +31,7 @@ pub trait Index<C, I> {
 }
 #[feature("deprecated-index-traits")]
 impl DeprecatedIndexImpl<
-    C, I, V, impl Deprecated: DeprecatedIndex<C, I, V>
+    C, I, V, impl Deprecated: DeprecatedIndex<C, I, V>,
 > of crate::ops::Index<C, I> {
     type Target = V;
     fn index(ref self: C, index: I) -> Self::Target {

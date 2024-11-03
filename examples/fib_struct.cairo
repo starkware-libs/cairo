@@ -3,7 +3,7 @@
 struct FibResult {
     value: felt252,
     index: felt252,
-    nothing: ()
+    nothing: (),
 }
 
 fn fib(a: felt252, b: felt252, n: felt252) -> FibResult {
