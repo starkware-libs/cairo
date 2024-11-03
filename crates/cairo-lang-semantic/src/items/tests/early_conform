@@ -394,7 +394,7 @@ use inner::MyType;
 fn main(my_enum: MyEnum) {
     let _: MyType = match my_enum {
         MyEnum::A => 3_u16.my_into(),
-        MyEnum::B => 3_u16.my_into()
+        MyEnum::B => 3_u16.my_into(),
     };
 }
 
@@ -408,7 +408,7 @@ Candidate `test::MyInto::my_into` inference failed with: Trait has no implementa
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
 Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
  --> lib.cairo:20:28
-        MyEnum::B => 3_u16.my_into()
+        MyEnum::B => 3_u16.my_into(),
                            ^*****^
 
 //! > ==========================================================================

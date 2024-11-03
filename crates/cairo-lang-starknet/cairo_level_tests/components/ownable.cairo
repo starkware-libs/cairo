@@ -18,14 +18,14 @@ pub mod ownable {
 
     #[embeddable_as(Transfer)]
     pub impl TransferImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::TransferTrait<ComponentState<TContractState>> {
         fn owner(self: @ComponentState<TContractState>) -> ContractAddress {
             self.owner.read()
         }
 
         fn transfer_ownership(
-            ref self: ComponentState<TContractState>, new_owner: ContractAddress
+            ref self: ComponentState<TContractState>, new_owner: ContractAddress,
         ) {
             self.validate_ownership();
             self.owner.write(new_owner);
@@ -34,7 +34,7 @@ pub mod ownable {
 
     #[generate_trait]
     pub impl OwnableHelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of OwnableHelperTrait<TContractState, X> {
         fn init_ownable(ref self: ComponentState<TContractState>, owner: ContractAddress) {
             self.owner.write(owner);

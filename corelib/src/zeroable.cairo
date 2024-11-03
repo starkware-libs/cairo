@@ -46,7 +46,7 @@ pub(crate) trait Zeroable<T> {
 pub(crate) mod zero_based {
     /// Implements `Zeroable` for any type that implements `Zero`, `Drop`, and `Copy`.
     pub(crate) impl ZeroableImpl<
-        T, impl ZeroImpl: crate::num::traits::Zero<T>, +Drop<T>, +Copy<T>
+        T, impl ZeroImpl: crate::num::traits::Zero<T>, +Drop<T>, +Copy<T>,
     > of super::Zeroable<T> {
         /// Returns the zero value for the type.
         fn zero() -> T {

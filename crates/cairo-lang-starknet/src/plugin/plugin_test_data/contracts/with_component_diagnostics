@@ -8,7 +8,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -35,7 +35,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -402,7 +402,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -427,7 +427,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -782,7 +782,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -806,7 +806,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1155,7 +1155,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1175,7 +1175,7 @@ mod test_contract {
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     // Too many arguments.
     component!(
-        path: super::test_component, storage: test_component_storage, event: ABC, another: x
+        path: super::test_component, storage: test_component_storage, event: ABC, another: x,
     );
     // Too few arguments.
     component!(path: super::test_component, storage: test_component_storage);
@@ -1188,7 +1188,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1208,7 +1208,7 @@ mod test_contract {
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     // Too many arguments.
     component!(
-        path: super::test_component, storage: test_component_storage, event: ABC, another: x
+        path: super::test_component, storage: test_component_storage, event: ABC, another: x,
     );
     // Too few arguments.
     component!(path: super::test_component, storage: test_component_storage);
@@ -1424,7 +1424,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x215c44bbf0e7c3b987e93bf1597778322461e87fd0059894735b0464ce94aff;
+pub const TEST_CLASS_HASH: felt252 = 0x121a1470e2769fd2e9f4441ff7ab7e2ae96e0f4e0446116a0f29d76df75b33;
 
 
 pub mod __external {
@@ -1551,7 +1551,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1583,7 +1583,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1981,7 +1981,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2016,7 +2016,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2349,7 +2349,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2386,7 +2386,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2728,7 +2728,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -2765,7 +2765,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -3117,7 +3117,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -3162,7 +3162,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -3536,14 +3536,14 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod component1 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 #[starknet::component]
 mod component2 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -3597,14 +3597,14 @@ lib.cairo:
 mod component1 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 #[starknet::component]
 mod component2 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 

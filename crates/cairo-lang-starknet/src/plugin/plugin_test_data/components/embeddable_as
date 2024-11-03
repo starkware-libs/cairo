@@ -13,7 +13,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -36,7 +36,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+        TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -691,7 +691,7 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl MyImpl<
-            TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>,
 
 > of MyTrait<TContractState> {
     
@@ -762,7 +762,7 @@ pub trait UnsafeNewContractStateTraitForMyImpl<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__MyImpl__do_nothing<TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyImpl__do_nothing<TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');

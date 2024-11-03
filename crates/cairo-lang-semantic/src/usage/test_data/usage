@@ -24,7 +24,7 @@ foo
 
 //! > module_code
 struct A {
-    b: B
+    b: B,
 }
 struct B {
     c: usize,
@@ -59,7 +59,7 @@ foo
 
 //! > module_code
 struct A {
-    b: B
+    b: B,
 }
 struct B {
     c: usize,
@@ -99,7 +99,7 @@ foo
 
 //! > module_code
 struct A {
-    b: B
+    b: B,
 }
 struct B {
     c: usize,

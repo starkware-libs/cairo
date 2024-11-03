@@ -475,7 +475,7 @@ fn foo(ref a: u16, v: MyEnum) -> MyEnum {
         MyEnum::MyVariant(val) => {
             a = val;
             return MyEnum::MyVariant(val);
-        }
+        },
     }
 }
 

@@ -34,7 +34,7 @@ impl FlattenedStorageCopy<T> of Copy<FlattenedStorage<T>> {}
 
 /// Dereference a flattened storage into a the storage object containing the members of the object.
 impl FlattenedStorageDeref<
-    T, impl StorageImpl: StorageTrait<T>
+    T, impl StorageImpl: StorageTrait<T>,
 > of core::ops::Deref<FlattenedStorage<T>> {
     type Target = StorageImpl::BaseType;
     fn deref(self: FlattenedStorage<T>) -> Self::Target {
@@ -45,7 +45,7 @@ impl FlattenedStorageDeref<
 /// Dereference a mutable flattened storage into a the storage object containing a mutable version
 /// of the members of the object.
 impl MutableFlattenedStorageDeref<
-    T, impl StorageImpl: StorageTraitMut<T>
+    T, impl StorageImpl: StorageTraitMut<T>,
 > of core::ops::Deref<FlattenedStorage<Mutable<T>>> {
     type Target = StorageImpl::BaseType;
     fn deref(self: FlattenedStorage<Mutable<T>>) -> Self::Target {

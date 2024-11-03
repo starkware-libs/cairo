@@ -9,7 +9,7 @@ trait ITests<TContractState> {
 mod MyContract {
     #[storage]
     struct Storage {
-        value: felt252
+        value: felt252,
     }
 
     #[cfg(missing_cfg)]
