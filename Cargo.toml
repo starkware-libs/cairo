@@ -40,6 +40,7 @@ members = [
     "crates/cairo-lang-proc-macros",
     "crates/cairo-lang-project",
     "crates/cairo-lang-runnable-utils",
+    "crates/cairo-lang-runnable",
     "crates/cairo-lang-runner",
     "crates/cairo-lang-semantic",
     "crates/cairo-lang-sierra",

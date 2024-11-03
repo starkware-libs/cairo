@@ -41,6 +41,7 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-plugins
           - test --profile=ci-dev -p cairo-lang-proc-macros
           - test --profile=ci-dev -p cairo-lang-project
+          - test --profile=ci-dev -p cairo-lang-runnable
           - test --profile=ci-dev -p cairo-lang-runnable-utils
           - test --profile=ci-dev -p cairo-lang-runner
           - test --profile=ci-dev -p cairo-lang-semantic
