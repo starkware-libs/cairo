@@ -1018,7 +1018,7 @@ foo
 struct S {}
 #[derive(Drop)]
 struct T {
-    s: S
+    s: S,
 }
 trait TT {
     fn f1oo(self: @S);
@@ -1108,11 +1108,11 @@ extern fn ex(a: u32) nopanic;
 extern fn ex1(a: @B) nopanic;
 #[derive(Drop)]
 struct B {
-    c: u32
+    c: u32,
 }
 #[derive(Drop)]
 struct A {
-    b: B
+    b: B,
 }
 
 //! > semantic_diagnostics
@@ -1229,11 +1229,11 @@ extern fn ex(a: @u32) nopanic;
 extern fn ex1(a: B) nopanic;
 #[derive(Drop, Copy)]
 struct B {
-    c: u32
+    c: u32,
 }
 #[derive(Drop)]
 struct A {
-    b: B
+    b: B,
 }
 
 //! > semantic_diagnostics

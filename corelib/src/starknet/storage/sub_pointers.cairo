@@ -28,7 +28,7 @@ pub trait SubPointersMut<T> {
 
 /// This makes the sub-pointers members directly accessible from a pointer to the parent struct.
 pub impl SubPointersMutDeref<
-    T, +SubPointersMut<T>
+    T, +SubPointersMut<T>,
 > of core::ops::Deref<StoragePointer<Mutable<T>>> {
     type Target = SubPointersMut::<T>::SubPointersType;
     fn deref(self: StoragePointer<Mutable<T>>) -> Self::Target {
@@ -45,7 +45,7 @@ pub trait SubPointersForward<T> {
 
 /// Implementation of SubPointersForward for `StoragePointer0Offset`.
 impl Pointer0OffsetSubPointersForward<
-    T, impl SubPointersImpl: SubPointers<T>
+    T, impl SubPointersImpl: SubPointers<T>,
 > of SubPointersForward<StoragePointer0Offset<T>> {
     type SubPointersType = SubPointersImpl::SubPointersType;
     fn sub_pointers(self: StoragePointer0Offset<T>) -> SubPointersImpl::SubPointersType {
@@ -60,7 +60,7 @@ impl SubPointersForwardImpl<
     T,
     +Drop<T>,
     impl AsPointerImpl: StorageAsPointer<T>,
-    impl PointerForwardImpl: SubPointersForward<StoragePointer0Offset<AsPointerImpl::Value>>
+    impl PointerForwardImpl: SubPointersForward<StoragePointer0Offset<AsPointerImpl::Value>>,
 > of SubPointersForward<T> {
     type SubPointersType = PointerForwardImpl::SubPointersType;
     fn sub_pointers(self: T) -> Self::SubPointersType {
@@ -77,11 +77,11 @@ pub trait SubPointersMutForward<T> {
 
 /// Implementation of SubPointersMutForward for `StoragePointer0Offset`.
 impl Pointer0OffsetSubPointersMutForward<
-    T, impl SubPointersImpl: SubPointersMut<T>
+    T, impl SubPointersImpl: SubPointersMut<T>,
 > of SubPointersMutForward<StoragePointer0Offset<Mutable<T>>> {
     type SubPointersType = SubPointersImpl::SubPointersType;
     fn sub_pointers_mut(
-        self: StoragePointer0Offset<Mutable<T>>
+        self: StoragePointer0Offset<Mutable<T>>,
     ) -> SubPointersImpl::SubPointersType {
         self.deref().sub_pointers_mut()
     }
@@ -94,7 +94,7 @@ impl SubPointersMutForwardImpl<
     T,
     +Drop<T>,
     impl AsPointerImpl: StorageAsPointer<T>,
-    impl PointerForwardImpl: SubPointersMutForward<StoragePointer0Offset<AsPointerImpl::Value>>
+    impl PointerForwardImpl: SubPointersMutForward<StoragePointer0Offset<AsPointerImpl::Value>>,
 > of SubPointersMutForward<T> {
     type SubPointersType = PointerForwardImpl::SubPointersType;
     fn sub_pointers_mut(self: T) -> Self::SubPointersType {
@@ -115,18 +115,14 @@ pub impl u256SubPointersImpl of starknet::storage::SubPointers<u256> {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
         let low_value = starknet::storage::StoragePointer::<
-            u128
-        > {
-            __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset,
-        };
+            u128,
+        > { __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset };
         current_offset = current_offset + starknet::Store::<u128>::size();
         let high_value = starknet::storage::StoragePointer::<
-            u128
-        > {
-            __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset,
-        };
+            u128,
+        > { __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset };
 
-        u256SubPointers { low: low_value, high: high_value, }
+        u256SubPointers { low: low_value, high: high_value }
     }
 }
 
@@ -139,22 +135,18 @@ struct U256SubPointersMut {
 pub impl U256SubPointersImplMut of starknet::storage::SubPointersMut<u256> {
     type SubPointersType = U256SubPointersMut;
     fn sub_pointers_mut(
-        self: starknet::storage::StoragePointer<Mutable<u256>>
+        self: starknet::storage::StoragePointer<Mutable<u256>>,
     ) -> U256SubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
         let low_value = starknet::storage::StoragePointer::<
-            Mutable<u128>
-        > {
-            __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset,
-        };
+            Mutable<u128>,
+        > { __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset };
         current_offset = current_offset + starknet::Store::<u128>::size();
         let high_value = starknet::storage::StoragePointer::<
-            Mutable<u128>
-        > {
-            __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset,
-        };
+            Mutable<u128>,
+        > { __storage_pointer_address__: base_address, __storage_pointer_offset__: current_offset };
 
-        U256SubPointersMut { low: low_value, high: high_value, }
+        U256SubPointersMut { low: low_value, high: high_value }
     }
 }

@@ -42,7 +42,7 @@ pub(crate) impl U256IntoEthAddress of Into<u256, EthAddress> {
         let high_32_bits = self.high % 0x100000000_u128;
         EthAddress {
             address: high_32_bits.into() * 0x100000000000000000000000000000000_felt252
-                + self.low.into()
+                + self.low.into(),
         }
     }
 }

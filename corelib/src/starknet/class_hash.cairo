@@ -12,7 +12,7 @@ pub extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
 pub(crate) extern fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
 
 pub(crate) extern fn class_hash_try_from_felt252(
-    address: felt252
+    address: felt252,
 ) -> Option<ClassHash> implicits(RangeCheck) nopanic;
 
 pub(crate) impl Felt252TryIntoClassHash of TryInto<felt252, ClassHash> {

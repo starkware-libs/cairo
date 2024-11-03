@@ -15,7 +15,7 @@ pub extern fn contract_address_const<const address: felt252>() -> ContractAddres
 pub(crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
 pub(crate) extern fn contract_address_try_from_felt252(
-    address: felt252
+    address: felt252,
 ) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
 
 pub(crate) impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
@@ -53,7 +53,7 @@ impl ContractAddressSerde of Serde<ContractAddress> {
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<ContractAddress> {
         Option::Some(
-            contract_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?
+            contract_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?,
         )
     }
 }

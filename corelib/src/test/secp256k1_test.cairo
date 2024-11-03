@@ -1,9 +1,9 @@
 use crate::serde::Serde;
 use starknet::{
-    eth_address::U256IntoEthAddress, EthAddress, secp256k1::Secp256k1Impl, SyscallResultTrait
+    eth_address::U256IntoEthAddress, EthAddress, secp256k1::Secp256k1Impl, SyscallResultTrait,
 };
 use starknet::secp256_trait::{
-    Signature, recover_public_key, Secp256PointTrait, signature_from_vrs, is_valid_signature
+    Signature, recover_public_key, Secp256PointTrait, signature_from_vrs, is_valid_signature,
 };
 use starknet::secp256k1::Secp256k1Point;
 use starknet::eth_signature::verify_eth_signature;
@@ -12,7 +12,7 @@ use starknet::eth_signature::verify_eth_signature;
 fn test_secp256k1_point_serde() {
     let (x, y): (u256, u256) = (
         0xa9a02d48081294b9bb0d8740d70d3607feb20876964d432846d9b9100b91eefd,
-        0x18b410b5523a1431024a6ab766c89fa5d062744c75e49efb9925bf8025a7c09e
+        0x18b410b5523a1431024a6ab766c89fa5d062744c75e49efb9925bf8025a7c09e,
     );
     let mut serialized_coordinates = array![];
     (x, y).serialize(ref serialized_coordinates);
@@ -28,8 +28,8 @@ fn test_secp256k1_point_serde() {
             actual_coordinates.at(0),
             actual_coordinates.at(1),
             actual_coordinates.at(2),
-            actual_coordinates.at(3)
-        )
+            actual_coordinates.at(3),
+        ),
     );
 }
 
@@ -38,7 +38,7 @@ fn test_secp256k1_recover_public_key() {
     let y_parity = true;
     let (msg_hash, signature, expected_public_key_x, expected_public_key_y, _) =
         get_message_and_signature(
-        :y_parity
+        :y_parity,
     );
     let public_key = recover_public_key::<Secp256k1Point>(msg_hash, signature).unwrap();
     let (x, y) = public_key.get_coordinates().unwrap_syscall();
@@ -48,7 +48,7 @@ fn test_secp256k1_recover_public_key() {
     let y_parity = false;
     let (msg_hash, signature, expected_public_key_x, expected_public_key_y, _) =
         get_message_and_signature(
-        :y_parity
+        :y_parity,
     );
     let public_key = recover_public_key::<Secp256k1Point>(msg_hash, signature).unwrap();
     let (x, y) = public_key.get_coordinates().unwrap_syscall();
@@ -75,12 +75,12 @@ fn get_message_and_signature(y_parity: bool) -> (u256, Signature, u256, u256, Et
     let (public_key_x, public_key_y) = if y_parity {
         (
             0xa9a02d48081294b9bb0d8740d70d3607feb20876964d432846d9b9100b91eefd,
-            0x18b410b5523a1431024a6ab766c89fa5d062744c75e49efb9925bf8025a7c09e
+            0x18b410b5523a1431024a6ab766c89fa5d062744c75e49efb9925bf8025a7c09e,
         )
     } else {
         (
             0x57a910a2a58ef7d57f452e1f6ea7ee0080789091de946b0ca6e5c6af2c8ff5c8,
-            0x249d233d0d21f35db55ce852edbd340d31e92ea4d591886149ca5d89911331ac
+            0x249d233d0d21f35db55ce852edbd340d31e92ea4d591886149ca5d89911331ac,
         )
     };
     let eth_address = 0x767410c1bb448978bd42b984d7de5970bcaf5c43_u256.into();
@@ -93,7 +93,7 @@ fn test_verify_eth_signature() {
     let y_parity = true;
     let (msg_hash, signature, _expected_public_key_x, _expected_public_key_y, eth_address) =
         get_message_and_signature(
-        :y_parity
+        :y_parity,
     );
     verify_eth_signature(:msg_hash, :signature, :eth_address);
 }
@@ -104,7 +104,7 @@ fn test_verify_eth_signature_wrong_eth_address() {
     let y_parity = true;
     let (msg_hash, signature, _expected_public_key_x, _expected_public_key_y, eth_address) =
         get_message_and_signature(
-        :y_parity
+        :y_parity,
     );
     let eth_address = (eth_address.into() + 1).try_into().unwrap();
     verify_eth_signature(:msg_hash, :signature, :eth_address);
@@ -116,7 +116,7 @@ fn test_verify_eth_signature_overflowing_signature_r() {
     let y_parity = true;
     let (msg_hash, mut signature, _expected_public_key_x, _expected_public_key_y, eth_address) =
         get_message_and_signature(
-        :y_parity
+        :y_parity,
     );
     signature.r = Secp256k1Impl::get_curve_size() + 1;
     verify_eth_signature(:msg_hash, :signature, :eth_address);
@@ -128,7 +128,7 @@ fn test_verify_eth_signature_overflowing_signature_s() {
     let y_parity = true;
     let (msg_hash, mut signature, _expected_public_key_x, _expected_public_key_y, eth_address) =
         get_message_and_signature(
-        :y_parity
+        :y_parity,
     );
     signature.s = Secp256k1Impl::get_curve_size() + 1;
     verify_eth_signature(:msg_hash, :signature, :eth_address);
@@ -144,7 +144,7 @@ fn test_verify_signature() {
         .unwrap();
 
     let is_valid = is_valid_signature::<
-        Secp256k1Point
+        Secp256k1Point,
     >(msg_hash, signature.r, signature.s, public_key);
     assert(is_valid, 'Signature should be valid');
 }
@@ -159,7 +159,7 @@ fn test_verify_signature_invalid_signature() {
         .unwrap();
 
     let is_valid = is_valid_signature::<
-        Secp256k1Point
+        Secp256k1Point,
     >(msg_hash, signature.r + 1, signature.s, public_key);
     assert(!is_valid, 'Signature should be invalid');
 }

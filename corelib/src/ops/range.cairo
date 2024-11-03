@@ -30,7 +30,7 @@ pub struct RangeIterator<T> {
 }
 
 impl RangeIteratorImpl<
-    T, impl OneT: One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>
+    T, impl OneT: One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>,
 > of Iterator<RangeIterator<T>> {
     type Item = T;
 
@@ -53,7 +53,7 @@ impl RangeIntoIterator<
     +Drop<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
-    -SierraIntRangeSupport<T>
+    -SierraIntRangeSupport<T>,
 > of IntoIterator<Range<T>> {
     type IntoIter = RangeIterator<T>;
 
@@ -78,7 +78,7 @@ mod internal {
     #[derive(Copy, Drop)]
     pub extern type IntRange<T>;
     pub extern fn int_range_try_new<T>(
-        x: T, y: T
+        x: T, y: T,
     ) -> Result<IntRange<T>, IntRange<T>> implicits(core::RangeCheck) nopanic;
     pub extern fn int_range_pop_front<T>(range: IntRange<T>) -> OptionRev<(IntRange<T>, T)> nopanic;
 
@@ -101,7 +101,7 @@ mod internal {
 trait SierraIntRangeSupport<T>;
 
 impl SierraRangeIntoIterator<
-    T, +Copy<T>, +Drop<T>, +SierraIntRangeSupport<T>
+    T, +Copy<T>, +Drop<T>, +SierraIntRangeSupport<T>,
 > of IntoIterator<Range<T>> {
     type IntoIter = internal::IntRange<T>;
 

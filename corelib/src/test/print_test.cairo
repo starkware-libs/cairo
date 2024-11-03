@@ -25,6 +25,7 @@ fn test_prints() {
         'This is a long string with more',
         ' than 31 characters.',
         20 // pending word length. Bigger than the actual data in the pending word.
+        ,
     ];
     x.print();
 
@@ -51,6 +52,7 @@ fn test_prints() {
         0x161616161616161616161616161616161616161616161616161616161616161, // The invalid full word.
         0,
         0 // pending byte is empty.
+        ,
     ];
     x.print();
 
@@ -64,6 +66,7 @@ fn test_prints() {
         0, // No full words.
         'a',
         2 // pending word length. Bigger than the actual data in the pending word.
+        ,
     ];
     x.print();
 
@@ -73,6 +76,7 @@ fn test_prints() {
         0, // No full words.
         'aa',
         1 // pending word length. Smaller than the actual data in the pending word.
+        ,
     ];
     x.print();
 
