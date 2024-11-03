@@ -57,7 +57,7 @@ fn test_replace_flow() {
         class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap(),
         contract_address_salt: 0,
         calldata: [100].span(),
-        deploy_from_zero: false
+        deploy_from_zero: false,
     )
         .unwrap();
 
@@ -79,7 +79,7 @@ fn test_cannot_replace_with_non_existing_class_hash() {
         class_hash: contract_a::TEST_CLASS_HASH.try_into().unwrap(),
         contract_address_salt: 0,
         calldata: [100].span(),
-        deploy_from_zero: false
+        deploy_from_zero: false,
     )
         .unwrap();
 
@@ -96,7 +96,7 @@ fn test_class_hash_at_syscall() {
         class_hash: a_class_hash,
         contract_address_salt: 0,
         calldata: [100].span(),
-        deploy_from_zero: false
+        deploy_from_zero: false,
     )
         .unwrap();
 
@@ -111,6 +111,6 @@ fn test_class_hash_at_syscall() {
 fn test_class_hash_at_syscall_undeployed_contract() {
     assert_eq!(
         get_class_hash_at_syscall(contract_address_const::<123456>()),
-        Result::Ok(class_hash_const::<0>())
+        Result::Ok(class_hash_const::<0>()),
     );
 }

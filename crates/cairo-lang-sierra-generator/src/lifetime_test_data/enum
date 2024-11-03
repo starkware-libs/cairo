@@ -16,7 +16,7 @@ fn foo(x: MyEnum, y: felt252, z: felt252, w: felt252) -> felt252 {
             },
             MyEnum::B(b) => { MyEnum::A(b + y + z) },
             MyEnum::C((_c0, _c1)) => { MyEnum::C((z, w)) },
-        }
+        },
     );
     w
 }

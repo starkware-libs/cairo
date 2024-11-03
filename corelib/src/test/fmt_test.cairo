@@ -15,11 +15,11 @@ fn test_format() {
     assert(format!("{}", nz_value) == "1", 'non zero bad formatting');
     assert(
         format!("{}_{}_{}_{}_{}_{}", 0_i128, 1_i8, 2_i16, 3_i32, 4_i64, 5_i128) == "0_1_2_3_4_5",
-        'signed positive bad formatting'
+        'signed positive bad formatting',
     );
     assert(
         format!("{}_{}_{}_{}_{}", -1_i8, -2_i16, -3_i32, -4_i64, -5_i128) == "-1_-2_-3_-4_-5",
-        'signed negative bad formatting'
+        'signed negative bad formatting',
     );
 }
 
@@ -40,7 +40,7 @@ enum EnumExample {
 
 #[derive(Drop, Copy)]
 struct IntoFelt252Based {
-    felt_value: felt252
+    felt_value: felt252,
 }
 
 impl IntoFelt252BasedInto of Into<IntoFelt252Based, felt252> {
@@ -63,14 +63,15 @@ fn test_format_debug() {
     assert(format!("{:?}{1:?}", 12_usize, 14_u32) == "1214", 'positional mix bad formatting');
     assert(
         format!("{ba:?}_{:?}_{:?}_{1:?}", 12, 14_u32) == "\"hello\"_12_14_14",
-        'full mix bad formatting'
+        'full mix bad formatting',
     );
     assert(
-        format!("{:?}", EnumExample::Empty) == "EnumExample::Empty(())", 'bad enum empty derive fmt'
+        format!("{:?}", EnumExample::Empty) == "EnumExample::Empty(())",
+        'bad enum empty derive fmt',
     );
     assert(
         format!("{:?}", EnumExample::FeltValue(4)) == "EnumExample::FeltValue(4)",
-        'bad derive enum fmt'
+        'bad derive enum fmt',
     );
     assert(
         format!(
@@ -79,23 +80,23 @@ fn test_format_debug() {
                 felt_value: 6,
                 bool_value: false,
                 byte_array_value: "ByteArray",
-                enum_value: EnumExample::BoolValue(true)
-            }
+                enum_value: EnumExample::BoolValue(true),
+            },
         ) == "StructExample { felt_value: 6, bool_value: false, byte_array_value: \"ByteArray\", enum_value: EnumExample::BoolValue(true) }",
-        'bad derive struct formatting'
+        'bad derive struct formatting',
     );
     assert(
         format!("{:?}", ((), (1,), (2, 3), (4, 5, 6))) == "((), (1,), (2, 3), (4, 5, 6))",
-        'bad tuple fmt'
+        'bad tuple fmt',
     );
     let empty: [felt252; 0] = [];
     assert(
         format!("{:?}", (empty, [1], [2, 3], [4, 5, 6])) == "([], [1], [2, 3], [4, 5, 6])",
-        'bad fixed sized array fmt'
+        'bad fixed sized array fmt',
     );
     assert(format!("{:?}", crate::box::BoxTrait::new(1)) == "&1", 'bad box fmt');
     assert(
-        format!("{:?}", crate::nullable::NullableTrait::new(1)) == "&1", 'bad nullable value fmt'
+        format!("{:?}", crate::nullable::NullableTrait::new(1)) == "&1", 'bad nullable value fmt',
     );
     assert(format!("{:?}", crate::nullable::null::<felt252>()) == "null", 'bad null fmt');
 
@@ -120,22 +121,22 @@ fn test_format_hex() {
     assert(format!("{:x}", 42_u64) == "2a", 'bad u64 lower hex formatting');
     assert(
         format!("{:x}", 16045690984833335023_u64) == "deadbeefdeadbeef",
-        'bad u64 lower hex formatting'
+        'bad u64 lower hex formatting',
     );
     assert(format!("{:x}", 42_u128) == "2a", 'bad u128 lower hex formatting');
     assert(
         format!(
-            "{:x}", 295990755083049101712519384020072382191_u128
+            "{:x}", 295990755083049101712519384020072382191_u128,
         ) == "deadbeefdeadbeefdeadbeefdeadbeef",
-        'bad u128 lower hex formatting'
+        'bad u128 lower hex formatting',
     );
     assert(format!("{:x}", 42_u256) == "2a", 'bad u256 lower hex formatting');
     assert(
         format!(
             "{:x}",
-            100720434726375746010458024839911619878118703404436202866098422983289408962287_u256
+            100720434726375746010458024839911619878118703404436202866098422983289408962287_u256,
         ) == "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-        'bad u256 lower hex formatting'
+        'bad u256 lower hex formatting',
     );
 
     let nz_value: NonZero<felt252> = 42.try_into().unwrap();

@@ -108,10 +108,10 @@ foo
 
 //! > module_code
 struct Struct1 {
-    x: felt252
+    x: felt252,
 }
 struct Struct2 {
-    x: felt252
+    x: felt252,
 }
 
 

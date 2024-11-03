@@ -22,7 +22,7 @@ fn foo() -> felt252 {
                 Option::Some(_) => three + four,
                 Option::None => one,
             }
-        }
+        },
     }
 }
 

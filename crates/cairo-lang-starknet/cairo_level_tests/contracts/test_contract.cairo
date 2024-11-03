@@ -18,7 +18,7 @@ impl OutsideImpl<TContractState, +Drop<TContractState>> of OutsideTrait<TContrac
 mod test_contract {
     use super::{
         IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
-        IAnotherContractDispatcherTrait, MyType
+        IAnotherContractDispatcherTrait, MyType,
     };
     use core::dict::Felt252Dict;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
@@ -46,7 +46,7 @@ mod test_contract {
 
         #[external(v0)]
         fn test(
-            ref self: ContractState, ref arg: felt252, arg1: felt252, arg2: felt252
+            ref self: ContractState, ref arg: felt252, arg1: felt252, arg2: felt252,
         ) -> felt252 {
             let mut x = self.my_storage_var.read();
             x += 1;
@@ -59,7 +59,7 @@ mod test_contract {
 
         #[external(v0)]
         fn call_foo(
-            ref self: ContractState, another_contract_address: starknet::ContractAddress, a: u128
+            ref self: ContractState, another_contract_address: starknet::ContractAddress, a: u128,
         ) -> u128 {
             IAnotherContractDispatcher { contract_address: another_contract_address }.foo(a)
         }
@@ -71,7 +71,7 @@ mod test_contract {
 
         /// An external method that requires the `segment_arena` builtin.
         #[external(v0)]
-        fn segment_arena_builtin(ref self: ContractState,) {
+        fn segment_arena_builtin(ref self: ContractState) {
             let x: Felt252Dict::<felt252> = Default::default();
             x.squash();
         }

@@ -21,43 +21,43 @@ pub use crate::{starknet, starknet::System};
 pub use crate::to_byte_array;
 pub use crate::traits::{
     Add, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivRem, Drop,
-    Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto
+    Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
 };
 
 
 #[deprecated(
-    feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0"
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0",
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::AddEq;
 #[deprecated(
-    feature: "deprecated-op-assign-traits", note: "Use `core::ops::SubAssign`.", since: "2.7.0"
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::SubAssign`.", since: "2.7.0",
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::SubEq;
 #[deprecated(
-    feature: "deprecated-op-assign-traits", note: "Use `core::ops::MulAssign`.", since: "2.7.0"
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::MulAssign`.", since: "2.7.0",
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::MulEq;
 #[deprecated(
-    feature: "deprecated-op-assign-traits", note: "Use `core::ops::DivAssign`.", since: "2.7.0"
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::DivAssign`.", since: "2.7.0",
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::DivEq;
 #[deprecated(
-    feature: "deprecated-op-assign-traits", note: "Use `core::ops::RemAssign`.", since: "2.7.0"
+    feature: "deprecated-op-assign-traits", note: "Use `core::ops::RemAssign`.", since: "2.7.0",
 )]
 #[feature("deprecated-op-assign-traits")]
 pub use crate::traits::RemEq;
 
 #[deprecated(
-    feature: "deprecated-index-traits", note: "Use `core::ops::index::Index`.", since: "2.7.0"
+    feature: "deprecated-index-traits", note: "Use `core::ops::index::Index`.", since: "2.7.0",
 )]
 #[feature("deprecated-index-traits")]
 pub use crate::traits::Index;
 #[deprecated(
-    feature: "deprecated-index-traits", note: "Use `core::ops::index::IndexView`.", since: "2.7.0"
+    feature: "deprecated-index-traits", note: "Use `core::ops::index::IndexView`.", since: "2.7.0",
 )]
 #[feature("deprecated-index-traits")]
 pub use crate::traits::IndexView;
@@ -65,5 +65,6 @@ pub use crate::zeroable::NonZero;
 pub use crate::ops::Deref;
 
 pub use starknet::storage::{
-    StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess, StoragePointerWriteAccess
+    StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
+    StoragePointerWriteAccess,
 };

@@ -23,7 +23,7 @@ pub trait TypeEq<S, T> {}
 impl ImplTypeEq<T> of TypeEq<T, T> {}
 
 impl DowncastableTryInto<
-    From, To, +DowncastableInt<From>, +DowncastableInt<To>, -TypeEq<From, To>
+    From, To, +DowncastableInt<From>, +DowncastableInt<To>, -TypeEq<From, To>,
 > of TryInto<From, To> {
     fn try_into(self: From) -> Option<To> {
         core::integer::downcast(self)

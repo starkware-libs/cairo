@@ -145,7 +145,7 @@ fn validate_call() {
         0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8, // calldata 5.
         0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7, // calldata 6.
         0x54767f773cc172172c3afc5265bd0a76089c24cdef409635d27ac1a1fa96ca8, // calldata 7.
-        0x65586264, // calldata 8.
+        0x65586264 // calldata 8.
     ]
         .span();
     test_contract::__wrapper____validate__(serialized_args);
@@ -436,7 +436,7 @@ fn validate_call() {
         0x3, // calldata length.
         0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, // calldata 0.
         0x4db5d32, // calldata 1.
-        0x0, // calldata 2.
+        0x0 // calldata 2.
     ]
         .span();
     test_contract::__wrapper____validate__(serialized_args);
@@ -867,7 +867,7 @@ mod erc_20 {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             assert(!Zero::is_zero(@sender), 'ERC20: transfer from 0');
             assert(!Zero::is_zero(@recipient), 'ERC20: transfer to 0');
@@ -880,7 +880,7 @@ mod erc_20 {
 
 fn erc20_transfer() {
     starknet::testing::set_caller_address(
-        starknet::contract_address::contract_address_const::<2>()
+        starknet::contract_address::contract_address_const::<2>(),
     );
     erc_20::__external::transfer(array![1, 0, 0].span());
 }

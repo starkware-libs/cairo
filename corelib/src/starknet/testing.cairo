@@ -9,7 +9,7 @@ use core::traits::Into;
 /// External users of the cairo crates can also implement their own cheatcodes
 /// by injecting custom `CairoHintProcessor`.
 pub extern fn cheatcode<const selector: felt252>(
-    input: Span<felt252>
+    input: Span<felt252>,
 ) -> Span<felt252> implicits() nopanic;
 
 /// Set the block number to the provided value.
@@ -125,7 +125,7 @@ pub fn set_block_hash(block_number: u64, value: felt252) {
 /// If called until `None` is returned, all events have been popped.
 pub fn pop_log_raw(address: ContractAddress) -> Option<(Span<felt252>, Span<felt252>)> {
     let mut log = cheatcode::<'pop_log'>([address.into()].span());
-    Option::Some((Serde::deserialize(ref log)?, Serde::deserialize(ref log)?,))
+    Option::Some((Serde::deserialize(ref log)?, Serde::deserialize(ref log)?))
 }
 
 /// Pop the earliest unpopped logged event for the contract as the requested type.
@@ -179,6 +179,6 @@ pub fn pop_log<T, +starknet::Event<T>>(address: ContractAddress) -> Option<T> {
 pub fn pop_l2_to_l1_message(address: ContractAddress) -> Option<(felt252, Span<felt252>)> {
     let mut l2_to_l1_message = cheatcode::<'pop_l2_to_l1_message'>([address.into()].span());
     Option::Some(
-        (Serde::deserialize(ref l2_to_l1_message)?, Serde::deserialize(ref l2_to_l1_message)?,)
+        (Serde::deserialize(ref l2_to_l1_message)?, Serde::deserialize(ref l2_to_l1_message)?),
     )
 }

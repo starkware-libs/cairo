@@ -42,11 +42,11 @@ fn panicable_closure() {
 }
 
 fn option_map<T, F, +core::ops::FnOnce<F, (T,)>, +Drop<F>>(
-    opt: Option<T>, f: F
+    opt: Option<T>, f: F,
 ) -> Option<core::ops::FnOnce::<F, (T,)>::Output> {
     match opt {
         Option::Some(x) => Option::Some(f(x)),
-        Option::None => Option::None
+        Option::None => Option::None,
     }
 }
 

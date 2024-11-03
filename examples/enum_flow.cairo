@@ -1,16 +1,16 @@
 enum MyEnumShort {
     a: felt252,
-    b: felt252
+    b: felt252,
 }
 enum MyEnumLong {
     a: felt252,
     b: felt252,
-    c: felt252
+    c: felt252,
 }
 enum MyEnumGeneric<S, T> {
     a: T,
     b: S,
-    c: T
+    c: T,
 }
 
 impl MyEnumGenericDrop of Drop<MyEnumGeneric<(), felt252>>;

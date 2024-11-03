@@ -3,9 +3,9 @@ use core::option::OptionTrait;
 use starknet::{
     EthAddress,
     secp256_trait::{
-        Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature
+        Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature,
     },
-    secp256k1::Secp256k1Point, SyscallResult, SyscallResultTrait
+    secp256k1::Secp256k1Point, SyscallResult, SyscallResultTrait,
 };
 use core::keccak::keccak_u256s_be_inputs;
 
@@ -24,7 +24,7 @@ pub fn verify_eth_signature(msg_hash: u256, signature: Signature, eth_address: E
 /// where N is the size of the curve.
 /// Returns a Result with an error string if the signature is invalid.
 pub fn is_eth_signature_valid(
-    msg_hash: u256, signature: Signature, eth_address: EthAddress
+    msg_hash: u256, signature: Signature, eth_address: EthAddress,
 ) -> Result<(), felt252> {
     if !is_signature_entry_valid::<Secp256k1Point>(signature.r) {
         return Result::Err('Signature out of range');
@@ -43,9 +43,12 @@ pub fn is_eth_signature_valid(
 
 /// Converts a public key point to the corresponding Ethereum address.
 pub fn public_key_point_to_eth_address<
-    Secp256Point, +Drop<Secp256Point>, +Secp256Trait<Secp256Point>, +Secp256PointTrait<Secp256Point>
+    Secp256Point,
+    +Drop<Secp256Point>,
+    +Secp256Trait<Secp256Point>,
+    +Secp256PointTrait<Secp256Point>,
 >(
-    public_key_point: Secp256Point
+    public_key_point: Secp256Point,
 ) -> EthAddress {
     let (x, y) = public_key_point.get_coordinates().unwrap_syscall();
 
@@ -53,7 +56,7 @@ pub fn public_key_point_to_eth_address<
     let point_hash_le = keccak_u256s_be_inputs([x, y].span());
     let point_hash = u256 {
         low: core::integer::u128_byte_reverse(point_hash_le.high),
-        high: core::integer::u128_byte_reverse(point_hash_le.low)
+        high: core::integer::u128_byte_reverse(point_hash_le.low),
     };
 
     point_hash.into()
