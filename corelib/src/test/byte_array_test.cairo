@@ -452,7 +452,9 @@ fn test_serde() {
     let mut serialized = array![];
     let ba: ByteArray = "";
     ba.serialize(ref serialized);
-    compare_spans(serialized.span(), [0, 0, 0].span());
+    compare_spans(serialized.span(), [0,
+    0,
+    0].span());
 
     let mut serialized = array![];
     let ba: ByteArray = "hello";

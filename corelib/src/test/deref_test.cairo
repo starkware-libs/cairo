@@ -163,7 +163,8 @@ fn test_tuple_deref() {
 fn test_fixed_size_array_deref() {
     let a = 6;
     let b = 3;
-    let usize_array = [a, b];
+    let usize_array = [a,
+    b];
     assert_eq!(usize_array.add, 9);
     assert_eq!(usize_array.sub, 3);
     assert_eq!(usize_array.mul, 18);

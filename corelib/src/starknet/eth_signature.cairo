@@ -53,7 +53,8 @@ pub fn public_key_point_to_eth_address<
     let (x, y) = public_key_point.get_coordinates().unwrap_syscall();
 
     // Keccak output is little endian.
-    let point_hash_le = keccak_u256s_be_inputs([x, y].span());
+    let point_hash_le = keccak_u256s_be_inputs([x,
+    y].span());
     let point_hash = u256 {
         low: core::integer::u128_byte_reverse(point_hash_le.high),
         high: core::integer::u128_byte_reverse(point_hash_le.low),

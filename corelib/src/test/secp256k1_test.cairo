@@ -25,9 +25,7 @@ fn test_secp256k1_point_serde() {
     assert_eq!(
         (@x.low.into(), @x.high.into(), @y.low.into(), @y.high.into()),
         (
-            actual_coordinates.at(0),
-            actual_coordinates.at(1),
-            actual_coordinates.at(2),
+            actual_coordinates.at(0), actual_coordinates.at(1), actual_coordinates.at(2),
             actual_coordinates.at(3),
         ),
     );

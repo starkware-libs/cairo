@@ -73,9 +73,12 @@ fn test_l2_to_l1_messages() {
 
     // Pop messages.
     assert_eq!(testing::pop_l2_to_l1_message(contract_address), Option::Some((0, [0].span())));
-    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Option::Some((1, [0, 1].span())));
+    assert_eq!(testing::pop_l2_to_l1_message(contract_address), Option::Some((1, [0,
+    1].span())));
     assert_eq!(
-        testing::pop_l2_to_l1_message(contract_address), Option::Some((2, [0, 1, 2].span())),
+        testing::pop_l2_to_l1_message(contract_address), Option::Some((2, [0,
+        1,
+        2].span())),
     );
 
     // Assert all messages have been popped.

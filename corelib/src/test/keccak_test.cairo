@@ -4,7 +4,23 @@ use crate::keccak;
 fn test_keccak_syscall() {
     assert_eq!(
         starknet::syscalls::keccak_syscall(
-            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].span(),
+            [1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17].span(),
         ),
         Result::Ok(0xd2eb808dfba4703c528d145dfe6571afec687be9c50d2218388da73622e8fdd5),
     );
@@ -21,11 +37,17 @@ fn test_keccak_hash() {
         0xf60cfab7e2cb9f2d73b0c2fa4a4bf40c326a7e71fdcdee263b071276522d0eb1,
     );
     assert_eq!(
-        keccak::keccak_u256s_le_inputs([1, 2, 3, 4].span()),
+        keccak::keccak_u256s_le_inputs([1,
+        2,
+        3,
+        4].span()),
         0x17a2126cf7391a26b41c36a687090cc5845f8e9f5191367fb5181e74f6eb550d,
     );
     assert_eq!(
-        keccak::keccak_u256s_be_inputs([1, 2, 3, 4].span()),
+        keccak::keccak_u256s_be_inputs([1,
+        2,
+        3,
+        4].span()),
         0x2d9982dfaf468a9ddf7101b6323aa9d56510e6fd534f267a01086462df912739,
     );
 }

@@ -81,7 +81,9 @@ fn test_validate_gas_cost() {
             to: contract_address,
             selector: 0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c,
             calldata: [
-                0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, 0x4db5d32, 0x0,
+                0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1,
+                0x4db5d32,
+                0x0,
             ]
                 .span(),
         },
