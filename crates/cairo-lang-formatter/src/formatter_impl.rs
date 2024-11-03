@@ -123,6 +123,10 @@ impl BreakLinePointProperties {
     pub fn set_single_breakpoint(&mut self) {
         self.is_single_breakpoint = true;
     }
+    pub fn set_line_by_line(&mut self) {
+        self.is_single_breakpoint = false;
+        self.is_optional = false;
+    }
     pub fn unset_comma_if_broken(&mut self) {
         self.is_comma_if_broken = false;
     }
@@ -775,6 +779,7 @@ pub trait SyntaxNodeFormat {
     fn get_internal_break_line_point_properties(
         &self,
         db: &dyn SyntaxGroup,
+        config: &FormatterConfig,
     ) -> BreakLinePointsPositions;
     /// If self is a protected zone, returns its precedence (highest precedence == lowest number).
     /// Otherwise, returns None.
@@ -856,7 +861,7 @@ impl<'a> FormatterImpl<'a> {
     fn format_internal(&mut self, syntax_node: &SyntaxNode) {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
         let internal_break_line_points_positions =
-            syntax_node.get_internal_break_line_point_properties(self.db);
+            syntax_node.get_internal_break_line_point_properties(self.db, &self.config);
         // TODO(ilya): consider not copying here.
         let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();

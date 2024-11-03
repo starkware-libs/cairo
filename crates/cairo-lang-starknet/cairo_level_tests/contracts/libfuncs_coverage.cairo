@@ -418,7 +418,10 @@ fn circuit_libfuncs(n: u384, input0: u384, input1: u384) {
     let sub = circuit_sub(inv, in2);
     let mul = circuit_mul(inv, sub);
 
-    let modulus = TryInto::<_, CircuitModulus>::try_into([n.limb0, n.limb1, n.limb2, n.limb3])
+    let modulus = TryInto::<_, CircuitModulus>::try_into([n.limb0,
+    n.limb1,
+    n.limb2,
+    n.limb3])
         .unwrap();
     let outputs = (mul, add, inv)
         .new_inputs()

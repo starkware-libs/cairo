@@ -91,7 +91,10 @@ fn test_format_debug() {
     );
     let empty: [felt252; 0] = [];
     assert(
-        format!("{:?}", (empty, [1], [2, 3], [4, 5, 6])) == "([], [1], [2, 3], [4, 5, 6])",
+        format!("{:?}", (empty, [1], [2,
+        3], [4,
+        5,
+        6])) == "([], [1], [2, 3], [4, 5, 6])",
         'bad fixed sized array fmt',
     );
     assert(format!("{:?}", crate::box::BoxTrait::new(1)) == "&1", 'bad box fmt');

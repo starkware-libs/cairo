@@ -31,9 +31,18 @@ mod circuit_contract {
         let add = circuit_add(add, add);
         let inv = circuit_inverse(add);
 
-        let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
+        let modulus = TryInto::<_, CircuitModulus>::try_into([7,
+        0,
+        0,
+        0]).unwrap();
         let _outputs =
-            match (inv,).new_inputs().next([3, 0, 0, 0]).next([6, 0, 0, 0]).done().eval(modulus) {
+            match (inv,).new_inputs().next([3,
+            0,
+            0,
+            0]).next([6,
+            0,
+            0,
+            0]).done().eval(modulus) {
             Result::Ok(outputs) => { outputs },
             Result::Err(_) => { panic!("Expected success") },
         };

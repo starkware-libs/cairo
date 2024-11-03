@@ -35,11 +35,20 @@ fn test_circuit_success() {
     let sub = circuit_sub(inv, in2);
     let mul = circuit_mul(inv, sub);
 
-    let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
+    let modulus = TryInto::<_, CircuitModulus>::try_into([7,
+    0,
+    0,
+    0]).unwrap();
     let outputs = (mul, add, inv)
         .new_inputs()
-        .next([3, 0, 0, 0])
-        .next([6, 0, 0, 0])
+        .next([3,
+        0,
+        0,
+        0])
+        .next([6,
+        0,
+        0,
+        0])
         .done()
         .eval(modulus)
         .unwrap();
@@ -56,9 +65,18 @@ fn test_circuit_failure() {
     let in0 = CircuitElement::<CircuitInput<0>> {};
     let out0 = circuit_inverse(in0);
 
-    let modulus = TryInto::<_, CircuitModulus>::try_into([55, 0, 0, 0]).unwrap();
-    (out0,).new_inputs().next([11, 0, 0, 0]).done().eval(modulus).unwrap_err();
-    (out0,).new_inputs().next([11, 0, 0, 0]).done().eval(modulus).unwrap_err();
+    let modulus = TryInto::<_, CircuitModulus>::try_into([55,
+    0,
+    0,
+    0]).unwrap();
+    (out0,).new_inputs().next([11,
+    0,
+    0,
+    0]).done().eval(modulus).unwrap_err();
+    (out0,).new_inputs().next([11,
+    0,
+    0,
+    0]).done().eval(modulus).unwrap_err();
 }
 
 #[test]
@@ -124,14 +142,23 @@ fn test_fill_inputs_loop() {
     let in2 = CircuitElement::<CircuitInput<1>> {};
     let add = circuit_add(in1, in2);
 
-    let mut inputs: Array::<[u96; 4]> = array![[1, 0, 0, 0], [2, 0, 0, 0]];
+    let mut inputs: Array::<[u96; 4]> = array![[1,
+    0,
+    0,
+    0], [2,
+    0,
+    0,
+    0]];
     let mut circuit_inputs = (add,).new_inputs();
 
     while let Option::Some(input) = inputs.pop_front() {
         circuit_inputs = circuit_inputs.next(input);
     };
 
-    let modulus = TryInto::<_, CircuitModulus>::try_into([55, 0, 0, 0]).unwrap();
+    let modulus = TryInto::<_, CircuitModulus>::try_into([55,
+    0,
+    0,
+    0]).unwrap();
     circuit_inputs.done().eval(modulus).unwrap();
 }
 

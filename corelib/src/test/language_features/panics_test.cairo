@@ -89,9 +89,7 @@ fn test_panic_with_stacked_errors() {
     expected: (
         0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, // BYTE_ARRAY_MAGIC
         1,
-        0x161616161616161616161616161616161616161616161616161616161616161,
-        0,
-        0,
+        0x161616161616161616161616161616161616161616161616161616161616161, 0, 0,
     ),
 )]
 fn test_panic_with_byte_array_invalid_full_word() {
@@ -111,8 +109,7 @@ fn test_panic_with_byte_array_invalid_full_word() {
     expected: (
         0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, // BYTE_ARRAY_MAGIC
         0,
-        'aa',
-        1,
+        'aa', 1,
     ),
 )]
 fn test_panic_with_byte_array_invalid_pending_word() {

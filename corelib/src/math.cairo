@@ -93,15 +93,8 @@ extern fn u256_guarantee_inv_mod_n(
     b: u256, n: NonZero<u256>,
 ) -> Result<
     (
-        NonZero<u256>,
-        U128MulGuarantee,
-        U128MulGuarantee,
-        U128MulGuarantee,
-        U128MulGuarantee,
-        U128MulGuarantee,
-        U128MulGuarantee,
-        U128MulGuarantee,
-        U128MulGuarantee,
+        NonZero<u256>, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee,
+        U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee,
     ),
     (U128MulGuarantee, U128MulGuarantee),
 > implicits(RangeCheck) nopanic;

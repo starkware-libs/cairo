@@ -114,7 +114,8 @@ pub fn set_signature(signature: Span<felt252>) {
 /// block_number will return the set value.
 /// Unset blocks values call would fail.
 pub fn set_block_hash(block_number: u64, value: felt252) {
-    cheatcode::<'set_block_hash'>([block_number.into(), value].span());
+    cheatcode::<'set_block_hash'>([block_number.into(),
+    value].span());
 }
 
 /// Pop the earliest unpopped logged event for the contract.

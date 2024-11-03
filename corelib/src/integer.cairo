@@ -1101,12 +1101,7 @@ pub fn u512_safe_div_rem_by_u256(
 extern fn u512_safe_divmod_by_u256(
     lhs: u512, rhs: NonZero<u256>,
 ) -> (
-    u512,
-    u256,
-    U128MulGuarantee,
-    U128MulGuarantee,
-    U128MulGuarantee,
-    U128MulGuarantee,
+    u512, u256, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee, U128MulGuarantee,
     U128MulGuarantee,
 ) implicits(RangeCheck) nopanic;
 
