@@ -2,9 +2,10 @@ use std::cmp::Ordering;
 use std::fmt;
 
 use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_parser::macro_helpers::token_tree_as_wrapped_arg_list;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
-use cairo_lang_syntax::node::ast::UsePath;
+use cairo_lang_syntax::node::ast::{TokenTreeNode, UsePath};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use itertools::Itertools;
@@ -792,6 +793,24 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode) {
+        // If we encounter a token tree node, i.e. a macro, we try to parse it as a
+        // [ast::WrappedArgList] (the syntax kind of legacy macro calls). If successful, we
+        // format the wrapped arg list according to the rules of wrapped arg lists, otherwise we
+        // treat it as a normal syntax node, and in practice no formatting is done.
+        // TODO(Gil): Consider if we want to keep this behavior when general macro support is added.
+        if syntax_node.kind(self.db) == SyntaxKind::TokenTreeNode {
+            let as_wrapped_arg_list = token_tree_as_wrapped_arg_list(
+                TokenTreeNode::from_syntax_node(self.db, syntax_node.clone()),
+                self.db,
+            );
+            let file_id = syntax_node.stable_ptr().file_id(self.db);
+
+            if let Some(wrapped_arg_list) = as_wrapped_arg_list {
+                let new_syntax_node = SyntaxNode::new_root(self.db, file_id, wrapped_arg_list.0);
+                self.format_node(&new_syntax_node);
+                return;
+            }
+        }
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }

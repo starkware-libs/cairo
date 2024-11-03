@@ -1591,7 +1591,12 @@ fn module_semantic_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
     for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)?.iter().cloned() {
         diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(plugin_diag.stable_ptr),
+            match plugin_diag.inner_span {
+                None => StableLocation::new(plugin_diag.stable_ptr),
+                Some(inner_span) => {
+                    StableLocation::with_inner_span(plugin_diag.stable_ptr, inner_span)
+                }
+            },
             SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
         ));
     }
