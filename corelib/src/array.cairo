@@ -279,7 +279,6 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     }
 }
 
-/// `Default` trait implementation to create a new empty array.
 impl ArrayDefault<T> of Default<Array<T>> {
     /// Returns a new empty array.
     ///
