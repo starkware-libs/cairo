@@ -540,7 +540,7 @@ impl CompiledInvocationBuilder<'_> {
                 let (end_base, end_offset) =
                     state.get_adjusted(end).to_deref_with_offset().unwrap();
                 assert_eq!(start_base, end_base);
-                let diff = (end_offset - start_offset) as i32;
+                let diff = end_offset - start_offset;
                 match cost_token_ty {
                     CostTokenType::RangeCheck => {
                         cost.range_checks += diff;
