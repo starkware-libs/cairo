@@ -901,7 +901,6 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
     }
 }
 
-/// `IntoIterator` trait implementation for `Array<T>`.
 impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
     /// Returns an `ArrayIter<T>` given an `Array<T>`.
