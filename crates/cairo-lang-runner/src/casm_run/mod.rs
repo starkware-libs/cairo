@@ -1151,7 +1151,8 @@ impl CairoHintProcessor<'_> {
         vm: &mut dyn VMWrapper,
     ) -> Result<(Relocatable, Relocatable), Vec<Felt252>> {
         let function = runner
-            .sierra_program_registry
+            .builder
+            .registry()
             .get_function(entry_point)
             .expect("Entrypoint exists, but not found.");
         let mut res = runner
