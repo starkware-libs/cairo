@@ -1,3 +1,10 @@
+//! Testing module that provides a single function for evaluating the amount of gas available.
+//!
+//! The `get_available_gas` function is useful for asserting the amount of gas consumed by a
+//! particular operation or function call.
+//! By calling `get_available_gas` before and after the operation, you can calculate the exact
+//! amount of gas used.
+
 use crate::gas::GasBuiltin;
 
 /// Returns the amount of gas available in the `GasBuiltin`.
@@ -6,15 +13,27 @@ use crate::gas::GasBuiltin;
 /// Note: The actual gas consumption observed by calls to `get_available_gas` is only exact
 /// immediately before calls to `withdraw_gas`.
 ///
-/// For example:
+/// # Examples
+///
 /// ```
-/// let gas_before = get_available_gas();
-/// // Making sure `gas_before` is exact.
-/// core::gas::withdraw_gas().unwrap();
-/// gas_heavy_function();
-/// let gas_after = get_available_gas();
-/// // Making sure `gas_after` is exact
-/// core::gas::withdraw_gas().unwrap();
-/// assert_lt!(gas_after - gas_before, 100000);
+/// use core::testing::get_available_gas;
+///
+/// fn gas_heavy_function() {
+///     // ... some gas-intensive code
+/// }
+///
+/// fn test_gas_consumption() {
+///     let gas_before = get_available_gas();
+///     // Making sure `gas_before` is exact.
+///     core::gas::withdraw_gas().unwrap();
+///
+///     gas_heavy_function();
+///
+///     let gas_after = get_available_gas();
+///     // Making sure `gas_after` is exact
+///     core::gas::withdraw_gas().unwrap();
+///
+///     assert!(gas_after - gas_before < 100_000);
+/// }
 /// ```
 pub extern fn get_available_gas() -> u128 implicits(GasBuiltin) nopanic;
