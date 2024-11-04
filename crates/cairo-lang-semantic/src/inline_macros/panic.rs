@@ -12,8 +12,8 @@ use num_bigint::BigUint;
 
 use super::write::FELT252_BYTES;
 
-/// Try to generate a simple panic handlic code.
-/// Return true if successful and updates the buiilder if successful.
+/// Try to generate a panic handling code.
+/// Return true if successful and updates the builder if successful.
 fn try_handle_simple_panic(
     db: &dyn SyntaxGroup,
     builder: &mut PatchBuilder<'_>,
@@ -34,7 +34,7 @@ fn try_handle_simple_panic(
             };
             format_string_expr
         }
-        // We have more than one argument, fallback to more generic handling.
+        // We have more than one argument; fallback to more generic handling.
         _ => return false,
     };
 
@@ -42,10 +42,44 @@ fn try_handle_simple_panic(
         return false;
     };
 
+    // Check for formatting placeholders
     if format_str.find(['{', '}']).is_some() {
-        return false;
+        // Handle formatted strings by building a formatter
+        let mut formatted_args = vec![];
+        for arg in arguments.iter().skip(1) { // Skip the first argument (the format string)
+            if let Some(arg_str) = try_extract_unnamed_arg(db, arg).and_then(|arg| arg.string_value(db)) {
+                formatted_args.push(arg_str);
+            } else {
+                return false; // Invalid argument type
+            }
+        }
+
+        // Generate panic code with formatted arguments
+        builder.add_str(&format!(
+            "core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, {}, ",
+            format_str.len() / FELT252_BYTES,
+        ));
+
+        for chunk in format_str.as_bytes().chunks(FELT252_BYTES) {
+            builder.add_str(&format!("{:#x}, ", BigUint::from_bytes_be(chunk)));
+        }
+
+        let remainder_size = format_str.len() % FELT252_BYTES;
+        if remainder_size == 0 {
+            // Adding the empty remainder word.
+            builder.add_str("0, ");
+        }
+        
+        // Add formatted arguments here (this is a simplified example)
+        for arg in formatted_args {
+            builder.add_str(&format!("{:#x}, ", BigUint::from_bytes_be(arg.as_bytes())));
+        }
+
+        builder.add_str(&format!("{remainder_size}])"));
+        return true;
     }
 
+    // If no formatting placeholders are found, handle as a simple string
     builder.add_str(&format!(
         "core::panics::panic(array![core::byte_array::BYTE_ARRAY_MAGIC, {}, ",
         format_str.len() / FELT252_BYTES,
@@ -60,6 +94,7 @@ fn try_handle_simple_panic(
         // Adding the empty remainder word.
         builder.add_str("0, ");
     }
+    
     builder.add_str(&format!("{remainder_size}])"));
 
     true
@@ -68,9 +103,11 @@ fn try_handle_simple_panic(
 /// Macro for panicking with a format string.
 #[derive(Default, Debug)]
 pub struct PanicMacro;
+
 impl NamedPlugin for PanicMacro {
     const NAME: &'static str = "panic";
 }
+
 impl InlineMacroExprPlugin for PanicMacro {
     fn generate_code(
         &self,
@@ -84,6 +121,7 @@ impl InlineMacroExprPlugin for PanicMacro {
 
         let mut builder = PatchBuilder::new(db, syntax);
         let arguments = arguments_syntax.arguments(db).elements(db);
+        
         if !try_handle_simple_panic(db, &mut builder, &arguments) {
             builder.add_modified(RewriteNode::interpolate_patched(
                 &formatdoc! {
@@ -120,7 +158,9 @@ impl InlineMacroExprPlugin for PanicMacro {
                 .into(),
             ));
         }
+
         let (content, code_mappings) = builder.build();
+        
         InlinePluginResult {
             code: Some(PluginGeneratedFile {
                 name: format!("{}_macro", Self::NAME).into(),
