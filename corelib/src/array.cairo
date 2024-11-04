@@ -282,11 +282,6 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
 impl ArrayDefault<T> of Default<Array<T>> {
     /// Returns a new empty array.
     ///
-    /// # Examples
-    ///
-    /// ```
-    /// let arr: Array<u8> = Default::default();
-    /// ```
     #[inline]
     fn default() -> Array<T> {
         ArrayTrait::new()
