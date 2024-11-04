@@ -1,39 +1,64 @@
-cargo publish --package cairo-lang-utils &&
-    cargo publish --package cairo-lang-debug &&
-    cargo publish --package cairo-lang-proc-macros &&
-    cargo publish --package cairo-lang-filesystem &&
-    cargo publish --package cairo-lang-diagnostics &&
-    cargo publish --package cairo-lang-syntax &&
-    cargo publish --package cairo-lang-syntax-codegen &&
-    cargo publish --package cairo-lang-parser &&
-    cargo publish --package cairo-lang-defs &&
-    cargo publish --package cairo-lang-formatter &&
-    cargo publish --package cairo-lang-test-utils &&
-    cargo publish --package cairo-lang-casm &&
-    cargo publish --package cairo-lang-eq-solver &&
-    cargo publish --package cairo-lang-project &&
-    cargo publish --package cairo-lang-sierra &&
-    cargo publish --package cairo-lang-sierra-type-size &&
-    cargo publish --package cairo-lang-sierra-ap-change &&
-    cargo publish --package cairo-lang-sierra-gas &&
-    cargo publish --package cairo-lang-sierra-to-casm &&
-    cargo publish --package cairo-lang-plugins &&
-    cargo publish --package cairo-lang-semantic &&
-    cargo publish --package cairo-lang-lowering &&
-    cargo publish --package cairo-lang-sierra-generator &&
-    cargo publish --package cairo-lang-compiler &&
-    cargo publish --package cairo-lang-starknet-classes &&
-    cargo publish --package cairo-lang-starknet &&
-    cargo publish --package cairo-lang-runner &&
-    cargo publish --package cairo-lang-test-plugin &&
-    cargo publish --package cairo-lang-test-runner &&
-    cargo publish --package cairo-lang-doc &&
-    cargo publish --package cairo-lang-language-server &&
-    cargo publish --package cairo-compile &&
-    cargo publish --package cairo-format &&
-    cargo publish --package cairo-language-server &&
-    cargo publish --package cairo-run &&
-    cargo publish --package cairo-test &&
-    cargo publish --package sierra-compile &&
-    cargo publish --package starknet-compile &&
-    cargo publish --package starknet-sierra-compile
+# An optional argument, '-s | --skip-first <#num_to_skip>', can be passed to skip the first #num_to_skip crates, otherwise SKIP_FIRST is set to 0.
+if [ "$1" == "-s" ] || [ "$1" == "--skip-first" ]; then
+    SKIP_FIRST=$2
+else
+    SKIP_FIRST=0
+fi
+
+# Define a list of the crates to be published.
+# The order of the crates is important, as a crate must be published after its dependencies.
+CRATES_TO_PUBLISH=(
+    cairo-lang-utils
+    cairo-lang-debug
+    cairo-lang-proc-macros
+    cairo-lang-filesystem
+    cairo-lang-diagnostics
+    cairo-lang-syntax
+    cairo-lang-syntax-codegen
+    cairo-lang-parser
+    cairo-lang-defs
+    cairo-lang-formatter
+    cairo-lang-test-utils
+    cairo-lang-casm
+    cairo-lang-eq-solver
+    cairo-lang-project
+    cairo-lang-sierra
+    cairo-lang-sierra-type-size
+    cairo-lang-sierra-ap-change
+    cairo-lang-sierra-gas
+    cairo-lang-sierra-to-casm
+    cairo-lang-plugins
+    cairo-lang-semantic
+    cairo-lang-lowering
+    cairo-lang-sierra-generator
+    cairo-lang-compiler
+    cairo-lang-starknet-classes
+    cairo-lang-starknet
+    cairo-lang-runner
+    cairo-lang-test-plugin
+    cairo-lang-test-runner
+    cairo-lang-doc
+    cairo-lang-language-server
+    cairo-compile
+    cairo-format
+    cairo-language-server
+    cairo-run
+    cairo-test
+    sierra-compile
+    starknet-compile
+    starknet-sierra-compile
+)
+
+# Assert that the number of crates to publish is equal to the number of crates in the workspace
+# - 4 (the number of crates that are for internal use only).
+NUM_CRATES_IN_WORKSPACE=$(find crates/ -name Cargo.toml | wc -l) 
+if [ "${#CRATES_TO_PUBLISH[@]}" -ne "$((NUM_CRATES_IN_WORKSPACE - 4))" ]; then
+    echo "The number of crates to publish is not equal to the number of crates in the workspace, 
+    new crates were probably added, please update the list of crates to publish."
+    exit 1
+fi
+
+# Publish the crates.
+for CRATE in "${CRATES_TO_PUBLISH[@]:$SKIP_FIRST}"; do
+    cargo publish --package "$CRATE" || exit 1
+done

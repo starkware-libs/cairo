@@ -9,9 +9,22 @@ mod render;
 pub fn hover(params: HoverParams, db: &AnalysisDatabase) -> Option<Hover> {
     let file_id = db.file_for_url(&params.text_document_position_params.text_document.uri)?;
     let position = params.text_document_position_params.position.to_cairo();
-    let identifier = db.find_identifier_at_position(file_id, position)?;
 
-    render::definition(db, &identifier, file_id).or_else(|| render::legacy(db, &identifier))
+    if let Some(hover) = db
+        .find_syntax_node_at_position(file_id, position)
+        .and_then(|ref node| render::literal(db, node, file_id))
+    {
+        return Some(hover);
+    }
+
+    if let Some(hover) = db
+        .find_identifier_at_position(file_id, position)
+        .and_then(|ref id| render::definition(db, id, file_id).or_else(|| render::legacy(db, id)))
+    {
+        return Some(hover);
+    }
+
+    None
 
     // TODO(mkaput): If client only supports plaintext, strip markdown formatting here like RA.
 }
