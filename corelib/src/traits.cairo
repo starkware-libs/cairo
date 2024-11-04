@@ -1,15 +1,48 @@
+//! Traits module provides a collection of common traits and related functionality for working with
+//! various types.
+//!
+//! The main components of this module are:
+//!
+//! - **Copy and Drop Traits**: The `Copy` and `Drop` traits, which define the behavior for
+//!   copying and dropping values of a given type, respectively.
+//! - **Arithmetic Traits**: Traits for standard arithmetic operations, such as `Add`, `Sub`,
+//!   `Mul`, `Div`, `Rem`, and `DivRem`.
+//! - **Comparison Traits**: Traits for comparing values, including `PartialEq` and `PartialOrd`.
+//! - **Conversion Traits**: Traits for converting between types, including `Into` and `TryInto`.
+//! - **Unary Operation Traits**: Traits for unary operations, such as `Neg` and `Not`.
+//! - **Index Traits**: Deprecated traits for indexing into collections, replaced by `IndexView`
+//!   and `Index` from the Index module.
+//! - **Destruct Traits**: Traits for destructing values, including `Destruct` and `PanicDestruct`.
+//! - **Default Trait**: The `Default` trait, which provides a way to create a default value of a
+//!   given type.
+//! - **Felt252Dict Value Trait**: The `Felt252DictValue` trait, which defines the requirements for
+//!   values that can be stored in a `Felt252Dict`.
+//! - **Tuple Traits**: Implementations of various traits (such as `Copy`, `Drop`, `PartialEq`,
+//!   and `Default`) for tuple-like types.
+//!
+//! These traits and their implementations provide a consistent and type-safe way to work with
+//! values, enabling operations such as arithmetic, comparison, conversion, and destruction.
+
 use crate::panics::Panic;
 
+/// `Copy` trait for copying values.
 pub trait Copy<T>;
+/// `Drop` trait for dropping values.
 pub trait Drop<T>;
 
+/// `Copy` implementation for a snapshot of any type.
 impl SnapshotCopy<T> of Copy<@T>;
+
+/// `Drop` implementation for a snapshot of any type.
 impl SnapshotDrop<T> of Drop<@T>;
 
 // TODO(spapini): When associated types are supported, support the general trait Add<X, Y>.
+/// `Add` trait for addition of two values of the same type.
 pub trait Add<T> {
+    // Adds two values of the same type `T` and returns the result of type `T`.
     fn add(lhs: T, rhs: T) -> T;
 }
+
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::AddAssign`.", since: "2.7.0"
 )]
@@ -18,9 +51,12 @@ pub trait AddEq<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Sub<X, Y>.
+/// `Sub` trait for substraction of two values of the same type.
 pub trait Sub<T> {
+    // Substracts two values of the same type `T` and returns the result of type `T`.
     fn sub(lhs: T, rhs: T) -> T;
 }
+
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::SubAssign`.", since: "2.7.0"
 )]
@@ -29,9 +65,12 @@ pub trait SubEq<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Mul<X, Y>.
+/// `Mul` trait for multiplication of two values of the same type.
 pub trait Mul<T> {
+    // Multiplies two values of the same type `T` and returns the result of type `T`.
     fn mul(lhs: T, rhs: T) -> T;
 }
+
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::MulAssign`.", since: "2.7.0"
 )]
@@ -40,9 +79,12 @@ pub trait MulEq<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Div<X, Y>.
+/// `Div` trait for division of two values of the same type.
 pub trait Div<T> {
+    // Divides two values of the same type `T` and returns the result of type `T`.
     fn div(lhs: T, rhs: T) -> T;
 }
+
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::DivAssign`.", since: "2.7.0"
 )]
@@ -51,9 +93,12 @@ pub trait DivEq<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Rem<X, Y>.
+/// `Rem` trait for computing the remainder when dividing one value by another of the same type.
 pub trait Rem<T> {
+    // Returns the remainder of the division of two values of the same type `T`.
     fn rem(lhs: T, rhs: T) -> T;
 }
+
 #[deprecated(
     feature: "deprecated-op-assign-traits", note: "Use `core::ops::RemAssign`.", since: "2.7.0"
 )]
@@ -62,71 +107,105 @@ pub trait RemEq<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait DivRem<X, Y>.
-/// Division with remainder.
+/// `DivRem` trait for computing the result of a division as well as the remainder when dividing
+/// one value by another of the same type.
 pub trait DivRem<T> {
+    // Returns the result of the division of two values of the same type `T` as well as the
+    // remainder.
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
 }
 
+/// `PartialEq` trait for checking for equality or inequality between two values of the same type.
 pub trait PartialEq<T> {
+    // Returns whether two values of the same type `T` are equal.
     fn eq(lhs: @T, rhs: @T) -> bool;
+
+    // Returns whether two values of the same type `T` are not equal.
     fn ne(lhs: @T, rhs: @T) -> bool {
         !Self::eq(lhs, rhs)
     }
 }
+
+/// `PartialEq` trait implementation for snapshots of values of the same type `T`.
 impl PartialEqSnap<T, +PartialEq<T>> of PartialEq<@T> {
+    // Returns whether two snapshots of values of the same type `T` are equal.
     fn eq(lhs: @@T, rhs: @@T) -> bool {
         PartialEq::<T>::eq(*lhs, *rhs)
     }
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitAnd<X, Y>.
+/// `BitAnd` trait for computing the AND bitwise operation between two values of the same type.
 pub trait BitAnd<T> {
+    ///  Computes the result of the AND operation between two values of the same type.
     fn bitand(lhs: T, rhs: T) -> T;
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitOr<X, Y>.
+/// `BitOr` trait for computing the OR bitwise operation between two values of the same type.
 pub trait BitOr<T> {
+    ///  Computes the result of the OR operation between two values of the same type.
     fn bitor(lhs: T, rhs: T) -> T;
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitXor<X, Y>.
+/// `BitXor` trait for computing the XOR bitwise operation between two values of the same type.
 pub trait BitXor<T> {
+    ///  Computes the result of the XOR operation between two values of the same type.
     fn bitxor(lhs: T, rhs: T) -> T;
 }
 
+/// `BitNot` trait for computing the NOT bitwise operation between two values of the same type.
 pub trait BitNot<T> {
+    ///  Computes the result of the NOT operation between two values of the same type.
     fn bitnot(a: T) -> T;
 }
 
+/// `PartialOrd` trait for comparing two values of the same type.
 pub trait PartialOrd<T> {
+    ///  Returns whether `lhs` is lower than `rhs` as a boolean.
     fn lt(lhs: T, rhs: T) -> bool;
+
+    ///  Returns whether `lhs` is greater than or equal to `rhs` as a boolean.
     fn ge(lhs: T, rhs: T) -> bool {
         !Self::lt(lhs, rhs)
     }
+
+    ///  Returns whether `lhs` is greater than `rhs` as a boolean.
     fn gt(lhs: T, rhs: T) -> bool {
         Self::lt(rhs, lhs)
     }
+
+    ///  Returns whether `lhs` is lower than or equal to `rhs` as a boolean.
     fn le(lhs: T, rhs: T) -> bool {
         Self::ge(rhs, lhs)
     }
 }
 
+/// `PartialOrd` trait implementation for snapshots of values of the same type `T`.
 impl PartialOrdSnap<T, +PartialOrd<T>, +Copy<T>> of PartialOrd<@T> {
+    ///  Returns whether `lhs` is lower than or equal to `rhs` as a boolean.
     fn le(lhs: @T, rhs: @T) -> bool {
         PartialOrd::<T>::le(*lhs, *rhs)
     }
+
+    ///  Returns whether `lhs` is greater than or equal to `rhs` as a boolean.
     fn ge(lhs: @T, rhs: @T) -> bool {
         PartialOrd::<T>::ge(*lhs, *rhs)
     }
+
+    ///  Returns whether `lhs` is lower than `rhs` as a boolean.
     fn lt(lhs: @T, rhs: @T) -> bool {
         PartialOrd::<T>::lt(*lhs, *rhs)
     }
+
+    ///  Returns whether `lhs` is greater than `rhs` as a boolean.
     fn gt(lhs: @T, rhs: @T) -> bool {
         PartialOrd::<T>::gt(*lhs, *rhs)
     }
 }
 
-/// Trait for conversion between types.
+/// `Into` trait for conversion between types.
 pub trait Into<T, S> {
     #[must_use]
     fn into(self: T) -> S;
@@ -138,7 +217,7 @@ impl TIntoT<T> of Into<T, T> {
     }
 }
 
-/// Trait for fallible conversion between types.
+/// `TryInto` trait for fallible conversion between types.
 pub trait TryInto<T, S> {
     fn try_into(self: T) -> Option<S>;
 }
@@ -149,17 +228,16 @@ impl TryIntoFromInto<From, To, +Into<From, To>> of TryInto<From, To> {
     }
 }
 
+/// `Neg` trait for computing the negated value of a value of any type.
 pub trait Neg<T> {
     fn neg(a: T) -> T;
 }
 
+/// `Not` trait for computing the logically negated value of a value of any type.
 pub trait Not<T> {
     fn not(a: T) -> T;
 }
 
-/// The following two traits are for implementing the [] operator. Only one should be implemented
-/// for each type. Both are not consuming of self, the first gets a snapshot of the object and
-/// the second gets ref.
 #[deprecated(
     feature: "deprecated-index-traits", note: "Use `core::ops::index::IndexView`.", since: "2.7.0"
 )]
@@ -174,18 +252,22 @@ pub trait Index<C, I, V> {
     fn index(ref self: C, index: I) -> V;
 }
 
+/// `Destruct` trait for destructing a value of any type.
 pub trait Destruct<T> {
     fn destruct(self: T) nopanic;
 }
+
 // TODO(spapini): Remove this, it can lead to multiple impls and unwanted Destruct implementation.
 impl DestructFromDrop<T, +Drop<T>> of Destruct<T> {
     #[inline]
     fn destruct(self: T) nopanic {}
 }
 
+/// `PanicDestruct` trait for destructing a value of any type in the case of a panic.
 pub trait PanicDestruct<T> {
     fn panic_destruct(self: T, ref panic: Panic) nopanic;
 }
+
 pub(crate) impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
     #[inline]
     fn panic_destruct(self: T, ref panic: Panic) nopanic {
@@ -193,27 +275,29 @@ pub(crate) impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
     }
 }
 
+/// `Default` trait for creating a default value of any type.
 pub trait Default<T> {
     #[must_use]
     fn default() -> T;
 }
 
+/// `Default` trait implementation for a snapshot of a values of type `T`.
 impl SnapshotDefault<T, +Default<T>, +Drop<T>> of Default<@T> {
+    // Returns the default value of any type as a snapshot.
     #[inline]
     fn default() -> @T {
         @Default::default()
     }
 }
 
-/// Trait for types allowed as values in a Felt252Dict.
+/// `Felt252DictValue` trait for types allowed as values in a Felt252Dict.
 pub trait Felt252DictValue<T> {
-    /// Returns the default value for this type as a value in a Felt252Dict.
+    /// Returns the default value for this type as a value in a `Felt252Dict`.
     /// Should be logically equivalent to 0.
     #[must_use]
     fn zero_default() -> T nopanic;
 }
 
-// Tuple Copy and Drop impls.
 pub(crate) impl TupleSize0Copy of Copy<()>;
 pub(crate) impl TupleSize0Drop of Drop<()>;
 impl TupleNextDrop<
@@ -231,7 +315,6 @@ impl TupleNextCopy<
     +Copy<TH::Rest>
 > of Copy<T>;
 
-/// Tuple `PartialEq` implementation.
 impl TuplePartialEq<
     T,
     impl TSF: crate::metaprogramming::TupleSnapForward<T>,
@@ -245,15 +328,11 @@ impl TuplePartialEq<
     }
 }
 
-/// Trait helper for implementing `PartialEq` for tuples.
-/// Provides an `eq` and `ne` function for comparing tuples of snapshots, and basic snapshots.
 trait TuplePartialEqHelper<T> {
     fn eq(lhs: T, rhs: T) -> bool;
     fn ne(lhs: T, rhs: T) -> bool;
 }
 
-/// An implementation of `TuplePartialEqHelper` for a snapshot of any type with `PartialEq`
-/// implementation.
 impl TuplePartialEqHelperByPartialEq<T, +PartialEq<T>> of TuplePartialEqHelper<@T> {
     fn eq(lhs: @T, rhs: @T) -> bool {
         lhs == rhs
@@ -263,7 +342,6 @@ impl TuplePartialEqHelperByPartialEq<T, +PartialEq<T>> of TuplePartialEqHelper<@
     }
 }
 
-/// Base implementation of `TuplePartialEqHelper` for tuples.
 impl TuplePartialEqHelperBaseTuple of TuplePartialEqHelper<()> {
     fn eq(lhs: (), rhs: ()) -> bool {
         true
@@ -273,7 +351,6 @@ impl TuplePartialEqHelperBaseTuple of TuplePartialEqHelper<()> {
     }
 }
 
-/// Base implementation of `TuplePartialEqHelper` for fixed-sized arrays.
 impl TuplePartialEqHelperBaseFixedSizedArray<T> of TuplePartialEqHelper<[@T; 0]> {
     fn eq(lhs: [@T; 0], rhs: [@T; 0]) -> bool {
         true
@@ -283,7 +360,6 @@ impl TuplePartialEqHelperBaseFixedSizedArray<T> of TuplePartialEqHelper<[@T; 0]>
     }
 }
 
-/// The recursive implementation of `TuplePartialEqHelper` for tuple style structs.
 impl TuplePartialEqHelperNext<
     T,
     impl TS: crate::metaprogramming::TupleSplit<T>,
@@ -305,21 +381,18 @@ impl TuplePartialEqHelperNext<
     }
 }
 
-/// Base implementation for `Default` for tuples.
 impl DefaultTupleBase of Default<()> {
     fn default() -> () {
         ()
     }
 }
 
-/// Base implementation for `Default` for fixed-sized arrays.
 impl DefaultFixedSizedArray<T> of Default<[T; 0]> {
     fn default() -> [T; 0] {
         []
     }
 }
 
-/// Recursive implementation for `Default` for tuple style structs.
 impl DefaultNext<
     T,
     impl TS: crate::metaprogramming::TupleSplit<T>,
@@ -335,7 +408,6 @@ impl DefaultNext<
 impl FixedSizedArrayDrop<T, +Drop<T>, const N: u32> of Drop<[T; N]>;
 impl FixedSizedArrayCopy<T, +Copy<T>, const N: u32> of Copy<[T; N]>;
 
-/// Recursive implementation of `Destruct` for tuple style structs.
 impl TupleNextDestruct<
     T,
     impl TH: crate::metaprogramming::TupleSplit<T>,
