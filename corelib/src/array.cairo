@@ -903,7 +903,6 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
 
 impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
-    /// Returns an `ArrayIter<T>` given an `Array<T>`.
     fn into_iter(self: Array<T>) -> ArrayIter<T> {
         ArrayIter { array: self }
     }
