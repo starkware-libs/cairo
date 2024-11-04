@@ -351,6 +351,9 @@ pub enum ExternalHint {
     /// Relocates a segment from `src` to `dst`.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 0))]
     AddRelocationRule { src: ResOperand, dst: ResOperand },
+    /// Writes a run argument of number `index` to `dst` and on.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 1))]
+    WriteRunParam { index: ResOperand, dst: CellRef },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -841,6 +844,7 @@ impl PythonicHint for ExternalHint {
                 let [src, dst] = [src, dst].map(ResOperandAsAddressFormatter);
                 format!("memory.add_relocation_rule(src_ptr={src}, dest_ptr={dst})")
             }
+            Self::WriteRunParam { .. } => "raise NotImplementedError".to_string(),
         }
     }
 }
