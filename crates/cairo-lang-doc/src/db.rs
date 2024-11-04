@@ -412,12 +412,22 @@ fn is_comment_line(line: &str) -> bool {
 }
 
 /// Parses the lines of extracted comments so it can be displayed.
+/// It also takes note for Fenced and Indented code blocks, and doesn't trim them.
 fn join_lines_of_comments(lines: &Vec<String>) -> String {
     let mut in_code_block = false;
     let mut result = String::new();
 
     for line in lines {
-        let contains_delimiter = line.trim().starts_with("```");
+        let trimmed_line = line.trim_start();
+        // 4 spaces or a tab.
+        let is_indented_code_line =
+            (line.starts_with("    ") || line.starts_with("\t")) && !in_code_block;
+        let contains_delimiter = trimmed_line.starts_with("```") || is_indented_code_line;
+
+        if is_indented_code_line && !in_code_block {
+            // We are at the start of an indented code block, add an extra newline
+            result.push('\n');
+        }
 
         if contains_delimiter {
             // If we stumble upon the opening of a code block, we have to make a newline.
@@ -428,6 +438,12 @@ fn join_lines_of_comments(lines: &Vec<String>) -> String {
 
             result.push_str(line);
             result.push('\n');
+
+            // If we just closed an indented code block, add an extra newline.
+            if !in_code_block && is_indented_code_line {
+                result.push('\n');
+            }
+
             continue;
         }
 
@@ -435,7 +451,7 @@ fn join_lines_of_comments(lines: &Vec<String>) -> String {
             result.push_str(line);
             result.push('\n');
         } else {
-            result.push_str(line.trim());
+            result.push_str(line);
             result.push(' ');
         }
     }

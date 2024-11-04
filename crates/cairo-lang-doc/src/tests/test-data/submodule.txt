@@ -89,7 +89,7 @@ Content("This is a submodule regarding the module_level_comments. It's used to m
 [super::main] This comment just proves that it won't be considered as a file-module comment. It just refers to the inner_sub_module
 
 //! > Item documentation tokens #3
-CommentLinkToken( label: "super::main", path: None, resolved item name: Some("main"))
+CommentLinkToken { label: "super::main", path: None, resolved_item_name: Some("main") }
 Content(" ")
 Content("This comment just proves that it won't be considered as a file-module comment. It just refers to the inner_sub_module")
 
@@ -112,7 +112,7 @@ Main function. Uses [cairo_submodule_code::inner_sub_module]. Empty code example
 
 //! > Item documentation tokens #5
 Content("Main function. Uses ")
-CommentLinkToken( label: "cairo_submodule_code::inner_sub_module", path: None, resolved item name: Some("inner_sub_module"))
+CommentLinkToken { label: "cairo_submodule_code::inner_sub_module", path: None, resolved_item_name: Some("inner_sub_module") }
 Content(".")
 Content(" ")
 Content("Empty code example.")

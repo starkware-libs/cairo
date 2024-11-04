@@ -68,6 +68,7 @@ impl<'a> DocumentationCommentParser<'a> {
     ) -> Vec<DocumentationCommentToken> {
         let mut tokens = Vec::new();
         let mut current_link: Option<CommentLinkToken> = None;
+        let mut is_indented_code_block = false;
         let mut replacer = |broken_link: BrokenLink<'_>| {
             if matches!(broken_link.link_type, LinkType::ShortcutUnknown | LinkType::Shortcut) {
                 return Some((broken_link.reference.to_string().into(), "".into()));
@@ -132,7 +133,13 @@ impl<'a> DocumentationCommentParser<'a> {
                     tokens.push(DocumentationCommentToken::Content(format!("\n```{}\n", language)));
                 }
                 Event::End(TagEnd::CodeBlock) => {
-                    tokens.push(DocumentationCommentToken::Content("```\n".to_string()));
+                    if !is_indented_code_block {
+                        tokens.push(DocumentationCommentToken::Content("```\n".to_string()));
+                    }
+                    is_indented_code_block = false;
+                }
+                Event::Start(Tag::CodeBlock(CodeBlockKind::Indented)) => {
+                    is_indented_code_block = true;
                 }
                 _ => {}
             }
@@ -348,12 +355,10 @@ impl fmt::Display for DocumentationCommentToken {
 
 impl DebugWithDb<dyn DocGroup> for CommentLinkToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn DocGroup) -> fmt::Result {
-        write!(
-            f,
-            "CommentLinkToken( label: {:?}, path: {:?}, resolved item name: {:?})",
-            self.label,
-            self.path,
-            self.resolved_item.map(|item| item.name(db.upcast()))
-        )
+        f.debug_struct("CommentLinkToken")
+            .field("label", &self.label)
+            .field("path", &self.path)
+            .field("resolved_item_name", &self.resolved_item.map(|item| item.name(db.upcast())))
+            .finish()
     }
 }
