@@ -916,8 +916,6 @@ trait FixedSizedArrayInfo<S> {
     const SIZE: usize;
 }
 
-/// `FixedSizedArrayInfo` implementation for a fixed-size array of size `SIZE`,
-/// containing elements of type `T`.
 impl FixedSizedArrayInfoImpl<T, const SIZE: usize> of FixedSizedArrayInfo<[T; SIZE]> {
     type Element = T;
     const SIZE: usize = SIZE;
