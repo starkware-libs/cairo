@@ -90,7 +90,7 @@ fn main() -> anyhow::Result<()> {
     let result = runner
         .run_function_with_starknet_context(
             runner.find_function("::main")?,
-            &[],
+            vec![],
             args.available_gas,
             StarknetState::default(),
         )
