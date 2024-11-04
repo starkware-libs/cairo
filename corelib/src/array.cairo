@@ -292,14 +292,18 @@ impl ArrayDefault<T> of Default<Array<T>> {
 /// type `usize`.
 impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     /// Returns a snapshot of the element at the given index.
-    /// `IndexView` needs to be explicitly imported with `use core::ops::IndexView;`
+    /// `IndexView` needs to be explicitly imported with `use core::ops::IndexView;` to use the
+    /// `index` function The explicit import is not required when using the subscripting operator.
     ///
     /// # Examples
     ///
     /// ```
     /// let arr: @Array<u8> = @array![1, 2, 3];
     /// let element: @u8 = arr.index(0);
-    /// assert!(element == @1)
+    /// assert!(element == @1);
+    ///
+    /// let element: @u8 = arr[0];
+    /// assert!(element == @1);
     /// ```
     fn index(self: @Array<T>, index: usize) -> @T {
         array_at(self, index).unbox()
@@ -367,7 +371,6 @@ pub struct Span<T> {
 }
 
 impl SpanCopy<T> of Copy<Span<T>>;
-/// `Drop` trait implementation for `Span<T>`.
 impl SpanDrop<T> of Drop<Span<T>>;
 
 impl ArrayIntoSpan<T, +Drop<T>> of Into<Array<T>, Span<T>> {
@@ -406,20 +409,11 @@ impl SpanIntoArray<T, +Drop<T>, +Clone<T>> of Into<Span<T>, Array<T>> {
 }
 
 impl SpanIntoArraySnap<T> of Into<Span<T>, @Array<T>> {
-    /// Takes a span and returns a snapshot of an array.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let span: Span<u8> = array![1, 2, 3].span();
-    /// let arr: @Array<u8> = span.into();
-    /// ```
     fn into(self: Span<T>) -> @Array<T> {
         self.snapshot
     }
 }
 
-/// `Serde` trait implementation to serialize and deserialize a `Span<felt252>`.
 impl SpanFelt252Serde of Serde<Span<felt252>> {
     /// Serializes a `Span<felt252>` into an `Array<felt252>`.
     ///
@@ -454,7 +448,6 @@ impl SpanFelt252Serde of Serde<Span<felt252>> {
     }
 }
 
-/// `Serde` trait implementation to serialize and deserialize a `Span<T>`.
 impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>> {
     /// Serializes a `Span<T>` into an `Array<felt252>`.
     ///
@@ -645,8 +638,6 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     }
 }
 
-/// `IndexView` trait implementation to access an item contained in type `Span<T>` with an index of
-/// type `usize`.
 pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     /// Returns a snapshot of the element at the given index.
     /// `IndexView` needs to be explicitly imported with `use core::ops::IndexView;`
@@ -664,14 +655,13 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     }
 }
 
-/// `ToSpanTrait` is a trait that, given a data structure, returns a span of the data.
+/// `ToSpanTrait` converts a data structure into a span of its data.
 pub trait ToSpanTrait<C, T> {
     /// Returns a span pointing to the data in the input.
     #[must_use]
     fn span(self: @C) -> Span<T>;
 }
 
-/// `ToSpanTrait` implementation for `Array<T>`.
 impl ArrayToSpan<T> of ToSpanTrait<Array<T>, T> {
     /// Returns a `Span<T>` corresponding to a view into an `Array<T>`.
     #[inline]
@@ -691,7 +681,6 @@ extern fn span_from_tuple<T, impl Info: FixedSizedArrayInfo<T>>(
     struct_like: Box<@T>
 ) -> @Array<Info::Element> nopanic;
 
-/// `ToSpanTrait` implementation for a box containing a snapshot of a fixed-size array.
 impl FixedSizeArrayBoxToSpan<T, const SIZE: usize> of ToSpanTrait<Box<@[T; SIZE]>, T> {
     /// Returns a `Span<T>` corresponding to a view into the given fixed-size array.
     ///
@@ -706,7 +695,6 @@ impl FixedSizeArrayBoxToSpan<T, const SIZE: usize> of ToSpanTrait<Box<@[T; SIZE]
     }
 }
 
-/// `ToSpanTrait` implementation for a snapshot of a fixed-size array.
 impl FixedSizeArrayToSpan<
     T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
 > of ToSpanTrait<[T; SIZE], T> {
@@ -716,7 +704,7 @@ impl FixedSizeArrayToSpan<
     ///
     /// ```
     /// let arr: [u32; 3] = [1, 2, 3];
-    /// let span: Span<u32> = (@arr).span();
+    /// let span = arr.span()
     /// ```
     #[inline]
     fn span(self: @[T; SIZE]) -> Span<T> {
@@ -732,7 +720,7 @@ impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
     ///
     /// ```
     /// let arr: [u32; 0] = [];
-    /// let span: Span<u32> = (@arr).span();
+    /// let span = arr.span();
     /// ```
     #[inline]
     fn span(self: @[T; 0]) -> Span<T> {
@@ -785,14 +773,6 @@ impl SpanTryIntoEmptyFixedSizedArray<T, +Drop<T>> of TryInto<Span<T>, @Box<[T; 0
 
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
 impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
-    /// Returns a clone of `self`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let arr = array![1, 2, 3];
-    /// let arr_clone = arr.clone();
-    /// ```
     fn clone(self: @Array<T>) -> Array<T> {
         let mut response = array_new();
         let mut span = self.span();
@@ -807,30 +787,12 @@ impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
 }
 
 impl ArrayPartialEq<T, +PartialEq<T>> of PartialEq<Array<T>> {
-    /// Returns `true` if the two arrays contain the same elements, false otherwise.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let arr_1 = array![1, 2, 3];
-    /// let arr_2 = array![1, 2, 3];
-    /// assert!(PartialEq::eq(@arr_1, @arr_2));
-    /// ```
     fn eq(lhs: @Array<T>, rhs: @Array<T>) -> bool {
         lhs.span() == rhs.span()
     }
 }
 
 impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
-    /// Returns `true` if the two spans contain the same elements, false otherwise.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let span_1 = array![1, 2, 3].span();
-    /// let span_2 = array![1, 2, 3].span();
-    /// assert!(PartialEq::eq(@span_1, @span_2));
-    /// ```
     fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
         if (*lhs).len() != (*rhs).len() {
             return false;
@@ -855,25 +817,22 @@ pub struct SpanIter<T> {
     span: Span<T>,
 }
 
-/// `Drop` trait implementation for `SpanIter<T>` struct.
 impl SpanIterDrop<T> of Drop<SpanIter<T>>;
-/// `Copy` trait implementation for `SpanIter<T>` struct.
 impl SpanIterCopy<T> of Copy<SpanIter<T>>;
 
-/// `Iterator` trait implementation for `SpanIter<T>` struct.
 impl SpanIterator<T> of Iterator<SpanIter<T>> {
-    /// Type of the elements contained in the span.
+    /// The type of the elements being iterated over.
     type Item = @T;
-    /// Returns an option of a snapshot of a span element if it exist, and `Option::None` otherwise.
+    // Advances the iterator and returns the next value. Returns `Option::None` when iteration is
+    // finished.
     fn next(ref self: SpanIter<T>) -> Option<@T> {
         self.span.pop_front()
     }
 }
 
-/// `IntoIterator` trait implementation for `Span<T>`.
 impl SpanIntoIterator<T> of crate::iter::IntoIterator<Span<T>> {
     type IntoIter = SpanIter<T>;
-    /// Returns a `SpanIter<T>` given a `Span<T>`.
+    /// The kind of iterator we are turning this into.
     fn into_iter(self: Span<T>) -> SpanIter<T> {
         SpanIter { span: self }
     }
@@ -885,15 +844,12 @@ pub struct ArrayIter<T> {
     array: Array<T>,
 }
 
-/// `Clone` trait implementation for `ArrayIter<T>` struct.
 impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone<ArrayIter<T>> {
-    /// Returns a clone of `self`.
     fn clone(self: @ArrayIter<T>) -> ArrayIter<T> {
         ArrayIter { array: crate::clone::Clone::clone(self.array), }
     }
 }
 
-/// `Iterator` trait implementation for `ArrayIter<T>` struct.
 impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
     type Item = T;
     fn next(ref self: ArrayIter<T>) -> Option<T> {
