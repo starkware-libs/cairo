@@ -366,7 +366,6 @@ pub struct Span<T> {
     pub(crate) snapshot: @Array<T>
 }
 
-/// `Copy` trait implementation for `Span<T>`.
 impl SpanCopy<T> of Copy<Span<T>>;
 /// `Drop` trait implementation for `Span<T>`.
 impl SpanDrop<T> of Drop<Span<T>>;
