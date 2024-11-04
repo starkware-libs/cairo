@@ -1,13 +1,14 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::{HashMap, HashSet};
 use std::ops::{Add, Sub};
+use std::sync::LazyLock;
 
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::hints::Hint;
+use cairo_lang_casm::hints::{Hint, StarknetHint};
 use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::operand::{CellRef, Register};
-use cairo_lang_casm::{casm, casm_build_extend};
+use cairo_lang_casm::operand::ResOperand;
+use cairo_lang_casm::{casm, casm_build_extend, deref};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
@@ -31,6 +32,7 @@ use cairo_lang_sierra_to_casm::metadata::{
 };
 use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
 use cairo_lang_starknet::contract::ContractInfo;
+use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -494,25 +496,12 @@ impl SierraCasmRunner {
 
     /// Validates the arguments given shallowly matches the parameters of a function.
     fn validate_args(&self, func: &Function, args: &[Arg]) -> Result<(), RunnerError> {
-        let non_args_params = HashSet::from([
-            AddModType::ID,
-            BitwiseType::ID,
-            GasBuiltinType::ID,
-            EcOpType::ID,
-            MulModType::ID,
-            PedersenType::ID,
-            PoseidonType::ID,
-            RangeCheck96Type::ID,
-            RangeCheckType::ID,
-            SegmentArenaType::ID,
-            SystemType::ID,
-        ]);
         let mut expected_arguments_size = 0;
         let mut arg_iter = args.iter().enumerate();
         for (param_index, (_, param_size)) in self
             .generic_id_and_size_from_concrete(&func.signature.param_types)
             .into_iter()
-            .filter(|(ty, _)| !non_args_params.contains(ty))
+            .filter(|(ty, _)| !NON_ARGS_TYPES.contains(ty))
             .enumerate()
         {
             let param_size: usize = param_size.into_or_panic();
@@ -593,16 +582,7 @@ impl SierraCasmRunner {
                 assert!(values.is_empty());
                 false
             } else {
-                *generic_ty != RangeCheckType::ID
-                    && *generic_ty != BitwiseType::ID
-                    && *generic_ty != EcOpType::ID
-                    && *generic_ty != PedersenType::ID
-                    && *generic_ty != PoseidonType::ID
-                    && *generic_ty != SystemType::ID
-                    && *generic_ty != SegmentArenaType::ID
-                    && *generic_ty != RangeCheck96Type::ID
-                    && *generic_ty != AddModType::ID
-                    && *generic_ty != MulModType::ID
+                !NON_ARGS_TYPES.contains(generic_ty)
             }
         });
 
@@ -644,16 +624,20 @@ impl SierraCasmRunner {
             .any(|ty| self.get_info(ty).long_id.generic_id == GasBuiltinType::ID)
     }
 
-    fn get_info(
-        &self,
-        ty: &cairo_lang_sierra::ids::ConcreteTypeId,
-    ) -> &cairo_lang_sierra::extensions::types::TypeInfo {
+    fn get_info(&self, ty: &ConcreteTypeId) -> &cairo_lang_sierra::extensions::types::TypeInfo {
         self.sierra_program_registry.get_type(ty).unwrap().info()
     }
 
+    /// Returns the entry code to call the function with `param_types` as its inputs and
+    /// `return_types` as outputs, located at `code_offset`. If `finalize_for_proof` is true,
+    /// will make sure to remove the segment arena after calling the function. For testing purposes,
+    /// `finalize_for_proof` can be set to false, to avoid a failure of the segment arena
+    /// validation.
     pub fn create_entry_code_from_params(
         param_types: &[(GenericTypeId, i16)],
+        return_types: &[(GenericTypeId, i16)],
         code_offset: usize,
+        finalize_for_proof: bool,
     ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
         let mut ctx = CasmBuilder::default();
         let mut builtin_offset = 3;
@@ -673,10 +657,7 @@ impl SierraCasmRunner {
                 // The offset [fp - i] for each of this builtins in this configuration.
                 builtin_vars.insert(
                     builtin_ty,
-                    ctx.add_var(CellExpression::Deref(CellRef {
-                        register: Register::FP,
-                        offset: -builtin_offset,
-                    })),
+                    ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset]))),
                 );
                 builtin_offset += 1;
                 builtins.push(builtin_name);
@@ -695,9 +676,24 @@ impl SierraCasmRunner {
                 args_vars.push((0..*size).map(|_| ctx.alloc_var(false)).collect_vec());
             }
         }
-        // Giving space for the VM to fill the arguments.
-        casm_build_extend!(ctx, ap += args_vars.iter().map(Vec::len).sum(););
-        if param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID) {
+        let got_segment_arena = param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID);
+        let has_post_calculation_loop = got_segment_arena && finalize_for_proof;
+
+        // Giving space for the VM to fill the arguments, as well as local params.
+        let params_size: usize = args_vars.iter().map(Vec::len).sum();
+        let mut local_exprs = vec![];
+        if has_post_calculation_loop {
+            for (ty, size) in return_types {
+                if ty != &SegmentArenaType::ID {
+                    for _ in 0..*size {
+                        casm_build_extend!(ctx, localvar local;);
+                        local_exprs.push(ctx.get_value(local, false));
+                    }
+                }
+            }
+        }
+        casm_build_extend!(ctx, ap += params_size + local_exprs.len(););
+        if got_segment_arena {
             casm_build_extend! {ctx,
                 tempvar segment_arena;
                 tempvar infos;
@@ -729,10 +725,92 @@ impl SierraCasmRunner {
                 }
             };
         }
-        casm_build_extend! {ctx,
-            let () = call FUNCTION;
-            ret;
-        };
+        casm_build_extend! (ctx, let () = call FUNCTION;);
+        let mut unprocessed_return_size = return_types.iter().map(|(_, size)| size).sum::<i16>();
+        let mut return_data = vec![];
+        for (ret_ty, size) in return_types {
+            if let Some(var) = builtin_vars.get_mut(ret_ty) {
+                *var = ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
+                unprocessed_return_size -= 1;
+            } else {
+                for _ in 0..*size {
+                    return_data.push(
+                        ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size]))),
+                    );
+                    unprocessed_return_size -= 1;
+                }
+            }
+        }
+        assert_eq!(unprocessed_return_size, 0);
+        if has_post_calculation_loop {
+            // Storing local data on FP - as we have a loop now:
+            for (cell, local_expr) in return_data.iter().cloned().zip(&local_exprs) {
+                let local_cell = ctx.add_var(local_expr.clone());
+                casm_build_extend!(ctx, assert local_cell = cell;);
+            }
+        }
+        if got_segment_arena && finalize_for_proof {
+            let segment_arena = builtin_vars[&SegmentArenaType::ID];
+            // Validating the segment arena's segments are one after the other.
+            casm_build_extend! {ctx,
+                tempvar n_segments = segment_arena[-2];
+                tempvar n_finalized = segment_arena[-1];
+                assert n_segments = n_finalized;
+                jump STILL_LEFT_PRE if n_segments != 0;
+                rescope{};
+                jump DONE_VALIDATION;
+                STILL_LEFT_PRE:
+                const one = 1;
+                tempvar infos = segment_arena[-3];
+                tempvar remaining_segments = n_segments - one;
+                rescope{infos = infos, remaining_segments = remaining_segments};
+                LOOP_START:
+                jump STILL_LEFT_LOOP if remaining_segments != 0;
+                rescope{};
+                jump DONE_VALIDATION;
+                STILL_LEFT_LOOP:
+                tempvar prev_end = infos[1];
+                tempvar curr_start = infos[3];
+            };
+            ctx.add_hint(
+                |[], [curr_start, prev_end]| StarknetHint::Cheatcode {
+                    selector: BigIntAsHex {
+                        value: BigInt::from_bytes_be(
+                            num_bigint::Sign::Plus,
+                            b"add_relocation_rule",
+                        ),
+                    },
+                    // Ignored inputs, to be handled as an empty list.
+                    input_start: ResOperand::Deref(curr_start),
+                    input_end: ResOperand::Deref(curr_start),
+                    // The actual data for the hint.
+                    output_start: curr_start,
+                    output_end: prev_end,
+                },
+                [],
+                [curr_start, prev_end],
+            );
+            casm_build_extend! {ctx,
+                const one = 1;
+                const three = 3;
+                assert curr_start = prev_end + one;
+                tempvar next_infos = infos + three;
+                tempvar next_remaining_segments = remaining_segments - one;
+                rescope{infos = next_infos, remaining_segments = next_remaining_segments};
+                #{ steps = 0; }
+                jump LOOP_START;
+                DONE_VALIDATION:
+            };
+        }
+        if has_post_calculation_loop {
+            for (_, local_expr) in return_data.iter().zip(&local_exprs) {
+                let local_cell = ctx.add_var(local_expr.clone());
+                casm_build_extend! {ctx,
+                    tempvar _cell = local_cell;
+                };
+            }
+        }
+        casm_build_extend! (ctx, ret;);
         ctx.future_label("FUNCTION".into(), code_offset);
         Ok((ctx.build([]).instructions, builtins))
     }
@@ -743,13 +821,26 @@ impl SierraCasmRunner {
         &self,
         func: &Function,
     ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
-        let params = self.generic_id_and_size_from_concrete(&func.signature.param_types);
+        let param_types = self.generic_id_and_size_from_concrete(&func.signature.param_types);
+        let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
 
         let entry_point = func.entry_point.0;
         let code_offset =
             self.casm_program.debug_info.sierra_statement_info[entry_point].start_offset;
+        // Finalizing for proof only if all returned values are builtins or droppable.
+        // (To handle cases such as a function returning a non-squashed dict, which can't be
+        // provable by itself)
+        let finalize_for_proof = func.signature.ret_types.iter().all(|ty| {
+            let info = self.get_info(ty);
+            info.droppable || NON_ARGS_TYPES.contains(&info.long_id.generic_id)
+        });
 
-        Self::create_entry_code_from_params(&params, code_offset)
+        Self::create_entry_code_from_params(
+            &param_types,
+            &return_types,
+            code_offset,
+            finalize_for_proof,
+        )
     }
 
     /// Returns the initial value for the gas counter.
@@ -797,6 +888,23 @@ impl SierraCasmRunner {
         &self.casm_program
     }
 }
+
+/// The types that are not user defined arguments.
+static NON_ARGS_TYPES: LazyLock<HashSet<GenericTypeId>> = LazyLock::new(|| {
+    HashSet::from([
+        AddModType::ID,
+        BitwiseType::ID,
+        GasBuiltinType::ID,
+        EcOpType::ID,
+        MulModType::ID,
+        PedersenType::ID,
+        PoseidonType::ID,
+        RangeCheck96Type::ID,
+        RangeCheckType::ID,
+        SegmentArenaType::ID,
+        SystemType::ID,
+    ])
+});
 
 /// Configuration for the profiling info collection phase.
 #[derive(Debug, Eq, PartialEq, Clone)]
