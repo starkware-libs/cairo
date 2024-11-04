@@ -51,9 +51,9 @@ pub trait AddEq<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait Sub<X, Y>.
-/// `Sub` trait for substraction of two values of the same type.
+/// `Sub` trait for subtraction of two values of the same type.
 pub trait Sub<T> {
-    // Substracts two values of the same type `T` and returns the result of type `T`.
+    // Subtracts two values of the same type `T` and returns the result of type `T`.
     fn sub(lhs: T, rhs: T) -> T;
 }
 
