@@ -795,7 +795,6 @@ dependencies = [
  "cairo-lang-utils",
  "cairo-vm",
  "itertools 0.12.1",
- "num-bigint",
  "thiserror",
 ]
 

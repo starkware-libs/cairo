@@ -28,6 +28,9 @@ pub enum Hint {
     Core(CoreHintBase),
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 1))]
     Starknet(StarknetHint),
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 2))]
+    #[cfg_attr(feature = "schemars", schemars(skip))]
+    External(ExternalHint),
 }
 
 impl Hint {
@@ -46,6 +49,11 @@ impl From<StarknetHint> for Hint {
         Hint::Starknet(value)
     }
 }
+impl From<ExternalHint> for Hint {
+    fn from(value: ExternalHint) -> Self {
+        Hint::External(value)
+    }
+}
 
 /// A trait for displaying the pythonic version of a hint.
 /// Should only be used from within the compiler.
@@ -58,6 +66,7 @@ impl PythonicHint for Hint {
         match self {
             Hint::Core(hint) => hint.get_pythonic_hint(),
             Hint::Starknet(hint) => hint.get_pythonic_hint(),
+            Hint::External(hint) => hint.get_pythonic_hint(),
         }
     }
 }
@@ -327,6 +336,21 @@ pub enum DeprecatedHint {
     /// Sets the value corresponding to the key in the vm dict_manager.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 6))]
     Felt252DictWrite { dict_ptr: ResOperand, key: ResOperand, value: ResOperand },
+}
+
+/// Represents an external hint.
+///
+/// Hints used out of the Sierra environment, mostly for creating external wrapper for code.
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(parity_scale_codec::Encode, parity_scale_codec::Decode)
+)]
+pub enum ExternalHint {
+    /// Relocates a segment from `src` to `dst`.
+    #[cfg_attr(feature = "parity-scale-codec", codec(index = 0))]
+    AddRelocationRule { src: ResOperand, dst: ResOperand },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -806,6 +830,17 @@ impl PythonicHint for StarknetHint {
                 )
             }
             StarknetHint::Cheatcode { .. } => "raise NotImplementedError".to_string(),
+        }
+    }
+}
+
+impl PythonicHint for ExternalHint {
+    fn get_pythonic_hint(&self) -> String {
+        match self {
+            Self::AddRelocationRule { src, dst } => {
+                let [src, dst] = [src, dst].map(ResOperandAsAddressFormatter);
+                format!("memory.add_relocation_rule(src_ptr={src}, dest_ptr={dst})")
+            }
         }
     }
 }
