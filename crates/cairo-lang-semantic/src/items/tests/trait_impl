@@ -572,9 +572,8 @@ fn complex(
         MyTrait::Impl1::InputType,
         Option<
             @Result<
-                [
-                    Option<MyTrait::Impl2::InputType>
-                ; 3], (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
+                [Option<MyTrait::Impl2::InputType>; 3],
+                (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
             >
         >
     )
@@ -636,9 +635,8 @@ fn complex(
         MyTrait::Impl1::InputType,
         Option<
             @Result<
-                [
-                    Option<MyTrait::Impl2::InputType>
-                ; 3], (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
+                [Option<MyTrait::Impl2::InputType>; 3],
+                (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
             >
         >
     )
@@ -648,7 +646,7 @@ fn complex(
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u16>; 3], (@core::integer::u16, core::integer::u16)>>)".
- --> lib.cairo:45:61
+ --> lib.cairo:44:61
 ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
                                                             ^
 
@@ -1239,6 +1237,7 @@ fn bar2<impl M: MyTrait<u32>>() {
 //! > expected_diagnostics
 
 //! > ==========================================================================
+
 //! > Inferring a Trait impl with generic param of a generic impl argument.
 
 //! > test_runner_name
@@ -1256,26 +1255,27 @@ trait InnerTrait<R> {
     fn foo() -> Self::X;
 }
 
-trait MyTrait<Y> {
-    impl MyImpl: InnerTrait<Y>;
+trait OuterTrait<Y> {
+    impl Inner: InnerTrait<Y>;
 }
-impl MyImpl<T, impl I: InnerTrait<T>> of MyTrait<T> {}
+impl OuterImpl<T, impl I: InnerTrait<T>> of OuterTrait<T> {}
 
 
-mod MyMod {
-    // impl of InnerTrait so MyImpl can be inferred.
-    impl MyIn<T> of super::InnerTrait<T> {
+mod my_mod {
+    // Implementing `InnerTrait` for all types.
+    impl MyInner<T> of super::InnerTrait<T> {
         type X = u16;
         fn foo() -> u16 {
             5
         }
     }
-    fn bar<F, impl A: super::MyTrait<F>>(_x: F) -> A::MyImpl::X {
-        A::MyImpl::foo()
+    fn requires_outer<T, impl O: super::OuterTrait<T>>(_x: T) -> O::Inner::X {
+        O::Inner::foo()
     }
+
     // inferring  MyTrait Impl from MyImpl with MyIn.
-    fn bar2() -> u16 {
-        bar(2_u32)
+    fn infers_outer_by_inner() -> u16 {
+        requires_outer(2_u32)
     }
 }
 

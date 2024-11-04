@@ -15,11 +15,6 @@ use crate::lang::lsp::{LsProtoGroup, ToCairo};
 mod completions;
 
 /// Compute completion items at a given cursor position.
-#[tracing::instrument(
-    level = "debug",
-    skip_all,
-    fields(uri = %params.text_document_position.text_document.uri)
-)]
 pub fn complete(params: CompletionParams, db: &AnalysisDatabase) -> Option<CompletionResponse> {
     let text_document_position = params.text_document_position;
     let file_id = db.file_for_url(&text_document_position.text_document.uri)?;
@@ -61,7 +56,6 @@ enum CompletionKind {
     ColonColon(Vec<PathSegment>),
 }
 
-#[tracing::instrument(level = "trace", skip_all)]
 fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
     debug!("node.kind: {:#?}", node.kind(db));
     match node.kind(db) {
@@ -148,7 +142,6 @@ fn completion_kind(db: &AnalysisDatabase, node: SyntaxNode) -> CompletionKind {
     CompletionKind::ColonColon(vec![])
 }
 
-#[tracing::instrument(level = "trace", skip_all)]
 fn completion_kind_from_path_node(db: &AnalysisDatabase, parent: SyntaxNode) -> CompletionKind {
     debug!("completion_kind_from_path_node: {}", parent.clone().get_text_without_trivia(db));
     let expr = ast::ExprPath::from_syntax_node(db, parent);

@@ -16,6 +16,7 @@ cairo_lang_test_utils::test_file_test!(
         missing_module: "missing_module.txt",
         partial: "partial.txt",
         starknet: "starknet.txt",
+        literals: "literals.txt",
     },
     test_hover
 );

@@ -349,8 +349,9 @@ impl GeneratedImplId {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct GeneratedImplLongId {
     pub concrete_trait: ConcreteTraitId,
-    /// The generic arguments used by the generated impl, typically impls and negative impls.
-    pub generic_args: Vec<GenericArgumentId>,
+    /// The generic params required for the impl. Typically impls and negative impls.
+    /// We save the params so that we can validate negative impls.
+    pub generic_params: Vec<GenericParam>,
     pub impl_items: GeneratedImplItems,
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq, SemanticObject)]

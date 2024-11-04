@@ -38,11 +38,11 @@
 //! }
 //! ```
 
-use std::io;
 use std::panic::RefUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::SystemTime;
+use std::{io, panic};
 
 use anyhow::{Context, Result};
 use cairo_lang_compiler::db::validate_corelib;
@@ -69,6 +69,7 @@ use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::{Client, Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
+use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
 use crate::state::State;
@@ -114,6 +115,7 @@ pub fn start() -> ExitCode {
 /// [lib]: crate#running-with-customizations
 pub fn start_with_tricks(tricks: Tricks) -> ExitCode {
     let _log_guard = init_logging();
+    set_panic_hook();
 
     info!("language server starting");
     env_config::report_to_logs();
@@ -152,9 +154,8 @@ fn init_logging() -> Option<impl Drop> {
     use std::io::IsTerminal;
 
     use tracing_chrome::ChromeLayerBuilder;
-    use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+    use tracing_subscriber::filter::{EnvFilter, LevelFilter, Targets};
     use tracing_subscriber::fmt::Layer;
-    use tracing_subscriber::fmt::format::FmtSpan;
     use tracing_subscriber::fmt::time::Uptime;
     use tracing_subscriber::prelude::*;
 
@@ -164,7 +165,6 @@ fn init_logging() -> Option<impl Drop> {
         .with_writer(io::stderr)
         .with_timer(Uptime::default())
         .with_ansi(io::stderr().is_terminal())
-        .with_span_events(FmtSpan::CLOSE)
         .with_filter(
             EnvFilter::builder()
                 .with_default_directive(LevelFilter::WARN.into())
@@ -194,6 +194,12 @@ fn init_logging() -> Option<impl Drop> {
         let (profile_layer, profile_layer_guard) =
             ChromeLayerBuilder::new().writer(profile_file).include_args(true).build();
 
+        // Filter out less important Salsa logs because they are too verbose,
+        // and with them the profile file quickly grows to several GBs of data.
+        let profile_layer = profile_layer.with_filter(
+            Targets::new().with_default(LevelFilter::TRACE).with_target("salsa", LevelFilter::WARN),
+        );
+
         guard = Some(profile_layer_guard);
         Some(profile_layer)
     } else {
@@ -206,6 +212,16 @@ fn init_logging() -> Option<impl Drop> {
     .expect("Could not set up global logger.");
 
     guard
+}
+
+/// Sets a special panic hook that skips execution for Salsa cancellation panics.
+fn set_panic_hook() {
+    let previous_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
+        if !is_cancelled(info.payload()) {
+            previous_hook(info);
+        }
+    }))
 }
 
 struct Backend {
@@ -286,7 +302,7 @@ impl Backend {
             // Refresh diagnostics each time state changes.
             // Although it is possible to mutate state without affecting the analysis database,
             // we basically never hit such a case in CairoLS in happy paths.
-            scheduler.on_sync_task(lang::diagnostics::refresh::refresh_diagnostics);
+            scheduler.on_sync_task(Self::refresh_diagnostics);
 
             let result = Self::event_loop(&connection, scheduler);
 
@@ -354,13 +370,24 @@ impl Backend {
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
-        state.db_swapper.maybe_swap(&mut state.db, &state.open_files, &state.tricks);
+    fn maybe_swap_database(state: &mut State, notifier: Notifier) {
+        state.db_swapper.maybe_swap(
+            &mut state.db,
+            &state.open_files,
+            &state.config,
+            &state.tricks,
+            &notifier,
+        );
+    }
+
+    /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
+    fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
+        state.diagnostics_controller.refresh(state.snapshot(), notifier);
     }
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(skip_all)]
     fn detect_crate_for(
         db: &mut AnalysisDatabase,
         scarb_toolchain: &ScarbToolchain,
@@ -417,7 +444,6 @@ impl Backend {
     }
 
     /// Reload crate detection for all open files.
-    #[tracing::instrument(level = "trace", skip_all)]
     fn reload(
         state: &mut State,
         notifier: &Notifier,

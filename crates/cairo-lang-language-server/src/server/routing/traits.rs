@@ -9,15 +9,15 @@ use cairo_lang_filesystem::db::{
     AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use lsp_types::notification::{
-    Cancel, DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles,
-    DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument, Notification,
+    DidChangeConfiguration, DidChangeTextDocument, DidChangeWatchedFiles, DidCloseTextDocument,
+    DidOpenTextDocument, DidSaveTextDocument, Notification,
 };
 use lsp_types::request::{
     CodeActionRequest, Completion, ExecuteCommand, Formatting, GotoDefinition, HoverRequest,
     Request, SemanticTokensFullRequest,
 };
 use lsp_types::{
-    CancelParams, CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
+    CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
     DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
     DocumentFormattingParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
@@ -25,7 +25,7 @@ use lsp_types::{
     TextDocumentPositionParams, TextEdit, Url,
 };
 use serde_json::Value;
-use tracing::{error, warn};
+use tracing::error;
 
 use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::ext::{
@@ -74,7 +74,7 @@ pub trait SyncNotificationHandler: Notification {
 }
 
 impl BackgroundDocumentRequestHandler for CodeActionRequest {
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(name = "textDocument/codeAction", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
         _notifier: Notifier,
@@ -85,7 +85,11 @@ impl BackgroundDocumentRequestHandler for CodeActionRequest {
 }
 
 impl SyncRequestHandler for ExecuteCommand {
-    #[tracing::instrument(level = "debug", skip_all, fields(command = params.command))]
+    #[tracing::instrument(
+        name = "workspace/executeCommand",
+        skip_all,
+        fields(command = params.command)
+    )]
     fn run(
         state: &mut State,
         notifier: Notifier,
@@ -107,7 +111,7 @@ impl SyncRequestHandler for ExecuteCommand {
 }
 
 impl BackgroundDocumentRequestHandler for HoverRequest {
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(name = "textDocument/hover", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
         _notifier: Notifier,
@@ -118,7 +122,7 @@ impl BackgroundDocumentRequestHandler for HoverRequest {
 }
 
 impl BackgroundDocumentRequestHandler for Formatting {
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(name = "textDocument/formatting", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
         _notifier: Notifier,
@@ -128,20 +132,12 @@ impl BackgroundDocumentRequestHandler for Formatting {
     }
 }
 
-impl SyncNotificationHandler for Cancel {
-    #[tracing::instrument(level = "trace", skip_all)]
-    fn run(
-        _state: &mut State,
-        _notifier: Notifier,
-        _requester: &mut Requester<'_>,
-        _params: CancelParams,
-    ) -> LSPResult<()> {
-        Ok(())
-    }
-}
-
 impl SyncNotificationHandler for DidChangeTextDocument {
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    #[tracing::instrument(
+        name = "textDocument/didChange",
+        skip_all,
+        fields(uri = %params.text_document.uri)
+    )]
     fn run(
         state: &mut State,
         _notifier: Notifier,
@@ -166,7 +162,7 @@ impl SyncNotificationHandler for DidChangeTextDocument {
 }
 
 impl SyncNotificationHandler for DidChangeConfiguration {
-    #[tracing::instrument(level = "debug", skip_all)]
+    #[tracing::instrument(name = "workspace/didChangeConfiguration", skip_all)]
     fn run(
         state: &mut State,
         _notifier: Notifier,
@@ -178,7 +174,7 @@ impl SyncNotificationHandler for DidChangeConfiguration {
 }
 
 impl SyncNotificationHandler for DidChangeWatchedFiles {
-    #[tracing::instrument(level = "debug", skip_all)]
+    #[tracing::instrument(name = "workspace/didChangeWatchedFiles", skip_all)]
     fn run(
         state: &mut State,
         notifier: Notifier,
@@ -210,7 +206,11 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
 }
 
 impl SyncNotificationHandler for DidCloseTextDocument {
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    #[tracing::instrument(
+        name = "textDocument/didClose",
+        skip_all,
+        fields(uri = %params.text_document.uri)
+    )]
     fn run(
         state: &mut State,
         _notifier: Notifier,
@@ -227,7 +227,10 @@ impl SyncNotificationHandler for DidCloseTextDocument {
 }
 
 impl SyncNotificationHandler for DidOpenTextDocument {
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    #[tracing::instrument(name = "textDocument/didOpen",
+        skip_all,
+        fields(uri = %params.text_document.uri)
+    )]
     fn run(
         state: &mut State,
         notifier: Notifier,
@@ -260,7 +263,11 @@ impl SyncNotificationHandler for DidOpenTextDocument {
 }
 
 impl SyncNotificationHandler for DidSaveTextDocument {
-    #[tracing::instrument(level = "debug", skip_all, fields(uri = %params.text_document.uri))]
+    #[tracing::instrument(
+        name = "textDocument/didSave",
+        skip_all,
+        fields(uri = %params.text_document.uri)
+    )]
     fn run(
         state: &mut State,
         _notifier: Notifier,
@@ -277,7 +284,7 @@ impl SyncNotificationHandler for DidSaveTextDocument {
 }
 
 impl BackgroundDocumentRequestHandler for GotoDefinition {
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(name = "textDocument/definition", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
         _notifier: Notifier,
@@ -288,7 +295,7 @@ impl BackgroundDocumentRequestHandler for GotoDefinition {
 }
 
 impl BackgroundDocumentRequestHandler for Completion {
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(name = "textDocument/completion", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
         _notifier: Notifier,
@@ -299,7 +306,7 @@ impl BackgroundDocumentRequestHandler for Completion {
 }
 
 impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(name = "textDocument/semanticTokens/full", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
         _notifier: Notifier,
@@ -310,7 +317,7 @@ impl BackgroundDocumentRequestHandler for SemanticTokensFullRequest {
 }
 
 impl BackgroundDocumentRequestHandler for ProvideVirtualFile {
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(name = "vfs/provide", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
         _notifier: Notifier,
@@ -327,7 +334,7 @@ impl BackgroundDocumentRequestHandler for ProvideVirtualFile {
 }
 
 impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(name = "cairo/viewAnalyzedCrates", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
         _notifier: Notifier,
@@ -338,7 +345,7 @@ impl BackgroundDocumentRequestHandler for ViewAnalyzedCrates {
 }
 
 impl BackgroundDocumentRequestHandler for ExpandMacro {
-    #[tracing::instrument(level = "trace", skip_all)]
+    #[tracing::instrument(name = "cairo/expandMacro", skip_all)]
     fn run_with_snapshot(
         snapshot: StateSnapshot,
         _notifier: Notifier,

@@ -1,6 +1,6 @@
 use std::sync::{LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
@@ -28,8 +28,8 @@ pub struct SemanticDatabaseForTesting {
 }
 impl salsa::Database for SemanticDatabaseForTesting {}
 impl ExternalFiles for SemanticDatabaseForTesting {
-    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
-        ext_as_virtual_impl(self.upcast(), external_id)
+    fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
+        try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
 impl salsa::ParallelDatabase for SemanticDatabaseForTesting {

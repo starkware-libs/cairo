@@ -41,18 +41,18 @@ pub trait LsProtoGroup: Upcast<dyn FilesGroup> {
     }
 
     /// Get the canonical [`Url`] for a [`FileId`].
-    fn url_for_file(&self, file_id: FileId) -> Url {
+    fn url_for_file(&self, file_id: FileId) -> Option<Url> {
         let vf = match self.upcast().lookup_intern_file(file_id) {
-            FileLongId::OnDisk(path) => return Url::from_file_path(path).unwrap(),
+            FileLongId::OnDisk(path) => return Some(Url::from_file_path(path).unwrap()),
             FileLongId::Virtual(vf) => vf,
-            FileLongId::External(id) => self.upcast().ext_as_virtual(id),
+            FileLongId::External(id) => self.upcast().try_ext_as_virtual(id)?,
         };
         // NOTE: The URL is constructed using setters and path segments in order to
         //   url-encode any funky characters in parts that LS is not controlling.
         let mut url = Url::parse("vfs://").unwrap();
         url.set_host(Some(&file_id.as_intern_id().to_string())).unwrap();
         url.path_segments_mut().unwrap().push(&format!("{}.cairo", vf.name));
-        url
+        Some(url)
     }
 }
 

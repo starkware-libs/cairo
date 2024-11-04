@@ -1151,7 +1151,8 @@ impl CairoHintProcessor<'_> {
         vm: &mut dyn VMWrapper,
     ) -> Result<(Relocatable, Relocatable), Vec<Felt252>> {
         let function = runner
-            .sierra_program_registry
+            .builder
+            .registry()
             .get_function(entry_point)
             .expect("Entrypoint exists, but not found.");
         let mut res = runner
@@ -1277,6 +1278,13 @@ impl CairoHintProcessor<'_> {
                     res_segment.write(payload.len())?;
                     res_segment.write_data(payload.iter())?;
                 }
+            }
+            "add_relocation_rule" => {
+                vm.add_relocation_rule(
+                    get_ptr(vm, output_start, &Felt252::ZERO)?,
+                    get_ptr(vm, output_end, &Felt252::ONE)?,
+                )?;
+                return Ok(());
             }
             _ => Err(HintError::CustomHint(Box::from(format!(
                 "Unknown cheatcode selector: {selector}"

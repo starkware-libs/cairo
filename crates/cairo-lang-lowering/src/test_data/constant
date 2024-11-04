@@ -55,10 +55,9 @@ enum MyEnum {
     B,
 }
 
-const MY_CONST: MyStruct =
-    MyStruct {
-        felt_val: 1234, bool_val: true, my_enum_val1: MyEnum::A(5678), my_enum_val2: MyEnum::B,
-    };
+const MY_CONST: MyStruct = MyStruct {
+    felt_val: 1234, bool_val: true, my_enum_val1: MyEnum::A(5678), my_enum_val2: MyEnum::B,
+};
 
 //! > semantic_diagnostics
 

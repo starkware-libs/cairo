@@ -10,9 +10,7 @@ extern fn sha256_state_handle_init(state: Box<[u32; 8]>) -> Sha256StateHandle no
 /// returns the state of a SHA-256 hash.
 extern fn sha256_state_handle_digest(state: Sha256StateHandle) -> Box<[u32; 8]> nopanic;
 
-const SHA256_INITIAL_STATE: [
-    u32
-    ; 8] = [
+const SHA256_INITIAL_STATE: [u32; 8] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 ];
 
@@ -23,9 +21,7 @@ const SHA256_INITIAL_STATE: [
 /// return the SHA-256 hash of the `input array` + `last_input_word` as big endian.
 pub fn compute_sha256_u32_array(
     mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u32
-    ) -> [
-    u32
-; 8] {
+) -> [u32; 8] {
     add_sha256_padding(ref input, last_input_word, last_input_num_bytes);
 
     let mut input = input.span();
