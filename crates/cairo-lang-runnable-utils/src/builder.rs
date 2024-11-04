@@ -25,10 +25,10 @@ use cairo_lang_sierra_to_casm::metadata::{
     Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
 };
 use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_vm::types::builtin_name::BuiltinName;
-use itertools::Itertools;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -244,20 +244,9 @@ pub fn create_entry_code_from_params(
 
     let emulated_builtins = UnorderedHashSet::<_>::from_iter([SystemType::ID]);
 
-    let mut args_vars = vec![];
-    for (ty, size) in param_types {
-        if !builtin_vars.contains_key(ty)
-            && !emulated_builtins.contains(ty)
-            && ty != &SegmentArenaType::ID
-        {
-            args_vars.push((0..*size).map(|_| ctx.alloc_var(false)).collect_vec());
-        }
-    }
     let got_segment_arena = param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID);
     let has_post_calculation_loop = got_segment_arena && finalize_for_proof;
 
-    // Giving space for the VM to fill the arguments, as well as local params.
-    let params_size: usize = args_vars.iter().map(Vec::len).sum();
     let mut local_exprs = vec![];
     if has_post_calculation_loop {
         for (ty, size) in return_types {
@@ -269,7 +258,7 @@ pub fn create_entry_code_from_params(
             }
         }
     }
-    casm_build_extend!(ctx, ap += params_size + local_exprs.len(););
+    casm_build_extend!(ctx, ap += local_exprs.len(););
     if got_segment_arena {
         casm_build_extend! {ctx,
             tempvar segment_arena;
@@ -286,21 +275,34 @@ pub fn create_entry_code_from_params(
         // Adding the segment arena to the builtins var map.
         builtin_vars.insert(SegmentArenaType::ID, segment_arena);
     }
-    let mut args_vars_iter = args_vars.into_iter();
-    for (generic_ty, _) in param_types {
+    let mut unallocated_count = 0;
+    let mut param_index = 0;
+    for (generic_ty, ty_size) in param_types {
         if let Some(var) = builtin_vars.get(generic_ty).cloned() {
             casm_build_extend!(ctx, tempvar _builtin = var;);
         } else if emulated_builtins.contains(generic_ty) {
             casm_build_extend! {ctx,
                 tempvar system;
                 hint AllocSegment {} into {dst: system};
-                ap += 1;
             };
+            unallocated_count += ty_size;
         } else {
-            for cell in args_vars_iter.next().unwrap() {
-                casm_build_extend!(ctx, tempvar _cell = cell;);
+            if *ty_size > 0 {
+                casm_build_extend! { ctx,
+                    tempvar first;
+                    const param_index = param_index;
+                    hint ExternalHint::WriteRunParam { index: param_index } into { dst: first };
+                };
+                for _ in 1..*ty_size {
+                    casm_build_extend!(ctx, tempvar _cell;);
+                }
             }
+            param_index += 1;
+            unallocated_count += ty_size;
         };
+    }
+    if unallocated_count > 0 {
+        casm_build_extend!(ctx, ap += unallocated_count.into_or_panic::<usize>(););
     }
     casm_build_extend! (ctx, let () = call FUNCTION;);
     let mut unprocessed_return_size = return_types.iter().map(|(_, size)| size).sum::<i16>();
