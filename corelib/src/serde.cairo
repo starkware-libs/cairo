@@ -1,8 +1,22 @@
+//! Serde module that provides a set of traits and implementations for serializing and deserializing
+//! data structures in a type-safe manner.
+//!
+//! `Serde<T>` is the main trait that defines the serialization and deserialization behavior for a
+//! type `T`.
+//! Implementations of this trait are provided for tuples, and other implementations can found in
+//! the corresponding modules.
+
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
 
+/// `Serde<T>` generic trait that allows serializing and deseriaziling valus of any type.
 pub trait Serde<T> {
+    /// Takes a snapshot of a value of any type and referenced output `Array<felt252`, serializes
+    /// the value and appends the result to the output.
     fn serialize(self: @T, ref output: Array<felt252>);
+    // Takes a `Span<felt252>` serialized value and deserializes it.
+    // Returns an option of the deserialized result if the operation is successful, `Option::None`
+    // otherwise.
     fn deserialize(ref serialized: Span<felt252>) -> Option<T>;
 }
 
@@ -21,48 +35,40 @@ impl SerdeTuple<
     }
 }
 
-/// Helper trait for serializing tuple style structs.
 trait SerializeTuple<T> {
     fn serialize(value: T, ref output: Array<felt252>);
 }
 
-/// Implementation of `SerializeTuple` for snapshots of types with `Serde` implementation.
 impl SerdeBasedSerializeTuple<T, +Serde<T>> of SerializeTuple<@T> {
     fn serialize(value: @T, ref output: Array<felt252>) {
         Serde::<T>::serialize(value, ref output);
     }
 }
 
-/// Helper trait for deserializing tuple style structs.
 trait DeserializeTuple<T> {
     fn deserialize(ref serialized: Span<felt252>) -> Option<T>;
 }
 
-/// Base implementation of `SerializeTuple` for tuples.
 impl SerializeTupleBaseTuple of SerializeTuple<()> {
     fn serialize(value: (), ref output: Array<felt252>) {}
 }
 
-/// Base implementation of `DeserializeTuple` for tuples.
 impl DeserializeTupleBaseTuple of DeserializeTuple<()> {
     fn deserialize(ref serialized: Span<felt252>) -> Option<()> {
         Option::Some(())
     }
 }
 
-/// Base implementation of `SerializeTuple` for fixed sized arrays.
 impl SerializeTupleBaseFixedSizedArray<T> of SerializeTuple<[@T; 0]> {
     fn serialize(value: [@T; 0], ref output: Array<felt252>) {}
 }
 
-/// Base implementation of `DeserializeTuple` for fixed sized arrays.
 impl DeserializeTupleBaseFixedSizedArray<T> of DeserializeTuple<[T; 0]> {
     fn deserialize(ref serialized: Span<felt252>) -> Option<[T; 0]> {
         Option::Some([])
     }
 }
 
-/// Recursive implementation of `SerializeTuple` for tuple style structs.
 impl SerializeTupleNext<
     T,
     impl TS: crate::metaprogramming::TupleSplit<T>,
@@ -77,7 +83,6 @@ impl SerializeTupleNext<
     }
 }
 
-/// Recursive implementation of `DeserializeTuple` for tuple style structs.
 impl DeserializeTupleNext<
     T,
     impl TS: crate::metaprogramming::TupleSplit<T>,
@@ -92,15 +97,18 @@ impl DeserializeTupleNext<
     }
 }
 
-/// Impl for `Serde` for types that can be converted into `felt252` using the `Into` trait and from
-/// `felt252` using the `TryInto` trait.
-/// Usage example:
-/// ```ignore
+/// `Serde` implementation for types that can be converted into `felt252` using the `Into` trait and
+/// from `felt252` using the `TryInto` trait.
+///
+/// # Examples
+///
+/// ```
 /// impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`
 /// ```
 pub mod into_felt252_based {
     use crate::traits::{Into, TryInto};
     use crate::array::ArrayTrait;
+
     pub impl SerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::Serde<T> {
         #[inline]
         fn serialize(self: @T, ref output: Array<felt252>) {
