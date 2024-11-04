@@ -732,7 +732,6 @@ extern fn tuple_from_span<T, impl Info: FixedSizedArrayInfo<T>>(
     span: @Array<Info::Element>
 ) -> Option<@Box<T>> nopanic;
 
-/// `TryInto` implementation from a span to fixed-size array.
 impl SpanTryIntoFixedSizedArray<
     T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
 > of TryInto<Span<T>, @Box<[T; SIZE]>> {
@@ -750,7 +749,6 @@ impl SpanTryIntoFixedSizedArray<
     }
 }
 
-/// `TryInto` implementation from a span to an empty fixed-size array.
 impl SpanTryIntoEmptyFixedSizedArray<T, +Drop<T>> of TryInto<Span<T>, @Box<[T; 0]>> {
     /// Returns an option of a snapshot of a box that contains an empty fixed-size array if the span
     /// is empty, and `Option::None` otherwise.
