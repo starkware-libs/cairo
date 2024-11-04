@@ -1,9 +1,8 @@
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::hints::StarknetHint;
+use cairo_lang_casm::hints::ExternalHint;
 use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::operand::ResOperand;
 use cairo_lang_casm::{casm, casm_build_extend, deref};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
@@ -26,12 +25,10 @@ use cairo_lang_sierra_to_casm::metadata::{
     Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
 };
 use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
-use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_vm::types::builtin_name::BuiltinName;
 use itertools::Itertools;
-use num_bigint::BigInt;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -351,26 +348,11 @@ pub fn create_entry_code_from_params(
             STILL_LEFT_LOOP:
             tempvar prev_end = infos[1];
             tempvar curr_start = infos[3];
-        };
-        ctx.add_hint(
-            |[], [curr_start, prev_end]| StarknetHint::Cheatcode {
-                selector: BigIntAsHex {
-                    value: BigInt::from_bytes_be(num_bigint::Sign::Plus, b"add_relocation_rule"),
-                },
-                // Ignored inputs, to be handled as an empty list.
-                input_start: ResOperand::Deref(curr_start),
-                input_end: ResOperand::Deref(curr_start),
-                // The actual data for the hint.
-                output_start: curr_start,
-                output_end: prev_end,
-            },
-            [],
-            [curr_start, prev_end],
-        );
-        casm_build_extend! {ctx,
             const one = 1;
-            const three = 3;
+            let expected_curr_start = prev_end + one;
+            hint ExternalHint::AddRelocationRule { src: curr_start, dst: expected_curr_start } into {};
             assert curr_start = prev_end + one;
+            const three = 3;
             tempvar next_infos = infos + three;
             tempvar next_remaining_segments = remaining_segments - one;
             rescope{infos = next_infos, remaining_segments = next_remaining_segments};
