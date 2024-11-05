@@ -1025,25 +1025,24 @@ Block(
 
 //! > ==========================================================================
 
-//! > Testing use star without implementation in Semantic
+//! > Testing use star
 
 //! > test_runner_name
-test_expr_semantics(expect_diagnostics: true)
+test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
-/// TODO(Tomer-StarkWare): Implement use star in Semantic
-pub mod a {
+pub mod mock_data {
     const C: u8 = 2;
 }
-pub mod b {
-    use super::a::*;
+pub mod use_star_module {
+    use super::mock_data::*;
 }
 
 //! > function_body
 
 //! > expr_code
 { 
-    let _s = b::C;
+    let _s = use_star_module::C;
 }
 
 //! > expected_semantics
@@ -1055,9 +1054,10 @@ Block(
                     pattern: Variable(
                         _s,
                     ),
-                    expr: Missing(
-                        ExprMissing {
-                            ty: <missing>,
+                    expr: Constant(
+                        ExprConstant {
+                            const_value_id: 2,
+                            ty: core::integer::u8,
                         },
                     ),
                 },
@@ -1069,7 +1069,243 @@ Block(
 )
 
 //! > expected_diagnostics
-error: Identifier not found.
- --> lib.cairo:10:17
-    let _s = b::C;
-                ^
+
+//! > ==========================================================================
+
+//! > Testing use star struct and enum
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+pub mod struct_enum_module {
+    pub struct S {
+        pub x: u8,
+    }
+    pub enum E {
+        A: u8,
+        B: u16,
+    }
+}
+
+use struct_enum_module::*;
+
+//! > function_body
+
+//! > expr_code
+{
+    let _b = E::B(3);
+    let _e = E::A(1);
+    let _a = S { x: 3 };
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _b,
+                    ),
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: E::B,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 3,
+                                    ty: core::integer::u16,
+                                },
+                            ),
+                            ty: test::struct_enum_module::E,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _e,
+                    ),
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: E::A,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 1,
+                                    ty: core::integer::u8,
+                                },
+                            ),
+                            ty: test::struct_enum_module::E,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _a,
+                    ),
+                    expr: StructCtor(
+                        ExprStructCtor {
+                            concrete_struct_id: test::struct_enum_module::S,
+                            members: [
+                                (
+                                    MemberId(test::struct_enum_module::x),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            base_struct: None,
+                            ty: test::struct_enum_module::S,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star ambiguous path
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+pub mod struct_enum_container_1 {
+    pub struct A {
+        pub x: u8,
+    }
+    pub enum E {
+        A: u8,
+        B: u16,
+    }
+}
+
+pub mod struct_enum_container_2 {
+    pub struct S {
+        pub x: u8,
+    }
+    pub enum E {
+        A: u8,
+        B: u16,
+    }
+}
+
+use struct_enum_container_1::*;
+use struct_enum_container_2::*;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    let _b = E::B(3);
+    let _e = E::A(1);
+    let _a = A { x: 3 };
+    let _s = S { x: 3 };
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _b,
+                    ),
+                    expr: Missing(
+                        ExprMissing {
+                            ty: <missing>,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _e,
+                    ),
+                    expr: Missing(
+                        ExprMissing {
+                            ty: <missing>,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _a,
+                    ),
+                    expr: StructCtor(
+                        ExprStructCtor {
+                            concrete_struct_id: test::struct_enum_container_1::A,
+                            members: [
+                                (
+                                    MemberId(test::struct_enum_container_1::x),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            base_struct: None,
+                            ty: test::struct_enum_container_1::A,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _s,
+                    ),
+                    expr: StructCtor(
+                        ExprStructCtor {
+                            concrete_struct_id: test::struct_enum_container_2::S,
+                            members: [
+                                (
+                                    MemberId(test::struct_enum_container_2::x),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            base_struct: None,
+                            ty: test::struct_enum_container_2::S,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+error: Ambiguous path. Multiple items with the same name. The paths that collide are, "test::struct_enum_container_1::E, test::struct_enum_container_2::E"
+ --> lib.cairo:25:14
+    let _b = E::B(3);
+             ^
+
+error: Ambiguous path. Multiple items with the same name. The paths that collide are, "test::struct_enum_container_1::E, test::struct_enum_container_2::E"
+ --> lib.cairo:26:14
+    let _e = E::A(1);
+             ^
