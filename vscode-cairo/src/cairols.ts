@@ -116,20 +116,15 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
     },
   );
 
-  client.onNotification(
-    new lc.NotificationType<string>("cairo/scarb-metadata-failed"),
-    async (errorMessage) => {
-      const goToOutput = "Go to output";
+  client.onNotification(new lc.NotificationType("cairo/scarb-metadata-failed"), async () => {
+    const goToOutput = "Go to output";
 
-      const selectedValue = await vscode.window.showErrorMessage(errorMessage, goToOutput);
+    const selectedValue = await vscode.window.showErrorMessage("Scarb metdata failed", goToOutput);
 
-      switch (selectedValue) {
-        case goToOutput:
-          client.outputChannel.show(true);
-          break;
-      }
-    },
-  );
+    if (selectedValue === goToOutput) {
+      client.outputChannel.show(true);
+    }
+  });
 
   await client.start();
 

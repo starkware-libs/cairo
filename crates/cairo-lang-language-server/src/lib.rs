@@ -404,7 +404,7 @@ impl Backend {
                     })
                     .inspect_err(|err| {
                         warn!("{err:?}");
-                        notifier.notify::<ScarbMetadataFailed>("Scarb metadata failed".to_string());
+                        notifier.notify::<ScarbMetadataFailed>(());
                     })
                     .ok();
 
