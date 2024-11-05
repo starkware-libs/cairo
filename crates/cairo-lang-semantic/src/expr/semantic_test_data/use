@@ -1025,10 +1025,10 @@ Block(
 
 //! > ==========================================================================
 
-//! > Testing use star without implementation in Semantic
+//! > Testing use star
 
 //! > test_runner_name
-test_expr_semantics(expect_diagnostics: true)
+test_expr_semantics(expect_diagnostics: false)
 
 //! > module_code
 pub mod generic_type {
@@ -1047,8 +1047,9 @@ use generic_type::*;
 
 //! > expr_code
 { 
-    let _s = S { x: 3 };
+    let _b = E::B(3);
     let _e = E::A(1);
+    let _a = S { x: 3 };
 }
 
 //! > expected_semantics
@@ -1058,7 +1059,122 @@ Block(
             Let(
                 StatementLet {
                     pattern: Variable(
-                        _s,
+                        _b,
+                    ),
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: E::B,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 3,
+                                    ty: core::integer::u16,
+                                },
+                            ),
+                            ty: test::generic_type::E,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _e,
+                    ),
+                    expr: EnumVariantCtor(
+                        ExprEnumVariantCtor {
+                            variant: E::A,
+                            value_expr: Literal(
+                                ExprLiteral {
+                                    value: 1,
+                                    ty: core::integer::u8,
+                                },
+                            ),
+                            ty: test::generic_type::E,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _a,
+                    ),
+                    expr: StructCtor(
+                        ExprStructCtor {
+                            concrete_struct_id: test::generic_type::S,
+                            members: [
+                                (
+                                    MemberId(test::generic_type::x),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u8,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            base_struct: None,
+                            ty: test::generic_type::S,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star ambigous meaning
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+pub mod generic_type_1 {
+    pub struct S {
+        pub x: u8,
+    }
+    pub enum E {
+        A: u8,
+        B: u16,
+    }
+}
+
+pub mod generic_type_2 {
+    pub struct S {
+        pub x: u8,
+    }
+    pub enum E {
+        A: u8,
+        B: u16,
+    }
+}
+
+use generic_type_1::*;
+use generic_type_2::*;
+
+//! > function_body
+
+//! > expr_code
+{ 
+    let _b = E::B(3);
+    let _e = E::A(1);
+    let _a = S { x: 3 };
+}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _b,
                     ),
                     expr: Missing(
                         ExprMissing {
@@ -1079,6 +1195,18 @@ Block(
                     ),
                 },
             ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _a,
+                    ),
+                    expr: Missing(
+                        ExprMissing {
+                            ty: <missing>,
+                        },
+                    ),
+                },
+            ),
         ],
         tail: None,
         ty: (),
@@ -1086,12 +1214,17 @@ Block(
 )
 
 //! > expected_diagnostics
-error: Type not found.
- --> lib.cairo:14:14
-    let _s = S { x: 3 };
+error: Ambiguous path. Multiple items with the same name.
+ --> lib.cairo:25:14
+    let _b = E::B(3);
              ^
 
-error: Identifier not found.
- --> lib.cairo:15:14
+error: Ambiguous path. Multiple items with the same name.
+ --> lib.cairo:26:14
     let _e = E::A(1);
+             ^
+
+error: Ambiguous path. Multiple items with the same name.
+ --> lib.cairo:27:14
+    let _a = S { x: 3 };
              ^
