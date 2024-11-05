@@ -1,27 +1,18 @@
 use std::collections::{HashMap, HashSet};
-use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
-use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_semantic::SemanticDiagnostic;
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::{LookupIntern, Upcast};
+use cairo_lang_utils::LookupIntern;
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{PublishDiagnosticsParams, Url};
-use tracing::{error, info_span, trace};
+use tracing::{info_span, trace};
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
+use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
-use crate::server::panic::is_cancelled;
-use crate::state::FileDiagnostics;
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]
@@ -121,53 +112,9 @@ fn refresh_file_diagnostics(
         trace!("url for file not found: {:?}", file.lookup_intern(db));
         return;
     };
-    let Ok(module_ids) = db.file_modules(file) else {
-        trace!("modules for file not found: {:?}", file.lookup_intern(db));
+
+    let Some(new_file_diagnostics) = FileDiagnostics::collect(db, file, processed_modules) else {
         return;
-    };
-
-    let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
-    let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
-
-    macro_rules! diags {
-        ($db:ident. $query:ident($file_id:expr), $f:expr) => {
-            info_span!(stringify!($query)).in_scope(|| {
-                catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
-                    .map($f)
-                    .map_err(|err| {
-                        if is_cancelled(err.as_ref()) {
-                            resume_unwind(err);
-                        } else {
-                            error!("caught panic when computing diagnostics for file {file_uri}");
-                            err
-                        }
-                    })
-                    .unwrap_or_default()
-            })
-        };
-    }
-
-    for &module_id in module_ids.iter() {
-        if !processed_modules.contains(&module_id) {
-            semantic_file_diagnostics.extend(
-                diags!(db.module_semantic_diagnostics(module_id), Result::unwrap_or_default)
-                    .get_all(),
-            );
-            lowering_file_diagnostics.extend(
-                diags!(db.module_lowering_diagnostics(module_id), Result::unwrap_or_default)
-                    .get_all(),
-            );
-
-            processed_modules.insert(module_id);
-        }
-    }
-
-    let parser_file_diagnostics = diags!(db.file_syntax_diagnostics(file), |r| r);
-
-    let new_file_diagnostics = FileDiagnostics {
-        parser: parser_file_diagnostics,
-        semantic: Diagnostics::from_iter(semantic_file_diagnostics),
-        lowering: Diagnostics::from_iter(lowering_file_diagnostics),
     };
 
     if !new_file_diagnostics.is_empty() {
@@ -183,32 +130,7 @@ fn refresh_file_diagnostics(
         file_diagnostics.insert(file_uri.clone(), new_file_diagnostics.clone());
     };
 
-    let mut diags = Vec::new();
-    map_cairo_diagnostics_to_lsp(
-        (*db).upcast(),
-        &mut diags,
-        &new_file_diagnostics.parser,
-        file,
-        trace_macro_diagnostics,
-    );
-    map_cairo_diagnostics_to_lsp(
-        (*db).upcast(),
-        &mut diags,
-        &new_file_diagnostics.semantic,
-        file,
-        trace_macro_diagnostics,
-    );
-    map_cairo_diagnostics_to_lsp(
-        (*db).upcast(),
-        &mut diags,
-        &new_file_diagnostics.lowering,
-        file,
-        trace_macro_diagnostics,
-    );
-
-    notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-        uri: file_uri,
-        diagnostics: diags,
-        version: None,
-    });
+    if let Some(params) = new_file_diagnostics.to_lsp(db, trace_macro_diagnostics) {
+        notifier.notify::<PublishDiagnostics>(params);
+    }
 }
