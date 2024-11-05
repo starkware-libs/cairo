@@ -521,6 +521,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 NotFoundItemType::Trait => "Trait not found.".into(),
                 NotFoundItemType::Impl => "Impl not found.".into(),
             },
+            SemanticDiagnosticKind::AmbiguousPath { module_item_1, module_item_2 } => {
+                format!(
+                    "Ambiguous path. Multiple items with the same name. Two items that collide, \
+                     `{}` and `{}`.",
+                    module_item_1.full_path(db.upcast()),
+                    module_item_2.full_path(db.upcast())
+                )
+            }
             SemanticDiagnosticKind::TraitInTraitMustBeExplicit => {
                 "In a trait, paths of the same trait must be fully explicit. Either use `Self` if \
                  this is the intention, or explicitly specify all the generic arguments."
@@ -1121,6 +1129,10 @@ pub enum SemanticDiagnosticKind {
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound(NotFoundItemType),
+    AmbiguousPath {
+        module_item_1: ModuleItemId,
+        module_item_2: ModuleItemId,
+    },
     TraitInTraitMustBeExplicit,
     ImplInImplMustBeExplicit,
     TraitItemForbiddenInTheTrait,

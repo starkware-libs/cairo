@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, TraitId, TraitItemId,
+    ModuleFileId, ModuleId, ModuleItemId, TraitId, TraitItemId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
@@ -231,6 +231,13 @@ impl Resolver<'_> {
     }
 }
 
+/// The result of resolveing an item using `use *` imports.
+enum UseStarResult {
+    UniquePathFound(ModuleId),
+    AmbiguousPath { module_item_1: ModuleItemId, module_item_2: ModuleItemId },
+    PathNotFound,
+}
+
 /// A trait for things that can be interpreted as a path of segments.
 pub trait AsSegments {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment>;
@@ -430,6 +437,10 @@ impl<'db> Resolver<'db> {
                             segment.generic_args(syntax_db),
                         )
                     }
+                    ResolvedBase::Ambiguous { module_item_1, module_item_2 } => {
+                        return Err(diagnostics
+                            .report(&identifier, AmbiguousPath { module_item_1, module_item_2 }));
+                    }
                 }
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
@@ -463,6 +474,12 @@ impl<'db> Resolver<'db> {
                                 generic_item,
                                 segment.generic_args(syntax_db),
                             )
+                        }
+                        ResolvedBase::Ambiguous { module_item_1, module_item_2 } => {
+                            return Err(diagnostics.report(&identifier, AmbiguousPath {
+                                module_item_1,
+                                module_item_2,
+                            }));
                         }
                     }
                 }
@@ -576,6 +593,10 @@ impl<'db> Resolver<'db> {
                         ));
                     }
                     ResolvedBase::StatementEnvironment(generic_item) => generic_item,
+                    ResolvedBase::Ambiguous { module_item_1, module_item_2 } => {
+                        return Err(diagnostics
+                            .report(&identifier, AmbiguousPath { module_item_1, module_item_2 }));
+                    }
                 }
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
@@ -591,6 +612,10 @@ impl<'db> Resolver<'db> {
                     ResolvedBase::StatementEnvironment(generic_item) => {
                         segments.next();
                         generic_item
+                    }
+                    ResolvedBase::Ambiguous { module_item_1, module_item_2 } => {
+                        return Err(diagnostics
+                            .report(&identifier, AmbiguousPath { module_item_1, module_item_2 }));
                     }
                 }
             }
@@ -648,9 +673,32 @@ impl<'db> Resolver<'db> {
                 }
                 let segment_stable_ptr = segment.stable_ptr().untyped();
 
-                let inner_item_info = self
-                    .db
-                    .module_item_info_by_name(*module_id, ident)?
+                let mut inner_item_info_res =
+                    self.db.module_item_info_by_name(*module_id, ident.clone())?;
+
+                match inner_item_info_res {
+                    Some(_) => {}
+                    None => {
+                        match self.resolve_path_using_use_star(diagnostics, *module_id, identifier)
+                        {
+                            UseStarResult::UniquePathFound(new_module_id) => {
+                                inner_item_info_res =
+                                    self.db.module_item_info_by_name(new_module_id, ident)?;
+                            }
+                            UseStarResult::AmbiguousPath { module_item_1, module_item_2 } => {
+                                return Err(diagnostics.report(identifier, AmbiguousPath {
+                                    module_item_1,
+                                    module_item_2,
+                                }));
+                            }
+                            UseStarResult::PathNotFound => {
+                                return Err(diagnostics.report(identifier, PathNotFound(item_type)));
+                            }
+                        }
+                    }
+                }
+
+                let inner_item_info = inner_item_info_res
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
 
                 self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
@@ -977,6 +1025,59 @@ impl<'db> Resolver<'db> {
         })
     }
 
+    /// Resolves an item using the `use *` imports.
+    fn resolve_path_using_use_star(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        containing_item: ModuleId,
+        identifier: &ast::TerminalIdentifier,
+    ) -> UseStarResult {
+        let mut target_module = None;
+        let mut module_item_id = None;
+        for module_id in self.module_use_star_modules(containing_item) {
+            let inner_item_info =
+                self.db.module_item_info_by_name(module_id, identifier.text(self.db.upcast()));
+            if let Ok(Some(inner_item_info)) = inner_item_info {
+                self.validate_item_usability(diagnostics, module_id, identifier, &inner_item_info);
+                self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
+                if target_module.is_some() {
+                    return UseStarResult::AmbiguousPath {
+                        module_item_1: module_item_id.unwrap(),
+                        module_item_2: inner_item_info.item_id,
+                    };
+                }
+                target_module = Some(module_id);
+                module_item_id = Some(inner_item_info.item_id);
+            }
+        }
+        match target_module {
+            Some(target_module) => UseStarResult::UniquePathFound(target_module),
+            None => UseStarResult::PathNotFound,
+        }
+    }
+
+    /// Returns the modules that are imported with `use *` in the current module.
+    fn module_use_star_modules(&self, module_id: ModuleId) -> OrderedHashSet<ModuleId> {
+        let mut modules = OrderedHashSet::default();
+        let mut visited: OrderedHashSet<ModuleId> = OrderedHashSet::default();
+        let mut stack = vec![module_id];
+        while let Some(module_id) = stack.pop() {
+            if !visited.insert(module_id) {
+                continue;
+            }
+            let Ok(glob_uses) = self.db.module_global_uses(module_id) else { continue };
+            for glob_use in glob_uses.keys() {
+                let Ok(data) = self.db.priv_global_use_semantic_data(*glob_use) else {
+                    continue;
+                };
+                let Ok(module_id) = data.imported_module else { continue };
+                stack.push(module_id);
+                modules.insert(module_id);
+            }
+        }
+        modules
+    }
+
     /// Given the current resolved item, resolves the next segment.
     fn resolve_path_next_segment_generic(
         &mut self,
@@ -989,9 +1090,30 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
         match containing_item {
             ResolvedGenericItem::Module(module_id) => {
-                let inner_item_info = self
-                    .db
-                    .module_item_info_by_name(*module_id, ident)?
+                let mut inner_item_info_res =
+                    self.db.module_item_info_by_name(*module_id, ident.clone())?;
+                match inner_item_info_res {
+                    Some(_) => {}
+                    None => {
+                        match self.resolve_path_using_use_star(diagnostics, *module_id, identifier)
+                        {
+                            UseStarResult::UniquePathFound(new_module_id) => {
+                                inner_item_info_res =
+                                    self.db.module_item_info_by_name(new_module_id, ident)?;
+                            }
+                            UseStarResult::AmbiguousPath { module_item_1, module_item_2 } => {
+                                return Err(diagnostics.report(identifier, AmbiguousPath {
+                                    module_item_1,
+                                    module_item_2,
+                                }));
+                            }
+                            UseStarResult::PathNotFound => {
+                                return Err(diagnostics.report(identifier, PathNotFound(item_type)));
+                            }
+                        }
+                    }
+                }
+                let inner_item_info = inner_item_info_res
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
                 self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
                 self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
@@ -1050,7 +1172,7 @@ impl<'db> Resolver<'db> {
     ) -> ResolvedBase {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
-
+        let module_id = self.module_file_id.0;
         if let Some(env) = statement_env {
             if let Some(inner_generic_arg) = get_statement_item_by_name(env, &ident) {
                 return ResolvedBase::StatementEnvironment(inner_generic_arg);
@@ -1058,8 +1180,8 @@ impl<'db> Resolver<'db> {
         }
 
         // If an item with this name is found inside the current module, use the current module.
-        if let Ok(Some(_)) = self.db.module_item_by_name(self.module_file_id.0, ident.clone()) {
-            return ResolvedBase::Module(self.module_file_id.0);
+        if let Ok(Some(_)) = self.db.module_item_by_name(module_id, ident.clone()) {
+            return ResolvedBase::Module(module_id);
         }
 
         // If the first element is `crate`, use the crate's root module as the base module.
@@ -1073,6 +1195,17 @@ impl<'db> Resolver<'db> {
                 CrateLongId::Real { name: ident, discriminator: dep.discriminator.clone() }
                     .intern(self.db),
             );
+        }
+        // If an item with this name is found in one of the 'use *' imports, use the module that
+        let diagnostics = &mut SemanticDiagnostics::default();
+        match self.resolve_path_using_use_star(diagnostics, module_id, identifier) {
+            UseStarResult::UniquePathFound(new_module_id) => {
+                return ResolvedBase::Module(new_module_id);
+            }
+            UseStarResult::AmbiguousPath { module_item_1, module_item_2 } => {
+                return ResolvedBase::Ambiguous { module_item_1, module_item_2 };
+            }
+            UseStarResult::PathNotFound => {}
         }
         // If the first segment is `core` - and it was not overridden by a dependency - using it.
         if ident == CORELIB_CRATE_NAME {
@@ -1681,6 +1814,8 @@ enum ResolvedBase {
     Crate(CrateId),
     /// The base module to address is the statement
     StatementEnvironment(ResolvedGenericItem),
+    /// The base module is ambiguous.
+    Ambiguous { module_item_1: ModuleItemId, module_item_2: ModuleItemId },
 }
 
 /// The callbacks to be used by `resolve_path_inner`.

@@ -92,7 +92,7 @@ pub fn priv_global_use_semantic_data(
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct UseGlobalData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    imported_module: Maybe<ModuleId>,
+    pub imported_module: Maybe<ModuleId>,
     resolver_data: Arc<ResolverData>,
 }
 
