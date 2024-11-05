@@ -1,6 +1,6 @@
 use std::sync::{Arc, LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx, init_dev_corelib,
@@ -43,8 +43,8 @@ pub struct SierraGenDatabaseForTesting {
 }
 impl salsa::Database for SierraGenDatabaseForTesting {}
 impl ExternalFiles for SierraGenDatabaseForTesting {
-    fn ext_as_virtual(&self, external_id: salsa::InternId) -> VirtualFile {
-        ext_as_virtual_impl(self.upcast(), external_id)
+    fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
+        try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
 impl salsa::ParallelDatabase for SierraGenDatabaseForTesting {

@@ -85,7 +85,22 @@ please include full logs from both the extension and the language server.
 If you feel brave enough, you can try some of the more advanced debugging techniques described in
 [CairoLS contribution guidelines][debugging].
 
+## Submitting bugs/issues
+
+If you have a problem that you think should be fixed, please follow steps below:
+
+1. Submit [a new `bug` issue][cairo-new-bug]
+2. Choose [`ide` label][cairo-ide-label]
+3. Fill out the issue template
+4. Attach all relevant screenshots, logs with trace (obtained with steps in [Troubleshooting])
+5. Do not forget to attach context like:
+   - Scarb version (which version or which nightly?), or commit reference (if built locally),
+   - relevant `Cairo` extension VSCode configuration,
+   - `Cairo` extension version.
+
 [cairo]: https://www.cairo-lang.org/
+[cairo-ide-label]: https://github.com/starkware-libs/cairo/labels/ide
+[cairo-new-bug]: https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=bug&projects=&template=01_BUG_REPORT.md&title=bug%3A+
 [debugging]: https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-language-server/CONTRIBUTING.md#debugging
 [discord]: https://discord.gg/QypNMzkHbc
 [dojo engine]: https://book.dojoengine.org/
@@ -93,4 +108,5 @@ If you feel brave enough, you can try some of the more advanced debugging techni
 [scarb-asdf]: https://docs.swmansion.com/scarb/download.html#install-via-asdf
 [scarb-dl]: https://docs.swmansion.com/scarb/download.html
 [telegram]: https://t.me/cairo_ls_support
+[troubleshooting]: #troubleshooting
 [vscode-marketplace]: https://marketplace.visualstudio.com/items?itemName=starkware.cairo1

@@ -5,7 +5,7 @@ use std::ops::{Shl, Sub};
 use std::vec::IntoIter;
 
 use ark_ff::{BigInteger, PrimeField};
-use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, StarknetHint};
+use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, ExternalHint, Hint, StarknetHint};
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
@@ -414,10 +414,13 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         let hint = match hint {
+            Hint::Starknet(hint) => hint,
             Hint::Core(core_hint_base) => {
                 return execute_core_hint_base(vm, exec_scopes, core_hint_base);
             }
-            Hint::Starknet(hint) => hint,
+            Hint::External(hint) => {
+                return execute_external_hint(vm, hint);
+            }
         };
         match hint {
             StarknetHint::SystemCall { system } => {
@@ -1151,7 +1154,8 @@ impl CairoHintProcessor<'_> {
         vm: &mut dyn VMWrapper,
     ) -> Result<(Relocatable, Relocatable), Vec<Felt252>> {
         let function = runner
-            .sierra_program_registry
+            .builder
+            .registry()
             .get_function(entry_point)
             .expect("Entrypoint exists, but not found.");
         let mut res = runner
@@ -1676,7 +1680,7 @@ fn alloc_memory(
 pub fn execute_core_hint(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
-    core_hint: &cairo_lang_casm::hints::CoreHint,
+    core_hint: &CoreHint,
 ) -> Result<(), HintError> {
     match core_hint {
         CoreHint::AllocSegment { dst } => {
@@ -2125,6 +2129,18 @@ pub fn execute_core_hint(
         }
     };
     Ok(())
+}
+
+/// Executes an external hint.
+fn execute_external_hint(
+    vm: &mut VirtualMachine,
+    core_hint: &ExternalHint,
+) -> Result<(), HintError> {
+    match core_hint {
+        ExternalHint::AddRelocationRule { src, dst } => Ok(
+            vm.add_relocation_rule(extract_relocatable(vm, src)?, extract_relocatable(vm, dst)?)?
+        ),
+    }
 }
 
 /// Reads a range of `Felt252`s from the VM.

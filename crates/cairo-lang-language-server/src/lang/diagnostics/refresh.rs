@@ -11,10 +11,10 @@ use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{LookupIntern, Upcast};
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{PublishDiagnosticsParams, Url};
-use tracing::{error, info_span};
+use tracing::{error, info_span, trace};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
@@ -61,10 +61,12 @@ pub fn refresh_diagnostics(
         let mut rest_of_files: HashSet<FileId> = HashSet::default();
         for crate_id in db.crates() {
             for module_id in db.crate_modules(crate_id).iter() {
-                if let Ok(module_files) = db.module_files(*module_id) {
-                    let unprocessed_files =
-                        module_files.iter().filter(|file| !open_files_ids.contains(file));
-                    rest_of_files.extend(unprocessed_files);
+                // Schedule only module main files for refreshing.
+                // All other related files will be refreshed along with it in a single job.
+                if let Ok(file) = db.module_main_file(*module_id) {
+                    if !open_files_ids.contains(&file) {
+                        rest_of_files.insert(file);
+                    }
                 }
             }
         }
@@ -123,7 +125,11 @@ fn refresh_file_diagnostics(
     file_diagnostics: &mut HashMap<Url, FileDiagnostics>,
     notifier: &Notifier,
 ) {
-    let file_uri = db.url_for_file(*file);
+    let Some(file_uri) = db.url_for_file(*file) else {
+        trace!("url for file not found: {:?}", file.lookup_intern(db));
+        return;
+    };
+
     let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
     let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
 
@@ -133,7 +139,7 @@ fn refresh_file_diagnostics(
                 catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
                     .map($f)
                     .map_err(|err| {
-                        if is_cancelled(&err) {
+                        if is_cancelled(err.as_ref()) {
                             resume_unwind(err);
                         } else {
                             error!("caught panic when computing diagnostics for file {file_uri}");

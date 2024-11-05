@@ -457,8 +457,8 @@ fn test_serde() {
     compare_spans(
         serialized.span(),
         [0, // data len
-         0x68656c6c6f, // pending_word
-         5 // pending_word_len
+        0x68656c6c6f, // pending_word
+        5 // pending_word_len
         ].span()
     );
 
@@ -472,7 +472,8 @@ fn test_serde() {
             0x4c6f6e6720737472696e672c206d6f7265207468616e203331206368617261, // data
             0x63746572732e, // pending_word
             6 // pending_word_len
-        ].span()
+        ]
+            .span()
     );
 }
 

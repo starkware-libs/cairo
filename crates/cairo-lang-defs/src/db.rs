@@ -576,13 +576,16 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
 }
 
 /// Returns the `VirtualFile` matching the given external id.
-pub fn ext_as_virtual_impl(db: &dyn DefsGroup, external_id: salsa::InternId) -> VirtualFile {
+pub fn try_ext_as_virtual_impl(
+    db: &dyn DefsGroup,
+    external_id: salsa::InternId,
+) -> Option<VirtualFile> {
     let long_id = PluginGeneratedFileId::from_intern_id(external_id).lookup_intern(db);
     let file_id = FileLongId::External(external_id).intern(db);
     let data = db
         .priv_module_sub_files(long_id.module_id, long_id.stable_ptr.file_id(db.upcast()))
         .unwrap();
-    data.files[&file_id].clone()
+    data.files.get(&file_id).cloned()
 }
 
 fn priv_module_sub_files(

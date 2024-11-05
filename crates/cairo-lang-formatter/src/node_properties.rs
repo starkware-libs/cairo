@@ -348,6 +348,31 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::TypeClause => Some(12),
                 _ => None,
             },
+            Some(SyntaxKind::ItemConstant) => match self.kind(db) {
+                SyntaxKind::ExprBinary
+                | SyntaxKind::ExprBlock
+                | SyntaxKind::ExprErrorPropagate
+                | SyntaxKind::ExprFieldInitShorthand
+                | SyntaxKind::ExprFunctionCall
+                | SyntaxKind::ExprIf
+                | SyntaxKind::ExprList
+                | SyntaxKind::ExprMatch
+                | SyntaxKind::ExprMissing
+                | SyntaxKind::ExprParenthesized
+                | SyntaxKind::ExprPath
+                | SyntaxKind::ExprStructCtorCall
+                | SyntaxKind::ExprListParenthesized
+                | SyntaxKind::ArgListBraced
+                | SyntaxKind::ArgListBracketed
+                | SyntaxKind::ExprUnary => Some(1),
+                SyntaxKind::TerminalEq => Some(10),
+                SyntaxKind::PatternEnum
+                | SyntaxKind::PatternTuple
+                | SyntaxKind::PatternStruct
+                | SyntaxKind::PatternFixedSizeArray => Some(11),
+                SyntaxKind::TypeClause => Some(12),
+                _ => None,
+            },
             _ => match self.kind(db) {
                 SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprList
@@ -378,7 +403,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::TraitItemList
                 | SyntaxKind::ImplItemList
                 | SyntaxKind::UsePathMulti
-                | SyntaxKind::ItemEnum => Some(5),
+                | SyntaxKind::ItemEnum
+                | SyntaxKind::PatternFixedSizeArray
+                | SyntaxKind::ExprFixedSizeArray => Some(5),
                 _ => None,
             },
         }
