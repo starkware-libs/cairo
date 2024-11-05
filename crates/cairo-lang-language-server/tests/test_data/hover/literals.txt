@@ -32,7 +32,6 @@ fn many_wrong_variables() {
     let c: u8 = 0x<caret>fff;
 }
 
-
 //! > hover #0
 // = source context
 const SOME_CONST: felt252 = 0x<caret>123;
@@ -102,7 +101,7 @@ core::integer::u32
 ```
 ---
 value of literal: `51 (0x33 | 0b110011)`
-    
+
 //! > hover #6
 // = source context
     let e = 5<caret>0;

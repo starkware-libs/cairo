@@ -1150,9 +1150,9 @@ error: Unexpected argument type. Expected: "core::integer::u32", found: "core::i
                  ^
 
 error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
- --> lib.cairo:25:11
-fn bar3() {
-          ^
+ --> lib.cairo:26:21
+    let _: MyTrait::MyType = 3_u32;
+                    ^****^
 
 //! > ==========================================================================
 
@@ -1525,9 +1525,9 @@ fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
                                                      ^
 
 error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
- --> lib.cairo:15:39
-fn let_statement(x: MyTrait::MyType2) {
-                                      ^
+ --> lib.cairo:16:21
+    let _: MyTrait::MyType1 = x;
+                    ^*****^
 
 error: Loop has incompatible return types: "core::integer::u16" and "core::integer::u32"
  --> lib.cairo:23:19
