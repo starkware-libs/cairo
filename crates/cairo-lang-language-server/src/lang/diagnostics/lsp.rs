@@ -14,7 +14,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
     db: &T::DbType,
     diags: &mut Vec<Diagnostic>,
     diagnostics: &Diagnostics<T>,
-    processed_file_id: &FileId,
+    processed_file_id: FileId,
     trace_macro_diagnostics: bool,
 ) {
     for diagnostic in if trace_macro_diagnostics {
@@ -56,7 +56,7 @@ pub fn map_cairo_diagnostics_to_lsp<T: DiagnosticEntry>(
             continue;
         };
 
-        if mapped_file_id != *processed_file_id {
+        if mapped_file_id != processed_file_id {
             continue;
         }
         diags.push(Diagnostic {

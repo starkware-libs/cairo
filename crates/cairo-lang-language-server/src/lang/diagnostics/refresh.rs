@@ -188,21 +188,21 @@ fn refresh_file_diagnostics(
         (*db).upcast(),
         &mut diags,
         &new_file_diagnostics.parser,
-        &file,
+        file,
         trace_macro_diagnostics,
     );
     map_cairo_diagnostics_to_lsp(
         (*db).upcast(),
         &mut diags,
         &new_file_diagnostics.semantic,
-        &file,
+        file,
         trace_macro_diagnostics,
     );
     map_cairo_diagnostics_to_lsp(
         (*db).upcast(),
         &mut diags,
         &new_file_diagnostics.lowering,
-        &file,
+        file,
         trace_macro_diagnostics,
     );
 
