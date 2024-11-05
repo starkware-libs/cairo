@@ -4,13 +4,14 @@ use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, TraitId, TraitItemId,
+    ModuleFileId, ModuleId, ModuleItemId, TraitId, TraitItemId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::node::ast::TerminalIdentifier;
 use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
@@ -231,6 +232,16 @@ impl Resolver<'_> {
     }
 }
 
+/// The result of resolveing an item using `use *` imports.
+enum UseStarResult {
+    /// A unique path was found, considering only the `use *` imports.
+    UniquePathFound(ModuleItemInfo),
+    /// The path is ambiguous, considering only the `use *` imports.
+    AmbiguousPath(Vec<ModuleItemId>),
+    /// The path was not found, considering only the `use *` imports.
+    PathNotFound,
+}
+
 /// A trait for things that can be interpreted as a path of segments.
 pub trait AsSegments {
     fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment>;
@@ -394,6 +405,36 @@ impl<'db> Resolver<'db> {
         )
     }
 
+    /// Specializes the item found in the current segment, and checks its usability.
+    fn specialize_generic_inner_item(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        module_id: ModuleId,
+        identifier: &TerminalIdentifier,
+        inner_item_info: ModuleItemInfo,
+        segment: &ast::PathSegment,
+    ) -> Maybe<ResolvedConcreteItem> {
+        let generic_args_syntax = segment.generic_args(self.db.upcast());
+        let segment_stable_ptr = segment.stable_ptr().untyped();
+        self.validate_item_usability(diagnostics, module_id, identifier, &inner_item_info);
+        self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
+        let inner_generic_item =
+            ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
+        let specialized_item = self.specialize_generic_module_item(
+            diagnostics,
+            identifier,
+            inner_generic_item,
+            generic_args_syntax.clone(),
+        )?;
+        self.warn_same_impl_trait(
+            diagnostics,
+            &specialized_item,
+            &generic_args_syntax.unwrap_or_default(),
+            segment_stable_ptr,
+        );
+        Ok(specialized_item)
+    }
+
     /// Resolves the first segment of a concrete path.
     fn resolve_concrete_path_first_segment(
         &mut self,
@@ -430,6 +471,22 @@ impl<'db> Resolver<'db> {
                             segment.generic_args(syntax_db),
                         )
                     }
+                    ResolvedBase::FoundThroughGlobalUse {
+                        item_info: inner_module_item,
+                        containing_module: module_id,
+                    } => {
+                        let segment = segments.next().unwrap();
+                        self.specialize_generic_inner_item(
+                            diagnostics,
+                            module_id,
+                            &identifier,
+                            inner_module_item,
+                            segment,
+                        )?
+                    }
+                    ResolvedBase::Ambiguous(module_items) => {
+                        return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
+                    }
                 }
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
@@ -463,6 +520,24 @@ impl<'db> Resolver<'db> {
                                 generic_item,
                                 segment.generic_args(syntax_db),
                             )
+                        }
+                        ResolvedBase::FoundThroughGlobalUse {
+                            item_info: inner_module_item,
+                            containing_module: module_id,
+                        } => {
+                            let segment = segments.next().unwrap();
+                            self.specialize_generic_inner_item(
+                                diagnostics,
+                                module_id,
+                                &identifier,
+                                inner_module_item,
+                                segment,
+                            )?
+                        }
+                        ResolvedBase::Ambiguous(module_items) => {
+                            return Err(
+                                diagnostics.report(&identifier, AmbiguousPath(module_items))
+                            );
                         }
                     }
                 }
@@ -576,6 +651,18 @@ impl<'db> Resolver<'db> {
                         ));
                     }
                     ResolvedBase::StatementEnvironment(generic_item) => generic_item,
+                    ResolvedBase::FoundThroughGlobalUse {
+                        item_info: inner_module_item, ..
+                    } => {
+                        segments.next();
+                        self.data
+                            .used_items
+                            .insert(LookupItemId::ModuleItem(inner_module_item.item_id));
+                        ResolvedGenericItem::from_module_item(self.db, inner_module_item.item_id)?
+                    }
+                    ResolvedBase::Ambiguous(module_items) => {
+                        return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
+                    }
                 }
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
@@ -591,6 +678,18 @@ impl<'db> Resolver<'db> {
                     ResolvedBase::StatementEnvironment(generic_item) => {
                         segments.next();
                         generic_item
+                    }
+                    ResolvedBase::FoundThroughGlobalUse {
+                        item_info: inner_module_item, ..
+                    } => {
+                        segments.next();
+                        self.data
+                            .used_items
+                            .insert(LookupItemId::ModuleItem(inner_module_item.item_id));
+                        ResolvedGenericItem::from_module_item(self.db, inner_module_item.item_id)?
+                    }
+                    ResolvedBase::Ambiguous(module_items) => {
+                        return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
                     }
                 }
             }
@@ -621,6 +720,29 @@ impl<'db> Resolver<'db> {
         (module_id != self.module_file_id.0).then_some(Ok(module_id))
     }
 
+    /// Resolves the inner item of a module, given the current segment of the path.
+    fn resolve_module_inner_item(
+        &mut self,
+        module_id: &ModuleId,
+        ident: SmolStr,
+        diagnostics: &mut SemanticDiagnostics,
+        identifier: &TerminalIdentifier,
+        item_type: NotFoundItemType,
+    ) -> Maybe<ModuleItemInfo> {
+        match self.db.module_item_info_by_name(*module_id, ident.clone())? {
+            Some(info) => Ok(info),
+            None => match self.resolve_path_using_use_star(diagnostics, *module_id, identifier) {
+                UseStarResult::UniquePathFound(item_info) => Ok(item_info),
+                UseStarResult::AmbiguousPath(module_items) => {
+                    Err(diagnostics.report(identifier, AmbiguousPath(module_items)))
+                }
+                UseStarResult::PathNotFound => {
+                    Err(diagnostics.report(identifier, PathNotFound(item_type)))
+                }
+            },
+        }
+    }
+
     /// Given the current resolved item, resolves the next segment.
     fn resolve_path_next_segment_concrete(
         &mut self,
@@ -646,30 +768,21 @@ impl<'db> Resolver<'db> {
                 if ident == SUPER_KW {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
-                let segment_stable_ptr = segment.stable_ptr().untyped();
-
-                let inner_item_info = self
-                    .db
-                    .module_item_info_by_name(*module_id, ident)?
-                    .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-
-                self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
-                self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
-                let inner_generic_item =
-                    ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
-                let specialized_item = self.specialize_generic_module_item(
+                let inner_item_info = self.resolve_module_inner_item(
+                    module_id,
+                    ident,
                     diagnostics,
                     identifier,
-                    inner_generic_item,
-                    generic_args_syntax.clone(),
+                    item_type,
                 )?;
-                self.warn_same_impl_trait(
+
+                self.specialize_generic_inner_item(
                     diagnostics,
-                    &specialized_item,
-                    &generic_args_syntax.unwrap_or_default(),
-                    segment_stable_ptr,
-                );
-                Ok(specialized_item)
+                    *module_id,
+                    identifier,
+                    inner_item_info,
+                    segment,
+                )
             }
             ResolvedConcreteItem::Type(ty) => {
                 if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
@@ -977,6 +1090,59 @@ impl<'db> Resolver<'db> {
         })
     }
 
+    /// Resolves an item using the `use *` imports.
+    fn resolve_path_using_use_star(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        module_id: ModuleId,
+        identifier: &ast::TerminalIdentifier,
+    ) -> UseStarResult {
+        let mut item_info = None;
+        let mut fitted_module_items: OrderedHashSet<ModuleItemId> = OrderedHashSet::default();
+        for imported_module in self.module_use_star_modules(module_id) {
+            let inner_item_info = self
+                .db
+                .module_item_info_by_name(imported_module, identifier.text(self.db.upcast()));
+            if let Ok(Some(inner_item_info)) = inner_item_info {
+                self.check_item_feature_usability(diagnostics, identifier, &inner_item_info);
+                self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
+                item_info = Some(inner_item_info.clone());
+                fitted_module_items.insert(inner_item_info.item_id);
+            }
+        }
+        if fitted_module_items.len() > 1 {
+            return UseStarResult::AmbiguousPath(fitted_module_items.iter().cloned().collect());
+        }
+        match item_info {
+            Some(item_info) => UseStarResult::UniquePathFound(item_info),
+            None => UseStarResult::PathNotFound,
+        }
+    }
+
+    // TODO(Tomer-StarkWare): Add reference to the visibility of the module.
+    /// Returns the modules that are imported with `use *` in the current module.
+    fn module_use_star_modules(&self, module_id: ModuleId) -> OrderedHashSet<ModuleId> {
+        let mut modules = OrderedHashSet::default();
+        let mut visited: OrderedHashSet<ModuleId> = OrderedHashSet::default();
+        let mut stack = vec![module_id];
+        while let Some(module_id) = stack.pop() {
+            if !visited.insert(module_id) {
+                continue;
+            }
+            let Ok(glob_uses) = self.db.module_global_uses(module_id) else {
+                continue;
+            };
+            for glob_use in glob_uses.keys() {
+                let Ok(module_id) = self.db.priv_global_use_imported_module(*glob_use) else {
+                    continue;
+                };
+                stack.push(module_id);
+                modules.insert(module_id);
+            }
+        }
+        modules
+    }
+
     /// Given the current resolved item, resolves the next segment.
     fn resolve_path_next_segment_generic(
         &mut self,
@@ -989,10 +1155,14 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
         match containing_item {
             ResolvedGenericItem::Module(module_id) => {
-                let inner_item_info = self
-                    .db
-                    .module_item_info_by_name(*module_id, ident)?
-                    .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
+                let inner_item_info = self.resolve_module_inner_item(
+                    module_id,
+                    ident,
+                    diagnostics,
+                    identifier,
+                    item_type,
+                )?;
+
                 self.validate_item_usability(diagnostics, *module_id, identifier, &inner_item_info);
                 self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
                 ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)
@@ -1050,7 +1220,7 @@ impl<'db> Resolver<'db> {
     ) -> ResolvedBase {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
-
+        let module_id = self.module_file_id.0;
         if let Some(env) = statement_env {
             if let Some(inner_generic_arg) = get_statement_item_by_name(env, &ident) {
                 return ResolvedBase::StatementEnvironment(inner_generic_arg);
@@ -1058,8 +1228,8 @@ impl<'db> Resolver<'db> {
         }
 
         // If an item with this name is found inside the current module, use the current module.
-        if let Ok(Some(_)) = self.db.module_item_by_name(self.module_file_id.0, ident.clone()) {
-            return ResolvedBase::Module(self.module_file_id.0);
+        if let Ok(Some(_)) = self.db.module_item_by_name(module_id, ident.clone()) {
+            return ResolvedBase::Module(module_id);
         }
 
         // If the first element is `crate`, use the crate's root module as the base module.
@@ -1073,6 +1243,20 @@ impl<'db> Resolver<'db> {
                 CrateLongId::Real { name: ident, discriminator: dep.discriminator.clone() }
                     .intern(self.db),
             );
+        }
+        // If an item with this name is found in one of the 'use *' imports, use the module that
+        let diagnostics = &mut SemanticDiagnostics::default();
+        match self.resolve_path_using_use_star(diagnostics, module_id, identifier) {
+            UseStarResult::UniquePathFound(inner_module_item) => {
+                return ResolvedBase::FoundThroughGlobalUse {
+                    item_info: inner_module_item,
+                    containing_module: module_id,
+                };
+            }
+            UseStarResult::AmbiguousPath(module_items) => {
+                return ResolvedBase::Ambiguous(module_items);
+            }
+            UseStarResult::PathNotFound => {}
         }
         // If the first segment is `core` - and it was not overridden by a dependency - using it.
         if ident == CORELIB_CRATE_NAME {
@@ -1389,6 +1573,18 @@ impl<'db> Resolver<'db> {
         identifier: &ast::TerminalIdentifier,
         item_info: &ModuleItemInfo,
     ) {
+        self.check_item_visibility(diagnostics, containing_module_id, identifier, item_info);
+        self.check_item_feature_usability(diagnostics, identifier, item_info);
+    }
+
+    /// Checks if an item is visible from the current module.
+    fn check_item_visibility(
+        &self,
+        diagnostics: &mut SemanticDiagnostics,
+        containing_module_id: ModuleId,
+        identifier: &ast::TerminalIdentifier,
+        item_info: &ModuleItemInfo,
+    ) {
         let db = self.db.upcast();
         if !self.ignore_visibility_checks(containing_module_id) {
             let user_module = self.module_file_id.0;
@@ -1401,6 +1597,15 @@ impl<'db> Resolver<'db> {
                 diagnostics.report(identifier, ItemNotVisible(item_info.item_id));
             }
         }
+    }
+
+    /// Checks if an item uses a feature that is not allowed.
+    fn check_item_feature_usability(
+        &self,
+        diagnostics: &mut SemanticDiagnostics,
+        identifier: &ast::TerminalIdentifier,
+        item_info: &ModuleItemInfo,
+    ) {
         match &item_info.feature_kind {
             FeatureKind::Unstable { feature, note }
                 if !self.data.feature_config.allowed_features.contains(feature) =>
@@ -1681,6 +1886,10 @@ enum ResolvedBase {
     Crate(CrateId),
     /// The base module to address is the statement
     StatementEnvironment(ResolvedGenericItem),
+    /// The item is imported using global use.
+    FoundThroughGlobalUse { item_info: ModuleItemInfo, containing_module: ModuleId },
+    /// The base module is ambiguous.
+    Ambiguous(Vec<ModuleItemId>),
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
