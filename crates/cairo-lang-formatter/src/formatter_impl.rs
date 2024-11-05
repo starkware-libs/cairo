@@ -562,7 +562,11 @@ impl LineBuilder {
                     LineComponent::BreakLinePoint(node_properties)
                         if node_properties.is_optional =>
                     {
-                        LineComponent::Token(child.to_string())
+                        if node_properties.space_if_not_broken {
+                            LineComponent::Space
+                        } else {
+                            LineComponent::Token("".to_string())
+                        }
                     }
                     _ => child.clone(),
                 })
