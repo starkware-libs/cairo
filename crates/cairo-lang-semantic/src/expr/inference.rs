@@ -601,11 +601,18 @@ impl<'db> Inference<'db> {
     /// Returns whether the inference was successful. If not, the error may be found by
     /// `.error_state()`.
     pub fn solve(&mut self) -> InferenceResult<()> {
+        self.solve_ex().map_err(|(err_set, _)| err_set)
+    }
+
+    /// Same as `solve`, but returns the error stable pointer if an error occurred.
+    fn solve_ex(&mut self) -> Result<(), (ErrorSet, Option<SyntaxStablePtrId>)> {
         let mut ambiguous = std::mem::take(&mut self.ambiguous);
         self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {
             // First inference error stops inference.
-            self.solve_single_pending(var)?;
+            self.solve_single_pending(var).map_err(|err_set| {
+                (err_set, self.stable_ptrs.get(&InferenceVar::Impl(var)).copied())
+            })?;
         }
         Ok(())
     }
@@ -667,7 +674,7 @@ impl<'db> Inference<'db> {
         // Conform all uninferred numeric literals to felt252.
         loop {
             let mut changed = false;
-            self.solve().map_err(|err_set| (err_set, None))?;
+            self.solve_ex()?;
             for (var, _) in self.ambiguous.clone() {
                 let impl_var = self.impl_var(var).clone();
                 if impl_var.concrete_trait_id.trait_id(self.db) != numeric_trait_id {

@@ -1,0 +1,108 @@
+//! > Test runnable on generic.
+
+//! > test_runner_name
+ExpandRunnableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[runnable]
+fn main<T>() {}
+
+//! > generated_cairo_code
+#[runnable]
+fn main<T>() {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Runnable functions cannot have generic params.
+ --> lib.cairo:2:8
+fn main<T>() {}
+       ^*^
+
+//! > ==========================================================================
+
+//! > Test runnable with arguments with no serde.
+
+//! > test_runner_name
+ExpandRunnableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[runnable]
+fn main(a: NoSerde, b: felt252) -> felt252 {
+    a.v + b
+}
+
+struct NoSerde {
+    v: felt252
+}
+
+//! > generated_cairo_code
+#[runnable]
+fn main(a: NoSerde, b: felt252) -> felt252 {
+    a.v + b
+}
+
+struct NoSerde {
+    v: felt252
+}
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
+fn __runnable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
+
+    let __param__runnable_wrapper__0 = Serde::deserialize(ref input).expect('Failed to deserialize param #0');
+    let __param__runnable_wrapper__1 = Serde::deserialize(ref input).expect('Failed to deserialize param #1');
+    assert(core::array::SpanTrait::is_empty(input), 'Input too long for params.');
+    let __result = @main(
+        __param__runnable_wrapper__0,
+        __param__runnable_wrapper__1,
+    );
+    Serde::serialize(__result, ref output);
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::serde::Serde::<test::NoSerde>.
+ --> lib.cairo:2:9
+fn main(a: NoSerde, b: felt252) -> felt252 {
+        ^********^
+
+//! > ==========================================================================
+
+//! > Test runnable with result with no serde.
+
+//! > test_runner_name
+ExpandRunnableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[runnable]
+fn main(a: felt252, b: felt252) -> NoSerde {
+    NoSerde { v: a + b }
+}
+
+struct NoSerde {
+    v: felt252
+}
+
+//! > generated_cairo_code
+#[runnable]
+fn main(a: felt252, b: felt252) -> NoSerde {
+    NoSerde { v: a + b }
+}
+
+struct NoSerde {
+    v: felt252
+}
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
+fn __runnable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
+
+    let __param__runnable_wrapper__0 = Serde::deserialize(ref input).expect('Failed to deserialize param #0');
+    let __param__runnable_wrapper__1 = Serde::deserialize(ref input).expect('Failed to deserialize param #1');
+    assert(core::array::SpanTrait::is_empty(input), 'Input too long for params.');
+    let __result = @main(
+        __param__runnable_wrapper__0,
+        __param__runnable_wrapper__1,
+    );
+    Serde::serialize(__result, ref output);
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::serde::Serde::<test::NoSerde>.
+ --> lib.cairo:2:33
+fn main(a: felt252, b: felt252) -> NoSerde {
+                                ^********^
