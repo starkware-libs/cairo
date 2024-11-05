@@ -4,7 +4,7 @@ mod ownable_mini_contract {
     use starknet::ContractAddress;
     use starknet::storage::{
         StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
-        StoragePointerWriteAccess
+        StoragePointerWriteAccess,
     };
 
     #[storage]
@@ -19,13 +19,13 @@ mod ownable_mini_contract {
     impl OwnershipHelper = ownable_mini::OwnableHelperImpl<ContractState>;
 
     impl OwnableHasStorage of ownable_mini::HasStorage<
-        ContractState, ownable_mini::OwnableStorage
+        ContractState, ownable_mini::OwnableStorage,
     > {
         fn storage(self: @ContractState) -> StorageNode::<ownable_mini::OwnableStorage>::NodeType {
             self.ownable.as_path().storage_node()
         }
         fn storage_mut(
-            ref self: ContractState
+            ref self: ContractState,
         ) -> StorageNodeMut::<ownable_mini::OwnableStorage>::NodeType {
             self.ownable.as_path().storage_node_mut()
         }

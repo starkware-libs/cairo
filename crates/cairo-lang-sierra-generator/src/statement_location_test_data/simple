@@ -85,7 +85,7 @@ fn foo(my_enum: MyEnum) -> u8 {
             c1 + c2
         } else {
             c1 * c2
-        } }
+        } },
     }
 }
 

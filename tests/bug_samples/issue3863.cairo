@@ -19,7 +19,7 @@ trait CallContextTrait {
 
 impl CallContextImpl of CallContextTrait {
     fn new(bytecode: Span<u8>, call_data: Span<u8>, value: u256) -> CallContext {
-        CallContext { bytecode, call_data, value, }
+        CallContext { bytecode, call_data, value }
     }
     fn bytecode(self: @CallContext) -> Span<u8> {
         *self.bytecode

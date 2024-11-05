@@ -21,7 +21,7 @@ impl DisplayByteArray of Display<ByteArray> {
 }
 
 impl DisplayInteger<
-    T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
+    T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>,
 > of Display<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         // TODO(yuval): determine base according to Formatter parameters.
@@ -85,7 +85,7 @@ impl DebugByteArray of Debug<ByteArray> {
 }
 
 impl DebugInteger<
-    T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
+    T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>,
 > of Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         Display::fmt(self, ref f)
@@ -183,7 +183,7 @@ impl TupleDebugHelperTuple1<E0, +TupleDebugHelper<@E0>> of TupleDebugHelper<(@E0
 
 /// `Debug` impl for tuples of size 2.
 impl TupleDebugHelperTuple2<
-    E0, E1, +TupleDebugHelper<@E0>, +TupleDebugHelper<@E1>
+    E0, E1, +TupleDebugHelper<@E0>, +TupleDebugHelper<@E1>,
 > of TupleDebugHelper<(@E0, @E1)> {
     fn fmt(value: (@E0, @E1), ref f: Formatter) -> Result<(), Error> {
         let (e0, e1) = value;
@@ -251,7 +251,7 @@ fn fmt_head_and_rest<
     +TupleDebugHelper<TS::Rest>,
     +Drop<TS::Rest>,
 >(
-    value: T, ref f: Formatter
+    value: T, ref f: Formatter,
 ) -> Result<(), Error> {
     let (head, rest) = TS::split_head(value);
     TupleDebugHelper::fmt(head, ref f)?;
@@ -282,7 +282,7 @@ impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
                         break Result::Err(Error {});
                     };
                 },
-                Option::None => { break Result::Ok(()); }
+                Option::None => { break Result::Ok(()); },
             };
         }?;
         write!(f, "]")
@@ -315,7 +315,7 @@ pub trait LowerHex<T> {
 }
 
 impl LowerHexInteger<
-    T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>
+    T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>,
 > of LowerHex<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error> {
         let base: T = 16_u8.into();

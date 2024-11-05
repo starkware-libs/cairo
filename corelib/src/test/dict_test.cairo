@@ -120,7 +120,7 @@ fn test_dict_of_nullable() {
             nullable::FromNullableResult::Null => true,
             nullable::FromNullableResult::NotNull(_) => false,
         },
-        'default_val == null'
+        'default_val == null',
     );
 }
 

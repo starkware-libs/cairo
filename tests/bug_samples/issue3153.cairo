@@ -1,6 +1,6 @@
 use starknet::{
     Store, SyscallResult, StorageBaseAddress, storage_read_syscall, storage_write_syscall,
-    storage_address_from_base_and_offset
+    storage_address_from_base_and_offset,
 };
 use core::integer::u256_from_felt252;
 
@@ -9,7 +9,7 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
         let intermediate: Option<felt252> = self.try_into();
         match intermediate {
             Option::Some(felt) => felt.try_into(),
-            Option::None => Option::None
+            Option::None => Option::None,
         }
     }
 }
@@ -57,22 +57,22 @@ impl ProposalStore of Store<Proposal> {
         Self::write_at_offset(address_domain, base, 0, value)
     }
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<Proposal> {
         let (proposer, last_updated_at) = unpack_proposal_fields(
             storage_read_syscall(
-                address_domain, storage_address_from_base_and_offset(base, offset)
-            )?
+                address_domain, storage_address_from_base_and_offset(base, offset),
+            )?,
         );
         Result::Ok(Proposal { proposer, last_updated_at })
     }
 
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: Proposal
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: Proposal,
     ) -> SyscallResult<()> {
         let packed = pack_proposal_fields(value.proposer, value.last_updated_at);
         storage_write_syscall(
-            address_domain, storage_address_from_base_and_offset(base, offset), packed
+            address_domain, storage_address_from_base_and_offset(base, offset), packed,
         )
     }
 
@@ -88,7 +88,7 @@ mod test_contract {
     #[storage]
     struct Storage {
         _proposals: Map<u32, Proposal>,
-        _single_proposal: Proposal
+        _single_proposal: Proposal,
     }
 
     #[external(v0)]

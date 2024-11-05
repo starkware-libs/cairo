@@ -10,7 +10,7 @@ fn foo(x: felt252) -> felt252 {
         _ => {
             let y = 4;
             y
-        }
+        },
     }
 }
 
