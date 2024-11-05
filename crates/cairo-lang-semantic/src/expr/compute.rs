@@ -1795,6 +1795,11 @@ fn compute_expr_indexed_semantic(
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let index_expr_syntax = &syntax.index_expr(syntax_db);
+    let index_expr = compute_expr_semantic(ctx, index_expr_syntax);
+    // Make sure the maximal amount of types is known when trying to access. Ignoring the returned
+    // value, as any errors will be reported later.
+    ctx.resolver.inference().solve().ok();
     let candidate_traits: Vec<_> = ["Index", "IndexView"]
         .iter()
         .map(|trait_name| get_core_trait(ctx.db, CoreTraitContext::Ops, (*trait_name).into()))
@@ -1810,8 +1815,6 @@ fn compute_expr_indexed_semantic(
         |ty, _, _| Some(MultipleImplementationOfIndexOperator(ty)),
     )?;
 
-    let index_expr_syntax = &syntax.index_expr(syntax_db);
-    let index_expr = compute_expr_semantic(ctx, index_expr_syntax);
     expr_function_call(
         ctx,
         function_id,
