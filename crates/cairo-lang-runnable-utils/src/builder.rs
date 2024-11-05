@@ -29,6 +29,7 @@ use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_vm::types::builtin_name::BuiltinName;
+use itertools::{Itertools, chain};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -164,6 +165,27 @@ impl RunnableBuilder {
 
         let assembled_cairo_program = self.casm_program.assemble_ex(&header, &footer);
         Ok((assembled_cairo_program, builtins))
+    }
+
+    /// CASM style string representation of the program.
+    pub fn casm_function_program(&self, func: &Function) -> Result<String, BuildError> {
+        let (header, builtins) = self.create_entry_code(func)?;
+        let footer = create_code_footer();
+
+        Ok(chain!(
+            [
+                format!("# builtins: {}\n", builtins.into_iter().map(|b| b.to_str()).join(", ")),
+                "# header #\n".to_string()
+            ],
+            header.into_iter().map(|i| format!("{i};\n")),
+            [
+                "# sierra based code #\n".to_string(),
+                self.casm_program.to_string(),
+                "# footer #\n".to_string()
+            ],
+            footer.into_iter().map(|i| format!("{i};\n")),
+        )
+        .join(""))
     }
 
     /// Returns the instructions to add to the beginning of the code to successfully call the main
