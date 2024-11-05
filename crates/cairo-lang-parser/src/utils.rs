@@ -11,6 +11,7 @@ use cairo_lang_utils::{Intern, Upcast};
 use crate::ParserDiagnostic;
 use crate::db::ParserDatabase;
 use crate::parser::Parser;
+use crate::types::TokenStream;
 
 /// A salsa database for parsing only.
 #[salsa::database(ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -70,6 +71,48 @@ impl SimpleParserDatabase {
         })
         .intern(self);
         get_syntax_root_and_diagnostics(self, file, content.to_string().as_str())
+    }
+
+    pub fn parse_token_stream(
+        &self,
+        token_stream: &dyn TokenStream,
+    ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+        let file_id = FileLongId::Virtual(VirtualFile {
+            parent: Default::default(),
+            name: "token_stream_file_parser_input".into(),
+            content: token_stream.to_string().into(),
+            code_mappings: Default::default(),
+            kind: FileKind::Module,
+        })
+        .intern(self);
+        let mut diagnostics = DiagnosticsBuilder::default();
+
+        (
+            Parser::parse_token_stream(self, &mut diagnostics, file_id, token_stream)
+                .as_syntax_node(),
+            diagnostics.build(),
+        )
+    }
+
+    pub fn parse_token_stream_expr(
+        &self,
+        token_stream: &dyn TokenStream,
+    ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+        let file_id = FileLongId::Virtual(VirtualFile {
+            parent: Default::default(),
+            name: "token_stream_expr_parser_input".into(),
+            content: Default::default(),
+            code_mappings: Default::default(),
+            kind: FileKind::Module,
+        })
+        .intern(self);
+        let mut diagnostics = DiagnosticsBuilder::default();
+
+        (
+            Parser::parse_token_stream_expr(self, &mut diagnostics, file_id, token_stream)
+                .as_syntax_node(),
+            diagnostics.build(),
+        )
     }
 }
 
