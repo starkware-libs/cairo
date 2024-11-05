@@ -51,7 +51,7 @@ impl Notification for CorelibVersionMismatch {
     const METHOD: &'static str = "cairo/corelib-version-mismatch";
 }
 
-/// Notifies about corelib version mismatch.
+/// Notifies about scarb metadata failure.
 #[derive(Debug)]
 pub struct ScarbMetadataFailed;
 
