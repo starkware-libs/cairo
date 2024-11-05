@@ -122,7 +122,7 @@ fn test_events() {
 
 #[test]
 fn test_pop_log() {
-    let contract_address = starknet::contract_address_const::<0x1234>();
+    let contract_address = starknet::const_value::<0x1234>();
     starknet::testing::set_contract_address(contract_address);
     let (keys, data) = ([1234].span(), [2345].span());
     starknet::syscalls::emit_event_syscall(keys, data).unwrap_syscall();
