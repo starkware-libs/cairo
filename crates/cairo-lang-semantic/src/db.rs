@@ -179,8 +179,20 @@ pub trait SemanticGroup:
     // ====
     /// Private query to compute data about a global use.
     #[salsa::invoke(items::us::priv_global_use_semantic_data)]
-    fn priv_global_use_semantic_data(&self, use_id: GlobalUseId)
-    -> Maybe<items::us::UseGlobalData>;
+    #[salsa::cycle(items::us::priv_global_use_semantic_data_cycle)]
+    fn priv_global_use_semantic_data(
+        &self,
+        global_use_id: GlobalUseId,
+    ) -> Maybe<items::us::UseGlobalData>;
+    /// Private query to compute the imported module, given a global use.
+    #[salsa::invoke(items::us::priv_global_use_imported_module)]
+    fn priv_global_use_imported_module(&self, global_use_id: GlobalUseId) -> Maybe<ModuleId>;
+    /// Returns the semantic diagnostics of a global use.
+    #[salsa::invoke(items::us::global_use_semantic_diagnostics)]
+    fn global_use_semantic_diagnostics(
+        &self,
+        global_use_id: GlobalUseId,
+    ) -> Diagnostics<SemanticDiagnostic>;
 
     // Module.
     // ====
@@ -1671,6 +1683,9 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.impl_alias_semantic_diagnostics(*type_alias));
             }
         }
+    }
+    for global_use in db.module_global_uses(module_id)?.keys() {
+        diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
     for analyzer_plugin in db.analyzer_plugins().iter() {

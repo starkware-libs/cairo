@@ -867,3 +867,133 @@ error: Are you missing a `::`?.
  --> lib.cairo:4:18
   let _fail = bar<felt252>(1);
                  ^
+
+//! > ==========================================================================
+
+//! > Testing use star not on a module
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+const NOT_MODULE: u8 = 2;
+pub mod a {
+    use super::NOT_MODULE::*;
+}
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Expected module, found constant.
+ --> lib.cairo:3:16
+    use super::NOT_MODULE::*;
+               ^********^
+
+//! > ==========================================================================
+
+//! > Testing use star ambiguous path
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+pub mod a {
+    pub const AMBIGUOUS: u8 = 1;
+}
+
+pub mod b {
+    pub const AMBIGUOUS: u8 = 4;
+}
+
+use a::*;
+use b::*;
+
+//! > function_body
+
+//! > expr_code
+AMBIGUOUS
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Ambiguous path. Multiple matching items: `test::a::AMBIGUOUS`, `test::b::AMBIGUOUS`
+ --> lib.cairo:12:1
+AMBIGUOUS
+^*******^
+
+//! > ==========================================================================
+
+//! > Testing use star path does not exist
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+use undefined_item::*;
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Identifier not found.
+ --> lib.cairo:1:5
+use undefined_item::*;
+    ^************^
+
+//! > ==========================================================================
+
+//! > Testing use star unresolved import due to cycle
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+mod a {
+    use super::*;
+    use a::a::a::a::*;
+}
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Identifier not found.
+ --> lib.cairo:3:18
+    use a::a::a::a::*;
+                 ^
+
+//! > ==========================================================================
+
+//! > Testing use star empty path
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+use *;
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: `*` in `use` items is not allowed for empty path.
+ --> lib.cairo:1:5
+use *;
+    ^
