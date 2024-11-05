@@ -521,6 +521,18 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 NotFoundItemType::Trait => "Trait not found.".into(),
                 NotFoundItemType::Impl => "Impl not found.".into(),
             },
+            SemanticDiagnosticKind::AmbiguousPath(module_items) => {
+                format!(
+                    "Ambiguous path. Multiple matching items: {}",
+                    module_items
+                        .iter()
+                        .map(|item| format!("`{}`", item.full_path(db.upcast())))
+                        .join(", ")
+                )
+            }
+            SemanticDiagnosticKind::UseStarEmptyPath => {
+                "`use *` is not allowed for empty path.".into()
+            }
             SemanticDiagnosticKind::TraitInTraitMustBeExplicit => {
                 "In a trait, paths of the same trait must be fully explicit. Either use `Self` if \
                  this is the intention, or explicitly specify all the generic arguments."
@@ -1124,6 +1136,8 @@ pub enum SemanticDiagnosticKind {
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound(NotFoundItemType),
+    AmbiguousPath(Vec<ModuleItemId>),
+    UseStarEmptyPath,
     TraitInTraitMustBeExplicit,
     ImplInImplMustBeExplicit,
     TraitItemForbiddenInTheTrait,
