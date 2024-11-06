@@ -13,6 +13,8 @@ use crate::Tricks;
 use crate::config::Config;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
+use crate::server::client::Client;
+use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
 
 /// State of Language server.
@@ -43,14 +45,16 @@ impl std::panic::UnwindSafe for FileDiagnostics {}
 
 impl State {
     pub fn new(
-        db: AnalysisDatabase,
+        sender: ClientSender,
         client_capabilities: ClientCapabilities,
-        scarb_toolchain: ScarbToolchain,
         tricks: Tricks,
     ) -> Self {
+        let notifier = Client::new(sender).notifier();
+        let scarb_toolchain = ScarbToolchain::new(notifier);
         let db_swapper = AnalysisDatabaseSwapper::new(scarb_toolchain.clone());
+
         Self {
-            db,
+            db: AnalysisDatabase::new(&tricks),
             open_files: Default::default(),
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
