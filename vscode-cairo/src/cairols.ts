@@ -120,7 +120,7 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
     const goToLogs = "Go to logs";
 
     const selectedValue = await vscode.window.showErrorMessage(
-      "Scarb metadata failed. Check if your project builds correctly via `scarb build`",
+      "`scarb metadata` failed. Check if your project builds correctly via `scarb build`.",
       goToLogs,
     );
 
