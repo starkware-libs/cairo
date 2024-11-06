@@ -62,7 +62,7 @@ use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
-use crate::lsp::ext::CorelibVersionMismatch;
+use crate::lsp::ext::{CorelibVersionMismatch, ScarbMetadataFailed};
 use crate::lsp::result::LSPResult;
 use crate::project::ProjectManifestPath;
 use crate::project::scarb::update_crate_roots;
@@ -402,9 +402,9 @@ impl Backend {
                     .with_context(|| {
                         format!("failed to refresh scarb workspace: {}", manifest_path.display())
                     })
-                    .inspect_err(|e| {
-                        // TODO(mkaput): Send a notification to the language client.
-                        warn!("{e:?}");
+                    .inspect_err(|err| {
+                        warn!("{err:?}");
+                        notifier.notify::<ScarbMetadataFailed>(());
                     })
                     .ok();
 

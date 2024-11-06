@@ -49,7 +49,7 @@ ExprMatch
 test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
-fn f(x: felt252,) {
+fn f(x: felt252) {
     let x = 5;
     match x {
         0 | 1 => 1,

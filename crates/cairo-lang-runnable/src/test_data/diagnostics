@@ -31,7 +31,7 @@ fn main(a: NoSerde, b: felt252) -> felt252 {
 }
 
 struct NoSerde {
-    v: felt252
+    v: felt252,
 }
 
 //! > generated_cairo_code
@@ -41,7 +41,7 @@ fn main(a: NoSerde, b: felt252) -> felt252 {
 }
 
 struct NoSerde {
-    v: felt252
+    v: felt252,
 }
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
 fn __runnable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
@@ -76,7 +76,7 @@ fn main(a: felt252, b: felt252) -> NoSerde {
 }
 
 struct NoSerde {
-    v: felt252
+    v: felt252,
 }
 
 //! > generated_cairo_code
@@ -86,7 +86,7 @@ fn main(a: felt252, b: felt252) -> NoSerde {
 }
 
 struct NoSerde {
-    v: felt252
+    v: felt252,
 }
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
 fn __runnable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {

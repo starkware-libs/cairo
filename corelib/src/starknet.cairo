@@ -17,7 +17,7 @@ pub use storage_access::{Store, StorageAddress};
 use storage_access::{
     StorePacking, StorageBaseAddress, storage_base_address_const, storage_base_address_from_felt252,
     storage_address_from_base, storage_address_from_base_and_offset, storage_address_to_felt252,
-    storage_address_try_from_felt252
+    storage_address_try_from_felt252,
 };
 
 /// Module containing all the extern declaration of the syscalls.
@@ -27,7 +27,7 @@ use syscalls::{
     call_contract_syscall, deploy_syscall, emit_event_syscall, get_block_hash_syscall,
     get_execution_info_syscall, library_call_syscall, send_message_to_l1_syscall,
     storage_read_syscall, storage_write_syscall, replace_class_syscall, keccak_syscall,
-    get_class_hash_at_syscall
+    get_class_hash_at_syscall,
 };
 
 /// secp256
@@ -41,7 +41,7 @@ pub use contract_address::{ContractAddress, contract_address_const};
 #[allow(unused_imports)]
 use contract_address::{
     ContractAddressIntoFelt252, Felt252TryIntoContractAddress, contract_address_to_felt252,
-    contract_address_try_from_felt252
+    contract_address_try_from_felt252,
 };
 
 /// EthAddress
@@ -49,7 +49,7 @@ pub mod eth_address;
 pub use eth_address::EthAddress;
 #[allow(unused_imports)]
 use eth_address::{
-    EthAddressIntoFelt252, EthAddressSerde, EthAddressZeroable, Felt252TryIntoEthAddress
+    EthAddressIntoFelt252, EthAddressSerde, EthAddressZeroable, Felt252TryIntoEthAddress,
 };
 
 /// EthSignature
@@ -63,7 +63,7 @@ pub use class_hash::ClassHash;
 #[allow(unused_imports)]
 use class_hash::{
     ClassHashIntoFelt252, Felt252TryIntoClassHash, class_hash_const, class_hash_to_felt252,
-    class_hash_try_from_felt252
+    class_hash_try_from_felt252,
 };
 
 /// Not `pub` on purpose, only used for direct reexport by the next line.
@@ -71,7 +71,7 @@ mod info;
 pub use info::{
     v2::ExecutionInfo as ExecutionInfo, BlockInfo, v2::TxInfo as TxInfo, get_execution_info,
     get_caller_address, get_contract_address, get_block_info, get_tx_info, get_block_timestamp,
-    get_block_number, v2::ResourceBounds as ResourcesBounds
+    get_block_number, v2::ResourceBounds as ResourcesBounds,
 };
 
 pub mod event;
@@ -154,7 +154,7 @@ pub extern type System;
 /// An Helper function to force the inclusion of `System` in the list of implicits.
 #[deprecated(
     feature: "use_system_implicit",
-    note: "Use `core::internal::require_implicit::<System>` instead."
+    note: "Use `core::internal::require_implicit::<System>` instead.",
 )]
 fn use_system_implicit() implicits(System) {}
 

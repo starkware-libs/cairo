@@ -321,7 +321,7 @@ foo
 
 //! > module_code
 struct MyStruct {
-    a: felt252
+    a: felt252,
 }
 
 //! > expected_diagnostics

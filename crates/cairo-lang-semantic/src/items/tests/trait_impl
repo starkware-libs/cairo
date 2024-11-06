@@ -554,7 +554,7 @@ fn generic_args(x: Option<MyTrait::Impl1::InputType>) -> Option<MyTrait::Impl2::
     Option::Some(x?)
 }
 fn tuple(
-    x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType
+    x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType,
 ) -> (MyTrait::Impl2::InputType, MyTrait::Impl1::InputType) {
     (x, y)
 }
@@ -573,10 +573,10 @@ fn complex(
         Option<
             @Result<
                 [Option<MyTrait::Impl2::InputType>; 3],
-                (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
-            >
-        >
-    )
+                (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType),
+            >,
+        >,
+    ),
 ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
     x
 }
@@ -617,7 +617,7 @@ fn generic_args(x: Option<MyTrait::Impl1::InputType>) -> Option<MyTrait::Impl2::
     Option::Some(x?)
 }
 fn tuple(
-    x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType
+    x: MyTrait::Impl1::InputType, y: MyTrait::Impl2::InputType,
 ) -> (MyTrait::Impl2::InputType, MyTrait::Impl1::InputType) {
     (x, y)
 }
@@ -636,10 +636,10 @@ fn complex(
         Option<
             @Result<
                 [Option<MyTrait::Impl2::InputType>; 3],
-                (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType)
-            >
-        >
-    )
+                (@MyTrait::Impl1::Impl::InputType, MyTrait::Impl2::Impl::InputType),
+            >,
+        >,
+    ),
 ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
     x
 }

@@ -14,7 +14,7 @@ fn u128_to_u64(input: u128) -> u64 {
 
 fn u128_split(input: u128) -> (u64, u64) {
     let (high, low) = crate::integer::u128_safe_divmod(
-        input, 0x10000000000000000_u128.try_into().unwrap()
+        input, 0x10000000000000000_u128.try_into().unwrap(),
     );
 
     (u128_to_u64(high), u128_to_u64(low))
@@ -83,7 +83,7 @@ pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
 ///
 /// Returns the hash as a little endian u256.
 pub fn cairo_keccak(
-    ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize
+    ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize,
 ) -> u256 {
     add_padding(ref input, last_input_word, last_input_num_bytes);
     starknet::syscalls::keccak_syscall(input.span()).unwrap_syscall()
@@ -95,7 +95,7 @@ fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes
     let words_divisor = KECCAK_FULL_RATE_IN_U64S.try_into().unwrap();
     // `last_block_num_full_words` is in range [0, KECCAK_FULL_RATE_IN_U64S - 1]
     let (_, last_block_num_full_words) = crate::integer::u32_safe_divmod(
-        input.len(), words_divisor
+        input.len(), words_divisor,
     );
 
     // The first word to append would be of the form
@@ -124,7 +124,7 @@ fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes
             crate::panic_with_felt252('Keccak last input word >7b')
         };
         let (_, r) = crate::integer::u64_safe_divmod(
-            last_input_word, first_padding_byte_part.try_into().unwrap()
+            last_input_word, first_padding_byte_part.try_into().unwrap(),
         );
         first_padding_byte_part + r
     };

@@ -7,7 +7,7 @@ use core::bytes_31::BYTES_IN_BYTES31;
 use starknet::{
     SyscallResult, syscalls::{storage_read_syscall, storage_write_syscall},
     contract_address::{ContractAddress, Felt252TryIntoContractAddress, ContractAddressIntoFelt252},
-    class_hash::{ClassHash, Felt252TryIntoClassHash, ClassHashIntoFelt252}
+    class_hash::{ClassHash, Felt252TryIntoClassHash, ClassHashIntoFelt252},
 };
 use core::serde::Serde;
 use core::RangeCheck;
@@ -23,18 +23,18 @@ pub extern type StorageBaseAddress;
 // Storage.
 pub extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
 pub extern fn storage_base_address_from_felt252(
-    addr: felt252
+    addr: felt252,
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
 
 pub(crate) extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
 pub extern fn storage_address_from_base_and_offset(
-    base: StorageBaseAddress, offset: u8
+    base: StorageBaseAddress, offset: u8,
 ) -> StorageAddress nopanic;
 
 pub extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
 pub(crate) extern fn storage_address_try_from_felt252(
-    address: felt252
+    address: felt252,
 ) -> Option<StorageAddress> implicits(RangeCheck) nopanic;
 
 impl Felt252TryIntoStorageAddress of TryInto<felt252, StorageAddress> {
@@ -54,7 +54,7 @@ impl StorageAddressSerde of Serde<StorageAddress> {
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<StorageAddress> {
         Option::Some(
-            storage_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?
+            storage_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?,
         )
     }
 }
@@ -88,12 +88,12 @@ pub trait Store<T> {
     /// Reads a value from storage from domain `address_domain` and base address `base` at offset
     /// `offset`.
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<T>;
     /// Writes a value to storage to domain `address_domain` and base address `base` at offset
     /// `offset`.
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: T
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: T,
     ) -> SyscallResult<()>;
     fn size() -> u8;
 }
@@ -109,7 +109,7 @@ pub trait StorePacking<T, PackedT> {
 }
 
 impl StoreUsingPacking<
-    T, PackedT, impl TPacking: StorePacking<T, PackedT>, impl PackedTStore: Store<PackedT>
+    T, PackedT, impl TPacking: StorePacking<T, PackedT>, impl PackedTStore: Store<PackedT>,
 > of Store<T> {
     #[inline]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T> {
@@ -121,13 +121,13 @@ impl StoreUsingPacking<
     }
     #[inline]
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<T> {
         Result::Ok(TPacking::unpack(PackedTStore::read_at_offset(address_domain, base, offset)?))
     }
     #[inline]
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: T
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: T,
     ) -> SyscallResult<()> {
         PackedTStore::write_at_offset(address_domain, base, offset, TPacking::pack(value))
     }
@@ -148,16 +148,16 @@ impl StoreFelt252 of Store<felt252> {
     }
     #[inline]
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<felt252> {
         storage_read_syscall(address_domain, storage_address_from_base_and_offset(base, offset))
     }
     #[inline]
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: felt252
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: felt252,
     ) -> SyscallResult<()> {
         storage_write_syscall(
-            address_domain, storage_address_from_base_and_offset(base, offset), value
+            address_domain, storage_address_from_base_and_offset(base, offset), value,
         )
     }
     #[inline]
@@ -349,13 +349,13 @@ impl TupleSize0Store of Store<()> {
     }
     #[inline]
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<()> {
         Result::Ok(())
     }
     #[inline]
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: ()
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: (),
     ) -> SyscallResult<()> {
         Result::Ok(())
     }
@@ -424,7 +424,7 @@ impl TupleNextStore<
     }
     #[inline]
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<T> {
         let head = HeadStore::read_at_offset(address_domain, base, offset)?;
         let rest = RestStore::read_at_offset(address_domain, base, offset + HeadStore::size())?;
@@ -432,7 +432,7 @@ impl TupleNextStore<
     }
     #[inline]
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: T
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: T,
     ) -> SyscallResult<()> {
         let (head, rest) = TH::split_head(value);
         HeadStore::write_at_offset(address_domain, base, offset, head)?;
@@ -450,11 +450,11 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
         let idx = Store::<felt252>::read(address_domain, base)?;
         if idx == 0 {
             starknet::SyscallResult::Ok(
-                Result::Ok(Store::read_at_offset(address_domain, base, 1_u8)?)
+                Result::Ok(Store::read_at_offset(address_domain, base, 1_u8)?),
             )
         } else if idx == 1 {
             starknet::SyscallResult::Ok(
-                Result::Err(Store::read_at_offset(address_domain, base, 1_u8)?)
+                Result::Err(Store::read_at_offset(address_domain, base, 1_u8)?),
             )
         } else {
             starknet::SyscallResult::Err(array!['Incorrect index:'])
@@ -462,7 +462,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
     }
     #[inline]
     fn write(
-        address_domain: u32, base: StorageBaseAddress, value: Result<T, E>
+        address_domain: u32, base: StorageBaseAddress, value: Result<T, E>,
     ) -> SyscallResult<()> {
         match value {
             Result::Ok(x) => {
@@ -472,22 +472,22 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
             Result::Err(x) => {
                 Store::write(address_domain, base, 1)?;
                 Store::write_at_offset(address_domain, base, 1_u8, x)?;
-            }
+            },
         };
         starknet::SyscallResult::Ok(())
     }
     #[inline]
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<Result<T, E>> {
         let idx = Store::<felt252>::read_at_offset(address_domain, base, offset)?;
         if idx == 0 {
             starknet::SyscallResult::Ok(
-                Result::Ok(Store::read_at_offset(address_domain, base, offset + 1_u8)?)
+                Result::Ok(Store::read_at_offset(address_domain, base, offset + 1_u8)?),
             )
         } else if idx == 1 {
             starknet::SyscallResult::Ok(
-                Result::Err(Store::read_at_offset(address_domain, base, offset + 1_u8)?)
+                Result::Err(Store::read_at_offset(address_domain, base, offset + 1_u8)?),
             )
         } else {
             starknet::SyscallResult::Err(array!['Incorrect index:'])
@@ -495,7 +495,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
     }
     #[inline]
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: Result<T, E>
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: Result<T, E>,
     ) -> SyscallResult<()> {
         match value {
             Result::Ok(x) => {
@@ -505,7 +505,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
             Result::Err(x) => {
                 Store::write_at_offset(address_domain, base, offset, 0)?;
                 Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
-            }
+            },
         };
         starknet::SyscallResult::Ok(())
     }
@@ -515,13 +515,13 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
     }
 }
 
-impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
+impl OptionStore<T, +Store<T>, +Drop<T>> of Store<Option<T>> {
     #[inline]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Option<T>> {
         let idx = Store::<felt252>::read(address_domain, base)?;
         if idx == 1 {
             starknet::SyscallResult::Ok(
-                Option::Some(Store::read_at_offset(address_domain, base, 1_u8)?)
+                Option::Some(Store::read_at_offset(address_domain, base, 1_u8)?),
             )
         } else if idx == 0 {
             starknet::SyscallResult::Ok(Option::None)
@@ -536,18 +536,18 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
                 Store::write(address_domain, base, 1)?;
                 Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
-            Option::None(_) => { Store::write(address_domain, base, 0)?; }
+            Option::None(_) => { Store::write(address_domain, base, 0)?; },
         };
         starknet::SyscallResult::Ok(())
     }
     #[inline]
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<Option<T>> {
         let idx = Store::<felt252>::read_at_offset(address_domain, base, offset)?;
         if idx == 1 {
             starknet::SyscallResult::Ok(
-                Option::Some(Store::read_at_offset(address_domain, base, offset + 1_u8)?)
+                Option::Some(Store::read_at_offset(address_domain, base, offset + 1_u8)?),
             )
         } else if idx == 0 {
             starknet::SyscallResult::Ok(Option::None)
@@ -557,14 +557,14 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
     }
     #[inline]
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: Option<T>
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: Option<T>,
     ) -> SyscallResult<()> {
         match value {
             Option::Some(x) => {
                 Store::write_at_offset(address_domain, base, offset, 1)?;
                 Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             },
-            Option::None(_x) => { Store::write_at_offset(address_domain, base, offset, 0)?; }
+            Option::None(_x) => { Store::write_at_offset(address_domain, base, offset, 0)?; },
         };
         starknet::SyscallResult::Ok(())
     }
@@ -595,16 +595,16 @@ impl ByteArrayStore of Store<ByteArray> {
     }
     #[inline]
     fn read_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
+        address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<ByteArray> {
         inner_read_byte_array(address_domain, storage_address_from_base_and_offset(base, offset))
     }
     #[inline]
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: ByteArray
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: ByteArray,
     ) -> SyscallResult<()> {
         inner_write_byte_array(
-            address_domain, storage_address_from_base_and_offset(base, offset), value
+            address_domain, storage_address_from_base_and_offset(base, offset), value,
         )
     }
     #[inline]
@@ -634,7 +634,7 @@ fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> Syscal
         Option::None => { return SyscallResult::Err(array!['Invalid ByteArray length']); },
     };
     let (mut remaining_full_words, pending_word_len) = core::DivRem::div_rem(
-        len, BYTES_IN_BYTES31.try_into().unwrap()
+        len, BYTES_IN_BYTES31.try_into().unwrap(),
     );
     let mut chunk = 0;
     let mut chunk_base = inner_byte_array_pointer(address, chunk);
@@ -646,7 +646,7 @@ fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> Syscal
         }
         let value =
             match starknet::syscalls::storage_read_syscall(
-                address_domain, storage_address_from_base_and_offset(chunk_base, index_in_chunk)
+                address_domain, storage_address_from_base_and_offset(chunk_base, index_in_chunk),
             ) {
             Result::Ok(value) => value,
             Result::Err(err) => { break Result::Err(err); },
@@ -670,7 +670,7 @@ fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> Syscal
     }?;
     if pending_word_len != 0 {
         let pending_word = starknet::syscalls::storage_read_syscall(
-            address_domain, storage_address_from_base_and_offset(chunk_base, index_in_chunk)
+            address_domain, storage_address_from_base_and_offset(chunk_base, index_in_chunk),
         )?;
         result.pending_word = pending_word;
         result.pending_word_len = pending_word_len;
@@ -682,7 +682,7 @@ fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> Syscal
 /// The length of the byte array is written to `address` at domain `address_domain`.
 /// For more info read the documentation of `ByteArrayStore`.
 fn inner_write_byte_array(
-    address_domain: u32, address: StorageAddress, value: ByteArray
+    address_domain: u32, address: StorageAddress, value: ByteArray,
 ) -> SyscallResult<()> {
     let len = value.len();
     starknet::syscalls::storage_write_syscall(address_domain, address, len.into())?;
@@ -698,7 +698,7 @@ fn inner_write_byte_array(
         match starknet::syscalls::storage_write_syscall(
             address_domain,
             storage_address_from_base_and_offset(chunk_base, index_in_chunk),
-            (*curr_value).into()
+            (*curr_value).into(),
         ) {
             Result::Ok(_) => {},
             Result::Err(err) => { break Result::Err(err); },
@@ -718,7 +718,7 @@ fn inner_write_byte_array(
         starknet::syscalls::storage_write_syscall(
             address_domain,
             storage_address_from_base_and_offset(chunk_base, index_in_chunk),
-            value.pending_word
+            value.pending_word,
         )?;
     }
     Result::Ok(())
