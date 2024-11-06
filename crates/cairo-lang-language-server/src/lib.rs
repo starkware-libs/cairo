@@ -52,8 +52,7 @@ use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::plugin::PluginSuite;
 use lsp_server::Message;
-use lsp_types::{ClientCapabilities, RegistrationParams};
-use server::connection::ClientSender;
+use lsp_types::RegistrationParams;
 use tracing::{debug, error, info, warn};
 
 use crate::config::Config;
@@ -67,7 +66,7 @@ use crate::lsp::result::LSPResult;
 use crate::project::ProjectManifestPath;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
-use crate::server::client::{Client, Notifier, Requester, Responder};
+use crate::server::client::{Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
@@ -268,21 +267,9 @@ impl Backend {
         let server_capabilities = collect_server_capabilities(&client_capabilities);
 
         let connection = connection_initializer.initialize_finish(id, server_capabilities)?;
-        let state = Self::create_state(connection.make_sender(), client_capabilities, tricks);
+        let state = State::new(connection.make_sender(), client_capabilities, tricks);
 
         Ok(Self { connection, state })
-    }
-
-    fn create_state(
-        sender: ClientSender,
-        client_capabilities: ClientCapabilities,
-        tricks: Tricks,
-    ) -> State {
-        let db = AnalysisDatabase::new(&tricks);
-        let notifier = Client::new(sender).notifier();
-        let scarb_toolchain = ScarbToolchain::new(notifier);
-
-        State::new(db, client_capabilities, scarb_toolchain, tricks)
     }
 
     /// Runs the main event loop thread and wait for its completion.
