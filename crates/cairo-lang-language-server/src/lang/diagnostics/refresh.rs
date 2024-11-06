@@ -39,15 +39,12 @@ pub fn refresh_diagnostics(
         open_files.iter().filter_map(|uri| db.file_for_url(uri)).collect::<HashSet<FileId>>()
     });
 
-    let open_files_modules = get_files_modules(db, open_files_ids.iter().copied());
-
     // Refresh open files modules first for better UX
     info_span!("refresh_open_files_modules").in_scope(|| {
-        for (file, file_modules_ids) in open_files_modules {
+        for &file in &open_files_ids {
             refresh_file_diagnostics(
                 db,
-                &file,
-                &file_modules_ids,
+                file,
                 trace_macro_diagnostics,
                 &mut processed_modules,
                 &mut files_with_set_diagnostics,
@@ -73,15 +70,12 @@ pub fn refresh_diagnostics(
         rest_of_files
     });
 
-    let rest_of_files_modules = get_files_modules(db, rest_of_files.iter().copied());
-
     // Refresh the rest of files after, since they are not viewed currently
     info_span!("refresh_other_files_modules").in_scope(|| {
-        for (file, file_modules_ids) in rest_of_files_modules {
+        for file in rest_of_files {
             refresh_file_diagnostics(
                 db,
-                &file,
-                &file_modules_ids,
+                file,
                 trace_macro_diagnostics,
                 &mut processed_modules,
                 &mut files_with_set_diagnostics,
@@ -114,19 +108,21 @@ pub fn refresh_diagnostics(
 }
 
 /// Refresh diagnostics for a single file.
-#[expect(clippy::too_many_arguments)]
 fn refresh_file_diagnostics(
     db: &AnalysisDatabase,
-    file: &FileId,
-    modules_ids: &Vec<ModuleId>,
+    file: FileId,
     trace_macro_diagnostics: bool,
     processed_modules: &mut HashSet<ModuleId>,
     files_with_set_diagnostics: &mut HashSet<Url>,
     file_diagnostics: &mut HashMap<Url, FileDiagnostics>,
     notifier: &Notifier,
 ) {
-    let Some(file_uri) = db.url_for_file(*file) else {
+    let Some(file_uri) = db.url_for_file(file) else {
         trace!("url for file not found: {:?}", file.lookup_intern(db));
+        return;
+    };
+    let Ok(module_ids) = db.file_modules(file) else {
+        trace!("modules for file not found: {:?}", file.lookup_intern(db));
         return;
     };
 
@@ -151,22 +147,22 @@ fn refresh_file_diagnostics(
         };
     }
 
-    for module_id in modules_ids {
-        if !processed_modules.contains(module_id) {
+    for &module_id in module_ids.iter() {
+        if !processed_modules.contains(&module_id) {
             semantic_file_diagnostics.extend(
-                diags!(db.module_semantic_diagnostics(*module_id), Result::unwrap_or_default)
+                diags!(db.module_semantic_diagnostics(module_id), Result::unwrap_or_default)
                     .get_all(),
             );
             lowering_file_diagnostics.extend(
-                diags!(db.module_lowering_diagnostics(*module_id), Result::unwrap_or_default)
+                diags!(db.module_lowering_diagnostics(module_id), Result::unwrap_or_default)
                     .get_all(),
             );
 
-            processed_modules.insert(*module_id);
+            processed_modules.insert(module_id);
         }
     }
 
-    let parser_file_diagnostics = diags!(db.file_syntax_diagnostics(*file), |r| r);
+    let parser_file_diagnostics = diags!(db.file_syntax_diagnostics(file), |r| r);
 
     let new_file_diagnostics = FileDiagnostics {
         parser: parser_file_diagnostics,
@@ -192,21 +188,21 @@ fn refresh_file_diagnostics(
         (*db).upcast(),
         &mut diags,
         &new_file_diagnostics.parser,
-        file,
+        &file,
         trace_macro_diagnostics,
     );
     map_cairo_diagnostics_to_lsp(
         (*db).upcast(),
         &mut diags,
         &new_file_diagnostics.semantic,
-        file,
+        &file,
         trace_macro_diagnostics,
     );
     map_cairo_diagnostics_to_lsp(
         (*db).upcast(),
         &mut diags,
         &new_file_diagnostics.lowering,
-        file,
+        &file,
         trace_macro_diagnostics,
     );
 
@@ -215,19 +211,4 @@ fn refresh_file_diagnostics(
         diagnostics: diags,
         version: None,
     });
-}
-
-/// Gets the mapping of files to their respective modules.
-#[tracing::instrument(skip_all)]
-fn get_files_modules(
-    db: &AnalysisDatabase,
-    files_ids: impl Iterator<Item = FileId>,
-) -> HashMap<FileId, Vec<ModuleId>> {
-    let mut result = HashMap::default();
-    for file_id in files_ids {
-        if let Ok(file_modules) = db.file_modules(file_id) {
-            result.insert(file_id, file_modules.iter().cloned().collect::<Vec<_>>());
-        }
-    }
-    result
 }
