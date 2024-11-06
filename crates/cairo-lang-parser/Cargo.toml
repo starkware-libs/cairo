@@ -19,10 +19,10 @@ num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
 smol_str.workspace = true
 unescaper.workspace = true
-indoc.workspace = true
 
 [dev-dependencies]
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 env_logger.workspace = true
 pretty_assertions.workspace = true
 test-log.workspace = true
+indoc.workspace = true

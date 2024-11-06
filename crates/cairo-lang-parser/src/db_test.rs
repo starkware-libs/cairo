@@ -1,4 +1,5 @@
 use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
     ModuleItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia,
 };
@@ -6,13 +7,14 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, Token as SyntaxToken, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 use indoc::indoc;
+use num_traits::ToPrimitive;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use test_log::test;
 
 use crate::db::ParserGroup;
 use crate::printer::print_tree;
-use crate::test_utils::{TextSpan, Token, TokenStream, create_virtual_file};
+use crate::test_utils::{MockToken, MockTokenStream, create_virtual_file};
 use crate::utils::SimpleParserDatabase;
 
 fn build_empty_file_green_tree(db: &dyn SyntaxGroup, file_id: FileId) -> SyntaxFile {
@@ -63,7 +65,7 @@ fn test_token_stream_parser() {
 
     let root_node = db.parse_virtual(code).unwrap();
 
-    let token_stream = TokenStream::from_syntax_node(&db, root_node.clone());
+    let token_stream = MockTokenStream::from_syntax_node(&db, root_node.clone());
 
     let (node_from_token_stream, _) = db.parse_token_stream(&token_stream);
 
@@ -86,10 +88,14 @@ fn test_token_stream_expr_parser() {
     "#};
     let db = SimpleParserDatabase::default();
 
-    let token_stream = TokenStream {
-        tokens: vec![Token {
+    let token_stream = MockTokenStream {
+        tokens: vec![MockToken {
             content: expr_code.to_string(),
-            span: TextSpan { start: 0, end: expr_code.len() },
+            span: TextSpan {
+                start: TextOffset::default(),
+                end: TextOffset::default()
+                    .add_width(TextWidth::new_for_testing(expr_code.len().to_u32().unwrap())),
+            },
         }],
     };
 

@@ -1,13 +1,12 @@
 use std::fmt::Display;
 
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
-use cairo_lang_filesystem::span::{TextOffset, TextWidth};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan};
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use num_traits::ToPrimitive;
 use smol_str::SmolStr;
 
 use crate::types::TokenStream as TokenStreamable;
@@ -46,47 +45,41 @@ pub fn create_virtual_file(
 }
 
 #[derive(Debug, Clone)]
-pub struct TokenStream {
-    pub tokens: Vec<Token>,
+pub struct MockTokenStream {
+    pub tokens: Vec<MockToken>,
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct TextSpan {
-    pub start: usize,
-    pub end: usize,
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct Token {
+pub struct MockToken {
     pub content: String,
     pub span: TextSpan,
 }
 
-impl Token {
+impl MockToken {
     pub fn new(content: String, span: TextSpan) -> Self {
         Self { content, span }
     }
 
-    pub fn token_from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Token {
-        let span = node.span(db).to_str_range();
-        Token::new(node.get_text(db), TextSpan { start: span.start, end: span.end })
+    pub fn token_from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> MockToken {
+        MockToken::new(node.get_text(db), node.span(db))
     }
 }
 
-impl TokenStream {
+impl MockTokenStream {
     #[doc(hidden)]
-    pub fn new(tokens: Vec<Token>) -> Self {
+    pub fn new(tokens: Vec<MockToken>) -> Self {
         Self { tokens }
     }
 
     pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let leaves = node.tokens(db);
-        let tokens = leaves.map(|node| Token::token_from_syntax_node(db, node.clone())).collect();
+        let tokens =
+            leaves.map(|node| MockToken::token_from_syntax_node(db, node.clone())).collect();
         Self::new(tokens)
     }
 }
 
-impl Display for TokenStream {
+impl Display for MockTokenStream {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for token in &self.tokens {
             write!(f, "{}", token.content.clone())?;
@@ -95,11 +88,8 @@ impl Display for TokenStream {
     }
 }
 
-impl TokenStreamable for TokenStream {
+impl TokenStreamable for MockTokenStream {
     fn get_start_offset(&self) -> Option<TextOffset> {
-        self.tokens.first().map(|token| {
-            TextOffset::default()
-                .add_width(TextWidth::new_for_testing(token.span.start.to_u32().unwrap()))
-        })
+        self.tokens.first().map(|token| token.span.start)
     }
 }
