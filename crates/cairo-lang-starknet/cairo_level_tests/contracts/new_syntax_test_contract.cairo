@@ -17,7 +17,7 @@ struct OutOfScopeEvent {}
 #[starknet::contract]
 mod counter_contract {
     use starknet::ContractAddress;
-    use super::{IOtherContractDispatcher, IOtherContractDispatcherTrait, OutOfScopeEvent,};
+    use super::{IOtherContractDispatcher, IOtherContractDispatcherTrait, OutOfScopeEvent};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
@@ -27,7 +27,7 @@ mod counter_contract {
         #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
         counter: u128,
-        other_contract: IOtherContractDispatcher
+        other_contract: IOtherContractDispatcher,
     }
 
     #[event]
@@ -37,22 +37,22 @@ mod counter_contract {
         ABC: super::test_component::Event,
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
-        OutOfScopeEvent: OutOfScopeEvent
+        OutOfScopeEvent: OutOfScopeEvent,
     }
 
     #[derive(Drop, starknet::Event)]
     struct CounterIncreased {
-        amount: u128
+        amount: u128,
     }
 
     #[derive(Drop, starknet::Event)]
     struct CounterDecreased {
-        amount: u128
+        amount: u128,
     }
 
     #[constructor]
     fn constructor(
-        ref self: ContractState, initial_counter: u128, other_contract_addr: ContractAddress
+        ref self: ContractState, initial_counter: u128, other_contract_addr: ContractAddress,
     ) {
         self.counter.write(initial_counter);
         self
@@ -88,6 +88,6 @@ mod counter_contract {
 mod test_component {
     #[storage]
     pub struct Storage {
-        pub data: u32
+        pub data: u32,
     }
 }

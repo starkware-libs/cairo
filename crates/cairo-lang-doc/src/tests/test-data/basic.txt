@@ -11,12 +11,13 @@ hello = "src"
 //! This comment refers to the crate.
 
 /// Main function comment outside.
+/// Below there is a [`TraitTest`]
 fn main() {
     //! Main function comment inside.
     println!("main");
 }
 
-/// Trait containing abc function.
+/// Trait containing abc function. Below a [`main`] function
 trait TraitTest {
     /// abc function returning u32.
     /// Default impl of abc TraitTest function.
@@ -27,7 +28,7 @@ trait TraitTest {
     }
 }
 
-/// Implementation of TraitTest's abc function.
+/// Implementation of TraitTest's abc function. Implements [this](TraitTest) trait.
 impl TraitTestImpl of TraitTest {
     /// Default impl of abc TraitTest function.
     fn abc() -> u32 {
@@ -37,10 +38,12 @@ impl TraitTestImpl of TraitTest {
     }
 }
 
-/// Test module used to check if the documentation is being attached to the nodes correctly.
+/// Test module used to check if the documentation is being attached to the nodes correctly. Inside
+/// there is [this](test_module::inner_test_module_function) function.
 pub mod test_module {
     //! Test module used to check if the documentation is being attached to the nodes correctly.
     /// Just a function outside the test_module.
+    /// Abote that module there is a [trait](super::TraitTest).
     pub fn inner_test_module_function() -> () {
         //! Just a function inside the test_module.
         println!("inside inner test module inner function");
@@ -54,39 +57,75 @@ pub mod test_module {
 ///     Point {x: 12, y: 14}
 ///   }
 /// ```
+/// [Point::bang]
 #[derive(Drop)]
 #[derive(Copy)]
 struct Point {
     /// X coordinate.
     pub x: u32,
     /// Y coordinate.
-    y: u32
+    y: u32,
 }
 
 /// Answer Enum representing an answer to a yes/no question.
+/// It will just refer in the docs to some wrong [item_that_does_not_exist] and also to
+/// [this](another_not_existing_path).
+/// But [this](Answer::Yes) is an existing variant of Answer
 enum Answer {
     /// Yes answer variant.
     Yes,
     /// No answer variant.
-    No
+    No,
 }
+
+/// Example usage:
+/// ```
+///   fn new_circle() {
+///     // [Circle] <- this should not tokenize as a link (neither be resolved), we're inside code
+///     block.
+///   }
+/// ```
+struct Circle {}
+
+/// Below there is a code example
+///
+///     First line of code
+///     // Comment inside the code block, that should be ignored. [Square] <- it will be ignored as
+///     well.
+///     Second line of code
+///
+struct Square {}
 
 //! > Item signature #1
 
 //! > Item documentation #1
 This comment refers to the crate.
 
+//! > Item documentation tokens #1
+Content("This comment refers to the crate.")
+
 //! > Item signature #2
 fn main()
 
 //! > Item documentation #2
-Main function comment outside. Main function comment inside.
+Main function comment outside. Below there is a [`TraitTest`] Main function comment inside.
+
+//! > Item documentation tokens #2
+Content("Main function comment outside. Below there is a ")
+CommentLinkToken { label: "`TraitTest`", path: None, resolved_item_name: Some("TraitTest") }
+Content(" ")
+Content("Main function comment inside.")
 
 //! > Item signature #3
 trait TraitTest
 
 //! > Item documentation #3
-Trait containing abc function.
+Trait containing abc function. Below a [`main`] function
+
+//! > Item documentation tokens #3
+Content("Trait containing abc function. Below a ")
+CommentLinkToken { label: "`main`", path: None, resolved_item_name: Some("main") }
+Content(" function")
 
 //! > Item signature #4
 fn abc() -> u32
@@ -94,11 +133,21 @@ fn abc() -> u32
 //! > Item documentation #4
 abc function returning u32. Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
+//! > Item documentation tokens #4
+Content("abc function returning u32. Default impl of abc TraitTest function.")
+Content(" ")
+Content("Default impl of abc TraitTest function inner comment.")
+
 //! > Item signature #5
 impl TraitTestImpl of TraitTest
 
 //! > Item documentation #5
-Implementation of TraitTest's abc function.
+Implementation of TraitTest's abc function. Implements [this](TraitTest) trait.
+
+//! > Item documentation tokens #5
+Content("Implementation of TraitTest's abc function. Implements ")
+CommentLinkToken { label: "this", path: Some("TraitTest"), resolved_item_name: Some("TraitTest") }
+Content(" trait.")
 
 //! > Item signature #6
 fn abc() -> u32
@@ -106,23 +155,42 @@ fn abc() -> u32
 //! > Item documentation #6
 Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
+//! > Item documentation tokens #6
+Content("Default impl of abc TraitTest function.")
+Content(" ")
+Content("Default impl of abc TraitTest function inner comment.")
+
 //! > Item signature #7
 
 //! > Item documentation #7
-Test module used to check if the documentation is being attached to the nodes correctly. Test module used to check if the documentation is being attached to the nodes correctly.
+Test module used to check if the documentation is being attached to the nodes correctly. Inside there is [this](test_module::inner_test_module_function) function. Test module used to check if the documentation is being attached to the nodes correctly.
+
+//! > Item documentation tokens #7
+Content("Test module used to check if the documentation is being attached to the nodes correctly. Inside there is ")
+CommentLinkToken { label: "this", path: Some("test_module::inner_test_module_function"), resolved_item_name: Some("inner_test_module_function") }
+Content(" function.")
+Content(" ")
+Content("Test module used to check if the documentation is being attached to the nodes correctly.")
 
 //! > Item signature #8
 pub fn inner_test_module_function() -> ()
 
 //! > Item documentation #8
-Just a function outside the test_module. Just a function inside the test_module.
+Just a function outside the test_module. Abote that module there is a [trait](super::TraitTest). Just a function inside the test_module.
+
+//! > Item documentation tokens #8
+Content("Just a function outside the test_module. Abote that module there is a ")
+CommentLinkToken { label: "trait", path: Some("super::TraitTest"), resolved_item_name: Some("TraitTest") }
+Content(".")
+Content(" ")
+Content("Just a function inside the test_module.")
 
 //! > Item signature #9
 #[derive(Drop)]
 #[derive(Copy)]
 struct Point {
     pub x: u32,
-    y: u32
+    y: u32,
 }
 
 //! > Item documentation #9
@@ -132,6 +200,14 @@ Point struct representing a point in a 2d space. Example usage:
     Point {x: 12, y: 14}
   }
 ```
+[Point::bang]
+
+//! > Item documentation tokens #9
+Content("Point struct representing a point in a 2d space. Example usage:")
+Content("\n```cairo\n")
+Content("  fn new_Point() {\n    Point {x: 12, y: 14}\n  }\n")
+Content("```\n")
+CommentLinkToken { label: "Point::bang", path: None, resolved_item_name: None }
 
 //! > Item signature #10
 pub x: u32
@@ -139,20 +215,35 @@ pub x: u32
 //! > Item documentation #10
 X coordinate.
 
+//! > Item documentation tokens #10
+Content("X coordinate.")
+
 //! > Item signature #11
 y: u32
 
 //! > Item documentation #11
 Y coordinate.
 
+//! > Item documentation tokens #11
+Content("Y coordinate.")
+
 //! > Item signature #12
 enum Answer {
     Yes,
-    No
+    No,
 }
 
 //! > Item documentation #12
-Answer Enum representing an answer to a yes/no question.
+Answer Enum representing an answer to a yes/no question. It will just refer in the docs to some wrong [item_that_does_not_exist] and also to [this](another_not_existing_path). But [this](Answer::Yes) is an existing variant of Answer
+
+//! > Item documentation tokens #12
+Content("Answer Enum representing an answer to a yes/no question. It will just refer in the docs to some wrong ")
+CommentLinkToken { label: "item_that_does_not_exist", path: None, resolved_item_name: None }
+Content(" and also to ")
+CommentLinkToken { label: "this", path: Some("another_not_existing_path"), resolved_item_name: None }
+Content(". But ")
+CommentLinkToken { label: "this", path: Some("Answer::Yes"), resolved_item_name: Some("Yes") }
+Content(" is an existing variant of Answer")
 
 //! > Item signature #13
 Yes
@@ -160,8 +251,50 @@ Yes
 //! > Item documentation #13
 Yes answer variant.
 
+//! > Item documentation tokens #13
+Content("Yes answer variant.")
+
 //! > Item signature #14
 No
 
 //! > Item documentation #14
 No answer variant.
+
+//! > Item documentation tokens #14
+Content("No answer variant.")
+
+//! > Item signature #15
+struct Circle {}
+
+//! > Item documentation #15
+Example usage: 
+```cairo
+  fn new_circle() {
+    // [Circle] <- this should not tokenize as a link (neither be resolved), we're inside code
+    block.
+  }
+```
+
+//! > Item documentation tokens #15
+Content("Example usage:")
+Content("\n```cairo\n")
+Content("  fn new_circle() {\n    // [Circle] <- this should not tokenize as a link (neither be resolved), we're inside code\n    block.\n  }\n")
+Content("```")
+
+//! > Item signature #16
+struct Square {}
+
+//! > Item documentation #16
+Below there is a code example  
+
+    First line of code
+    // Comment inside the code block, that should be ignored. [Square] <- it will be ignored as
+    well.
+    Second line of code
+
+//! > Item documentation tokens #16
+Content("Below there is a code example")
+Content("First line of code\n")
+Content("// Comment inside the code block, that should be ignored. [Square] <- it will be ignored as\n")
+Content("well.\n")
+Content("Second line of code")

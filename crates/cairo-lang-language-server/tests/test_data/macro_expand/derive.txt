@@ -25,7 +25,7 @@ struct <caret>A {
 
 #[derive(Drop, Serde)]
 struct A {
-    a: felt252
+    a: felt252,
 }
 
 // impls
@@ -37,7 +37,7 @@ impl ASerde of core::serde::Serde<A> {
         core::serde::Serde::serialize(self.a, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<A> {
-        core::option::Option::Some(A { a: core::serde::Serde::deserialize(ref serialized)?, })
+        core::option::Option::Some(A { a: core::serde::Serde::deserialize(ref serialized)? })
     }
 }
 
@@ -50,7 +50,7 @@ impl ASerde of core::serde::Serde<A> {
 
 #[derive(Drop, Serde)]
 struct A {
-    a: felt252
+    a: felt252,
 }
 
 // impls
@@ -62,7 +62,7 @@ impl ASerde of core::serde::Serde<A> {
         core::serde::Serde::serialize(self.a, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<A> {
-        core::option::Option::Some(A { a: core::serde::Serde::deserialize(ref serialized)?, })
+        core::option::Option::Some(A { a: core::serde::Serde::deserialize(ref serialized)? })
     }
 }
 
@@ -75,7 +75,7 @@ impl ASerde of core::serde::Serde<A> {
 
 #[derive(Drop, Serde)]
 struct A {
-    a: felt252
+    a: felt252,
 }
 
 // impls
@@ -87,7 +87,7 @@ impl ASerde of core::serde::Serde<A> {
         core::serde::Serde::serialize(self.a, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<A> {
-        core::option::Option::Some(A { a: core::serde::Serde::deserialize(ref serialized)?, })
+        core::option::Option::Some(A { a: core::serde::Serde::deserialize(ref serialized)? })
     }
 }
 
@@ -100,7 +100,7 @@ struct <caret>A {
 
 #[derive(Drop, Serde)]
 struct A {
-    a: felt252
+    a: felt252,
 }
 
 // impls
@@ -112,6 +112,6 @@ impl ASerde of core::serde::Serde<A> {
         core::serde::Serde::serialize(self.a, ref output)
     }
     fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<A> {
-        core::option::Option::Some(A { a: core::serde::Serde::deserialize(ref serialized)?, })
+        core::option::Option::Some(A { a: core::serde::Serde::deserialize(ref serialized)? })
     }
 }

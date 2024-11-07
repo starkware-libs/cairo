@@ -11,7 +11,7 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        my_storage_var: felt252
+        my_storage_var: felt252,
     }
 
     #[external(v0)]
@@ -25,7 +25,7 @@ mod test_contract {
     fn test_storage_read(ref self: ContractState, address: felt252) -> felt252 {
         let domain_address = 0_u32; // Only address_domain 0 is currently supported.
         let storage_address = storage_address_from_base_and_offset(
-            storage_base_address_from_felt252(address), 0_u8
+            storage_base_address_from_felt252(address), 0_u8,
         );
         storage_read_syscall(domain_address, storage_address).unwrap_syscall()
     }
@@ -34,7 +34,7 @@ mod test_contract {
     fn test_storage_write(ref self: ContractState, address: felt252, value: felt252) {
         let domain_address = 0_u32; // Only address_domain 0 is currently supported.
         let storage_address = storage_address_from_base_and_offset(
-            storage_base_address_from_felt252(address), 0_u8
+            storage_base_address_from_felt252(address), 0_u8,
         );
         storage_write_syscall(domain_address, storage_address, value).unwrap_syscall();
     }

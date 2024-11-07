@@ -67,6 +67,8 @@ pub struct BreakLinePointProperties {
     /// Indicates that in a group of such breakpoints, only one should be broken, specifically the
     /// last one which fits in the line length.
     pub is_single_breakpoint: bool,
+    /// Indicates whether a comma should be added when the line breaks.
+    pub is_comma_if_broken: bool,
 }
 impl Ord for BreakLinePointProperties {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -98,7 +100,14 @@ impl BreakLinePointProperties {
             space_if_not_broken,
             is_empty_line_breakpoint: false,
             is_single_breakpoint: false,
+            is_comma_if_broken: false,
         }
+    }
+    pub fn set_comma_if_broken(&mut self) {
+        self.is_comma_if_broken = true;
+    }
+    pub fn is_comma_if_broken(&self) -> bool {
+        self.is_comma_if_broken
     }
     pub fn new_empty_line() -> Self {
         Self {
@@ -108,10 +117,14 @@ impl BreakLinePointProperties {
             space_if_not_broken: false,
             is_empty_line_breakpoint: true,
             is_single_breakpoint: false,
+            is_comma_if_broken: false,
         }
     }
     pub fn set_single_breakpoint(&mut self) {
         self.is_single_breakpoint = true;
+    }
+    pub fn unset_comma_if_broken(&mut self) {
+        self.is_comma_if_broken = false;
     }
 }
 
@@ -462,10 +475,18 @@ impl LineBuilder {
                     comment_only_added_indent = 0;
                 }
             }
+            if let Some(LineComponent::BreakLinePoint(cur_break_line_points_properties)) =
+                self.children.get(*current_line_end)
+            {
+                if cur_break_line_points_properties.is_comma_if_broken() {
+                    trees.last_mut().unwrap().push_str(",");
+                }
+            }
             current_line_start = *current_line_end + 1;
         }
         trees
     }
+
     /// Returns a reference to the currently active builder.
     fn get_active_builder_mut(&mut self) -> &mut LineBuilder {
         // Split into two match statements since self is mutably borrowed in the second match,
@@ -562,7 +583,11 @@ impl LineBuilder {
                     LineComponent::BreakLinePoint(node_properties)
                         if node_properties.is_optional =>
                     {
-                        LineComponent::Token(child.to_string())
+                        if node_properties.space_if_not_broken {
+                            LineComponent::Space
+                        } else {
+                            LineComponent::Token("".to_string())
+                        }
                     }
                     _ => child.clone(),
                 })
@@ -572,7 +597,6 @@ impl LineBuilder {
         }
     }
 }
-
 /// Represents a comment line in the code.
 #[derive(Clone, PartialEq, Eq)]
 struct CommentLine {
@@ -730,7 +754,6 @@ impl BreakLinePointsPositions {
         }
     }
 }
-
 // TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
@@ -772,6 +795,8 @@ pub struct FormatterImpl<'a> {
     /// Indicates whether the current line only consists of whitespace tokens (since the last
     /// newline).
     is_current_line_whitespaces: bool,
+    /// Indicates whether the last element handled was a comment.
+    is_last_element_comment: bool,
 }
 
 impl<'a> FormatterImpl<'a> {
@@ -782,6 +807,7 @@ impl<'a> FormatterImpl<'a> {
             line_state: PendingLineState::new(),
             empty_lines_allowance: 0,
             is_current_line_whitespaces: true,
+            is_last_element_comment: false,
         }
     }
     /// Gets a root of a syntax tree and returns the formatted string of the code it represents.
@@ -817,7 +843,14 @@ impl<'a> FormatterImpl<'a> {
         if protected_zone_precedence.is_some() {
             self.line_state.line_buffer.close_sub_builder();
         }
-        self.append_break_line_point(node_break_points.trailing());
+        if let Some(mut trailing_break_point) = node_break_points.trailing() {
+            if self.is_last_element_comment {
+                trailing_break_point.unset_comma_if_broken();
+            }
+            self.append_break_line_point(Some(trailing_break_point));
+        }
+
+        // self.append_break_line_point(node_break_points.trailing());
     }
     /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode) {
@@ -836,6 +869,7 @@ impl<'a> FormatterImpl<'a> {
         }
         for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
+                // Skip empty nodes.
                 continue;
             }
             self.format_node(child);
@@ -846,6 +880,7 @@ impl<'a> FormatterImpl<'a> {
                     self.append_break_line_point(Some(properties.clone()));
                 }
             }
+
             self.empty_lines_allowance = allowed_empty_between;
         }
     }
@@ -948,6 +983,7 @@ impl<'a> FormatterImpl<'a> {
                     );
                     self.is_current_line_whitespaces = false;
                     self.empty_lines_allowance = 1;
+                    self.is_last_element_comment = true;
                 }
                 ast::Trivium::Whitespace(_) => {}
                 ast::Trivium::Newline(_) => {
@@ -981,6 +1017,7 @@ impl<'a> FormatterImpl<'a> {
         self.append_break_line_point(node_break_points.leading());
         self.line_state.line_buffer.push_str(&text);
         self.append_break_line_point(node_break_points.trailing());
+        self.is_last_element_comment = false;
     }
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
         if let Some(properties) = properties {

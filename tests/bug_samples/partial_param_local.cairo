@@ -1,5 +1,5 @@
 struct strct {
-    x: felt252
+    x: felt252,
 }
 
 #[test]

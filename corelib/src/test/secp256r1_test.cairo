@@ -8,7 +8,7 @@ use crate::test::test_utils::assert_eq;
 fn test_secp256k1_point_serde() {
     let (x, y): (u256, u256) = (
         0x04aaec73635726f213fb8a9e64da3b8632e41495a944d0045b522eba7240fad5,
-        0x0087d9315798aaa3a5ba01775787ced05eaaf7b4e09fc81d6d1aa546e8365d525d
+        0x0087d9315798aaa3a5ba01775787ced05eaaf7b4e09fc81d6d1aa546e8365d525d,
     );
     let mut serialized_coordinates = array![];
     (x, y).serialize(ref serialized_coordinates);
@@ -24,8 +24,8 @@ fn test_secp256k1_point_serde() {
             actual_coordinates.at(0),
             actual_coordinates.at(1),
             actual_coordinates.at(2),
-            actual_coordinates.at(3)
-        )
+            actual_coordinates.at(3),
+        ),
     );
 }
 
@@ -51,7 +51,7 @@ fn get_message_and_signature() -> (u256, Signature, u256, u256, Secp256r1Point) 
 
     let (public_key_x, public_key_y) = (
         0x04aaec73635726f213fb8a9e64da3b8632e41495a944d0045b522eba7240fad5,
-        0x0087d9315798aaa3a5ba01775787ced05eaaf7b4e09fc81d6d1aa546e8365d525d
+        0x0087d9315798aaa3a5ba01775787ced05eaaf7b4e09fc81d6d1aa546e8365d525d,
     );
 
     let public_key = Secp256r1Impl::secp256_ec_new_syscall(public_key_x, public_key_y)
@@ -66,7 +66,7 @@ fn get_message_and_signature() -> (u256, Signature, u256, u256, Secp256r1Point) 
 fn test_verify_signature() {
     let (msg_hash, signature, _, _, public_key) = get_message_and_signature();
     let is_valid = is_valid_signature::<
-        Secp256r1Point
+        Secp256r1Point,
     >(msg_hash, signature.r, signature.s, public_key);
     assert(is_valid, 'Signature should be valid');
 }
@@ -76,7 +76,7 @@ fn test_verify_signature() {
 fn test_verify_signature_invalid_signature() {
     let (msg_hash, signature, _, _, public_key) = get_message_and_signature();
     let is_valid = is_valid_signature::<
-        Secp256r1Point
+        Secp256r1Point,
     >(msg_hash, signature.r + 1, signature.s, public_key);
     assert(!is_valid, 'Signature should be invalid');
 }
@@ -86,7 +86,7 @@ fn test_verify_signature_invalid_signature() {
 fn test_verify_signature_overflowing_signature_r() {
     let (msg_hash, mut signature, _, _, public_key) = get_message_and_signature();
     let is_valid = is_valid_signature::<
-        Secp256r1Point
+        Secp256r1Point,
     >(msg_hash, Secp256r1Impl::get_curve_size() + 1, signature.s, public_key);
     assert(!is_valid, 'Signature out of range');
 }
@@ -96,7 +96,7 @@ fn test_verify_signature_overflowing_signature_r() {
 fn test_verify_signature_overflowing_signature_s() {
     let (msg_hash, mut signature, _, _, public_key) = get_message_and_signature();
     let is_valid = is_valid_signature::<
-        Secp256r1Point
+        Secp256r1Point,
     >(msg_hash, signature.r, Secp256r1Impl::get_curve_size() + 1, public_key);
     assert(!is_valid, 'Signature out of range');
 }

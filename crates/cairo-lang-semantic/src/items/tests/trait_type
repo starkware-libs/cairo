@@ -904,8 +904,8 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Type `core::integer::u32` could not be indexed.
-Candidate `core::ops::index::Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<core::integer::u32, ?1>.
-Candidate `core::ops::index::IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<core::integer::u32, ?1>.
+Candidate `core::ops::index::Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<core::integer::u32, ?2>.
+Candidate `core::ops::index::IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<core::integer::u32, ?2>.
  --> lib.cairo:8:9
         x[0];
         ^**^
@@ -1150,9 +1150,9 @@ error: Unexpected argument type. Expected: "core::integer::u32", found: "core::i
                  ^
 
 error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
- --> lib.cairo:25:11
-fn bar3() {
-          ^
+ --> lib.cairo:26:21
+    let _: MyTrait::MyType = 3_u32;
+                    ^****^
 
 //! > ==========================================================================
 
@@ -1525,9 +1525,9 @@ fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
                                                      ^
 
 error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
- --> lib.cairo:15:39
-fn let_statement(x: MyTrait::MyType2) {
-                                      ^
+ --> lib.cairo:16:21
+    let _: MyTrait::MyType1 = x;
+                    ^*****^
 
 error: Loop has incompatible return types: "core::integer::u16" and "core::integer::u32"
  --> lib.cairo:23:19
@@ -1593,16 +1593,16 @@ fn snapshot2(x: @MyTrait::MyType1) -> @@MyTrait::MyType2 {
 fn complex1(
     x: @(
         MyTrait::MyType1,
-        Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>
-    )
+        Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>,
+    ),
 ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
     x
 }
 fn complex2(
-    x: @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>)
+    x: @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>),
 ) -> @(
     MyTrait::MyType1,
-    Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>
+    Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>,
 ) {
     x
 }
@@ -1653,16 +1653,16 @@ fn snapshot2(x: @MyTrait::MyType1) -> @@MyTrait::MyType2 {
 fn complex1(
     x: @(
         MyTrait::MyType1,
-        Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>
-    )
+        Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>,
+    ),
 ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
     x
 }
 fn complex2(
-    x: @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>)
+    x: @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>),
 ) -> @(
     MyTrait::MyType1,
-    Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>
+    Option<@Result<[Option<MyTrait::MyType2>; 3], (@MyTrait::MyType3, MyTrait::MyType4)>>,
 ) {
     x
 }
@@ -2265,7 +2265,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn bar<+MyTrait, +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>>(
-    _y: MyTrait::ty
+    _y: MyTrait::ty,
 ) -> felt252 {
     _y + 3
 }
@@ -2293,7 +2293,7 @@ fn bar<
     impl I1: MyTrait,
     impl I2: MyTrait,
     +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
-    +core::metaprogramming::TypeEqual<felt252, I1::ty>
+    +core::metaprogramming::TypeEqual<felt252, I1::ty>,
 >() -> I2::ty {
     3_u32
 }
@@ -2324,9 +2324,9 @@ test_function_diagnostics(expect_diagnostics: true)
 fn bar<
     +MyTrait,
     +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>,
-    +core::metaprogramming::TypeEqual<MyTrait::ty, u32>
+    +core::metaprogramming::TypeEqual<MyTrait::ty, u32>,
 >(
-    _y: MyTrait::ty
+    _y: MyTrait::ty,
 ) -> MyTrait::ty {
     _y
 }
@@ -2360,7 +2360,7 @@ fn bar<
     +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>,
     +TraitWithInferredParams<MyTrait::ty>,
 >(
-    _y: MyTrait::ty
+    _y: MyTrait::ty,
 ) -> MyTrait::ty {
     _y + TraitWithInferredParams::<MyTrait::ty>::foo()
 }
@@ -2405,7 +2405,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn bar<
-    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>
+    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
 >() -> I1::ty {
     I2::foo()
 }
@@ -2446,7 +2446,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn bar<
-    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>
+    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
 >() -> I1::ty {
     I2::foo()
 }
@@ -2490,7 +2490,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn bar<
-    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>
+    impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
 >() -> I2::ty {
     I1::foo()
 }

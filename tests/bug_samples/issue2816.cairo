@@ -1,5 +1,5 @@
 fn contains<T, impl TPartialEq: PartialEq<T>, +Drop<T>, +Copy<T>>(
-    ref self: Array<T>, item: T
+    ref self: Array<T>, item: T,
 ) -> bool {
     let mut index = 0_usize;
     loop {

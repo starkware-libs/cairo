@@ -5,20 +5,23 @@ use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, Tra
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_parser::utils::SimpleParserDatabase;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_utils::Upcast;
-use itertools::{Itertools, chain};
+use itertools::{Itertools, chain, intersperse};
 
 use crate::documentable_item::DocumentableItemId;
 use crate::markdown::cleanup_doc_markdown;
+use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
 
 #[salsa::query_group(DocDatabase)]
 pub trait DocGroup:
     Upcast<dyn DefsGroup>
     + Upcast<dyn SyntaxGroup>
     + Upcast<dyn FilesGroup>
+    + Upcast<dyn SemanticGroup>
     + SyntaxGroup
     + FilesGroup
     + DefsGroup
@@ -29,6 +32,12 @@ pub trait DocGroup:
     /// Gets the documentation of an item.
     fn get_item_documentation(&self, item_id: DocumentableItemId) -> Option<String>;
 
+    /// Gets the documentation of a certain as a vector of continuous tokens.
+    fn get_item_documentation_as_tokens(
+        &self,
+        item_id: DocumentableItemId,
+    ) -> Option<Vec<DocumentationCommentToken>>;
+
     /// Gets the signature of an item (i.e., item without its body).
     fn get_item_signature(&self, item_id: DocumentableItemId) -> String;
 }
@@ -37,16 +46,8 @@ fn get_item_documentation(db: &dyn DocGroup, item_id: DocumentableItemId) -> Opt
     match item_id {
         DocumentableItemId::Crate(crate_id) => get_crate_root_module_documentation(db, crate_id),
         item_id => {
-            // We check for different type of comments for the item. Even modules can have both
-            // inner and module level comments.
-            let outer_comments = extract_item_outer_documentation(db, item_id);
-            // In case if item_id is a module, there are 2 possible cases:
-            // 1. Inline module: It could have inner comments, but not the module_level.
-            // 2. Non-inline Module (module as file): It could have module level comments, but not
-            //    the inner ones.
-            let inner_comments = extract_item_inner_documentation(db, item_id);
-            let module_level_comments =
-                extract_item_module_level_documentation(db.upcast(), item_id);
+            let (outer_comments, inner_comments, module_level_comments) =
+                get_item_documentation_content(db, item_id);
             match (module_level_comments, outer_comments, inner_comments) {
                 (None, None, None) => None,
                 (module_level_comments, outer_comments, inner_comments) => Some(
@@ -193,6 +194,73 @@ fn get_item_signature(db: &dyn DocGroup, item_id: DocumentableItemId) -> String 
         _ => "".to_owned(),
     };
     fmt(definition)
+}
+
+fn get_item_documentation_as_tokens(
+    db: &dyn DocGroup,
+    item_id: DocumentableItemId,
+) -> Option<Vec<DocumentationCommentToken>> {
+    let (outer_comment, inner_comment, module_level_comment) = match item_id {
+        DocumentableItemId::Crate(crate_id) => {
+            (None, None, get_crate_root_module_documentation(db, crate_id))
+        }
+        item_id => get_item_documentation_content(db, item_id),
+    };
+
+    let doc_parser = DocumentationCommentParser::new(db.upcast());
+
+    let mut outer_comment_tokens =
+        outer_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
+
+    if let Some(outer_comment_tokens) = &mut outer_comment_tokens {
+        trim_last_token(outer_comment_tokens);
+    }
+
+    let mut inner_comment_tokens =
+        inner_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
+
+    if let Some(inner_comment_tokens) = &mut inner_comment_tokens {
+        trim_last_token(inner_comment_tokens);
+    }
+
+    let mut module_level_comment_tokens = module_level_comment
+        .map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
+
+    if let Some(module_level_comment_tokens) = &mut module_level_comment_tokens {
+        trim_last_token(module_level_comment_tokens);
+    }
+
+    let separator_token = vec![DocumentationCommentToken::Content(" ".to_string())];
+
+    let result: Vec<Vec<DocumentationCommentToken>> =
+        [outer_comment_tokens, inner_comment_tokens, module_level_comment_tokens]
+            .into_iter()
+            .flatten()
+            .collect();
+
+    if result.is_empty() {
+        return None;
+    }
+
+    Some(intersperse(result, separator_token).flatten().collect())
+}
+
+/// Get the raw documentation content from the item.
+fn get_item_documentation_content(
+    db: &dyn DocGroup,
+    item_id: DocumentableItemId,
+) -> (Option<String>, Option<String>, Option<String>) {
+    // We check for different type of comments for the item. Even modules can have both
+    // inner and module level comments.
+    let outer_comments = extract_item_outer_documentation(db, item_id);
+    // In case if item_id is a module, there are 2 possible cases:
+    // 1. Inline module: It could have inner comments, but not the module_level.
+    // 2. Non-inline Module (module as a file): It could have module level comments, but not the
+    //    inner ones.
+    let inner_comments = extract_item_inner_documentation(db, item_id);
+    let module_level_comments = extract_item_module_level_documentation(db.upcast(), item_id);
+
+    (outer_comments, inner_comments, module_level_comments)
 }
 
 /// Run Cairo formatter over code with extra post-processing that is specific to signatures.
@@ -344,12 +412,22 @@ fn is_comment_line(line: &str) -> bool {
 }
 
 /// Parses the lines of extracted comments so it can be displayed.
+/// It also takes note for Fenced and Indented code blocks, and doesn't trim them.
 fn join_lines_of_comments(lines: &Vec<String>) -> String {
     let mut in_code_block = false;
     let mut result = String::new();
 
     for line in lines {
-        let contains_delimiter = line.trim().starts_with("```");
+        let trimmed_line = line.trim_start();
+        // 4 spaces or a tab.
+        let is_indented_code_line =
+            (line.starts_with("    ") || line.starts_with("\t")) && !in_code_block;
+        let contains_delimiter = trimmed_line.starts_with("```") || is_indented_code_line;
+
+        if is_indented_code_line && !in_code_block {
+            // We are at the start of an indented code block, add an extra newline
+            result.push('\n');
+        }
 
         if contains_delimiter {
             // If we stumble upon the opening of a code block, we have to make a newline.
@@ -360,6 +438,12 @@ fn join_lines_of_comments(lines: &Vec<String>) -> String {
 
             result.push_str(line);
             result.push('\n');
+
+            // If we just closed an indented code block, add an extra newline.
+            if !in_code_block && is_indented_code_line {
+                result.push('\n');
+            }
+
             continue;
         }
 
@@ -367,9 +451,15 @@ fn join_lines_of_comments(lines: &Vec<String>) -> String {
             result.push_str(line);
             result.push('\n');
         } else {
-            result.push_str(line.trim());
+            result.push_str(line);
             result.push(' ');
         }
     }
     result.trim_end().to_string()
+}
+
+fn trim_last_token(tokens: &mut [DocumentationCommentToken]) {
+    if let Some(DocumentationCommentToken::Content(token)) = tokens.last_mut() {
+        *token = token.trim_end().to_string();
+    }
 }

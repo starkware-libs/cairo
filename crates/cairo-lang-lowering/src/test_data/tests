@@ -241,7 +241,7 @@ fn foo(x: MyEnum) -> felt252 {
             // A workaround to drop inner.
             let (_a, _b) = inner.unbox();
             7
-        }
+        },
     }
 }
 

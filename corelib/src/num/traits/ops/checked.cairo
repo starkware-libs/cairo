@@ -23,7 +23,7 @@ pub trait CheckedMul<T> {
 
 pub(crate) mod overflow_based {
     pub(crate) impl TCheckedAdd<
-        T, +Drop<T>, +crate::num::traits::OverflowingAdd<T>
+        T, +Drop<T>, +crate::num::traits::OverflowingAdd<T>,
     > of crate::num::traits::CheckedAdd<T> {
         fn checked_add(self: T, v: T) -> Option<T> {
             let (result, overflow) = self.overflowing_add(v);
@@ -35,7 +35,7 @@ pub(crate) mod overflow_based {
     }
 
     pub(crate) impl TCheckedSub<
-        T, +Drop<T>, +crate::num::traits::OverflowingSub<T>
+        T, +Drop<T>, +crate::num::traits::OverflowingSub<T>,
     > of crate::num::traits::CheckedSub<T> {
         fn checked_sub(self: T, v: T) -> Option<T> {
             let (result, overflow) = self.overflowing_sub(v);
@@ -47,7 +47,7 @@ pub(crate) mod overflow_based {
     }
 
     pub(crate) impl TCheckedMul<
-        T, +Drop<T>, +crate::num::traits::OverflowingMul<T>
+        T, +Drop<T>, +crate::num::traits::OverflowingMul<T>,
     > of crate::num::traits::CheckedMul<T> {
         fn checked_mul(self: T, v: T) -> Option<T> {
             let (result, overflow) = self.overflowing_mul(v);

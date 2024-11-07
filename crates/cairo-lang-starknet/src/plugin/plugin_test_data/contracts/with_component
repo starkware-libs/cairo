@@ -8,7 +8,7 @@ ExpandContractTestRunner(expect_diagnostics: false)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -42,7 +42,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -451,14 +451,14 @@ ExpandContractTestRunner(expect_diagnostics: warnings_only)
 mod component1 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 #[starknet::component]
 mod component2 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -495,14 +495,14 @@ lib.cairo:
 mod component1 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 #[starknet::component]
 mod component2 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1089,14 +1089,14 @@ ExpandContractTestRunner(expect_diagnostics: warnings_only)
 mod component1 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 #[starknet::component]
 mod component2 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -1139,14 +1139,14 @@ lib.cairo:
 mod component1 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 #[starknet::component]
 mod component2 {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 

@@ -15,7 +15,7 @@ mod test_contract {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        A: super::A
+        A: super::A,
     }
 }
 
@@ -25,7 +25,7 @@ Event type must derive `starknet::Event`.
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Event type must derive `starknet::Event`.
  --> lib.cairo:12:9
-        A: super::A
+        A: super::A,
         ^*********^
 
 error: Trait has no implementation in context: core::starknet::event::Event::<test::A>.
