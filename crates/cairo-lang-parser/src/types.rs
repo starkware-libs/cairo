@@ -2,9 +2,12 @@ use std::fmt::Display;
 
 use cairo_lang_filesystem::span::TextOffset;
 
-/// This one describes a struct that can be threated as substitute to a plain code when using the
-/// parser. Using it, we can control what the initial [TextOffset] should be used during creation of
-/// a Root [cairo_lang_syntax::node::SyntaxNode].
+/// Used to run Cairo language parser over a custom source of tokens not produced by the lexer.
 pub trait TokenStream: Display {
+    /// Returns the starting [`TextOffset`] of the token stream, if there is at least a single
+    /// token.
+    ///
+    /// This property is used as offset of a root [cairo_lang_syntax::node::SyntaxNode] produced
+    /// when parsing this stream.
     fn get_start_offset(&self) -> Option<TextOffset>;
 }

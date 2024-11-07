@@ -9,7 +9,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
-use crate::types::TokenStream as TokenStreamable;
+use crate::types::TokenStream;
 use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics};
 
 pub fn get_diagnostics(
@@ -88,7 +88,7 @@ impl Display for MockTokenStream {
     }
 }
 
-impl TokenStreamable for MockTokenStream {
+impl TokenStream for MockTokenStream {
     fn get_start_offset(&self) -> Option<TextOffset> {
         self.tokens.first().map(|token| token.span.start)
     }
