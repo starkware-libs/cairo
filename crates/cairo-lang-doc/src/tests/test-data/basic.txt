@@ -97,7 +97,7 @@ struct Circle {}
 struct Square {}
 
 
-/// This glass is dropable.
+/// This glass is droppable.
 #[derive(Drop)]
 /// When it's dropped, it shatters.
 struct Glass {}
@@ -310,7 +310,7 @@ Content("Second line of code")
 struct Glass {}
 
 //! > Item documentation #17
-This glass is dropable. When it's dropped, it shatters.
+This glass is droppable. When it's dropped, it shatters.
 
 //! > Item documentation tokens #17
-Content("This glass is dropable. When it's dropped, it shatters.")
+Content("This glass is droppable. When it's dropped, it shatters.")
