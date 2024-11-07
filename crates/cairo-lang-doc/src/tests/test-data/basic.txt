@@ -96,6 +96,12 @@ struct Circle {}
 ///
 struct Square {}
 
+
+/// This glass is dropable.
+#[derive(Drop)]
+/// When it's dropped, it shatters.
+struct Glass {}
+
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -298,3 +304,13 @@ Content("First line of code\n")
 Content("// Comment inside the code block, that should be ignored. [Square] <- it will be ignored as\n")
 Content("well.\n")
 Content("Second line of code")
+
+//! > Item signature #17
+#[derive(Drop)]
+struct Glass {}
+
+//! > Item documentation #17
+This glass is dropable. When it's dropped, it shatters.
+
+//! > Item documentation tokens #17
+Content("This glass is dropable. When it's dropped, it shatters.")
