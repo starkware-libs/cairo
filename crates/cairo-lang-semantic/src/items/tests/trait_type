@@ -1149,7 +1149,7 @@ error: Unexpected argument type. Expected: "core::integer::u32", found: "core::i
     let _: u32 = x;
                  ^
 
-error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
+error: Trait has no implementation in context: test::MyTrait.
  --> lib.cairo:26:21
     let _: MyTrait::MyType = 3_u32;
                     ^****^
@@ -1524,7 +1524,7 @@ error: Unexpected return type. Expected: "core::integer::u32", found: "core::int
 fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
                                                      ^
 
-error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
+error: Trait has no implementation in context: test::MyTrait.
  --> lib.cairo:16:21
     let _: MyTrait::MyType1 = x;
                     ^*****^
@@ -2024,7 +2024,7 @@ impl MyImpl<K> of MyTrait {
 //! > trait's associated type is not inferred from a concrete impl with generic args.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> u32 {
@@ -2043,13 +2043,8 @@ trait MyTrait {
 impl MyImpl<K> of MyTrait {
     type ty = K;
 }
-///TODO(TomerStarkware): infer impl types from trait types.
 
 //! > expected_diagnostics
-error: Candidate impl test::MyImpl::<?0> has an unused generic parameter.
- --> lib.cairo:10:21
-    let x: MyTrait::ty = 4_u32;
-                    ^^
 
 //! > ==========================================================================
 
@@ -2391,10 +2386,10 @@ error: Trait has no implementation in context: test::OtherTrait::<_::ty>.
     +TraitWithInferredParams<MyTrait::ty>,
      ^*********************^
 
-error: Trait has no implementation in context: test::TraitWithInferredParams::<core::felt252, test::OtherImpl>.
- --> lib.cairo:23:50
+error: Trait has no implementation in context: test::MyTrait.
+ --> lib.cairo:23:45
     _y + TraitWithInferredParams::<MyTrait::ty>::foo()
-                                                 ^*^
+                                            ^^
 
 //! > ==========================================================================
 
@@ -2579,3 +2574,37 @@ error: Not a type.
  --> lib.cairo:1:69
 fn bar<T, const C: u32, impl I: core::metaprogramming::TypeEqual<T, C>>() {}
                                                                     ^
+
+//! > ==========================================================================
+
+//! > Mismatch between inferred trait type and expected type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+///TODO(TomerStarkware): change diagnostics to mismatch types instead of missing impl.
+fn foo() {
+    let _: felt252 = MyTrait::my_function();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType;
+    fn my_function() -> Self::MyType;
+}
+impl MyImpl of MyTrait {
+    type MyType = u16;
+    fn my_function() -> u16 {
+        2_u16
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: test::MyTrait.
+ --> lib.cairo:13:31
+    let _: felt252 = MyTrait::my_function();
+                              ^*********^

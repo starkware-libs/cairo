@@ -266,7 +266,7 @@ fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `core::felt252` and `core::integer::u128`.
+error: Trait has no implementation in context: core::ops::function::FnOnce::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>.
  --> lib.cairo:10:23
     let _k: felt252 = bar(c);
                       ^*^
