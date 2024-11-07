@@ -102,6 +102,11 @@ struct Square {}
 /// When it's dropped, it shatters.
 struct Glass {}
 
+/// This cup is droppable.
+#[derive(Drop)]
+/// When it's dropped, it shatters.
+struct Cup {}
+
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -314,3 +319,13 @@ This glass is droppable. When it's dropped, it shatters.
 
 //! > Item documentation tokens #17
 Content("This glass is droppable. When it's dropped, it shatters.")
+
+//! > Item signature #18
+#[derive(Drop)]
+struct Cup {}
+
+//! > Item documentation #18
+This cup is droppable. When it's dropped, it shatters.
+
+//! > Item documentation tokens #18
+Content("This cup is droppable. When it's dropped, it shatters.")
