@@ -166,8 +166,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         token_stream: &'a dyn TokenStream,
     ) -> SyntaxFile {
-        let content = token_stream.to_string();
-        let mut lexer = Lexer::from_text(db, content.as_str());
+        let mut lexer = Lexer::from_text(db, token_stream.to_str());
         let next_terminal = lexer.next().unwrap();
         let parser = Parser {
             db,
@@ -195,8 +194,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         token_stream: &'a dyn TokenStream,
     ) -> Expr {
-        let content = token_stream.to_string();
-        let mut lexer = Lexer::from_text(db, content.as_str());
+        let mut lexer = Lexer::from_text(db, token_stream.to_str());
         let next_terminal = lexer.next().unwrap();
         let mut parser = Parser {
             db,

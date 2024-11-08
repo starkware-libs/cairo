@@ -47,6 +47,7 @@ pub fn create_virtual_file(
 #[derive(Debug, Clone)]
 pub struct MockTokenStream {
     pub tokens: Vec<MockToken>,
+    pub content_string: String,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -68,7 +69,8 @@ impl MockToken {
 impl MockTokenStream {
     #[doc(hidden)]
     pub fn new(tokens: Vec<MockToken>) -> Self {
-        Self { tokens }
+        let content_string = tokens.iter().map(|token| token.content.clone()).collect::<String>();
+        Self { tokens, content_string }
     }
 
     pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
@@ -91,5 +93,9 @@ impl Display for MockTokenStream {
 impl TokenStream for MockTokenStream {
     fn get_start_offset(&self) -> Option<TextOffset> {
         self.tokens.first().map(|token| token.span.start)
+    }
+
+    fn to_str(&self) -> &str {
+        &self.content_string
     }
 }

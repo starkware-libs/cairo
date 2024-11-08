@@ -97,6 +97,7 @@ fn test_token_stream_expr_parser() {
                     .add_width(TextWidth::new_for_testing(expr_code.len().to_u32().unwrap())),
             },
         }],
+        content_string: expr_code.to_string(),
     };
 
     let (node_from_token_stream, _) = db.parse_token_stream_expr(&token_stream);

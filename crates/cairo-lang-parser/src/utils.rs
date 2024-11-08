@@ -80,7 +80,7 @@ impl SimpleParserDatabase {
         let file_id = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
             name: "token_stream_file_parser_input".into(),
-            content: token_stream.to_string().into(),
+            content: token_stream.to_str().into(),
             code_mappings: Default::default(),
             kind: FileKind::Module,
         })
