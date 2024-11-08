@@ -975,7 +975,7 @@ trait OutsideTraitWithPanicDestruct<TContractState> {
 
 #[starknet::embeddable]
 impl OutsideImplWithPanicDestruct<
-    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>,
 > of OutsideTraitWithPanicDestruct<TContractState> {
     fn ret_5(self: @TContractState) -> felt252 {
         5
@@ -1018,7 +1018,7 @@ trait OutsideTraitWithPanicDestruct<TContractState> {
 
 #[starknet::embeddable]
 impl OutsideImplWithPanicDestruct<
-    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>,
 > of OutsideTraitWithPanicDestruct<TContractState> {
     fn ret_5(self: @TContractState) -> felt252 {
         5
@@ -1318,7 +1318,7 @@ trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -2448,7 +2448,7 @@ error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters 
 
 error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
  --> lib.cairo:22:21
-    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+    TContractState, impl DisallowedPanicDestruct: PanicDestruct<TContractState>,
                     ^*********************************************************^
 
 //! > ==========================================================================

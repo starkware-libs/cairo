@@ -85,17 +85,17 @@ extern fn array_pop_front_consume<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)
 pub(crate) extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 extern fn array_snapshot_multi_pop_front<PoppedT, impl Info: FixedSizedArrayInfo<PoppedT>>(
-    ref arr: @Array<Info::Element>
+    ref arr: @Array<Info::Element>,
 ) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
 extern fn array_snapshot_multi_pop_back<PoppedT, impl Info: FixedSizedArrayInfo<PoppedT>>(
-    ref arr: @Array<Info::Element>
+    ref arr: @Array<Info::Element>,
 ) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
 #[panic_with('Index out of bounds', array_at)]
 extern fn array_get<T>(
-    arr: @Array<T>, index: usize
+    arr: @Array<T>, index: usize,
 ) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
 extern fn array_slice<T>(
-    arr: @Array<T>, start: usize, length: usize
+    arr: @Array<T>, start: usize, length: usize,
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
@@ -151,7 +151,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
                 self.append(current.clone());
                 self.append_span(span);
             },
-            Option::None => {}
+            Option::None => {},
         };
     }
 
@@ -345,7 +345,7 @@ fn serialize_array_helper<T, +Serde<T>, +Drop<T>>(mut input: Span<T>, ref output
 }
 
 fn deserialize_array_helper<T, +Serde<T>, +Drop<T>>(
-    ref serialized: Span<felt252>, mut curr_output: Array<T>, remaining: felt252
+    ref serialized: Span<felt252>, mut curr_output: Array<T>, remaining: felt252,
 ) -> Option<Array<T>> {
     if remaining == 0 {
         return Option::Some(curr_output);
@@ -358,7 +358,8 @@ fn deserialize_array_helper<T, +Serde<T>, +Drop<T>>(
 /// It is a structure with a single field that holds a snapshot of an array.
 /// `Span` implements the `Copy` and the `Drop` traits.
 pub struct Span<T> {
-    pub(crate) snapshot: @Array<T>
+    /// The snapshot of the array.
+    pub(crate) snapshot: @Array<T>,
 }
 
 impl SpanCopy<T> of Copy<Span<T>>;
@@ -659,7 +660,7 @@ impl SnapIntoSpanWhereToSpanTrait<C, T, +ToSpanTrait<C, T>> of Into<@C, Span<T>>
 }
 
 extern fn span_from_tuple<T, impl Info: FixedSizedArrayInfo<T>>(
-    struct_like: Box<@T>
+    struct_like: Box<@T>,
 ) -> @Array<Info::Element> nopanic;
 
 impl FixedSizeArrayBoxToSpan<T, const SIZE: usize> of ToSpanTrait<Box<@[T; SIZE]>, T> {
@@ -677,7 +678,7 @@ impl FixedSizeArrayBoxToSpan<T, const SIZE: usize> of ToSpanTrait<Box<@[T; SIZE]
 }
 
 impl FixedSizeArrayToSpan<
-    T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
+    T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>,
 > of ToSpanTrait<[T; SIZE], T> {
     /// Returns a `Span<T>` corresponding to a view into the given fixed-size array.
     ///
@@ -709,11 +710,11 @@ impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
 }
 
 extern fn tuple_from_span<T, impl Info: FixedSizedArrayInfo<T>>(
-    span: @Array<Info::Element>
+    span: @Array<Info::Element>,
 ) -> Option<@Box<T>> nopanic;
 
 impl SpanTryIntoFixedSizedArray<
-    T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>
+    T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>,
 > of TryInto<Span<T>, @Box<[T; SIZE]>> {
     /// Returns an option of a snapshot of a box that contains a fixed-size array.
     ///
@@ -824,7 +825,7 @@ pub struct ArrayIter<T> {
 
 impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone<ArrayIter<T>> {
     fn clone(self: @ArrayIter<T>) -> ArrayIter<T> {
-        ArrayIter { array: crate::clone::Clone::clone(self.array), }
+        ArrayIter { array: crate::clone::Clone::clone(self.array) }
     }
 }
 
