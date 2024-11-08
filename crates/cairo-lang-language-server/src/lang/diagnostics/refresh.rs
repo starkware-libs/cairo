@@ -1,23 +1,19 @@
 use std::collections::{HashMap, HashSet};
 
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
-use lsp_types::Url;
 use lsp_types::notification::PublishDiagnostics;
 use tracing::info_span;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
-use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]
 pub fn refresh_diagnostics(
     db: &AnalysisDatabase,
-    open_files: &HashSet<Url>,
+    batch: Vec<FileId>,
     trace_macro_diagnostics: bool,
     file_diagnostics: &mut HashMap<FileId, FileDiagnostics>,
     notifier: Notifier,
@@ -25,57 +21,18 @@ pub fn refresh_diagnostics(
     let mut files_with_set_diagnostics: HashSet<FileId> = HashSet::default();
     let mut processed_modules: HashSet<ModuleId> = HashSet::default();
 
-    let open_files_ids = info_span!("get_open_files_ids").in_scope(|| {
-        open_files.iter().filter_map(|uri| db.file_for_url(uri)).collect::<HashSet<FileId>>()
-    });
+    for file in batch {
+        refresh_file_diagnostics(
+            db,
+            file,
+            trace_macro_diagnostics,
+            &mut processed_modules,
+            &mut files_with_set_diagnostics,
+            file_diagnostics,
+            &notifier,
+        );
+    }
 
-    // Refresh open files modules first for better UX
-    info_span!("refresh_open_files_modules").in_scope(|| {
-        for &file in &open_files_ids {
-            refresh_file_diagnostics(
-                db,
-                file,
-                trace_macro_diagnostics,
-                &mut processed_modules,
-                &mut files_with_set_diagnostics,
-                file_diagnostics,
-                &notifier,
-            );
-        }
-    });
-
-    let rest_of_files = info_span!("get_rest_of_files").in_scope(|| {
-        let mut rest_of_files: HashSet<FileId> = HashSet::default();
-        for crate_id in db.crates() {
-            for module_id in db.crate_modules(crate_id).iter() {
-                // Schedule only module main files for refreshing.
-                // All other related files will be refreshed along with it in a single job.
-                if let Ok(file) = db.module_main_file(*module_id) {
-                    if !open_files_ids.contains(&file) {
-                        rest_of_files.insert(file);
-                    }
-                }
-            }
-        }
-        rest_of_files
-    });
-
-    // Refresh the rest of files after, since they are not viewed currently
-    info_span!("refresh_other_files_modules").in_scope(|| {
-        for file in rest_of_files {
-            refresh_file_diagnostics(
-                db,
-                file,
-                trace_macro_diagnostics,
-                &mut processed_modules,
-                &mut files_with_set_diagnostics,
-                file_diagnostics,
-                &notifier,
-            );
-        }
-    });
-
-    // Clear old diagnostics
     info_span!("clear_old_diagnostics").in_scope(|| {
         let mut removed_files = Vec::new();
 
