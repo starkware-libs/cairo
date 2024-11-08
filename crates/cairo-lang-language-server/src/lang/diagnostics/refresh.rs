@@ -4,10 +4,9 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_utils::LookupIntern;
+use lsp_types::Url;
 use lsp_types::notification::PublishDiagnostics;
-use lsp_types::{PublishDiagnosticsParams, Url};
-use tracing::{info_span, trace};
+use tracing::info_span;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
@@ -20,10 +19,10 @@ pub fn refresh_diagnostics(
     db: &AnalysisDatabase,
     open_files: &HashSet<Url>,
     trace_macro_diagnostics: bool,
-    file_diagnostics: &mut HashMap<Url, FileDiagnostics>,
+    file_diagnostics: &mut HashMap<FileId, FileDiagnostics>,
     notifier: Notifier,
 ) {
-    let mut files_with_set_diagnostics: HashSet<Url> = HashSet::default();
+    let mut files_with_set_diagnostics: HashSet<FileId> = HashSet::default();
     let mut processed_modules: HashSet<ModuleId> = HashSet::default();
 
     let open_files_ids = info_span!("get_open_files_ids").in_scope(|| {
@@ -80,20 +79,24 @@ pub fn refresh_diagnostics(
     info_span!("clear_old_diagnostics").in_scope(|| {
         let mut removed_files = Vec::new();
 
-        file_diagnostics.retain(|uri, _| {
-            let retain = files_with_set_diagnostics.contains(uri);
+        file_diagnostics.retain(|&file, _| {
+            let retain = files_with_set_diagnostics.contains(&file);
             if !retain {
-                removed_files.push(uri.clone());
+                removed_files.push(file);
             }
             retain
         });
 
         for file in removed_files {
-            notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-                uri: file,
-                diagnostics: vec![],
-                version: None,
-            });
+            let Some(params) = FileDiagnostics::empty(file).to_lsp(db, trace_macro_diagnostics)
+            else {
+                // This is a pathological branch which is not expected to happen.
+                // Theoretically, it is fine to skip here because if we cannot make a URL for the
+                // file, then we likely never have been able to publish any diagnostics for it in
+                // the past.
+                continue;
+            };
+            notifier.notify::<PublishDiagnostics>(params);
         }
     });
 }
@@ -104,30 +107,25 @@ fn refresh_file_diagnostics(
     file: FileId,
     trace_macro_diagnostics: bool,
     processed_modules: &mut HashSet<ModuleId>,
-    files_with_set_diagnostics: &mut HashSet<Url>,
-    file_diagnostics: &mut HashMap<Url, FileDiagnostics>,
+    files_with_set_diagnostics: &mut HashSet<FileId>,
+    file_diagnostics: &mut HashMap<FileId, FileDiagnostics>,
     notifier: &Notifier,
 ) {
-    let Some(file_uri) = db.url_for_file(file) else {
-        trace!("url for file not found: {:?}", file.lookup_intern(db));
-        return;
-    };
-
     let Some(new_file_diagnostics) = FileDiagnostics::collect(db, file, processed_modules) else {
         return;
     };
 
     if !new_file_diagnostics.is_empty() {
-        files_with_set_diagnostics.insert(file_uri.clone());
+        files_with_set_diagnostics.insert(file);
     }
 
     // Since we are using Arcs, this comparison should be efficient.
-    if let Some(old_file_diagnostics) = file_diagnostics.get(&file_uri) {
+    if let Some(old_file_diagnostics) = file_diagnostics.get(&file) {
         if old_file_diagnostics == &new_file_diagnostics {
             return;
         }
 
-        file_diagnostics.insert(file_uri.clone(), new_file_diagnostics.clone());
+        file_diagnostics.insert(file, new_file_diagnostics.clone());
     };
 
     if let Some(params) = new_file_diagnostics.to_lsp(db, trace_macro_diagnostics) {

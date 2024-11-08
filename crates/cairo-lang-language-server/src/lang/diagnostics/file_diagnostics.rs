@@ -30,6 +30,16 @@ pub struct FileDiagnostics {
 }
 
 impl FileDiagnostics {
+    /// Constructs a new `FileDiagnostics` with no diagnostics.
+    pub fn empty(file: FileId) -> Self {
+        FileDiagnostics {
+            file,
+            parser: Diagnostics::default(),
+            semantic: Diagnostics::default(),
+            lowering: Diagnostics::default(),
+        }
+    }
+
     /// Collects all diagnostics kinds from the given `file` and constructs a new `FileDiagnostics`.
     ///
     /// The `processed_modules` in/out parameter is used to avoid constructing two overlapping
@@ -98,6 +108,8 @@ impl FileDiagnostics {
     }
 
     /// Constructs a new [`lsp_types::PublishDiagnosticsParams`] from this `FileDiagnostics`.
+    ///
+    /// Returns `None` only if [`LsProtoGroup::url_for_file`] returns `None` for the file.
     pub fn to_lsp(
         &self,
         db: &AnalysisDatabase,

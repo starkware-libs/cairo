@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
-use lsp_types::Url;
+use cairo_lang_filesystem::ids::FileId;
 use tracing::{error, trace};
 
 use self::file_diagnostics::FileDiagnostics;
@@ -55,7 +55,7 @@ impl DiagnosticsController {
 
     /// Runs diagnostics controller's event loop.
     fn control_loop(receiver: trigger::Receiver<WorkerArgs>) {
-        let mut file_diagnostics = HashMap::<Url, FileDiagnostics>::new();
+        let mut file_diagnostics = HashMap::<FileId, FileDiagnostics>::new();
 
         while let Some(WorkerArgs { state, notifier }) = receiver.wait() {
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
