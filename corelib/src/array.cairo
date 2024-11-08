@@ -281,27 +281,19 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
 
 impl ArrayDefault<T> of Default<Array<T>> {
     /// Returns a new empty array.
-    ///
     #[inline]
     fn default() -> Array<T> {
         ArrayTrait::new()
     }
 }
 
-/// `IndexView` trait implementation to access an item contained in type `Array<T>` with an index of
-/// type `usize`.
 impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     /// Returns a snapshot of the element at the given index.
-    /// `IndexView` needs to be explicitly imported with `use core::ops::IndexView;` to use the
-    /// `index` function The explicit import is not required when using the subscripting operator.
     ///
     /// # Examples
     ///
     /// ```
     /// let arr: @Array<u8> = @array![1, 2, 3];
-    /// let element: @u8 = arr.index(0);
-    /// assert!(element == @1);
-    ///
     /// let element: @u8 = arr[0];
     /// assert!(element == @1);
     /// ```
@@ -310,7 +302,6 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     }
 }
 
-/// `Serde` trait implementation to serialize and deserialize an `Array<T>`.
 impl ArraySerde<T, +Serde<T>, +Drop<T>> of Serde<Array<T>> {
     /// Serializes an `Array<T>` into an `Array<felt252>`.
     ///
@@ -374,19 +365,10 @@ impl SpanCopy<T> of Copy<Span<T>>;
 impl SpanDrop<T> of Drop<Span<T>>;
 
 impl ArrayIntoSpan<T, +Drop<T>> of Into<Array<T>, Span<T>> {
-    /// Takes an array and returns a span of that array.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let arr: Array<u8> = array![1, 2, 3];
-    /// let span: Span<u8> = arr.into();
-    /// ```
     fn into(self: Array<T>) -> Span<T> {
         self.span()
     }
 }
-
 
 impl SpanIntoArray<T, +Drop<T>, +Clone<T>> of Into<Span<T>, Array<T>> {
     /// Turns a span into an array.
@@ -640,13 +622,12 @@ pub impl SpanImpl<T> of SpanTrait<T> {
 
 pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     /// Returns a snapshot of the element at the given index.
-    /// `IndexView` needs to be explicitly imported with `use core::ops::IndexView;`
     ///
     /// # Examples
     ///
     /// ```
     /// let span: @Span<u8> = @array![1, 2, 3].span();
-    /// let element: @u8 = span.index(0);
+    /// let element: @u8 = span[0];
     /// assert!(element == @1);
     /// ```
     #[inline]
@@ -712,7 +693,6 @@ impl FixedSizeArrayToSpan<
     }
 }
 
-/// `ToSpanTrait` implementation for a snapshot of an empty fixed-size array.
 impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
     /// Returns a `Span<T>` corresponding to a view into the given empty fixed-size array.
     ///
@@ -849,7 +829,10 @@ impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone
 }
 
 impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
+    /// The type of the elements being iterated over.
     type Item = T;
+    // Advances the iterator and returns the next value. Returns `Option::None` when iteration is
+    // finished.
     fn next(ref self: ArrayIter<T>) -> Option<T> {
         self.array.pop_front()
     }
@@ -857,6 +840,7 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
 
 impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
+    /// The kind of iterator we are turning this into.
     fn into_iter(self: Array<T>) -> ArrayIter<T> {
         ArrayIter { array: self }
     }
