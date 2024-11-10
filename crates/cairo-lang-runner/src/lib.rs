@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::ops::{Add, Sub};
 
 use cairo_lang_casm::hints::Hint;
-use cairo_lang_runnable_utils::builder::{BuildError, RunnableBuilder};
+use cairo_lang_runnable_utils::builder::{BuildError, EntryCodeConfig, RunnableBuilder};
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumType;
@@ -195,7 +195,8 @@ impl SierraCasmRunner {
         available_gas: Option<usize>,
         starknet_state: StarknetState,
     ) -> Result<RunResultStarknet, RunnerError> {
-        let (assembled_program, builtins) = self.builder.assemble_function_program(func)?;
+        let (assembled_program, builtins) =
+            self.builder.assemble_function_program(func, EntryCodeConfig::testing())?;
         let (hints_dict, string_to_hint) = build_hints_dict(&assembled_program.hints);
         let user_args = self.prepare_args(func, available_gas, args)?;
         let mut hint_processor = CairoHintProcessor {

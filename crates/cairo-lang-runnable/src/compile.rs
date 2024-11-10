@@ -7,7 +7,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_runnable_utils::builder::RunnableBuilder;
+use cairo_lang_runnable_utils::builder::{EntryCodeConfig, RunnableBuilder};
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
@@ -99,5 +99,5 @@ pub fn compile_runnable_function_in_prepared_db(
     );
     let runnable_func = sierra_program.funcs[0].clone();
     let builder = RunnableBuilder::new(sierra_program, None)?;
-    Ok(builder.casm_function_program(&runnable_func)?)
+    Ok(builder.casm_function_program(&runnable_func, EntryCodeConfig::provable())?)
 }
