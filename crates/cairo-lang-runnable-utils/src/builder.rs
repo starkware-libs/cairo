@@ -243,6 +243,12 @@ impl RunnableBuilder {
 pub struct EntryCodeConfig {
     /// Whether to finalize the segment arena after calling the function.
     pub finalize_segment_arena: bool,
+    /// Whether the wrapped function is expecting the output builtin.
+    ///
+    /// If true, will expect the function signature to be `(Span<felt252>, Array<felt252>) ->
+    /// Array<felt252>`. And will inject the output builtin to be the supplied array input, and
+    /// to be the result of the output.
+    pub outputting_function: bool,
 }
 impl EntryCodeConfig {
     /// Returns a configuration for testing purposes.
@@ -250,12 +256,12 @@ impl EntryCodeConfig {
     /// This configuration will not finalize the segment arena after calling the function, to
     /// prevent failure in case of functions returning values.
     pub fn testing() -> Self {
-        Self { finalize_segment_arena: false }
+        Self { finalize_segment_arena: false, outputting_function: false }
     }
 
     /// Returns a configuration for proving purposes.
     pub fn provable() -> Self {
-        Self { finalize_segment_arena: true }
+        Self { finalize_segment_arena: true, outputting_function: true }
     }
 }
 
@@ -272,6 +278,7 @@ pub fn create_entry_code_from_params(
     let mut ctx = CasmBuilder::default();
     let mut builtin_offset = 3;
     let mut builtin_vars = UnorderedHashMap::<_, _>::default();
+    let mut builtin_ty_to_vm_name = UnorderedHashMap::<_, _>::default();
     let mut builtins = vec![];
     for (builtin_name, builtin_ty) in [
         (BuiltinName::mul_mod, MulModType::ID),
@@ -286,12 +293,18 @@ pub fn create_entry_code_from_params(
         if param_types.iter().any(|(ty, _)| ty == &builtin_ty) {
             // The offset [fp - i] for each of this builtins in this configuration.
             builtin_vars.insert(
-                builtin_ty,
+                builtin_name,
                 ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset]))),
             );
+            builtin_ty_to_vm_name.insert(builtin_ty.clone(), builtin_name);
             builtin_offset += 1;
             builtins.push(builtin_name);
         }
+    }
+    if config.outputting_function {
+        let output_builtin_var = ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset])));
+        builtin_vars.insert(BuiltinName::output, output_builtin_var);
+        builtins.push(BuiltinName::output);
     }
     builtins.reverse();
 
@@ -328,12 +341,14 @@ pub fn create_entry_code_from_params(
             assert zero = *(segment_arena++);
         }
         // Adding the segment arena to the builtins var map.
-        builtin_vars.insert(SegmentArenaType::ID, segment_arena);
+        builtin_vars.insert(BuiltinName::segment_arena, segment_arena);
+        builtin_ty_to_vm_name.insert(SegmentArenaType::ID, BuiltinName::segment_arena);
     }
     let mut unallocated_count = 0;
     let mut param_index = 0;
     for (generic_ty, ty_size) in param_types {
-        if let Some(var) = builtin_vars.get(generic_ty).cloned() {
+        if let Some(name) = builtin_ty_to_vm_name.get(generic_ty).cloned() {
+            let var = builtin_vars[&name];
             casm_build_extend!(ctx, tempvar _builtin = var;);
         } else if emulated_builtins.contains(generic_ty) {
             casm_build_extend! {ctx,
@@ -341,7 +356,7 @@ pub fn create_entry_code_from_params(
                 hint AllocSegment into {dst: system};
             };
             unallocated_count += ty_size;
-        } else {
+        } else if !config.outputting_function {
             if *ty_size > 0 {
                 casm_build_extend! { ctx,
                     tempvar first;
@@ -354,7 +369,20 @@ pub fn create_entry_code_from_params(
             }
             param_index += 1;
             unallocated_count += ty_size;
+        }
+    }
+    if config.outputting_function {
+        let output_ptr = builtin_vars[&BuiltinName::output];
+        casm_build_extend! { ctx,
+            tempvar input_start;
+            tempvar _input_end;
+            const param_index = 0;
+            hint ExternalHint::WriteRunParam { index: param_index } into { dst: input_start };
+            const user_data_offset = 1;
+            tempvar output_start = output_ptr + user_data_offset;
+            tempvar output_end = output_start;
         };
+        unallocated_count += 4;
     }
     if unallocated_count > 0 {
         casm_build_extend!(ctx, ap += unallocated_count.into_or_panic::<usize>(););
@@ -363,9 +391,50 @@ pub fn create_entry_code_from_params(
     let mut unprocessed_return_size = return_types.iter().map(|(_, size)| size).sum::<i16>();
     let mut return_data = vec![];
     for (ret_ty, size) in return_types {
-        if let Some(var) = builtin_vars.get_mut(ret_ty) {
-            *var = ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
+        if let Some(name) = builtin_ty_to_vm_name.get(ret_ty) {
+            *builtin_vars.get_mut(name).unwrap() =
+                ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
             unprocessed_return_size -= 1;
+        } else if config.outputting_function {
+            let output_ptr_var = builtin_vars[&BuiltinName::output];
+            // The output builtin values.
+            let new_output_ptr = if *size == 3 {
+                let success_value =
+                    ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
+                unprocessed_return_size -= 2;
+                // The output ptr in the case of successful run.
+                let output_ptr_end =
+                    ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
+                unprocessed_return_size -= 1;
+                casm_build_extend! {ctx,
+                    tempvar new_output_ptr;
+                    jump SUCCESS if success_value != 0;
+                    const one = 1;
+                    // In the case of an error, we assume no values are written to the output_ptr.
+                    assert new_output_ptr = output_ptr_var + one;
+                    jump AFTER_OUTPUT_HANDLING;
+                    SUCCESS:
+                    assert new_output_ptr = output_ptr_end;
+                    AFTER_OUTPUT_HANDLING:
+                    assert success_value = output_ptr_var[0];
+                };
+                new_output_ptr
+            } else if *size == 2 {
+                // No panic possible.
+                unprocessed_return_size -= 1;
+                let output_ptr_end =
+                    ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
+                unprocessed_return_size -= 1;
+                casm_build_extend! {ctx,
+                    const c_one = 1;
+                    tempvar one = c_one;
+                    assert one = *(output_ptr_var++);
+                };
+                output_ptr_end
+            } else {
+                panic!("Unexpected output size: {size}",);
+            };
+            *builtin_vars.get_mut(&BuiltinName::output).unwrap() = new_output_ptr;
         } else {
             for _ in 0..*size {
                 return_data.push(
@@ -384,7 +453,7 @@ pub fn create_entry_code_from_params(
         }
     }
     if got_segment_arena && config.finalize_segment_arena {
-        let segment_arena = builtin_vars[&SegmentArenaType::ID];
+        let segment_arena = builtin_vars[&BuiltinName::segment_arena];
         // Validating the segment arena's segments are one after the other.
         casm_build_extend! {ctx,
             tempvar n_segments = segment_arena[-2];
@@ -424,6 +493,23 @@ pub fn create_entry_code_from_params(
             casm_build_extend! {ctx,
                 tempvar _cell = local_cell;
             };
+        }
+    }
+    if config.outputting_function {
+        for name in [
+            BuiltinName::output,
+            BuiltinName::mul_mod,
+            BuiltinName::add_mod,
+            BuiltinName::range_check96,
+            BuiltinName::poseidon,
+            BuiltinName::ec_op,
+            BuiltinName::bitwise,
+            BuiltinName::range_check,
+            BuiltinName::pedersen,
+        ] {
+            if let Some(var) = builtin_vars.get(&name).copied() {
+                casm_build_extend!(ctx, tempvar cell = var;);
+            }
         }
     }
     casm_build_extend! (ctx, ret;);
