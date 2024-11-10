@@ -133,7 +133,7 @@ compiler_errors
 test_program@25() -> ();
 
 //! > error
-InvalidStatementIdx
+Error from program registry: Function `test_program` points to non existing entry point statement.
 
 //! > ==========================================================================
 
