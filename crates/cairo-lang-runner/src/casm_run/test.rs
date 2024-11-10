@@ -129,6 +129,7 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
         syscalls_used_resources: Default::default(),
+        no_temporary_segments: true,
     };
 
     let RunFunctionResult { ap, memory, .. } =
@@ -157,6 +158,7 @@ fn test_allocate_segment() {
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
         syscalls_used_resources: Default::default(),
+        no_temporary_segments: true,
     };
 
     let RunFunctionResult { ap, memory, .. } =
