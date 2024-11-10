@@ -119,7 +119,6 @@ fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementId
                 Statement::Return(_) => vec![],
             })
         },
-        CostError::StatementOutOfBounds,
         |_| unreachable!("Cycles are not detected."),
     )
 }
