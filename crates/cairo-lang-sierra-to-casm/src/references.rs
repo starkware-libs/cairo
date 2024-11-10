@@ -197,6 +197,8 @@ pub fn check_types_match(
     if itertools::equal(types.iter(), refs.iter().map(|r| &r.ty)) {
         Ok(())
     } else {
+        eprintln!("refs: {:?}", refs);
+        eprintln!("types: {:?}", types);
         Err(ReferencesError::InvalidReferenceTypeForArgument)
     }
 }
