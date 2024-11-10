@@ -687,7 +687,6 @@ fn compute_reverse_topological_order(
         (0..n_statements).map(StatementIdx),
         n_statements,
         |idx| Ok(dependencies_callback(&idx)),
-        CostError::StatementOutOfBounds,
         |_| CostError::UnexpectedCycle,
     )
 }

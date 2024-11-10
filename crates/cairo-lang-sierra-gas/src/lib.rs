@@ -44,8 +44,6 @@ mod test;
 pub enum CostError {
     #[error("error from the program registry")]
     ProgramRegistryError(#[from] Box<ProgramRegistryError>),
-    #[error("found an illegal statement index during cost calculations")]
-    StatementOutOfBounds(StatementIdx),
     #[error("failed solving the symbol tables")]
     SolvingGasEquationFailed,
     #[error("found an unexpected cycle during cost computation")]
