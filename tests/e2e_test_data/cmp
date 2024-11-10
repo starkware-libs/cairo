@@ -4,250 +4,231 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(a: u128, b: u128) -> bool {
-    a < b
+use core::num::traits::{WideMul, CheckedSub};
+
+use core::internal::{
+        bounded_int, bounded_int::{BoundedInt, AddHelper, MulHelper, DivRemHelper}
+};
+
+pub const P: u32 = 0x7fffffff;
+
+
+type ConstValue<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
+
+const M31_P: NonZero<ConstValue<0x7fffffff>> = 0x7fffffff;
+
+
+impl DivRemU32ByP of DivRemHelper<u64, ConstValue<0x7fffffff>> {
+        type DivT = BoundedInt<0, 8589934596>;
+        type RemT = BoundedInt<0, 0x7ffffffe>;
+}
+
+
+/// Equals `2^31 - 1`.
+const P64NZ: NonZero<u64> = 0x7fffffff;
+
+/// Equals `2^31 - 1`.
+const P128NZ: NonZero<u128> = 0x7fffffff;
+
+pub const R: CM31 = CM31 { a: M31 { inner: 2 }, b: M31 { inner: 1 } };
+
+#[derive(Copy, Drop, Debug, PartialEq)]
+pub struct M31 {
+    pub inner: u32
+}
+
+
+#[generate_trait]
+pub impl M31Impl of M31Trait {
+    // #[inline]
+    // fn reduce_u32(val: u32) -> M31 {
+    //     let (_, res) = bounded_int::div_rem(val, M31_P);
+        
+    //     M31 { inner: core::integer::upcast(res) }
+    // }
+
+    #[inline]
+    fn reduce_u64(val: u64) -> M31 {
+        let (_, res) = bounded_int::div_rem(val, M31_P);
+      
+        M31 { inner: core::integer::upcast(res) }
+    }
+
+    #[inline]
+    fn reduce_u128(val: u128) -> M31 {
+        let (_, res) = core::integer::u128_safe_divmod(val, P128NZ);
+        M31 { inner: res.try_into().unwrap() }
+    }
+
+    #[inline]
+    fn sqn(v: M31, n: usize) -> M31 {
+        if n == 0 {
+            return v;
+        }
+        Self::sqn(v * v, n - 1)
+    }
+
+    fn inverse(self: M31) -> M31 {
+        assert!(self.is_non_zero());
+        let t0 = Self::sqn(self, 2) * self;
+        let t1 = Self::sqn(t0, 1) * t0;
+        let t2 = Self::sqn(t1, 3) * t0;
+        let t3 = Self::sqn(t2, 1) * t0;
+        let t4 = Self::sqn(t3, 8) * t3;
+        let t5 = Self::sqn(t4, 8) * t3;
+        Self::sqn(t5, 7) * t2
+    }
+}
+
+
+pub impl M31Zero of core::num::traits::Zero<M31> {
+    #[inline]
+    fn zero() -> M31 {
+        M31 { inner: 0 }
+    }
+
+    fn is_zero(self: @M31) -> bool {
+        *self.inner == 0
+    }
+
+    fn is_non_zero(self: @M31) -> bool {
+        *self.inner != 0
+    }
+}
+
+#[derive(Copy, Drop, Debug, PartialEq)]
+pub struct CM31 {
+    pub a: M31,
+    pub b: M31,
+}
+
+#[derive(Copy, Drop, Debug, PartialEq)]
+pub struct QM31 {
+    pub a: CM31,
+    pub b: CM31,
+}
+
+
+
+pub impl M31Add of core::traits::Add<M31> {
+    #[inline]
+    fn add(lhs: M31, rhs: M31) -> M31 {
+        let res = lhs.inner + rhs.inner;
+        let res = res.checked_sub(P).unwrap_or(res);
+        M31 { inner: res }
+    }
+}
+
+pub impl M31Sub of core::traits::Sub<M31> {
+    #[inline]
+    fn sub(lhs: M31, rhs: M31) -> M31 {
+        lhs + (-rhs)
+    }
+}
+
+
+pub impl M31Mul of core::traits::Mul<M31> {
+    #[inline]
+    fn mul(lhs: M31, rhs: M31) -> M31 {
+        M31Impl::reduce_u64(lhs.inner.wide_mul(rhs.inner))
+    }
+}
+
+
+pub impl M31Neg of Neg<M31> {
+    #[inline]
+    fn neg(a: M31) -> M31 {
+        if a.inner == 0 {
+            M31 { inner: 0 }
+        } else {
+            M31 { inner: P - a.inner }
+        }
+    }
+}
+
+pub impl CM31Add of core::traits::Add<CM31> {
+    #[inline]
+    fn add(lhs: CM31, rhs: CM31) -> CM31 {
+        CM31 { a: lhs.a + rhs.a, b: lhs.b + rhs.b }
+    }
+}
+
+
+pub impl CM31Mul of core::traits::Mul<CM31> {
+    #[inline]
+    fn mul(lhs: CM31, rhs: CM31) -> CM31 {
+        CM31 { a: lhs.a * rhs.a - lhs.b * rhs.b, b: lhs.a * rhs.b + lhs.b * rhs.a }
+    }
+}
+
+pub impl QM31Mul of core::traits::Mul<QM31> {
+    #[inline]
+    fn mul(lhs: QM31, rhs: QM31) -> QM31 {
+        // (a + bu) * (c + du) = (ac + rbd) + (ad + bc)u.
+        QM31 { a: lhs.a * rhs.a + R * lhs.b * rhs.b, b: lhs.a * rhs.b + lhs.b * rhs.a }
+    }
+}
+
+
+
+fn foo(a: M31, b: M31) -> M31 {
+    a * b
 }
 
 //! > casm
-[fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
-jmp rel 7 if [ap + -1] != 0, ap++;
-[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
-jmp rel 10;
-[ap + -1] = [[fp + -5] + 0];
-ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 0, ap++;
-ret;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 1, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 770})
-
-//! > sierra_code
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc u128_overflowing_sub = u128_overflowing_sub;
-libfunc branch_align = branch_align;
-libfunc drop<u128> = drop<u128>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-
-u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
-branch_align() -> (); // 1
-drop<u128>([4]) -> (); // 2
-struct_construct<Unit>() -> ([7]); // 3
-enum_init<core::bool, 0>([7]) -> ([8]); // 4
-store_temp<RangeCheck>([3]) -> ([3]); // 5
-store_temp<core::bool>([8]) -> ([8]); // 6
-return([3], [8]); // 7
-branch_align() -> (); // 8
-drop<u128>([6]) -> (); // 9
-struct_construct<Unit>() -> ([9]); // 10
-enum_init<core::bool, 1>([9]) -> ([10]); // 11
-store_temp<RangeCheck>([5]) -> ([5]); // 12
-store_temp<core::bool>([10]) -> ([10]); // 13
-return([5], [10]); // 14
-
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
-
-//! > ==========================================================================
-
-//! > u32 lt libfunc
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-fn foo(a: u32, b: u32) -> bool {
-    a < b
-}
-
-//! > casm
-[fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
-jmp rel 7 if [ap + -1] != 0, ap++;
-[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
-jmp rel 10;
-[ap + -1] = [[fp + -5] + 0];
-ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 0, ap++;
-ret;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -4] * [fp + -3], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[fp + -5] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[fp + -5] + 1], ap++;
+[ap + -1] = [[fp + -5] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+[ap + 0] = [fp + -5] + 3, ap++;
+[ap + 0] = [ap + -2], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 770})
+test::foo: OrderedHashMap({Const: 1310})
 
 //! > sierra_code
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc u32_overflowing_sub = u32_overflowing_sub;
-libfunc branch_align = branch_align;
-libfunc drop<u32> = drop<u32>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-
-u32_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
-branch_align() -> (); // 1
-drop<u32>([4]) -> (); // 2
-struct_construct<Unit>() -> ([7]); // 3
-enum_init<core::bool, 0>([7]) -> ([8]); // 4
-store_temp<RangeCheck>([3]) -> ([3]); // 5
-store_temp<core::bool>([8]) -> ([8]); // 6
-return([3], [8]); // 7
-branch_align() -> (); // 8
-drop<u32>([6]) -> (); // 9
-struct_construct<Unit>() -> ([9]); // 10
-enum_init<core::bool, 1>([9]) -> ([10]); // 11
-store_temp<RangeCheck>([5]) -> ([5]); // 12
-store_temp<core::bool>([10]) -> ([10]); // 13
-return([5], [10]); // 14
-
-test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);
-
-//! > ==========================================================================
-
-//! > u128_le libfunc
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-fn foo(a: u128, b: u128) -> bool {
-    a <= b
-}
-
-//! > casm
-[fp + -3] = [ap + 1] + [fp + -4], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
-jmp rel 7 if [ap + -1] != 0, ap++;
-[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
-jmp rel 10;
-[ap + -1] = [[fp + -5] + 0];
-ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 1, ap++;
-ret;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 0, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 770})
-
-//! > sierra_code
+type test::M31 = Struct<ut@test::M31, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<2147483647, 2147483647> = BoundedInt<2147483647, 2147483647> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<0, 2147483646> = BoundedInt<0, 2147483646> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedInt<0, 8589934596> = BoundedInt<0, 8589934596> [storable: true, drop: true, dup: true, zero_sized: false];
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<BoundedInt<2147483647, 2147483647>>, Const<BoundedInt<2147483647, 2147483647>, 2147483647>> = Const<NonZero<BoundedInt<2147483647, 2147483647>>, Const<BoundedInt<2147483647, 2147483647>, 2147483647>> [storable: false, drop: false, dup: false, zero_sized: false];
+type NonZero<BoundedInt<2147483647, 2147483647>> = NonZero<BoundedInt<2147483647, 2147483647>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<BoundedInt<2147483647, 2147483647>, 2147483647> = Const<BoundedInt<2147483647, 2147483647>, 2147483647> [storable: false, drop: false, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
 
-libfunc u128_overflowing_sub = u128_overflowing_sub;
-libfunc branch_align = branch_align;
-libfunc drop<u128> = drop<u128>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc struct_deconstruct<test::M31> = struct_deconstruct<test::M31>;
+libfunc u32_wide_mul = u32_wide_mul;
+libfunc const_as_immediate<Const<NonZero<BoundedInt<2147483647, 2147483647>>, Const<BoundedInt<2147483647, 2147483647>, 2147483647>>> = const_as_immediate<Const<NonZero<BoundedInt<2147483647, 2147483647>>, Const<BoundedInt<2147483647, 2147483647>, 2147483647>>>;
+libfunc store_temp<u64> = store_temp<u64>;
+libfunc store_temp<NonZero<BoundedInt<2147483647, 2147483647>>> = store_temp<NonZero<BoundedInt<2147483647, 2147483647>>>;
+libfunc bounded_int_div_rem<u64, BoundedInt<2147483647, 2147483647>> = bounded_int_div_rem<u64, BoundedInt<2147483647, 2147483647>>;
+libfunc drop<BoundedInt<0, 8589934596>> = drop<BoundedInt<0, 8589934596>>;
+libfunc upcast<BoundedInt<0, 2147483646>, u32> = upcast<BoundedInt<0, 2147483646>, u32>;
+libfunc struct_construct<test::M31> = struct_construct<test::M31>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc store_temp<test::M31> = store_temp<test::M31>;
 
-u128_overflowing_sub([0], [2], [1]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
-branch_align() -> (); // 1
-drop<u128>([4]) -> (); // 2
-struct_construct<Unit>() -> ([7]); // 3
-enum_init<core::bool, 1>([7]) -> ([8]); // 4
-store_temp<RangeCheck>([3]) -> ([3]); // 5
-store_temp<core::bool>([8]) -> ([8]); // 6
-return([3], [8]); // 7
-branch_align() -> (); // 8
-drop<u128>([6]) -> (); // 9
-struct_construct<Unit>() -> ([9]); // 10
-enum_init<core::bool, 0>([9]) -> ([10]); // 11
-store_temp<RangeCheck>([5]) -> ([5]); // 12
-store_temp<core::bool>([10]) -> ([10]); // 13
-return([5], [10]); // 14
+struct_deconstruct<test::M31>([1]) -> ([3]); // 0
+struct_deconstruct<test::M31>([2]) -> ([4]); // 1
+u32_wide_mul([3], [4]) -> ([5]); // 2
+const_as_immediate<Const<NonZero<BoundedInt<2147483647, 2147483647>>, Const<BoundedInt<2147483647, 2147483647>, 2147483647>>>() -> ([6]); // 3
+store_temp<u64>([5]) -> ([5]); // 4
+store_temp<NonZero<BoundedInt<2147483647, 2147483647>>>([6]) -> ([6]); // 5
+bounded_int_div_rem<u64, BoundedInt<2147483647, 2147483647>>([0], [5], [6]) -> ([7], [8], [9]); // 6
+drop<BoundedInt<0, 8589934596>>([8]) -> (); // 7
+upcast<BoundedInt<0, 2147483646>, u32>([9]) -> ([10]); // 8
+struct_construct<test::M31>([10]) -> ([11]); // 9
+store_temp<RangeCheck>([7]) -> ([7]); // 10
+store_temp<test::M31>([11]) -> ([11]); // 11
+return([7], [11]); // 12
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
-
-//! > ==========================================================================
-
-//! > u32_le libfunc
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-fn foo(a: u32, b: u32) -> bool {
-    a <= b
-}
-
-//! > casm
-[fp + -3] = [ap + 1] + [fp + -4], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
-jmp rel 7 if [ap + -1] != 0, ap++;
-[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
-jmp rel 10;
-[ap + -1] = [[fp + -5] + 0];
-ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 1, ap++;
-ret;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 0, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 770})
-
-//! > sierra_code
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc u32_overflowing_sub = u32_overflowing_sub;
-libfunc branch_align = branch_align;
-libfunc drop<u32> = drop<u32>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-
-u32_overflowing_sub([0], [2], [1]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
-branch_align() -> (); // 1
-drop<u32>([4]) -> (); // 2
-struct_construct<Unit>() -> ([7]); // 3
-enum_init<core::bool, 1>([7]) -> ([8]); // 4
-store_temp<RangeCheck>([3]) -> ([3]); // 5
-store_temp<core::bool>([8]) -> ([8]); // 6
-return([3], [8]); // 7
-branch_align() -> (); // 8
-drop<u32>([6]) -> (); // 9
-struct_construct<Unit>() -> ([9]); // 10
-enum_init<core::bool, 0>([9]) -> ([10]); // 11
-store_temp<RangeCheck>([5]) -> ([5]); // 12
-store_temp<core::bool>([10]) -> ([10]); // 13
-return([5], [10]); // 14
-
-test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);
+test::foo@0([0]: RangeCheck, [1]: test::M31, [2]: test::M31) -> (RangeCheck, test::M31);

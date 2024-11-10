@@ -214,6 +214,7 @@ fn run_e2e_test(
     // Compile to casm.
     let casm =
         compiler::compile(&sierra_program, &metadata_with_linear, config).unwrap().to_string();
+    // let casm = "".to_string();
 
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
