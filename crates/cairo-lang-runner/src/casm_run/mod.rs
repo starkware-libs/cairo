@@ -100,6 +100,8 @@ pub struct CairoHintProcessor<'a> {
     /// Resources used during syscalls - does not include resources used during the current VM run.
     /// At the end of the run - adding both would result in the actual expected resource usage.
     pub syscalls_used_resources: StarknetExecutionResources,
+    /// Avoid allocating memory segments so finalization of segment arena may not occur.
+    pub no_temporary_segments: bool,
 }
 
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -421,7 +423,12 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         let hint = match hint {
             Hint::Starknet(hint) => hint,
             Hint::Core(core_hint_base) => {
-                return execute_core_hint_base(vm, exec_scopes, core_hint_base);
+                return execute_core_hint_base(
+                    vm,
+                    exec_scopes,
+                    core_hint_base,
+                    self.no_temporary_segments,
+                );
             }
             Hint::External(hint) => {
                 return self.execute_external_hint(vm, hint);
@@ -1649,10 +1656,11 @@ pub fn execute_core_hint_base(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     core_hint_base: &cairo_lang_casm::hints::CoreHintBase,
+    no_temporary_segments: bool,
 ) -> Result<(), HintError> {
     match core_hint_base {
         cairo_lang_casm::hints::CoreHintBase::Core(core_hint) => {
-            execute_core_hint(vm, exec_scopes, core_hint)
+            execute_core_hint(vm, exec_scopes, core_hint, no_temporary_segments)
         }
         cairo_lang_casm::hints::CoreHintBase::Deprecated(deprecated_hint) => {
             execute_deprecated_hint(vm, exec_scopes, deprecated_hint)
@@ -1723,6 +1731,7 @@ pub fn execute_core_hint(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     core_hint: &CoreHint,
+    no_temporary_segments: bool,
 ) -> Result<(), HintError> {
     match core_hint {
         CoreHint::AllocSegment { dst } => {
@@ -1921,7 +1930,8 @@ pub fn execute_core_hint(
                     exec_scopes.get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")?
                 }
             };
-            let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
+            let new_dict_segment =
+                dict_manager_exec_scope.new_default_dict(vm, no_temporary_segments);
             vm.insert_value((dict_infos_base + 3 * n_dicts)?, new_dict_segment)?;
         }
         CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
