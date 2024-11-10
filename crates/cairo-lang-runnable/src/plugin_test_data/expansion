@@ -11,6 +11,7 @@ fn main() {}
 #[runnable]
 fn main() {}
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
+#[runnable_raw]
 fn __runnable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
 
     assert(core::array::SpanTrait::is_empty(input), 'Input too long for params.');
@@ -40,6 +41,7 @@ fn main(a: felt252, b: felt252) -> felt252 {
     a + b
 }
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
+#[runnable_raw]
 fn __runnable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
 
     let __param__runnable_wrapper__0 = Serde::deserialize(ref input).expect('Failed to deserialize param #0');

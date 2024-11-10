@@ -44,6 +44,7 @@ struct NoSerde {
     v: felt252,
 }
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
+#[runnable_raw]
 fn __runnable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
 
     let __param__runnable_wrapper__0 = Serde::deserialize(ref input).expect('Failed to deserialize param #0');
@@ -89,6 +90,7 @@ struct NoSerde {
     v: felt252,
 }
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
+#[runnable_raw]
 fn __runnable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
 
     let __param__runnable_wrapper__0 = Serde::deserialize(ref input).expect('Failed to deserialize param #0');
