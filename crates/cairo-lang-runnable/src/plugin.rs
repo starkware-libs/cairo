@@ -10,7 +10,8 @@ use indoc::formatdoc;
 use itertools::Itertools;
 
 pub const RUNNABLE_ATTR: &str = "runnable";
-const RUNNABLE_PREFIX: &str = "__runnable_wrapper__";
+pub const RUNNABLE_RAW_ATTR: &str = "runnable_raw";
+pub const RUNNABLE_PREFIX: &str = "__runnable_wrapper__";
 const IMPLICIT_PRECEDENCE: &[&str] = &[
     "core::pedersen::Pedersen",
     "core::RangeCheck",
@@ -58,6 +59,7 @@ impl MacroPlugin for RunnablePlugin {
         builder.add_modified(RewriteNode::interpolate_patched(&formatdoc! {"
 
                 $implicit_precedence$
+                #[{RUNNABLE_RAW_ATTR}]
                 fn {RUNNABLE_PREFIX}$function_name$(mut input: Span<felt252>, ref output: Array<felt252>) {{\n
             "},
             &[
@@ -111,10 +113,10 @@ impl MacroPlugin for RunnablePlugin {
     }
 
     fn declared_attributes(&self) -> Vec<String> {
-        vec![RUNNABLE_ATTR.to_string()]
+        vec![RUNNABLE_ATTR.to_string(), RUNNABLE_RAW_ATTR.to_string()]
     }
 
     fn executable_attributes(&self) -> Vec<String> {
-        vec![RUNNABLE_ATTR.to_string()]
+        vec![RUNNABLE_RAW_ATTR.to_string()]
     }
 }

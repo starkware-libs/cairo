@@ -15,7 +15,7 @@ use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 
-use crate::plugin::{RUNNABLE_ATTR, RunnablePlugin};
+use crate::plugin::{RUNNABLE_PREFIX, RUNNABLE_RAW_ATTR, RunnablePlugin};
 
 /// Compile the function given by path.
 /// Errors if there is ambiguity.
@@ -45,14 +45,11 @@ pub fn compile_runnable_in_prepared_db(
 ) -> Result<String> {
     let mut runnables: Vec<_> = find_executable_function_ids(db, main_crate_ids)
         .into_iter()
-        .filter_map(|(id, labels)| labels.into_iter().any(|l| l == RUNNABLE_ATTR).then_some(id))
+        .filter_map(|(id, labels)| labels.into_iter().any(|l| l == RUNNABLE_RAW_ATTR).then_some(id))
         .collect();
 
-    // TODO(ilya): Add contract names.
     if let Some(runnable_path) = runnable_path {
-        runnables.retain(|runnable| {
-            runnable.base_semantic_function(db).full_path(db.upcast()) == runnable_path
-        });
+        runnables.retain(|runnable| originating_function_path(db, *runnable) == runnable_path);
     };
     let runnable = match runnables.len() {
         0 => {
@@ -64,7 +61,7 @@ pub fn compile_runnable_in_prepared_db(
         _ => {
             let runnable_names = runnables
                 .iter()
-                .map(|runnable| runnable.base_semantic_function(db).full_path(db.upcast()))
+                .map(|runnable| originating_function_path(db, *runnable))
                 .join("\n  ");
             anyhow::bail!(
                 "More than one runnable found in the main crate: \n  {}\nUse --runnable to \
@@ -75,6 +72,21 @@ pub fn compile_runnable_in_prepared_db(
     };
 
     compile_runnable_function_in_prepared_db(db, runnable, diagnostics_reporter)
+}
+
+/// Returns the path to the function that the runnable is wrapping.
+///
+/// If the runnable is not wrapping a function, returns the full path of the runnable.
+fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
+    let wrapper_name = wrapper.name(db);
+    let wrapper_full_path = wrapper.base_semantic_function(db).full_path(db.upcast());
+    let Some(wrapped_name) = wrapper_name.strip_suffix(RUNNABLE_PREFIX) else {
+        return wrapper_full_path;
+    };
+    let Some(wrapper_path_to_module) = wrapper_full_path.strip_suffix(wrapper_name.as_str()) else {
+        return wrapper_full_path;
+    };
+    format!("{}{}", wrapper_path_to_module, wrapped_name)
 }
 
 /// Runs compiler for a runnable function.
