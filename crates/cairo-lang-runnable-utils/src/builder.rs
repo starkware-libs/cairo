@@ -279,8 +279,10 @@ pub fn create_entry_code_from_params(
                 }
             }
         }
+        if !local_exprs.is_empty() {
+            casm_build_extend!(ctx, ap += local_exprs.len(););
+        }
     }
-    casm_build_extend!(ctx, ap += local_exprs.len(););
     if got_segment_arena {
         casm_build_extend! {ctx,
             tempvar segment_arena;
