@@ -4,250 +4,2609 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(a: u128, b: u128) -> bool {
-    a < b
+use core::num::traits::{WideMul, CheckedSub};
+
+pub const P: u32 = 0x7fffffff;
+
+/// Equals `2^31 - 1`.
+const P32NZ: NonZero<u32> = 0x7fffffff;
+
+/// Equals `2^31 - 1`.
+const P64NZ: NonZero<u64> = 0x7fffffff;
+
+/// Equals `2^31 - 1`.
+const P128NZ: NonZero<u128> = 0x7fffffff;
+
+pub const R: CM31 = CM31 { a: M31 { inner: 2 }, b: M31 { inner: 1 } };
+
+#[derive(Copy, Drop, Debug, PartialEq)]
+pub struct M31 {
+    pub inner: u32
+}
+
+
+#[generate_trait]
+pub impl M31Impl of M31Trait {
+    #[inline]
+    fn reduce_u32(val: u32) -> M31 {
+        let (_, res) = core::integer::u32_safe_divmod(val, P32NZ);
+        M31 { inner: res.try_into().unwrap() }
+    }
+
+    #[inline]
+    fn reduce_u64(val: u64) -> M31 {
+        let (_, res) = core::integer::u64_safe_divmod(val, P64NZ);
+        M31 { inner: res.try_into().unwrap() }
+    }
+
+    #[inline]
+    fn reduce_u128(val: u128) -> M31 {
+        let (_, res) = core::integer::u128_safe_divmod(val, P128NZ);
+        M31 { inner: res.try_into().unwrap() }
+    }
+
+    #[inline]
+    fn sqn(v: M31, n: usize) -> M31 {
+        if n == 0 {
+            return v;
+        }
+        Self::sqn(v * v, n - 1)
+    }
+
+    fn inverse(self: M31) -> M31 {
+        assert!(self.is_non_zero());
+        let t0 = Self::sqn(self, 2) * self;
+        let t1 = Self::sqn(t0, 1) * t0;
+        let t2 = Self::sqn(t1, 3) * t0;
+        let t3 = Self::sqn(t2, 1) * t0;
+        let t4 = Self::sqn(t3, 8) * t3;
+        let t5 = Self::sqn(t4, 8) * t3;
+        Self::sqn(t5, 7) * t2
+    }
+}
+
+
+pub impl M31Zero of core::num::traits::Zero<M31> {
+    #[inline]
+    fn zero() -> M31 {
+        M31 { inner: 0 }
+    }
+
+    fn is_zero(self: @M31) -> bool {
+        *self.inner == 0
+    }
+
+    fn is_non_zero(self: @M31) -> bool {
+        *self.inner != 0
+    }
+}
+
+#[derive(Copy, Drop, Debug, PartialEq)]
+pub struct CM31 {
+    pub a: M31,
+    pub b: M31,
+}
+
+#[derive(Copy, Drop, Debug, PartialEq)]
+pub struct QM31 {
+    pub a: CM31,
+    pub b: CM31,
+}
+
+
+
+pub impl M31Add of core::traits::Add<M31> {
+    #[inline]
+    fn add(lhs: M31, rhs: M31) -> M31 {
+        let res = lhs.inner + rhs.inner;
+        let res = res.checked_sub(P).unwrap_or(res);
+        M31 { inner: res }
+    }
+}
+
+pub impl M31Sub of core::traits::Sub<M31> {
+    #[inline]
+    fn sub(lhs: M31, rhs: M31) -> M31 {
+        lhs + (-rhs)
+    }
+}
+
+
+pub impl M31Mul of core::traits::Mul<M31> {
+    #[inline]
+    fn mul(lhs: M31, rhs: M31) -> M31 {
+        M31Impl::reduce_u64(lhs.inner.wide_mul(rhs.inner))
+    }
+}
+
+
+pub impl M31Neg of Neg<M31> {
+    #[inline]
+    fn neg(a: M31) -> M31 {
+        if a.inner == 0 {
+            M31 { inner: 0 }
+        } else {
+            M31 { inner: P - a.inner }
+        }
+    }
+}
+
+pub impl CM31Add of core::traits::Add<CM31> {
+    #[inline]
+    fn add(lhs: CM31, rhs: CM31) -> CM31 {
+        CM31 { a: lhs.a + rhs.a, b: lhs.b + rhs.b }
+    }
+}
+
+
+pub impl CM31Mul of core::traits::Mul<CM31> {
+    #[inline]
+    fn mul(lhs: CM31, rhs: CM31) -> CM31 {
+        CM31 { a: lhs.a * rhs.a - lhs.b * rhs.b, b: lhs.a * rhs.b + lhs.b * rhs.a }
+    }
+}
+
+pub impl QM31Mul of core::traits::Mul<QM31> {
+    #[inline]
+    fn mul(lhs: QM31, rhs: QM31) -> QM31 {
+        // (a + bu) * (c + du) = (ac + rbd) + (ad + bc)u.
+        QM31 { a: lhs.a * rhs.a + R * lhs.b * rhs.b, b: lhs.a * rhs.b + lhs.b * rhs.a }
+    }
+}
+
+
+
+fn foo(a: QM31, b: QM31) -> QM31 {
+    a * b
 }
 
 //! > casm
-[fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
-jmp rel 7 if [ap + -1] != 0, ap++;
-[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
-jmp rel 10;
-[ap + -1] = [[fp + -5] + 0];
-ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 0, ap++;
-ret;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 1, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 770})
-
-//! > sierra_code
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc u128_overflowing_sub = u128_overflowing_sub;
-libfunc branch_align = branch_align;
-libfunc drop<u128> = drop<u128>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-
-u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
-branch_align() -> (); // 1
-drop<u128>([4]) -> (); // 2
-struct_construct<Unit>() -> ([7]); // 3
-enum_init<core::bool, 0>([7]) -> ([8]); // 4
-store_temp<RangeCheck>([3]) -> ([3]); // 5
-store_temp<core::bool>([8]) -> ([8]); // 6
-return([3], [8]); // 7
-branch_align() -> (); // 8
-drop<u128>([6]) -> (); // 9
-struct_construct<Unit>() -> ([9]); // 10
-enum_init<core::bool, 1>([9]) -> ([10]); // 11
-store_temp<RangeCheck>([5]) -> ([5]); // 12
-store_temp<core::bool>([10]) -> ([10]); // 13
-return([5], [10]); // 14
-
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
-
-//! > ==========================================================================
-
-//! > u32 lt libfunc
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-fn foo(a: u32, b: u32) -> bool {
-    a < b
-}
-
-//! > casm
-[fp + -4] = [ap + 1] + [fp + -3], ap++;
+[ap + 0] = [fp + -10] * [fp + -6], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[fp + -11] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[fp + -11] + 1], ap++;
+[ap + -1] = [[fp + -11] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[fp + -11] + 3];
+jmp rel 1609;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[fp + -11] + 3];
+[ap + 0] = [fp + -9] * [fp + -5], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[fp + -11] + 4], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[fp + -11] + 5], ap++;
+[ap + -1] = [[fp + -11] + 6], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[fp + -11] + 7];
+jmp rel 1574;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[fp + -11] + 7];
+[ap + 0] = [fp + -11] + 8, ap++;
+[ap + -4] = [ap + 0] + 0, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 32;
+[ap + 0] = 2147483647, ap++;
+[ap + -1] = [ap + 1] + [ap + -6], ap++;
 %{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
-jmp rel 10;
-[ap + -1] = [[fp + -5] + 0];
+[ap + -1] = [[ap + -6] + 0];
+jmp rel 8;
+[ap + -1] = [[ap + -5] + 0];
+[ap + 0] = [ap + -5] + 1, ap++;
+[ap + 0] = [ap + -2], ap++;
+jmp rel 21;
+ap += 318;
+%{ memory[ap + 0] = segments.add() %}
 ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 155785504329508738615720351733824384887, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -326] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 1531;
+ap += 3;
+[ap + 0] = [ap + -5], ap++;
 [ap + 0] = 0, ap++;
-ret;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 1, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 770})
-
-//! > sierra_code
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc u32_overflowing_sub = u32_overflowing_sub;
-libfunc branch_align = branch_align;
-libfunc drop<u32> = drop<u32>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-
-u32_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
-branch_align() -> (); // 1
-drop<u32>([4]) -> (); // 2
-struct_construct<Unit>() -> ([7]); // 3
-enum_init<core::bool, 0>([7]) -> ([8]); // 4
-store_temp<RangeCheck>([3]) -> ([3]); // 5
-store_temp<core::bool>([8]) -> ([8]); // 6
-return([3], [8]); // 7
-branch_align() -> (); // 8
-drop<u32>([6]) -> (); // 9
-struct_construct<Unit>() -> ([9]); // 10
-enum_init<core::bool, 1>([9]) -> ([10]); // 11
-store_temp<RangeCheck>([5]) -> ([5]); // 12
-store_temp<core::bool>([10]) -> ([10]); // 13
-return([5], [10]); // 14
-
-test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);
-
-//! > ==========================================================================
-
-//! > u128_le libfunc
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-fn foo(a: u128, b: u128) -> bool {
-    a <= b
-}
-
-//! > casm
-[fp + -3] = [ap + 1] + [fp + -4], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
-jmp rel 7 if [ap + -1] != 0, ap++;
-[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
-jmp rel 10;
-[ap + -1] = [[fp + -5] + 0];
-ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 1, ap++;
-ret;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 0, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 770})
-
-//! > sierra_code
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
-
-libfunc u128_overflowing_sub = u128_overflowing_sub;
-libfunc branch_align = branch_align;
-libfunc drop<u128> = drop<u128>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-
-u128_overflowing_sub([0], [2], [1]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
-branch_align() -> (); // 1
-drop<u128>([4]) -> (); // 2
-struct_construct<Unit>() -> ([7]); // 3
-enum_init<core::bool, 1>([7]) -> ([8]); // 4
-store_temp<RangeCheck>([3]) -> ([3]); // 5
-store_temp<core::bool>([8]) -> ([8]); // 6
-return([3], [8]); // 7
-branch_align() -> (); // 8
-drop<u128>([6]) -> (); // 9
-struct_construct<Unit>() -> ([9]); // 10
-enum_init<core::bool, 0>([9]) -> ([10]); // 11
-store_temp<RangeCheck>([5]) -> ([5]); // 12
-store_temp<core::bool>([10]) -> ([10]); // 13
-return([5], [10]); // 14
-
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
-
-//! > ==========================================================================
-
-//! > u32_le libfunc
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-fn foo(a: u32, b: u32) -> bool {
-    a <= b
-}
-
-//! > casm
-[fp + -3] = [ap + 1] + [fp + -4], ap++;
+%{ memory[ap + 0] = (memory[ap + -19] + memory[ap + -1]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -20] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -5] + 0];
+jmp rel 1506;
+[ap + 1] = [ap + -20] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -5] + 0];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
 %{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
+[ap + -1] = [[ap + -9] + 1];
 jmp rel 10;
-[ap + -1] = [[fp + -5] + 0];
+[ap + -1] = [[ap + -8] + 1];
 ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [fp + -10] * [fp + -5], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -4] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -7] + 1], ap++;
+[ap + -1] = [[ap + -8] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -11] + 3];
+jmp rel 1449;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -11] + 3];
+[ap + 0] = [fp + -9] * [fp + -6], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -13] + 4], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -16] + 5], ap++;
+[ap + -1] = [[ap + -17] + 6], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -20] + 7];
+jmp rel 1414;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -20] + 7];
+%{ memory[ap + 0] = (memory[ap + -12] + memory[ap + -3]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -13] + [ap + -4], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -23] + 8];
+jmp rel 1389;
+[ap + 1] = [ap + -13] + [ap + -4], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -23] + 8];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -27] + 9];
+jmp rel 10;
+[ap + -1] = [[ap + -26] + 9];
+ap += 1;
+[ap + 0] = [ap + -27] + 10, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -27] + 10, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = 2, ap++;
+[ap + 0] = [ap + -1] * [fp + -8], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -5] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -8] + 1], ap++;
+[ap + -1] = [[ap + -9] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -12] + 3];
+jmp rel 1322;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -12] + 3];
 [ap + 0] = 1, ap++;
-ret;
-[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [ap + -1] * [fp + -7], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -15] + 4], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -18] + 5], ap++;
+[ap + -1] = [[ap + -19] + 6], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -22] + 7];
+jmp rel 1285;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -22] + 7];
+[ap + 0] = [ap + -22] + 8, ap++;
+[ap + -4] = [ap + 0] + 0, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 32;
+[ap + 0] = 2147483647, ap++;
+[ap + -1] = [ap + 1] + [ap + -6], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -6] + 0];
+jmp rel 8;
+[ap + -1] = [[ap + -5] + 0];
+[ap + 0] = [ap + -5] + 1, ap++;
+[ap + 0] = [ap + -2], ap++;
+jmp rel 21;
+ap += 255;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504329508738615720351733824384887, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -263] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 1242;
+ap += 3;
+[ap + 0] = [ap + -5], ap++;
 [ap + 0] = 0, ap++;
+%{ memory[ap + 0] = (memory[ap + -20] + memory[ap + -1]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -21] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -5] + 0];
+jmp rel 1217;
+[ap + 1] = [ap + -21] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -5] + 0];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -9] + 1];
+jmp rel 10;
+[ap + -1] = [[ap + -8] + 1];
+ap += 1;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = 2, ap++;
+[ap + 0] = [ap + -1] * [fp + -7], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -5] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -8] + 1], ap++;
+[ap + -1] = [[ap + -9] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -12] + 3];
+jmp rel 1158;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -12] + 3];
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -1] * [fp + -8], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -15] + 4], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -18] + 5], ap++;
+[ap + -1] = [[ap + -19] + 6], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -22] + 7];
+jmp rel 1121;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -22] + 7];
+%{ memory[ap + 0] = (memory[ap + -13] + memory[ap + -3]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -14] + [ap + -4], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -25] + 8];
+jmp rel 1096;
+[ap + 1] = [ap + -14] + [ap + -4], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -25] + 8];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -29] + 9];
+jmp rel 10;
+[ap + -1] = [[ap + -28] + 9];
+ap += 1;
+[ap + 0] = [ap + -29] + 10, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -29] + 10, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -30] * [fp + -4], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -4] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -7] + 1], ap++;
+[ap + -1] = [[ap + -8] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -11] + 3];
+jmp rel 1031;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -11] + 3];
+[ap + 0] = [ap + -10] * [fp + -3], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -13] + 4], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -16] + 5], ap++;
+[ap + -1] = [[ap + -17] + 6], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -20] + 7];
+jmp rel 996;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -20] + 7];
+[ap + 0] = [ap + -20] + 8, ap++;
+[ap + -4] = [ap + 0] + 0, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 32;
+[ap + 0] = 2147483647, ap++;
+[ap + -1] = [ap + 1] + [ap + -6], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -6] + 0];
+jmp rel 8;
+[ap + -1] = [[ap + -5] + 0];
+[ap + 0] = [ap + -5] + 1, ap++;
+[ap + 0] = [ap + -2], ap++;
+jmp rel 21;
+ap += 192;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504329508738615720351733824384887, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -200] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 953;
+ap += 3;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = 0, ap++;
+%{ memory[ap + 0] = (memory[ap + -19] + memory[ap + -1]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -20] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -5] + 0];
+jmp rel 928;
+[ap + 1] = [ap + -20] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -5] + 0];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -9] + 1];
+jmp rel 10;
+[ap + -1] = [[ap + -8] + 1];
+ap += 1;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -64] * [fp + -3], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -4] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -7] + 1], ap++;
+[ap + -1] = [[ap + -8] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -11] + 3];
+jmp rel 871;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -11] + 3];
+[ap + 0] = [ap + -44] * [fp + -4], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -13] + 4], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -16] + 5], ap++;
+[ap + -1] = [[ap + -17] + 6], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -20] + 7];
+jmp rel 836;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -20] + 7];
+%{ memory[ap + 0] = (memory[ap + -12] + memory[ap + -3]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -13] + [ap + -4], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -23] + 8];
+jmp rel 811;
+[ap + 1] = [ap + -13] + [ap + -4], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -23] + 8];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -27] + 9];
+jmp rel 10;
+[ap + -1] = [[ap + -26] + 9];
+ap += 1;
+[ap + 0] = [ap + -27] + 10, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -27] + 10, ap++;
+[ap + 0] = [ap + -6], ap++;
+%{ memory[ap + 0] = (memory[ap + -154] + memory[ap + -28]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -155] + [ap + -29], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -5] + 0];
+jmp rel 756;
+[ap + 1] = [ap + -155] + [ap + -29], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -5] + 0];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -9] + 1];
+jmp rel 10;
+[ap + -1] = [[ap + -8] + 1];
+ap += 1;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -6], ap++;
+%{ memory[ap + 0] = (memory[ap + -136] + memory[ap + -10]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -137] + [ap + -11], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -5] + 0];
+jmp rel 709;
+[ap + 1] = [ap + -137] + [ap + -11], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -5] + 0];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -9] + 1];
+jmp rel 10;
+[ap + -1] = [[ap + -8] + 1];
+ap += 1;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [fp + -10] * [fp + -4], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -4] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -7] + 1], ap++;
+[ap + -1] = [[ap + -8] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -11] + 3];
+jmp rel 644;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -11] + 3];
+[ap + 0] = [fp + -9] * [fp + -3], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -13] + 4], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -16] + 5], ap++;
+[ap + -1] = [[ap + -17] + 6], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -20] + 7];
+jmp rel 609;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -20] + 7];
+[ap + 0] = [ap + -20] + 8, ap++;
+[ap + 0] = [ap + -29], ap++;
+[ap + 0] = [ap + -21], ap++;
+[ap + -6] = [ap + 0] + 0, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 32;
+[ap + 0] = 2147483647, ap++;
+[ap + -1] = [ap + 1] + [ap + -8], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -8] + 0];
+jmp rel 8;
+[ap + -1] = [[ap + -7] + 0];
+[ap + 0] = [ap + -7] + 1, ap++;
+[ap + 0] = [ap + -2], ap++;
+jmp rel 21;
+ap += 111;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504329508738615720351733824384887, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -121] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 564;
+ap += 3;
+[ap + 0] = [ap + -7], ap++;
+[ap + 0] = 0, ap++;
+%{ memory[ap + 0] = (memory[ap + -21] + memory[ap + -1]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -22] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -5] + 0];
+jmp rel 539;
+[ap + 1] = [ap + -22] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -5] + 0];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -9] + 1];
+jmp rel 10;
+[ap + -1] = [[ap + -8] + 1];
+ap += 1;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [fp + -10] * [fp + -3], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -4] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -7] + 1], ap++;
+[ap + -1] = [[ap + -8] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -11] + 3];
+jmp rel 482;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -11] + 3];
+[ap + 0] = [fp + -9] * [fp + -4], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -13] + 4], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -16] + 5], ap++;
+[ap + -1] = [[ap + -17] + 6], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -20] + 7];
+jmp rel 447;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -20] + 7];
+%{ memory[ap + 0] = (memory[ap + -12] + memory[ap + -3]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -13] + [ap + -4], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -23] + 8];
+jmp rel 422;
+[ap + 1] = [ap + -13] + [ap + -4], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -23] + 8];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -27] + 9];
+jmp rel 10;
+[ap + -1] = [[ap + -26] + 9];
+ap += 1;
+[ap + 0] = [ap + -27] + 10, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -27] + 10, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [fp + -8] * [fp + -6], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -4] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -7] + 1], ap++;
+[ap + -1] = [[ap + -8] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -11] + 3];
+jmp rel 357;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -11] + 3];
+[ap + 0] = [fp + -7] * [fp + -5], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -13] + 4], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -16] + 5], ap++;
+[ap + -1] = [[ap + -17] + 6], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -20] + 7];
+jmp rel 322;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -20] + 7];
+[ap + 0] = [ap + -20] + 8, ap++;
+[ap + -4] = [ap + 0] + 0, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 32;
+[ap + 0] = 2147483647, ap++;
+[ap + -1] = [ap + 1] + [ap + -6], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -6] + 0];
+jmp rel 8;
+[ap + -1] = [[ap + -5] + 0];
+[ap + 0] = [ap + -5] + 1, ap++;
+[ap + 0] = [ap + -2], ap++;
+jmp rel 21;
+ap += 50;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504329508738615720351733824384887, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -58] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 279;
+ap += 3;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = 0, ap++;
+%{ memory[ap + 0] = (memory[ap + -19] + memory[ap + -1]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -20] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -5] + 0];
+jmp rel 254;
+[ap + 1] = [ap + -20] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -5] + 0];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -9] + 1];
+jmp rel 10;
+[ap + -1] = [[ap + -8] + 1];
+ap += 1;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [fp + -8] * [fp + -5], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -4] + 0], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -7] + 1], ap++;
+[ap + -1] = [[ap + -8] + 2], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -11] + 3];
+jmp rel 197;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -11] + 3];
+[ap + 0] = [fp + -7] * [fp + -6], ap++;
+[ap + 0] = 2147483647, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], memory[ap + -1]) %}
+[ap + 4] = [[ap + -13] + 4], ap++;
+[ap + -1] = [ap + 3] + 1, ap++;
+[ap + -3] = [ap + -1] + [ap + -2], ap++;
+[ap + -2] = [[ap + -16] + 5], ap++;
+[ap + -1] = [[ap + -17] + 6], ap++;
+[ap + -3] = [ap + -6] * [ap + -2];
+[ap + -7] = [ap + -3] + [ap + -1];
+%{ memory[ap + 0] = memory[ap + -1] < 4294967296 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -20] + 7];
+jmp rel 162;
+[ap + 0] = [ap + -2] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[ap + -20] + 7];
+%{ memory[ap + 0] = (memory[ap + -12] + memory[ap + -3]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -13] + [ap + -4], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -23] + 8];
+jmp rel 137;
+[ap + 1] = [ap + -13] + [ap + -4], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -23] + 8];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -27] + 9];
+jmp rel 10;
+[ap + -1] = [[ap + -26] + 9];
+ap += 1;
+[ap + 0] = [ap + -27] + 10, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -27] + 10, ap++;
+[ap + 0] = [ap + -6], ap++;
+%{ memory[ap + 0] = (memory[ap + -89] + memory[ap + -28]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -90] + [ap + -29], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -5] + 0];
+jmp rel 82;
+[ap + 1] = [ap + -90] + [ap + -29], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -5] + 0];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -9] + 1];
+jmp rel 10;
+[ap + -1] = [[ap + -8] + 1];
+ap += 1;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -6], ap++;
+%{ memory[ap + 0] = (memory[ap + -71] + memory[ap + -10]) % PRIME < 4294967296 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -72] + [ap + -11], ap++;
+[ap + -1] = [ap + 0] + 4294967296, ap++;
+[ap + -1] = [[ap + -5] + 0];
+jmp rel 35;
+[ap + 1] = [ap + -72] + [ap + -11], ap++;
+[ap + -1] = [ap + 0] + 340282366920938463463374607427473244160, ap++;
+[ap + -2] = [[ap + -5] + 0];
+[ap + 0] = 2147483647, ap++;
+[ap + -2] = [ap + 1] + [ap + -1], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[ap + -9] + 1];
+jmp rel 10;
+[ap + -1] = [[ap + -8] + 1];
+ap += 1;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 5;
+[ap + 0] = [ap + -9] + 2, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -125], ap++;
+[ap + 0] = [ap + -125], ap++;
+[ap + 0] = [ap + -14], ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+ap += 1;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -8] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 14;
+ap += 10;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -17] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+ap += 19;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -44] + 9, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 70;
+ap += 22;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -44] + 8, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 56;
+ap += 31;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -44] + 4, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 42;
+ap += 46;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -53] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 28;
+ap += 56;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -78] + 8, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 14;
+ap += 65;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -78] + 4, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+ap += 80;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -105] + 9, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 70;
+ap += 83;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -105] + 8, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 56;
+ap += 92;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -105] + 4, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 42;
+ap += 107;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -114] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 28;
+ap += 119;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -141] + 8, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 14;
+ap += 128;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -141] + 4, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+ap += 143;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -150] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 14;
+ap += 152;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -159] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+ap += 161;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -186] + 9, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 70;
+ap += 164;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -186] + 8, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 56;
+ap += 173;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -186] + 4, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 42;
+ap += 188;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -195] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 28;
+ap += 198;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -220] + 8, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 14;
+ap += 207;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -220] + 4, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+ap += 222;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -249] + 9, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 70;
+ap += 225;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -249] + 8, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 56;
+ap += 235;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -249] + 4, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 42;
+ap += 251;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -258] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 28;
+ap += 261;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -285] + 8, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 14;
+ap += 271;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -285] + 4, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+ap += 287;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -312] + 9, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 70;
+ap += 290;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -312] + 8, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 56;
+ap += 299;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -312] + 4, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 42;
+ap += 314;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 155785504323917466144735657540098748279, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -321] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 28;
+ap += 324;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [fp + -11] + 8, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+jmp rel 14;
+ap += 333;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 29721761890975875353235833581453094220424382983267374, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [fp + -11] + 4, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 770})
+test::foo: OrderedHashMap({Const: 55080})
 
 //! > sierra_code
-type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::M31 = Struct<ut@test::M31, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+type test::CM31 = Struct<ut@test::CM31, test::M31, test::M31> [storable: true, drop: true, dup: true, zero_sized: false];
+type test::QM31 = Struct<ut@test::QM31, test::CM31, test::CM31> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 29721761890975875353235833581453094220424382983267374> = Const<felt252, 29721761890975875353235833581453094220424382983267374> [storable: false, drop: false, dup: false, zero_sized: false];
+type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 155785504323917466144735657540098748279> = Const<felt252, 155785504323917466144735657540098748279> [storable: false, drop: false, dup: false, zero_sized: false];
+type Tuple<test::QM31> = Struct<ut@Tuple, test::QM31> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::PanicResult::<(test::QM31,)> = Enum<ut@core::panics::PanicResult::<(test::QM31,)>, Tuple<test::QM31>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<test::CM31, Const<test::M31, Const<u32, 2>>, Const<test::M31, Const<u32, 1>>> = Const<test::CM31, Const<test::M31, Const<u32, 2>>, Const<test::M31, Const<u32, 1>>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 155785504329508738615720351733824384887> = Const<felt252, 155785504329508738615720351733824384887> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<test::M31, Const<u32, 1>> = Const<test::M31, Const<u32, 1>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<test::M31, Const<u32, 2>> = Const<test::M31, Const<u32, 2>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u32, 1> = Const<u32, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u32, 2> = Const<u32, 2> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<u32, 2147483647> = Const<u32, 2147483647> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u32, 0> = Const<u32, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<NonZero<u64>, Const<u64, 2147483647>> = Const<NonZero<u64>, Const<u64, 2147483647>> [storable: false, drop: false, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<u64> = NonZero<u64> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<u64, 2147483647> = Const<u64, 2147483647> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc u32_overflowing_sub = u32_overflowing_sub;
+libfunc struct_deconstruct<test::QM31> = struct_deconstruct<test::QM31>;
+libfunc dup<test::CM31> = dup<test::CM31>;
+libfunc struct_deconstruct<test::CM31> = struct_deconstruct<test::CM31>;
+libfunc dup<test::M31> = dup<test::M31>;
+libfunc struct_deconstruct<test::M31> = struct_deconstruct<test::M31>;
+libfunc u32_wide_mul = u32_wide_mul;
+libfunc const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>> = const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>;
+libfunc store_temp<u64> = store_temp<u64>;
+libfunc store_temp<NonZero<u64>> = store_temp<NonZero<u64>>;
+libfunc u64_safe_divmod = u64_safe_divmod;
+libfunc drop<u64> = drop<u64>;
+libfunc downcast<u64, u32> = downcast<u64, u32>;
 libfunc branch_align = branch_align;
-libfunc drop<u32> = drop<u32>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc const_as_immediate<Const<u32, 0>> = const_as_immediate<Const<u32, 0>>;
+libfunc dup<u32> = dup<u32>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc u32_eq = u32_eq;
+libfunc const_as_immediate<Const<u32, 2147483647>> = const_as_immediate<Const<u32, 2147483647>>;
+libfunc store_temp<u32> = store_temp<u32>;
+libfunc u32_overflowing_sub = u32_overflowing_sub;
+libfunc jump = jump;
+libfunc drop<u32> = drop<u32>;
+libfunc drop<test::CM31> = drop<test::CM31>;
+libfunc drop<test::M31> = drop<test::M31>;
+libfunc array_new<felt252> = array_new<felt252>;
+libfunc const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>> = const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc array_append<felt252> = array_append<felt252>;
+libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
+libfunc u32_overflowing_add = u32_overflowing_add;
+libfunc const_as_immediate<Const<test::CM31, Const<test::M31, Const<u32, 2>>, Const<test::M31, Const<u32, 1>>>> = const_as_immediate<Const<test::CM31, Const<test::M31, Const<u32, 2>>, Const<test::M31, Const<u32, 1>>>>;
+libfunc struct_construct<test::M31> = struct_construct<test::M31>;
+libfunc struct_construct<test::CM31> = struct_construct<test::CM31>;
+libfunc store_temp<test::CM31> = store_temp<test::CM31>;
+libfunc struct_construct<test::QM31> = struct_construct<test::QM31>;
+libfunc struct_construct<Tuple<test::QM31>> = struct_construct<Tuple<test::QM31>>;
+libfunc enum_init<core::panics::PanicResult::<(test::QM31,)>, 0> = enum_init<core::panics::PanicResult::<(test::QM31,)>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(test::QM31,)>> = store_temp<core::panics::PanicResult::<(test::QM31,)>>;
+libfunc const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>> = const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>;
+libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
+libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
+libfunc enum_init<core::panics::PanicResult::<(test::QM31,)>, 1> = enum_init<core::panics::PanicResult::<(test::QM31,)>, 1>;
+libfunc const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>> = const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 
-u32_overflowing_sub([0], [2], [1]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
-branch_align() -> (); // 1
-drop<u32>([4]) -> (); // 2
-struct_construct<Unit>() -> ([7]); // 3
-enum_init<core::bool, 1>([7]) -> ([8]); // 4
-store_temp<RangeCheck>([3]) -> ([3]); // 5
-store_temp<core::bool>([8]) -> ([8]); // 6
-return([3], [8]); // 7
-branch_align() -> (); // 8
-drop<u32>([6]) -> (); // 9
-struct_construct<Unit>() -> ([9]); // 10
-enum_init<core::bool, 0>([9]) -> ([10]); // 11
-store_temp<RangeCheck>([5]) -> ([5]); // 12
-store_temp<core::bool>([10]) -> ([10]); // 13
-return([5], [10]); // 14
+struct_deconstruct<test::QM31>([1]) -> ([3], [4]); // 0
+dup<test::CM31>([3]) -> ([3], [5]); // 1
+struct_deconstruct<test::CM31>([5]) -> ([6], [7]); // 2
+struct_deconstruct<test::QM31>([2]) -> ([8], [9]); // 3
+dup<test::CM31>([8]) -> ([8], [10]); // 4
+struct_deconstruct<test::CM31>([10]) -> ([11], [12]); // 5
+dup<test::M31>([6]) -> ([6], [13]); // 6
+struct_deconstruct<test::M31>([13]) -> ([14]); // 7
+dup<test::M31>([11]) -> ([11], [15]); // 8
+struct_deconstruct<test::M31>([15]) -> ([16]); // 9
+u32_wide_mul([14], [16]) -> ([17]); // 10
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([18]); // 11
+store_temp<u64>([17]) -> ([17]); // 12
+store_temp<NonZero<u64>>([18]) -> ([18]); // 13
+u64_safe_divmod([0], [17], [18]) -> ([19], [20], [21]); // 14
+drop<u64>([20]) -> (); // 15
+downcast<u64, u32>([19], [21]) { fallthrough([22], [23]) 1191([24]) }; // 16
+branch_align() -> (); // 17
+dup<test::M31>([7]) -> ([7], [25]); // 18
+struct_deconstruct<test::M31>([25]) -> ([26]); // 19
+dup<test::M31>([12]) -> ([12], [27]); // 20
+struct_deconstruct<test::M31>([27]) -> ([28]); // 21
+u32_wide_mul([26], [28]) -> ([29]); // 22
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([30]); // 23
+store_temp<u64>([29]) -> ([29]); // 24
+store_temp<NonZero<u64>>([30]) -> ([30]); // 25
+u64_safe_divmod([22], [29], [30]) -> ([31], [32], [33]); // 26
+drop<u64>([32]) -> (); // 27
+downcast<u64, u32>([31], [33]) { fallthrough([34], [35]) 1174([36]) }; // 28
+branch_align() -> (); // 29
+const_as_immediate<Const<u32, 0>>() -> ([37]); // 30
+dup<u32>([35]) -> ([35], [38]); // 31
+store_temp<RangeCheck>([34]) -> ([34]); // 32
+u32_eq([38], [37]) { fallthrough() 60() }; // 33
+branch_align() -> (); // 34
+const_as_immediate<Const<u32, 2147483647>>() -> ([39]); // 35
+store_temp<u32>([39]) -> ([39]); // 36
+u32_overflowing_sub([34], [39], [35]) { fallthrough([40], [41]) 42([42], [43]) }; // 37
+branch_align() -> (); // 38
+store_temp<RangeCheck>([40]) -> ([44]); // 39
+store_temp<u32>([41]) -> ([45]); // 40
+jump() { 65() }; // 41
+branch_align() -> (); // 42
+drop<u32>([43]) -> (); // 43
+drop<test::CM31>([4]) -> (); // 44
+drop<test::M31>([6]) -> (); // 45
+drop<test::CM31>([9]) -> (); // 46
+drop<test::CM31>([8]) -> (); // 47
+drop<test::CM31>([3]) -> (); // 48
+drop<test::M31>([11]) -> (); // 49
+drop<test::M31>([7]) -> (); // 50
+drop<test::M31>([12]) -> (); // 51
+drop<u32>([23]) -> (); // 52
+array_new<felt252>() -> ([46]); // 53
+const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>>() -> ([47]); // 54
+store_temp<felt252>([47]) -> ([47]); // 55
+array_append<felt252>([46], [47]) -> ([48]); // 56
+store_temp<RangeCheck>([42]) -> ([49]); // 57
+store_temp<Array<felt252>>([48]) -> ([50]); // 58
+jump() { 1171() }; // 59
+branch_align() -> (); // 60
+drop<u32>([35]) -> (); // 61
+const_as_immediate<Const<u32, 0>>() -> ([51]); // 62
+store_temp<RangeCheck>([34]) -> ([44]); // 63
+store_temp<u32>([51]) -> ([45]); // 64
+u32_overflowing_add([44], [23], [45]) { fallthrough([52], [53]) 1155([54], [55]) }; // 65
+branch_align() -> (); // 66
+const_as_immediate<Const<u32, 2147483647>>() -> ([56]); // 67
+dup<u32>([53]) -> ([53], [57]); // 68
+store_temp<u32>([56]) -> ([56]); // 69
+u32_overflowing_sub([52], [57], [56]) { fallthrough([58], [59]) 76([60], [61]) }; // 70
+branch_align() -> (); // 71
+drop<u32>([53]) -> (); // 72
+store_temp<RangeCheck>([58]) -> ([62]); // 73
+store_temp<u32>([59]) -> ([63]); // 74
+jump() { 80() }; // 75
+branch_align() -> (); // 76
+drop<u32>([61]) -> (); // 77
+store_temp<RangeCheck>([60]) -> ([62]); // 78
+store_temp<u32>([53]) -> ([63]); // 79
+struct_deconstruct<test::M31>([6]) -> ([64]); // 80
+struct_deconstruct<test::M31>([12]) -> ([65]); // 81
+u32_wide_mul([64], [65]) -> ([66]); // 82
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([67]); // 83
+store_temp<u64>([66]) -> ([66]); // 84
+store_temp<NonZero<u64>>([67]) -> ([67]); // 85
+u64_safe_divmod([62], [66], [67]) -> ([68], [69], [70]); // 86
+drop<u64>([69]) -> (); // 87
+downcast<u64, u32>([68], [70]) { fallthrough([71], [72]) 1140([73]) }; // 88
+branch_align() -> (); // 89
+struct_deconstruct<test::M31>([7]) -> ([74]); // 90
+struct_deconstruct<test::M31>([11]) -> ([75]); // 91
+u32_wide_mul([74], [75]) -> ([76]); // 92
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([77]); // 93
+store_temp<u64>([76]) -> ([76]); // 94
+store_temp<NonZero<u64>>([77]) -> ([77]); // 95
+u64_safe_divmod([71], [76], [77]) -> ([78], [79], [80]); // 96
+drop<u64>([79]) -> (); // 97
+downcast<u64, u32>([78], [80]) { fallthrough([81], [82]) 1126([83]) }; // 98
+branch_align() -> (); // 99
+u32_overflowing_add([81], [72], [82]) { fallthrough([84], [85]) 1112([86], [87]) }; // 100
+branch_align() -> (); // 101
+const_as_immediate<Const<u32, 2147483647>>() -> ([88]); // 102
+dup<u32>([85]) -> ([85], [89]); // 103
+store_temp<u32>([88]) -> ([88]); // 104
+u32_overflowing_sub([84], [89], [88]) { fallthrough([90], [91]) 111([92], [93]) }; // 105
+branch_align() -> (); // 106
+drop<u32>([85]) -> (); // 107
+store_temp<RangeCheck>([90]) -> ([94]); // 108
+store_temp<u32>([91]) -> ([95]); // 109
+jump() { 115() }; // 110
+branch_align() -> (); // 111
+drop<u32>([93]) -> (); // 112
+store_temp<RangeCheck>([92]) -> ([94]); // 113
+store_temp<u32>([85]) -> ([95]); // 114
+const_as_immediate<Const<test::CM31, Const<test::M31, Const<u32, 2>>, Const<test::M31, Const<u32, 1>>>>() -> ([96]); // 115
+struct_deconstruct<test::CM31>([96]) -> ([97], [98]); // 116
+dup<test::CM31>([4]) -> ([4], [99]); // 117
+struct_deconstruct<test::CM31>([99]) -> ([100], [101]); // 118
+dup<test::M31>([97]) -> ([97], [102]); // 119
+struct_deconstruct<test::M31>([102]) -> ([103]); // 120
+dup<test::M31>([100]) -> ([100], [104]); // 121
+struct_deconstruct<test::M31>([104]) -> ([105]); // 122
+store_temp<u32>([103]) -> ([103]); // 123
+u32_wide_mul([103], [105]) -> ([106]); // 124
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([107]); // 125
+store_temp<u64>([106]) -> ([106]); // 126
+store_temp<NonZero<u64>>([107]) -> ([107]); // 127
+u64_safe_divmod([94], [106], [107]) -> ([108], [109], [110]); // 128
+drop<u64>([109]) -> (); // 129
+downcast<u64, u32>([108], [110]) { fallthrough([111], [112]) 1089([113]) }; // 130
+branch_align() -> (); // 131
+dup<test::M31>([98]) -> ([98], [114]); // 132
+struct_deconstruct<test::M31>([114]) -> ([115]); // 133
+dup<test::M31>([101]) -> ([101], [116]); // 134
+struct_deconstruct<test::M31>([116]) -> ([117]); // 135
+store_temp<u32>([115]) -> ([115]); // 136
+u32_wide_mul([115], [117]) -> ([118]); // 137
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([119]); // 138
+store_temp<u64>([118]) -> ([118]); // 139
+store_temp<NonZero<u64>>([119]) -> ([119]); // 140
+u64_safe_divmod([111], [118], [119]) -> ([120], [121], [122]); // 141
+drop<u64>([121]) -> (); // 142
+downcast<u64, u32>([120], [122]) { fallthrough([123], [124]) 1070([125]) }; // 143
+branch_align() -> (); // 144
+const_as_immediate<Const<u32, 0>>() -> ([126]); // 145
+dup<u32>([124]) -> ([124], [127]); // 146
+store_temp<RangeCheck>([123]) -> ([123]); // 147
+u32_eq([127], [126]) { fallthrough() 177() }; // 148
+branch_align() -> (); // 149
+const_as_immediate<Const<u32, 2147483647>>() -> ([128]); // 150
+store_temp<u32>([128]) -> ([128]); // 151
+u32_overflowing_sub([123], [128], [124]) { fallthrough([129], [130]) 157([131], [132]) }; // 152
+branch_align() -> (); // 153
+store_temp<RangeCheck>([129]) -> ([133]); // 154
+store_temp<u32>([130]) -> ([134]); // 155
+jump() { 182() }; // 156
+branch_align() -> (); // 157
+drop<u32>([132]) -> (); // 158
+drop<test::CM31>([4]) -> (); // 159
+drop<u32>([95]) -> (); // 160
+drop<test::CM31>([9]) -> (); // 161
+drop<test::CM31>([8]) -> (); // 162
+drop<test::CM31>([3]) -> (); // 163
+drop<u32>([63]) -> (); // 164
+drop<test::M31>([97]) -> (); // 165
+drop<test::M31>([100]) -> (); // 166
+drop<test::M31>([98]) -> (); // 167
+drop<test::M31>([101]) -> (); // 168
+drop<u32>([112]) -> (); // 169
+array_new<felt252>() -> ([135]); // 170
+const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>>() -> ([136]); // 171
+store_temp<felt252>([136]) -> ([136]); // 172
+array_append<felt252>([135], [136]) -> ([137]); // 173
+store_temp<RangeCheck>([131]) -> ([138]); // 174
+store_temp<Array<felt252>>([137]) -> ([139]); // 175
+jump() { 1067() }; // 176
+branch_align() -> (); // 177
+drop<u32>([124]) -> (); // 178
+const_as_immediate<Const<u32, 0>>() -> ([140]); // 179
+store_temp<RangeCheck>([123]) -> ([133]); // 180
+store_temp<u32>([140]) -> ([134]); // 181
+u32_overflowing_add([133], [112], [134]) { fallthrough([141], [142]) 1049([143], [144]) }; // 182
+branch_align() -> (); // 183
+const_as_immediate<Const<u32, 2147483647>>() -> ([145]); // 184
+dup<u32>([142]) -> ([142], [146]); // 185
+store_temp<u32>([145]) -> ([145]); // 186
+u32_overflowing_sub([141], [146], [145]) { fallthrough([147], [148]) 193([149], [150]) }; // 187
+branch_align() -> (); // 188
+drop<u32>([142]) -> (); // 189
+store_temp<RangeCheck>([147]) -> ([151]); // 190
+store_temp<u32>([148]) -> ([152]); // 191
+jump() { 197() }; // 192
+branch_align() -> (); // 193
+drop<u32>([150]) -> (); // 194
+store_temp<RangeCheck>([149]) -> ([151]); // 195
+store_temp<u32>([142]) -> ([152]); // 196
+struct_deconstruct<test::M31>([97]) -> ([153]); // 197
+struct_deconstruct<test::M31>([101]) -> ([154]); // 198
+store_temp<u32>([153]) -> ([153]); // 199
+u32_wide_mul([153], [154]) -> ([155]); // 200
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([156]); // 201
+store_temp<u64>([155]) -> ([155]); // 202
+store_temp<NonZero<u64>>([156]) -> ([156]); // 203
+u64_safe_divmod([151], [155], [156]) -> ([157], [158], [159]); // 204
+drop<u64>([158]) -> (); // 205
+downcast<u64, u32>([157], [159]) { fallthrough([160], [161]) 1032([162]) }; // 206
+branch_align() -> (); // 207
+struct_deconstruct<test::M31>([98]) -> ([163]); // 208
+struct_deconstruct<test::M31>([100]) -> ([164]); // 209
+store_temp<u32>([163]) -> ([163]); // 210
+u32_wide_mul([163], [164]) -> ([165]); // 211
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([166]); // 212
+store_temp<u64>([165]) -> ([165]); // 213
+store_temp<NonZero<u64>>([166]) -> ([166]); // 214
+u64_safe_divmod([160], [165], [166]) -> ([167], [168], [169]); // 215
+drop<u64>([168]) -> (); // 216
+downcast<u64, u32>([167], [169]) { fallthrough([170], [171]) 1016([172]) }; // 217
+branch_align() -> (); // 218
+u32_overflowing_add([170], [161], [171]) { fallthrough([173], [174]) 1000([175], [176]) }; // 219
+branch_align() -> (); // 220
+const_as_immediate<Const<u32, 2147483647>>() -> ([177]); // 221
+dup<u32>([174]) -> ([174], [178]); // 222
+store_temp<u32>([177]) -> ([177]); // 223
+u32_overflowing_sub([173], [178], [177]) { fallthrough([179], [180]) 230([181], [182]) }; // 224
+branch_align() -> (); // 225
+drop<u32>([174]) -> (); // 226
+store_temp<RangeCheck>([179]) -> ([183]); // 227
+store_temp<u32>([180]) -> ([184]); // 228
+jump() { 234() }; // 229
+branch_align() -> (); // 230
+drop<u32>([182]) -> (); // 231
+store_temp<RangeCheck>([181]) -> ([183]); // 232
+store_temp<u32>([174]) -> ([184]); // 233
+dup<test::CM31>([9]) -> ([9], [185]); // 234
+struct_deconstruct<test::CM31>([185]) -> ([186], [187]); // 235
+dup<test::M31>([186]) -> ([186], [188]); // 236
+struct_deconstruct<test::M31>([188]) -> ([189]); // 237
+dup<u32>([152]) -> ([152], [190]); // 238
+u32_wide_mul([190], [189]) -> ([191]); // 239
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([192]); // 240
+store_temp<u64>([191]) -> ([191]); // 241
+store_temp<NonZero<u64>>([192]) -> ([192]); // 242
+u64_safe_divmod([183], [191], [192]) -> ([193], [194], [195]); // 243
+drop<u64>([194]) -> (); // 244
+downcast<u64, u32>([193], [195]) { fallthrough([196], [197]) 977([198]) }; // 245
+branch_align() -> (); // 246
+dup<test::M31>([187]) -> ([187], [199]); // 247
+struct_deconstruct<test::M31>([199]) -> ([200]); // 248
+dup<u32>([184]) -> ([184], [201]); // 249
+u32_wide_mul([201], [200]) -> ([202]); // 250
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([203]); // 251
+store_temp<u64>([202]) -> ([202]); // 252
+store_temp<NonZero<u64>>([203]) -> ([203]); // 253
+u64_safe_divmod([196], [202], [203]) -> ([204], [205], [206]); // 254
+drop<u64>([205]) -> (); // 255
+downcast<u64, u32>([204], [206]) { fallthrough([207], [208]) 958([209]) }; // 256
+branch_align() -> (); // 257
+const_as_immediate<Const<u32, 0>>() -> ([210]); // 258
+dup<u32>([208]) -> ([208], [211]); // 259
+store_temp<RangeCheck>([207]) -> ([207]); // 260
+u32_eq([211], [210]) { fallthrough() 290() }; // 261
+branch_align() -> (); // 262
+const_as_immediate<Const<u32, 2147483647>>() -> ([212]); // 263
+store_temp<u32>([212]) -> ([212]); // 264
+u32_overflowing_sub([207], [212], [208]) { fallthrough([213], [214]) 270([215], [216]) }; // 265
+branch_align() -> (); // 266
+store_temp<RangeCheck>([213]) -> ([217]); // 267
+store_temp<u32>([214]) -> ([218]); // 268
+jump() { 295() }; // 269
+branch_align() -> (); // 270
+drop<u32>([216]) -> (); // 271
+drop<test::CM31>([4]) -> (); // 272
+drop<u32>([95]) -> (); // 273
+drop<test::CM31>([9]) -> (); // 274
+drop<test::CM31>([8]) -> (); // 275
+drop<test::CM31>([3]) -> (); // 276
+drop<u32>([63]) -> (); // 277
+drop<test::M31>([187]) -> (); // 278
+drop<u32>([184]) -> (); // 279
+drop<test::M31>([186]) -> (); // 280
+drop<u32>([152]) -> (); // 281
+drop<u32>([197]) -> (); // 282
+array_new<felt252>() -> ([219]); // 283
+const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>>() -> ([220]); // 284
+store_temp<felt252>([220]) -> ([220]); // 285
+array_append<felt252>([219], [220]) -> ([221]); // 286
+store_temp<RangeCheck>([215]) -> ([222]); // 287
+store_temp<Array<felt252>>([221]) -> ([223]); // 288
+jump() { 955() }; // 289
+branch_align() -> (); // 290
+drop<u32>([208]) -> (); // 291
+const_as_immediate<Const<u32, 0>>() -> ([224]); // 292
+store_temp<RangeCheck>([207]) -> ([217]); // 293
+store_temp<u32>([224]) -> ([218]); // 294
+u32_overflowing_add([217], [197], [218]) { fallthrough([225], [226]) 937([227], [228]) }; // 295
+branch_align() -> (); // 296
+const_as_immediate<Const<u32, 2147483647>>() -> ([229]); // 297
+dup<u32>([226]) -> ([226], [230]); // 298
+store_temp<u32>([229]) -> ([229]); // 299
+u32_overflowing_sub([225], [230], [229]) { fallthrough([231], [232]) 306([233], [234]) }; // 300
+branch_align() -> (); // 301
+drop<u32>([226]) -> (); // 302
+store_temp<RangeCheck>([231]) -> ([235]); // 303
+store_temp<u32>([232]) -> ([236]); // 304
+jump() { 310() }; // 305
+branch_align() -> (); // 306
+drop<u32>([234]) -> (); // 307
+store_temp<RangeCheck>([233]) -> ([235]); // 308
+store_temp<u32>([226]) -> ([236]); // 309
+struct_deconstruct<test::M31>([187]) -> ([237]); // 310
+u32_wide_mul([152], [237]) -> ([238]); // 311
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([239]); // 312
+store_temp<u64>([238]) -> ([238]); // 313
+store_temp<NonZero<u64>>([239]) -> ([239]); // 314
+u64_safe_divmod([235], [238], [239]) -> ([240], [241], [242]); // 315
+drop<u64>([241]) -> (); // 316
+downcast<u64, u32>([240], [242]) { fallthrough([243], [244]) 920([245]) }; // 317
+branch_align() -> (); // 318
+struct_deconstruct<test::M31>([186]) -> ([246]); // 319
+u32_wide_mul([184], [246]) -> ([247]); // 320
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([248]); // 321
+store_temp<u64>([247]) -> ([247]); // 322
+store_temp<NonZero<u64>>([248]) -> ([248]); // 323
+u64_safe_divmod([243], [247], [248]) -> ([249], [250], [251]); // 324
+drop<u64>([250]) -> (); // 325
+downcast<u64, u32>([249], [251]) { fallthrough([252], [253]) 904([254]) }; // 326
+branch_align() -> (); // 327
+u32_overflowing_add([252], [244], [253]) { fallthrough([255], [256]) 888([257], [258]) }; // 328
+branch_align() -> (); // 329
+const_as_immediate<Const<u32, 2147483647>>() -> ([259]); // 330
+dup<u32>([256]) -> ([256], [260]); // 331
+store_temp<u32>([259]) -> ([259]); // 332
+u32_overflowing_sub([255], [260], [259]) { fallthrough([261], [262]) 339([263], [264]) }; // 333
+branch_align() -> (); // 334
+drop<u32>([256]) -> (); // 335
+store_temp<RangeCheck>([261]) -> ([265]); // 336
+store_temp<u32>([262]) -> ([266]); // 337
+jump() { 343() }; // 338
+branch_align() -> (); // 339
+drop<u32>([264]) -> (); // 340
+store_temp<RangeCheck>([263]) -> ([265]); // 341
+store_temp<u32>([256]) -> ([266]); // 342
+u32_overflowing_add([265], [63], [236]) { fallthrough([267], [268]) 868([269], [270]) }; // 343
+branch_align() -> (); // 344
+const_as_immediate<Const<u32, 2147483647>>() -> ([271]); // 345
+dup<u32>([268]) -> ([268], [272]); // 346
+store_temp<u32>([271]) -> ([271]); // 347
+u32_overflowing_sub([267], [272], [271]) { fallthrough([273], [274]) 354([275], [276]) }; // 348
+branch_align() -> (); // 349
+drop<u32>([268]) -> (); // 350
+store_temp<RangeCheck>([273]) -> ([277]); // 351
+store_temp<u32>([274]) -> ([278]); // 352
+jump() { 358() }; // 353
+branch_align() -> (); // 354
+drop<u32>([276]) -> (); // 355
+store_temp<RangeCheck>([275]) -> ([277]); // 356
+store_temp<u32>([268]) -> ([278]); // 357
+u32_overflowing_add([277], [95], [266]) { fallthrough([279], [280]) 854([281], [282]) }; // 358
+branch_align() -> (); // 359
+const_as_immediate<Const<u32, 2147483647>>() -> ([283]); // 360
+dup<u32>([280]) -> ([280], [284]); // 361
+store_temp<u32>([283]) -> ([283]); // 362
+u32_overflowing_sub([279], [284], [283]) { fallthrough([285], [286]) 369([287], [288]) }; // 363
+branch_align() -> (); // 364
+drop<u32>([280]) -> (); // 365
+store_temp<RangeCheck>([285]) -> ([289]); // 366
+store_temp<u32>([286]) -> ([290]); // 367
+jump() { 373() }; // 368
+branch_align() -> (); // 369
+drop<u32>([288]) -> (); // 370
+store_temp<RangeCheck>([287]) -> ([289]); // 371
+store_temp<u32>([280]) -> ([290]); // 372
+struct_deconstruct<test::CM31>([3]) -> ([291], [292]); // 373
+struct_deconstruct<test::CM31>([9]) -> ([293], [294]); // 374
+dup<test::M31>([291]) -> ([291], [295]); // 375
+struct_deconstruct<test::M31>([295]) -> ([296]); // 376
+dup<test::M31>([293]) -> ([293], [297]); // 377
+struct_deconstruct<test::M31>([297]) -> ([298]); // 378
+u32_wide_mul([296], [298]) -> ([299]); // 379
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([300]); // 380
+store_temp<u64>([299]) -> ([299]); // 381
+store_temp<NonZero<u64>>([300]) -> ([300]); // 382
+u64_safe_divmod([289], [299], [300]) -> ([301], [302], [303]); // 383
+drop<u64>([302]) -> (); // 384
+downcast<u64, u32>([301], [303]) { fallthrough([304], [305]) 833([306]) }; // 385
+branch_align() -> (); // 386
+dup<test::M31>([292]) -> ([292], [307]); // 387
+struct_deconstruct<test::M31>([307]) -> ([308]); // 388
+dup<test::M31>([294]) -> ([294], [309]); // 389
+struct_deconstruct<test::M31>([309]) -> ([310]); // 390
+u32_wide_mul([308], [310]) -> ([311]); // 391
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([312]); // 392
+store_temp<u64>([311]) -> ([311]); // 393
+store_temp<NonZero<u64>>([312]) -> ([312]); // 394
+u64_safe_divmod([304], [311], [312]) -> ([313], [314], [315]); // 395
+drop<u64>([314]) -> (); // 396
+downcast<u64, u32>([313], [315]) { fallthrough([316], [317]) 816([318]) }; // 397
+branch_align() -> (); // 398
+const_as_immediate<Const<u32, 0>>() -> ([319]); // 399
+struct_construct<test::M31>([278]) -> ([320]); // 400
+struct_construct<test::M31>([290]) -> ([321]); // 401
+struct_construct<test::CM31>([320], [321]) -> ([322]); // 402
+dup<u32>([317]) -> ([317], [323]); // 403
+store_temp<RangeCheck>([316]) -> ([316]); // 404
+store_temp<test::CM31>([322]) -> ([322]); // 405
+u32_eq([323], [319]) { fallthrough() 432() }; // 406
+branch_align() -> (); // 407
+const_as_immediate<Const<u32, 2147483647>>() -> ([324]); // 408
+store_temp<u32>([324]) -> ([324]); // 409
+u32_overflowing_sub([316], [324], [317]) { fallthrough([325], [326]) 415([327], [328]) }; // 410
+branch_align() -> (); // 411
+store_temp<RangeCheck>([325]) -> ([329]); // 412
+store_temp<u32>([326]) -> ([330]); // 413
+jump() { 437() }; // 414
+branch_align() -> (); // 415
+drop<u32>([328]) -> (); // 416
+drop<test::CM31>([4]) -> (); // 417
+drop<test::CM31>([322]) -> (); // 418
+drop<test::M31>([291]) -> (); // 419
+drop<test::CM31>([8]) -> (); // 420
+drop<test::M31>([293]) -> (); // 421
+drop<test::M31>([292]) -> (); // 422
+drop<test::M31>([294]) -> (); // 423
+drop<u32>([305]) -> (); // 424
+array_new<felt252>() -> ([331]); // 425
+const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>>() -> ([332]); // 426
+store_temp<felt252>([332]) -> ([332]); // 427
+array_append<felt252>([331], [332]) -> ([333]); // 428
+store_temp<RangeCheck>([327]) -> ([334]); // 429
+store_temp<Array<felt252>>([333]) -> ([335]); // 430
+jump() { 813() }; // 431
+branch_align() -> (); // 432
+drop<u32>([317]) -> (); // 433
+const_as_immediate<Const<u32, 0>>() -> ([336]); // 434
+store_temp<RangeCheck>([316]) -> ([329]); // 435
+store_temp<u32>([336]) -> ([330]); // 436
+u32_overflowing_add([329], [305], [330]) { fallthrough([337], [338]) 798([339], [340]) }; // 437
+branch_align() -> (); // 438
+const_as_immediate<Const<u32, 2147483647>>() -> ([341]); // 439
+dup<u32>([338]) -> ([338], [342]); // 440
+store_temp<u32>([341]) -> ([341]); // 441
+u32_overflowing_sub([337], [342], [341]) { fallthrough([343], [344]) 448([345], [346]) }; // 442
+branch_align() -> (); // 443
+drop<u32>([338]) -> (); // 444
+store_temp<RangeCheck>([343]) -> ([347]); // 445
+store_temp<u32>([344]) -> ([348]); // 446
+jump() { 452() }; // 447
+branch_align() -> (); // 448
+drop<u32>([346]) -> (); // 449
+store_temp<RangeCheck>([345]) -> ([347]); // 450
+store_temp<u32>([338]) -> ([348]); // 451
+struct_deconstruct<test::M31>([291]) -> ([349]); // 452
+struct_deconstruct<test::M31>([294]) -> ([350]); // 453
+u32_wide_mul([349], [350]) -> ([351]); // 454
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([352]); // 455
+store_temp<u64>([351]) -> ([351]); // 456
+store_temp<NonZero<u64>>([352]) -> ([352]); // 457
+u64_safe_divmod([347], [351], [352]) -> ([353], [354], [355]); // 458
+drop<u64>([354]) -> (); // 459
+downcast<u64, u32>([353], [355]) { fallthrough([356], [357]) 784([358]) }; // 460
+branch_align() -> (); // 461
+struct_deconstruct<test::M31>([292]) -> ([359]); // 462
+struct_deconstruct<test::M31>([293]) -> ([360]); // 463
+u32_wide_mul([359], [360]) -> ([361]); // 464
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([362]); // 465
+store_temp<u64>([361]) -> ([361]); // 466
+store_temp<NonZero<u64>>([362]) -> ([362]); // 467
+u64_safe_divmod([356], [361], [362]) -> ([363], [364], [365]); // 468
+drop<u64>([364]) -> (); // 469
+downcast<u64, u32>([363], [365]) { fallthrough([366], [367]) 771([368]) }; // 470
+branch_align() -> (); // 471
+u32_overflowing_add([366], [357], [367]) { fallthrough([369], [370]) 758([371], [372]) }; // 472
+branch_align() -> (); // 473
+const_as_immediate<Const<u32, 2147483647>>() -> ([373]); // 474
+dup<u32>([370]) -> ([370], [374]); // 475
+store_temp<u32>([373]) -> ([373]); // 476
+u32_overflowing_sub([369], [374], [373]) { fallthrough([375], [376]) 483([377], [378]) }; // 477
+branch_align() -> (); // 478
+drop<u32>([370]) -> (); // 479
+store_temp<RangeCheck>([375]) -> ([379]); // 480
+store_temp<u32>([376]) -> ([380]); // 481
+jump() { 487() }; // 482
+branch_align() -> (); // 483
+drop<u32>([378]) -> (); // 484
+store_temp<RangeCheck>([377]) -> ([379]); // 485
+store_temp<u32>([370]) -> ([380]); // 486
+struct_deconstruct<test::CM31>([4]) -> ([381], [382]); // 487
+struct_deconstruct<test::CM31>([8]) -> ([383], [384]); // 488
+dup<test::M31>([381]) -> ([381], [385]); // 489
+struct_deconstruct<test::M31>([385]) -> ([386]); // 490
+dup<test::M31>([383]) -> ([383], [387]); // 491
+struct_deconstruct<test::M31>([387]) -> ([388]); // 492
+u32_wide_mul([386], [388]) -> ([389]); // 493
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([390]); // 494
+store_temp<u64>([389]) -> ([389]); // 495
+store_temp<NonZero<u64>>([390]) -> ([390]); // 496
+u64_safe_divmod([379], [389], [390]) -> ([391], [392], [393]); // 497
+drop<u64>([392]) -> (); // 498
+downcast<u64, u32>([391], [393]) { fallthrough([394], [395]) 738([396]) }; // 499
+branch_align() -> (); // 500
+dup<test::M31>([382]) -> ([382], [397]); // 501
+struct_deconstruct<test::M31>([397]) -> ([398]); // 502
+dup<test::M31>([384]) -> ([384], [399]); // 503
+struct_deconstruct<test::M31>([399]) -> ([400]); // 504
+u32_wide_mul([398], [400]) -> ([401]); // 505
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([402]); // 506
+store_temp<u64>([401]) -> ([401]); // 507
+store_temp<NonZero<u64>>([402]) -> ([402]); // 508
+u64_safe_divmod([394], [401], [402]) -> ([403], [404], [405]); // 509
+drop<u64>([404]) -> (); // 510
+downcast<u64, u32>([403], [405]) { fallthrough([406], [407]) 722([408]) }; // 511
+branch_align() -> (); // 512
+const_as_immediate<Const<u32, 0>>() -> ([409]); // 513
+dup<u32>([407]) -> ([407], [410]); // 514
+store_temp<RangeCheck>([406]) -> ([406]); // 515
+u32_eq([410], [409]) { fallthrough() 542() }; // 516
+branch_align() -> (); // 517
+const_as_immediate<Const<u32, 2147483647>>() -> ([411]); // 518
+store_temp<u32>([411]) -> ([411]); // 519
+u32_overflowing_sub([406], [411], [407]) { fallthrough([412], [413]) 525([414], [415]) }; // 520
+branch_align() -> (); // 521
+store_temp<RangeCheck>([412]) -> ([416]); // 522
+store_temp<u32>([413]) -> ([417]); // 523
+jump() { 547() }; // 524
+branch_align() -> (); // 525
+drop<u32>([415]) -> (); // 526
+drop<u32>([380]) -> (); // 527
+drop<test::CM31>([322]) -> (); // 528
+drop<u32>([348]) -> (); // 529
+drop<test::M31>([381]) -> (); // 530
+drop<test::M31>([383]) -> (); // 531
+drop<test::M31>([382]) -> (); // 532
+drop<test::M31>([384]) -> (); // 533
+drop<u32>([395]) -> (); // 534
+array_new<felt252>() -> ([418]); // 535
+const_as_immediate<Const<felt252, 155785504329508738615720351733824384887>>() -> ([419]); // 536
+store_temp<felt252>([419]) -> ([419]); // 537
+array_append<felt252>([418], [419]) -> ([420]); // 538
+store_temp<RangeCheck>([414]) -> ([421]); // 539
+store_temp<Array<felt252>>([420]) -> ([422]); // 540
+jump() { 719() }; // 541
+branch_align() -> (); // 542
+drop<u32>([407]) -> (); // 543
+const_as_immediate<Const<u32, 0>>() -> ([423]); // 544
+store_temp<RangeCheck>([406]) -> ([416]); // 545
+store_temp<u32>([423]) -> ([417]); // 546
+u32_overflowing_add([416], [395], [417]) { fallthrough([424], [425]) 704([426], [427]) }; // 547
+branch_align() -> (); // 548
+const_as_immediate<Const<u32, 2147483647>>() -> ([428]); // 549
+dup<u32>([425]) -> ([425], [429]); // 550
+store_temp<u32>([428]) -> ([428]); // 551
+u32_overflowing_sub([424], [429], [428]) { fallthrough([430], [431]) 558([432], [433]) }; // 552
+branch_align() -> (); // 553
+drop<u32>([425]) -> (); // 554
+store_temp<RangeCheck>([430]) -> ([434]); // 555
+store_temp<u32>([431]) -> ([435]); // 556
+jump() { 562() }; // 557
+branch_align() -> (); // 558
+drop<u32>([433]) -> (); // 559
+store_temp<RangeCheck>([432]) -> ([434]); // 560
+store_temp<u32>([425]) -> ([435]); // 561
+struct_deconstruct<test::M31>([381]) -> ([436]); // 562
+struct_deconstruct<test::M31>([384]) -> ([437]); // 563
+u32_wide_mul([436], [437]) -> ([438]); // 564
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([439]); // 565
+store_temp<u64>([438]) -> ([438]); // 566
+store_temp<NonZero<u64>>([439]) -> ([439]); // 567
+u64_safe_divmod([434], [438], [439]) -> ([440], [441], [442]); // 568
+drop<u64>([441]) -> (); // 569
+downcast<u64, u32>([440], [442]) { fallthrough([443], [444]) 690([445]) }; // 570
+branch_align() -> (); // 571
+struct_deconstruct<test::M31>([382]) -> ([446]); // 572
+struct_deconstruct<test::M31>([383]) -> ([447]); // 573
+u32_wide_mul([446], [447]) -> ([448]); // 574
+const_as_immediate<Const<NonZero<u64>, Const<u64, 2147483647>>>() -> ([449]); // 575
+store_temp<u64>([448]) -> ([448]); // 576
+store_temp<NonZero<u64>>([449]) -> ([449]); // 577
+u64_safe_divmod([443], [448], [449]) -> ([450], [451], [452]); // 578
+drop<u64>([451]) -> (); // 579
+downcast<u64, u32>([450], [452]) { fallthrough([453], [454]) 677([455]) }; // 580
+branch_align() -> (); // 581
+u32_overflowing_add([453], [444], [454]) { fallthrough([456], [457]) 664([458], [459]) }; // 582
+branch_align() -> (); // 583
+const_as_immediate<Const<u32, 2147483647>>() -> ([460]); // 584
+dup<u32>([457]) -> ([457], [461]); // 585
+store_temp<u32>([460]) -> ([460]); // 586
+u32_overflowing_sub([456], [461], [460]) { fallthrough([462], [463]) 593([464], [465]) }; // 587
+branch_align() -> (); // 588
+drop<u32>([457]) -> (); // 589
+store_temp<RangeCheck>([462]) -> ([466]); // 590
+store_temp<u32>([463]) -> ([467]); // 591
+jump() { 597() }; // 592
+branch_align() -> (); // 593
+drop<u32>([465]) -> (); // 594
+store_temp<RangeCheck>([464]) -> ([466]); // 595
+store_temp<u32>([457]) -> ([467]); // 596
+u32_overflowing_add([466], [348], [435]) { fallthrough([468], [469]) 647([470], [471]) }; // 597
+branch_align() -> (); // 598
+const_as_immediate<Const<u32, 2147483647>>() -> ([472]); // 599
+dup<u32>([469]) -> ([469], [473]); // 600
+store_temp<u32>([472]) -> ([472]); // 601
+u32_overflowing_sub([468], [473], [472]) { fallthrough([474], [475]) 608([476], [477]) }; // 602
+branch_align() -> (); // 603
+drop<u32>([469]) -> (); // 604
+store_temp<RangeCheck>([474]) -> ([478]); // 605
+store_temp<u32>([475]) -> ([479]); // 606
+jump() { 612() }; // 607
+branch_align() -> (); // 608
+drop<u32>([477]) -> (); // 609
+store_temp<RangeCheck>([476]) -> ([478]); // 610
+store_temp<u32>([469]) -> ([479]); // 611
+u32_overflowing_add([478], [380], [467]) { fallthrough([480], [481]) 636([482], [483]) }; // 612
+branch_align() -> (); // 613
+const_as_immediate<Const<u32, 2147483647>>() -> ([484]); // 614
+dup<u32>([481]) -> ([481], [485]); // 615
+store_temp<u32>([484]) -> ([484]); // 616
+u32_overflowing_sub([480], [485], [484]) { fallthrough([486], [487]) 623([488], [489]) }; // 617
+branch_align() -> (); // 618
+drop<u32>([481]) -> (); // 619
+store_temp<RangeCheck>([486]) -> ([490]); // 620
+store_temp<u32>([487]) -> ([491]); // 621
+jump() { 627() }; // 622
+branch_align() -> (); // 623
+drop<u32>([489]) -> (); // 624
+store_temp<RangeCheck>([488]) -> ([490]); // 625
+store_temp<u32>([481]) -> ([491]); // 626
+struct_construct<test::M31>([479]) -> ([492]); // 627
+struct_construct<test::M31>([491]) -> ([493]); // 628
+struct_construct<test::CM31>([492], [493]) -> ([494]); // 629
+struct_construct<test::QM31>([322], [494]) -> ([495]); // 630
+struct_construct<Tuple<test::QM31>>([495]) -> ([496]); // 631
+enum_init<core::panics::PanicResult::<(test::QM31,)>, 0>([496]) -> ([497]); // 632
+store_temp<RangeCheck>([490]) -> ([490]); // 633
+store_temp<core::panics::PanicResult::<(test::QM31,)>>([497]) -> ([497]); // 634
+return([490], [497]); // 635
+branch_align() -> (); // 636
+drop<u32>([483]) -> (); // 637
+drop<u32>([479]) -> (); // 638
+drop<test::CM31>([322]) -> (); // 639
+array_new<felt252>() -> ([498]); // 640
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([499]); // 641
+store_temp<felt252>([499]) -> ([499]); // 642
+array_append<felt252>([498], [499]) -> ([500]); // 643
+store_temp<RangeCheck>([482]) -> ([501]); // 644
+store_temp<Array<felt252>>([500]) -> ([502]); // 645
+jump() { 658() }; // 646
+branch_align() -> (); // 647
+drop<u32>([471]) -> (); // 648
+drop<u32>([380]) -> (); // 649
+drop<test::CM31>([322]) -> (); // 650
+drop<u32>([467]) -> (); // 651
+array_new<felt252>() -> ([503]); // 652
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([504]); // 653
+store_temp<felt252>([504]) -> ([504]); // 654
+array_append<felt252>([503], [504]) -> ([505]); // 655
+store_temp<RangeCheck>([470]) -> ([501]); // 656
+store_temp<Array<felt252>>([505]) -> ([502]); // 657
+struct_construct<core::panics::Panic>() -> ([506]); // 658
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([506], [502]) -> ([507]); // 659
+enum_init<core::panics::PanicResult::<(test::QM31,)>, 1>([507]) -> ([508]); // 660
+store_temp<RangeCheck>([501]) -> ([501]); // 661
+store_temp<core::panics::PanicResult::<(test::QM31,)>>([508]) -> ([508]); // 662
+return([501], [508]); // 663
+branch_align() -> (); // 664
+drop<u32>([459]) -> (); // 665
+drop<u32>([380]) -> (); // 666
+drop<test::CM31>([322]) -> (); // 667
+drop<u32>([348]) -> (); // 668
+drop<u32>([435]) -> (); // 669
+array_new<felt252>() -> ([509]); // 670
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([510]); // 671
+store_temp<felt252>([510]) -> ([510]); // 672
+array_append<felt252>([509], [510]) -> ([511]); // 673
+store_temp<RangeCheck>([458]) -> ([512]); // 674
+store_temp<Array<felt252>>([511]) -> ([513]); // 675
+jump() { 752() }; // 676
+branch_align() -> (); // 677
+drop<u32>([380]) -> (); // 678
+drop<test::CM31>([322]) -> (); // 679
+drop<u32>([348]) -> (); // 680
+drop<u32>([435]) -> (); // 681
+drop<u32>([444]) -> (); // 682
+array_new<felt252>() -> ([514]); // 683
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([515]); // 684
+store_temp<felt252>([515]) -> ([515]); // 685
+array_append<felt252>([514], [515]) -> ([516]); // 686
+store_temp<RangeCheck>([455]) -> ([512]); // 687
+store_temp<Array<felt252>>([516]) -> ([513]); // 688
+jump() { 752() }; // 689
+branch_align() -> (); // 690
+drop<u32>([380]) -> (); // 691
+drop<test::CM31>([322]) -> (); // 692
+drop<u32>([348]) -> (); // 693
+drop<u32>([435]) -> (); // 694
+drop<test::M31>([383]) -> (); // 695
+drop<test::M31>([382]) -> (); // 696
+array_new<felt252>() -> ([517]); // 697
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([518]); // 698
+store_temp<felt252>([518]) -> ([518]); // 699
+array_append<felt252>([517], [518]) -> ([519]); // 700
+store_temp<RangeCheck>([445]) -> ([512]); // 701
+store_temp<Array<felt252>>([519]) -> ([513]); // 702
+jump() { 752() }; // 703
+branch_align() -> (); // 704
+drop<u32>([427]) -> (); // 705
+drop<u32>([380]) -> (); // 706
+drop<test::CM31>([322]) -> (); // 707
+drop<u32>([348]) -> (); // 708
+drop<test::M31>([381]) -> (); // 709
+drop<test::M31>([383]) -> (); // 710
+drop<test::M31>([382]) -> (); // 711
+drop<test::M31>([384]) -> (); // 712
+array_new<felt252>() -> ([520]); // 713
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([521]); // 714
+store_temp<felt252>([521]) -> ([521]); // 715
+array_append<felt252>([520], [521]) -> ([522]); // 716
+store_temp<RangeCheck>([426]) -> ([421]); // 717
+store_temp<Array<felt252>>([522]) -> ([422]); // 718
+rename<RangeCheck>([421]) -> ([512]); // 719
+rename<Array<felt252>>([422]) -> ([513]); // 720
+jump() { 752() }; // 721
+branch_align() -> (); // 722
+drop<u32>([380]) -> (); // 723
+drop<test::CM31>([322]) -> (); // 724
+drop<u32>([348]) -> (); // 725
+drop<test::M31>([381]) -> (); // 726
+drop<test::M31>([383]) -> (); // 727
+drop<test::M31>([382]) -> (); // 728
+drop<test::M31>([384]) -> (); // 729
+drop<u32>([395]) -> (); // 730
+array_new<felt252>() -> ([523]); // 731
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([524]); // 732
+store_temp<felt252>([524]) -> ([524]); // 733
+array_append<felt252>([523], [524]) -> ([525]); // 734
+store_temp<RangeCheck>([408]) -> ([512]); // 735
+store_temp<Array<felt252>>([525]) -> ([513]); // 736
+jump() { 752() }; // 737
+branch_align() -> (); // 738
+drop<u32>([380]) -> (); // 739
+drop<test::CM31>([322]) -> (); // 740
+drop<u32>([348]) -> (); // 741
+drop<test::M31>([381]) -> (); // 742
+drop<test::M31>([383]) -> (); // 743
+drop<test::M31>([382]) -> (); // 744
+drop<test::M31>([384]) -> (); // 745
+array_new<felt252>() -> ([526]); // 746
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([527]); // 747
+store_temp<felt252>([527]) -> ([527]); // 748
+array_append<felt252>([526], [527]) -> ([528]); // 749
+store_temp<RangeCheck>([396]) -> ([512]); // 750
+store_temp<Array<felt252>>([528]) -> ([513]); // 751
+struct_construct<core::panics::Panic>() -> ([529]); // 752
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([529], [513]) -> ([530]); // 753
+enum_init<core::panics::PanicResult::<(test::QM31,)>, 1>([530]) -> ([531]); // 754
+store_temp<RangeCheck>([512]) -> ([512]); // 755
+store_temp<core::panics::PanicResult::<(test::QM31,)>>([531]) -> ([531]); // 756
+return([512], [531]); // 757
+branch_align() -> (); // 758
+drop<u32>([372]) -> (); // 759
+drop<test::CM31>([4]) -> (); // 760
+drop<test::CM31>([322]) -> (); // 761
+drop<u32>([348]) -> (); // 762
+drop<test::CM31>([8]) -> (); // 763
+array_new<felt252>() -> ([532]); // 764
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([533]); // 765
+store_temp<felt252>([533]) -> ([533]); // 766
+array_append<felt252>([532], [533]) -> ([534]); // 767
+store_temp<RangeCheck>([371]) -> ([535]); // 768
+store_temp<Array<felt252>>([534]) -> ([536]); // 769
+jump() { 848() }; // 770
+branch_align() -> (); // 771
+drop<test::CM31>([4]) -> (); // 772
+drop<test::CM31>([322]) -> (); // 773
+drop<u32>([348]) -> (); // 774
+drop<test::CM31>([8]) -> (); // 775
+drop<u32>([357]) -> (); // 776
+array_new<felt252>() -> ([537]); // 777
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([538]); // 778
+store_temp<felt252>([538]) -> ([538]); // 779
+array_append<felt252>([537], [538]) -> ([539]); // 780
+store_temp<RangeCheck>([368]) -> ([535]); // 781
+store_temp<Array<felt252>>([539]) -> ([536]); // 782
+jump() { 848() }; // 783
+branch_align() -> (); // 784
+drop<test::CM31>([4]) -> (); // 785
+drop<test::CM31>([322]) -> (); // 786
+drop<u32>([348]) -> (); // 787
+drop<test::CM31>([8]) -> (); // 788
+drop<test::M31>([293]) -> (); // 789
+drop<test::M31>([292]) -> (); // 790
+array_new<felt252>() -> ([540]); // 791
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([541]); // 792
+store_temp<felt252>([541]) -> ([541]); // 793
+array_append<felt252>([540], [541]) -> ([542]); // 794
+store_temp<RangeCheck>([358]) -> ([535]); // 795
+store_temp<Array<felt252>>([542]) -> ([536]); // 796
+jump() { 848() }; // 797
+branch_align() -> (); // 798
+drop<u32>([340]) -> (); // 799
+drop<test::CM31>([4]) -> (); // 800
+drop<test::CM31>([322]) -> (); // 801
+drop<test::M31>([291]) -> (); // 802
+drop<test::CM31>([8]) -> (); // 803
+drop<test::M31>([293]) -> (); // 804
+drop<test::M31>([292]) -> (); // 805
+drop<test::M31>([294]) -> (); // 806
+array_new<felt252>() -> ([543]); // 807
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([544]); // 808
+store_temp<felt252>([544]) -> ([544]); // 809
+array_append<felt252>([543], [544]) -> ([545]); // 810
+store_temp<RangeCheck>([339]) -> ([334]); // 811
+store_temp<Array<felt252>>([545]) -> ([335]); // 812
+rename<RangeCheck>([334]) -> ([535]); // 813
+rename<Array<felt252>>([335]) -> ([536]); // 814
+jump() { 848() }; // 815
+branch_align() -> (); // 816
+drop<test::CM31>([4]) -> (); // 817
+drop<u32>([278]) -> (); // 818
+drop<test::M31>([291]) -> (); // 819
+drop<test::CM31>([8]) -> (); // 820
+drop<test::M31>([293]) -> (); // 821
+drop<test::M31>([292]) -> (); // 822
+drop<test::M31>([294]) -> (); // 823
+drop<u32>([305]) -> (); // 824
+drop<u32>([290]) -> (); // 825
+array_new<felt252>() -> ([546]); // 826
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([547]); // 827
+store_temp<felt252>([547]) -> ([547]); // 828
+array_append<felt252>([546], [547]) -> ([548]); // 829
+store_temp<RangeCheck>([318]) -> ([535]); // 830
+store_temp<Array<felt252>>([548]) -> ([536]); // 831
+jump() { 848() }; // 832
+branch_align() -> (); // 833
+drop<test::CM31>([4]) -> (); // 834
+drop<u32>([278]) -> (); // 835
+drop<test::M31>([291]) -> (); // 836
+drop<test::CM31>([8]) -> (); // 837
+drop<test::M31>([293]) -> (); // 838
+drop<test::M31>([292]) -> (); // 839
+drop<test::M31>([294]) -> (); // 840
+drop<u32>([290]) -> (); // 841
+array_new<felt252>() -> ([549]); // 842
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([550]); // 843
+store_temp<felt252>([550]) -> ([550]); // 844
+array_append<felt252>([549], [550]) -> ([551]); // 845
+store_temp<RangeCheck>([306]) -> ([535]); // 846
+store_temp<Array<felt252>>([551]) -> ([536]); // 847
+struct_construct<core::panics::Panic>() -> ([552]); // 848
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([552], [536]) -> ([553]); // 849
+enum_init<core::panics::PanicResult::<(test::QM31,)>, 1>([553]) -> ([554]); // 850
+store_temp<RangeCheck>([535]) -> ([535]); // 851
+store_temp<core::panics::PanicResult::<(test::QM31,)>>([554]) -> ([554]); // 852
+return([535], [554]); // 853
+branch_align() -> (); // 854
+drop<u32>([282]) -> (); // 855
+drop<test::CM31>([4]) -> (); // 856
+drop<u32>([278]) -> (); // 857
+drop<test::CM31>([9]) -> (); // 858
+drop<test::CM31>([8]) -> (); // 859
+drop<test::CM31>([3]) -> (); // 860
+array_new<felt252>() -> ([555]); // 861
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([556]); // 862
+store_temp<felt252>([556]) -> ([556]); // 863
+array_append<felt252>([555], [556]) -> ([557]); // 864
+store_temp<RangeCheck>([281]) -> ([558]); // 865
+store_temp<Array<felt252>>([557]) -> ([559]); // 866
+jump() { 882() }; // 867
+branch_align() -> (); // 868
+drop<u32>([270]) -> (); // 869
+drop<test::CM31>([4]) -> (); // 870
+drop<u32>([95]) -> (); // 871
+drop<test::CM31>([9]) -> (); // 872
+drop<test::CM31>([8]) -> (); // 873
+drop<test::CM31>([3]) -> (); // 874
+drop<u32>([266]) -> (); // 875
+array_new<felt252>() -> ([560]); // 876
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([561]); // 877
+store_temp<felt252>([561]) -> ([561]); // 878
+array_append<felt252>([560], [561]) -> ([562]); // 879
+store_temp<RangeCheck>([269]) -> ([558]); // 880
+store_temp<Array<felt252>>([562]) -> ([559]); // 881
+struct_construct<core::panics::Panic>() -> ([563]); // 882
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([563], [559]) -> ([564]); // 883
+enum_init<core::panics::PanicResult::<(test::QM31,)>, 1>([564]) -> ([565]); // 884
+store_temp<RangeCheck>([558]) -> ([558]); // 885
+store_temp<core::panics::PanicResult::<(test::QM31,)>>([565]) -> ([565]); // 886
+return([558], [565]); // 887
+branch_align() -> (); // 888
+drop<u32>([258]) -> (); // 889
+drop<test::CM31>([4]) -> (); // 890
+drop<u32>([95]) -> (); // 891
+drop<test::CM31>([9]) -> (); // 892
+drop<test::CM31>([8]) -> (); // 893
+drop<test::CM31>([3]) -> (); // 894
+drop<u32>([63]) -> (); // 895
+drop<u32>([236]) -> (); // 896
+array_new<felt252>() -> ([566]); // 897
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([567]); // 898
+store_temp<felt252>([567]) -> ([567]); // 899
+array_append<felt252>([566], [567]) -> ([568]); // 900
+store_temp<RangeCheck>([257]) -> ([569]); // 901
+store_temp<Array<felt252>>([568]) -> ([570]); // 902
+jump() { 994() }; // 903
+branch_align() -> (); // 904
+drop<test::CM31>([4]) -> (); // 905
+drop<u32>([95]) -> (); // 906
+drop<test::CM31>([9]) -> (); // 907
+drop<test::CM31>([8]) -> (); // 908
+drop<test::CM31>([3]) -> (); // 909
+drop<u32>([63]) -> (); // 910
+drop<u32>([236]) -> (); // 911
+drop<u32>([244]) -> (); // 912
+array_new<felt252>() -> ([571]); // 913
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([572]); // 914
+store_temp<felt252>([572]) -> ([572]); // 915
+array_append<felt252>([571], [572]) -> ([573]); // 916
+store_temp<RangeCheck>([254]) -> ([569]); // 917
+store_temp<Array<felt252>>([573]) -> ([570]); // 918
+jump() { 994() }; // 919
+branch_align() -> (); // 920
+drop<test::CM31>([4]) -> (); // 921
+drop<u32>([95]) -> (); // 922
+drop<test::CM31>([9]) -> (); // 923
+drop<test::CM31>([8]) -> (); // 924
+drop<test::CM31>([3]) -> (); // 925
+drop<u32>([63]) -> (); // 926
+drop<u32>([236]) -> (); // 927
+drop<u32>([184]) -> (); // 928
+drop<test::M31>([186]) -> (); // 929
+array_new<felt252>() -> ([574]); // 930
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([575]); // 931
+store_temp<felt252>([575]) -> ([575]); // 932
+array_append<felt252>([574], [575]) -> ([576]); // 933
+store_temp<RangeCheck>([245]) -> ([569]); // 934
+store_temp<Array<felt252>>([576]) -> ([570]); // 935
+jump() { 994() }; // 936
+branch_align() -> (); // 937
+drop<u32>([228]) -> (); // 938
+drop<test::CM31>([4]) -> (); // 939
+drop<u32>([95]) -> (); // 940
+drop<test::CM31>([9]) -> (); // 941
+drop<test::CM31>([8]) -> (); // 942
+drop<test::CM31>([3]) -> (); // 943
+drop<u32>([63]) -> (); // 944
+drop<test::M31>([187]) -> (); // 945
+drop<u32>([184]) -> (); // 946
+drop<test::M31>([186]) -> (); // 947
+drop<u32>([152]) -> (); // 948
+array_new<felt252>() -> ([577]); // 949
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([578]); // 950
+store_temp<felt252>([578]) -> ([578]); // 951
+array_append<felt252>([577], [578]) -> ([579]); // 952
+store_temp<RangeCheck>([227]) -> ([222]); // 953
+store_temp<Array<felt252>>([579]) -> ([223]); // 954
+rename<RangeCheck>([222]) -> ([569]); // 955
+rename<Array<felt252>>([223]) -> ([570]); // 956
+jump() { 994() }; // 957
+branch_align() -> (); // 958
+drop<test::CM31>([4]) -> (); // 959
+drop<u32>([95]) -> (); // 960
+drop<test::CM31>([9]) -> (); // 961
+drop<test::CM31>([8]) -> (); // 962
+drop<test::CM31>([3]) -> (); // 963
+drop<u32>([63]) -> (); // 964
+drop<test::M31>([187]) -> (); // 965
+drop<u32>([184]) -> (); // 966
+drop<test::M31>([186]) -> (); // 967
+drop<u32>([152]) -> (); // 968
+drop<u32>([197]) -> (); // 969
+array_new<felt252>() -> ([580]); // 970
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([581]); // 971
+store_temp<felt252>([581]) -> ([581]); // 972
+array_append<felt252>([580], [581]) -> ([582]); // 973
+store_temp<RangeCheck>([209]) -> ([569]); // 974
+store_temp<Array<felt252>>([582]) -> ([570]); // 975
+jump() { 994() }; // 976
+branch_align() -> (); // 977
+drop<test::CM31>([4]) -> (); // 978
+drop<u32>([95]) -> (); // 979
+drop<test::CM31>([9]) -> (); // 980
+drop<test::CM31>([8]) -> (); // 981
+drop<test::CM31>([3]) -> (); // 982
+drop<u32>([63]) -> (); // 983
+drop<test::M31>([187]) -> (); // 984
+drop<u32>([184]) -> (); // 985
+drop<test::M31>([186]) -> (); // 986
+drop<u32>([152]) -> (); // 987
+array_new<felt252>() -> ([583]); // 988
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([584]); // 989
+store_temp<felt252>([584]) -> ([584]); // 990
+array_append<felt252>([583], [584]) -> ([585]); // 991
+store_temp<RangeCheck>([198]) -> ([569]); // 992
+store_temp<Array<felt252>>([585]) -> ([570]); // 993
+struct_construct<core::panics::Panic>() -> ([586]); // 994
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([586], [570]) -> ([587]); // 995
+enum_init<core::panics::PanicResult::<(test::QM31,)>, 1>([587]) -> ([588]); // 996
+store_temp<RangeCheck>([569]) -> ([569]); // 997
+store_temp<core::panics::PanicResult::<(test::QM31,)>>([588]) -> ([588]); // 998
+return([569], [588]); // 999
+branch_align() -> (); // 1000
+drop<u32>([176]) -> (); // 1001
+drop<test::CM31>([4]) -> (); // 1002
+drop<u32>([95]) -> (); // 1003
+drop<test::CM31>([9]) -> (); // 1004
+drop<test::CM31>([8]) -> (); // 1005
+drop<test::CM31>([3]) -> (); // 1006
+drop<u32>([63]) -> (); // 1007
+drop<u32>([152]) -> (); // 1008
+array_new<felt252>() -> ([589]); // 1009
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([590]); // 1010
+store_temp<felt252>([590]) -> ([590]); // 1011
+array_append<felt252>([589], [590]) -> ([591]); // 1012
+store_temp<RangeCheck>([175]) -> ([592]); // 1013
+store_temp<Array<felt252>>([591]) -> ([593]); // 1014
+jump() { 1106() }; // 1015
+branch_align() -> (); // 1016
+drop<test::CM31>([4]) -> (); // 1017
+drop<u32>([95]) -> (); // 1018
+drop<test::CM31>([9]) -> (); // 1019
+drop<test::CM31>([8]) -> (); // 1020
+drop<test::CM31>([3]) -> (); // 1021
+drop<u32>([63]) -> (); // 1022
+drop<u32>([152]) -> (); // 1023
+drop<u32>([161]) -> (); // 1024
+array_new<felt252>() -> ([594]); // 1025
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([595]); // 1026
+store_temp<felt252>([595]) -> ([595]); // 1027
+array_append<felt252>([594], [595]) -> ([596]); // 1028
+store_temp<RangeCheck>([172]) -> ([592]); // 1029
+store_temp<Array<felt252>>([596]) -> ([593]); // 1030
+jump() { 1106() }; // 1031
+branch_align() -> (); // 1032
+drop<test::CM31>([4]) -> (); // 1033
+drop<u32>([95]) -> (); // 1034
+drop<test::CM31>([9]) -> (); // 1035
+drop<test::CM31>([8]) -> (); // 1036
+drop<test::CM31>([3]) -> (); // 1037
+drop<u32>([63]) -> (); // 1038
+drop<u32>([152]) -> (); // 1039
+drop<test::M31>([100]) -> (); // 1040
+drop<test::M31>([98]) -> (); // 1041
+array_new<felt252>() -> ([597]); // 1042
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([598]); // 1043
+store_temp<felt252>([598]) -> ([598]); // 1044
+array_append<felt252>([597], [598]) -> ([599]); // 1045
+store_temp<RangeCheck>([162]) -> ([592]); // 1046
+store_temp<Array<felt252>>([599]) -> ([593]); // 1047
+jump() { 1106() }; // 1048
+branch_align() -> (); // 1049
+drop<u32>([144]) -> (); // 1050
+drop<test::CM31>([4]) -> (); // 1051
+drop<u32>([95]) -> (); // 1052
+drop<test::CM31>([9]) -> (); // 1053
+drop<test::CM31>([8]) -> (); // 1054
+drop<test::CM31>([3]) -> (); // 1055
+drop<u32>([63]) -> (); // 1056
+drop<test::M31>([97]) -> (); // 1057
+drop<test::M31>([100]) -> (); // 1058
+drop<test::M31>([98]) -> (); // 1059
+drop<test::M31>([101]) -> (); // 1060
+array_new<felt252>() -> ([600]); // 1061
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([601]); // 1062
+store_temp<felt252>([601]) -> ([601]); // 1063
+array_append<felt252>([600], [601]) -> ([602]); // 1064
+store_temp<RangeCheck>([143]) -> ([138]); // 1065
+store_temp<Array<felt252>>([602]) -> ([139]); // 1066
+rename<RangeCheck>([138]) -> ([592]); // 1067
+rename<Array<felt252>>([139]) -> ([593]); // 1068
+jump() { 1106() }; // 1069
+branch_align() -> (); // 1070
+drop<test::CM31>([4]) -> (); // 1071
+drop<u32>([95]) -> (); // 1072
+drop<test::CM31>([9]) -> (); // 1073
+drop<test::CM31>([8]) -> (); // 1074
+drop<test::CM31>([3]) -> (); // 1075
+drop<u32>([63]) -> (); // 1076
+drop<test::M31>([97]) -> (); // 1077
+drop<test::M31>([100]) -> (); // 1078
+drop<test::M31>([98]) -> (); // 1079
+drop<test::M31>([101]) -> (); // 1080
+drop<u32>([112]) -> (); // 1081
+array_new<felt252>() -> ([603]); // 1082
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([604]); // 1083
+store_temp<felt252>([604]) -> ([604]); // 1084
+array_append<felt252>([603], [604]) -> ([605]); // 1085
+store_temp<RangeCheck>([125]) -> ([592]); // 1086
+store_temp<Array<felt252>>([605]) -> ([593]); // 1087
+jump() { 1106() }; // 1088
+branch_align() -> (); // 1089
+drop<test::CM31>([4]) -> (); // 1090
+drop<u32>([95]) -> (); // 1091
+drop<test::CM31>([9]) -> (); // 1092
+drop<test::CM31>([8]) -> (); // 1093
+drop<test::CM31>([3]) -> (); // 1094
+drop<u32>([63]) -> (); // 1095
+drop<test::M31>([97]) -> (); // 1096
+drop<test::M31>([100]) -> (); // 1097
+drop<test::M31>([98]) -> (); // 1098
+drop<test::M31>([101]) -> (); // 1099
+array_new<felt252>() -> ([606]); // 1100
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([607]); // 1101
+store_temp<felt252>([607]) -> ([607]); // 1102
+array_append<felt252>([606], [607]) -> ([608]); // 1103
+store_temp<RangeCheck>([113]) -> ([592]); // 1104
+store_temp<Array<felt252>>([608]) -> ([593]); // 1105
+struct_construct<core::panics::Panic>() -> ([609]); // 1106
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([609], [593]) -> ([610]); // 1107
+enum_init<core::panics::PanicResult::<(test::QM31,)>, 1>([610]) -> ([611]); // 1108
+store_temp<RangeCheck>([592]) -> ([592]); // 1109
+store_temp<core::panics::PanicResult::<(test::QM31,)>>([611]) -> ([611]); // 1110
+return([592], [611]); // 1111
+branch_align() -> (); // 1112
+drop<u32>([87]) -> (); // 1113
+drop<test::CM31>([4]) -> (); // 1114
+drop<u32>([63]) -> (); // 1115
+drop<test::CM31>([9]) -> (); // 1116
+drop<test::CM31>([8]) -> (); // 1117
+drop<test::CM31>([3]) -> (); // 1118
+array_new<felt252>() -> ([612]); // 1119
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([613]); // 1120
+store_temp<felt252>([613]) -> ([613]); // 1121
+array_append<felt252>([612], [613]) -> ([614]); // 1122
+store_temp<RangeCheck>([86]) -> ([615]); // 1123
+store_temp<Array<felt252>>([614]) -> ([616]); // 1124
+jump() { 1206() }; // 1125
+branch_align() -> (); // 1126
+drop<test::CM31>([4]) -> (); // 1127
+drop<u32>([63]) -> (); // 1128
+drop<test::CM31>([9]) -> (); // 1129
+drop<test::CM31>([8]) -> (); // 1130
+drop<test::CM31>([3]) -> (); // 1131
+drop<u32>([72]) -> (); // 1132
+array_new<felt252>() -> ([617]); // 1133
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([618]); // 1134
+store_temp<felt252>([618]) -> ([618]); // 1135
+array_append<felt252>([617], [618]) -> ([619]); // 1136
+store_temp<RangeCheck>([83]) -> ([615]); // 1137
+store_temp<Array<felt252>>([619]) -> ([616]); // 1138
+jump() { 1206() }; // 1139
+branch_align() -> (); // 1140
+drop<test::CM31>([4]) -> (); // 1141
+drop<u32>([63]) -> (); // 1142
+drop<test::CM31>([9]) -> (); // 1143
+drop<test::CM31>([8]) -> (); // 1144
+drop<test::CM31>([3]) -> (); // 1145
+drop<test::M31>([11]) -> (); // 1146
+drop<test::M31>([7]) -> (); // 1147
+array_new<felt252>() -> ([620]); // 1148
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([621]); // 1149
+store_temp<felt252>([621]) -> ([621]); // 1150
+array_append<felt252>([620], [621]) -> ([622]); // 1151
+store_temp<RangeCheck>([73]) -> ([615]); // 1152
+store_temp<Array<felt252>>([622]) -> ([616]); // 1153
+jump() { 1206() }; // 1154
+branch_align() -> (); // 1155
+drop<u32>([55]) -> (); // 1156
+drop<test::CM31>([4]) -> (); // 1157
+drop<test::M31>([6]) -> (); // 1158
+drop<test::CM31>([9]) -> (); // 1159
+drop<test::CM31>([8]) -> (); // 1160
+drop<test::CM31>([3]) -> (); // 1161
+drop<test::M31>([11]) -> (); // 1162
+drop<test::M31>([7]) -> (); // 1163
+drop<test::M31>([12]) -> (); // 1164
+array_new<felt252>() -> ([623]); // 1165
+const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>() -> ([624]); // 1166
+store_temp<felt252>([624]) -> ([624]); // 1167
+array_append<felt252>([623], [624]) -> ([625]); // 1168
+store_temp<RangeCheck>([54]) -> ([49]); // 1169
+store_temp<Array<felt252>>([625]) -> ([50]); // 1170
+rename<RangeCheck>([49]) -> ([615]); // 1171
+rename<Array<felt252>>([50]) -> ([616]); // 1172
+jump() { 1206() }; // 1173
+branch_align() -> (); // 1174
+drop<test::CM31>([4]) -> (); // 1175
+drop<test::M31>([6]) -> (); // 1176
+drop<test::CM31>([9]) -> (); // 1177
+drop<test::CM31>([8]) -> (); // 1178
+drop<test::CM31>([3]) -> (); // 1179
+drop<test::M31>([11]) -> (); // 1180
+drop<test::M31>([7]) -> (); // 1181
+drop<test::M31>([12]) -> (); // 1182
+drop<u32>([23]) -> (); // 1183
+array_new<felt252>() -> ([626]); // 1184
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([627]); // 1185
+store_temp<felt252>([627]) -> ([627]); // 1186
+array_append<felt252>([626], [627]) -> ([628]); // 1187
+store_temp<RangeCheck>([36]) -> ([615]); // 1188
+store_temp<Array<felt252>>([628]) -> ([616]); // 1189
+jump() { 1206() }; // 1190
+branch_align() -> (); // 1191
+drop<test::CM31>([4]) -> (); // 1192
+drop<test::M31>([6]) -> (); // 1193
+drop<test::CM31>([9]) -> (); // 1194
+drop<test::CM31>([8]) -> (); // 1195
+drop<test::CM31>([3]) -> (); // 1196
+drop<test::M31>([11]) -> (); // 1197
+drop<test::M31>([7]) -> (); // 1198
+drop<test::M31>([12]) -> (); // 1199
+array_new<felt252>() -> ([629]); // 1200
+const_as_immediate<Const<felt252, 29721761890975875353235833581453094220424382983267374>>() -> ([630]); // 1201
+store_temp<felt252>([630]) -> ([630]); // 1202
+array_append<felt252>([629], [630]) -> ([631]); // 1203
+store_temp<RangeCheck>([24]) -> ([615]); // 1204
+store_temp<Array<felt252>>([631]) -> ([616]); // 1205
+struct_construct<core::panics::Panic>() -> ([632]); // 1206
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([632], [616]) -> ([633]); // 1207
+enum_init<core::panics::PanicResult::<(test::QM31,)>, 1>([633]) -> ([634]); // 1208
+store_temp<RangeCheck>([615]) -> ([615]); // 1209
+store_temp<core::panics::PanicResult::<(test::QM31,)>>([634]) -> ([634]); // 1210
+return([615], [634]); // 1211
 
-test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);
+test::foo@0([0]: RangeCheck, [1]: test::QM31, [2]: test::QM31) -> (RangeCheck, core::panics::PanicResult::<(test::QM31,)>);
