@@ -1,6 +1,6 @@
 use std::ops::{Add, Sub};
 
-use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
+use cairo_lang_sierra::algorithm::topological_order::reverse_topological_ordering;
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
@@ -449,8 +449,10 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
         &mut self,
         specific_cost_context: &SpecificCostContext,
     ) -> Result<(), CostError> {
-        let topological_order =
-            compute_topological_order(self.program.statements.len(), true, |current_idx| {
+        let rev_topological_order = compute_reverse_topological_order(
+            self.program.statements.len(),
+            true,
+            |current_idx| {
                 match &self.program.get_statement(current_idx).unwrap() {
                     Statement::Return(_) => {
                         // Return has no dependencies.
@@ -464,9 +466,10 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
                             .collect()
                     }
                 }
-            })?;
+            },
+        )?;
 
-        for current_idx in topological_order {
+        for current_idx in rev_topological_order {
             // The computation of the dependencies was completed.
             let res = self.no_cache_compute_wallet_at(&current_idx, specific_cost_context);
             // Update the cache with the result.
@@ -513,14 +516,16 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
         &self,
         specific_cost_context: &SpecificCostContext,
     ) -> Result<UnorderedHashMap<StatementIdx, CostType>, CostError> {
-        // Compute a topological order of the statements.
+        // Compute a reverse topological order of the statements.
         // Unlike `prepare_wallet`:
         // * function calls are not treated as edges and
         // * the success branches of `withdraw_gas` are treated as edges.
         //
         // Note, that we allow cycles, but the result may not be optimal in such a case.
-        let topological_order =
-            compute_topological_order(self.program.statements.len(), false, |current_idx| {
+        let rev_topological_order = compute_reverse_topological_order(
+            self.program.statements.len(),
+            false,
+            |current_idx| {
                 match self.program.get_statement(current_idx).unwrap() {
                     Statement::Return(_) => {
                         // Return has no dependencies.
@@ -532,7 +537,8 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
                         .map(|branch_info| current_idx.next(&branch_info.target))
                         .collect(),
                 }
-            })?;
+            },
+        )?;
 
         // Compute the excess mapping - additional amount of cost that, if possible, should be
         // added to the wallet value.
@@ -540,7 +546,7 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
         // The set of statements for which the excess value was already finalized.
         let mut finalized_excess_statements = UnorderedHashSet::<StatementIdx>::default();
 
-        for idx in topological_order.iter().rev() {
+        for idx in rev_topological_order.iter().rev() {
             self.handle_excess_at(
                 idx,
                 specific_cost_context,
@@ -672,12 +678,12 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
 /// Generates a topological ordering of the statements according to the given dependencies_callback.
 ///
 /// Each statement appears in the ordering after its dependencies.
-fn compute_topological_order(
+fn compute_reverse_topological_order(
     n_statements: usize,
     detect_cycles: bool,
     dependencies_callback: impl Fn(&StatementIdx) -> Vec<StatementIdx>,
 ) -> Result<Vec<StatementIdx>, CostError> {
-    get_topological_ordering(
+    reverse_topological_ordering(
         detect_cycles,
         (0..n_statements).map(StatementIdx),
         n_statements,
