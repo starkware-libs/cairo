@@ -104,6 +104,7 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
         bool_to_felt252(self)
     }
 }
+
 /// Boolean module.
 pub mod boolean;
 
@@ -318,7 +319,6 @@ pub mod gas;
 #[allow(unused_imports)]
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
-
 /// Panics module.
 pub mod panics;
 #[allow(unused_imports)]
@@ -379,6 +379,7 @@ use poseidon::Poseidon;
 /// Debug module.
 pub mod debug;
 
+/// Fmt module.
 pub mod fmt;
 
 /// Starknet module.
