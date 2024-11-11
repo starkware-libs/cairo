@@ -8,7 +8,7 @@ use cairo_lang_defs::plugin_utils::{
 };
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use indoc::formatdoc;
 
 /// Macro for assertion.
@@ -110,5 +110,56 @@ impl InlineMacroExprPlugin for AssertMacro {
             }),
             diagnostics: vec![],
         }
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Asserts that a condition is true at runtime.
+    
+            The `assert!` macro is used to check whether a boolean expression evaluates to `true`. \ 
+            If the expression evaluates to `false`, the macro will cause the program to panic, \ 
+            optionally displaying a custom error message. This is useful for debugging and ensuring \ 
+            that certain conditions hold during execution.
+    
+            # Syntax
+    
+            ```cairo
+            assert!(condition);
+            assert!(condition, "error message");
+            assert!(condition, "formatted error: {}", value);
+            ```
+    
+            # Parameters
+    
+            - `condition`: A boolean expression to evaluate. The assertion passes if this expression is `true`.
+            - `format_string` (optional): A string literal that may include format placeholders.
+            - `args` (optional): Arguments corresponding to the format placeholders in the `format_string`.
+    
+            # Examples
+    
+            ```cairo
+            assert!(2 + 2 == 4); // Passes, does nothing.
+    
+            assert!(2 + 2 == 5); // Panics with "assertion failed: `2 + 2 == 5`."
+    
+            let age = 18;
+            assert!(age >= 21, "Age must be at least 21, found {}", age);
+            // Panics with "Age must be at least 21, found 18."
+    
+            let x = -1;
+            assert!(x >= 0, "Invalid value: x = {}", x);
+            // Panics with "Invalid value: x = -1."
+            ```
+    
+            # Notes
+    
+            - **Use Cases**: Ideal for catching programming errors and enforcing invariants.
+            - **Performance**: Assertions can impact performance; consider using `debug_assert!` for checks in debug mode only.
+            - **Error Handling**: For recoverable errors, use proper error handling mechanisms like `Result` or `Option` instead of panicking.
+    
+            "#}
+            .to_string(),
+        )
     }
 }
