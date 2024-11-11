@@ -6,7 +6,7 @@
 //! segment to store data.
 //!
 //! This type is useful for avoiding null pointer dereferences. It is especially used in
-//! dictionaries that store complexe data structure that don't implement the `zero_default` method
+//! dictionaries that store complex data structure that don't implement the `zero_default` method
 //! of the `Felt252DictValue` trait which is called when a value does not exist in the dictionary.
 //!
 //! # Examples
@@ -52,7 +52,7 @@ extern fn nullable_forward_snapshot<T>(value: @Nullable<T>) -> Nullable<@T> nopa
 
 impl NullableDeref<T> of crate::ops::Deref<Nullable<T>> {
     type Target = T;
-    /// `deref` implementation for `Nullable<T>` taht returns the wrapped value.
+    /// `deref` implementation for `Nullable<T>` that returns the wrapped value.
     ///
     /// # Panics
     ///
