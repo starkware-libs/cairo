@@ -54,38 +54,28 @@ impl InlineMacroExprPlugin for ArrayMacro {
         Some(
             indoc! {r#"
             Creates a new array containing the provided elements.
-    
             The `array!` macro allows you to create an array by specifying a list of elements. \ 
             The elements are added to a new array in the order they are provided.
     
             # Syntax
-    
             ```cairo
             array![element1, element2, element3, ...]
             ```
-    
             # Returns
-    
             An array containing the specified elements.
     
             # Examples
-    
             ```cairo
             let arr = array![]; // Creates an empty array.
-    
             let arr = array![1, 2, 3]; // Creates an array containing 1, 2, and 3.
-    
             let x = 5;
             let y = 10;
             let arr = array![x, y, x + y]; // Creates an array containing 5, 10, and 15.
             ```
-    
             # Notes
-    
-            - All elements must be of the same type or compatible types that can be coerced to a common type.
-            - The macro internally uses `ArrayTrait::new()` to create a new array and `ArrayTrait::append()` to add each element.
-            - The order of the elements in the array is the same as the order they are provided in the macro.
-
+            - Elements must be of the same type or convertible to a common type.
+            - Uses `ArrayTrait::new()` to create the array and `ArrayTrait::append()` to add elements.
+            - Elements are added in the order provided.
             "#}
             .to_string(),
         )

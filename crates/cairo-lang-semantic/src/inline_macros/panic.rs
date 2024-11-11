@@ -136,33 +136,26 @@ impl InlineMacroExprPlugin for PanicMacro {
         Some(
             indoc! {r#"
             Terminates the program immediately with an error message.
-    
-            The `panic!` macro is used to halt execution when the program encounters an unrecoverable \ 
-            error. It prints an error message to the standard error output and exits the program. \ 
-            This macro accepts a format string and arguments, similar to the `format!` macro, allowing for \ 
-            detailed error messages.
-    
+            The `panic!` macro halts execution when an unrecoverable error \ 
+            occurs. It prints an error message and exits the program. \ 
+            Accepts a format string and arguments, similar to `format!`, \ 
+            for detailed error messages.
+
             # Syntax
-    
             ```cairo
             panic!();
             panic!("error message");
             panic!("formatted error: {}", value);
             ```
-    
             # Behavior
-    
-            - If called without any arguments, it panics with a default message.
-            - If provided with a message or formatted string, it panics with the given message.
-            - The macro constructs the panic message at runtime using the provided format string and arguments.
-    
+            - Without arguments, panics with a default message.
+            - With a message or formatted string, panics with that message.
+            - Constructs the panic message at runtime using the format string and arguments.
+
             # Examples
-    
             ```cairo
             panic!(); // Panics with a default message.
-    
             panic!("An unexpected error occurred."); // Panics with the provided message.
-    
             let x = 10;
             let y = 20;
             if x + y != 30 {
@@ -172,12 +165,9 @@ impl InlineMacroExprPlugin for PanicMacro {
             ```
     
             # Notes
-    
-            - Use `panic!` for unrecoverable errors where the program cannot safely continue.
-            - Panicking will terminate the current execution flow and unwind the stack, which may skip resource cleanup.
-            - In library code, prefer returning `Result` or `Option` to allow the caller to handle errors.
+            - Use `panic!` only for unrecoverable errors.
+            - In library code, prefer returning `Result` or `Option` to let callers handle errors.
             - Avoid using `panic!` for control flow or expected error conditions.
-    
             "#}
             .to_string(),
         )
