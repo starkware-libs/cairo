@@ -659,6 +659,7 @@ impl SnapIntoSpanWhereToSpanTrait<C, T, +ToSpanTrait<C, T>> of Into<@C, Span<T>>
     }
 }
 
+/// Returns a span from a box of a snapshot of a struct of members of the same type.
 extern fn span_from_tuple<T, impl Info: FixedSizedArrayInfo<T>>(
     struct_like: Box<@T>,
 ) -> @Array<Info::Element> nopanic;
@@ -709,6 +710,7 @@ impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
     }
 }
 
+/// Returns an option to a snapshot of a box of struct of members of the same type from a span.
 extern fn tuple_from_span<T, impl Info: FixedSizedArrayInfo<T>>(
     span: @Array<Info::Element>,
 ) -> Option<@Box<T>> nopanic;
@@ -802,8 +804,8 @@ impl SpanIterCopy<T> of Copy<SpanIter<T>>;
 impl SpanIterator<T> of Iterator<SpanIter<T>> {
     /// The type of the elements being iterated over.
     type Item = @T;
-    // Advances the iterator and returns the next value. Returns `Option::None` when iteration is
-    // finished.
+    /// Advances the iterator and returns the next value. Returns `Option::None` when iteration is
+    /// finished.
     fn next(ref self: SpanIter<T>) -> Option<@T> {
         self.span.pop_front()
     }
@@ -811,7 +813,6 @@ impl SpanIterator<T> of Iterator<SpanIter<T>> {
 
 impl SpanIntoIterator<T> of crate::iter::IntoIterator<Span<T>> {
     type IntoIter = SpanIter<T>;
-    /// The kind of iterator we are turning this into.
     fn into_iter(self: Span<T>) -> SpanIter<T> {
         SpanIter { span: self }
     }
@@ -832,8 +833,8 @@ impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone
 impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
     /// The type of the elements being iterated over.
     type Item = T;
-    // Advances the iterator and returns the next value. Returns `Option::None` when iteration is
-    // finished.
+    /// Advances the iterator and returns the next value. Returns `Option::None` when iteration is
+    /// finished.
     fn next(ref self: ArrayIter<T>) -> Option<T> {
         self.array.pop_front()
     }
@@ -841,7 +842,6 @@ impl ArrayIterator<T> of Iterator<ArrayIter<T>> {
 
 impl ArrayIntoIterator<T> of crate::iter::IntoIterator<Array<T>> {
     type IntoIter = ArrayIter<T>;
-    /// The kind of iterator we are turning this into.
     fn into_iter(self: Array<T>) -> ArrayIter<T> {
         ArrayIter { array: self }
     }
