@@ -116,48 +116,36 @@ impl InlineMacroExprPlugin for AssertMacro {
         Some(
             indoc! {r#"
             Asserts that a condition is true at runtime.
-    
-            The `assert!` macro is used to check whether a boolean expression evaluates to `true`. \ 
-            If the expression evaluates to `false`, the macro will cause the program to panic, \ 
-            optionally displaying a custom error message. This is useful for debugging and ensuring \ 
-            that certain conditions hold during execution.
-    
+            The `assert!` macro checks a boolean expression; if it evaluates to `false`, \ 
+            it panics with an optional custom error message. Useful for debugging and \ 
+            ensuring conditions hold during execution.
+
             # Syntax
-    
             ```cairo
             assert!(condition);
             assert!(condition, "error message");
             assert!(condition, "formatted error: {}", value);
             ```
-    
             # Parameters
-    
-            - `condition`: A boolean expression to evaluate. The assertion passes if this expression is `true`.
-            - `format_string` (optional): A string literal that may include format placeholders.
+            - `condition`: A boolean expression to evaluate.
+            - `format_string` (optional): A string literal for format placeholders.
             - `args` (optional): Arguments corresponding to the format placeholders in the `format_string`.
     
             # Examples
-    
             ```cairo
             assert!(2 + 2 == 4); // Passes, does nothing.
-    
             assert!(2 + 2 == 5); // Panics with "assertion failed: `2 + 2 == 5`."
-    
             let age = 18;
             assert!(age >= 21, "Age must be at least 21, found {}", age);
             // Panics with "Age must be at least 21, found 18."
-    
             let x = -1;
             assert!(x >= 0, "Invalid value: x = {}", x);
             // Panics with "Invalid value: x = -1."
             ```
-    
             # Notes
-    
-            - **Use Cases**: Ideal for catching programming errors and enforcing invariants.
-            - **Performance**: Assertions can impact performance; consider using `debug_assert!` for checks in debug mode only.
-            - **Error Handling**: For recoverable errors, use proper error handling mechanisms like `Result` or `Option` instead of panicking.
-    
+            - Use to catch programming errors and enforce invariants.
+            - May impact performance; consider `debug_assert!` for debug-only checks.
+            - For recoverable errors, prefer using `Result` or `Option` instead of panicking.
             "#}
             .to_string(),
         )
