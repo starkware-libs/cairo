@@ -93,7 +93,7 @@ use class_hash::{
     class_hash_try_from_felt252,
 };
 
-/// Execution informations module.
+/// Execution information module.
 /// Not `pub` on purpose, only used for direct reexport by the next line.
 mod info;
 pub use info::{
@@ -200,7 +200,7 @@ pub trait SyscallResultTrait<T> {
     ///
     /// # Panics
     ///
-    /// Panics if the syscall call is not successfull.
+    /// Panics if the syscall call is not successful.
     ///
     /// # Examples
     ///
