@@ -533,6 +533,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UseStarEmptyPath => {
                 "`*` in `use` items is not allowed for empty path.".into()
             }
+            SemanticDiagnosticKind::InaccessiblePath => "Item is inaccessible.".into(),
             SemanticDiagnosticKind::TraitInTraitMustBeExplicit => {
                 "In a trait, paths of the same trait must be fully explicit. Either use `Self` if \
                  this is the intention, or explicitly specify all the generic arguments."
@@ -1138,6 +1139,7 @@ pub enum SemanticDiagnosticKind {
     PathNotFound(NotFoundItemType),
     AmbiguousPath(Vec<ModuleItemId>),
     UseStarEmptyPath,
+    InaccessiblePath,
     TraitInTraitMustBeExplicit,
     ImplInImplMustBeExplicit,
     TraitItemForbiddenInTheTrait,
