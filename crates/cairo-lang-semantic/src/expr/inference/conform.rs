@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use std::hash::Hash;
 
 use cairo_lang_defs::ids::{TraitConstantId, TraitTypeId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
 
@@ -17,7 +17,7 @@ use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
 use crate::items::trt::ConcreteTraitImplId;
 use crate::substitution::SemanticRewriter;
-use crate::types::{ImplTypeId, peel_snapshots};
+use crate::types::{ClosureTypeLongId, ImplTypeId, peel_snapshots};
 use crate::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
     FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
@@ -159,7 +159,20 @@ impl InferenceConform for Inference<'_> {
                 if closure0.wrapper_location != closure1.wrapper_location {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 }
-
+                let param_tys = zip_eq(closure0.param_tys, closure1.param_tys)
+                    .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let captured_types = zip_eq(closure0.captured_types, closure1.captured_types)
+                    .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let ret_ty = self.conform_ty(closure0.ret_ty, closure1.ret_ty)?;
+                let closure0 = ClosureTypeLongId {
+                    param_tys,
+                    ret_ty,
+                    captured_types,
+                    wrapper_location: closure0.wrapper_location,
+                    parent_function: closure0.parent_function,
+                };
                 Ok((TypeLongId::Closure(closure0).intern(self.db), n_snapshots))
             }
             TypeLongId::FixedSizeArray { type_id, size } => {
@@ -608,7 +621,7 @@ impl Inference<'_> {
         &mut self,
         id: ImplVarId,
         key: K,
-        get_map: impl Fn(&mut ImplVarTraitItemMappings) -> &mut HashMap<K, V>,
+        get_map: impl Fn(&mut ImplVarTraitItemMappings) -> &mut OrderedHashMap<K, V>,
         new_var: impl FnOnce(&mut Self, Option<SyntaxStablePtrId>) -> V,
     ) -> V
     where
