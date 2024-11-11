@@ -225,12 +225,13 @@ fn get_branch_requirements<
         .collect()
 }
 
-/// For every `branch_align`, `withdraw_gas` and `redeposit_gas` statements, computes the required
-/// variables.
+/// For every `branch_align`, `withdraw_gas`, `redeposit_gas` and `coupon_refund` statements,
+/// computes the required variables.
 ///
 /// * For `branch_align` this is the amount of cost *reduced* from the wallet.
 /// * For `withdraw_gas` this is the amount that should be withdrawn and added to the wallet.
 /// * For `redeposit_gas` this is the amount that should be redeposited and removed from the wallet.
+/// * For `coupon_refund` this is the amount that should be refunded and removed from the wallet.
 fn analyze_gas_statements<
     CostType: CostTypeTrait,
     SpecificCostContext: SpecificCostContextTrait<CostType>,
