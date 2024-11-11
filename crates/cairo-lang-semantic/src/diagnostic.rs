@@ -3,8 +3,9 @@ use std::fmt::Display;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleItemId, NamedLanguageElementId,
-    StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitImplId, UseId,
+    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleId, ModuleItemId,
+    NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    TraitImplId, UseId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
@@ -558,8 +559,24 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
             }
-            SemanticDiagnosticKind::ItemNotVisible(item_id) => {
-                format!("Item `{}` is not visible in this context.", item_id.full_path(db.upcast()))
+            SemanticDiagnosticKind::ItemNotVisible(item_id, containing_modules) => {
+                format!(
+                    "Item `{}` is not visible in this context{}.",
+                    item_id.full_path(db.upcast()),
+                    if containing_modules.is_empty() {
+                        "".to_string()
+                    } else if let [module_id] = &containing_modules[..] {
+                        format!(" through module `{}`", module_id.full_path(db.upcast()))
+                    } else {
+                        format!(
+                            " through any of the modules: {}",
+                            containing_modules
+                                .iter()
+                                .map(|module_id| format!("`{}`", module_id.full_path(db.upcast())))
+                                .join(", ")
+                        )
+                    }
+                )
             }
             SemanticDiagnosticKind::UnusedImport(use_id) => {
                 format!("Unused import: `{}`", use_id.full_path(db.upcast()))
@@ -1144,7 +1161,7 @@ pub enum SemanticDiagnosticKind {
     TraitItemForbiddenInItsImpl,
     ImplItemForbiddenInTheImpl,
     SuperUsedInRootModule,
-    ItemNotVisible(ModuleItemId),
+    ItemNotVisible(ModuleItemId, Vec<ModuleId>),
     UnusedImport(UseId),
     RedundantModifier {
         current_modifier: SmolStr,
