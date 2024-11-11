@@ -119,11 +119,7 @@ pub fn priv_module_semantic_data(
         .map(|(global_use_id, use_path_star)| {
             let item = ast::UsePath::Star(use_path_star.clone()).get_item(syntax_db);
             let visibility = item.visibility(syntax_db);
-            // TODO(Tomer-StarkWare): Add implementation for public imports.
-            if !matches!(visibility, ast::Visibility::Default(_)) {
-                diagnostics.report(use_path_star, SemanticDiagnosticKind::NonPrivateUseStar);
-            }
-            (*global_use_id, Visibility::Private)
+            (*global_use_id, Visibility::from_ast(db.upcast(), &mut diagnostics, &visibility))
         })
         .collect();
     Ok(Arc::new(ModuleSemanticData { items, global_uses, diagnostics: diagnostics.build() }))
@@ -145,6 +141,15 @@ pub fn module_item_info_by_name(
 ) -> Maybe<Option<ModuleItemInfo>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).cloned())
+}
+
+/// Get the imported global uses of a module, and their visibility.
+pub fn get_module_global_uses(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<GlobalUseId, Visibility>> {
+    let module_data = db.priv_module_semantic_data(module_id)?;
+    Ok(module_data.global_uses.clone())
 }
 
 /// Query implementation of [SemanticGroup::module_all_used_items].

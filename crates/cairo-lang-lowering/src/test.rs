@@ -111,7 +111,7 @@ fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
 fn test_location_and_diagnostics() {
     let db = &mut LoweringDatabaseForTesting::default();
 
-    let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;").unwrap();
+    let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;", None).unwrap();
 
     let function_body = db.function_body(test_expr.function_id).unwrap();
 
