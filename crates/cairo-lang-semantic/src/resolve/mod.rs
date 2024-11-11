@@ -18,6 +18,7 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern, extract_matches, require, try_extract_matches};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
@@ -46,11 +47,12 @@ use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
     ConcreteImplId, ConcreteImplLongId, ImplImplId, ImplLongId, ImplLookupContext,
 };
-use crate::items::module::ModuleItemInfo;
+use crate::items::module::{ModuleItemInfo, get_module_global_uses};
 use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
     ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
+use crate::items::visibility::peek_visible_in;
 use crate::items::{TraitOrImplContext, visibility};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{ImplTypeId, are_coupons_enabled, resolve_type};
@@ -240,6 +242,17 @@ enum UseStarResult {
     AmbiguousPath(Vec<ModuleItemId>),
     /// The path was not found, considering only the `use *` imports.
     PathNotFound,
+    /// Item is not visible in the current module, considering only the `use *` imports.
+    ItemNotVisible(ModuleItemId),
+}
+
+/// The modules that are imported by a module, using global uses.
+struct ImportedModules {
+    /// The imported modules that have a path where each step is visible by the previous module.
+    accessible_modules: OrderedHashSet<(ModuleId, ModuleId)>,
+    // TODO(Tomer-StarkWare): consider changing from all_modules to inaccessible_modules
+    /// All the imported modules.
+    all_modules: OrderedHashSet<ModuleId>,
 }
 
 /// A trait for things that can be interpreted as a path of segments.
@@ -487,6 +500,9 @@ impl<'db> Resolver<'db> {
                     ResolvedBase::Ambiguous(module_items) => {
                         return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
                     }
+                    ResolvedBase::ItemNotVisible(module_item_id) => {
+                        return Err(diagnostics.report(&identifier, ItemNotVisible(module_item_id)));
+                    }
                 }
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
@@ -537,6 +553,11 @@ impl<'db> Resolver<'db> {
                         ResolvedBase::Ambiguous(module_items) => {
                             return Err(
                                 diagnostics.report(&identifier, AmbiguousPath(module_items))
+                            );
+                        }
+                        ResolvedBase::ItemNotVisible(module_item_id) => {
+                            return Err(
+                                diagnostics.report(&identifier, ItemNotVisible(module_item_id))
                             );
                         }
                     }
@@ -663,6 +684,9 @@ impl<'db> Resolver<'db> {
                     ResolvedBase::Ambiguous(module_items) => {
                         return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
                     }
+                    ResolvedBase::ItemNotVisible(module_item_id) => {
+                        return Err(diagnostics.report(&identifier, ItemNotVisible(module_item_id)));
+                    }
                 }
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
@@ -690,6 +714,9 @@ impl<'db> Resolver<'db> {
                     }
                     ResolvedBase::Ambiguous(module_items) => {
                         return Err(diagnostics.report(&identifier, AmbiguousPath(module_items)));
+                    }
+                    ResolvedBase::ItemNotVisible(module_item_id) => {
+                        return Err(diagnostics.report(&identifier, ItemNotVisible(module_item_id)));
                     }
                 }
             }
@@ -738,6 +765,9 @@ impl<'db> Resolver<'db> {
                 }
                 UseStarResult::PathNotFound => {
                     Err(diagnostics.report(identifier, PathNotFound(item_type)))
+                }
+                UseStarResult::ItemNotVisible(module_item_id) => {
+                    Err(diagnostics.report(identifier, ItemNotVisible(module_item_id)))
                 }
             },
         }
@@ -1099,13 +1129,23 @@ impl<'db> Resolver<'db> {
     ) -> UseStarResult {
         let mut item_info = None;
         let mut fitted_module_items: OrderedHashSet<ModuleItemId> = OrderedHashSet::default();
-        for imported_module in self.module_use_star_modules(module_id) {
-            let inner_item_info = self
-                .db
-                .module_item_info_by_name(imported_module, identifier.text(self.db.upcast()));
-            if let Ok(Some(inner_item_info)) = inner_item_info {
-                self.check_item_feature_usability(diagnostics, identifier, &inner_item_info);
-                self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
+        let imported_modules = self.module_use_star_modules(module_id);
+        let mut is_accessible = false;
+        for (star_module_id, item_module_id) in imported_modules.accessible_modules {
+            if let Some(inner_item_info) =
+                self.resolve_item_in_imported_module(item_module_id, identifier, diagnostics)
+            {
+                item_info = Some(inner_item_info.clone());
+                is_accessible |=
+                    self.is_item_visible(item_module_id, &inner_item_info, star_module_id)
+                        && self.is_item_feature_usable(&inner_item_info);
+                fitted_module_items.insert(inner_item_info.item_id);
+            }
+        }
+        for star_module_id in imported_modules.all_modules {
+            if let Some(inner_item_info) =
+                self.resolve_item_in_imported_module(star_module_id, identifier, diagnostics)
+            {
                 item_info = Some(inner_item_info.clone());
                 fitted_module_items.insert(inner_item_info.item_id);
             }
@@ -1114,33 +1154,79 @@ impl<'db> Resolver<'db> {
             return UseStarResult::AmbiguousPath(fitted_module_items.iter().cloned().collect());
         }
         match item_info {
-            Some(item_info) => UseStarResult::UniquePathFound(item_info),
+            Some(item_info) => {
+                if is_accessible {
+                    UseStarResult::UniquePathFound(item_info)
+                } else {
+                    UseStarResult::ItemNotVisible(item_info.item_id)
+                }
+            }
             None => UseStarResult::PathNotFound,
         }
     }
 
-    // TODO(Tomer-StarkWare): Add reference to the visibility of the module.
+    /// Resolves an item in an imported module.
+    fn resolve_item_in_imported_module(
+        &mut self,
+        module_id: ModuleId,
+        identifier: &ast::TerminalIdentifier,
+        diagnostics: &mut SemanticDiagnostics,
+    ) -> Option<ModuleItemInfo> {
+        let inner_item_info =
+            self.db.module_item_info_by_name(module_id, identifier.text(self.db.upcast()));
+        if let Ok(Some(inner_item_info)) = inner_item_info {
+            self.validate_item_usability(diagnostics, module_id, identifier, &inner_item_info);
+            self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
+            return Some(inner_item_info);
+        }
+        None
+    }
+
     /// Returns the modules that are imported with `use *` in the current module.
-    fn module_use_star_modules(&self, module_id: ModuleId) -> OrderedHashSet<ModuleId> {
-        let mut modules = OrderedHashSet::default();
-        let mut visited: OrderedHashSet<ModuleId> = OrderedHashSet::default();
-        let mut stack = vec![module_id];
-        while let Some(module_id) = stack.pop() {
-            if !visited.insert(module_id) {
+    fn module_use_star_modules(&self, module_id: ModuleId) -> ImportedModules {
+        let mut visited = UnorderedHashSet::<_>::default();
+        let mut stack = vec![(module_id, module_id)];
+        let mut accessible_modules = OrderedHashSet::default();
+        while let Some((user_module, containing_module)) = stack.pop() {
+            if !visited.insert((user_module, containing_module)) {
                 continue;
             }
-            let Ok(glob_uses) = self.db.module_global_uses(module_id) else {
+            let Ok(glob_uses) = get_module_global_uses(self.db, containing_module) else {
                 continue;
             };
-            for glob_use in glob_uses.keys() {
-                let Ok(module_id) = self.db.priv_global_use_imported_module(*glob_use) else {
+            for (glob_use, item_visibility) in glob_uses.iter() {
+                let Ok(module_id_found) = self.db.priv_global_use_imported_module(*glob_use) else {
                     continue;
                 };
-                stack.push(module_id);
-                modules.insert(module_id);
+                if peek_visible_in(
+                    self.db.upcast(),
+                    *item_visibility,
+                    containing_module,
+                    user_module,
+                ) {
+                    stack.push((containing_module, module_id_found));
+                    accessible_modules.insert((containing_module, module_id_found));
+                }
             }
         }
-        modules
+
+        let mut visited = UnorderedHashSet::<_>::default();
+        let mut stack = vec![module_id];
+        let mut all_modules = OrderedHashSet::default();
+        while let Some(curr_module_id) = stack.pop() {
+            if !visited.insert(curr_module_id) {
+                continue;
+            }
+            all_modules.insert(curr_module_id);
+            let Ok(glob_uses) = get_module_global_uses(self.db, curr_module_id) else { continue };
+            for glob_use in glob_uses.keys() {
+                let Ok(module_id_found) = self.db.priv_global_use_imported_module(*glob_use) else {
+                    continue;
+                };
+                stack.push(module_id_found);
+            }
+        }
+        ImportedModules { accessible_modules, all_modules }
     }
 
     /// Given the current resolved item, resolves the next segment.
@@ -1257,6 +1343,9 @@ impl<'db> Resolver<'db> {
                 return ResolvedBase::Ambiguous(module_items);
             }
             UseStarResult::PathNotFound => {}
+            UseStarResult::ItemNotVisible(module_item_id) => {
+                return ResolvedBase::ItemNotVisible(module_item_id);
+            }
         }
         // If the first segment is `core` - and it was not overridden by a dependency - using it.
         if ident == CORELIB_CRATE_NAME {
@@ -1573,39 +1662,9 @@ impl<'db> Resolver<'db> {
         identifier: &ast::TerminalIdentifier,
         item_info: &ModuleItemInfo,
     ) {
-        self.check_item_visibility(diagnostics, containing_module_id, identifier, item_info);
-        self.check_item_feature_usability(diagnostics, identifier, item_info);
-    }
-
-    /// Checks if an item is visible from the current module.
-    fn check_item_visibility(
-        &self,
-        diagnostics: &mut SemanticDiagnostics,
-        containing_module_id: ModuleId,
-        identifier: &ast::TerminalIdentifier,
-        item_info: &ModuleItemInfo,
-    ) {
-        let db = self.db.upcast();
-        if !self.ignore_visibility_checks(containing_module_id) {
-            let user_module = self.module_file_id.0;
-            if !visibility::peek_visible_in(
-                db,
-                item_info.visibility,
-                containing_module_id,
-                user_module,
-            ) {
-                diagnostics.report(identifier, ItemNotVisible(item_info.item_id));
-            }
+        if !self.is_item_visible(containing_module_id, item_info, self.module_file_id.0) {
+            diagnostics.report(identifier, ItemNotVisible(item_info.item_id));
         }
-    }
-
-    /// Checks if an item uses a feature that is not allowed.
-    fn check_item_feature_usability(
-        &self,
-        diagnostics: &mut SemanticDiagnostics,
-        identifier: &ast::TerminalIdentifier,
-        item_info: &ModuleItemInfo,
-    ) {
         match &item_info.feature_kind {
             FeatureKind::Unstable { feature, note }
                 if !self.data.feature_config.allowed_features.contains(feature) =>
@@ -1633,6 +1692,35 @@ impl<'db> Resolver<'db> {
                 });
             }
             _ => {}
+        }
+    }
+
+    /// Checks if an item is visible from the current module.
+    fn is_item_visible(
+        &self,
+        containing_module_id: ModuleId,
+        item_info: &ModuleItemInfo,
+        user_module: ModuleId,
+    ) -> bool {
+        let db = self.db.upcast();
+        self.ignore_visibility_checks(containing_module_id)
+            || visibility::peek_visible_in(
+                db,
+                item_info.visibility,
+                containing_module_id,
+                user_module,
+            )
+    }
+
+    /// Checks if an item uses a feature that is not allowed.
+    fn is_item_feature_usable(&self, item_info: &ModuleItemInfo) -> bool {
+        match &item_info.feature_kind {
+            FeatureKind::Unstable { feature, .. }
+            | FeatureKind::Deprecated { feature, .. }
+            | FeatureKind::Internal { feature, .. } => {
+                self.data.feature_config.allowed_features.contains(feature)
+            }
+            _ => true,
         }
     }
 
@@ -1890,6 +1978,8 @@ enum ResolvedBase {
     FoundThroughGlobalUse { item_info: ModuleItemInfo, containing_module: ModuleId },
     /// The base module is ambiguous.
     Ambiguous(Vec<ModuleItemId>),
+    /// The base module is inaccessible.
+    ItemNotVisible(ModuleItemId),
 }
 
 /// The callbacks to be used by `resolve_path_inner`.
