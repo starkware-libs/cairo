@@ -5,7 +5,7 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_defs::plugin_utils::unsupported_bracket_diagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 
 #[derive(Debug, Default)]
 pub struct ArrayMacro;
@@ -48,5 +48,46 @@ impl InlineMacroExprPlugin for ArrayMacro {
             }),
             diagnostics: vec![],
         }
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Creates a new array containing the provided elements.
+    
+            The `array!` macro allows you to create an array by specifying a list of elements. \ 
+            The elements are added to a new array in the order they are provided.
+    
+            # Syntax
+    
+            ```cairo
+            array![element1, element2, element3, ...]
+            ```
+    
+            # Returns
+    
+            An array containing the specified elements.
+    
+            # Examples
+    
+            ```cairo
+            let arr = array![]; // Creates an empty array.
+    
+            let arr = array![1, 2, 3]; // Creates an array containing 1, 2, and 3.
+    
+            let x = 5;
+            let y = 10;
+            let arr = array![x, y, x + y]; // Creates an array containing 5, 10, and 15.
+            ```
+    
+            # Notes
+    
+            - All elements must be of the same type or compatible types that can be coerced to a common type.
+            - The macro internally uses `ArrayTrait::new()` to create a new array and `ArrayTrait::append()` to add each element.
+            - The order of the elements in the array is the same as the order they are provided in the macro.
+
+            "#}
+            .to_string(),
+        )
     }
 }

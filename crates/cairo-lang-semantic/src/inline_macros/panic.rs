@@ -6,8 +6,8 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
 use cairo_lang_syntax::node::ast::{Arg, WrappedArgList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
-use indoc::formatdoc;
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use indoc::{formatdoc, indoc};
 use num_bigint::BigUint;
 
 use super::write::FELT252_BYTES;
@@ -130,5 +130,56 @@ impl InlineMacroExprPlugin for PanicMacro {
             }),
             diagnostics: vec![],
         }
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Terminates the program immediately with an error message.
+    
+            The `panic!` macro is used to halt execution when the program encounters an unrecoverable \ 
+            error. It prints an error message to the standard error output and exits the program. \ 
+            This macro accepts a format string and arguments, similar to the `format!` macro, allowing for \ 
+            detailed error messages.
+    
+            # Syntax
+    
+            ```cairo
+            panic!();
+            panic!("error message");
+            panic!("formatted error: {}", value);
+            ```
+    
+            # Behavior
+    
+            - If called without any arguments, it panics with a default message.
+            - If provided with a message or formatted string, it panics with the given message.
+            - The macro constructs the panic message at runtime using the provided format string and arguments.
+    
+            # Examples
+    
+            ```cairo
+            panic!(); // Panics with a default message.
+    
+            panic!("An unexpected error occurred."); // Panics with the provided message.
+    
+            let x = 10;
+            let y = 20;
+            if x + y != 30 {
+                panic!("Math is broken: {} + {} != 30", x, y);
+                // Panics with "Math is broken: 10 + 20 != 30".
+            }
+            ```
+    
+            # Notes
+    
+            - Use `panic!` for unrecoverable errors where the program cannot safely continue.
+            - Panicking will terminate the current execution flow and unwind the stack, which may skip resource cleanup.
+            - In library code, prefer returning `Result` or `Option` to allow the caller to handle errors.
+            - Avoid using `panic!` for control flow or expected error conditions.
+    
+            "#}
+            .to_string(),
+        )
     }
 }
