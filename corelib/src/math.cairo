@@ -157,6 +157,18 @@ extern fn u256_guarantee_inv_mod_n(
 
 /// Returns the inverse of `a` modulo `n`, or None if `a` is not invertible modulo `n`.
 /// All `a`s will be considered not invertible for `n == 1`.
+///
+/// # Examples
+///
+/// ```
+/// use core::math::u256_inv_mod;
+///
+/// let a : u256 = 17;
+/// let n : NonZero<u256> = 29;
+///
+/// let result = u256_inv_mod(a, n);
+/// assert!(result.uwrap() == 12);
+/// ```
 #[inline]
 pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     match u256_guarantee_inv_mod_n(a, n) {
@@ -166,11 +178,37 @@ pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
 }
 
 /// Returns `a / b (mod n)`, or None if `b` is not invertible modulo `n`.
+///
+/// # Examples
+///
+/// ```
+/// use core::math::u256_inv_mod;
+///
+/// let a: u256 = 17;
+/// let b:  u256 = 7;
+/// let n: NonZero<u256> = 29;
+///
+/// let result = u256_div_mod_n(a, b, n);
+/// assert!(result.unwrap() == 19);
+/// ```
 pub fn u256_div_mod_n(a: u256, b: u256, n: NonZero<u256>) -> Option<u256> {
     Option::Some(u256_mul_mod_n(a, u256_inv_mod(b, n)?.into(), n))
 }
 
 /// Returns `a * b (mod n)`.
+///
+/// # Examples
+///
+/// ```
+/// use core::math::u256_mul_mod_n;
+///
+/// let a: u256 = 17;
+/// let b:  u256 = 23;
+/// let n: NonZero<u256> = 29;
+///
+/// let result = u256_mul_mod_n(a, b, n);
+/// assert!(result == 14);
+/// ```
 pub fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
     let (_, r) = u512_safe_div_rem_by_u256(u256_wide_mul(a, b), n);
     r
@@ -183,9 +221,11 @@ trait Oneable<T> {
     /// Returns the multiplicative identity element of Self, 1.
     #[must_use]
     fn one() -> T;
+
     /// Returns whether self is equal to 1, the multiplicative identity element.
     #[must_use]
     fn is_one(self: T) -> bool;
+
     /// Returns whether self is not equal to 1, the multiplicative identity element.
     #[must_use]
     fn is_non_one(self: T) -> bool;
@@ -198,10 +238,12 @@ pub(crate) mod one_based {
         fn one() -> T {
             OneImpl::one()
         }
+
         #[inline]
         fn is_one(self: T) -> bool {
             OneImpl::is_one(@self)
         }
+
         #[inline]
         fn is_non_one(self: T) -> bool {
             OneImpl::is_non_one(@self)
