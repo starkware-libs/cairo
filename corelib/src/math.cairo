@@ -1,3 +1,29 @@
+//! Math module that provides a set of mathematical utilities and functions for working with large
+//! integers.
+//!
+//! ## Extended GCD
+//!
+//! The `egcd` function computes the extended GCD of two numbers `a` and `b`, returning the GCD `g`
+//! and the Bezout coefficients `s` and `t` such that `g = s*a - t*b` or `g = t*b - s*a`, depending
+//! on the `sub_direction` flag.
+//!
+//! ## Modular Inverse
+//!
+//! The `inv_mod` function computes the modular inverse of a number `a` modulo a given modulus `n`,
+//! if it exists. The inverse is guaranteed to be between 1 and `n-1` (inclusive).
+//!
+//! ## Modular Division and Multiplication
+//!
+//! The `u256_div_mod_n` function performs modular division, computing `a / b (mod n)`, if `b` is
+//! invertible modulo `n`.
+//! The `u256_mul_mod_n` function performs modular multiplication, computing `a * b (mod n)`.
+//!
+//! ## Oneable Trait
+//!
+//! The `Oneable` trait defines the behavior for types that have a multiplicative identity element
+//! (1). It provides methods for getting the identity element, checking if a value is equal to 1,
+//! and checking if a value is not equal to 1.
+
 #[allow(unused_imports)]
 use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 #[allow(unused_imports)]
@@ -10,12 +36,23 @@ use crate::RangeCheck;
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
 // supported.
-/// Extended GCD: finds (g, s, t, sub_direction) such that
+/// Extended GCD: finds (g, s, t, sub_direction) such that:
 /// `g = gcd(a, b) = s * a - t * b` if `sub_direction` is true, or
 /// `g = gcd(a, b) = t * b - s * a` if `sub_direction` is false.
 /// `(s, -t)` or `(-s, t)` are the Bezout coefficients (according to `sub_direction`).
-///
 /// Uses the Extended Euclidean algorithm.
+///
+/// # Examples
+///
+/// ```
+/// use core::math::egcd;
+///
+/// let x : NonZero<u32> = 10;
+/// let y : NonZero<u32> = 15;
+///
+/// let (result, _, _, _) = egcd(x, y);
+/// assert!(result == 5);
+/// ```
 pub fn egcd<
     T,
     +Copy<T>,
@@ -47,9 +84,21 @@ pub fn egcd<
 }
 
 // TODO(yuval): use signed integers once supported.
-/// Returns `s` the inverse of `a` modulo `n` such that `as`≡ 1 modulo `n`, or None if `gcd(a, n)
-/// > 1`.
-/// `s` is guaranteed to be between `1` and `n - 1` (inclusive).
+/// Computes `s` the inverse of `a` modulo `n` such that `as`≡ 1 modulo `n`, or None if `gcd(a, n)
+/// > 1`. `s` is guaranteed to be between `1` and `n - 1` (inclusive).
+/// Returns `s` or `n - s` depending on the `sub_direction` when computing `egcd(a, n)`.
+///
+/// # Examples
+///
+/// ```
+/// use core::math::inv_mod;
+///
+/// let a : NonZero<u32> = 17;
+/// let n : NonZero<u32> = 29;
+///
+/// let result = inv_mod(a, n);
+/// assert!(result.uwrap() == 12);
+/// ```
 pub fn inv_mod<
     T,
     +Copy<T>,
@@ -128,6 +177,7 @@ pub fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
 }
 
 // === Oneable ===
+
 /// A trait for types that have a multiplicative identity element.
 trait Oneable<T> {
     /// Returns the multiplicative identity element of Self, 1.
