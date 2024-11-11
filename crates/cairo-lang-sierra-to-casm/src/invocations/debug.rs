@@ -26,7 +26,7 @@ fn build_print(
         buffer(0) arr_end;
     };
     casm_build_extend! {casm_builder,
-        hint DebugPrint {start: arr_start, end: arr_end} into {};
+        hint DebugPrint {start: arr_start, end: arr_end};
         // Since we can't have hints not carried on actual instructions.
         ap += 0;
     };
