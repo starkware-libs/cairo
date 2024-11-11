@@ -1,3 +1,5 @@
+//! Lib module is the main entrypoint for the Cairo core library.
+
 pub mod traits;
 #[feature("deprecated-index-traits")]
 #[feature("deprecated-op-assign-traits")]
