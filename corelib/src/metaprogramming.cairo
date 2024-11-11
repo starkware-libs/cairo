@@ -1,3 +1,5 @@
+//! Metaprogramming module that provides metaprogramming utilities for working with tuples.
+
 /// A trait that can be used to disable implementations based on the types of the generic args.
 /// Assumes that `TypeEqualImpl` is the only implementation of this trait.
 pub trait TypeEqual<S, T> {}
@@ -7,6 +9,7 @@ impl TypeEqualImpl<T> of TypeEqual<T, T>;
 /// Marker trait for types that are tuples.
 /// Currently supports tuples of size 0 to 10.
 pub(crate) trait IsTuple<T>;
+
 impl IsTupleTupleSize0 of IsTuple<()>;
 impl IsTupleTupleSize1<E0> of IsTuple<(E0,)>;
 impl IsTupleTupleSize2<E0, E1> of IsTuple<(E0, E1)>;
@@ -53,6 +56,7 @@ pub(crate) trait TupleSplit<T> {
     /// Reconstructs the tuple from the head and the rest.
     fn reconstruct(head: Self::Head, rest: Self::Rest) -> T nopanic;
 }
+
 impl TupleSplitTupleSize1<E0> of TupleSplit<(E0,)> {
     type Head = E0;
     type Rest = ();
@@ -64,6 +68,7 @@ impl TupleSplitTupleSize1<E0> of TupleSplit<(E0,)> {
         (head,)
     }
 }
+
 impl TupleSplitTupleSize2<E0, E1> of TupleSplit<(E0, E1)> {
     type Head = E0;
     type Rest = (E1,);
@@ -76,6 +81,7 @@ impl TupleSplitTupleSize2<E0, E1> of TupleSplit<(E0, E1)> {
         (head, e1)
     }
 }
+
 impl TupleSplitTupleSize3<E0, E1, E2> of TupleSplit<(E0, E1, E2)> {
     type Head = E0;
     type Rest = (E1, E2);
@@ -88,6 +94,7 @@ impl TupleSplitTupleSize3<E0, E1, E2> of TupleSplit<(E0, E1, E2)> {
         (head, e1, e2)
     }
 }
+
 impl TupleSplitTupleSize4<E0, E1, E2, E3> of TupleSplit<(E0, E1, E2, E3)> {
     type Head = E0;
     type Rest = (E1, E2, E3);
@@ -100,6 +107,7 @@ impl TupleSplitTupleSize4<E0, E1, E2, E3> of TupleSplit<(E0, E1, E2, E3)> {
         (head, e1, e2, e3)
     }
 }
+
 impl TupleSplitTupleSize5<E0, E1, E2, E3, E4> of TupleSplit<(E0, E1, E2, E3, E4)> {
     type Head = E0;
     type Rest = (E1, E2, E3, E4);
@@ -112,6 +120,7 @@ impl TupleSplitTupleSize5<E0, E1, E2, E3, E4> of TupleSplit<(E0, E1, E2, E3, E4)
         (head, e1, e2, e3, e4)
     }
 }
+
 impl TupleSplitTupleSize6<E0, E1, E2, E3, E4, E5> of TupleSplit<(E0, E1, E2, E3, E4, E5)> {
     type Head = E0;
     type Rest = (E1, E2, E3, E4, E5);
@@ -124,6 +133,7 @@ impl TupleSplitTupleSize6<E0, E1, E2, E3, E4, E5> of TupleSplit<(E0, E1, E2, E3,
         (head, e1, e2, e3, e4, e5)
     }
 }
+
 impl TupleSplitTupleSize7<E0, E1, E2, E3, E4, E5, E6> of TupleSplit<(E0, E1, E2, E3, E4, E5, E6)> {
     type Head = E0;
     type Rest = (E1, E2, E3, E4, E5, E6);
@@ -138,6 +148,7 @@ impl TupleSplitTupleSize7<E0, E1, E2, E3, E4, E5, E6> of TupleSplit<(E0, E1, E2,
         (head, e1, e2, e3, e4, e5, e6)
     }
 }
+
 impl TupleSplitTupleSize8<
     E0, E1, E2, E3, E4, E5, E6, E7,
 > of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7)> {
@@ -156,6 +167,7 @@ impl TupleSplitTupleSize8<
         (head, e1, e2, e3, e4, e5, e6, e7)
     }
 }
+
 impl TupleSplitTupleSize9<
     E0, E1, E2, E3, E4, E5, E6, E7, E8,
 > of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8)> {
@@ -174,6 +186,7 @@ impl TupleSplitTupleSize9<
         (head, e1, e2, e3, e4, e5, e6, e7, e8)
     }
 }
+
 impl TupleSplitTupleSize10<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9,
 > of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9)> {
@@ -192,6 +205,7 @@ impl TupleSplitTupleSize10<
         (head, e1, e2, e3, e4, e5, e6, e7, e8, e9)
     }
 }
+
 impl TupleSplitTupleSize11<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10,
 > of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10)> {
@@ -210,6 +224,7 @@ impl TupleSplitTupleSize11<
         (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)
     }
 }
+
 impl TupleSplitTupleSize12<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11,
 > of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11)> {
@@ -228,6 +243,7 @@ impl TupleSplitTupleSize12<
         (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)
     }
 }
+
 impl TupleSplitTupleSize13<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12,
 > of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12)> {
@@ -246,6 +262,7 @@ impl TupleSplitTupleSize13<
         (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12)
     }
 }
+
 impl TupleSplitTupleSize14<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13,
 > of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13)> {
@@ -264,6 +281,7 @@ impl TupleSplitTupleSize14<
         (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13)
     }
 }
+
 impl TupleSplitTupleSize15<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14,
 > of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14)> {
@@ -282,6 +300,7 @@ impl TupleSplitTupleSize15<
         (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14)
     }
 }
+
 impl TupleSplitTupleSize16<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15,
 > of TupleSplit<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15)> {
@@ -300,6 +319,7 @@ impl TupleSplitTupleSize16<
         (head, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15)
     }
 }
+
 impl TupleSplitFixedSizedArraySized1<T> of TupleSplit<[T; 1]> {
     type Head = T;
     type Rest = [T; 0];
@@ -312,6 +332,7 @@ impl TupleSplitFixedSizedArraySized1<T> of TupleSplit<[T; 1]> {
         [head]
     }
 }
+
 impl TupleSplitFixedSizedArraySized2<T> of TupleSplit<[T; 2]> {
     type Head = T;
     type Rest = [T; 1];
@@ -324,6 +345,7 @@ impl TupleSplitFixedSizedArraySized2<T> of TupleSplit<[T; 2]> {
         [head, e1]
     }
 }
+
 impl TupleSplitFixedSizedArraySized3<T> of TupleSplit<[T; 3]> {
     type Head = T;
     type Rest = [T; 2];
@@ -336,6 +358,7 @@ impl TupleSplitFixedSizedArraySized3<T> of TupleSplit<[T; 3]> {
         [head, e1, e2]
     }
 }
+
 impl TupleSplitFixedSizedArraySized4<T> of TupleSplit<[T; 4]> {
     type Head = T;
     type Rest = [T; 3];
@@ -348,6 +371,7 @@ impl TupleSplitFixedSizedArraySized4<T> of TupleSplit<[T; 4]> {
         [head, e1, e2, e3]
     }
 }
+
 impl TupleSplitFixedSizedArraySized5<T> of TupleSplit<[T; 5]> {
     type Head = T;
     type Rest = [T; 4];
@@ -360,6 +384,7 @@ impl TupleSplitFixedSizedArraySized5<T> of TupleSplit<[T; 5]> {
         [head, e1, e2, e3, e4]
     }
 }
+
 impl TupleSplitFixedSizedArraySized6<T> of TupleSplit<[T; 6]> {
     type Head = T;
     type Rest = [T; 5];
@@ -372,6 +397,7 @@ impl TupleSplitFixedSizedArraySized6<T> of TupleSplit<[T; 6]> {
         [head, e1, e2, e3, e4, e5]
     }
 }
+
 impl TupleSplitFixedSizedArraySized7<T> of TupleSplit<[T; 7]> {
     type Head = T;
     type Rest = [T; 6];
@@ -384,6 +410,7 @@ impl TupleSplitFixedSizedArraySized7<T> of TupleSplit<[T; 7]> {
         [head, e1, e2, e3, e4, e5, e6]
     }
 }
+
 impl TupleSplitFixedSizedArraySized8<T> of TupleSplit<[T; 8]> {
     type Head = T;
     type Rest = [T; 7];
@@ -396,6 +423,7 @@ impl TupleSplitFixedSizedArraySized8<T> of TupleSplit<[T; 8]> {
         [head, e1, e2, e3, e4, e5, e6, e7]
     }
 }
+
 impl TupleSplitFixedSizedArraySized9<T> of TupleSplit<[T; 9]> {
     type Head = T;
     type Rest = [T; 8];
@@ -408,6 +436,7 @@ impl TupleSplitFixedSizedArraySized9<T> of TupleSplit<[T; 9]> {
         [head, e1, e2, e3, e4, e5, e6, e7, e8]
     }
 }
+
 impl TupleSplitFixedSizedArraySized10<T> of TupleSplit<[T; 10]> {
     type Head = T;
     type Rest = [T; 9];
@@ -428,12 +457,14 @@ pub(crate) trait TupleExtendFront<T, E> {
     /// Creates a new tuple from the `value` tuple with `element` in front of it.
     fn extend_front(value: T, element: E) -> Self::Result nopanic;
 }
+
 impl TupleExtendFrontTupleSize0<E> of TupleExtendFront<(), E> {
     type Result = (E,);
     fn extend_front(value: (), element: E) -> (E,) nopanic {
         (element,)
     }
 }
+
 impl TupleExtendFrontTupleSize1<E0, E> of TupleExtendFront<(E0,), E> {
     type Result = (E, E0);
     fn extend_front(value: (E0,), element: E) -> (E, E0) nopanic {
@@ -441,6 +472,7 @@ impl TupleExtendFrontTupleSize1<E0, E> of TupleExtendFront<(E0,), E> {
         (element, e0)
     }
 }
+
 impl TupleExtendFrontTupleSize2<E0, E1, E> of TupleExtendFront<(E0, E1), E> {
     type Result = (E, E0, E1);
     fn extend_front(value: (E0, E1), element: E) -> (E, E0, E1) nopanic {
@@ -448,6 +480,7 @@ impl TupleExtendFrontTupleSize2<E0, E1, E> of TupleExtendFront<(E0, E1), E> {
         (element, e0, e1)
     }
 }
+
 impl TupleExtendFrontTupleSize3<E0, E1, E2, E> of TupleExtendFront<(E0, E1, E2), E> {
     type Result = (E, E0, E1, E2);
     fn extend_front(value: (E0, E1, E2), element: E) -> (E, E0, E1, E2) nopanic {
@@ -455,6 +488,7 @@ impl TupleExtendFrontTupleSize3<E0, E1, E2, E> of TupleExtendFront<(E0, E1, E2),
         (element, e0, e1, e2)
     }
 }
+
 impl TupleExtendFrontTupleSize4<E0, E1, E2, E3, E> of TupleExtendFront<(E0, E1, E2, E3), E> {
     type Result = (E, E0, E1, E2, E3);
     fn extend_front(value: (E0, E1, E2, E3), element: E) -> (E, E0, E1, E2, E3) nopanic {
@@ -462,6 +496,7 @@ impl TupleExtendFrontTupleSize4<E0, E1, E2, E3, E> of TupleExtendFront<(E0, E1, 
         (element, e0, e1, e2, e3)
     }
 }
+
 impl TupleExtendFrontTupleSize5<
     E0, E1, E2, E3, E4, E,
 > of TupleExtendFront<(E0, E1, E2, E3, E4), E> {
@@ -471,6 +506,7 @@ impl TupleExtendFrontTupleSize5<
         (element, e0, e1, e2, e3, e4)
     }
 }
+
 impl TupleExtendFrontTupleSize6<
     E0, E1, E2, E3, E4, E5, E,
 > of TupleExtendFront<(E0, E1, E2, E3, E4, E5), E> {
@@ -482,6 +518,7 @@ impl TupleExtendFrontTupleSize6<
         (element, e0, e1, e2, e3, e4, e5)
     }
 }
+
 impl TupleExtendFrontTupleSize7<
     E0, E1, E2, E3, E4, E5, E6, E,
 > of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6), E> {
@@ -493,6 +530,7 @@ impl TupleExtendFrontTupleSize7<
         (element, e0, e1, e2, e3, e4, e5, e6)
     }
 }
+
 impl TupleExtendFrontTupleSize8<
     E0, E1, E2, E3, E4, E5, E6, E7, E,
 > of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7), E> {
@@ -504,6 +542,7 @@ impl TupleExtendFrontTupleSize8<
         (element, e0, e1, e2, e3, e4, e5, e6, e7)
     }
 }
+
 impl TupleExtendFrontTupleSize9<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E,
 > of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8), E> {
@@ -515,6 +554,7 @@ impl TupleExtendFrontTupleSize9<
         (element, e0, e1, e2, e3, e4, e5, e6, e7, e8)
     }
 }
+
 impl TupleExtendFrontTupleSize10<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E,
 > of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9), E> {
@@ -526,6 +566,7 @@ impl TupleExtendFrontTupleSize10<
         (element, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9)
     }
 }
+
 impl TupleExtendFrontTupleSize11<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E,
 > of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10), E> {
@@ -537,6 +578,7 @@ impl TupleExtendFrontTupleSize11<
         (element, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)
     }
 }
+
 impl TupleExtendFrontTupleSize12<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E,
 > of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11), E> {
@@ -548,6 +590,7 @@ impl TupleExtendFrontTupleSize12<
         (element, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)
     }
 }
+
 impl TupleExtendFrontTupleSize13<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E,
 > of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12), E> {
@@ -559,6 +602,7 @@ impl TupleExtendFrontTupleSize13<
         (element, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12)
     }
 }
+
 impl TupleExtendFrontTupleSize14<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E,
 > of TupleExtendFront<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13), E> {
@@ -582,6 +626,7 @@ impl TupleExtendFrontTupleSize15<
         (element, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14)
     }
 }
+
 impl TupleExtendFrontFixedSizedArraySize0<T> of TupleExtendFront<[T; 0], T> {
     type Result = [T; 1];
     fn extend_front(value: [T; 0], element: T) -> [T; 1] nopanic {
@@ -589,6 +634,7 @@ impl TupleExtendFrontFixedSizedArraySize0<T> of TupleExtendFront<[T; 0], T> {
         [element]
     }
 }
+
 impl TupleExtendFrontFixedSizedArraySize1<T> of TupleExtendFront<[T; 1], T> {
     type Result = [T; 2];
     fn extend_front(value: [T; 1], element: T) -> [T; 2] nopanic {
@@ -596,6 +642,7 @@ impl TupleExtendFrontFixedSizedArraySize1<T> of TupleExtendFront<[T; 1], T> {
         [element, e0]
     }
 }
+
 impl TupleExtendFrontFixedSizedArraySize2<T> of TupleExtendFront<[T; 2], T> {
     type Result = [T; 3];
     fn extend_front(value: [T; 2], element: T) -> [T; 3] nopanic {
@@ -603,6 +650,7 @@ impl TupleExtendFrontFixedSizedArraySize2<T> of TupleExtendFront<[T; 2], T> {
         [element, e0, e1]
     }
 }
+
 impl TupleExtendFrontFixedSizedArraySize3<T> of TupleExtendFront<[T; 3], T> {
     type Result = [T; 4];
     fn extend_front(value: [T; 3], element: T) -> [T; 4] nopanic {
@@ -610,6 +658,7 @@ impl TupleExtendFrontFixedSizedArraySize3<T> of TupleExtendFront<[T; 3], T> {
         [element, e0, e1, e2]
     }
 }
+
 impl TupleExtendFrontFixedSizedArraySize4<T> of TupleExtendFront<[T; 4], T> {
     type Result = [T; 5];
     fn extend_front(value: [T; 4], element: T) -> [T; 5] nopanic {
@@ -617,6 +666,7 @@ impl TupleExtendFrontFixedSizedArraySize4<T> of TupleExtendFront<[T; 4], T> {
         [element, e0, e1, e2, e3]
     }
 }
+
 impl TupleExtendFrontFixedSizedArraySize5<T> of TupleExtendFront<[T; 5], T> {
     type Result = [T; 6];
     fn extend_front(value: [T; 5], element: T) -> [T; 6] nopanic {
@@ -624,6 +674,7 @@ impl TupleExtendFrontFixedSizedArraySize5<T> of TupleExtendFront<[T; 5], T> {
         [element, e0, e1, e2, e3, e4]
     }
 }
+
 impl TupleExtendFrontFixedSizedArraySize6<T> of TupleExtendFront<[T; 6], T> {
     type Result = [T; 7];
     fn extend_front(value: [T; 6], element: T) -> [T; 7] nopanic {
@@ -631,6 +682,7 @@ impl TupleExtendFrontFixedSizedArraySize6<T> of TupleExtendFront<[T; 6], T> {
         [element, e0, e1, e2, e3, e4, e5]
     }
 }
+
 impl TupleExtendFrontFixedSizedArraySize7<T> of TupleExtendFront<[T; 7], T> {
     type Result = [T; 8];
     fn extend_front(value: [T; 7], element: T) -> [T; 8] nopanic {
@@ -638,6 +690,7 @@ impl TupleExtendFrontFixedSizedArraySize7<T> of TupleExtendFront<[T; 7], T> {
         [element, e0, e1, e2, e3, e4, e5, e6]
     }
 }
+
 impl TupleExtendFrontFixedSizedArraySize8<T> of TupleExtendFront<[T; 8], T> {
     type Result = [T; 9];
     fn extend_front(value: [T; 8], element: T) -> [T; 9] nopanic {
@@ -645,6 +698,7 @@ impl TupleExtendFrontFixedSizedArraySize8<T> of TupleExtendFront<[T; 8], T> {
         [element, e0, e1, e2, e3, e4, e5, e6, e7]
     }
 }
+
 impl TupleExtendFrontFixedSizedArraySize9<T> of TupleExtendFront<[T; 9], T> {
     type Result = [T; 10];
     fn extend_front(value: [T; 9], element: T) -> [T; 10] nopanic {
@@ -659,12 +713,14 @@ pub(crate) trait TupleSnapForward<T> {
     type SnapForward;
     fn snap_forward(self: @T) -> Self::SnapForward nopanic;
 }
+
 impl TupleSnapForwardTupleSize0 of TupleSnapForward<()> {
     type SnapForward = ();
     fn snap_forward(self: @()) -> () nopanic {
         ()
     }
 }
+
 impl TupleSnapForwardTupleSize1<E0> of TupleSnapForward<(E0,)> {
     type SnapForward = (@E0,);
     fn snap_forward(self: @(E0,)) -> (@E0,) nopanic {
@@ -672,6 +728,7 @@ impl TupleSnapForwardTupleSize1<E0> of TupleSnapForward<(E0,)> {
         (e0,)
     }
 }
+
 impl TupleSnapForwardTupleSize2<E0, E1> of TupleSnapForward<(E0, E1)> {
     type SnapForward = (@E0, @E1);
     fn snap_forward(self: @(E0, E1)) -> (@E0, @E1) nopanic {
@@ -679,6 +736,7 @@ impl TupleSnapForwardTupleSize2<E0, E1> of TupleSnapForward<(E0, E1)> {
         (e0, e1)
     }
 }
+
 impl TupleSnapForwardTupleSize3<E0, E1, E2> of TupleSnapForward<(E0, E1, E2)> {
     type SnapForward = (@E0, @E1, @E2);
     fn snap_forward(self: @(E0, E1, E2)) -> (@E0, @E1, @E2) nopanic {
@@ -686,6 +744,7 @@ impl TupleSnapForwardTupleSize3<E0, E1, E2> of TupleSnapForward<(E0, E1, E2)> {
         (e0, e1, e2)
     }
 }
+
 impl TupleSnapForwardTupleSize4<E0, E1, E2, E3> of TupleSnapForward<(E0, E1, E2, E3)> {
     type SnapForward = (@E0, @E1, @E2, @E3);
     fn snap_forward(self: @(E0, E1, E2, E3)) -> (@E0, @E1, @E2, @E3) nopanic {
@@ -693,6 +752,7 @@ impl TupleSnapForwardTupleSize4<E0, E1, E2, E3> of TupleSnapForward<(E0, E1, E2,
         (e0, e1, e2, e3)
     }
 }
+
 impl TupleSnapForwardTupleSize5<E0, E1, E2, E3, E4> of TupleSnapForward<(E0, E1, E2, E3, E4)> {
     type SnapForward = (@E0, @E1, @E2, @E3, @E4);
     fn snap_forward(self: @(E0, E1, E2, E3, E4)) -> (@E0, @E1, @E2, @E3, @E4) nopanic {
@@ -700,6 +760,7 @@ impl TupleSnapForwardTupleSize5<E0, E1, E2, E3, E4> of TupleSnapForward<(E0, E1,
         (e0, e1, e2, e3, e4)
     }
 }
+
 impl TupleSnapForwardTupleSize6<
     E0, E1, E2, E3, E4, E5,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5)> {
@@ -709,6 +770,7 @@ impl TupleSnapForwardTupleSize6<
         (e0, e1, e2, e3, e4, e5)
     }
 }
+
 impl TupleSnapForwardTupleSize7<
     E0, E1, E2, E3, E4, E5, E6,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6)> {
@@ -720,6 +782,7 @@ impl TupleSnapForwardTupleSize7<
         (e0, e1, e2, e3, e4, e5, e6)
     }
 }
+
 impl TupleSnapForwardTupleSize8<
     E0, E1, E2, E3, E4, E5, E6, E7,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7)> {
@@ -731,6 +794,7 @@ impl TupleSnapForwardTupleSize8<
         (e0, e1, e2, e3, e4, e5, e6, e7)
     }
 }
+
 impl TupleSnapForwardTupleSize9<
     E0, E1, E2, E3, E4, E5, E6, E7, E8,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8)> {
@@ -742,6 +806,7 @@ impl TupleSnapForwardTupleSize9<
         (e0, e1, e2, e3, e4, e5, e6, e7, e8)
     }
 }
+
 impl TupleSnapForwardTupleSize10<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9)> {
@@ -753,6 +818,7 @@ impl TupleSnapForwardTupleSize10<
         (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9)
     }
 }
+
 impl TupleSnapForwardTupleSize11<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10)> {
@@ -764,6 +830,7 @@ impl TupleSnapForwardTupleSize11<
         (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)
     }
 }
+
 impl TupleSnapForwardTupleSize12<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11)> {
@@ -775,6 +842,7 @@ impl TupleSnapForwardTupleSize12<
         (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11)
     }
 }
+
 impl TupleSnapForwardTupleSize13<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12)> {
@@ -786,6 +854,7 @@ impl TupleSnapForwardTupleSize13<
         (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12)
     }
 }
+
 impl TupleSnapForwardTupleSize14<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13)> {
@@ -797,6 +866,7 @@ impl TupleSnapForwardTupleSize14<
         (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13)
     }
 }
+
 impl TupleSnapForwardTupleSize15<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14)> {
@@ -810,6 +880,7 @@ impl TupleSnapForwardTupleSize15<
         (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14)
     }
 }
+
 impl TupleSnapForwardTupleSize16<
     E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15,
 > of TupleSnapForward<(E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15)> {
@@ -832,6 +903,7 @@ impl TupleSnapForwardFixedSizedArraySized0<T> of TupleSnapForward<[T; 0]> {
         []
     }
 }
+
 impl TupleSnapForwardFixedSizedArraySized1<T> of TupleSnapForward<[T; 1]> {
     type SnapForward = [@T; 1];
     fn snap_forward(self: @[T; 1]) -> [@T; 1] nopanic {
@@ -839,6 +911,7 @@ impl TupleSnapForwardFixedSizedArraySized1<T> of TupleSnapForward<[T; 1]> {
         [e0]
     }
 }
+
 impl TupleSnapForwardFixedSizedArraySized2<T> of TupleSnapForward<[T; 2]> {
     type SnapForward = [@T; 2];
     fn snap_forward(self: @[T; 2]) -> [@T; 2] nopanic {
@@ -846,6 +919,7 @@ impl TupleSnapForwardFixedSizedArraySized2<T> of TupleSnapForward<[T; 2]> {
         [e0, e1]
     }
 }
+
 impl TupleSnapForwardFixedSizedArraySized3<T> of TupleSnapForward<[T; 3]> {
     type SnapForward = [@T; 3];
     fn snap_forward(self: @[T; 3]) -> [@T; 3] nopanic {
@@ -853,6 +927,7 @@ impl TupleSnapForwardFixedSizedArraySized3<T> of TupleSnapForward<[T; 3]> {
         [e0, e1, e2]
     }
 }
+
 impl TupleSnapForwardFixedSizedArraySized4<T> of TupleSnapForward<[T; 4]> {
     type SnapForward = [@T; 4];
     fn snap_forward(self: @[T; 4]) -> [@T; 4] nopanic {
@@ -860,6 +935,7 @@ impl TupleSnapForwardFixedSizedArraySized4<T> of TupleSnapForward<[T; 4]> {
         [e0, e1, e2, e3]
     }
 }
+
 impl TupleSnapForwardFixedSizedArraySized5<T> of TupleSnapForward<[T; 5]> {
     type SnapForward = [@T; 5];
     fn snap_forward(self: @[T; 5]) -> [@T; 5] nopanic {
@@ -867,6 +943,7 @@ impl TupleSnapForwardFixedSizedArraySized5<T> of TupleSnapForward<[T; 5]> {
         [e0, e1, e2, e3, e4]
     }
 }
+
 impl TupleSnapForwardFixedSizedArraySized6<T> of TupleSnapForward<[T; 6]> {
     type SnapForward = [@T; 6];
     fn snap_forward(self: @[T; 6]) -> [@T; 6] nopanic {
@@ -874,6 +951,7 @@ impl TupleSnapForwardFixedSizedArraySized6<T> of TupleSnapForward<[T; 6]> {
         [e0, e1, e2, e3, e4, e5]
     }
 }
+
 impl TupleSnapForwardFixedSizedArraySized7<T> of TupleSnapForward<[T; 7]> {
     type SnapForward = [@T; 7];
     fn snap_forward(self: @[T; 7]) -> [@T; 7] nopanic {
@@ -881,6 +959,7 @@ impl TupleSnapForwardFixedSizedArraySized7<T> of TupleSnapForward<[T; 7]> {
         [e0, e1, e2, e3, e4, e5, e6]
     }
 }
+
 impl TupleSnapForwardFixedSizedArraySized8<T> of TupleSnapForward<[T; 8]> {
     type SnapForward = [@T; 8];
     fn snap_forward(self: @[T; 8]) -> [@T; 8] nopanic {
@@ -888,6 +967,7 @@ impl TupleSnapForwardFixedSizedArraySized8<T> of TupleSnapForward<[T; 8]> {
         [e0, e1, e2, e3, e4, e5, e6, e7]
     }
 }
+
 impl TupleSnapForwardFixedSizedArraySized9<T> of TupleSnapForward<[T; 9]> {
     type SnapForward = [@T; 9];
     fn snap_forward(self: @[T; 9]) -> [@T; 9] nopanic {
@@ -895,6 +975,7 @@ impl TupleSnapForwardFixedSizedArraySized9<T> of TupleSnapForward<[T; 9]> {
         [e0, e1, e2, e3, e4, e5, e6, e7, e8]
     }
 }
+
 impl TupleSnapForwardFixedSizedArraySized10<T> of TupleSnapForward<[T; 10]> {
     type SnapForward = [@T; 10];
     fn snap_forward(self: @[T; 10]) -> [@T; 10] nopanic {
@@ -907,12 +988,15 @@ impl TupleSnapForwardFixedSizedArraySized10<T> of TupleSnapForward<[T; 10]> {
 pub(crate) trait SnapRemove<T> {
     type Result;
 }
+
 impl SnapRemoveSnap<T> of SnapRemove<@T> {
     type Result = T;
 }
+
 impl SnapRemoveTupleBase of SnapRemove<()> {
     type Result = ();
 }
+
 impl SnapRemoveTupleNext<
     T,
     +IsTuple<T>,
@@ -923,6 +1007,7 @@ impl SnapRemoveTupleNext<
 > of SnapRemove<T> {
     type Result = TEF::Result;
 }
+
 impl SnapRemoveFixedSizedArray<T, const N: usize> of SnapRemove<[@T; N]> {
     type Result = [T; N];
 }
