@@ -997,3 +997,146 @@ error: `*` in `use` items is not allowed for empty path.
  --> lib.cairo:1:5
 use *;
     ^
+
+//! > ==========================================================================
+
+//! > Testing use star inaccessible item
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    const INACCESSIBLE: u8 = 1;
+}
+
+use a::*;
+
+//! > function_body
+
+//! > expr_code
+INACCESSIBLE
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Item is inaccessible.
+ --> lib.cairo:7:1
+INACCESSIBLE
+^**********^
+
+//! > ==========================================================================
+
+//! > Testing use star inaccessible module
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    mod inaccessible {
+        pub const C: u8 = 1;
+    }
+}
+
+use a::*;
+
+//! > function_body
+
+//! > expr_code
+inaccessible::C
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Item is inaccessible.
+ --> lib.cairo:9:1
+inaccessible::C
+^**********^
+
+//! > ==========================================================================
+
+//! > Testing use star imported inaccessible module
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    mod b {
+        pub const C: u8 = 1;
+    }
+}
+
+mod c {
+    pub mod d {
+        use super::super::a::b::*;
+    }
+}
+
+use c::d::*;
+
+//! > function_body
+
+//! > expr_code
+C
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Item is inaccessible.
+ --> lib.cairo:15:1
+C
+^
+
+error: Item `test::a::b` is not visible in this context.
+ --> lib.cairo:9:30
+        use super::super::a::b::*;
+                             ^
+
+//! > ==========================================================================
+
+//! > Testing use star imported inaccessible item
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        const C: u8 = 1;
+    }
+}
+
+mod c {
+    pub mod d {
+        pub use super::super::a::b::*;
+    }
+}
+
+use c::d::*;
+
+//! > function_body
+
+//! > expr_code
+C
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Item is inaccessible.
+ --> lib.cairo:15:1
+C
+^
