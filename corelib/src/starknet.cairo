@@ -1,3 +1,30 @@
+//! Starknet module that provides a comprehensive set of utilities and abstractions for interacting
+//! with the Starknet network.
+//!
+//! # Core Components
+//!
+//! - **Storage Access**: The `storage` module contains an interface for reading and writing
+//! Starknet contract storage. It handles the complex low-level details of storage addressing and
+//! management.
+//! - **Syscalls**: The `syscalls` module contains the extern declarations for all the system calls
+//! available in Starknet, such as contract deployment, message sending, and storage access.
+//! - **Contract Addresses**: The `contract_address` and `eth_address` modules provide types and
+//! utilities for working with Starknet contract addresses and Ethereum addresses.
+//! - **Cryptography**: The `secp256k1`, `secp256r1`, and `eth_signature` modules handle various
+//! cryptographic operations, including Ethereum signature verification.
+//! - **Execution Info**: The `info` module exposes functions for accessing information about the
+//! current contract execution, such as the caller address, contract address, block info, and
+//! transaction info.
+//! - **Events**: The `event` module provides a way to emit and handle events in Starknet contracts.
+//! - **Accounts**: The `account` module contains functionality related to Starknet account
+//! contracts.
+//!
+//! # Testing and Development
+//!
+//! The `testing` module provides utilities for testing Starknet contracts, including functions for
+//! emitting events, accessing Starknet state information, and using "cheatcodes" for testing
+//! purposes.
+
 #[allow(unused_imports)]
 use core::box::Box;
 #[allow(unused_imports)]
@@ -9,7 +36,7 @@ use core::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use core::zeroable::Zeroable;
 
-/// Store trait and implementations for various types.
+/// Storage access module containing `Store<T>` trait and implementations for various types.
 pub mod storage_access;
 /// Re-imports
 pub use storage_access::{Store, StorageAddress};
@@ -30,12 +57,12 @@ use syscalls::{
     get_class_hash_at_syscall,
 };
 
-/// secp256
+/// Secp256 related operations module.
 pub mod secp256_trait;
 pub mod secp256k1;
 pub mod secp256r1;
 
-/// ContractAddress
+/// `ContractAddress` module.
 pub mod contract_address;
 pub use contract_address::{ContractAddress, contract_address_const};
 #[allow(unused_imports)]
@@ -44,7 +71,7 @@ use contract_address::{
     contract_address_try_from_felt252,
 };
 
-/// EthAddress
+/// Ethereum addresses module.
 pub mod eth_address;
 pub use eth_address::EthAddress;
 #[allow(unused_imports)]
@@ -52,12 +79,12 @@ use eth_address::{
     EthAddressIntoFelt252, EthAddressSerde, EthAddressZeroable, Felt252TryIntoEthAddress,
 };
 
-/// EthSignature
+/// Ethereum signatures module.
 pub mod eth_signature;
 #[allow(unused_imports)]
 use eth_signature::verify_eth_signature;
 
-/// ClassHash
+/// `ClassHash`  module
 pub mod class_hash;
 pub use class_hash::ClassHash;
 #[allow(unused_imports)]
@@ -66,6 +93,7 @@ use class_hash::{
     class_hash_try_from_felt252,
 };
 
+/// Execution informations module.
 /// Not `pub` on purpose, only used for direct reexport by the next line.
 mod info;
 pub use info::{
@@ -74,9 +102,11 @@ pub use info::{
     get_block_number, v2::ResourceBounds as ResourcesBounds,
 };
 
+/// Events module.
 pub mod event;
 pub use event::Event;
 
+/// Account module.
 pub mod account;
 pub use account::AccountContract;
 
@@ -85,6 +115,7 @@ pub use account::AccountContract;
 ///
 /// The front facing interface for the user is simple and intuitive, for example consider the
 /// following storage struct:
+///
 /// ```
 /// #[storage]
 /// struct Storage {
@@ -93,7 +124,9 @@ pub use account::AccountContract;
 ///     c: Map<felt52, Map<felt52, felt52>>,
 /// }
 /// ```
+///
 /// The user can access the storage members `a` and `b` using the following code:
+///
 /// ```
 /// fn use_storage(self: @ContractState) {
 ///     let a_value = self.a.read();
@@ -151,7 +184,7 @@ pub mod storage;
 
 pub extern type System;
 
-/// An Helper function to force the inclusion of `System` in the list of implicits.
+/// A helper function to force the inclusion of `System` in the list of implicits.
 #[deprecated(
     feature: "use_system_implicit",
     note: "Use `core::internal::require_implicit::<System>` instead.",
@@ -161,10 +194,24 @@ fn use_system_implicit() implicits(System) {}
 /// The result type for a syscall.
 pub type SyscallResult<T> = Result<T, Array<felt252>>;
 
+/// `SyscallResultTrait` that allows to unwrap the result of a syscall.
 pub trait SyscallResultTrait<T> {
-    /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with the revert reason.
+    /// Takes a `SyscallResult` and returns `x` if the return value is `Result::Ok(x)`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the syscall call is not successfull.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::starknet::SyscallResultTrait;
+    ///
+    /// let mut syscall_result = SyscallResultTrait::unwrap_syscall(syscall_result);
+    /// ```
     fn unwrap_syscall(self: SyscallResult<T>) -> T;
 }
+
 impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
     fn unwrap_syscall(self: SyscallResult<T>) -> T {
         match self {
@@ -174,10 +221,10 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
     }
 }
 
-/// The expected return value of the `__validate*__` functions of an accounted contract.
+/// The expected return value of the `__validate__` functions of an accounted contract.
 pub const VALIDATED: felt252 = 'VALID';
 
 /// Module for starknet testing only.
-/// Provides functions useful for testing event emission, starknet state information, and the
+/// Provides functions useful for testing event emission, Starknet state information, and the
 /// cheatcode concept in general.
 pub mod testing;
