@@ -38,6 +38,7 @@ pub enum SymbolDef {
     Variable(VariableDef),
     ExprInlineMacro(String),
     Member(MemberDef),
+    Module(ModuleDef),
 }
 
 /// Information about a struct member.
@@ -78,7 +79,6 @@ impl SymbolDef {
 
         match definition_item {
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
-            | ResolvedItem::Generic(ResolvedGenericItem::Module(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericFunction(_))
             | ResolvedItem::Generic(ResolvedGenericItem::TraitFunction(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericType(_))
@@ -88,7 +88,6 @@ impl SymbolDef {
             | ResolvedItem::Generic(ResolvedGenericItem::Trait(_))
             | ResolvedItem::Generic(ResolvedGenericItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Constant(_))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::Module(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Function(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::TraitFunction(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
@@ -96,6 +95,14 @@ impl SymbolDef {
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_)) => {
                 ItemDef::new(db, &definition_node).map(Self::Item)
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::Module(id)) => {
+                Some(Self::Module(ModuleDef::new(id.name(db), id.full_path(db))))
+            }
+
+            ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => {
+                Some(Self::Module(ModuleDef::new(id.name(db), id.full_path(db))))
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Variable(_)) => {
@@ -287,6 +294,42 @@ impl VariableDef {
         let ty = var.ty().format(db.upcast());
 
         format!("{prefix}{mutability}{name}: {ty}")
+    }
+}
+
+/// Information about the definition of a module.
+pub struct ModuleDef {
+    name: SmolStr,
+    full_path: String,
+}
+
+impl ModuleDef {
+    /// Constructs new [`ModuleDef`] instance.
+    pub fn new(name: SmolStr, full_path: String) -> Self {
+        let full_path =
+            match full_path.strip_suffix(name.as_str()).and_then(|path| path.strip_suffix("::")) {
+                Some(stripped_path) => stripped_path.to_owned(),
+                None => full_path,
+            };
+
+        ModuleDef { name, full_path }
+    }
+
+    /// Gets module signature, which tries to resemble the way how it is defined in code.
+    pub fn signature(&self) -> String {
+        format!("mod {}", self.name)
+    }
+
+    /// Gets the full path of a module.
+    pub fn definition_path(&self) -> String {
+        self.full_path.clone()
+    }
+
+    /// Gets the module's documentation if it's available.
+    pub fn documentation(&self) -> Option<String> {
+        // Modules cannot have docstrings at the moment.
+        // Implement this function as soon as it becomes possible in the future.
+        None
     }
 }
 
