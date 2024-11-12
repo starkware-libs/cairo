@@ -274,8 +274,8 @@ pub fn create_entry_code_from_params(
         casm_build_extend! {ctx,
             tempvar segment_arena;
             tempvar infos;
-            hint AllocSegment {} into {dst: segment_arena};
-            hint AllocSegment {} into {dst: infos};
+            hint AllocSegment into {dst: segment_arena};
+            hint AllocSegment into {dst: infos};
             const czero = 0;
             tempvar zero = czero;
             // Write Infos segment, n_constructed (0), and n_destructed (0) to the segment.
@@ -293,7 +293,7 @@ pub fn create_entry_code_from_params(
         } else if emulated_builtins.contains(generic_ty) {
             casm_build_extend! {ctx,
                 tempvar system;
-                hint AllocSegment {} into {dst: system};
+                hint AllocSegment into {dst: system};
                 ap += 1;
             };
         } else {
@@ -350,7 +350,7 @@ pub fn create_entry_code_from_params(
             tempvar curr_start = infos[3];
             const one = 1;
             let expected_curr_start = prev_end + one;
-            hint ExternalHint::AddRelocationRule { src: curr_start, dst: expected_curr_start } into {};
+            hint ExternalHint::AddRelocationRule { src: curr_start, dst: expected_curr_start };
             assert curr_start = prev_end + one;
             const three = 3;
             tempvar next_infos = infos + three;
