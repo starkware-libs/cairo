@@ -232,11 +232,20 @@ Rectangle struct.
 // = source context
     let mut rect = Rectangle { wid<caret>th: 30, height: 50 };
 // = highlight
-No highlight information.
+    let mut rect = Rectangle { <sel>width</sel>: 30, height: 50 };
 // = popover
 ```cairo
-hello::Rectangle
+hello
 ```
+```cairo
+#[derive(Copy, Drop)]
+struct Rectangle {
+    width: u64,
+    height: u64,
+}
+```
+---
+Width of the rectangle.
 
 //! > hover #12
 // = source context
