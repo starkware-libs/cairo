@@ -75,7 +75,6 @@ impl InlineMacroExprPlugin for ArrayMacro {
             ```
             # Notes
             - Elements must be of the same type or convertible to a common type.
-            - Uses `ArrayTrait::new()` to create the array and `ArrayTrait::append()` to add elements.
             - Elements are added in the order provided.
             "#}
             .to_string(),
