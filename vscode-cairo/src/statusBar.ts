@@ -44,7 +44,6 @@ export class StatusBar {
 
   private async updateScarbVersion(): Promise<void> {
     try {
-      // TODO(mkaput): Support multi-root workspaces.
       const scarb = await Scarb.find(vscode.workspace.workspaceFolders?.[0], this.context);
       if (scarb) {
         const version = await scarb.getVersion(this.context);

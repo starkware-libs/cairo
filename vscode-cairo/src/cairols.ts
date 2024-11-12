@@ -25,13 +25,39 @@ function notifyScarbMissing(ctx: Context) {
   ctx.log.error(errorMessage);
 }
 
-export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
-  // TODO(mkaput): Support multi-root workspaces.
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+function allFoldersHaveSameLSProvider(executables: LSExecutable[]): boolean {
+	if (executables.length < 2) {
+		return true;
+	}
+  let primaryExecutable = executables[0]!;
+	
+	return executables.slice(1).find((x) => primaryExecutable.run.command !== x.run.command) ? false : true;
+}
 
-  const scarb = await findScarbForWorkspaceFolder(workspaceFolder, ctx);
+export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {  
+  let executables = await Promise.all(
+    (vscode.workspace.workspaceFolders || []).map(
+      async (workspaceFolder) => await getLanguageServerExecutable(workspaceFolder, ctx)
+    ).filter((x) => !!x)
+  ) as LSExecutable[];
 
-  const serverOptions = await getServerOptions(workspaceFolder, scarb, ctx);
+  if (!allFoldersHaveSameLSProvider(executables)) {
+    throw new Error("Multiple versions of scarb in one workspace is not supported");
+  }
+
+   // First one is good as any of them since they should be all the same at this point
+  let lsExecutable = executables[0];
+
+  if (!lsExecutable) {
+    throw new Error("Failed to start Cairo LS");
+  }
+  let { run, scarb } = lsExecutable; 
+  
+  setupEnv(run, ctx);
+
+  ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
+
+  let serverOptions = { run, debug: run };
 
   const client = new lc.LanguageClient(
     "cairoLanguageServer",
@@ -154,33 +180,24 @@ async function findScarbForWorkspaceFolder(
   }
 }
 
-async function getServerOptions(
-  workspaceFolder: vscode.WorkspaceFolder | undefined,
+interface LSExecutable {
+  run: lc.Executable,
   scarb: Scarb | undefined,
-  ctx: Context,
-): Promise<lc.ServerOptions> {
-  let serverExecutableProvider: LanguageServerExecutableProvider | undefined;
+}
+
+async function getLanguageServerExecutable(workspaceFolder: vscode.WorkspaceFolder | undefined, ctx: Context): Promise<LSExecutable | undefined> {
+  let scarb = await findScarbForWorkspaceFolder(workspaceFolder, ctx);
   try {
-    serverExecutableProvider = await determineLanguageServerExecutableProvider(
+    let provider = await determineLanguageServerExecutableProvider(
       workspaceFolder,
       scarb,
       ctx,
-    );
+    )
+    return { run: provider.languageServerExecutable(), scarb };
   } catch (e) {
     ctx.log.error(`${e}`);
   }
-
-  const run = serverExecutableProvider?.languageServerExecutable();
-  if (run == undefined) {
-    ctx.log.error("failed to start CairoLS");
-    throw new Error("failed to start CairoLS");
-  }
-
-  setupEnv(run, ctx);
-
-  ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
-
-  return { run, debug: run };
+  return undefined;
 }
 
 async function determineLanguageServerExecutableProvider(
