@@ -19,6 +19,7 @@ use cairo_lang_utils::Upcast;
 pub use self::semantic::*;
 pub use self::swapper::*;
 pub use self::syntax::*;
+use super::proc_macros::db::ProcMacroDatabase;
 use crate::Tricks;
 
 mod semantic;
@@ -33,7 +34,8 @@ mod syntax;
     ParserDatabase,
     SemanticDatabase,
     SyntaxDatabase,
-    DocDatabase
+    DocDatabase,
+    ProcMacroDatabase
 )]
 pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,
