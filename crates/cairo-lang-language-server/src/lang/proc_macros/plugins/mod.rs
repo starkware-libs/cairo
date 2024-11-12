@@ -2,7 +2,14 @@ use std::sync::Arc;
 
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_semantic::plugin::PluginSuite;
+use downcast::unsafe_downcast_ref;
+use scarb::inline::inline_macro_generate_code;
+use scarb::regular::macro_generate_code;
 use scarb_proc_macro_server_types::methods::defined_macros::DefinedMacrosResponse;
+
+mod downcast;
+// TODO(#6666) Evict this module when this is possible.
+mod scarb;
 
 /// Creates [`PluginSuite`] for macros supported by proc-macro-server.
 pub fn proc_macro_plugin_suite(defined_macros: DefinedMacrosResponse) -> PluginSuite {
@@ -35,11 +42,14 @@ struct ProcMacroPlugin {
 impl MacroPlugin for ProcMacroPlugin {
     fn generate_code(
         &self,
-        _db: &dyn cairo_lang_syntax::node::db::SyntaxGroup,
-        _item_ast: cairo_lang_syntax::node::ast::ModuleItem,
+        db: &dyn cairo_lang_syntax::node::db::SyntaxGroup,
+        item_ast: cairo_lang_syntax::node::ast::ModuleItem,
         _metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
     ) -> cairo_lang_defs::plugin::PluginResult {
-        todo!();
+        // Safety: We use this plugin only in AnalysisDatabase.
+        let analysis_db = unsafe { unsafe_downcast_ref(db) };
+
+        macro_generate_code(analysis_db, item_ast, &self.defined_attributes, &self.defined_derives)
     }
 
     fn declared_attributes(&self) -> Vec<String> {
@@ -58,10 +68,13 @@ struct InlineProcMacroPlugin;
 impl InlineMacroExprPlugin for InlineProcMacroPlugin {
     fn generate_code(
         &self,
-        _db: &dyn cairo_lang_syntax::node::db::SyntaxGroup,
-        _item_ast: &cairo_lang_syntax::node::ast::ExprInlineMacro,
+        db: &dyn cairo_lang_syntax::node::db::SyntaxGroup,
+        item_ast: &cairo_lang_syntax::node::ast::ExprInlineMacro,
         _metadata: &cairo_lang_defs::plugin::MacroPluginMetadata<'_>,
     ) -> cairo_lang_defs::plugin::InlinePluginResult {
-        todo!();
+        // Safety: We use this plugin only in AnalysisDatabase.
+        let analysis_db = unsafe { unsafe_downcast_ref(db) };
+
+        inline_macro_generate_code(analysis_db, item_ast)
     }
 }

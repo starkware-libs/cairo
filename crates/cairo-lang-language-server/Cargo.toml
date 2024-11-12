@@ -26,6 +26,7 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.8.5" }
 cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.8.5" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.5" }
 cairo-lang-macro = "0.1.1"
+convert_case.workspace = true
 crossbeam = "0.8.4"
 governor = { version = "0.7.0", default-features = false, features = ["std", "quanta"]}
 indent.workspace = true
@@ -38,6 +39,7 @@ rustc-hash = "1.1.0"
 salsa.workspace = true
 scarb-metadata = "1.13"
 scarb-proc-macro-server-types = "0.1"
+scarb-stable-hash = "1.0.0"
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 smol_str.workspace = true
