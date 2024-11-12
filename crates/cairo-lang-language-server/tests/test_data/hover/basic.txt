@@ -170,21 +170,31 @@ fn add_two(x: u32) -> u32
 // = source context
     front<caret>_of_house::hosting::add_to_waitlist();
 // = highlight
-No highlight information.
+    <sel>front_of_house</sel>::hosting::add_to_waitlist();
 // = popover
 ```cairo
-fn add_to_waitlist() -> ()
+hello
 ```
+```cairo
+mod front_of_house
+```
+---
+Front of house module.
 
 //! > hover #7
 // = source context
     front_of_house::ho<caret>sting::add_to_waitlist();
 // = highlight
-No highlight information.
+    front_of_house::<sel>hosting</sel>::add_to_waitlist();
 // = popover
 ```cairo
-fn add_to_waitlist() -> ()
+hello::front_of_house
 ```
+```cairo
+mod hosting
+```
+---
+Hosting module.
 
 //! > hover #8
 // = source context
