@@ -3,8 +3,10 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_types::Url;
@@ -13,6 +15,7 @@ use tracing::{error, warn};
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 use crate::{Backend, Tricks, env_config};
@@ -86,6 +89,7 @@ impl AnalysisDatabaseSwapper {
     ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
             let mut new_db = AnalysisDatabase::new(tricks);
+            self.migrate_proc_macro_state(&mut new_db, db);
             self.migrate_file_overrides(&mut new_db, db, open_files);
             self.detect_crates_for_open_files(&mut new_db, open_files, config, notifier);
             new_db
@@ -97,6 +101,21 @@ impl AnalysisDatabaseSwapper {
         *db = new_db;
 
         self.last_replace = SystemTime::now();
+    }
+
+    /// Copies current proc macro state into new db.
+    fn migrate_proc_macro_state(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
+        new_db.set_macro_plugins(old_db.macro_plugins());
+        new_db.set_inline_macro_plugins(old_db.inline_macro_plugins());
+        new_db.set_analyzer_plugins(old_db.analyzer_plugins());
+
+        new_db.set_proc_macro_client_status(old_db.proc_macro_client_status());
+
+        // TODO(#6646) probably this should not be part of migration as it will be ever growing.
+        // But diagnostics going crazy every 5 minutes are no better.
+        new_db.set_attribute_macro_resolution(old_db.attribute_macro_resolution());
+        new_db.set_derive_macro_resolution(old_db.derive_macro_resolution());
+        new_db.set_inline_macro_resolution(old_db.inline_macro_resolution());
     }
 
     /// Makes sure that all open files exist in the new db, with their current changes.

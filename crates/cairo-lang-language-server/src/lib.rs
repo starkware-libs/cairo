@@ -51,6 +51,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::plugin::PluginSuite;
+use crossbeam::select;
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use salsa::{Database, Durability};
@@ -345,19 +346,59 @@ impl Backend {
     // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69 |
     // +--------------------------------------------------+
     fn event_loop(connection: &Connection, mut scheduler: Scheduler<'_>) -> Result<()> {
-        for msg in connection.incoming() {
-            if connection.handle_shutdown(&msg)? {
-                break;
-            }
-            let task = match msg {
-                Message::Request(req) => server::request(req),
-                Message::Notification(notification) => server::notification(notification),
-                Message::Response(response) => scheduler.response(response),
+        let (proc_macro_errors, proc_macro_responses) =
+            scheduler.state.proc_macro_controller.init_channels();
+
+        macro_rules! unwrap_or_break {
+            ($result:expr) => {
+                match $result {
+                    Ok(ok) => ok,
+                    Err(_) => break,
+                }
             };
-            scheduler.dispatch(task);
+        }
+
+        loop {
+            select! {
+                recv(connection.incoming()) -> msg => {
+                    let msg = unwrap_or_break!(msg);
+
+                    if connection.handle_shutdown(&msg)? {
+                        break;
+                    }
+                    let task = match msg {
+                        Message::Request(req) => server::request(req),
+                        Message::Notification(notification) => server::notification(notification),
+                        Message::Response(response) => scheduler.response(response),
+                    };
+                    scheduler.dispatch(task);
+                }
+                recv(proc_macro_errors) -> error => {
+                    let () = unwrap_or_break!(error);
+
+                    scheduler.local(Self::on_proc_macro_error);
+                }
+                recv(proc_macro_responses) -> response => {
+                    let () = unwrap_or_break!(response);
+
+                    scheduler.local(Self::on_proc_macro_response);
+                }
+            }
         }
 
         Ok(())
+    }
+
+    /// Calls [`lang::proc_macros::controller::ProcMacroClientController::handle_error`] to do its
+    /// work.
+    fn on_proc_macro_error(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        state.proc_macro_controller.handle_error(&mut state.db, &state.config);
+    }
+
+    /// Calls [`lang::proc_macros::controller::ProcMacroClientController::on_response`] to do its
+    /// work.
+    fn on_proc_macro_response(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        state.proc_macro_controller.on_response(&mut state.db, &state.config);
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
