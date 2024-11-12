@@ -166,20 +166,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         token_stream: &'a dyn TokenStream,
     ) -> SyntaxFile {
-        let mut lexer = Lexer::from_text(db, token_stream.to_str());
-        let next_terminal = lexer.next().unwrap();
-        let parser = Parser {
-            db,
-            file_id,
-            lexer,
-            next_terminal,
-            pending_trivia: Vec::new(),
-            offset: Default::default(),
-            current_width: Default::default(),
-            last_trivia_length: Default::default(),
-            diagnostics,
-            pending_skipped_token_diagnostics: Default::default(),
-        };
+        let parser = Parser::new(db, file_id, token_stream.to_str(), diagnostics);
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(
             db,
@@ -194,20 +181,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         token_stream: &'a dyn TokenStream,
     ) -> Expr {
-        let mut lexer = Lexer::from_text(db, token_stream.to_str());
-        let next_terminal = lexer.next().unwrap();
-        let mut parser = Parser {
-            db,
-            file_id,
-            lexer,
-            next_terminal,
-            pending_trivia: Vec::new(),
-            offset: Default::default(),
-            current_width: Default::default(),
-            last_trivia_length: Default::default(),
-            diagnostics,
-            pending_skipped_token_diagnostics: Default::default(),
-        };
+        let mut parser = Parser::new(db, file_id, token_stream.to_str(), diagnostics);
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
             parser.diagnostics.add(ParserDiagnostic {
