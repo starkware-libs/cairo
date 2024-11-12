@@ -1,17 +1,17 @@
 use std::path::PathBuf;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
-use cairo_lang_filesystem::db::{init_files_group, ExternalFiles, FilesDatabase, FilesGroup};
+use cairo_lang_filesystem::db::{ExternalFiles, FilesDatabase, FilesGroup, init_files_group};
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::SyntaxFile;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::{Intern, Upcast};
 
+use crate::ParserDiagnostic;
 use crate::db::ParserDatabase;
 use crate::parser::Parser;
 use crate::types::TokenStream;
-use crate::ParserDiagnostic;
 
 /// A salsa database for parsing only.
 #[salsa::database(ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -51,11 +51,7 @@ impl SimpleParserDatabase {
         content: impl ToString,
     ) -> Result<SyntaxNode, Diagnostics<ParserDiagnostic>> {
         let (node, diagnostics) = self.parse_virtual_with_diagnostics(content);
-        if diagnostics.check_error_free().is_ok() {
-            Ok(node)
-        } else {
-            Err(diagnostics)
-        }
+        if diagnostics.check_error_free().is_ok() { Ok(node) } else { Err(diagnostics) }
     }
 
     /// Parses new file and return its syntax root with diagnostics.
@@ -78,7 +74,8 @@ impl SimpleParserDatabase {
     }
 
     /// Parses a [TokenStream] (based on whole file) and returns its syntax root.
-    /// It's very similar to [Self::parse_virtual_with_diagnostics], but instead of taking a content as a string, it takes a [TokenStream].
+    /// It's very similar to [Self::parse_virtual_with_diagnostics], but instead of taking a content
+    /// as a string, it takes a [TokenStream].
     pub fn parse_token_stream(
         &self,
         token_stream: &dyn TokenStream,

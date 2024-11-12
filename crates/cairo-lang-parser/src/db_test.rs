@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
@@ -15,7 +17,7 @@ use test_log::test;
 use crate::db::ParserGroup;
 use crate::printer::print_tree;
 use crate::test_utils::{MockToken, MockTokenStream, create_virtual_file};
-use crate::utils::SimpleParserDatabase;
+use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics_from_file};
 
 fn build_empty_file_green_tree(db: &dyn SyntaxGroup, file_id: FileId) -> SyntaxFile {
     let eof_token = TokenEndOfFile::new_green(db, SmolStr::from(""));
@@ -60,13 +62,13 @@ fn test_parser_shorthand() {
 
 #[test]
 fn test_token_stream_parser() {
-    let code = include_str!("parser_test_data/cairo_test_files/short.cairo");
-    let db = SimpleParserDatabase::default();
+    let filepath: PathBuf = "src/parser_test_data/cairo_test_files/short.cairo".into();
+    let db_val = SimpleParserDatabase::default();
+    let db = &db_val;
 
-    let root_node = db.parse_virtual(code).unwrap();
+    let (root_node, _) = get_syntax_root_and_diagnostics_from_file(db, filepath);
 
-    let token_stream = MockTokenStream::from_syntax_node(&db, root_node.clone());
-
+    let token_stream = MockTokenStream::from_syntax_node(db, root_node.clone());
     let (node_from_token_stream, _) = db.parse_token_stream(&token_stream);
 
     let original_leaves: Vec<SyntaxNode> = root_node.tokens(db.upcast()).collect();
@@ -76,8 +78,8 @@ fn test_token_stream_parser() {
 
     assert_eq!(original_leaves.len(), token_stream_origin_leaves.len());
     assert_eq!(
-        print_tree(&db, &root_node, false, true),
-        print_tree(&db, &node_from_token_stream, false, true)
+        print_tree(db, &root_node, false, true),
+        print_tree(db, &node_from_token_stream, false, true)
     )
 }
 
