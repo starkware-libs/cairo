@@ -166,7 +166,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         token_stream: &'a dyn TokenStream,
     ) -> SyntaxFile {
-        let parser = Parser::new(db, file_id, token_stream.to_str(), diagnostics);
+        let parser = Parser::new(db, file_id, token_stream.as_str(), diagnostics);
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(
             db,
@@ -181,7 +181,7 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         token_stream: &'a dyn TokenStream,
     ) -> Expr {
-        let mut parser = Parser::new(db, file_id, token_stream.to_str(), diagnostics);
+        let mut parser = Parser::new(db, file_id, token_stream.as_str(), diagnostics);
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
             parser.diagnostics.add(ParserDiagnostic {

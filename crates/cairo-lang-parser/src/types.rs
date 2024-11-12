@@ -10,5 +10,5 @@ pub trait TokenStream {
     fn get_start_offset(&self) -> Option<TextOffset>;
 
     /// Returns all tokens string content as a slice.
-    fn to_str(&self) -> &str;
+    fn as_str(&self) -> &str;
 }

@@ -44,15 +44,23 @@ pub fn create_virtual_file(
     .intern(db)
 }
 
+/// Mocked struct which implements [crate::types::TokenStream]
+/// It's main purpose is being used for testing the [crate::parser::Parser::parse_token_stream]
 #[derive(Debug, Clone)]
 pub struct MockTokenStream {
+    /// Field that holds all the tokens that are part of the stream
     pub tokens: Vec<MockToken>,
+    /// It's just a field to store the content of all of the tokens, so we can implement a
+    /// [crate::types::TokenStream::as_str]
     pub content_string: String,
 }
 
+/// Represent a token inside the [MockTokenStream]
 #[derive(Debug, Default, Clone)]
 pub struct MockToken {
+    /// Just a text of a given [MockToken]
     pub content: String,
+    /// It's offsets are related to the other tokens present in the same [MockTokenStream].
     pub span: TextSpan,
 }
 
@@ -61,7 +69,8 @@ impl MockToken {
         Self { content, span }
     }
 
-    pub fn token_from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> MockToken {
+    /// Create a token based on [SyntaxNode]
+    pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> MockToken {
         MockToken::new(node.get_text(db), node.span(db))
     }
 }
@@ -73,10 +82,10 @@ impl MockTokenStream {
         Self { tokens, content_string }
     }
 
+    /// Create whole [MockTokenStream] based upon the [SyntaxNode].
     pub fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let leaves = node.tokens(db);
-        let tokens =
-            leaves.map(|node| MockToken::token_from_syntax_node(db, node.clone())).collect();
+        let tokens = leaves.map(|node| MockToken::from_syntax_node(db, node.clone())).collect();
         Self::new(tokens)
     }
 }
@@ -95,7 +104,7 @@ impl TokenStream for MockTokenStream {
         self.tokens.first().map(|token| token.span.start)
     }
 
-    fn to_str(&self) -> &str {
+    fn as_str(&self) -> &str {
         &self.content_string
     }
 }
