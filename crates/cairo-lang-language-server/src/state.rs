@@ -10,6 +10,7 @@ use crate::Tricks;
 use crate::config::Config;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
+use crate::lang::proc_macros::controller::ProcMacroClientController;
 use crate::server::client::Client;
 use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
@@ -25,6 +26,7 @@ pub struct State {
     pub db_swapper: AnalysisDatabaseSwapper,
     pub tricks: Owned<Tricks>,
     pub diagnostics_controller: DiagnosticsController,
+    pub proc_macro_controller: ProcMacroClientController,
 }
 
 impl State {
@@ -36,6 +38,7 @@ impl State {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
         let db_swapper = AnalysisDatabaseSwapper::new(scarb_toolchain.clone());
+        let proc_macro_controller = ProcMacroClientController::new(scarb_toolchain.clone());
 
         Self {
             db: AnalysisDatabase::new(&tricks),
@@ -47,6 +50,7 @@ impl State {
             db_swapper,
             tricks: Owned::new(tricks.into()),
             diagnostics_controller: DiagnosticsController::new(notifier),
+            proc_macro_controller,
         }
     }
 
