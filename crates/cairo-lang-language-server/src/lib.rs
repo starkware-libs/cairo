@@ -61,6 +61,7 @@ use tracing::{debug, error, info, trace, warn};
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::proc_macros::controller::ProcMacroChannelsReceivers;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
@@ -280,6 +281,9 @@ impl Backend {
         event_loop_thread(move || {
             let Self { mut state, connection } = self;
 
+            state.proc_macro_controller.initialize_once(&mut state.db);
+            let proc_macro_channels = state.proc_macro_controller.init_channels();
+
             let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
 
             Self::dispatch_setup_tasks(&mut scheduler);
@@ -294,7 +298,7 @@ impl Backend {
             // we basically never hit such a case in CairoLS in happy paths.
             scheduler.on_sync_task(Self::refresh_diagnostics);
 
-            let result = Self::event_loop(&connection, scheduler);
+            let result = Self::event_loop(&connection, proc_macro_channels, scheduler);
 
             // Trigger cancellation in any background tasks that might still be running.
             state.db.salsa_runtime_mut().synthetic_write(Durability::LOW);
@@ -346,7 +350,11 @@ impl Backend {
     // | File: `crates/ruff_server/src/server.rs`         |
     // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69 |
     // +--------------------------------------------------+
-    fn event_loop(connection: &Connection, mut scheduler: Scheduler<'_>) -> Result<()> {
+    fn event_loop(
+        connection: &Connection,
+        proc_macro_channels: ProcMacroChannelsReceivers,
+        mut scheduler: Scheduler<'_>,
+    ) -> Result<()> {
         let incoming = connection.incoming();
 
         loop {
@@ -364,10 +372,32 @@ impl Backend {
                     };
                     scheduler.dispatch(task);
                 }
+                recv(proc_macro_channels.response) -> response => {
+                    let Ok(()) = response else { break };
+
+                    scheduler.local(Self::on_proc_macro_response);
+                }
+                recv(proc_macro_channels.error) -> error => {
+                    let Ok(()) = error else { break };
+
+                    scheduler.local(Self::on_proc_macro_error);
+                }
             }
         }
 
         Ok(())
+    }
+
+    /// Calls [`lang::proc_macros::controller::ProcMacroClientController::handle_error`] to do its
+    /// work.
+    fn on_proc_macro_error(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        state.proc_macro_controller.handle_error(&mut state.db);
+    }
+
+    /// Calls [`lang::proc_macros::controller::ProcMacroClientController::on_response`] to do its
+    /// work.
+    fn on_proc_macro_response(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        state.proc_macro_controller.on_response(&mut state.db);
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.

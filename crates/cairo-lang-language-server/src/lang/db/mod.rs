@@ -19,6 +19,7 @@ use cairo_lang_utils::Upcast;
 pub use self::semantic::*;
 pub use self::swapper::*;
 pub use self::syntax::*;
+use super::proc_macros::db::{ProcMacroDatabase, init_proc_macro_group};
 use crate::Tricks;
 
 mod semantic;
@@ -33,7 +34,8 @@ mod syntax;
     ParserDatabase,
     SemanticDatabase,
     SyntaxDatabase,
-    DocDatabase
+    DocDatabase,
+    ProcMacroDatabase
 )]
 pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,
@@ -46,6 +48,9 @@ impl AnalysisDatabase {
 
         init_files_group(&mut db);
         init_lowering_group(&mut db, InliningStrategy::Default);
+        // proc-macro-server can be restarted many times but we want to keep these data across
+        // multiple server starts, so init it once per database, not per server.
+        init_proc_macro_group(&mut db);
 
         db.set_cfg_set(Self::initial_cfg_set().into());
 
