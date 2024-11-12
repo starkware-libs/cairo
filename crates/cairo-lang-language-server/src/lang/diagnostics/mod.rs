@@ -57,6 +57,9 @@ impl DiagnosticsController {
 
     /// Runs diagnostics controller's event loop.
     fn control_loop(receiver: trigger::Receiver<WorkerArgs>) {
+        // NOTE: Globally, we have to always identify files by URL instead of FileId,
+        //   as the diagnostics state is independent of analysis database swaps,
+        //   which invalidate FileIds.
         let mut file_diagnostics = HashMap::<Url, FileDiagnostics>::new();
 
         while let Some(WorkerArgs { state, notifier }) = receiver.wait() {
