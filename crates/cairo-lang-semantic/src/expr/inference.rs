@@ -302,16 +302,24 @@ impl Hash for ImplVarTraitItemMappings {
 }
 
 /// State of inference.
+#[derive(Clone, Default, Debug, DebugWithDb, PartialEq, Eq)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct InferenceAssignment {
+    /// Current inferred assignment for type variables.
+    pub type_assignment: OrderedHashMap<LocalTypeVarId, TypeId>,
+    /// Current inferred assignment for const variables.
+    pub const_assignment: OrderedHashMap<LocalConstVarId, ConstValueId>,
+    /// Current inferred assignment for impl variables.
+    pub impl_assignment: OrderedHashMap<LocalImplVarId, ImplId>,
+}
+
+/// State of inference.
 #[derive(Debug, DebugWithDb, PartialEq, Eq)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct InferenceData {
     pub inference_id: InferenceId,
-    /// Current inferred assignment for type variables.
-    pub type_assignment: HashMap<LocalTypeVarId, TypeId>,
-    /// Current inferred assignment for const variables.
-    pub const_assignment: HashMap<LocalConstVarId, ConstValueId>,
-    /// Current inferred assignment for impl variables.
-    pub impl_assignment: HashMap<LocalImplVarId, ImplId>,
+    /// Current inferred assignment.
+    pub assignments: InferenceAssignment,
     /// Unsolved impl variables mapping to a maps of trait items to a corresponding item variable.
     /// Upon solution of the trait conforms the fully known item to the variable.
     pub impl_vars_trait_item_mappings: HashMap<LocalImplVarId, ImplVarTraitItemMappings>,
@@ -346,9 +354,7 @@ impl InferenceData {
     pub fn new(inference_id: InferenceId) -> Self {
         Self {
             inference_id,
-            type_assignment: HashMap::new(),
-            impl_assignment: HashMap::new(),
-            const_assignment: HashMap::new(),
+            assignments: InferenceAssignment::default(),
             impl_vars_trait_item_mappings: HashMap::new(),
             type_vars: Vec::new(),
             impl_vars: Vec::new(),
@@ -374,8 +380,7 @@ impl InferenceData {
     ) -> InferenceData {
         let mut inference_id_replacer =
             InferenceIdReplacer::new(db, self.inference_id, inference_id);
-        Self {
-            inference_id,
+        let assignments = InferenceAssignment {
             type_assignment: self
                 .type_assignment
                 .iter()
@@ -391,6 +396,10 @@ impl InferenceData {
                 .iter()
                 .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
                 .collect(),
+        };
+        Self {
+            inference_id,
+            assignments,
             impl_vars_trait_item_mappings: self
                 .impl_vars_trait_item_mappings
                 .iter()
@@ -435,9 +444,7 @@ impl InferenceData {
     pub fn temporary_clone(&self) -> InferenceData {
         Self {
             inference_id: self.inference_id,
-            type_assignment: self.type_assignment.clone(),
-            const_assignment: self.const_assignment.clone(),
-            impl_assignment: self.impl_assignment.clone(),
+            assignments: self.assignments.clone(),
             impl_vars_trait_item_mappings: self.impl_vars_trait_item_mappings.clone(),
             type_vars: self.type_vars.clone(),
             const_vars: self.const_vars.clone(),
@@ -452,6 +459,19 @@ impl InferenceData {
             error: self.error.clone(),
             consumed_error: self.consumed_error,
         }
+    }
+}
+
+impl Deref for InferenceData {
+    type Target = InferenceAssignment;
+
+    fn deref(&self) -> &Self::Target {
+        &self.assignments
+    }
+}
+impl DerefMut for InferenceData {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.assignments
     }
 }
 
@@ -742,7 +762,7 @@ impl<'db> Inference<'db> {
 
             let ty_missing = TypeId::missing(self.db, diag);
             for var in &self.data.type_vars {
-                self.data.type_assignment.entry(var.id).or_insert(ty_missing);
+                self.data.assignments.type_assignment.entry(var.id).or_insert(ty_missing);
             }
         }
     }
@@ -981,14 +1001,16 @@ impl<'db> Inference<'db> {
                     let GenericArgumentId::Type(ty) = garg else {
                         continue;
                     };
-
+                    let ty = inference.rewrite(ty).no_err();
                     // If the negative impl has a generic argument that is not fully
                     // concrete we can't tell if we should rule out the candidate impl.
                     // For example if we have -TypeEqual<S, T> we can't tell if S and
                     // T are going to be assigned the same concrete type.
                     // We return `SolutionSet::Ambiguous` here to indicate that more
                     // information is needed.
-                    if !ty.is_fully_concrete(inference.db) {
+                    if !matches!(ty.lookup_intern(inference.db), TypeLongId::Closure(_))
+                        && !ty.is_fully_concrete(inference.db)
+                    {
                         // TODO(ilya): Try to detect the ambiguity earlier in the
                         // inference process.
                         return Ok(SolutionSet::Ambiguous(

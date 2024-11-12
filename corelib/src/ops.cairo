@@ -15,3 +15,4 @@ use range::RangeOp;
 
 mod function;
 pub use function::FnOnce;
+pub use function::Fn;
