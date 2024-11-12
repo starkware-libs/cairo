@@ -104,8 +104,10 @@ struct Pair2<T, U> {
 }
 
 //! > Item documentation #6
+A second struct defining a pair. As above.
 
 //! > Item documentation tokens #6
+Content("A second struct defining a pair. As above.")
 
 //! > Item signature #7
 pub first: T
