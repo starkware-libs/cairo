@@ -90,7 +90,9 @@ impl<TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usize>
 }
 
 /// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
-// TODO(lior): Remove this function once [compute_precost_info] is used.
+///
+/// Note that this calculation is deprecated and is only done for backwards compatibility with old
+/// Sierra classes. Generally, the new [compute_precost_info] is used.
 pub fn calc_gas_precost_info(
     program: &Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
@@ -185,7 +187,9 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
 }
 
 /// Calculates gas postcost information for a given program - the gas costs of step token.
-// TODO(lior): Remove this function once [compute_postcost_info] is used.
+///
+/// Note that this calculation is deprecated and is only done for backwards compatibility with old
+/// Sierra classes. Generally, the new [compute_postcost_info] is used.
 pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
     program: &Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,

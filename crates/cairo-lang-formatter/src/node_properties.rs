@@ -8,6 +8,7 @@ use crate::formatter_impl::{
     BreakLinePointIndentation, BreakLinePointProperties, BreakLinePointsPositions, SortKind,
     SyntaxNodeFormat,
 };
+use crate::{CollectionsBreakingBehavior, FormatterConfig};
 
 impl SyntaxNodeFormat for SyntaxNode {
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
@@ -746,13 +747,13 @@ impl SyntaxNodeFormat for SyntaxNode {
     fn get_internal_break_line_point_properties(
         &self,
         db: &dyn SyntaxGroup,
+        config: &FormatterConfig,
     ) -> BreakLinePointsPositions {
         match self.kind(db) {
             SyntaxKind::ImplicitsList
             | SyntaxKind::PatternList
             | SyntaxKind::PatternStructParamList
             | SyntaxKind::StructArgList
-            | SyntaxKind::ExprList
             | SyntaxKind::GenericArgList
             | SyntaxKind::GenericParamList
             | SyntaxKind::ParamList
@@ -765,6 +766,42 @@ impl SyntaxNodeFormat for SyntaxNode {
                 ),
                 breaking_frequency: 2,
             },
+            SyntaxKind::ExprList => {
+                let mut properties = BreakLinePointProperties::new(
+                    5,
+                    BreakLinePointIndentation::NotIndented,
+                    true,
+                    true,
+                );
+
+                if let Some(parent_kind) = parent_kind(db, self) {
+                    match parent_kind {
+                        SyntaxKind::ExprListParenthesized => match config.tuple_breaking_behavior {
+                            CollectionsBreakingBehavior::SingleBreakPoint => {
+                                properties.set_single_breakpoint();
+                            }
+                            CollectionsBreakingBehavior::LineByLine => {
+                                properties.set_line_by_line();
+                            }
+                        },
+                        SyntaxKind::ExprFixedSizeArray => {
+                            match config.fixed_array_breaking_behavior {
+                                CollectionsBreakingBehavior::SingleBreakPoint => {
+                                    properties.set_single_breakpoint();
+                                }
+                                CollectionsBreakingBehavior::LineByLine => {
+                                    properties.set_line_by_line();
+                                }
+                            }
+                        }
+                        _ => {
+                            properties.set_line_by_line();
+                        }
+                    }
+                }
+
+                BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
+            }
             SyntaxKind::MatchArms | SyntaxKind::MemberList | SyntaxKind::VariantList => {
                 BreakLinePointsPositions::List {
                     properties: BreakLinePointProperties::new(
