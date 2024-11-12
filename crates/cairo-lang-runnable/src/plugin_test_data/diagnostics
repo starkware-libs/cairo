@@ -108,3 +108,133 @@ error: Trait has no implementation in context: core::serde::Serde::<test::NoSerd
  --> lib.cairo:2:33
 fn main(a: felt252, b: felt252) -> NoSerde {
                                 ^********^
+
+//! > ==========================================================================
+
+//! > Test raw runnable with return type.
+
+//! > test_runner_name
+ExpandRunnableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) -> felt252 {
+    1
+}
+
+//! > generated_cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) -> felt252 {
+    1
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid return type for `#[runnable_raw]` function, expected `()`.
+ --> lib.cairo:2:65
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) -> felt252 {
+                                                                ^********^
+
+//! > ==========================================================================
+
+//! > Test raw runnable wrong number of parameters.
+
+//! > test_runner_name
+ExpandRunnableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>, extra: felt252) {}
+
+//! > generated_cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>, extra: felt252) {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid number of params for `#[runnable_raw]` function, expected 2.
+ --> lib.cairo:2:9
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>, extra: felt252) {}
+        ^********************************************************************^
+
+//! > ==========================================================================
+
+//! > Test raw runnable bad input type.
+
+//! > test_runner_name
+ExpandRunnableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<u8>, ref _output: Array<felt252>) {}
+
+//! > generated_cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<u8>, ref _output: Array<felt252>) {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid first param type for `#[runnable_raw]` function, expected `Span<felt252>`.
+ --> lib.cairo:2:13
+fn main(mut _input: Span<u8>, ref _output: Array<felt252>) {}
+            ^****^
+
+//! > ==========================================================================
+
+//! > Test raw runnable bad output type.
+
+//! > test_runner_name
+ExpandRunnableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<u8>) {}
+
+//! > generated_cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<u8>) {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid second param type for `#[runnable_raw]` function, expected `Array<felt252>`.
+ --> lib.cairo:2:40
+fn main(mut _input: Span<felt252>, ref _output: Array<u8>) {}
+                                       ^*****^
+
+//! > ==========================================================================
+
+//! > Test raw runnable bad input modifier.
+
+//! > test_runner_name
+ExpandRunnableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[runnable_raw]
+fn main(ref _input: Span<felt252>, ref _output: Array<felt252>) {}
+
+//! > generated_cairo_code
+#[runnable_raw]
+fn main(ref _input: Span<felt252>, ref _output: Array<felt252>) {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid first param mutability for `#[runnable_raw]` function, got unexpected `ref`.
+ --> lib.cairo:2:13
+fn main(ref _input: Span<felt252>, ref _output: Array<felt252>) {}
+            ^****^
+
+//! > ==========================================================================
+
+//! > Test raw runnable bad output modifier.
+
+//! > test_runner_name
+ExpandRunnableTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<felt252>, _output: Array<felt252>) {}
+
+//! > generated_cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<felt252>, _output: Array<felt252>) {}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Invalid second param mutability for `#[runnable_raw]` function, expected `ref`.
+ --> lib.cairo:2:36
+fn main(mut _input: Span<felt252>, _output: Array<felt252>) {}
+                                   ^*****^
