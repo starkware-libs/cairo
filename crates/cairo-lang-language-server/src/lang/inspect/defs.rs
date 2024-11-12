@@ -317,7 +317,9 @@ pub fn find_definition(
         }
     }
 
-    if let Some(member_id) = try_extract_member(db, identifier, lookup_items) {
+    if let Some(member_id) = try_extract_member(db, identifier, lookup_items)
+        .or_else(|| try_extract_member_from_constructor(db, identifier, lookup_items))
+    {
         return Some((ResolvedItem::Member(member_id), member_id.untyped_stable_ptr(db)));
     }
 
@@ -361,6 +363,46 @@ pub fn find_definition(
     } else {
         None
     }
+}
+
+/// Extracts [`MemberId`] if the [`ast::TerminalIdentifier`] is used as a struct member
+/// in [`ast::ExprStructCtorCall`].
+fn try_extract_member_from_constructor(
+    db: &AnalysisDatabase,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<MemberId> {
+    let function_id = lookup_items.first()?.function_with_body()?;
+
+    let identifier_node = identifier.as_syntax_node();
+
+    let struct_member =
+        db.first_ancestor_of_kind(identifier_node.clone(), SyntaxKind::StructArgSingle)?;
+    let struct_member = ast::StructArgSingle::from_syntax_node(db, struct_member);
+
+    let ast::OptionStructArgExpr::StructArgExpr(struct_member_expr) = struct_member.arg_expr(db)
+    else {
+        return None;
+    };
+
+    let struct_member_expr_id =
+        db.lookup_expr_by_ptr(function_id, struct_member_expr.expr(db).stable_ptr().into()).ok()?;
+
+    let constructor = db.first_ancestor_of_kind(identifier_node, SyntaxKind::ExprStructCtorCall)?;
+    let constructor_expr = ast::ExprStructCtorCall::from_syntax_node(db, constructor);
+    let constructor_expr_id =
+        db.lookup_expr_by_ptr(function_id, constructor_expr.stable_ptr().into()).ok()?;
+
+    let Expr::StructCtor(constructor_expr_semantic) =
+        db.expr_semantic(function_id, constructor_expr_id)
+    else {
+        return None;
+    };
+
+    constructor_expr_semantic
+        .members
+        .iter()
+        .find_map(|(id, expr_id)| struct_member_expr_id.eq(expr_id).then(|| *id))
 }
 
 /// Extracts [`MemberId`] if the [`ast::TerminalIdentifier`] points to
