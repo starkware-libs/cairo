@@ -832,7 +832,7 @@ impl PythonicHint for StarknetHint {
                     ResOperandAsAddressFormatter(system)
                 )
             }
-            StarknetHint::Cheatcode { .. } => "raise NotImplementedError".to_string(),
+            StarknetHint::Cheatcode { .. } => "raise NotImplementedError # Cheatcode".to_string(),
         }
     }
 }
@@ -844,7 +844,10 @@ impl PythonicHint for ExternalHint {
                 let [src, dst] = [src, dst].map(ResOperandAsAddressFormatter);
                 format!("memory.add_relocation_rule(src_ptr={src}, dest_ptr={dst})")
             }
-            Self::WriteRunParam { .. } => "raise NotImplementedError".to_string(),
+            Self::WriteRunParam { index, dst } => {
+                let index = ResOperandAsIntegerFormatter(index);
+                format!("raise NotImplementedError # memory{dst}.. = params[{index}]")
+            }
         }
     }
 }
