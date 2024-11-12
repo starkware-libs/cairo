@@ -235,7 +235,7 @@ fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `core::integer::u32` and `core::integer::u64`.
+error: Trait has no implementation in context: core::ops::function::FnOnce::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>.
  --> lib.cairo:10:23
     let _k: felt252 = bar(c);
                       ^*^
@@ -266,10 +266,10 @@ fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `core::felt252` and `core::integer::u128`.
- --> lib.cairo:10:23
-    let _k: felt252 = bar(c);
-                      ^*^
+error: Type mismatch: `core::integer::u128` and `core::felt252`.
+ --> lib.cairo:9:39
+    let _f: u128 = core::ops::FnOnce::call(c, (2,));
+                                      ^**^
 
 //! > ==========================================================================
 
@@ -375,7 +375,7 @@ fn baz<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::ops::function::FnOnce::<core::felt252, ()>.
+error: Trait has no implementation in context: core::ops::function::Fn::<core::felt252, ()>.
  --> lib.cairo:7:19
     let _x: u32 = bar();
                   ^***^
@@ -409,10 +409,10 @@ fn bar(a: felt252) -> u32 {
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `(?6,)` and `(?0, ?1, ?2)`.
- --> lib.cairo:8:19
-    let _f: u32 = bar(2);
-                  ^****^
+error: Type annotations needed. Failed to infer ?0.
+ --> lib.cairo:5:18
+    let bar = |_a, _b, _c| -> u32 {
+                 ^
 
 //! > ==========================================================================
 
@@ -646,3 +646,60 @@ foo
 fn bar<T, +Destruct<T>>(a: T) {}
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Calling a non closure type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _y =  || 2;
+    let x: u32 = 5;
+    x()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Call expression requires a function, found `core::integer::u32`.
+Candidate `core::ops::function::FnOnce::call` inference failed with: Trait has no implementation in context: core::ops::function::FnOnce::<core::integer::u32, ?4>.
+ --> lib.cairo:4:5
+    x()
+    ^*^
+
+//! > ==========================================================================
+
+//! > Implementing a closure trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> u32 {
+    let _y =  || 2;
+    let x: u32 = 5;
+    x()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl MyImpl of core::ops::FnOnce<u32, ()> {
+    type Output = u32;
+    fn call(self: u32, args: ()) -> u32 {
+        self
+    }
+}
+
+//! > expected_diagnostics
+error: Trait `TraitId(core::ops::function::FnOnce)` should not be re-implemented.
+ --> lib.cairo:1:16
+impl MyImpl of core::ops::FnOnce<u32, ()> {
+               ^************************^

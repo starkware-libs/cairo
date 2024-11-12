@@ -267,6 +267,7 @@ impl FunctionLongId {
                                 semantic::corelib::destruct_trait_fn(semantic_db),
                                 semantic::corelib::panic_destruct_trait_fn(semantic_db),
                                 semantic::corelib::fn_once_call_trait_fn(semantic_db),
+                                semantic::corelib::fn_call_trait_fn(semantic_db),
                             ]
                             .contains(&function)
                         );

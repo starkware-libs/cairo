@@ -13,3 +13,15 @@ pub trait FnOnce<T, Args> {
     /// Performs the call operation.
     fn call(self: T, args: Args) -> Self::Output;
 }
+impl FnOnceImpl<T, Args, +Destruct<T>, +Fn<T, Args>> of FnOnce<T, Args> {
+    type Output = Fn::<T, Args>::Output;
+    fn call(self: T, args: Args) -> Self::Output {
+        Fn::call(@self, args)
+    }
+}
+
+pub trait Fn<T, Args> {
+    type Output;
+    #[inline(never)]
+    fn call(self: @T, args: Args) -> Self::Output;
+}
