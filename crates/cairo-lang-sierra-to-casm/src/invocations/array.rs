@@ -213,9 +213,8 @@ fn build_array_get(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [expr_range_check, expr_arr, expr_index] = builder.try_get_refs()?;
-    let range_check = expr_range_check.try_unpack_single()?;
-    let [arr_start, arr_end] = expr_arr.try_unpack()?;
+    let [expr_arr, expr_index] = builder.try_get_refs()?;
+    let [arr_start, _arr_end] = expr_arr.try_unpack()?;
     let index = expr_index.try_unpack_single()?;
 
     let element_size = builder.program_info.type_sizes[elem_ty];
@@ -224,54 +223,16 @@ fn build_array_get(
     add_input_variables! {casm_builder,
         deref_or_immediate index;
         deref arr_start;
-        deref arr_end;
-        buffer(1) range_check;
     };
     casm_build_extend! {casm_builder,
         const element_size = element_size;
-        let orig_range_check = range_check;
-        // Compute the length of the array (in cells).
-        tempvar array_length_in_cells = arr_end - arr_start;
-        // Compute the offset of the element (in cells).
         maybe_tempvar element_offset_in_cells = index * element_size;
-        // Check that offset is in range.
-        // Note that the offset may be as large as `(2^15 - 1) * (2^32 - 1)`.
-        tempvar is_in_range;
-        hint TestLessThan {lhs: element_offset_in_cells, rhs: array_length_in_cells} into {dst: is_in_range};
-        jump InRange if is_in_range != 0;
-        // Index out of bounds. Compute offset - length.
-        tempvar offset_length_diff = element_offset_in_cells - array_length_in_cells;
-        // Assert offset - length >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
-        assert offset_length_diff  = *(range_check++);
-        jump FailureHandle;
-
-        InRange:
-        // Assert offset < length, or that length - (offset + 1) is in [0, 2^128).
-        // Compute offset + 1.
-        const one = 1;
-        tempvar element_offset_in_cells_plus_1 = element_offset_in_cells + one;
-        // Compute length - (offset + 1).
-        tempvar offset_length_diff = array_length_in_cells - element_offset_in_cells_plus_1;
-        // Assert length - (offset + 1) is in [0, 2^128).
-        assert offset_length_diff = *(range_check++);
-         // The start address of target cells.
         let target_cell = arr_start + element_offset_in_cells;
     };
-    let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [
-            ("Fallthrough", &[&[range_check], &[target_cell]], None),
-            ("FailureHandle", &[&[range_check]], Some(failure_handle)),
-        ],
-        CostValidationInfo {
-            builtin_infos: vec![BuiltinInfo {
-                cost_token_ty: CostTokenType::RangeCheck,
-                start: orig_range_check,
-                end: range_check,
-            }],
-            extra_costs: None,
-        },
+        [("Fallthrough", &[&[target_cell]], None)],
+        CostValidationInfo { builtin_infos: vec![], extra_costs: None },
     ))
 }
 

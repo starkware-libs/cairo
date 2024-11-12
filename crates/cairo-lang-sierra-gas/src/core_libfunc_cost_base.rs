@@ -283,15 +283,9 @@ pub fn core_libfunc_cost(
             }
             ArrayConcreteLibfunc::Get(libfunc) => {
                 if info_provider.type_size(&libfunc.ty) == 1 {
-                    vec![
-                        (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
-                        (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
-                    ]
+                    vec![(ConstCost::steps(0)).into()]
                 } else {
-                    vec![
-                        (ConstCost::steps(6) + ConstCost::range_checks(1)).into(),
-                        (ConstCost::steps(6) + ConstCost::range_checks(1)).into(),
-                    ]
+                    vec![(ConstCost::steps(1)).into()]
                 }
             }
             ArrayConcreteLibfunc::Slice(libfunc) => {

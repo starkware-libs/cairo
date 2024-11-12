@@ -334,26 +334,19 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
         let param_signatures = vec![
-            ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(snapshot_ty(context, arr_type)?),
             ParamSignature::new(index_type),
         ];
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
         let branch_signatures = vec![
             // First (success) branch returns rc, array and element; failure branch does not return
             // an element.
             BranchSignature {
-                vars: vec![rc_output_info.clone(), OutputVarInfo {
+                vars: vec![OutputVarInfo {
                     ty: box_ty(context, snapshot_ty(context, ty)?)?,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 }],
-                ap_change: SierraApChange::Known { new_vars_only: false },
-            },
-            BranchSignature {
-                vars: vec![rc_output_info],
                 ap_change: SierraApChange::Known { new_vars_only: false },
             },
         ];

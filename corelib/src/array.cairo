@@ -90,10 +90,9 @@ extern fn array_snapshot_multi_pop_front<PoppedT, impl Info: FixedSizedArrayInfo
 extern fn array_snapshot_multi_pop_back<PoppedT, impl Info: FixedSizedArrayInfo<PoppedT>>(
     ref arr: @Array<Info::Element>,
 ) -> Option<@Box<PoppedT>> implicits(RangeCheck) nopanic;
-#[panic_with('Index out of bounds', array_at)]
 extern fn array_get<T>(
-    arr: @Array<T>, index: usize,
-) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
+    arr: @Array<T>, index: usize
+) -> Box<@T> nopanic;
 extern fn array_slice<T>(
     arr: @Array<T>, start: usize, length: usize,
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
@@ -209,7 +208,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// ```
     #[inline]
     fn get(self: @Array<T>, index: usize) -> Option<Box<@T>> {
-        array_get(self, index)
+        Option::Some(array_get(self, index))
     }
 
     /// Returns a snapshot of the element at the given index.
@@ -227,7 +226,7 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// assert!(arr.at(1) == @4);
     /// ```
     fn at(self: @Array<T>, index: usize) -> @T {
-        array_at(self, index).unbox()
+        array_get(self, index).unbox()
     }
 
     /// Returns the length of the array as a `usize` value.
@@ -298,7 +297,7 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     /// assert!(element == @1);
     /// ```
     fn index(self: @Array<T>, index: usize) -> @T {
-        array_at(self, index).unbox()
+        array_get(self, index).unbox()
     }
 }
 
@@ -550,7 +549,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// ```
     #[inline]
     fn get(self: Span<T>, index: usize) -> Option<Box<@T>> {
-        array_get(self.snapshot, index)
+        Option::Some(array_get(self.snapshot, index))
     }
 
     /// Returns a snapshot of the element at the given index.
@@ -569,7 +568,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     /// ```
     #[inline]
     fn at(self: Span<T>, index: usize) -> @T {
-        array_at(self.snapshot, index).unbox()
+        array_get(self.snapshot, index).unbox()
     }
 
     /// Returns a span containing values from the 'start' index, with
@@ -633,7 +632,7 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     /// ```
     #[inline]
     fn index(self: @Span<T>, index: usize) -> @T {
-        array_at(*self.snapshot, index).unbox()
+        array_get(*self.snapshot, index).unbox()
     }
 }
 
