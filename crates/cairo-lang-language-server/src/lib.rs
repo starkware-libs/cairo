@@ -279,6 +279,8 @@ impl Backend {
         event_loop_thread(move || {
             let Self { mut state, connection } = self;
 
+            state.proc_macro_controller.initialize_once(&mut state.db);
+
             let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
 
             Self::dispatch_setup_tasks(&mut scheduler);
@@ -355,6 +357,9 @@ impl Backend {
             };
         }
 
+        let (proc_macro_errors, proc_macro_responses) =
+            scheduler.state.proc_macro_controller.init_channels();
+
         loop {
             select! {
                 recv(connection.incoming()) -> msg => {
@@ -370,10 +375,32 @@ impl Backend {
                     };
                     scheduler.dispatch(task);
                 }
+                recv(proc_macro_errors) -> error => {
+                    let () = unwrap_or_break!(error);
+
+                    scheduler.local(Self::on_proc_macro_error);
+                }
+                recv(proc_macro_responses) -> response => {
+                    let () = unwrap_or_break!(response);
+
+                    scheduler.local(Self::on_proc_macro_response);
+                }
             }
         }
 
         Ok(())
+    }
+
+    /// Calls [`lang::proc_macros::controller::ProcMacroClientController::handle_error`] to do its
+    /// work.
+    fn on_proc_macro_error(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        state.proc_macro_controller.handle_error(&mut state.db);
+    }
+
+    /// Calls [`lang::proc_macros::controller::ProcMacroClientController::on_response`] to do its
+    /// work.
+    fn on_proc_macro_response(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        state.proc_macro_controller.on_response(&mut state.db);
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.

@@ -38,7 +38,7 @@ pub fn event_loop_thread(
 type SyncTaskHook = Box<dyn Fn(&mut State, Notifier)>;
 
 pub struct Scheduler<'s> {
-    state: &'s mut State,
+    pub state: &'s mut State,
     client: Client<'s>,
     background_pool: thread::Pool,
     sync_task_hooks: Vec<SyncTaskHook>,
