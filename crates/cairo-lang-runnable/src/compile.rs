@@ -8,14 +8,13 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_runnable_utils::builder::{EntryCodeConfig, RunnableBuilder};
-use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 
-use crate::plugin::{RUNNABLE_PREFIX, RUNNABLE_RAW_ATTR, RunnablePlugin};
+use crate::plugin::{RUNNABLE_PREFIX, RUNNABLE_RAW_ATTR, runnable_plugin_suite};
 
 /// Compile the function given by path.
 /// Errors if there is ambiguity.
@@ -26,7 +25,7 @@ pub fn compile_runnable(
 ) -> Result<String> {
     let mut db = RootDatabase::builder()
         .detect_corelib()
-        .with_plugin_suite(std::mem::take(PluginSuite::default().add_plugin::<RunnablePlugin>()))
+        .with_plugin_suite(runnable_plugin_suite())
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
