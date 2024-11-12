@@ -37,8 +37,8 @@ fn main(a: felt252, b: felt252) -> felt252 {
 # builtins: 
 # header #
 ap += 0;
-%{ raise NotImplementedError %}
-%{ raise NotImplementedError %}
+%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+%{ raise NotImplementedError("memory[ap + 1].. = params[1])") %}
 ap += 2;
 call rel 3;
 ret;
@@ -72,9 +72,9 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 # header #
 ap += 0;
 [ap + 0] = [fp + -3], ap++;
-%{ raise NotImplementedError %}
-%{ raise NotImplementedError %}
-%{ raise NotImplementedError %}
+%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+%{ raise NotImplementedError("memory[ap + 1].. = params[1])") %}
+%{ raise NotImplementedError("memory[ap + 2].. = params[2])") %}
 ap += 3;
 call rel 3;
 ret;
