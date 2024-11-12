@@ -7,6 +7,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_doc::db::DocGroup;
+use cairo_lang_doc::documentable_item::DocumentableItemId;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::pattern::QueryPatternVariablesFromDb;
@@ -38,6 +39,7 @@ pub enum SymbolDef {
     Variable(VariableDef),
     ExprInlineMacro(String),
     Member(MemberDef),
+    Module(ModuleDef),
 }
 
 /// Information about a struct member.
@@ -78,7 +80,6 @@ impl SymbolDef {
 
         match definition_item {
             ResolvedItem::Generic(ResolvedGenericItem::GenericConstant(_))
-            | ResolvedItem::Generic(ResolvedGenericItem::Module(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericFunction(_))
             | ResolvedItem::Generic(ResolvedGenericItem::TraitFunction(_))
             | ResolvedItem::Generic(ResolvedGenericItem::GenericType(_))
@@ -88,7 +89,6 @@ impl SymbolDef {
             | ResolvedItem::Generic(ResolvedGenericItem::Trait(_))
             | ResolvedItem::Generic(ResolvedGenericItem::Impl(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Constant(_))
-            | ResolvedItem::Concrete(ResolvedConcreteItem::Module(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Function(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::TraitFunction(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Type(_))
@@ -96,6 +96,14 @@ impl SymbolDef {
             | ResolvedItem::Concrete(ResolvedConcreteItem::Trait(_))
             | ResolvedItem::Concrete(ResolvedConcreteItem::Impl(_)) => {
                 ItemDef::new(db, &definition_node).map(Self::Item)
+            }
+
+            ResolvedItem::Generic(ResolvedGenericItem::Module(id)) => {
+                Some(Self::Module(ModuleDef::new(db, id)))
+            }
+
+            ResolvedItem::Concrete(ResolvedConcreteItem::Module(id)) => {
+                Some(Self::Module(ModuleDef::new(db, id)))
             }
 
             ResolvedItem::Generic(ResolvedGenericItem::Variable(_)) => {
@@ -287,6 +295,54 @@ impl VariableDef {
         let ty = var.ty().format(db.upcast());
 
         format!("{prefix}{mutability}{name}: {ty}")
+    }
+}
+
+/// Information about the definition of a module.
+pub struct ModuleDef {
+    id: ModuleId,
+    name: SmolStr,
+    /// A full path to the parent module if [`ModuleId`] points to a submodule,
+    /// None otherwise (i.e. for a crate root).
+    parent_full_path: Option<String>,
+}
+
+impl ModuleDef {
+    /// Constructs new [`ModuleDef`] instance.
+    pub fn new(db: &AnalysisDatabase, id: ModuleId) -> Self {
+        let name = id.name(db);
+        let parent_full_path = id
+            .full_path(db)
+            .strip_suffix(name.as_str())
+            .unwrap()
+            .strip_suffix("::")  // Fails when path lacks `::`, i.e. when we import from a crate root.
+            .map(String::from);
+
+        ModuleDef { id, name, parent_full_path }
+    }
+
+    /// Gets the module signature: a name preceded by a qualifier: "mod" for submodule
+    /// and "crate" for crate root.
+    pub fn signature(&self) -> String {
+        let prefix = if self.parent_full_path.is_some() { "mod" } else { "crate" };
+        format!("{prefix} {}", self.name)
+    }
+
+    /// Gets the full path of a parent module of the current module.
+    pub fn definition_path(&self) -> String {
+        self.parent_full_path.clone().unwrap_or_default()
+    }
+
+    /// Gets the module's documentation if it's available.
+    pub fn documentation(&self, db: &AnalysisDatabase) -> Option<String> {
+        let doc_id = match self.id {
+            ModuleId::CrateRoot(id) => DocumentableItemId::Crate(id),
+            ModuleId::Submodule(id) => DocumentableItemId::LookupItem(LookupItemId::ModuleItem(
+                ModuleItemId::Submodule(id),
+            )),
+        };
+
+        db.get_item_documentation(doc_id)
     }
 }
 
