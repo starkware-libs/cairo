@@ -59,3 +59,12 @@ impl Notification for ScarbMetadataFailed {
     type Params = ();
     const METHOD: &'static str = "cairo/scarb-metadata-failed";
 }
+
+/// Notifies about `proc-macro-server` fatal fail.
+#[derive(Debug)]
+pub struct ProcMacroServerFatalFailed;
+
+impl Notification for ProcMacroServerFatalFailed {
+    type Params = ();
+    const METHOD: &'static str = "cairo/procMacroServerFatalFailed";
+}
