@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -13,12 +15,13 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_test_plugin::test_plugin_suite;
+use cairo_lang_test_plugin::test_assert_suite;
 use cairo_lang_utils::Upcast;
 
 pub use self::semantic::*;
 pub use self::swapper::*;
 pub use self::syntax::*;
+use super::proc_macros::db::{ProcMacroCacheDatabase, ProcMacroCacheGroup};
 use crate::Tricks;
 
 mod semantic;
@@ -33,7 +36,8 @@ mod syntax;
     ParserDatabase,
     SemanticDatabase,
     SyntaxDatabase,
-    DocDatabase
+    DocDatabase,
+    ProcMacroCacheDatabase
 )]
 pub struct AnalysisDatabase {
     storage: salsa::Storage<Self>,
@@ -49,15 +53,27 @@ impl AnalysisDatabase {
 
         db.set_cfg_set(Self::initial_cfg_set().into());
 
-        let plugin_suite =
-            [get_default_plugin_suite(), starknet_plugin_suite(), test_plugin_suite()]
-                .into_iter()
-                .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))
-                .fold(PluginSuite::default(), |mut acc, suite| {
-                    acc.add(suite);
-                    acc
-                });
+        let plugin_suite = [
+            get_default_plugin_suite(),
+            starknet_plugin_suite(),
+            // test_plugin_suite() TODO(#6551)
+            test_assert_suite(),
+        ]
+        .into_iter()
+        .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))
+        .fold(PluginSuite::default(), |mut acc, suite| {
+            acc.add(suite);
+            acc
+        });
         db.apply_plugin_suite(plugin_suite);
+
+        // proc-macro-server can be restarted many times but we want to keep these data across
+        // multiple server starts, so init it once per database, not per server.
+        db.set_attribute_macro_resolution(Default::default());
+        db.set_derive_macro_resolution(Default::default());
+        db.set_inline_macro_resolution(Default::default());
+        // We read this to check if client is available so it should be initialized.
+        db.set_proc_macro_client_status(Default::default());
 
         db
     }
@@ -82,6 +98,48 @@ impl AnalysisDatabase {
         self.set_macro_plugins(plugin_suite.plugins);
         self.set_inline_macro_plugins(plugin_suite.inline_macro_plugins.into());
         self.set_analyzer_plugins(plugin_suite.analyzer_plugins);
+    }
+
+    /// Removes all plugins from `previous_plugin_suite` if exists, plugins are considered
+    /// equal if uses same [`Arc`]. Then adds `new_plugin_suite`, unlike
+    /// [`AnalysisDatabase::apply_plugin_suite`] this will keep all other plugins in place.
+    pub(crate) fn replace_plugin_suite(
+        &mut self,
+        previous_plugin_suite: Option<PluginSuite>,
+        new_plugin_suite: PluginSuite,
+    ) {
+        let mut macro_plugins = self.macro_plugins();
+        let mut analyzer_plugins = self.analyzer_plugins();
+        let mut inline_macro_plugins = Arc::unwrap_or_clone(self.inline_macro_plugins());
+
+        if let Some(previous_plugin_suite) = previous_plugin_suite {
+            macro_plugins.retain(|plugin| {
+                previous_plugin_suite
+                    .plugins
+                    .iter()
+                    .all(|previous_plugin| !Arc::ptr_eq(previous_plugin, plugin))
+            });
+            analyzer_plugins.retain(|plugin| {
+                previous_plugin_suite
+                    .analyzer_plugins
+                    .iter()
+                    .all(|previous_plugin| !Arc::ptr_eq(previous_plugin, plugin))
+            });
+            inline_macro_plugins.retain(|_, plugin| {
+                previous_plugin_suite
+                    .inline_macro_plugins
+                    .iter()
+                    .all(|(_, previous_plugin)| !Arc::ptr_eq(previous_plugin, plugin))
+            });
+        }
+
+        macro_plugins.extend(new_plugin_suite.plugins);
+        analyzer_plugins.extend(new_plugin_suite.analyzer_plugins);
+        inline_macro_plugins.extend(new_plugin_suite.inline_macro_plugins);
+
+        self.set_macro_plugins(macro_plugins);
+        self.set_analyzer_plugins(analyzer_plugins);
+        self.set_inline_macro_plugins(Arc::new(inline_macro_plugins));
     }
 }
 
