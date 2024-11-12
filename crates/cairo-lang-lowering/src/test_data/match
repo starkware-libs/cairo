@@ -164,7 +164,7 @@ test_function_lowering
 
 //! > function
 fn foo(a: @Array::<felt252>) -> Option<Box<@felt252>> {
-    core::array::array_get(a, 0_u32)
+    Option::Some(core::array::array_get(a, 0_u32))
 }
 
 //! > function_name
@@ -177,28 +177,14 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::RangeCheck, v1: @core::array::Array::<core::felt252>
+Parameters: v0: @core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
-  (v2: core::integer::u32) <- 0
+  (v1: core::integer::u32) <- 0
+  (v2: core::box::Box::<@core::felt252>) <- core::array::array_get::<core::felt252>(v0, v1)
+  (v3: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v2)
 End:
-  Match(match core::array::array_get::<core::felt252>(v0, v1, v2) {
-    Option::Some(v3, v4) => blk1,
-    Option::None(v5) => blk2,
-  })
-
-blk1:
-Statements:
-  (v6: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v4)
-End:
-  Return(v3, v6)
-
-blk2:
-Statements:
-  (v7: ()) <- struct_construct()
-  (v8: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v7)
-End:
-  Return(v5, v8)
+  Return(v3)
 
 //! > ==========================================================================
 
