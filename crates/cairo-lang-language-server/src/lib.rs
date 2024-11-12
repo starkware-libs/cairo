@@ -41,7 +41,7 @@
 use std::panic::RefUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 use std::{io, panic};
 
 use anyhow::{Context, Result};
@@ -292,6 +292,9 @@ impl Backend {
             // we basically never hit such a case in CairoLS in happy paths.
             scheduler.on_sync_task(Self::refresh_diagnostics);
 
+            // Starts proc-macro-server after config has been changed.
+            scheduler.on_sync_task(Self::maybe_start_proc_macro_server);
+
             let result = Self::event_loop(&connection, scheduler);
 
             // Trigger cancellation in any background tasks that might still be running.
@@ -345,7 +348,13 @@ impl Backend {
     // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69 |
     // +--------------------------------------------------+
     fn event_loop(connection: &Connection, mut scheduler: Scheduler<'_>) -> Result<()> {
-        for msg in connection.incoming() {
+        for msg in connection.incoming(Duration::from_secs(1)) {
+            let Some(msg) = msg else {
+                scheduler.local(Self::run_idle_tasks);
+
+                continue;
+            };
+
             if connection.handle_shutdown(&msg)? {
                 break;
             }
@@ -358,6 +367,12 @@ impl Backend {
         }
 
         Ok(())
+    }
+
+    /// Executes tasks when there is no incoming message.
+    /// Warning! Keep it very cheap!
+    fn run_idle_tasks(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        state.proc_macro_controller.maybe_update_and_apply_responses(&mut state.db, &state.config);
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
@@ -374,6 +389,11 @@ impl Backend {
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
     fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
         state.diagnostics_controller.refresh(state.snapshot(), notifier);
+    }
+
+    /// Calls [`lang::proc_macros::client::controller::ProcMacroClientController::try_initialize_if_disabled`] to do its work.
+    fn maybe_start_proc_macro_server(state: &mut State, _notifier: Notifier) {
+        state.proc_macro_controller.try_initialize_if_disabled(&mut state.db, &state.config);
     }
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the

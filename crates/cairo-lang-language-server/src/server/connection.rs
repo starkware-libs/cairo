@@ -6,8 +6,10 @@
 // +-----------------------------------------------------+
 
 use std::sync::{Arc, Weak};
+use std::time::Duration;
 
 use anyhow::{Result, bail};
+use crossbeam::channel::RecvTimeoutError;
 use lsp_server::{
     Connection as LSPConnection, IoThreads, Message, Notification, Request, RequestId, Response,
 };
@@ -78,8 +80,12 @@ impl Connection {
     }
 
     /// An iterator over incoming messages from the client.
-    pub fn incoming(&self) -> crossbeam::channel::Iter<'_, Message> {
-        self.receiver.iter()
+    pub fn incoming(&self, timeout: Duration) -> impl Iterator<Item = Option<Message>> + '_ {
+        std::iter::from_fn(move || match self.receiver.recv_timeout(timeout) {
+            Ok(message) => Some(Some(message)),
+            Err(RecvTimeoutError::Timeout) => Some(None),
+            Err(RecvTimeoutError::Disconnected) => None,
+        })
     }
 
     /// Check and respond to any incoming shutdown requests; returns `true` if the server should be
