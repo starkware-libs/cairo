@@ -29,104 +29,104 @@ fn test_ast() {
             (
                 SyntaxKind::ExprBinary,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                TextWidth::new_for_testing(7)
+                TextOffset::default().add_width(TextWidth::new(0)),
+                TextWidth::new(7)
             ),
             (
                 SyntaxKind::ExprPath,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                TextWidth::new_for_testing(4)
+                TextOffset::default().add_width(TextWidth::new(0)),
+                TextWidth::new(4)
             ),
             (
                 SyntaxKind::PathSegmentSimple,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                TextWidth::new_for_testing(4)
+                TextOffset::default().add_width(TextWidth::new(0)),
+                TextWidth::new(4)
             ),
             (
                 SyntaxKind::TerminalIdentifier,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                TextWidth::new_for_testing(4)
+                TextOffset::default().add_width(TextWidth::new(0)),
+                TextWidth::new(4)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                TextWidth::new_for_testing(0)
+                TextOffset::default().add_width(TextWidth::new(0)),
+                TextWidth::new(0)
             ),
             (
                 SyntaxKind::TokenIdentifier,
                 Some("foo".into()),
-                TextOffset::default().add_width(TextWidth::new_for_testing(0)),
-                TextWidth::new_for_testing(3)
+                TextOffset::default().add_width(TextWidth::new(0)),
+                TextWidth::new(3)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(3)),
-                TextWidth::new_for_testing(1)
+                TextOffset::default().add_width(TextWidth::new(3)),
+                TextWidth::new(1)
             ),
             (
                 SyntaxKind::TokenWhitespace,
                 Some(" ".into()),
-                TextOffset::default().add_width(TextWidth::new_for_testing(3)),
-                TextWidth::new_for_testing(1)
+                TextOffset::default().add_width(TextWidth::new(3)),
+                TextWidth::new(1)
             ),
             (
                 SyntaxKind::TerminalPlus,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(4)),
-                TextWidth::new_for_testing(2)
+                TextOffset::default().add_width(TextWidth::new(4)),
+                TextWidth::new(2)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(4)),
-                TextWidth::new_for_testing(0)
+                TextOffset::default().add_width(TextWidth::new(4)),
+                TextWidth::new(0)
             ),
             (
                 SyntaxKind::TokenPlus,
                 Some("+".into()),
-                TextOffset::default().add_width(TextWidth::new_for_testing(4)),
-                TextWidth::new_for_testing(1)
+                TextOffset::default().add_width(TextWidth::new(4)),
+                TextWidth::new(1)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(5)),
-                TextWidth::new_for_testing(1)
+                TextOffset::default().add_width(TextWidth::new(5)),
+                TextWidth::new(1)
             ),
             (
                 SyntaxKind::TokenWhitespace,
                 Some(" ".into()),
-                TextOffset::default().add_width(TextWidth::new_for_testing(5)),
-                TextWidth::new_for_testing(1)
+                TextOffset::default().add_width(TextWidth::new(5)),
+                TextWidth::new(1)
             ),
             (
                 SyntaxKind::TerminalLiteralNumber,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
-                TextWidth::new_for_testing(1)
+                TextOffset::default().add_width(TextWidth::new(6)),
+                TextWidth::new(1)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
-                TextWidth::new_for_testing(0)
+                TextOffset::default().add_width(TextWidth::new(6)),
+                TextWidth::new(0)
             ),
             (
                 SyntaxKind::TokenLiteralNumber,
                 Some("5".into()),
-                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
-                TextWidth::new_for_testing(1)
+                TextOffset::default().add_width(TextWidth::new(6)),
+                TextWidth::new(1)
             ),
             (
                 SyntaxKind::Trivia,
                 None,
-                TextOffset::default().add_width(TextWidth::new_for_testing(7)),
-                TextWidth::new_for_testing(0)
+                TextOffset::default().add_width(TextWidth::new(7)),
+                TextWidth::new(0)
             )
         ]
     )
@@ -171,9 +171,10 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     let terminal5 = TerminalLiteralNumber::new_green(db, no_trivia, token5, no_trivia);
     let expr = ExprBinary::new_green(
         db,
-        ExprPath::new_green(db, vec![
-            PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into(),
-        ])
+        ExprPath::new_green(
+            db,
+            vec![PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
+        )
         .into(),
         terminal_plus.into(),
         terminal5.into(),

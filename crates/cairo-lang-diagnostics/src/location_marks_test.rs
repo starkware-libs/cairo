@@ -35,85 +35,103 @@ fn test_location_marks() {
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: second_line.add_width(TextWidth::new_for_testing(13)),
-            end: second_line.add_width(TextWidth::new_for_testing(13)),
+            start: second_line.add_width(TextWidth::new(13)),
+            end: second_line.add_width(TextWidth::new(13)),
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
             Second liné.
                         ^
-        "});
+        "}
+    );
 
     // Span of length 1.
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: third_line.add_width(TextWidth::new_for_testing(3)),
-            end: third_line.add_width(TextWidth::new_for_testing(4)),
+            start: third_line.add_width(TextWidth::new(3)),
+            end: third_line.add_width(TextWidth::new(4)),
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
             Third liné.
                ^
-        "});
+        "}
+    );
 
     // Span of length 2.
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: third_line.add_width(TextWidth::new_for_testing(3)),
-            end: third_line.add_width(TextWidth::new_for_testing(5)),
+            start: third_line.add_width(TextWidth::new(3)),
+            end: third_line.add_width(TextWidth::new(5)),
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
             Third liné.
                ^^
-        "});
+        "}
+    );
 
     // Span of length > 1.
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: second_line.add_width(TextWidth::new_for_testing(7)),
-            end: second_line.add_width(TextWidth::new_for_testing(12)),
+            start: second_line.add_width(TextWidth::new(7)),
+            end: second_line.add_width(TextWidth::new(12)),
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
             Second liné.
                    ^**^
-        "});
+        "}
+    );
 
     // Multiline span.
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: second_line.add_width(TextWidth::new_for_testing(7)),
-            end: third_line.add_width(TextWidth::new_for_testing(2)),
+            start: second_line.add_width(TextWidth::new(7)),
+            end: third_line.add_width(TextWidth::new(2)),
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
             Second liné.
                    ^***^
-        "});
+        "}
+    );
 
     // Span that ends past the end of the file.
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: third_line.add_width(TextWidth::new_for_testing(7)),
+            start: third_line.add_width(TextWidth::new(7)),
             end: summary.last_offset.add_width(TextWidth::from_char('\n')),
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
             Third liné.
                    ^**^
-        "});
+        "}
+    );
 
     // Empty span past the end of the file.
     let location = DiagnosticLocation {
@@ -121,8 +139,11 @@ fn test_location_marks() {
         span: TextSpan { start: summary.last_offset, end: summary.last_offset },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
             Third liné.
                        ^
-        "});
+        "}
+    );
 }

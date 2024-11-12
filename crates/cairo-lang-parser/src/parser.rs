@@ -139,7 +139,7 @@ impl<'a> Parser<'a> {
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
     }
-
+    
     /// Parses a file expr.
     pub fn parse_file_expr(
         db: &'a dyn SyntaxGroup,
