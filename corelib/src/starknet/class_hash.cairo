@@ -1,14 +1,39 @@
-use core::serde::Serde;
+//! Class hash module that provides functionality for working with Starknet contract class hashes.
+//!
+//! The `ClassHash` type represents a Starknet contract class hash. This module provides the
+//! implementation of many basic traits for this type.
+//!
+//! `class_hash_const` allows to construct a `ClassHash` value from a constant `felt252` address.
+//!
+//! # Examples
+//!
+//! ```
+//! use core::starknet::class_hash::class_hash_const;
+//!
+//! let hash = class_hash_const::<0x123>();
+//! ```
+
 #[allow(unused_imports)]
 use core::hash::{Hash, HashStateTrait};
 use core::RangeCheck;
+use core::serde::Serde;
 
 /// Represents a Starknet contract class hash.
 /// The value range of this type is `[0, 2**251)`.
 #[derive(Copy, Drop)]
 pub extern type ClassHash;
 
+/// Returns a `ClassHash` value given a `felt252` address value.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::class_hash::class_hash_const;
+///
+/// let hash = class_hash_const::<0x123>();
+/// ```
 pub extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
+
 pub(crate) extern fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
 
 pub(crate) extern fn class_hash_try_from_felt252(
@@ -20,6 +45,7 @@ pub(crate) impl Felt252TryIntoClassHash of TryInto<felt252, ClassHash> {
         class_hash_try_from_felt252(self)
     }
 }
+
 pub(crate) impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
     fn into(self: ClassHash) -> felt252 {
         class_hash_to_felt252(self)
