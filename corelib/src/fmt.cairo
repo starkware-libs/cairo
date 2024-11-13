@@ -8,7 +8,7 @@
 //! - `Debug`: A trait for debug formatting using the empty format ("{:?}").
 //! - `LowerHex`: A trait for hex formatting in lower case.
 //!
-//! The module includes implementations of the `Display`, `Debug` and `LowerHex` traits for various
+//! The module includes implementations of the [`Display`], [`Debug`] and [`LowerHex`] traits for various
 //! types.
 
 /// Dedicated type for representing formatting errors.
