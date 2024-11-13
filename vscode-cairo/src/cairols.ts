@@ -37,7 +37,7 @@ async function allFoldersHaveSameLSProvider(
   // If every executable is scarb based, check if the versions match
   if (executables.every((v) => !!v.scarb)) {
     const versions = await Promise.all(executables.map((v) => v.scarb!.getVersion(ctx)));
-  
+
     return versions.every((x) => x === versions[0]);
   }
 
