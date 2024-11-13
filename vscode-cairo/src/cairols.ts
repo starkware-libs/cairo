@@ -25,13 +25,23 @@ function notifyScarbMissing(ctx: Context) {
   ctx.log.error(errorMessage);
 }
 
-function allFoldersHaveSameLSProvider(executables: LSExecutable[]): boolean {
+async function allFoldersHaveSameLSProvider(ctx: Context, executables: LSExecutable[]): Promise<boolean> {
 	if (executables.length < 2) {
 		return true;
 	}
+  
+  // If every executable is scarb based, check if the versions match
+  if (executables.every(v => !!v.scarb)) {
+    let versions = await Promise.all(executables.map(v => v.scarb!.getVersion(ctx)));
+    let primaryVersion = versions[0];
+    
+    let hasMultipleVersions = versions.slice(1).find(x => x != primaryVersion);
+    return !hasMultipleVersions;
+  }
+
   let primaryExecutable = executables[0]!;
-	
-	return executables.slice(1).find((x) => primaryExecutable.run.command !== x.run.command) ? false : true;
+	let hasMultipleExecs = executables.slice(1).find((x) => primaryExecutable.run.command !== x.run.command)
+  return !hasMultipleExecs;
 }
 
 export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {  
@@ -40,8 +50,9 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
       async (workspaceFolder) => await getLanguageServerExecutable(workspaceFolder, ctx)
     ).filter((x) => !!x)
   ) as LSExecutable[];
-
-  if (!allFoldersHaveSameLSProvider(executables)) {
+  
+  let sameProvider = await allFoldersHaveSameLSProvider(ctx, executables);
+  if (!sameProvider) {
     throw new Error("Multiple versions of scarb in one workspace is not supported");
   }
 
