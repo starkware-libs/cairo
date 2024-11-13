@@ -95,7 +95,6 @@ impl BoxDeref<T> of crate::ops::Deref<Box<T>> {
     }
 }
 
-/// `Debug` trait implementation for the `Box` type.
 impl BoxDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Box<T>> {
     /// Formats a `Box` type, allowing to print `Box` instances for debugging purposes.
     ///
