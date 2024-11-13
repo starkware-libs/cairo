@@ -59,6 +59,8 @@ extern fn box_forward_snapshot<T>(value: @Box<T>) -> Box<@T> nopanic;
 pub impl BoxImpl<T> of BoxTrait<T> {
     /// Creates a new `Box` with the given value.
     ///
+    /// Allocates space in the boxed segment for the provided value
+    /// and returns a `Box<T>` that points to it.
     /// # Examples
     ///
     /// ```
