@@ -78,7 +78,6 @@ pub impl BoxImpl<T> of BoxTrait<T> {
     }
 }
 
-/// `Deref` trait implementation for the `Box` type.
 impl BoxDeref<T> of crate::ops::Deref<Box<T>> {
     /// The target type after dereferencing.
     type Target = T;
