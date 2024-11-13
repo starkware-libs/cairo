@@ -1,7 +1,15 @@
-//! A type that points to a wrapped value, using a dedicated memory segment.
+//! A smart pointer type that stores its value in a dedicated memory segment.
 //!
-//! `Box<T>` is a smart pointer that allows to store values of arbitrary size
-//! while keeping a fixed-size pointer during operations.
+//! `Box<T>` provides a way to store a value of type `T` in Cairo VM's _boxed_ segment,
+//! leaving only a pointer in the execution segment. This allows for:
+//!
+//! * Storing values of arbitrary size while maintaining a fixed-size pointer
+//! * Enabling recursive types that would otherwise have infinite size
+//! * Moving large data structures efficiently by passing pointers instead of copying values
+//!
+//! When a `Box<T>` is created, the value is stored in the boxed segment, and what remains
+//! in the execution segment is only a pointer to that value.
+//!
 //!
 //! # Examples
 //!
