@@ -25,50 +25,55 @@ function notifyScarbMissing(ctx: Context) {
   ctx.log.error(errorMessage);
 }
 
-async function allFoldersHaveSameLSProvider(ctx: Context, executables: LSExecutable[]): Promise<boolean> {
-	if (executables.length < 2) {
-		return true;
-	}
-  
+async function allFoldersHaveSameLSProvider(
+  ctx: Context,
+  executables: LSExecutable[],
+): Promise<boolean> {
+  if (executables.length < 2) {
+    return true;
+  }
+
   // If every executable is scarb based, check if the versions match
-  if (executables.every(v => !!v.scarb)) {
-    let versions = await Promise.all(executables.map(v => v.scarb!.getVersion(ctx)));
-    let primaryVersion = versions[0];
-    
-    let hasMultipleVersions = versions.slice(1).find(x => x != primaryVersion);
+  if (executables.every((v) => !!v.scarb)) {
+    const versions = await Promise.all(executables.map((v) => v.scarb!.getVersion(ctx)));
+    const primaryVersion = versions[0];
+
+    const hasMultipleVersions = versions.slice(1).find((x) => x != primaryVersion);
     return !hasMultipleVersions;
   }
 
-  let primaryExecutable = executables[0]!;
-	let hasMultipleExecs = executables.slice(1).find((x) => primaryExecutable.run.command !== x.run.command)
+  const primaryExecutable = executables[0]!;
+  const hasMultipleExecs = executables
+    .slice(1)
+    .find((x) => primaryExecutable.run.command !== x.run.command);
   return !hasMultipleExecs;
 }
 
-export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {  
-  let executables = await Promise.all(
-    (vscode.workspace.workspaceFolders || []).map(
-      async (workspaceFolder) => await getLanguageServerExecutable(workspaceFolder, ctx)
-    ).filter((x) => !!x)
-  ) as LSExecutable[];
-  
-  let sameProvider = await allFoldersHaveSameLSProvider(ctx, executables);
+export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
+  const executables = (await Promise.all(
+    (vscode.workspace.workspaceFolders || [])
+      .map(async (workspaceFolder) => await getLanguageServerExecutable(workspaceFolder, ctx))
+      .filter((x) => !!x),
+  )) as LSExecutable[];
+
+  const sameProvider = await allFoldersHaveSameLSProvider(ctx, executables);
   if (!sameProvider) {
     throw new Error("Multiple versions of scarb in one workspace is not supported");
   }
 
-   // First one is good as any of them since they should be all the same at this point
-  let lsExecutable = executables[0];
+  // First one is good as any of them since they should be all the same at this point
+  const lsExecutable = executables[0];
 
   if (!lsExecutable) {
     throw new Error("Failed to start Cairo LS");
   }
-  let { run, scarb } = lsExecutable; 
-  
+  const { run, scarb } = lsExecutable;
+
   setupEnv(run, ctx);
 
   ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
 
-  let serverOptions = { run, debug: run };
+  const serverOptions = { run, debug: run };
 
   const client = new lc.LanguageClient(
     "cairoLanguageServer",
@@ -192,18 +197,17 @@ async function findScarbForWorkspaceFolder(
 }
 
 interface LSExecutable {
-  run: lc.Executable,
-  scarb: Scarb | undefined,
+  run: lc.Executable;
+  scarb: Scarb | undefined;
 }
 
-async function getLanguageServerExecutable(workspaceFolder: vscode.WorkspaceFolder | undefined, ctx: Context): Promise<LSExecutable | undefined> {
-  let scarb = await findScarbForWorkspaceFolder(workspaceFolder, ctx);
+async function getLanguageServerExecutable(
+  workspaceFolder: vscode.WorkspaceFolder | undefined,
+  ctx: Context,
+): Promise<LSExecutable | undefined> {
+  const scarb = await findScarbForWorkspaceFolder(workspaceFolder, ctx);
   try {
-    let provider = await determineLanguageServerExecutableProvider(
-      workspaceFolder,
-      scarb,
-      ctx,
-    )
+    const provider = await determineLanguageServerExecutableProvider(workspaceFolder, scarb, ctx);
     return { run: provider.languageServerExecutable(), scarb };
   } catch (e) {
     ctx.log.error(`${e}`);
