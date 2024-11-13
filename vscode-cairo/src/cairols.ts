@@ -11,6 +11,7 @@ import {
   registerVfsProvider,
   registerViewAnalyzedCratesProvider,
 } from "./textDocumentProviders";
+import assert from "node:assert";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
@@ -38,37 +39,31 @@ async function allFoldersHaveSameLSProvider(
     const versions = await Promise.all(executables.map((v) => v.scarb!.getVersion(ctx)));
     const primaryVersion = versions[0];
 
-    const hasMultipleVersions = versions.slice(1).find((x) => x != primaryVersion);
-    return !hasMultipleVersions;
+    return versions.slice(1).every((x) => x == primaryVersion);
   }
 
   const primaryExecutable = executables[0]!;
-  const hasMultipleExecs = executables
-    .slice(1)
-    .find((x) => primaryExecutable.run.command !== x.run.command);
-  return !hasMultipleExecs;
+  return executables.slice(1).every((x) => primaryExecutable.run.command == x.run.command);
 }
 
 export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
-  const executables = (await Promise.all(
-    (vscode.workspace.workspaceFolders || [])
-      .map(async (workspaceFolder) => await getLanguageServerExecutable(workspaceFolder, ctx))
-      .filter((x) => !!x),
-  )) as LSExecutable[];
+  const executables = (
+    await Promise.all(
+      (vscode.workspace.workspaceFolders || []).map(
+        async (workspaceFolder) => await getLanguageServerExecutable(workspaceFolder, ctx),
+      ),
+    )
+  ).filter((x) => !!x);
 
   const sameProvider = await allFoldersHaveSameLSProvider(ctx, executables);
-  if (!sameProvider) {
-    throw new Error("Multiple versions of scarb in one workspace is not supported");
-  }
+  assert(sameProvider, "Multiple versions of scarb in one workspace is not supported");
 
   // First one is good as any of them since they should be all the same at this point
   const lsExecutable = executables[0];
 
-  if (!lsExecutable) {
-    throw new Error("Failed to start Cairo LS");
-  }
-  const { run, scarb } = lsExecutable;
+  assert(lsExecutable, "Failed to start Cairo LS");
 
+  const { run, scarb } = lsExecutable;
   setupEnv(run, ctx);
 
   ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
