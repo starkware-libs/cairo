@@ -146,12 +146,12 @@ pub fn maybe_code_location(
     db: &dyn DefsGroup,
     location: StableLocation,
 ) -> Option<(SourceFileFullPath, SourceCodeSpan)> {
-    let file_full_path = location.file_id(db.upcast()).full_path(db.upcast());
     let location = location.diagnostic_location(db.upcast()).user_location(db.upcast());
+    let file_full_path = location.file_id.full_path(db.upcast());
     let position = location.span.position_in_file(db.upcast(), location.file_id)?;
     let source_location = SourceCodeSpan {
         start: SourceCodeLocation { col: position.start.col, line: position.start.line },
-        end: SourceCodeLocation { col: position.start.col, line: position.start.line },
+        end: SourceCodeLocation { col: position.end.col, line: position.end.line },
     };
 
     Some((SourceFileFullPath(file_full_path), source_location))

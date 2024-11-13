@@ -25,3 +25,4 @@ cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testin
 env_logger.workspace = true
 pretty_assertions.workspace = true
 test-log.workspace = true
+indoc.workspace = true
