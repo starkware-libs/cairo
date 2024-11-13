@@ -66,7 +66,12 @@ pub fn test_profiling(
     .unwrap();
     let func = runner.find_function(&inputs["function_name"]).unwrap();
     let result = runner
-        .run_function_with_starknet_context(func, &[], Some(u32::MAX as usize), Default::default())
+        .run_function_with_starknet_context(
+            func,
+            vec![],
+            Some(u32::MAX as usize),
+            Default::default(),
+        )
         .unwrap();
     let profiling_processor = ProfilingInfoProcessor::new(
         Some(&db),

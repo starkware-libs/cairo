@@ -205,7 +205,7 @@ fn run_function(
         .run_function_with_starknet_context(
             // find first
             runner.find_function("").expect("Failed finding the function."),
-            &params.iter().cloned().map(Arg::Value).collect_vec(),
+            params.iter().cloned().map(Arg::Value).collect_vec(),
             available_gas,
             Default::default(),
         )
@@ -357,7 +357,7 @@ fn complex_input_test(example_dir_data: &ExampleDirData) {
         .run_function_with_starknet_context(
             // find first
             runner.find_function("").expect("Failed finding the function."),
-            &[
+            vec![
                 // `felt_input`
                 Arg::Value(Felt252::from(1)),
                 // `felt_arr_input`

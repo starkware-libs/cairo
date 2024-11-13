@@ -12,9 +12,10 @@ use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::zip_eq;
 
 use crate::db::SemanticGroup;
+use crate::expr::inference::canonic::CanonicalTrait;
 use crate::expr::inference::{
-    ConstVar, ImplVar, ImplVarId, InferenceId, InferenceVar, LocalConstVarId, LocalImplVarId,
-    LocalTypeVarId, TypeVar,
+    ConstVar, ImplVar, ImplVarId, ImplVarTraitItemMappings, InferenceId, InferenceVar,
+    LocalConstVarId, LocalImplVarId, LocalTypeVarId, TypeVar,
 };
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
@@ -360,6 +361,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, UninferredImpl, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVarMemberPath, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ImplVarTraitItemMappings, $($exclude)*);
+        $crate::prune_single!(__regular_helper, CanonicalTrait, $($exclude)*);
     };
 }
 

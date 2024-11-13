@@ -9,11 +9,7 @@ use cairo_lang_syntax::node::helpers::{OptionWrappedGenericParamListHelper, Quer
 use indoc::formatdoc;
 use itertools::Itertools;
 
-#[cfg(test)]
-#[path = "plugin_test.rs"]
-mod test;
-
-const RUNNABLE_ATTR: &str = "runnable";
+pub const RUNNABLE_ATTR: &str = "runnable";
 const RUNNABLE_PREFIX: &str = "__runnable_wrapper__";
 const IMPLICIT_PRECEDENCE: &[&str] = &[
     "core::pedersen::Pedersen",
