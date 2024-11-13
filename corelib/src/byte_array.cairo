@@ -8,7 +8,7 @@
 //!
 //! # Examples
 //!
-//! Creating a new `ByteArray`:
+//! Creating a new `ByteArray` and appending a single byte with [`ByteArrayTrait::append_byte`]:
 //!
 //! ```
 //! let mut ba: ByteArray = "";
@@ -23,7 +23,7 @@
 //! ba.append(@other_ba);
 //! ```
 //!
-//! Accessing a byte with [`ByteArrayTrait::at`]:
+//! Accessing a single byte with [`ByteArrayTrait::at`]:
 //!
 //! ```
 //! let mut ba: ByteArray = "";
@@ -53,9 +53,9 @@ use crate::cmp::min;
 #[allow(unused_imports)]
 use crate::integer::{u128_safe_divmod, U32TryIntoNonZero};
 use crate::option::OptionTrait;
-use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::serde::Serde;
+use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::zeroable::NonZeroIntoImpl;
 
@@ -75,7 +75,7 @@ pub struct ByteArray {
     /// The first byte of each word in the byte array is the most significant byte in the word.
     pub(crate) data: Array<bytes31>,
     /// `pending_word` field is a `felt252` that actually represents a `bytes31`, with < 31 bytes.
-    /// It is represented as a felt252 to improve performance of building the `ByteArray`.
+    /// It is represented as a `felt252` to improve performance of building the byte array.
     /// The first byte is the most significant byte among the `pending_word_len` bytes in the word.
     pub(crate) pending_word: felt252,
     /// `pending_word_len` represents the number of bytes in `pending_word`.
@@ -91,12 +91,13 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     // TODO(yuval): add a `new` function for initialization.
 
     /// Appends a single word of `len` bytes to the end of the `ByteArray`.
+    /// 
     /// This function assumes that:
     /// 1. `word` could be validly converted to a `bytes31` which has no more than `len` bytes
     ///    of data.
     /// 2. len <= BYTES_IN_BYTES31.
     ///
-    /// If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
+    /// If these assumptions are not met, it can corrupt the `ByteArray`. Thus, this should be a
     /// private function. We could add masking/assertions but it would be more expensive.
     ///
     /// # Examples
@@ -212,7 +213,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// let ba = "1";
     /// let other_ba = "2";
     /// let result = ByteArrayTrait::concat(@ba, @other_ba);
-    /// assert!(result =="12")
+    /// assert!(result == "12");
     /// ```
     fn concat(left: @ByteArray, right: @ByteArray) -> ByteArray {
         let mut result = left.clone();
@@ -327,6 +328,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     }
 
     /// Appends the reverse of the given word to the end of `self`.
+    /// 
     /// This function assumes that:
     /// 1. len < 31
     /// 2. word is validly convertible to bytes31 of length `len`.
@@ -460,7 +462,6 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     }
 }
 
-/// `Add` trait implementation for the `ByteArray` type.
 impl ByteArrayAdd of Add<ByteArray> {
     /// Concatenates two `ByteArray` and returns the resulting `ByteArray`.
     ///
@@ -469,7 +470,7 @@ impl ByteArrayAdd of Add<ByteArray> {
     /// ```
     /// let ba: ByteArray = "1";
     /// let other_ba: ByteArray = "2";
-    /// let result = Add::add(ba, other_ba);
+    /// let result = ba + other_ba;
     /// assert!(result == "12")
     /// ```
     #[inline]
@@ -478,7 +479,6 @@ impl ByteArrayAdd of Add<ByteArray> {
     }
 }
 
-/// `AddEq` trait implementation for the `ByteArray` type.
 #[feature("deprecated-op-assign-traits")]
 impl ByteArrayAddEq of crate::traits::AddEq<ByteArray> {
     /// Appends a `ByteArray` to another `ByteArray`.
@@ -488,7 +488,7 @@ impl ByteArrayAddEq of crate::traits::AddEq<ByteArray> {
     /// ```
     /// let mut ba: ByteArray = "1";
     /// let other_ba: ByteArray = "2";
-    /// ba.add_eq(other_ba);
+    /// ba += other_ba;
     /// assert!(ba == "12");
     /// ```
     #[inline]
