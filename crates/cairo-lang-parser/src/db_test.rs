@@ -62,7 +62,10 @@ fn test_parser_shorthand() {
 
 #[test]
 fn test_token_stream_parser() {
-    let filepath: PathBuf = "src/parser_test_data/cairo_test_files/short.cairo".into();
+    let filepath: PathBuf =
+        [env!("CARGO_MANIFEST_DIR"), "src/parser_test_data/cairo_test_files/short.cairo"]
+            .into_iter()
+            .collect();
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
 
