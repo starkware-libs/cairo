@@ -122,12 +122,13 @@ impl BoxDeref<T> of crate::ops::Deref<Box<T>> {
 
 impl BoxDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Box<T>> {
     /// Formats a `Box` type, allowing to print `Box` instances for debugging purposes.
+    /// Boxed values are prefixed with `&` when formatted.
     ///
     /// # Examples
     ///
     /// ```
     /// let boxed_value: Box<u32> = BoxTrait::new(1);
-    /// println!("{:?}", boxed_value);
+    /// println!("{:?}", boxed_value); // Result will be `&1`
     /// ```
     fn fmt(self: @Box<T>, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
         write!(f, "&")?;
