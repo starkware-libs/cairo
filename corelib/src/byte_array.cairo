@@ -91,7 +91,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     // TODO(yuval): add a `new` function for initialization.
 
     /// Appends a single word of `len` bytes to the end of the `ByteArray`.
-    /// 
+    ///
     /// This function assumes that:
     /// 1. `word` could be validly converted to a `bytes31` which has no more than `len` bytes
     ///    of data.
@@ -328,7 +328,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     }
 
     /// Appends the reverse of the given word to the end of `self`.
-    /// 
+    ///
     /// This function assumes that:
     /// 1. len < 31
     /// 2. word is validly convertible to bytes31 of length `len`.
