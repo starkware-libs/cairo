@@ -1,3 +1,17 @@
+//! Fmt module that provides functionality for formatting values.
+//!
+//! The main components of this module are:
+//!
+//! - `Error`: A type representing formatting errors.
+//! - `Formatter`: A struct that holds the configuration and buffer for formatting.
+//! - `Display`: A trait for standard formatting using the empty format (`{}`).
+//! - `Debug`: A trait for debug formatting using the empty format ("{:?}").
+//! - `LowerHex`: A trait for hex formatting in lower case.
+//!
+//! The module includes implementations of the `Display`, `Debug` and `LowerHex` traits for various
+//! types.
+
+/// Dedicated type for representing formatting errors.
 #[derive(Drop)]
 pub struct Error {}
 
@@ -9,10 +23,18 @@ pub struct Formatter {
 }
 
 /// A trait for standard formatting, using the empty format ("{}").
+///
+/// # Examples
+///
+/// ```
+/// let word: ByteArray = "123";
+/// println!("{}", word);
+/// ```
 pub trait Display<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error>;
 }
 
+/// `Display` trait implementation for `ByteArray`.
 impl DisplayByteArray of Display<ByteArray> {
     fn fmt(self: @ByteArray, ref f: Formatter) -> Result<(), Error> {
         f.buffer.append(self);
@@ -20,6 +42,7 @@ impl DisplayByteArray of Display<ByteArray> {
     }
 }
 
+/// `Display` trait implementation for unsigned integers.
 impl DisplayInteger<
     T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>,
 > of Display<T> {
@@ -31,6 +54,7 @@ impl DisplayInteger<
     }
 }
 
+/// `Display` trait implementation for signed integers.
 impl DisplaySignedInteger<
     Signed,
     Unsigned,
@@ -48,6 +72,7 @@ impl DisplaySignedInteger<
     }
 }
 
+/// `Display` trait implementation for  `NonZero` values.
 impl DisplayNonZero<T, +Display<T>, +Copy<T>, +Drop<T>> of Display<NonZero<T>> {
     fn fmt(self: @NonZero<T>, ref f: Formatter) -> Result<(), Error> {
         let value: T = (*self).into();
@@ -55,6 +80,7 @@ impl DisplayNonZero<T, +Display<T>, +Copy<T>, +Drop<T>> of Display<NonZero<T>> {
     }
 }
 
+/// `Display` trait implementation for booleans.
 impl DisplayBool of Display<bool> {
     fn fmt(self: @bool, ref f: Formatter) -> Result<(), Error> {
         if *self {
@@ -65,6 +91,7 @@ impl DisplayBool of Display<bool> {
     }
 }
 
+/// `Display` trait implementation for snapshots.
 impl DisplaySnapshot<T, +Display<T>> of Display<@T> {
     fn fmt(self: @@T, ref f: Formatter) -> Result<(), Error> {
         Display::fmt(*self, ref f)
@@ -72,10 +99,18 @@ impl DisplaySnapshot<T, +Display<T>> of Display<@T> {
 }
 
 /// A trait for debug formatting, using the empty format ("{:?}").
+///
+/// # Examples
+///
+/// ```
+/// let word: ByteArray = "123";
+/// println!("{:?}", word);
+/// ```
 pub trait Debug<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error>;
 }
 
+/// `Debug` trait implementation for `ByteArray`.
 impl DebugByteArray of Debug<ByteArray> {
     fn fmt(self: @ByteArray, ref f: Formatter) -> Result<(), Error> {
         write!(f, "\"")?;
@@ -84,6 +119,7 @@ impl DebugByteArray of Debug<ByteArray> {
     }
 }
 
+/// `Debug` trait implementation for unsigned integers.
 impl DebugInteger<
     T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>,
 > of Debug<T> {
@@ -92,6 +128,7 @@ impl DebugInteger<
     }
 }
 
+/// `Debug` trait implementation for signed integers.
 impl DebugSignedInteger<
     Signed,
     Unsigned,
@@ -105,6 +142,7 @@ impl DebugSignedInteger<
     }
 }
 
+/// `Debug` trait implementation for `NonZero` values.
 impl DebugNonZero<T, +Debug<T>, +Copy<T>, +Drop<T>> of Debug<NonZero<T>> {
     fn fmt(self: @NonZero<T>, ref f: Formatter) -> Result<(), Error> {
         let value: T = (*self).into();
@@ -112,12 +150,14 @@ impl DebugNonZero<T, +Debug<T>, +Copy<T>, +Drop<T>> of Debug<NonZero<T>> {
     }
 }
 
+/// `Debug` trait implementation for booleans.
 impl DebugBool of Debug<bool> {
     fn fmt(self: @bool, ref f: Formatter) -> Result<(), Error> {
         Display::fmt(self, ref f)
     }
 }
 
+/// `Debug` trait implementation for snapshots.
 impl DebugSnapshot<T, +Debug<T>> of Debug<@T> {
     fn fmt(self: @@T, ref f: Formatter) -> Result<(), Error> {
         write!(f, "@")?;
@@ -125,7 +165,7 @@ impl DebugSnapshot<T, +Debug<T>> of Debug<@T> {
     }
 }
 
-/// Tuple `Debug` implementation.
+/// `Debug` trait implementation for tuples.
 impl TupleDebug<
     T,
     impl TSF: crate::metaprogramming::TupleSnapForward<T>,
@@ -139,7 +179,7 @@ impl TupleDebug<
     }
 }
 
-/// Fixed sized array `Debug` implementation.
+/// `Debug` trait implementation for fixed-size arrays.
 impl FixedSizedArrayDebug<
     T,
     impl TSF: crate::metaprogramming::TupleSnapForward<T>,
@@ -158,21 +198,21 @@ trait TupleDebugHelper<T> {
     fn fmt(value: T, ref f: Formatter) -> Result<(), Error>;
 }
 
-/// An implementation of `TupleDebugHelper` for snapshots of types with `Debug` implementations.
+/// An implementation of `TupleDebugHelper` for snapshots of types that implement `Debug`.
 impl TupleDebugHelperFromDebug<T, +Debug<T>> of TupleDebugHelper<@T> {
     fn fmt(value: @T, ref f: Formatter) -> Result<(), Error> {
         Debug::fmt(value, ref f)
     }
 }
 
-/// `Debug` impl for tuples of size 0.
+/// `Debug` implementation for tuples of size 0.
 impl TupleDebugHelperTuple0 of TupleDebugHelper<()> {
     fn fmt(value: (), ref f: Formatter) -> Result<(), Error> {
         Result::Ok(())
     }
 }
 
-/// `Debug` impl for tuples of size 1.
+/// `Debug` implementation for tuples of size 1.
 impl TupleDebugHelperTuple1<E0, +TupleDebugHelper<@E0>> of TupleDebugHelper<(@E0,)> {
     fn fmt(value: (@E0,), ref f: Formatter) -> Result<(), Error> {
         let (e0,) = value;
@@ -181,7 +221,7 @@ impl TupleDebugHelperTuple1<E0, +TupleDebugHelper<@E0>> of TupleDebugHelper<(@E0
     }
 }
 
-/// `Debug` impl for tuples of size 2.
+/// `Debug` implementation for tuples of size 2.
 impl TupleDebugHelperTuple2<
     E0, E1, +TupleDebugHelper<@E0>, +TupleDebugHelper<@E1>,
 > of TupleDebugHelper<(@E0, @E1)> {
@@ -193,7 +233,7 @@ impl TupleDebugHelperTuple2<
     }
 }
 
-/// `Debug` impl for tuples of size 3 and above.
+/// `Debug` implementation for tuples of size 3 and above.
 /// Not starting from size 1 since we have special cases for 0 and 1.
 impl TupleDebugHelperTupleNext<
     T,
@@ -211,14 +251,14 @@ impl TupleDebugHelperTupleNext<
     }
 }
 
-/// `Debug` impl for fixed sized arrays of size 0.
+/// `Debug` implementation for fixed-sized arrays of size 0.
 impl TupleDebugHelperFixedSizedArray0<T> of TupleDebugHelper<[@T; 0]> {
     fn fmt(value: [@T; 0], ref f: Formatter) -> Result<(), Error> {
         Result::Ok(())
     }
 }
 
-/// `Debug` impl for fixed sized arrays of size 1.
+/// `Debug` implementation for fixed-sized arrays of size 1.
 impl TupleDebugHelperFixedSizedArray1<T, +TupleDebugHelper<@T>> of TupleDebugHelper<[@T; 1]> {
     fn fmt(value: [@T; 1], ref f: Formatter) -> Result<(), Error> {
         let [e0] = value;
@@ -226,7 +266,7 @@ impl TupleDebugHelperFixedSizedArray1<T, +TupleDebugHelper<@T>> of TupleDebugHel
     }
 }
 
-/// `Debug` impl for fixed sized arrays of size 2 and above.
+/// `Debug` implementation for fixed-sized arrays of size 2 and above.
 /// Not starting from size 1 since we have a special case for 0.
 impl TupleDebugHelperFixedSizedArrayNext<
     T,
@@ -259,12 +299,14 @@ fn fmt_head_and_rest<
     TupleDebugHelper::fmt(rest, ref f)
 }
 
+/// `Debug` trait implementation for `Array<T>`.
 impl ArrayTDebug<T, +Debug<T>> of Debug<Array<T>> {
     fn fmt(self: @Array<T>, ref f: Formatter) -> Result<(), Error> {
         Debug::fmt(@self.span(), ref f)
     }
 }
 
+/// `Debug` trait implementation for `Span<T>`.
 impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
     fn fmt(self: @Span<T>, ref f: Formatter) -> Result<(), Error> {
         let mut self = *self;
@@ -289,10 +331,13 @@ impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
     }
 }
 
-/// Impls for `Debug` and `LowerHex` for types that can be converted into `felt252` using the `Into`
+/// Implementations for `Debug` and `LowerHex` for types that can be converted into `felt252` using
+/// the `Into`
 /// trait.
-/// Usage example:
-/// ```ignore
+///
+/// # Examples
+///
+/// ```
 /// impl MyTypeDebug = crate::fmt::into_felt252_based::DebugImpl<MyType>;`
 /// impl MyTypeLowerHex = crate::fmt::into_felt252_based::LowerHexImpl<MyType>;
 /// ```
@@ -302,6 +347,7 @@ pub mod into_felt252_based {
             crate::fmt::DebugInteger::<felt252>::fmt(@(*self).into(), ref f)
         }
     }
+
     pub impl LowerHexImpl<T, +Into<T, felt252>, +Copy<T>> of core::fmt::LowerHex<T> {
         fn fmt(self: @T, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
             core::fmt::LowerHexInteger::<felt252>::fmt(@(*self).into(), ref f)
@@ -314,6 +360,7 @@ pub trait LowerHex<T> {
     fn fmt(self: @T, ref f: Formatter) -> Result<(), Error>;
 }
 
+/// `LowerHex` trait implementation for integers.
 impl LowerHexInteger<
     T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>,
 > of LowerHex<T> {
@@ -324,6 +371,7 @@ impl LowerHexInteger<
     }
 }
 
+/// `LowerHex` trait implementation for `NonZero` values.
 impl LowerHexNonZero<T, +LowerHex<T>, +Copy<T>, +Drop<T>> of LowerHex<NonZero<T>> {
     fn fmt(self: @NonZero<T>, ref f: Formatter) -> Result<(), Error> {
         let value: T = (*self).into();
