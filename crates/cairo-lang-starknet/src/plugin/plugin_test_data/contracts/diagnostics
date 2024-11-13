@@ -1332,7 +1332,7 @@ mod test_contract {
     struct Storage {}
     #[external(v0)]
     fn foo(
-        ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)
+        ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252),
     ) -> (felt252, felt252) {}
 }
 
@@ -1345,7 +1345,7 @@ mod test_contract {
     struct Storage {}
     #[external(v0)]
     fn foo(
-        ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)
+        ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252),
     ) -> (felt252, felt252) {}
 }
 
@@ -1423,7 +1423,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x37db5b411e79068f08f0832de46108b618c2f188115ac652f78be4f6dfcdeb4;
+pub const TEST_CLASS_HASH: felt252 = 0x51e947dc07c2918ff505d4f848310fd40dc215c7a78b8e0ec19a8c6ab47ce3;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -7159,7 +7159,7 @@ mod component {
 
     #[embeddable_as(MyEmbeddableImpl)]
     impl MyImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface<ComponentState<TContractState>> {
         #[external(v0)]
         fn foo1(self: @ComponentState<TContractState>) {}
@@ -7222,7 +7222,7 @@ mod component {
 
     #[embeddable_as(MyEmbeddableImpl)]
     impl MyImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface<ComponentState<TContractState>> {
         #[external(v0)]
         fn foo1(self: @ComponentState<TContractState>) {}
@@ -7991,8 +7991,8 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl MyEmbeddableImpl<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>
 > of super::Interface<TContractState> {
     #[external(v0)]
     fn foo1(self: @TContractState) {
@@ -8072,8 +8072,8 @@ pub trait UnsafeNewContractStateTraitForMyEmbeddableImpl<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -8092,8 +8092,8 @@ fn __wrapper__MyEmbeddableImpl__foo1<TContractState, impl X: HasComponent<TContr
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -8112,8 +8112,8 @@ fn __wrapper__MyEmbeddableImpl__foo2<TContractState, impl X: HasComponent<TContr
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__foo3<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__foo3<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -8579,7 +8579,7 @@ mod component1 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo1(self: @ComponentState<TContractState>) {}
     }
@@ -8592,7 +8592,7 @@ mod component2 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo2(self: @ComponentState<TContractState>) {}
     }
@@ -8619,7 +8619,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -8703,7 +8703,7 @@ mod component1 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo1(self: @ComponentState<TContractState>) {}
     }
@@ -8716,7 +8716,7 @@ mod component2 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo2(self: @ComponentState<TContractState>) {}
     }
@@ -8743,7 +8743,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -9464,7 +9464,7 @@ lib.cairo:6:5
 generate_trait:
 
     trait Comp1HelperTrait<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > {
         fn foo1(self: @ComponentState<TContractState>);
     }
@@ -9608,7 +9608,7 @@ lib.cairo:19:5
 generate_trait:
 
     trait Comp1HelperTrait<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > {
         fn foo2(self: @ComponentState<TContractState>);
     }
@@ -9750,7 +9750,7 @@ pub impl Comp3<
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
 
 > of super::Comp3Trait<TContractState> {
     
@@ -9830,7 +9830,7 @@ fn __wrapper__Comp3__foo3<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -9853,7 +9853,7 @@ fn __wrapper__Comp3__foo4<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -9898,7 +9898,7 @@ mod component1 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo1(self: @ComponentState<TContractState>) {}
     }
@@ -9911,7 +9911,7 @@ mod component2 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo2(self: @ComponentState<TContractState>) {}
     }
@@ -9934,7 +9934,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -10010,7 +10010,7 @@ mod component1 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo1(self: @ComponentState<TContractState>) {}
     }
@@ -10023,7 +10023,7 @@ mod component2 {
 
     #[generate_trait]
     impl Comp1HelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of Comp1HelperTrait<TContractState, X> {
         fn foo2(self: @ComponentState<TContractState>) {}
     }
@@ -10046,7 +10046,7 @@ mod component3 {
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
     > of super::Comp3Trait<ComponentState<TContractState>> {
         fn foo3(ref self: ComponentState<TContractState>) {
             // No diagnostics
@@ -10715,7 +10715,7 @@ lib.cairo:6:5
 generate_trait:
 
     trait Comp1HelperTrait<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > {
         fn foo1(self: @ComponentState<TContractState>);
     }
@@ -10859,7 +10859,7 @@ lib.cairo:19:5
 generate_trait:
 
     trait Comp1HelperTrait<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > {
         fn foo2(self: @ComponentState<TContractState>);
     }
@@ -11001,7 +11001,7 @@ pub impl Comp3<
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>
+        +Drop<TContractState>,
 
 > of super::Comp3Trait<TContractState> {
     
@@ -11076,7 +11076,7 @@ fn __wrapper__Comp3__foo3<TContractState,
         impl Comp1: super::component1::HasComponent<TContractState>,
         impl Comp2: super::component2::HasComponent<TContractState>,
         +HasComponent<TContractState>,
-        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+        +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
@@ -11123,7 +11123,7 @@ mod contract {
     use super::ContractTrait;
     #[storage]
     struct Storage {
-        a_member: felt252
+        a_member: felt252,
     }
 
     #[abi(embed_v0)]
@@ -11156,7 +11156,7 @@ mod contract {
     use super::ContractTrait;
     #[storage]
     struct Storage {
-        a_member: felt252
+        a_member: felt252,
     }
 
     #[abi(embed_v0)]
@@ -11809,7 +11809,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3b1a0f089233a1d0d98b6d9576c2636903d23c1b78085851496af3bff605a30;
+pub const TEST_CLASS_HASH: felt252 = 0x3232c860888b3e1c54dda19284c63d6667fbbdebe403a54921a6dfbbe3134c9;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -11918,7 +11918,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -11935,7 +11935,7 @@ mod contract {
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        component_member: super::test_component::Storage
+        component_member: super::test_component::Storage,
     }
 
     #[event]
@@ -11968,7 +11968,7 @@ lib.cairo:
 mod test_component {
     #[storage]
     struct Storage {
-        data: u32
+        data: u32,
     }
 }
 
@@ -11985,7 +11985,7 @@ mod contract {
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        component_member: super::test_component::Storage
+        component_member: super::test_component::Storage,
     }
 
     #[event]
@@ -12783,7 +12783,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3653c75be8955a10e60ac6743eb49d095f4656c3a082b05e48756e24f1671f2;
+pub const TEST_CLASS_HASH: felt252 = 0x3ce880c1c1fe3435239eab46a6ebc0ff304b8a4b4eb9e2c683d2ddb2746437f;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -12926,26 +12926,26 @@ ExpandContractTestRunner(expect_diagnostics: true)
 //! > cairo_code
 struct u256Pair {
     a: u256,
-    b: u256
+    b: u256,
 }
 
 impl u256PairStore of starknet::Store<u256Pair> {
     fn read(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress,
     ) -> starknet::SyscallResult<u256Pair> {
         let a = starknet::Store::<u256>::read(address_domain, base)?;
         let b = starknet::Store::<u256>::read_at_offset(address_domain, base, 2)?;
         starknet::SyscallResult::Ok(u256Pair { a, b })
     }
     fn write(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: u256Pair
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: u256Pair,
     ) -> starknet::SyscallResult<()> {
         starknet::Store::<u256>::write(address_domain, base, value.a)?;
         starknet::Store::<u256>::write_at_offset(address_domain, base, 2, value.b)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8,
     ) -> starknet::SyscallResult<u256Pair> {
         let a = starknet::Store::<u256>::read_at_offset(address_domain, base, offset)?;
         let b = starknet::Store::<u256>::read_at_offset(address_domain, base, offset + 2)?;
@@ -12955,7 +12955,7 @@ impl u256PairStore of starknet::Store<u256Pair> {
         address_domain: u32,
         base: starknet::storage_access::StorageBaseAddress,
         offset: u8,
-        value: u256Pair
+        value: u256Pair,
     ) -> starknet::SyscallResult<()> {
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset, value.a)?;
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset + 2, value.b)?;
@@ -12976,7 +12976,7 @@ mod contract {
     use super::ContractTrait;
     #[storage]
     struct Storage {
-        u256_pair: super::u256Pair
+        u256_pair: super::u256Pair,
     }
 
     #[abi(embed_v0)]
@@ -13003,26 +13003,26 @@ lib.cairo:
 
 struct u256Pair {
     a: u256,
-    b: u256
+    b: u256,
 }
 
 impl u256PairStore of starknet::Store<u256Pair> {
     fn read(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress,
     ) -> starknet::SyscallResult<u256Pair> {
         let a = starknet::Store::<u256>::read(address_domain, base)?;
         let b = starknet::Store::<u256>::read_at_offset(address_domain, base, 2)?;
         starknet::SyscallResult::Ok(u256Pair { a, b })
     }
     fn write(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: u256Pair
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: u256Pair,
     ) -> starknet::SyscallResult<()> {
         starknet::Store::<u256>::write(address_domain, base, value.a)?;
         starknet::Store::<u256>::write_at_offset(address_domain, base, 2, value.b)?;
         starknet::SyscallResult::Ok(())
     }
     fn read_at_offset(
-        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8
+        address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8,
     ) -> starknet::SyscallResult<u256Pair> {
         let a = starknet::Store::<u256>::read_at_offset(address_domain, base, offset)?;
         let b = starknet::Store::<u256>::read_at_offset(address_domain, base, offset + 2)?;
@@ -13032,7 +13032,7 @@ impl u256PairStore of starknet::Store<u256Pair> {
         address_domain: u32,
         base: starknet::storage_access::StorageBaseAddress,
         offset: u8,
-        value: u256Pair
+        value: u256Pair,
     ) -> starknet::SyscallResult<()> {
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset, value.a)?;
         starknet::Store::<u256>::write_at_offset(address_domain, base, offset + 2, value.b)?;
@@ -13053,7 +13053,7 @@ mod contract {
     use super::ContractTrait;
     #[storage]
     struct Storage {
-        u256_pair: super::u256Pair
+        u256_pair: super::u256Pair,
     }
 
     #[abi(embed_v0)]
@@ -13721,7 +13721,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x1ef205582bfa9cd0a088bc1b88a40d43b5ed2c42cf4087763c93ef1eb5803a6;
+pub const TEST_CLASS_HASH: felt252 = 0xc5af418eb5eed4ff51ca2888dc884ade488de0dea59772fe757c6cfc2d73f3;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -13839,7 +13839,7 @@ mod component {
 
     #[embeddable_as(MyEmbeddableImpl)]
     impl MyImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface<ComponentState<TContractState>> {
         fn func(self: @ComponentState<TContractState>) {}
     }
@@ -13886,7 +13886,7 @@ mod component {
 
     #[embeddable_as(MyEmbeddableImpl)]
     impl MyImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface<ComponentState<TContractState>> {
         fn func(self: @ComponentState<TContractState>) {}
     }
@@ -14556,8 +14556,8 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl MyEmbeddableImpl<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>
 > of super::Interface<TContractState> {
     
     fn func(self: @TContractState) {
@@ -14627,8 +14627,8 @@ pub trait UnsafeNewContractStateTraitForMyEmbeddableImpl<
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__MyEmbeddableImpl__func<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyEmbeddableImpl__func<TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyEmbeddableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');

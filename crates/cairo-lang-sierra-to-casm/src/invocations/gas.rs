@@ -224,12 +224,12 @@ fn add_get_total_requested_count_code(
     builtin_cost: Var,
 ) -> Result<(i64, Var), InvocationError> {
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-    let requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];
+    let const_requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];
     let mut total_requested_count =
-        casm_builder.add_var(CellExpression::Immediate(BigInt::from(requested_count)));
+        casm_builder.add_var(CellExpression::Immediate(BigInt::from(const_requested_count)));
     for token_type in CostTokenType::iter_precost() {
-        let requested_count = variable_values[&(builder.idx, *token_type)];
-        if requested_count == 0 {
+        let token_requested_count = variable_values[&(builder.idx, *token_type)];
+        if token_requested_count == 0 {
             continue;
         }
         let offset = token_type.offset_in_builtin_costs();
@@ -239,10 +239,10 @@ fn add_get_total_requested_count_code(
         };
 
         // If necessary, multiply by the number of instances.
-        let multi_cost = if requested_count != 1 {
+        let multi_cost = if token_requested_count != 1 {
             casm_build_extend! {casm_builder,
-                const requested_count = requested_count;
-                tempvar multi_cost = single_cost * requested_count;
+                const token_requested_count = token_requested_count;
+                tempvar multi_cost = single_cost * token_requested_count;
             };
             multi_cost
         } else {
@@ -254,7 +254,7 @@ fn add_get_total_requested_count_code(
         };
         total_requested_count = updated_total_requested_count;
     }
-    Ok((requested_count, total_requested_count))
+    Ok((const_requested_count, total_requested_count))
 }
 
 /// Validates that all the cost token variables are available for statement at `idx`.

@@ -223,10 +223,11 @@ struct ComplexStruct {
     e: bool,
 }
 
-const COMPLEX_STRUCT: ComplexStruct =
-    ComplexStruct { a: 1, b: {
+const COMPLEX_STRUCT: ComplexStruct = ComplexStruct {
+    a: 1, b: {
         IN_RANGE_NEGATIVE1
-    }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true, };
+    }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true,
+};
 
 const CONST_MEMBER: u8 = COMPLEX_STRUCT.a;
 
@@ -309,7 +310,7 @@ const CALCULATION_WITH_DIVISION: u8 = 120 / 0;
 
 error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
  --> lib.cairo:31:38
-    }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true, };
+    }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true,
                                      ^
 
 //! > ==========================================================================

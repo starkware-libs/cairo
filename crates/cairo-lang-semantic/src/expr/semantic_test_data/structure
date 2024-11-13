@@ -10,7 +10,7 @@ struct A {
     c: B,
 }
 struct B {
-    a: felt252
+    a: felt252,
 }
 
 //! > function_body

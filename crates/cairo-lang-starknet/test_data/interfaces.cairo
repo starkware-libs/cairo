@@ -15,21 +15,21 @@ mod comp {
 
     #[embeddable_as(I1I1)]
     impl Interface1_Implementation1<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface1<ComponentState<TContractState>> {
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 
     #[embeddable_as(I1I2)]
     impl Interface1_Implementation2<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface1<ComponentState<TContractState>> {
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 
     #[embeddable_as(I2I)]
     impl Interface2_Implementation<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of super::Interface2<ComponentState<TContractState>> {
         fn foo(ref self: ComponentState<TContractState>) {}
     }
@@ -42,13 +42,13 @@ mod counter_contract {
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        comp_storage: super::comp::Storage
+        comp_storage: super::comp::Storage,
     }
 
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        CompEvent: super::comp::Event
+        CompEvent: super::comp::Event,
     }
 
     #[abi(embed_v0)]

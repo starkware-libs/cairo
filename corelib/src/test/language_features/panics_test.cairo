@@ -91,8 +91,8 @@ fn test_panic_with_stacked_errors() {
         1,
         0x161616161616161616161616161616161616161616161616161616161616161,
         0,
-        0
-    )
+        0,
+    ),
 )]
 fn test_panic_with_byte_array_invalid_full_word() {
     // This is a serialized ByteArray, but the full word is an invalid short string (> 2^248).
@@ -112,8 +112,8 @@ fn test_panic_with_byte_array_invalid_full_word() {
         0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, // BYTE_ARRAY_MAGIC
         0,
         'aa',
-        1
-    )
+        1,
+    ),
 )]
 fn test_panic_with_byte_array_invalid_pending_word() {
     // This is a serialized ByteArray, but the pending word length < the actual data in the pending

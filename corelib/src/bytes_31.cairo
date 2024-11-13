@@ -115,7 +115,7 @@ pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252
 
     if len <= BYTES_IN_U128 {
         let (quotient, remainder) = u128_safe_divmod(
-            low, one_shift_left_bytes_u128(index).try_into().unwrap()
+            low, one_shift_left_bytes_u128(index).try_into().unwrap(),
         );
         return (remainder.into(), quotient.into());
     }
@@ -123,7 +123,7 @@ pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252
     // len > BYTES_IN_U128
     if index < BYTES_IN_U128 {
         let (low_quotient, low_remainder) = u128_safe_divmod(
-            low, one_shift_left_bytes_u128(index).try_into().unwrap()
+            low, one_shift_left_bytes_u128(index).try_into().unwrap(),
         );
         let right = high.into() * one_shift_left_bytes_u128(BYTES_IN_U128 - index).into()
             + low_quotient.into();
@@ -132,7 +132,7 @@ pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252
 
     // len > BYTES_IN_U128 && index > BYTES_IN_U128
     let (high_quotient, high_remainder) = u128_safe_divmod(
-        high, one_shift_left_bytes_u128(index - BYTES_IN_U128).try_into().unwrap()
+        high, one_shift_left_bytes_u128(index - BYTES_IN_U128).try_into().unwrap(),
     );
     let left = high_remainder.into() * POW_2_128 + low.into();
     return (left, high_quotient.into());

@@ -38,13 +38,13 @@ mod tests {
     #[test]
     fn test_flow() {
         let (address0, _) = deploy_syscall(
-            Balance::TEST_CLASS_HASH.try_into().unwrap(), 0, [100].span(), false
+            Balance::TEST_CLASS_HASH.try_into().unwrap(), 0, [100].span(), false,
         )
             .unwrap();
         let mut contract0 = IBalanceDispatcher { contract_address: address0 };
 
         let (address1, _) = deploy_syscall(
-            Balance::TEST_CLASS_HASH.try_into().unwrap(), 0, [200].span(), false
+            Balance::TEST_CLASS_HASH.try_into().unwrap(), 0, [200].span(), false,
         )
             .unwrap();
         let mut contract1 = IBalanceDispatcher { contract_address: address1 };

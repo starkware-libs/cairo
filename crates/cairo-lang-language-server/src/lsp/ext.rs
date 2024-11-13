@@ -50,3 +50,12 @@ impl Notification for CorelibVersionMismatch {
     type Params = String;
     const METHOD: &'static str = "cairo/corelib-version-mismatch";
 }
+
+/// Notifies about scarb metadata failure.
+#[derive(Debug)]
+pub struct ScarbMetadataFailed;
+
+impl Notification for ScarbMetadataFailed {
+    type Params = ();
+    const METHOD: &'static str = "cairo/scarb-metadata-failed";
+}

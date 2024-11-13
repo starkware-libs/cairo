@@ -36,14 +36,14 @@ fn fib(mut n: u32) -> u32 {
         let mut __formatter_for_print_macros__: core::fmt::Formatter =
             core::traits::Default::default();
         core::result::ResultTrait::<
-            (), core::fmt::Error
+            (), core::fmt::Error,
         >::unwrap(
             {
                 core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10
+                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10,
                 );
                 core::result::Result::<(), core::fmt::Error>::Ok(())
-            }
+            },
         );
         core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     };
@@ -68,14 +68,14 @@ fn fib(mut n: u32) -> u32 {
 {
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
     core::result::ResultTrait::<
-        (), core::fmt::Error
+        (), core::fmt::Error,
     >::unwrap(
         {
             core::byte_array::ByteArrayTrait::append_word(
-                ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10
+                ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10,
             );
             core::result::Result::<(), core::fmt::Error>::Ok(())
-        }
+        },
     );
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
 }
@@ -90,14 +90,14 @@ fn fib(mut n: u32) -> u32 {
 {
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
     core::result::ResultTrait::<
-        (), core::fmt::Error
+        (), core::fmt::Error,
     >::unwrap(
         {
             core::byte_array::ByteArrayTrait::append_word(
-                ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10
+                ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10,
             );
             core::result::Result::<(), core::fmt::Error>::Ok(())
-        }
+        },
     );
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
 }
@@ -112,14 +112,14 @@ fn fib(mut n: u32) -> u32 {
 {
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
     core::result::ResultTrait::<
-        (), core::fmt::Error
+        (), core::fmt::Error,
     >::unwrap(
         {
             core::byte_array::ByteArrayTrait::append_word(
-                ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10
+                ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10,
             );
             core::result::Result::<(), core::fmt::Error>::Ok(())
-        }
+        },
     );
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
 }
@@ -136,14 +136,14 @@ fn fib(mut n: u32) -> u32 {
         let mut __formatter_for_print_macros__: core::fmt::Formatter =
             core::traits::Default::default();
         core::result::ResultTrait::<
-            (), core::fmt::Error
+            (), core::fmt::Error,
         >::unwrap(
             {
                 core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10
+                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10,
                 );
                 core::result::Result::<(), core::fmt::Error>::Ok(())
-            }
+            },
         );
         core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     };
@@ -170,14 +170,14 @@ fn fib(mut n: u32) -> u32 {
         let mut __formatter_for_print_macros__: core::fmt::Formatter =
             core::traits::Default::default();
         core::result::ResultTrait::<
-            (), core::fmt::Error
+            (), core::fmt::Error,
         >::unwrap(
             {
                 core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10
+                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10,
                 );
                 core::result::Result::<(), core::fmt::Error>::Ok(())
-            }
+            },
         );
         core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     };
@@ -204,14 +204,14 @@ fn fib(mut n: u32) -> u32 {
         let mut __formatter_for_print_macros__: core::fmt::Formatter =
             core::traits::Default::default();
         core::result::ResultTrait::<
-            (), core::fmt::Error
+            (), core::fmt::Error,
         >::unwrap(
             {
                 core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10
+                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10,
                 );
                 core::result::Result::<(), core::fmt::Error>::Ok(())
-            }
+            },
         );
         core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     };
@@ -238,14 +238,14 @@ fn fib(mut n: u32) -> u32 {
         let mut __formatter_for_print_macros__: core::fmt::Formatter =
             core::traits::Default::default();
         core::result::ResultTrait::<
-            (), core::fmt::Error
+            (), core::fmt::Error,
         >::unwrap(
             {
                 core::byte_array::ByteArrayTrait::append_word(
-                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10
+                    ref __formatter_for_print_macros__.buffer, 0x736f6d6520746578740a, 10,
                 );
                 core::result::Result::<(), core::fmt::Error>::Ok(())
-            }
+            },
         );
         core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     };

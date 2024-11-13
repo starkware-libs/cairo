@@ -64,9 +64,9 @@ impl MyImpl<+MyTrait> of MyTrait {
 
 //! > expected_diagnostics
 error: Inference cycle detected
- --> lib.cairo:8:10
-fn foo() {
-         ^
+ --> lib.cairo:9:14
+    MyTrait::foo();
+             ^*^
 
 //! > ==========================================================================
 
@@ -321,7 +321,7 @@ foo
 
 //! > module_code
 struct MyStruct {
-    a: felt252
+    a: felt252,
 }
 
 //! > expected_diagnostics

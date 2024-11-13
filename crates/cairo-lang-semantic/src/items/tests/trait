@@ -222,11 +222,11 @@ struct A {}
 enum B {}
 struct C {
     x: felt252,
-    y: NonCopy
+    y: NonCopy,
 }
 enum D {
     X: felt252,
-    Y: NonCopy
+    Y: NonCopy,
 }
 extern type E;
 

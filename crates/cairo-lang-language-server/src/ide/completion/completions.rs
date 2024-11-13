@@ -22,8 +22,8 @@ use cairo_lang_utils::{LookupIntern, Upcast};
 use lsp_types::{CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit};
 use tracing::debug;
 
-use crate::ide::utils::find_methods_for_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::inspect::methods::find_methods_for_type;
 use crate::lang::lsp::ToLsp;
 
 pub fn generic_completions(
