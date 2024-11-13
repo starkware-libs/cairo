@@ -4,7 +4,7 @@
 //!
 //! - `Error`: A type representing formatting errors.
 //! - `Formatter`: A struct that holds the configuration and buffer for formatting.
-//! - `Display`: A trait for standard formatting using the empty format (`{}`).
+//! - `Display`: A trait for standard formatting using the empty format ("{}").
 //! - `Debug`: A trait for debug formatting using the empty format ("{:?}").
 //! - `LowerHex`: A trait for hex formatting in lower case.
 //!
