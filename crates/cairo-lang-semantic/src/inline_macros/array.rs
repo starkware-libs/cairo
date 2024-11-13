@@ -5,7 +5,7 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_defs::plugin_utils::unsupported_bracket_diagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::indoc;
 
 #[derive(Debug, Default)]
