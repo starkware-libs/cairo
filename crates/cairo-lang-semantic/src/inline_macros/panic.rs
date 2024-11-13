@@ -6,7 +6,7 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
 use cairo_lang_syntax::node::ast::{Arg, WrappedArgList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::{formatdoc, indoc};
 use num_bigint::BigUint;
 
@@ -162,6 +162,10 @@ impl InlineMacroExprPlugin for PanicMacro {
                 panic!("Math is broken: {} + {} != 30", x, y);
                 // Panics with "Math is broken: 10 + 20 != 30".
             }
+            let x = -1;
+            assert!(x >= 0, "Invalid value: x = {}", x);
+            assert!(x >= 0, "Invalid value: x = {x}");
+            // Panics with "Invalid value: x = -1."
             ```
     
             # Notes

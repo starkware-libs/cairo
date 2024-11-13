@@ -140,6 +140,7 @@ impl InlineMacroExprPlugin for AssertMacro {
             // Panics with "Age must be at least 21, found 18."
             let x = -1;
             assert!(x >= 0, "Invalid value: x = {}", x);
+            assert!(x >= 0, "Invalid value: x = {x}");
             // Panics with "Invalid value: x = -1."
             ```
             # Notes
