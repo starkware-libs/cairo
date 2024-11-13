@@ -151,13 +151,7 @@ fn bar(
     let rec_tuple = (
         (first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg),
         (
-            first_arg,
-            second_arg,
-            third_arg,
-            fourth_arg,
-            fifth_arg,
-            sixth_arg,
-            seventh_arg,
+            first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg,
             eighth_arg,
         ),
     );
@@ -248,6 +242,33 @@ fn function_for_a_comment() {
 // leading words
 // long_single_word_that_should_not_be_broken_not_creating_additional_empty_lines_padding_padding_padding_padding
 fn function_for_a_comment() {}
+
+use long_use::{
+    a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a,
+    a, a, a, a, a, a, a, a, a, a, a, a, a, a,
+};
+fn many_arguments(
+    very_long_argument_1: T,
+    very_long_argument_2: T,
+    very_long_argument_3: T,
+    very_long_argument_4: T,
+    very_long_argument_5: T,
+) {}
+fn small_tuple() {
+    (1,)
+}
+fn big_tuple() {
+    (
+        11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111,
+    )
+}
+fn foo() {
+    let arr1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let arr2 = [
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    ];
+}
 
 use long_use::{
     a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a,

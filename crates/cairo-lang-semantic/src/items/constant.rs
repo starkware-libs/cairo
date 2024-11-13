@@ -455,11 +455,29 @@ pub fn evaluate_constant_expr(
                 .collect(),
             expr.ty,
         ),
-        Expr::StructCtor(ExprStructCtor { members, base_struct: None, ty, .. }) => {
+        Expr::StructCtor(ExprStructCtor {
+            members,
+            base_struct: None,
+            ty,
+            concrete_struct_id,
+            ..
+        }) => {
+            let member_order = match db.concrete_struct_members(*concrete_struct_id) {
+                Ok(member_order) => member_order,
+                Err(diag_add) => return ConstValue::Missing(diag_add),
+            };
             ConstValue::Struct(
-                members
-                    .iter()
-                    .map(|(_, expr_id)| evaluate_constant_expr(db, exprs, *expr_id, diagnostics))
+                member_order
+                    .values()
+                    .map(|m| {
+                        members
+                            .iter()
+                            .find(|(member_id, _)| m.id == *member_id)
+                            .map(|(_, expr_id)| {
+                                evaluate_constant_expr(db, exprs, *expr_id, diagnostics)
+                            })
+                            .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic()))
+                    })
                     .collect(),
                 *ty,
             )

@@ -193,10 +193,7 @@ pub fn validate_under_limit<const K: u8>(
             let (x, y, x_part, y_fixed) =
                 auxiliary_vars.iter().cloned().collect_tuple().expect("Wrong amount of vars.");
             casm_build_extend! {casm_builder,
-                hint LinearSplit {
-                    value: value,
-                    scalar: a_imm, max_x: u128_limit_minus_1
-                } into {x: x, y: y};
+                hint LinearSplit { value, scalar: a_imm, max_x: u128_limit_minus_1 } into { x, y };
                 assert x_part = x * a_imm;
                 assert value = x_part + y;
                 // x <= max_x = 2**128 - 1
@@ -213,10 +210,7 @@ pub fn validate_under_limit<const K: u8>(
                 auxiliary_vars.iter().cloned().collect_tuple().expect("Wrong amount of vars.");
             casm_build_extend! {casm_builder,
                 const u128_limit_minus_2 = u128::MAX - 1;
-                hint LinearSplit {
-                    value: value,
-                    scalar: a_imm, max_x: u128_limit_minus_2
-                } into {x: x, y: y};
+                hint LinearSplit { value, scalar: a_imm, max_x: u128_limit_minus_2 } into { x, y };
                 assert x_part = x * a_imm;
                 assert value = x_part + y;
                 // y < 2**128

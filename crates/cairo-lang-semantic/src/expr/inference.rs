@@ -275,14 +275,30 @@ pub enum InferenceErrorStatus {
 }
 
 /// A mapping of an impl var's trait items to concrete items
-#[derive(Debug, Default, PartialEq, Eq, Clone)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, SemanticObject)]
 pub struct ImplVarTraitItemMappings {
     /// The trait types of the impl var.
-    types: HashMap<TraitTypeId, TypeId>,
+    types: OrderedHashMap<TraitTypeId, TypeId>,
     /// The trait constants of the impl var.
-    constants: HashMap<TraitConstantId, ConstValueId>,
+    constants: OrderedHashMap<TraitConstantId, ConstValueId>,
     /// The trait impls of the impl var.
-    impls: HashMap<TraitImplId, ImplId>,
+    impls: OrderedHashMap<TraitImplId, ImplId>,
+}
+impl Hash for ImplVarTraitItemMappings {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.types.iter().for_each(|(trait_type_id, type_id)| {
+            trait_type_id.hash(state);
+            type_id.hash(state);
+        });
+        self.constants.iter().for_each(|(trait_const_id, const_id)| {
+            trait_const_id.hash(state);
+            const_id.hash(state);
+        });
+        self.impls.iter().for_each(|(trait_impl_id, impl_id)| {
+            trait_impl_id.hash(state);
+            impl_id.hash(state);
+        });
+    }
 }
 
 /// State of inference.
@@ -871,8 +887,13 @@ impl<'db> Inference<'db> {
         // Update the concrete trait of the impl var.
         let concrete_trait_id = self.rewrite(impl_var.concrete_trait_id).no_err();
         self.impl_vars[impl_var.id.0].concrete_trait_id = concrete_trait_id;
-
-        let solution_set = self.trait_solution_set(concrete_trait_id, impl_var.lookup_context)?;
+        let impl_var_trait_item_mappings =
+            self.impl_vars_trait_item_mappings.get(&var).cloned().unwrap_or_default();
+        let solution_set = self.trait_solution_set(
+            concrete_trait_id,
+            impl_var_trait_item_mappings,
+            impl_var.lookup_context,
+        )?;
         Ok(match solution_set {
             SolutionSet::None => SolutionSet::None,
             SolutionSet::Unique((canonical_impl, canonicalizer)) => {
@@ -886,8 +907,10 @@ impl<'db> Inference<'db> {
     pub fn trait_solution_set(
         &mut self,
         concrete_trait_id: ConcreteTraitId,
+        impl_var_trait_item_mappings: ImplVarTraitItemMappings,
         mut lookup_context: ImplLookupContext,
     ) -> InferenceResult<SolutionSet<(CanonicalImpl, CanonicalMapping)>> {
+        let impl_var_trait_item_mappings = self.rewrite(impl_var_trait_item_mappings).no_err();
         // TODO(spapini): This is done twice. Consider doing it only here.
         let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
@@ -916,8 +939,12 @@ impl<'db> Inference<'db> {
             _ => {}
         };
 
-        let (canonical_trait, canonicalizer) =
-            CanonicalTrait::canonicalize(self.db, self.inference_id, concrete_trait_id);
+        let (canonical_trait, canonicalizer) = CanonicalTrait::canonicalize(
+            self.db,
+            self.inference_id,
+            concrete_trait_id,
+            impl_var_trait_item_mappings,
+        );
         let solution_set = match self.db.canonic_trait_solutions(canonical_trait, lookup_context) {
             Ok(solution_set) => solution_set,
             Err(err) => return Err(self.set_error(err)),
@@ -974,7 +1001,11 @@ impl<'db> Inference<'db> {
                 }
 
                 if !matches!(
-                    inference.trait_solution_set(concrete_trait_id, lookup_context.clone())?,
+                    inference.trait_solution_set(
+                        concrete_trait_id,
+                        ImplVarTraitItemMappings::default(),
+                        lookup_context.clone()
+                    )?,
                     SolutionSet::None
                 ) {
                     // If a negative impl has an impl, then we should skip it.

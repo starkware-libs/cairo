@@ -921,36 +921,36 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)+ {
-            $($input_name:ident : $input_value:ident),*
+            $($input_name:ident $(: $input_value:ident)?),*
         } into {
-            $($output_name:ident : $output_value:ident),*
+            $($output_name:ident $(: $output_value:ident)?),*
         }; $($tok:tt)*) => {
         $builder.add_hint(
             |[$($input_name),*], [$($output_name),*]| $hint_head$(::$hint_tail)+ {
                 $($input_name,)* $($output_name,)*
             },
-            [$($input_value,)*],
-            [$($output_value,)*],
+            [$($crate::casm_build_hint_param_value!($input_name  $(: $input_value)?),)*],
+            [$($crate::casm_build_hint_param_value!($output_name  $(: $output_value)?),)*],
         );
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, hint $hint_name:ident {
-            $($input_name:ident : $input_value:ident),*
-        } into {
-            $($output_name:ident : $output_value:ident),*
-        }; $($tok:tt)*) => {
-        $crate::casm_build_extend!($builder, hint $crate::hints::CoreHint::$hint_name {
-            $($input_name : $input_value),*
-        } into {
-            $($output_name : $output_value),*
-        }; $($tok)*)
+    ($builder:ident, hint $hint_name:ident { $($inputs:tt)* } into { $($outputs:tt)* }; $($tok:tt)*) => {
+        $crate::casm_build_extend! {$builder,
+            hint $crate::hints::CoreHint::$hint_name { $($inputs)* } into { $($outputs)* };
+            $($tok)*
+        }
     };
-    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)* {
-        $($arg_name:ident : $arg_value:ident),*
-    }; $($tok:tt)*) => {
-        $crate::casm_build_extend!($builder, hint $hint_head$(::$hint_tail)* {
-            $($arg_name : $arg_value),*
-        } into {}; $($tok)*)
+    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)* { $($inputs:tt)* }; $($tok:tt)*) => {
+        $crate::casm_build_extend! {$builder,
+            hint $hint_head$(::$hint_tail)* { $($inputs)* } into {};
+            $($tok)*
+        }
+    };
+    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)* into { $($outputs:tt)* }; $($tok:tt)*) => {
+        $crate::casm_build_extend! {$builder,
+            hint $hint_head$(::$hint_tail)* {} into { $($outputs)* };
+            $($tok)*
+        }
     };
     ($builder:ident, rescope { $($new_var:ident = $value_var:ident),* }; $($tok:tt)*) => {
         $builder.rescope([$(($new_var, $value_var)),*]);
@@ -968,5 +968,15 @@ macro_rules! casm_build_extend {
         $counter += $builder.steps() as i32;
         $builder.reset_steps();
         $crate::casm_build_extend!($builder, $($tok)*)
+    };
+}
+
+#[macro_export]
+macro_rules! casm_build_hint_param_value {
+    ($_name:ident : $value:ident) => {
+        $value
+    };
+    ($name:ident) => {
+        $name
     };
 }
