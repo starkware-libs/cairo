@@ -372,8 +372,8 @@ impl Backend {
     }
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
-    fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
-        state.diagnostics_controller.refresh(state.snapshot(), notifier);
+    fn refresh_diagnostics(state: &mut State, _notifier: Notifier) {
+        state.diagnostics_controller.refresh(state);
     }
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
