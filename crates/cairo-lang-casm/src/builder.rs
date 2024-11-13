@@ -101,8 +101,9 @@ enum Statement {
     Final(Instruction),
     /// A jump or call command, requires fixing the actual target label.
     Jump(String, Instruction),
-    /// A target label for jumps.
-    Label(String),
+    /// A target label for jumps, additionally with an offset for defining the label in a position
+    /// relative to the current statement.
+    Label(String, usize),
 }
 
 /// The builder result.
@@ -188,7 +189,7 @@ impl CasmBuilder {
                     offset += inst.body.op_size();
                     instructions.push(inst);
                 }
-                Statement::Label(name) => {
+                Statement::Label(name, _) => {
                     self.label_state.remove(&name);
                 }
             }
@@ -221,8 +222,8 @@ impl CasmBuilder {
                 Statement::Final(inst) | Statement::Jump(_, inst) => {
                     offset += inst.body.op_size();
                 }
-                Statement::Label(name) => {
-                    label_offsets.insert(name.clone(), offset);
+                Statement::Label(name, extra_offset) => {
+                    label_offsets.insert(name.clone(), offset + extra_offset);
                 }
             }
         }
@@ -492,8 +493,14 @@ impl CasmBuilder {
             .get(&name)
             .unwrap_or_else(|| panic!("No known value for state on reaching {name}."))
             .clone();
-        self.statements.push(Statement::Label(name));
+        self.statements.push(Statement::Label(name, 0));
         self.reachable = true;
+    }
+
+    /// Adds a label `name` in distance `offset` from the current point.
+    /// Useful for calling code outside of the builder's context.
+    pub fn future_label(&mut self, name: String, offset: usize) {
+        self.statements.push(Statement::Label(name, offset));
     }
 
     /// Rescoping the values, while ignoring all vars not stated in `vars` and giving the vars on
@@ -621,7 +628,7 @@ impl CasmBuilder {
     }
 
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
-    fn get_value(&self, var: Var, adjust_ap: bool) -> CellExpression {
+    pub fn get_value(&self, var: Var, adjust_ap: bool) -> CellExpression {
         if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
     }
 
@@ -914,36 +921,36 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)+ {
-            $($input_name:ident : $input_value:ident),*
+            $($input_name:ident $(: $input_value:ident)?),*
         } into {
-            $($output_name:ident : $output_value:ident),*
+            $($output_name:ident $(: $output_value:ident)?),*
         }; $($tok:tt)*) => {
         $builder.add_hint(
             |[$($input_name),*], [$($output_name),*]| $hint_head$(::$hint_tail)+ {
                 $($input_name,)* $($output_name,)*
             },
-            [$($input_value,)*],
-            [$($output_value,)*],
+            [$($crate::casm_build_hint_param_value!($input_name  $(: $input_value)?),)*],
+            [$($crate::casm_build_hint_param_value!($output_name  $(: $output_value)?),)*],
         );
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, hint $hint_name:ident {
-            $($input_name:ident : $input_value:ident),*
-        } into {
-            $($output_name:ident : $output_value:ident),*
-        }; $($tok:tt)*) => {
-        $crate::casm_build_extend!($builder, hint $crate::hints::CoreHint::$hint_name {
-            $($input_name : $input_value),*
-        } into {
-            $($output_name : $output_value),*
-        }; $($tok)*)
+    ($builder:ident, hint $hint_name:ident { $($inputs:tt)* } into { $($outputs:tt)* }; $($tok:tt)*) => {
+        $crate::casm_build_extend! {$builder,
+            hint $crate::hints::CoreHint::$hint_name { $($inputs)* } into { $($outputs)* };
+            $($tok)*
+        }
     };
-    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)* {
-        $($arg_name:ident : $arg_value:ident),*
-    }; $($tok:tt)*) => {
-        $crate::casm_build_extend!($builder, hint $hint_head$(::$hint_tail)* {
-            $($arg_name : $arg_value),*
-        } into {}; $($tok)*)
+    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)* { $($inputs:tt)* }; $($tok:tt)*) => {
+        $crate::casm_build_extend! {$builder,
+            hint $hint_head$(::$hint_tail)* { $($inputs)* } into {};
+            $($tok)*
+        }
+    };
+    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)* into { $($outputs:tt)* }; $($tok:tt)*) => {
+        $crate::casm_build_extend! {$builder,
+            hint $hint_head$(::$hint_tail)* {} into { $($outputs)* };
+            $($tok)*
+        }
     };
     ($builder:ident, rescope { $($new_var:ident = $value_var:ident),* }; $($tok:tt)*) => {
         $builder.rescope([$(($new_var, $value_var)),*]);
@@ -961,5 +968,15 @@ macro_rules! casm_build_extend {
         $counter += $builder.steps() as i32;
         $builder.reset_steps();
         $crate::casm_build_extend!($builder, $($tok)*)
+    };
+}
+
+#[macro_export]
+macro_rules! casm_build_hint_param_value {
+    ($_name:ident : $value:ident) => {
+        $value
+    };
+    ($name:ident) => {
+        $name
     };
 }

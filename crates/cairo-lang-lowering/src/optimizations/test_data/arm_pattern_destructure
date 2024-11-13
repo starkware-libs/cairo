@@ -30,7 +30,7 @@ enum MyEnum {
     e: (felt252, felt252),
     f: (felt252,),
     g: (felt252,),
-    h: felt252
+    h: felt252,
 }
 extern fn bar(ref r: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 

@@ -72,7 +72,9 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::solver::SolutionSet;
-use crate::expr::inference::{ImplVarId, Inference, InferenceError, InferenceId};
+use crate::expr::inference::{
+    ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceId,
+};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
@@ -1815,7 +1817,11 @@ pub fn can_infer_impl_by_self(
             inference_errors.push((trait_function_id, err));
         }
     }
-    match temp_inference.trait_solution_set(concrete_trait_id, lookup_context.clone()) {
+    match temp_inference.trait_solution_set(
+        concrete_trait_id,
+        ImplVarTraitItemMappings::default(),
+        lookup_context.clone(),
+    ) {
         Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_)) => true,
         Ok(SolutionSet::None) => {
             inference_errors

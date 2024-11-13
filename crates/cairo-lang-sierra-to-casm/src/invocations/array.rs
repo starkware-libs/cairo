@@ -49,7 +49,7 @@ fn build_array_new(
     let mut casm_builder = CasmBuilder::default();
     casm_build_extend! {casm_builder,
         tempvar arr_start;
-        hint AllocSegment {} into {dst: arr_start};
+        hint AllocSegment into {dst: arr_start};
         ap += 1;
     };
     Ok(builder.build_from_casm_builder(

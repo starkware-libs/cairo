@@ -9,7 +9,7 @@ export class StatusBar {
   private statusBarItem: vscode.StatusBarItem;
 
   constructor(private readonly context: Context) {
-    this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 
     this.context.extension.subscriptions.push(this.statusBarItem);
   }

@@ -13,7 +13,7 @@ mod component {
 
     #[embeddable_as]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -34,7 +34,7 @@ mod component {
 
     #[embeddable_as]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -197,7 +197,7 @@ mod component {
 
     #[embeddable_as(X, Y)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -218,7 +218,7 @@ mod component {
 
     #[embeddable_as(X, Y)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -381,7 +381,7 @@ mod component {
 
     #[embeddable_as(name: MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -402,7 +402,7 @@ mod component {
 
     #[embeddable_as(name: MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -925,7 +925,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        impl X: HasComponent<TContractState>, TContractState
+        impl X: HasComponent<TContractState>, TContractState,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing() {}
     }
@@ -946,7 +946,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        impl X: HasComponent<TContractState>, TContractState
+        impl X: HasComponent<TContractState>, TContractState,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing() {}
     }
@@ -1289,7 +1289,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of MyTrait<ComponentState<TContractState>>;
 }
 trait MyTrait<T>;
@@ -1306,7 +1306,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of MyTrait<ComponentState<TContractState>>;
 }
 trait MyTrait<T>;
@@ -1465,7 +1465,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn no_self() {}
         fn self_of_wrong_type(self: ComponentState<TContractState>) {}
@@ -1488,7 +1488,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>
+        TContractState, impl X: HasComponent<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn no_self() {}
         fn self_of_wrong_type(self: ComponentState<TContractState>) {}
@@ -1583,8 +1583,8 @@ pub trait HasComponent<TContractState> {
 
 #[starknet::embeddable]
 pub impl MyImpl<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
+            TContractState, impl X: HasComponent<TContractState>,
+impl TContractStateDrop: Drop<TContractState>
 > of MyTrait<TContractState> {
 }
 
@@ -1696,7 +1696,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>, +Destruct<TContractState>
+        TContractState, impl X: HasComponent<TContractState>, +Destruct<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -1708,7 +1708,7 @@ trait MyTrait<T> {
 //! > expected_diagnostics
 error: Plugin diagnostic: `embeddable_as` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
  --> lib.cairo:10:63
-        TContractState, impl X: HasComponent<TContractState>, +Destruct<TContractState>
+        TContractState, impl X: HasComponent<TContractState>, +Destruct<TContractState>,
                                                               ^***********************^
 
 //! > generated_cairo_code
@@ -1723,7 +1723,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>, +Destruct<TContractState>
+        TContractState, impl X: HasComponent<TContractState>, +Destruct<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -1880,7 +1880,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>, +PanicDestruct<TContractState>
+        TContractState, impl X: HasComponent<TContractState>, +PanicDestruct<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }
@@ -1892,7 +1892,7 @@ trait MyTrait<T> {
 //! > expected_diagnostics
 error: Plugin diagnostic: `embeddable_as` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
  --> lib.cairo:10:63
-        TContractState, impl X: HasComponent<TContractState>, +PanicDestruct<TContractState>
+        TContractState, impl X: HasComponent<TContractState>, +PanicDestruct<TContractState>,
                                                               ^****************************^
 
 //! > generated_cairo_code
@@ -1907,7 +1907,7 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<
-        TContractState, impl X: HasComponent<TContractState>, +PanicDestruct<TContractState>
+        TContractState, impl X: HasComponent<TContractState>, +PanicDestruct<TContractState>,
     > of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {}
     }

@@ -11,6 +11,7 @@ pub mod operators;
 pub mod parser;
 pub mod printer;
 pub mod recovery;
+pub mod types;
 pub mod utils;
 mod validation;
 

@@ -327,7 +327,7 @@ fn build_ec_state_init(
         tempvar random_x;
         tempvar random_y;
         tempvar random_ptr;
-        hint RandomEcPoint {} into { x: random_x, y: random_y };
+        hint RandomEcPoint into { x: random_x, y: random_y };
         // Initialize `random_ptr` and copy the random point into it.
         const ec_point_size = 2;
         hint AllocConstantSize { size: ec_point_size } into {dst: random_ptr};

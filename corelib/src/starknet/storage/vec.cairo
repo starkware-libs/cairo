@@ -1,6 +1,6 @@
 use super::{
     StorageAsPath, StorageAsPointer, StoragePath, StoragePointer0Offset, Mutable, StoragePathTrait,
-    StoragePathUpdateTrait, StoragePointerReadAccess, StoragePointerWriteAccess
+    StoragePathUpdateTrait, StoragePointerReadAccess, StoragePointerWriteAccess,
 };
 use core::Option;
 
@@ -63,7 +63,7 @@ impl PathableVecImpl<
     T,
     +Drop<T>,
     impl PathImpl: StorageAsPath<T>,
-    impl VecTraitImpl: VecTrait<StoragePath<PathImpl::Value>>
+    impl VecTraitImpl: VecTrait<StoragePath<PathImpl::Value>>,
 > of VecTrait<T> {
     type ElementType = VecTraitImpl::ElementType;
     fn get(self: T, index: u64) -> Option<StoragePath<VecTraitImpl::ElementType>> {
@@ -117,7 +117,7 @@ impl PathableMutableVecImpl<
     T,
     +Drop<T>,
     impl PathImpl: StorageAsPath<T>,
-    impl VecTraitImpl: MutableVecTrait<StoragePath<PathImpl::Value>>
+    impl VecTraitImpl: MutableVecTrait<StoragePath<PathImpl::Value>>,
 > of MutableVecTrait<T> {
     type ElementType = VecTraitImpl::ElementType;
     fn get(self: T, index: u64) -> Option<StoragePath<Mutable<VecTraitImpl::ElementType>>> {
@@ -135,7 +135,7 @@ impl PathableMutableVecImpl<
 }
 
 pub impl VecIndexView<
-    VecT, impl VecImpl: VecTrait<VecT>, +Copy<VecT>
+    VecT, impl VecImpl: VecTrait<VecT>, +Copy<VecT>,
 > of core::ops::IndexView<VecT, u64> {
     type Target = StoragePath<VecImpl::ElementType>;
     fn index(self: @VecT, index: u64) -> Self::Target {
@@ -144,7 +144,7 @@ pub impl VecIndexView<
 }
 
 pub impl MutableVecIndexView<
-    VecT, impl VecImpl: MutableVecTrait<VecT>, +Copy<VecT>
+    VecT, impl VecImpl: MutableVecTrait<VecT>, +Copy<VecT>,
 > of core::ops::IndexView<VecT, u64> {
     type Target = StoragePath<Mutable<VecImpl::ElementType>>;
     fn index(self: @VecT, index: u64) -> Self::Target {

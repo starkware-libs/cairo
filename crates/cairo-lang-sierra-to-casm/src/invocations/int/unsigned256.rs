@@ -77,15 +77,9 @@ fn build_u256_divmod(
 
         // Divide in a hint.
         hint Uint256DivMod {
-            dividend0: dividend0,
-            dividend1: dividend1,
-            divisor0: divisor0,
-            divisor1: divisor1
+            dividend0, dividend1, divisor0, divisor1
         } into {
-            quotient0: quotient0,
-            quotient1: quotient1,
-            remainder0: remainder0,
-            remainder1: remainder1
+            quotient0, quotient1, remainder0, remainder1
         };
 
         // Verify the hint ranges.
@@ -221,14 +215,9 @@ fn build_u256_sqrt(
 
         // Divide in a hint.
         hint Uint256SquareRoot {
-            value_low: value_low,
-            value_high: value_high
+            value_low, value_high
         } into {
-            sqrt0: sqrt0,
-            sqrt1: sqrt1,
-            remainder_low: remainder_low,
-            remainder_high: remainder_high,
-            sqrt_mul_2_minus_remainder_ge_u128: sqrt_mul_2_minus_remainder_ge_u128
+            sqrt0, sqrt1, remainder_low, remainder_high, sqrt_mul_2_minus_remainder_ge_u128
         };
 
         // Verify the hint consistency and ranges.
@@ -369,17 +358,9 @@ fn build_u256_inv_mod_n(
 
         // Find the inverse or an a proof there isn't one.
         hint U256InvModN {
-            b0: b0,
-            b1: b1,
-            n0: n0,
-            n1: n1
+            b0, b1, n0, n1
         } into {
-            g0_or_no_inv: g0_or_no_inv,
-            g1_option: g1_option,
-            s_or_r0: s_or_r0,
-            s_or_r1: s_or_r1,
-            t_or_k0: t_or_k0,
-            t_or_k1: t_or_k1
+            g0_or_no_inv, g1_option, s_or_r0, s_or_r1, t_or_k0, t_or_k1
         };
 
         jump NoInverse if g0_or_no_inv != 0;

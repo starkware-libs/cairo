@@ -38,11 +38,11 @@
 //! }
 //! ```
 
-use std::io;
 use std::panic::RefUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::SystemTime;
+use std::{io, panic};
 
 use anyhow::{Context, Result};
 use cairo_lang_compiler::db::validate_corelib;
@@ -52,8 +52,8 @@ use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::plugin::PluginSuite;
 use lsp_server::Message;
-use lsp_types::{ClientCapabilities, RegistrationParams};
-use server::connection::ClientSender;
+use lsp_types::RegistrationParams;
+use salsa::{Database, Durability};
 use tracing::{debug, error, info, warn};
 
 use crate::config::Config;
@@ -62,13 +62,14 @@ use crate::lang::lsp::LsProtoGroup;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
-use crate::lsp::ext::CorelibVersionMismatch;
+use crate::lsp::ext::{CorelibVersionMismatch, ScarbMetadataFailed};
 use crate::lsp::result::LSPResult;
 use crate::project::ProjectManifestPath;
 use crate::project::scarb::update_crate_roots;
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
-use crate::server::client::{Client, Notifier, Requester, Responder};
+use crate::server::client::{Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
+use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
 use crate::state::State;
@@ -114,6 +115,7 @@ pub fn start() -> ExitCode {
 /// [lib]: crate#running-with-customizations
 pub fn start_with_tricks(tricks: Tricks) -> ExitCode {
     let _log_guard = init_logging();
+    set_panic_hook();
 
     info!("language server starting");
     env_config::report_to_logs();
@@ -212,6 +214,16 @@ fn init_logging() -> Option<impl Drop> {
     guard
 }
 
+/// Sets a special panic hook that skips execution for Salsa cancellation panics.
+fn set_panic_hook() {
+    let previous_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
+        if !is_cancelled(info.payload()) {
+            previous_hook(info);
+        }
+    }))
+}
+
 struct Backend {
     connection: Connection,
     state: State,
@@ -256,21 +268,9 @@ impl Backend {
         let server_capabilities = collect_server_capabilities(&client_capabilities);
 
         let connection = connection_initializer.initialize_finish(id, server_capabilities)?;
-        let state = Self::create_state(connection.make_sender(), client_capabilities, tricks);
+        let state = State::new(connection.make_sender(), client_capabilities, tricks);
 
         Ok(Self { connection, state })
-    }
-
-    fn create_state(
-        sender: ClientSender,
-        client_capabilities: ClientCapabilities,
-        tricks: Tricks,
-    ) -> State {
-        let db = AnalysisDatabase::new(&tricks);
-        let notifier = Client::new(sender).notifier();
-        let scarb_toolchain = ScarbToolchain::new(notifier);
-
-        State::new(db, client_capabilities, scarb_toolchain, tricks)
     }
 
     /// Runs the main event loop thread and wait for its completion.
@@ -293,6 +293,9 @@ impl Backend {
             scheduler.on_sync_task(Self::refresh_diagnostics);
 
             let result = Self::event_loop(&connection, scheduler);
+
+            // Trigger cancellation in any background tasks that might still be running.
+            state.db.salsa_runtime_mut().synthetic_write(Durability::LOW);
 
             if let Err(err) = connection.close() {
                 error!("failed to close connection to the language server: {err:?}");
@@ -358,8 +361,14 @@ impl Backend {
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
-        state.db_swapper.maybe_swap(&mut state.db, &state.open_files, &state.tricks);
+    fn maybe_swap_database(state: &mut State, notifier: Notifier) {
+        state.db_swapper.maybe_swap(
+            &mut state.db,
+            &state.open_files,
+            &state.config,
+            &state.tricks,
+            &notifier,
+        );
     }
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
@@ -384,9 +393,9 @@ impl Backend {
                     .with_context(|| {
                         format!("failed to refresh scarb workspace: {}", manifest_path.display())
                     })
-                    .inspect_err(|e| {
-                        // TODO(mkaput): Send a notification to the language client.
-                        warn!("{e:?}");
+                    .inspect_err(|err| {
+                        warn!("{err:?}");
+                        notifier.notify::<ScarbMetadataFailed>(());
                     })
                     .ok();
 

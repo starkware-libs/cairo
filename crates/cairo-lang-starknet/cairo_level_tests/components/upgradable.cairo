@@ -12,17 +12,17 @@ pub mod upgradable {
     use ownable_comp::OwnableHelperImpl;
     #[storage]
     pub struct Storage {
-        pub current_implementation: ClassHash
+        pub current_implementation: ClassHash,
     }
     #[event]
     #[derive(Drop, starknet::Event)]
     pub enum Event {
-        ContractUpgraded: ContractUpgraded
+        ContractUpgraded: ContractUpgraded,
     }
     #[derive(Drop, starknet::Event)]
     struct ContractUpgraded {
         old_class_hash: ClassHash,
-        new_class_hash: ClassHash
+        new_class_hash: ClassHash,
     }
     #[embeddable_as(UpgradableImpl)]
     impl Upgradable<
