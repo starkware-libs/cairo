@@ -39,11 +39,11 @@ async function allFoldersHaveSameLSProvider(
     const versions = await Promise.all(executables.map((v) => v.scarb!.getVersion(ctx)));
     const primaryVersion = versions[0];
 
-    return versions.slice(1).every((x) => x == primaryVersion);
+    return versions.slice(1).every((x) => x === primaryVersion);
   }
 
   const primaryExecutable = executables[0]!;
-  return executables.slice(1).every((x) => primaryExecutable.run.command == x.run.command);
+  return executables.slice(1).every((x) => primaryExecutable.run.command === x.run.command);
 }
 
 export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
