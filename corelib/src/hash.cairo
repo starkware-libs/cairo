@@ -1,30 +1,53 @@
+//! Hash module that provides traits and implementations for hashing various data types.
+//!
+//! This module provides some traits and associated implementations:
+//! - `HashStateTrait`: A trait that defines the behavior of hash state accumulators, which can be
+//! used to update and finalize a hash state.
+//! - `Hash`: A trait that defines how to update a hash state with a given value.
+//! - `LegacyHash`: A trait for hashing values, used for backwards compatibility. It's recommended
+//! to use the `Hash` trait instead.
+//! - `HashStateExTrait`: An extension trait that provides a convenient `update_with` method for
+//! hash state accumulators.
+
 #[allow(unused_imports)]
 use crate::traits::Into;
 
 /// A trait for hash state accumulators.
 pub trait HashStateTrait<S> {
+    /// Updates the current hash state `self` with the given `felt252` value and returns a new hash
+    /// state.
     #[must_use]
     fn update(self: S, value: felt252) -> S;
+
+    /// Takes the current state `self` and returns the hash result.
     #[must_use]
     fn finalize(self: S) -> felt252;
 }
 
 /// A trait for values that can be hashed.
 pub trait Hash<T, S, +HashStateTrait<S>> {
-    /// Updates the hash state with the given value.
+    /// Updates the hash state with the given value and returns a new hash state.
     #[must_use]
     fn update_state(state: S, value: T) -> S;
 }
 
-/// Trait for hashing values.
-/// Used for backwards compatibility.
+/// Implementation for `Hash` for `felt252` values and `S` state.
+impl HashFelt252<S, +HashStateTrait<S>> of Hash<felt252, S> {
+    #[inline]
+    fn update_state(state: S, value: felt252) -> S {
+        state.update(value)
+    }
+}
+
+/// Trait for hashing values using a `felt252` as hash state, used for backwards compatibility.
 /// NOTE: Implement `Hash` instead of this trait if possible.
 pub trait LegacyHash<T> {
+    /// Takes a `felt252` state and a value of type `T` and returns the hash result.
     #[must_use]
     fn hash(state: felt252, value: T) -> felt252;
 }
 
-/// Implementation of `LegacyHash` for types that have `Hash` for backwards compatibility.
+/// Implementation for `LegacyHash` for types that implement `Hash` for backwards compatibility.
 impl LegacyHashForHash<T, +Hash<T, crate::pedersen::HashState>> of LegacyHash<T> {
     #[inline]
     fn hash(state: felt252, value: T) -> felt252 {
@@ -34,11 +57,13 @@ impl LegacyHashForHash<T, +Hash<T, crate::pedersen::HashState>> of LegacyHash<T>
 
 /// Extension trait for hash state accumulators.
 pub trait HashStateExTrait<S, T> {
-    /// Updates the hash state with the given value.
+    /// Updates the hash state with the given value and returns the hash result.
     #[must_use]
     fn update_with(self: S, value: T) -> S;
 }
 
+/// Implementation for `HashStateExTrait` for types that implement `Hash` for backwards
+/// compatibility.
 impl HashStateEx<S, +HashStateTrait<S>, T, +Hash<T, S>> of HashStateExTrait<S, T> {
     #[inline]
     fn update_with(self: S, value: T) -> S {
@@ -46,16 +71,11 @@ impl HashStateEx<S, +HashStateTrait<S>, T, +Hash<T, S>> of HashStateExTrait<S, T
     }
 }
 
-impl HashFelt252<S, +HashStateTrait<S>> of Hash<felt252, S> {
-    #[inline]
-    fn update_state(state: S, value: felt252) -> S {
-        state.update(value)
-    }
-}
-
-/// Impl for `Hash` for types that can be converted into `felt252` using the `Into` trait.
-/// Usage example:
-/// ```ignore
+/// Implementation for `Hash` for types that can be converted into `felt252` using the `Into` trait.
+///
+/// # Examples
+///
+/// ```
 /// impl MyTypeHash<S, +HashStateTrait<S>, +Drop<S>> =
 ///     core::hash::into_felt252_based::HashImpl<MyType, S>;`
 /// ```
