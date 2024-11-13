@@ -49,8 +49,8 @@ async function allFoldersHaveSameLSProvider(
 export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
   const executables = (
     await Promise.all(
-      (vscode.workspace.workspaceFolders || []).map(
-        (workspaceFolder) => getLanguageServerExecutable(workspaceFolder, ctx),
+      (vscode.workspace.workspaceFolders || []).map((workspaceFolder) =>
+        getLanguageServerExecutable(workspaceFolder, ctx),
       ),
     )
   ).filter((x) => !!x) as LSExecutable[];
