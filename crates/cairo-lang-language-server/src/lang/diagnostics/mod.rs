@@ -11,7 +11,7 @@ use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_s
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
-use crate::state::StateSnapshot;
+use crate::state::{State, StateSnapshot};
 
 mod file_batches;
 mod file_diagnostics;
@@ -26,42 +26,52 @@ mod trigger;
 pub struct DiagnosticsController {
     // NOTE: Member order matters here.
     //   The trigger MUST be dropped before worker's join handle.
-    //   Otherwise, the worker will never be requested to stop, and the worker's JoinHandle will
-    //   never terminate.
-    trigger: trigger::Sender<WorkerArgs>,
-    _worker: JoinHandle,
-}
-
-struct WorkerArgs {
-    state: StateSnapshot,
-    notifier: Notifier,
+    //   Otherwise, the controller thread will never be requested to stop, and the controller's
+    //   JoinHandle will never terminate.
+    trigger: trigger::Sender<StateSnapshot>,
+    _thread: JoinHandle,
 }
 
 impl DiagnosticsController {
     /// Creates a new diagnostics controller.
-    pub fn new() -> Self {
+    pub fn new(notifier: Notifier) -> Self {
         let (trigger, receiver) = trigger();
-
-        let worker = thread::Builder::new(ThreadPriority::Worker)
-            .name("cairo-ls:diagnostics_controller".into())
-            .spawn(move || Self::control_loop(receiver))
-            .expect("failed to spawn diagnostics controller thread");
-
-        Self { trigger, _worker: worker }
+        let thread = DiagnosticsControllerThread::spawn(receiver, notifier);
+        Self { trigger, _thread: thread }
     }
 
-    /// Schedules diagnostics refreshing using current state snapshot.
-    pub fn refresh(&self, state: StateSnapshot, notifier: Notifier) {
-        self.trigger.activate(WorkerArgs { state, notifier });
+    /// Schedules diagnostics refreshing on snapshot(s) of the current state.
+    pub fn refresh(&self, state: &State) {
+        self.trigger.activate(state.snapshot());
+    }
+}
+
+/// Stores entire state of diagnostics controller's worker thread.
+struct DiagnosticsControllerThread {
+    receiver: trigger::Receiver<StateSnapshot>,
+    notifier: Notifier,
+    // NOTE: Globally, we have to always identify files by URL instead of FileId,
+    //   as the diagnostics state is independent of analysis database swaps,
+    //   which invalidate FileIds.
+    file_diagnostics: HashMap<Url, FileDiagnostics>,
+}
+
+impl DiagnosticsControllerThread {
+    /// Spawns a new diagnostics controller worker thread.
+    fn spawn(receiver: trigger::Receiver<StateSnapshot>, notifier: Notifier) -> JoinHandle {
+        let mut this = Self { receiver, notifier, file_diagnostics: Default::default() };
+
+        thread::Builder::new(ThreadPriority::Worker)
+            .name("cairo-ls:diagnostics-controller".into())
+            .spawn(move || this.event_loop())
+            .expect("failed to spawn diagnostics controller thread")
     }
 
     /// Runs diagnostics controller's event loop.
-    fn control_loop(receiver: trigger::Receiver<WorkerArgs>) {
-        let mut file_diagnostics = HashMap::<Url, FileDiagnostics>::new();
-
-        while let Some(WorkerArgs { state, notifier }) = receiver.wait() {
+    fn event_loop(&mut self) {
+        while let Some(state) = self.receiver.wait() {
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
-                Self::control_tick(state, &mut file_diagnostics, notifier);
+                self.diagnostics_controller_tick(state);
             })) {
                 if let Ok(err) = cancelled_anyhow(err, "diagnostics refreshing has been cancelled")
                 {
@@ -75,11 +85,7 @@ impl DiagnosticsController {
 
     /// Runs a single tick of the diagnostics controller's event loop.
     #[tracing::instrument(skip_all)]
-    fn control_tick(
-        state: StateSnapshot,
-        file_diagnostics: &mut HashMap<Url, FileDiagnostics>,
-        notifier: Notifier,
-    ) {
+    fn diagnostics_controller_tick(&mut self, state: StateSnapshot) {
         // TODO(mkaput): Make multiple batches and run them in parallel.
         let primary_files = find_primary_files(&state.db, &state.open_files);
         let secondary_files = find_secondary_files(&state.db, &primary_files);
@@ -89,8 +95,8 @@ impl DiagnosticsController {
                 &state.db,
                 batch,
                 state.config.trace_macro_diagnostics,
-                file_diagnostics,
-                notifier.clone(),
+                &mut self.file_diagnostics,
+                self.notifier.clone(),
             );
         }
     }
