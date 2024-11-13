@@ -1,4 +1,4 @@
-//! Fmt module that provides functionality for formatting values.
+//! Functionality for formatting values.
 //!
 //! The main components of this module are:
 //!
