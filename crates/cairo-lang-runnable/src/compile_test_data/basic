@@ -10,7 +10,6 @@ fn main() {}
 //! > generated_casm_code
 # builtins: 
 # header #
-ap += 0;
 call rel 3;
 ret;
 # sierra based code #
@@ -36,7 +35,6 @@ fn main(a: felt252, b: felt252) -> felt252 {
 //! > generated_casm_code
 # builtins: 
 # header #
-ap += 0;
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 %{ raise NotImplementedError("memory[ap + 1].. = params[1])") %}
 ap += 2;
@@ -70,7 +68,6 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 //! > generated_casm_code
 # builtins: range_check
 # header #
-ap += 0;
 [ap + 0] = [fp + -3], ap++;
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 %{ raise NotImplementedError("memory[ap + 1].. = params[1])") %}
