@@ -1,9 +1,11 @@
-//! Class hash module that provides functionality for working with Starknet contract class hashes.
+//! The `ClassHash` type represents a Starknet contract class hash, with a value range of
+//! `[0, 2**251)`.
 //!
-//! The `ClassHash` type represents a Starknet contract class hash. This module provides the
-//! implementation of many basic traits for this type.
+//! This module implements some basic traits for the `ContractAddress` type, such as [`Serde`],
+//! [`Zero`], [`PartialEq`], and [`Debug`].
 //!
-//! `class_hash_const` allows to construct a `ClassHash` value from a constant `felt252` address.
+//! `class_hash_const` function allows to construct a `ClassHash` value from a constant `felt252`
+//! address.
 //!
 //! # Examples
 //!
@@ -52,14 +54,16 @@ pub(crate) impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
     }
 }
 
-impl ClassHashZero of core::num::traits::Zero<ClassHash> {
+impl ClassHashZero of core::num::traits<ClassHash> {
     fn zero() -> ClassHash {
         class_hash_const::<0>()
     }
+
     #[inline]
     fn is_zero(self: @ClassHash) -> bool {
         core::num::traits::Zero::<felt252>::is_zero(@class_hash_to_felt252(*self))
     }
+
     #[inline]
     fn is_non_zero(self: @ClassHash) -> bool {
         !self.is_zero()
@@ -73,6 +77,7 @@ impl ClassHashSerde of Serde<ClassHash> {
     fn serialize(self: @ClassHash, ref output: Array<felt252>) {
         class_hash_to_felt252(*self).serialize(ref output);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<ClassHash> {
         Option::Some(class_hash_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?)
     }
