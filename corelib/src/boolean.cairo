@@ -8,7 +8,6 @@
 //! Basic boolean operations:
 //!
 //! ```
-//! use core::boolean::BoolTrait;
 //!
 //! let value = true;
 //! assert!(value == true);
