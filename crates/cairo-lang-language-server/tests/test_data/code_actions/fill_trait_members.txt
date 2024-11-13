@@ -1,0 +1,146 @@
+//! > Test completing missing trait members in impl block.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2024_07"
+
+//! > cairo_code
+mod some_module {
+    pub struct SomeStructWithConstParameter<const C: u8> {}
+
+    pub trait MyTrait<T, U, const C: u8> {
+        const CONCRETE_CONST: u32;
+        const GENERIC_CONST: T;
+
+        type Type;
+
+        fn foo(t: T, v: U) -> T;
+        fn bar(t: T) -> U;
+        fn baz(s: SomeStructWithConstParameter<C>);
+
+        fn generic<const V: u32, W, +Into<T, W>>(w: W);
+
+        fn with_concrete_impl<W, impl SomeImpl: Into<T, W>>(w: W) -> W;
+    }
+}
+
+mod happy_cases {
+    use super::some_module::{MyTrait, SomeStructWithConstParameter};
+
+    impl EmptyImpl<caret> of MyTrait<u32, felt252, 1> {
+
+    }
+
+    impl ImplWithConst<caret> of MyTrait<u32, felt252, 10> {
+        const CONCRETE_CONST: u32 = 0;
+    }
+
+    impl ImplWithFoo<caret> of MyTrait<u32, felt252, 0> {
+        fn foo(t: u32, v: felt252) -> u32 { 0 }
+    }
+
+    impl ImplWithEverything<caret> of MyTrait<u32, felt252, 12> {
+        const CONCRETE_CONST: u32 = 0;
+        const GENERIC_CONST: u32 = 0;
+
+        type Type = u256;
+
+        fn foo(t: u32, v: felt252) -> u32 { 0 }
+        fn bar(t: u32) -> felt252 { 0 }
+        fn baz(s: SomeStructWithConstParameter::<12>) {}
+
+        fn generic<const V: u32, W, +Into<u32, W>>(w: W) {}
+
+        fn with_concrete_impl<W, impl SomeImpl: Into<T, W>>(w: W) -> W {}
+    }
+
+    impl ImplWithoutGenericArgs of MyTrait {
+
+    }
+}
+
+mod unhappy_cases {
+    impl WrongImpl<caret> NonExistentTrait<u8> {
+
+    }
+
+    use super::some_module::MyTrait;
+
+    impl NoBraces<caret> of MyTrait<u32, u8>;
+}
+
+//! > Code action #0
+    impl EmptyImpl<caret> of MyTrait<u32, felt252, 1> {
+Title: Implement missing members
+Add new text: "const CONCRETE_CONST: core::integer::u32 = ();
+
+const GENERIC_CONST: core::integer::u32 = ();
+
+type Type = ();
+
+fn foo(t: core::integer::u32, v: core::felt252) -> core::integer::u32 {}
+
+fn bar(t: core::integer::u32) -> core::felt252 {}
+
+fn baz(s: hello::some_module::SomeStructWithConstParameter::<1>) {}
+
+fn generic<const V: core::integer::u32, W, +Into<core::integer::u32, W>>(w: W) {}
+
+fn with_concrete_impl<W, impl SomeImpl: Into<core::integer::u32, W>>(w: W) -> W {}"
+At: Range { start: Position { line: 23, character: 0 }, end: Position { line: 23, character: 0 } }
+
+//! > Code action #1
+    impl ImplWithConst<caret> of MyTrait<u32, felt252, 10> {
+Title: Implement missing members
+Add new text: "const GENERIC_CONST: core::integer::u32 = ();
+
+type Type = ();
+
+fn foo(t: core::integer::u32, v: core::felt252) -> core::integer::u32 {}
+
+fn bar(t: core::integer::u32) -> core::felt252 {}
+
+fn baz(s: hello::some_module::SomeStructWithConstParameter::<10>) {}
+
+fn generic<const V: core::integer::u32, W, +Into<core::integer::u32, W>>(w: W) {}
+
+fn with_concrete_impl<W, impl SomeImpl: Into<core::integer::u32, W>>(w: W) -> W {}"
+At: Range { start: Position { line: 27, character: 38 }, end: Position { line: 27, character: 38 } }
+
+//! > Code action #2
+    impl ImplWithFoo<caret> of MyTrait<u32, felt252, 0> {
+Title: Implement missing members
+Add new text: "const CONCRETE_CONST: core::integer::u32 = ();
+
+const GENERIC_CONST: core::integer::u32 = ();
+
+type Type = ();
+
+fn bar(t: core::integer::u32) -> core::felt252 {}
+
+fn baz(s: hello::some_module::SomeStructWithConstParameter::<0>) {}
+
+fn generic<const V: core::integer::u32, W, +Into<core::integer::u32, W>>(w: W) {}
+
+fn with_concrete_impl<W, impl SomeImpl: Into<core::integer::u32, W>>(w: W) -> W {}"
+At: Range { start: Position { line: 31, character: 47 }, end: Position { line: 31, character: 47 } }
+
+//! > Code action #3
+    impl ImplWithEverything<caret> of MyTrait<u32, felt252, 12> {
+Title: Implement missing members
+Add new text: ""
+At: Range { start: Position { line: 46, character: 73 }, end: Position { line: 46, character: 73 } }
+
+//! > Code action #4
+    impl WrongImpl<caret> NonExistentTrait<u8> {
+No code actions.
+
+//! > Code action #5
+    impl NoBraces<caret> of MyTrait<u32, u8>;
+No code actions.
