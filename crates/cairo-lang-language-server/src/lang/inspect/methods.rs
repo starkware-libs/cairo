@@ -1,9 +1,9 @@
 use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
 use cairo_lang_semantic::expr::inference::solver::SolutionSet;
+use cairo_lang_semantic::expr::inference::{ImplVarTraitItemMappings, InferenceId};
 use cairo_lang_semantic::lsp_helpers::TypeFilter;
 use cairo_lang_semantic::resolve::Resolver;
 use tracing::debug;
@@ -49,7 +49,11 @@ pub fn find_methods_for_type(
             // ignore the result as nothing can be done with the error, if any.
             inference.solve().ok();
             if !matches!(
-                inference.trait_solution_set(concrete_trait_id, lookup_context),
+                inference.trait_solution_set(
+                    concrete_trait_id,
+                    ImplVarTraitItemMappings::default(),
+                    lookup_context
+                ),
                 Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))
             ) {
                 continue;

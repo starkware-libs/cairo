@@ -2053,6 +2053,36 @@ error: Candidate impl test::MyImpl::<?0> has an unused generic parameter.
 
 //! > ==========================================================================
 
+//! > trait's generic arg is inferred from concrete impl with associated type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> u32 {
+    MyTrait::<u32>::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T, K> {
+    type ty;
+    fn foo() -> Self::ty;
+}
+
+impl MyImpl<K, +Default<K>> of MyTrait<u32, K> {
+    type ty = K;
+    fn foo() -> Self::ty {
+        Default::default()
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
 //! > using an impl's associated type in a function signature of a concrete impl with generic args.
 
 //! > test_runner_name
@@ -2579,3 +2609,37 @@ error: Not a type.
  --> lib.cairo:1:69
 fn bar<T, const C: u32, impl I: core::metaprogramming::TypeEqual<T, C>>() {}
                                                                     ^
+
+//! > ==========================================================================
+
+//! > Mismatch between inferred trait type and expected type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+///TODO(TomerStarkware): change diagnostics to mismatch types instead of missing impl.
+fn foo() {
+    let _: felt252 = MyTrait::my_function();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type MyType;
+    fn my_function() -> Self::MyType;
+}
+impl MyImpl of MyTrait {
+    type MyType = u16;
+    fn my_function() -> u16 {
+        2_u16
+    }
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `core::felt252` and `core::integer::u16`.
+ --> lib.cairo:13:31
+    let _: felt252 = MyTrait::my_function();
+                              ^*********^
