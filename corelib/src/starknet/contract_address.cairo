@@ -1,3 +1,20 @@
+//! The `ContractAddress` type represents a Starknet contract address, with a value range of
+//! `[0, 2**251)`.
+//!
+//! This module implements some basic traits for the `ContractAddress` type, such as [`Serde`],
+//! [`Zero`], [`PartialEq`], [`PartialOrd`] and [`Debug`].
+//!
+//! `contract_address_const` function allows to construct a `ContractAddress` value from a constant
+//! `felt252` value.
+//!
+//! # Examples
+//!
+//! ```
+//! use core::starknet::contract_address::contract_address_const;
+//!
+//! let contract_address = contract_address_const::<0x0>();
+//! ```
+
 #[allow(unused_imports)]
 use core::zeroable::Zeroable;
 use core::serde::Serde;
@@ -10,8 +27,17 @@ use core::RangeCheck;
 #[derive(Copy, Drop)]
 pub extern type ContractAddress;
 
-
+/// Returns a `ContractAddress` value given a `felt252` address value.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::contract_address::contract_address_const;
+///
+/// let contract_address = contract_address_const::<0x0>();
+/// ```
 pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
+
 pub(crate) extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
 pub(crate) extern fn contract_address_try_from_felt252(
@@ -23,21 +49,23 @@ pub(crate) impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddres
         contract_address_try_from_felt252(self)
     }
 }
+
 pub(crate) impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
     fn into(self: ContractAddress) -> felt252 {
         contract_address_to_felt252(self)
     }
 }
 
-
 impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }
+
     #[inline]
     fn is_zero(self: @ContractAddress) -> bool {
         core::num::traits::Zero::<felt252>::is_zero(@contract_address_to_felt252(*self))
     }
+
     #[inline]
     fn is_non_zero(self: @ContractAddress) -> bool {
         !self.is_zero()
@@ -51,6 +79,7 @@ impl ContractAddressSerde of Serde<ContractAddress> {
     fn serialize(self: @ContractAddress, ref output: Array<felt252>) {
         contract_address_to_felt252(*self).serialize(ref output);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<ContractAddress> {
         Option::Some(
             contract_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?,
