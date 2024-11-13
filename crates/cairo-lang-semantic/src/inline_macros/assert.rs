@@ -8,7 +8,7 @@ use cairo_lang_defs::plugin_utils::{
 };
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{ast, TypedStablePtr, TypedSyntaxNode};
 use indoc::{formatdoc, indoc};
 
 /// Macro for assertion.
@@ -129,7 +129,7 @@ impl InlineMacroExprPlugin for AssertMacro {
             # Parameters
             - `condition`: A boolean expression to evaluate.
             - `format_string` (optional): A string literal for format placeholders.
-            - `args` (optional): Arguments corresponding to the format placeholders in the `format_string`.
+            - `args` (optional): Values for placeholders in `format_string`.
     
             # Examples
             ```cairo
