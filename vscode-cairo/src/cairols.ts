@@ -37,13 +37,11 @@ async function allFoldersHaveSameLSProvider(
   // If every executable is scarb based, check if the versions match
   if (executables.every((v) => !!v.scarb)) {
     const versions = await Promise.all(executables.map((v) => v.scarb!.getVersion(ctx)));
-    const primaryVersion = versions[0];
-
-    return versions.slice(1).every((x) => x === primaryVersion);
+  
+    return versions.every((x) => x === versions[0]);
   }
 
-  const primaryExecutable = executables[0]!;
-  return executables.slice(1).every((x) => primaryExecutable.run.command === x.run.command);
+  return executables.every((x) => executables[0]!.run.command === x.run.command);
 }
 
 export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
