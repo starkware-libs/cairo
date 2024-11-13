@@ -4,13 +4,15 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use lsp_types::Url;
 use tracing::{error, trace};
 
+use self::file_diagnostics::FileDiagnostics;
 use self::trigger::trigger;
 use crate::lang::diagnostics::refresh::refresh_diagnostics;
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
-use crate::state::{FileDiagnostics, StateSnapshot};
+use crate::state::StateSnapshot;
 
+mod file_diagnostics;
 mod lsp;
 mod refresh;
 mod trigger;

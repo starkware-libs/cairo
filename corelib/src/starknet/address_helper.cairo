@@ -9,7 +9,7 @@ extern fn contract_address_const<const address: u251>() -> ContractAddress nopan
 
 type StorageBaseRange = core::internal::BoundedInt<0, STORAGE_BASE_MAX>;
 extern fn storage_base_address_const<
-    const address: StorageBaseRange
+    const address: StorageBaseRange,
 >() -> StorageBaseAddress nopanic;
 
 trait AddressTrait<Address> {
@@ -39,7 +39,7 @@ impl StorageBaseAddressAddressTrait of AddressTrait<StorageBaseAddress> {
 }
 
 pub fn address<
-    const VALUE: AddressImpl::Range, Address, impl AddressImpl: AddressTrait<Address>
+    const VALUE: AddressImpl::Range, Address, impl AddressImpl: AddressTrait<Address>,
 >() -> Address {
     AddressImpl::from_const::<VALUE>()
 }

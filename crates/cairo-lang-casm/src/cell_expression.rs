@@ -72,14 +72,14 @@ impl CellExpression {
     }
 
     /// Given `[ref] + offset` returns `([ref], offset)`.
-    pub fn to_deref_with_offset(&self) -> Option<(CellRef, i16)> {
+    pub fn to_deref_with_offset(&self) -> Option<(CellRef, i32)> {
         match self {
-            CellExpression::Deref(cell) => Some((*cell, 0i16)),
+            CellExpression::Deref(cell) => Some((*cell, 0)),
             CellExpression::BinOp {
                 op: CellOperator::Add,
                 a: cell,
                 b: DerefOrImmediate::Immediate(offset),
-            } => Some((*cell, offset.value.to_i16()?)),
+            } => Some((*cell, offset.value.to_i32()?)),
             _ => None,
         }
     }
@@ -88,7 +88,7 @@ impl CellExpression {
     /// written as an instruction offset.
     pub fn to_buffer(&self, required_slack: i16) -> Option<CellExpression> {
         let (base, offset) = self.to_deref_with_offset()?;
-        offset.checked_add(required_slack)?;
+        offset.to_i16()?.checked_add(required_slack)?;
         if offset == 0 {
             Some(CellExpression::Deref(base))
         } else {

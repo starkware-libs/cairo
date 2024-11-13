@@ -65,7 +65,7 @@ impl Default for MetadataComputationConfig {
 /// Calculates the metadata for a Sierra program, with ap change info only.
 pub fn calc_metadata_ap_change_only(program: &Program) -> Result<Metadata, MetadataError> {
     Ok(Metadata {
-        ap_change_info: calc_ap_changes(program, |_, _| 0)?,
+        ap_change_info: linear_calc_ap_changes(program, |_, _| 0)?,
         gas_info: GasInfo {
             variable_values: Default::default(),
             function_costs: Default::default(),

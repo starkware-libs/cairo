@@ -12,7 +12,7 @@ mod token_bridge {
     use core::num::traits::Zero;
     use starknet::SyscallResultTrait;
     use starknet::{
-        ContractAddress, get_caller_address, EthAddress, syscalls::send_message_to_l1_syscall
+        ContractAddress, get_caller_address, EthAddress, syscalls::send_message_to_l1_syscall,
     };
     use super::{IMintableTokenDispatcher, IMintableTokenDispatcherTrait};
 
@@ -127,10 +127,10 @@ mod token_bridge {
 
             // Send the message.
             let mut message_payload: Array<felt252> = array![
-                WITHDRAW_MESSAGE, l1_recipient.into(), amount.low.into(), amount.high.into()
+                WITHDRAW_MESSAGE, l1_recipient.into(), amount.low.into(), amount.high.into(),
             ];
             send_message_to_l1_syscall(
-                to_address: self.read_initialized_l1_bridge(), payload: message_payload.span()
+                to_address: self.read_initialized_l1_bridge(), payload: message_payload.span(),
             )
                 .unwrap_syscall();
             self.emit(WithdrawInitiated { l1_recipient, amount, caller_address });
@@ -139,7 +139,7 @@ mod token_bridge {
 
     #[l1_handler]
     fn handle_deposit(
-        ref self: ContractState, from_address: felt252, account: ContractAddress, amount: u256
+        ref self: ContractState, from_address: felt252, account: ContractAddress, amount: u256,
     ) {
         assert(from_address == self.l1_bridge.read(), 'EXPECTED_FROM_BRIDGE_ONLY');
 

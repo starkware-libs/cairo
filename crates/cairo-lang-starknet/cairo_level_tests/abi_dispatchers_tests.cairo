@@ -15,7 +15,7 @@ mod test_contract {
     #[storage]
     struct Storage {
         another: IAnotherContractDispatcher,
-        another_as_library: IAnotherContractLibraryDispatcher
+        another_as_library: IAnotherContractLibraryDispatcher,
     }
 
     #[external(v0)]
@@ -50,14 +50,14 @@ mod test_contract {
 fn test_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     test_contract::__external::set_another_address(serialized(a));
-    assert_eq!(test_contract::__external::get_another_address(serialized(())), serialized(a),);
+    assert_eq!(test_contract::__external::get_another_address(serialized(())), serialized(a));
 }
 
 #[test]
 fn test_library_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     test_contract::__external::set_another_class_hash(serialized(a));
-    assert_eq!(test_contract::__external::get_another_class_hash(serialized(())), serialized(a),);
+    assert_eq!(test_contract::__external::get_another_class_hash(serialized(())), serialized(a));
 }
 
 
@@ -81,8 +81,9 @@ fn test_validate_gas_cost() {
             to: contract_address,
             selector: 0x219209e083275171774dab1df80982e9df2096516f06319c5c6d71ae0a8480c,
             calldata: [
-                0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, 0x4db5d32, 0x0
-            ].span()
+                0x7a6f98c03379b9513ca84cca1373ff452a7462a3b61598f0af5bb27ad7f76d1, 0x4db5d32, 0x0,
+            ]
+                .span(),
         },
         Call {
             to: contract_address,
@@ -96,10 +97,12 @@ fn test_validate_gas_cost() {
                 0x53c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8,
                 0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7,
                 0x54767f773cc172172c3afc5265bd0a76089c24cdef409635d27ac1a1fa96ca8,
-                0x65586264
-            ].span()
+                0x65586264,
+            ]
+                .span(),
         },
-    ].span();
+    ]
+        .span();
     let post_call_building_gas = withdraw_and_get_available_gas();
 
     let serialized_args = serialized(calls);
@@ -118,6 +121,6 @@ fn test_validate_gas_cost() {
         "Unexpected gas_usage:
      call_building: `{call_building_gas_usage}`.
      serialization: `{serialization_gas_usage}`.
-     entry_point: `{entry_point_gas_usage}`."
+     entry_point: `{entry_point_gas_usage}`.",
     );
 }

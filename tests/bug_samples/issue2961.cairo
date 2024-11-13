@@ -2,7 +2,7 @@ use core::test::test_utils::assert_eq;
 
 #[derive(Copy, PartialEq, Destruct, Serde)]
 struct SimpleStruct {
-    a: felt252
+    a: felt252,
 }
 
 #[test]
@@ -18,7 +18,7 @@ fn test_struct_serialization() {
 #[derive(Clone, PartialEq, Drop, Serde)]
 enum SimpleEnum {
     a: felt252,
-    b: felt252
+    b: felt252,
 }
 
 #[test]

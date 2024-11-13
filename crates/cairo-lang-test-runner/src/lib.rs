@@ -429,7 +429,7 @@ fn run_single_test(
     }
     let func = runner.find_function(name.as_str())?;
     let result = runner
-        .run_function_with_starknet_context(func, &[], test.available_gas, Default::default())
+        .run_function_with_starknet_context(func, vec![], test.available_gas, Default::default())
         .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
     Ok((
         name,

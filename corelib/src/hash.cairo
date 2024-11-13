@@ -61,7 +61,7 @@ impl HashFelt252<S, +HashStateTrait<S>> of Hash<felt252, S> {
 /// ```
 pub mod into_felt252_based {
     pub impl HashImpl<
-        T, S, +Into<T, felt252>, +super::HashStateTrait<S>, +Drop<S>
+        T, S, +Into<T, felt252>, +super::HashStateTrait<S>, +Drop<S>,
     > of super::Hash<T, S> {
         #[inline]
         fn update_state(state: S, value: T) -> S {

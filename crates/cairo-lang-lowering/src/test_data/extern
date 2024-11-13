@@ -332,7 +332,7 @@ test_function_lowering(expect_diagnostics: false)
 //! > function
 fn foo(mut arr: Array::<felt252>, mut b: (felt252,)) -> Array::<felt252> {
     let y = match f(ref arr, ref b) {
-        MyEnum::A(_x) => arr
+        MyEnum::A(_x) => arr,
     };
     y
 }

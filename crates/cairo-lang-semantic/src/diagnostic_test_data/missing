@@ -55,7 +55,7 @@ MyStruct{ a: 0 }
 
 //! > module_code
 struct MyStruct {
-    a: UnknownType
+    a: UnknownType,
 }
 
 //! > function_body
@@ -63,5 +63,5 @@ struct MyStruct {
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:2:8
-    a: UnknownType
+    a: UnknownType,
        ^*********^

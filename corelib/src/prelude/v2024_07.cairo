@@ -15,7 +15,7 @@ pub use crate::serde::Serde;
 pub use crate::{starknet, starknet::System};
 pub use crate::traits::{
     Add, Copy, Default, Destruct, Div, DivRem, Drop, Felt252DictValue, Into, Mul, Neg, Not,
-    PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto
+    PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
 };
 
 pub use crate::zeroable::NonZero;

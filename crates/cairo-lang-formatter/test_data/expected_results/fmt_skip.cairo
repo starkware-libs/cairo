@@ -102,7 +102,7 @@ fn bar() {
         6,
         7,
         8,
-        9
+        9,
     ];
 }
 // Skip the formatting of a struct.

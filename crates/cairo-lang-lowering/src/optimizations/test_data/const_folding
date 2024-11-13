@@ -88,7 +88,7 @@ test_match_optimizer
 
 //! > function
 struct A {
-    a: felt252
+    a: felt252,
 }
 
 fn foo() -> Box<A> {
@@ -1300,7 +1300,7 @@ test_match_optimizer
 
 //! > function
 fn foo() -> starknet::storage::StorageBaseAddress {
-    starknet::storage::StorageBase::<felt252> { __base_address__: 1337, }.deref().finalize()
+    starknet::storage::StorageBase::<felt252> { __base_address__: 1337 }.deref().finalize()
 }
 
 //! > function_name

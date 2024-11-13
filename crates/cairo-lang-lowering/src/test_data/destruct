@@ -125,7 +125,7 @@ impl APanicDestruct of PanicDestruct<A> {
 }
 
 struct B {
-    a: A
+    a: A,
 }
 impl BPanicDestruct of PanicDestruct<B> {
     #[inline(never)]

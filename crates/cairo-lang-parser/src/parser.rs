@@ -17,6 +17,7 @@ use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
 use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
+use crate::types::TokenStream;
 use crate::validation::{validate_literal_number, validate_short_string, validate_string};
 
 #[cfg(test)]
@@ -100,16 +101,16 @@ macro_rules! or_an_attribute {
 }
 
 impl<'a> Parser<'a> {
-    /// Parses a file.
-    pub fn parse_file(
+    /// Creates a new parser.
+    fn new(
         db: &'a dyn SyntaxGroup,
-        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
         file_id: FileId,
         text: &'a str,
-    ) -> SyntaxFile {
+        diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
+    ) -> Self {
         let mut lexer = Lexer::from_text(db, text);
         let next_terminal = lexer.next().unwrap();
-        let parser = Parser {
+        Parser {
             db,
             file_id,
             lexer,
@@ -119,8 +120,23 @@ impl<'a> Parser<'a> {
             current_width: Default::default(),
             last_trivia_length: Default::default(),
             diagnostics,
-            pending_skipped_token_diagnostics: Default::default(),
-        };
+            pending_skipped_token_diagnostics: Vec::new(),
+        }
+    }
+
+    /// Adds a diagnostic to the parser diagnostics collection.
+    fn add_diagnostic(&mut self, kind: ParserDiagnosticKind, span: TextSpan) {
+        self.diagnostics.add(ParserDiagnostic { file_id: self.file_id, kind, span });
+    }
+
+    /// Parses a file.
+    pub fn parse_file(
+        db: &'a dyn SyntaxGroup,
+        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+        file_id: FileId,
+        text: &'a str,
+    ) -> SyntaxFile {
+        let parser = Parser::new(db, file_id, text, diagnostics);
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
     }
@@ -132,20 +148,40 @@ impl<'a> Parser<'a> {
         file_id: FileId,
         text: &'a str,
     ) -> Expr {
-        let mut lexer = Lexer::from_text(db, text);
-        let next_terminal = lexer.next().unwrap();
-        let mut parser = Parser {
+        let mut parser = Parser::new(db, file_id, text, diagnostics);
+        let green = parser.parse_expr();
+        if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
+            parser.add_diagnostic(
+                ParserDiagnosticKind::SkippedElement { element_name: "end of expr".into() },
+                span,
+            );
+        }
+        Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
+    }
+
+    /// Parses a token stream.
+    pub fn parse_token_stream(
+        db: &'a dyn SyntaxGroup,
+        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+        file_id: FileId,
+        token_stream: &'a dyn TokenStream,
+    ) -> SyntaxFile {
+        let parser = Parser::new(db, file_id, token_stream.as_str(), diagnostics);
+        let green = parser.parse_syntax_file();
+        SyntaxFile::from_syntax_node(
             db,
-            file_id,
-            lexer,
-            next_terminal,
-            pending_trivia: Vec::new(),
-            offset: Default::default(),
-            current_width: Default::default(),
-            last_trivia_length: Default::default(),
-            diagnostics,
-            pending_skipped_token_diagnostics: Default::default(),
-        };
+            SyntaxNode::new_root_with_offset(db, file_id, green.0, token_stream.get_start_offset()),
+        )
+    }
+
+    /// Parses a token stream expression.
+    pub fn parse_token_stream_expr(
+        db: &'a dyn SyntaxGroup,
+        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+        file_id: FileId,
+        token_stream: &'a dyn TokenStream,
+    ) -> Expr {
+        let mut parser = Parser::new(db, file_id, token_stream.as_str(), diagnostics);
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
             parser.diagnostics.add(ParserDiagnostic {
@@ -154,7 +190,10 @@ impl<'a> Parser<'a> {
                 span,
             });
         }
-        Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
+        Expr::from_syntax_node(
+            db,
+            SyntaxNode::new_root_with_offset(db, file_id, green.0, token_stream.get_start_offset()),
+        )
     }
 
     /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.
@@ -163,11 +202,7 @@ impl<'a> Parser<'a> {
         missing_kind: ParserDiagnosticKind,
     ) -> T::Green {
         let next_offset = self.offset.add_width(self.current_width - self.last_trivia_length);
-        self.diagnostics.add(ParserDiagnostic {
-            file_id: self.file_id,
-            kind: missing_kind,
-            span: TextSpan { start: next_offset, end: next_offset },
-        });
+        self.add_diagnostic(missing_kind, TextSpan { start: next_offset, end: next_offset });
         T::missing(self.db)
     }
 
@@ -263,17 +298,16 @@ impl<'a> Parser<'a> {
                     | SyntaxKind::TerminalLBrace
                     | SyntaxKind::TerminalLBrack => {
                         // This case is treated as an item inline macro with a missing bang ('!').
-                        self.diagnostics.add(ParserDiagnostic {
-                            file_id: self.file_id,
-                            kind: ParserDiagnosticKind::ItemInlineMacroWithoutBang {
+                        self.add_diagnostic(
+                            ParserDiagnosticKind::ItemInlineMacroWithoutBang {
                                 identifier: ident.clone().text,
                                 bracket_type: self.peek().kind,
                             },
-                            span: TextSpan {
+                            TextSpan {
                                 start: self.offset,
                                 end: self.offset.add_width(self.current_width),
                             },
-                        });
+                        );
                         let macro_name = self.add_trivia_to_terminal::<TerminalIdentifier>(ident);
                         Ok(self
                             .parse_item_inline_macro_given_bang(
@@ -1141,14 +1175,13 @@ impl<'a> Parser<'a> {
                     if self.is_comparison_operator(child_op_kind)
                         && self.is_comparison_operator(current_op)
                     {
-                        self.diagnostics.add(ParserDiagnostic {
-                            file_id: self.file_id,
-                            kind: ParserDiagnosticKind::ConsecutiveMathOperators {
+                        self.add_diagnostic(
+                            ParserDiagnosticKind::ConsecutiveMathOperators {
                                 first_op: child_op_kind,
                                 second_op: current_op,
                             },
-                            span: TextSpan { start: self.offset, end: self.offset },
-                        });
+                            TextSpan { start: self.offset, end: self.offset },
+                        );
                     }
                 }
                 child_op = Some(current_op);
@@ -1532,11 +1565,10 @@ impl<'a> Parser<'a> {
             );
         let rparen = self.parse_token::<TerminalRParen>();
         if let [ExprListElementOrSeparatorGreen::Element(_)] = &exprs[..] {
-            self.diagnostics.add(ParserDiagnostic {
-                file_id: self.file_id,
-                kind: ParserDiagnosticKind::MissingToken(SyntaxKind::TokenComma),
-                span: TextSpan { start: self.offset, end: self.offset },
-            });
+            self.add_diagnostic(
+                ParserDiagnosticKind::MissingToken(SyntaxKind::TokenComma),
+                TextSpan { start: self.offset, end: self.offset },
+            );
         }
         ExprListParenthesized::new_green(
             self.db,
@@ -1628,11 +1660,10 @@ impl<'a> Parser<'a> {
         let skipped_tokens = self.skip_until(is_of_kind!(rbrace, lbrace, module_item_kw, block));
 
         if let Err(SkippedError(span)) = skipped_tokens {
-            self.diagnostics.add(ParserDiagnostic {
-                file_id: self.file_id,
-                kind: ParserDiagnosticKind::SkippedElement { element_name: "'{'".into() },
+            self.add_diagnostic(
+                ParserDiagnosticKind::SkippedElement { element_name: "'{'".into() },
                 span,
-            });
+            );
         }
 
         let is_rbrace_or_top_level = is_of_kind!(rbrace, module_item_kw);
@@ -2639,10 +2670,9 @@ impl<'a> Parser<'a> {
                     if let (Some(diagnostic_kind), true) =
                         (forbid_trailing_separator, !children.is_empty())
                     {
-                        self.diagnostics.add(ParserDiagnostic {
-                            file_id: self.file_id,
-                            span: TextSpan { start: self.offset, end: self.offset },
-                            kind: diagnostic_kind,
+                        self.add_diagnostic(diagnostic_kind, TextSpan {
+                            start: self.offset,
+                            end: self.offset,
                         });
                     }
                     break;
@@ -2713,11 +2743,7 @@ impl<'a> Parser<'a> {
     /// current trivia as skipped, and continuing the compilation as if it wasn't there.
     fn skip_token(&mut self, diagnostic_kind: ParserDiagnosticKind) {
         if self.peek().kind == SyntaxKind::TerminalEndOfFile {
-            self.diagnostics.add(ParserDiagnostic {
-                file_id: self.file_id,
-                kind: diagnostic_kind,
-                span: TextSpan { start: self.offset, end: self.offset },
-            });
+            self.add_diagnostic(diagnostic_kind, TextSpan { start: self.offset, end: self.offset });
             return;
         }
         let terminal = self.take_raw();
@@ -2888,11 +2914,7 @@ impl<'a> Parser<'a> {
             }
         }
         // Produce a diagnostic from the aggregated ones at the end.
-        self.diagnostics.add(ParserDiagnostic {
-            file_id: self.file_id,
-            span: current_diag.span,
-            kind: current_diag.kind,
-        });
+        self.add_diagnostic(current_diag.kind, current_diag.span);
     }
 
     /// Takes a token from the Lexer and place it in self.current. If tokens were skipped, glue them
