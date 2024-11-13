@@ -50,10 +50,10 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
   const executables = (
     await Promise.all(
       (vscode.workspace.workspaceFolders || []).map(
-        async (workspaceFolder) => await getLanguageServerExecutable(workspaceFolder, ctx),
+        (workspaceFolder) => getLanguageServerExecutable(workspaceFolder, ctx),
       ),
     )
-  ).filter((x) => !!x);
+  ).filter((x) => !!x) as LSExecutable[];
 
   const sameProvider = await allFoldersHaveSameLSProvider(ctx, executables);
   assert(sameProvider, "Multiple versions of scarb in one workspace is not supported");
