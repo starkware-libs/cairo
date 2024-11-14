@@ -142,7 +142,7 @@ Block(
                     ),
                     expr: FunctionCall(
                         ExprFunctionCall {
-                            function: test::bar::<{closure@lib.cairo:6:13: 6:16}, Generated core::ops::function::FnOnce::<{closure@lib.cairo:6:13: 6:16}, (core::integer::u8,)>>,
+                            function: test::bar::<{closure@lib.cairo:6:13: 6:16}, core::ops::function::FnOnceImpl::<{closure@lib.cairo:6:13: 6:16}, (core::integer::u8,), core::traits::DestructFromDrop::<{closure@lib.cairo:6:13: 6:16}, Generated core::traits::Drop::<{closure@lib.cairo:6:13: 6:16}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:6:13: 6:16}, (core::integer::u8,)>>>,
                             args: [
                                 Value(
                                     Var(

@@ -845,21 +845,22 @@ fn compute_expr_function_call_semantic(
             if ctx.are_closures_in_context {
                 // TODO(TomerStarkware): find the correct trait based on captured variables.
                 let fn_once_trait = crate::corelib::fn_once_trait(db);
+                let fn_trait = crate::corelib::fn_trait(db);
                 let self_expr = ExprAndId { expr: var.clone(), id: ctx.arenas.exprs.alloc(var) };
-                let (call_function_id, _, fixed_closure, closure_mutability) =
+                let mut closure_call_data = |call_trait| {
                     compute_method_function_call_data(
                         ctx,
-                        &[fn_once_trait],
+                        &[call_trait],
                         "call".into(),
-                        self_expr,
+                        self_expr.clone(),
                         syntax.into(),
                         None,
                         |ty, _, inference_errors| {
-                            Some(NoImplementationOfTrait {
-                                ty,
-                                inference_errors,
-                                trait_name: "FnOnce".into(),
-                            })
+                            if call_trait == fn_once_trait {
+                                Some(CallExpressionRequiresFunction { ty, inference_errors })
+                            } else {
+                                None
+                            }
                         },
                         |_, _, _| {
                             unreachable!(
@@ -869,7 +870,10 @@ fn compute_expr_function_call_semantic(
                                  NoImplementationOfTrait function."
                             )
                         },
-                    )?;
+                    )
+                };
+                let (call_function_id, _, fixed_closure, closure_mutability) =
+                    closure_call_data(fn_trait).or_else(|_| closure_call_data(fn_once_trait))?;
 
                 let args_iter = args_syntax.elements(syntax_db).into_iter();
                 // Normal parameters
@@ -1049,7 +1053,7 @@ pub fn compute_root_expr(
         };
         let ConcreteTraitLongId { trait_id, generic_args } =
             concrete_trait_id.lookup_intern(ctx.db);
-        if trait_id == crate::corelib::fn_once_trait(ctx.db) {
+        if crate::corelib::fn_traits(ctx.db).contains(&trait_id) {
             ctx.are_closures_in_context = true;
         }
         if trait_id != get_core_trait(ctx.db, CoreTraitContext::MetaProgramming, "TypeEqual".into())
@@ -1910,7 +1914,7 @@ fn compute_method_function_call_data(
     self_expr: ExprAndId,
     method_syntax: SyntaxStablePtrId,
     generic_args_syntax: Option<Vec<ast::GenericArg>>,
-    no_implementation_diagnostic: fn(
+    no_implementation_diagnostic: impl Fn(
         TypeId,
         SmolStr,
         TraitInferenceErrors,
