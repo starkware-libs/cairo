@@ -57,3 +57,15 @@ fn option_map_test() {
     assert_eq!(option_map(Option::Some(2), |x| Option::Some(x)), Option::Some(Option::Some(2)));
 }
 
+fn array_map<T, F, impl Fn: core::ops::Fn<F, (T,)>, +Drop<T>, +Drop<F>, +Drop<Fn::Output>>(
+    arr: [T; 2], f: F,
+) -> [core::ops::Fn::<F, (T,)>::Output; 2] {
+    let [a, b] = arr;
+    [f(a), f(b)]
+}
+
+#[test]
+fn array_map_test() {
+    assert_eq!(array_map([2, 3], |x| x + 3), [5, 6]);
+}
+
