@@ -139,7 +139,7 @@ pub trait DivRem<T> {
 
 /// `PartialEq` trait for checking for equality or inequality between two values of the same type.
 pub trait PartialEq<T> {
-    // Returns whether two values of the same type `T` are equal.
+    /// Returns whether `lhs` and `rhs` equal, and is used by `==`.
     fn eq(lhs: @T, rhs: @T) -> bool;
 
     // Returns whether two values of the same type `T` are not equal.
