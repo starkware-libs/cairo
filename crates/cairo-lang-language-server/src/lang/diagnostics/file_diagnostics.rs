@@ -51,40 +51,41 @@ impl FileDiagnostics {
         file: FileId,
         processed_modules: &mut HashSet<ModuleId>,
     ) -> Option<Self> {
-        let module_ids = db.file_modules(file).ok()?;
-
-        let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
-        let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
-
-        macro_rules! diags {
-            ($db:ident. $query:ident($file_id:expr), $f:expr) => {
+        macro_rules! query {
+            ($query:expr) => {
                 info_span!(stringify!($query)).in_scope(|| {
-                    catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
-                        .map($f)
-                        .map_err(|err| {
-                            if is_cancelled(err.as_ref()) {
-                                resume_unwind(err);
-                            } else {
-                                error!(
-                                    "caught panic when computing diagnostics for file: {:?}",
-                                    file.lookup_intern(db)
-                                );
-                                err
-                            }
-                        })
-                        .unwrap_or_default()
+                    catch_unwind(AssertUnwindSafe(|| $query)).map_err(|err| {
+                        if is_cancelled(err.as_ref()) {
+                            resume_unwind(err);
+                        } else {
+                            error!(
+                                "caught panic when computing diagnostics for file: {:?}",
+                                file.lookup_intern(db)
+                            );
+                            err
+                        }
+                    })
                 })
             };
         }
 
+        let module_ids = query!(db.file_modules(file)).ok()?.ok()?;
+
+        let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
+        let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
+
         for &module_id in module_ids.iter() {
             if !processed_modules.contains(&module_id) {
                 semantic_file_diagnostics.extend(
-                    diags!(db.module_semantic_diagnostics(module_id), Result::unwrap_or_default)
+                    query!(db.module_semantic_diagnostics(module_id))
+                        .map(Result::unwrap_or_default)
+                        .unwrap_or_default()
                         .get_all(),
                 );
                 lowering_file_diagnostics.extend(
-                    diags!(db.module_lowering_diagnostics(module_id), Result::unwrap_or_default)
+                    query!(db.module_lowering_diagnostics(module_id))
+                        .map(Result::unwrap_or_default)
+                        .unwrap_or_default()
                         .get_all(),
                 );
 
@@ -92,7 +93,7 @@ impl FileDiagnostics {
             }
         }
 
-        let parser_file_diagnostics = diags!(db.file_syntax_diagnostics(file), |r| r);
+        let parser_file_diagnostics = query!(db.file_syntax_diagnostics(file)).unwrap_or_default();
 
         Some(FileDiagnostics {
             file,

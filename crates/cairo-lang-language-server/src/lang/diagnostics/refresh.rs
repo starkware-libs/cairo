@@ -37,6 +37,7 @@ pub fn refresh_diagnostics(
 }
 
 /// Refresh diagnostics for a single file.
+#[tracing::instrument(skip_all, fields(url = tracing_file_url(db, file)))]
 fn refresh_file_diagnostics(
     db: &AnalysisDatabase,
     file: FileId,
@@ -83,4 +84,8 @@ pub fn clear_old_diagnostics(
             notifier.notify::<PublishDiagnostics>(params);
         }
     }
+}
+
+fn tracing_file_url(db: &AnalysisDatabase, file: FileId) -> String {
+    db.url_for_file(file).map(|u| u.to_string()).unwrap_or_default()
 }
