@@ -1,6 +1,3 @@
-//! A dynamic, growable array of bytes where bytes are stored in multiples of 31 bytes,
-//! with a `felt252` pending word used for bytes that don't complete a full `bytes31` word.
-//!
 //! `ByteArray` is designed to handle large sequences of bytes with operations like appending,
 //! concatenation, and accessing individual bytes. It uses a structure that combines an `Array` of
 //! `bytes31` for full words and a `felt252` for handling partial words, optimizing for both space
@@ -68,7 +65,8 @@ const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
-/// An array of `bytes31` defined as a structure containing 3 fields.
+/// A dynamic, growable array of bytes where bytes are stored in multiples of 31 bytes,
+/// with a `felt252` pending word used for bytes that don't complete a full `bytes31` word.
 #[derive(Drop, Clone, PartialEq, Serde, Default)]
 pub struct ByteArray {
     /// `data` field is an array of full "words" of 31 bytes each.
