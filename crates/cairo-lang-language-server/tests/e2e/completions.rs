@@ -10,6 +10,7 @@ cairo_lang_test_utils::test_file_test!(
     "tests/test_data/completions",
     {
         methods_text_edits: "methods_text_edits.txt",
+        structs: "structs.txt",
     },
     test_completions_text_edits
 
@@ -24,8 +25,14 @@ cairo_lang_test_utils::test_file_test!(
 /// expected quick fixes from the snapshot file.
 fn test_completions_text_edits(
     inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
+    let check_detail: bool =
+        args.get("detail").map(|value| value.parse().unwrap()).unwrap_or_default();
+    let check_edit: bool = args.get("edit").map(|value| value.parse().unwrap()).unwrap_or_default();
+    let check_insert: bool =
+        args.get("insert").map(|value| value.parse().unwrap()).unwrap_or_default();
+
     let (cairo, cursors) = cursors(&inputs["cairo_code"]);
 
     let mut ls = sandbox! {
@@ -52,20 +59,42 @@ fn test_completions_text_edits(
             partial_result_params: Default::default(),
             context: None,
         };
+
         let caret_completions =
             ls.send_request::<lsp_request!("textDocument/completion")>(completion_params);
+
         if let Some(completions) = caret_completions {
             let completion_items = match completions {
                 lsp_types::CompletionResponse::Array(items) => items,
                 lsp_types::CompletionResponse::List(list) => list.items,
             };
+
             for completion in completion_items {
-                if let Some(text_edit) = completion.additional_text_edits {
-                    report.push_str("--------------------------\n");
-                    report.push_str(format!("Completion: {}\n", completion.label).as_str());
+                report.push_str("--------------------------\n");
+                let completion_label = completion.label;
+
+                if completion_label.is_empty() {
+                    // A special case to avoid having trailing spaces in tests.
+                    report.push_str("Completion:\n");
+                } else {
+                    report.push_str(format!("Completion: {}\n", completion_label).as_str());
+                }
+
+                if check_detail {
+                    if let Some(detail) = completion.detail {
+                        report.push_str(format!("Detail: {detail}\n").as_str());
+                    }
+                }
+
+                if check_insert {
                     if let Some(text) = completion.insert_text {
                         report.push_str(format!("Insert text: {text}\n").as_str());
                     }
+                }
+
+                if check_edit {
+                    let text_edit = completion.additional_text_edits.unwrap_or_default();
+
                     for edit in text_edit {
                         report.push_str(format!("Text edit: {}", edit.new_text).as_str());
                     }
