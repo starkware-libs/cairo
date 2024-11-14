@@ -38,8 +38,8 @@ use std::fmt;
 mod pool;
 mod priority;
 
-pub(super) use pool::Pool;
-pub use priority::ThreadPriority;
+pub use self::pool::Pool;
+pub use self::priority::ThreadPriority;
 
 pub struct Builder {
     priority: ThreadPriority,
