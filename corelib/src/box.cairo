@@ -1,19 +1,12 @@
-//! A smart pointer type that stores its value in a dedicated memory segment.
-//!
-//! `Box<T>` provides a way to store a value of type `T` in Cairo VM's _boxed_ segment,
-//! leaving only a pointer in the execution segment. This allows for:
+//! `Box<T>` is a smart pointer that allows for:
 //!
 //! * Storing values of arbitrary size while maintaining a fixed-size pointer
 //! * Enabling recursive types that would otherwise have infinite size
 //! * Moving large data structures efficiently by passing pointers instead of copying values
 //!
-//! When a `Box<T>` is created, the value is stored in the boxed segment, and what remains
-//! in the execution segment is only a pointer to that value.
-//!
-//!
 //! # Examples
 //!
-//! Creating a new box:
+//! Creating a new box with [`BoxTrait::new`]:
 //!
 //! ```
 //! let boxed = BoxTrait::new(42);
@@ -134,3 +127,7 @@ impl BoxDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Box<T>>
         TDebug::fmt(self.as_snapshot().unbox(), ref f)
     }
 }
+// NOTE: A `Box<T>` is a smart pointer type that provides a way to store a value of type `T` in
+// Cairo VM's _boxed_ segment, leaving only a pointer in the execution segment.
+
+
