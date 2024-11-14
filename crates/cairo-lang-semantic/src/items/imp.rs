@@ -61,8 +61,9 @@ use super::type_aliases::{
 };
 use super::{TraitOrImplContext, resolve_trait_path};
 use crate::corelib::{
-    CoreTraitContext, concrete_destruct_trait, concrete_drop_trait, copy_trait, core_submodule,
-    deref_trait, destruct_trait, drop_trait, fn_once_trait, get_core_trait, panic_destruct_trait,
+    CoreTraitContext, concrete_destruct_trait, concrete_drop_trait, copy_trait, core_crate,
+    deref_trait, destruct_trait, drop_trait, fn_once_trait, fn_trait, get_core_trait,
+    panic_destruct_trait,
 };
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -662,13 +663,19 @@ pub fn priv_impl_declaration_data_inner(
         Err(diagnostics.report(&trait_path_syntax, ImplRequirementCycle))
     };
 
-    // Check for reimplementation of TypeEqual Trait.
+    // Check for reimplementation of compilers' Traits.
     if let Ok(concrete_trait) = concrete_trait {
-        if concrete_trait.trait_id(db)
-            == get_core_trait(db, CoreTraitContext::MetaProgramming, "TypeEqual".into())
-            && impl_def_id.module_file_id(db.upcast()).0 != core_submodule(db, "metaprogramming")
+        if [
+            get_core_trait(db, CoreTraitContext::MetaProgramming, "TypeEqual".into()),
+            fn_trait(db),
+            fn_once_trait(db),
+        ]
+        .contains(&concrete_trait.trait_id(db))
+            && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast()) != core_crate(db)
         {
-            diagnostics.report(&trait_path_syntax, TypeEqualTraitReImplementation);
+            diagnostics.report(&trait_path_syntax, CompilerTraitReImplementation {
+                trait_id: concrete_trait.trait_id(db),
+            });
         }
     }
 
@@ -676,8 +683,9 @@ pub fn priv_impl_declaration_data_inner(
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, impl_ast.stable_ptr().untyped());
 
-    let concrete_trait = inference.rewrite(concrete_trait).no_err();
-    let generic_params = inference.rewrite(generic_params).no_err();
+    let concrete_trait: Result<ConcreteTraitId, DiagnosticAdded> =
+        inference.rewrite(concrete_trait).no_err();
+    let generic_params: Vec<GenericParam> = inference.rewrite(generic_params).no_err();
 
     let attributes = impl_ast.attributes(syntax_db).structurize(syntax_db);
     let mut resolver_data = resolver.data;
@@ -1725,30 +1733,29 @@ pub fn find_closure_generated_candidate(
     };
 
     // Handles the special cases of `Copy`, `Drop`, `Destruct` and `PanicDestruct`.
-    let handle_mem_trait = |trait_id, neg_impl_trait: Option<_>| {
+    let mem_trait_generic_params = |trait_id, neg_impl_trait: Option<_>| {
         let id = db.trait_generic_params(trait_id).unwrap().first().unwrap().id();
-        (
-            concrete_trait_id,
-            chain!(
-                closure_type_long.captured_types.iter().map(|ty| {
-                    GenericParam::Impl(GenericParamImpl {
-                        id,
-                        concrete_trait: Maybe::Ok(db.intern_concrete_trait(ConcreteTraitLongId {
-                            trait_id,
-                            generic_args: vec![GenericArgumentId::Type(*ty)],
-                        })),
-                    })
-                }),
-                neg_impl_trait.map(|neg_impl_trait| {
-                    GenericParam::NegImpl(GenericParamImpl {
-                        id,
-                        concrete_trait: Maybe::Ok(neg_impl_trait),
-                    })
+        chain!(
+            closure_type_long.captured_types.iter().map(|ty| {
+                GenericParam::Impl(GenericParamImpl {
+                    id,
+                    concrete_trait: Maybe::Ok(db.intern_concrete_trait(ConcreteTraitLongId {
+                        trait_id,
+                        generic_args: vec![GenericArgumentId::Type(*ty)],
+                    })),
                 })
-            )
-            .collect(),
-            [].into(),
+            }),
+            neg_impl_trait.map(|neg_impl_trait| {
+                GenericParam::NegImpl(GenericParamImpl {
+                    id,
+                    concrete_trait: Maybe::Ok(neg_impl_trait),
+                })
+            })
         )
+        .collect()
+    };
+    let handle_mem_trait = |trait_id, neg_impl_trait: Option<_>| {
+        (concrete_trait_id, mem_trait_generic_params(trait_id, neg_impl_trait), [].into())
     };
     let (concrete_trait, generic_params, impl_items) = match concrete_trait_id.trait_id(db) {
         trait_id if trait_id == fn_once_trait(db) => {
@@ -1763,7 +1770,44 @@ pub fn find_closure_generated_candidate(
             }
             .intern(db);
             let ret_ty = db.trait_type_by_name(trait_id, "Output".into()).unwrap().unwrap();
-            (concrete_trait, vec![], [(ret_ty, closure_type_long.ret_ty)].into())
+
+            let id = db.trait_generic_params(trait_id).unwrap().first().unwrap().id();
+            // FnOnce is generated only if there is no fn trait.
+            let param: GenericParam = GenericParam::NegImpl(GenericParamImpl {
+                id,
+                concrete_trait: Maybe::Ok(
+                    ConcreteTraitLongId {
+                        trait_id: fn_trait(db),
+                        generic_args: vec![
+                            GenericArgumentId::Type(closure_type),
+                            GenericArgumentId::Type(
+                                TypeLongId::Tuple(closure_type_long.param_tys.clone()).intern(db),
+                            ),
+                        ],
+                    }
+                    .intern(db),
+                ),
+            });
+            (concrete_trait, vec![param], [(ret_ty, closure_type_long.ret_ty)].into())
+        }
+        trait_id if trait_id == fn_trait(db) => {
+            let concrete_trait = ConcreteTraitLongId {
+                trait_id,
+                generic_args: vec![
+                    GenericArgumentId::Type(closure_type),
+                    GenericArgumentId::Type(
+                        TypeLongId::Tuple(closure_type_long.param_tys.clone()).intern(db),
+                    ),
+                ],
+            }
+            .intern(db);
+            let ret_ty = db.trait_type_by_name(trait_id, "Output".into()).unwrap().unwrap();
+
+            (
+                concrete_trait,
+                mem_trait_generic_params(copy_trait(db), None),
+                [(ret_ty, closure_type_long.ret_ty)].into(),
+            )
         }
         trait_id if trait_id == drop_trait(db) => handle_mem_trait(trait_id, None),
         trait_id if trait_id == destruct_trait(db) => {
