@@ -1,7 +1,11 @@
-//! The `Clone` module provides functionality for creating duplicate instances of types,
-//! specifically through the [`Clone`] trait. This trait allows for explicit duplication of
-//! values, which can be particularly useful when working with types that do not implement
-//! the `Copy` trait or when you need to ensure deep copying of complex structures.
+//! The `Clone` trait provides the ability to duplicate instances of types that cannot be
+//! 'implicitly copied'.
+//!
+//! In Cairo, some simple types are "implicitly copyable" and when you assign them or pass them as
+//! arguments, the receiver will get a copy, leaving the original value in place. These types do not
+//! require allocation to copy, and are not at risk of accessing un-allocated memory, so the
+//! compiler considers them cheap and safe to copy. For other types, copies must be made explicitly,
+//! by convention implementing the [`Clone`] trait and calling the [`clone`] method.
 //!
 //! # Examples
 //!
@@ -9,6 +13,25 @@
 //! let arr = array![1, 2, 3];
 //! let cloned_arr = arr.clone();
 //! assert!(arr == cloned_arr);
+//! ```
+//!
+//! To easily implement the Clone trait, you can also use
+//! `#[derive(Clone)]`:
+//! ```
+//! #[derive(Clone, Drop)]
+//! struct Sheep {
+//!    name: ByteArray,
+//!    age: u8,
+//! }
+//!
+//! fn main() {
+//!    let dolly = Sheep {
+//!        name: "Dolly",
+//!        age: 6,
+//!    };
+//!
+//!    let cloned_sheep = dolly.clone();  // Famous cloned sheep!
+//!}
 //! ```
 
 /// `Clone` trait defines the interface for cloning values.
