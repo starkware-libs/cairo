@@ -68,15 +68,6 @@ impl TupleClone<
     ///
     /// ```
     /// let tuple: (u8, u32) = (0, 1);
-    /// let clone = (@tuple).clone();
-    /// assert!(clone == tuple);
-    /// ```
-    ///
-    /// Note that explicitly passing a snapshot to `clone` is not mandatory, as the compiler is able
-    /// to infer that a snapshot is passed.
-    ///
-    /// ```
-    /// let tuple: (u8, u32) = (0, 1);
     /// let clone = tuple.clone();
     /// assert!(clone == tuple);
     /// ```
