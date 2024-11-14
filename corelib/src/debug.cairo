@@ -1,25 +1,6 @@
-//! Debug module for debugging purposes, primarily focusing on printing different
-//! types to aid in development and troubleshooting. The `PrintTrait` allows various types to be
-//! printed, either directly or through conversion to a `felt252`.
-//!
-//! All implementations of the `PrintTrait` are not accessible outside the core library,
-//! and one should use `print!` and `println!` macros in order to print compatible types.
-//!
-//! `{:?}` is a placeholder allowing to print values using the `Debug` trait.
-//!
-//! This module includes only one public function available outside the core library:
-//! `print_byte_array_as_string``
-//!
-//! # Examples
-//!
-//! ```
-//! let value = 0_u8
-//! print!("{:?}", value);
-//! println!("{:?}", value);
-//!
-//! let ba: ByteArray = "123";
-//! print_byte_array_as_string(@ba);
-//! ```
+//! Utilities related to printing of values at runtime.
+//! The recommended way of printing values is by using the `Display` and `Debug` traits
+//! available in the [`fmt`] module. The items in this module are not public, and are not recommended to use.
 
 #[allow(unused_imports)]
 use crate::array::ArrayTrait;
