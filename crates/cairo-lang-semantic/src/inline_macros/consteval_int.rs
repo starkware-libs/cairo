@@ -69,6 +69,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
             Evaluates an integer expression at compile time.
             The `consteval_int!` macro computes an integer expression \ 
             during compilation and replaces itself with the computed value.
+            This macro is deprecated; use const expressions directly instead.
     
             # Syntax
             ```cairo
@@ -82,8 +83,6 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
             let x = consteval_int!(2 + 3); // Equivalent to: let x = 5;
             let y = consteval_int!(4 * 5); // Equivalent to: let y = 20;
             ```
-            # Notes
-            - Useful for compile-time computations when const expressions were not fully supported.
             "#}
             .to_string(),
         )
