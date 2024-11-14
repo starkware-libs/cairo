@@ -1157,3 +1157,123 @@ blk10:
 Statements:
 End:
   Return(v8, v17)
+
+//! > ==========================================================================
+
+//! > Remapping where input var is not renamed.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(ref a: u32) {
+    let v = true;
+    if v {
+        a = 1;
+    }
+    let v = true;
+    if v {
+        a = 2;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: ()) <- struct_construct()
+  (v2: core::bool) <- bool::True(v1)
+End:
+  Match(match_enum(v2) {
+    bool::False(v3) => blk1,
+    bool::True(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v0 -> v5})
+
+blk2:
+Statements:
+  (v6: core::integer::u32) <- 1
+End:
+  Goto(blk3, {v6 -> v5})
+
+blk3:
+Statements:
+  (v7: ()) <- struct_construct()
+  (v8: core::bool) <- bool::True(v7)
+End:
+  Match(match_enum(v8) {
+    bool::False(v9) => blk4,
+    bool::True(v10) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v5 -> v11})
+
+blk5:
+Statements:
+  (v12: core::integer::u32) <- 2
+End:
+  Goto(blk6, {v12 -> v11})
+
+blk6:
+Statements:
+  (v13: ()) <- struct_construct()
+End:
+  Return(v11, v13)
+
+//! > after
+Parameters: v0: core::integer::u32
+blk0 (root):
+Statements:
+  (v1: ()) <- struct_construct()
+End:
+  Goto(blk2, {v1 -> v4})
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v0 -> v5})
+
+blk2:
+Statements:
+  (v6: core::integer::u32) <- 1
+End:
+  Goto(blk3, {v6 -> v5})
+
+blk3:
+Statements:
+  (v7: ()) <- struct_construct()
+End:
+  Goto(blk5, {v7 -> v10})
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v5 -> v11})
+
+blk5:
+Statements:
+  (v12: core::integer::u32) <- 2
+End:
+  Goto(blk6, {v12 -> v11})
+
+blk6:
+Statements:
+  (v13: ()) <- struct_construct()
+End:
+  Return(v11, v13)

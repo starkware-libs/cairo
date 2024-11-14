@@ -6,12 +6,12 @@ use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use itertools::{Itertools, zip_eq};
+use itertools::{zip_eq, Itertools};
 
 use super::var_renamer::VarRenamer;
-use crate::borrow_check::Demand;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::EmptyDemandReporter;
+use crate::borrow_check::Demand;
 use crate::utils::RebuilderEx;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
@@ -322,15 +322,22 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             return;
         };
 
-        let Some(var_usage) = remapping.get(&candidate.match_variable) else {
-            // Revoke the candidate.
-            info.candidate = None;
-            return;
-        };
         let orig_match_variable = candidate.match_variable;
-        candidate.match_variable = var_usage.var_id;
 
-        if remapping.len() > 1 {
+        // The term 'additional_remappings' refers to remappings for variables other than the match
+        // variable.
+        let goto_has_additional_remappings =
+            if let Some(var_usage) = remapping.get(&candidate.match_variable) {
+                candidate.match_variable = var_usage.var_id;
+                remapping.len() > 1
+            } else {
+                // Note that remapping.is_empty() is false here.
+                true
+            };
+
+        if goto_has_additional_remappings {
+            // here, we have remappings for variables other than the match variable.
+
             if candidate.future_merge || candidate.additional_remappings.is_some() {
                 // TODO(ilya): Support multiple remappings with future merges.
 
@@ -342,7 +349,11 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                     remapping: remapping
                         .iter()
                         .filter_map(|(var, dst)| {
-                            if *var != orig_match_variable { Some((*var, *dst)) } else { None }
+                            if *var != orig_match_variable {
+                                Some((*var, *dst))
+                            } else {
+                                None
+                            }
                         })
                         .collect(),
                 });
