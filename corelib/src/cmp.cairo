@@ -1,6 +1,5 @@
-//! Comparison module for comparing two values of any type that implements
-//! `PartialOrd`, `Drop`, and `Copy` traits. These functions are useful for operations
-//! where you need to determine the relationship between two values in terms of order.
+//! Utilities for comparing and ordering values.
+//! This module contains functions that rely on the `PartialOrd` trait for comparing values.
 //!
 //! ### Examples
 //!
