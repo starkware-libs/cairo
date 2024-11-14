@@ -1,33 +1,6 @@
-//! Felt252 module that implements the [`Zero`] and the [`One`] traits for the `felt252` type.
+//! Utilities for the `felt252` type.
 //!
-//! ### One Trait
-//!
-//! - **one()**: Returns the one value of `felt252`.
-//! - **is_one()**: Checks if a `felt252` value is one.
-//! - **is_non_one()**: Checks if a `felt252` value is not one.
-//!
-//! ## Examples
-//!
-//! The `Zero` trait provides three methods: [`Zero::zero`], [`Zero::is_zero`] and
-//! [`Zero::is_non_zero`].
-//!
-//! ```
-//! use core::num::traits::Zero;
-//!
-//! let zero = Zero::<felt252>::zero();
-//! assert!(zero.is_zero());
-//! assert!(!zero.is_non_zero());
-//! ```
-//!
-//! The `One` trait provides three methods: [`One::one`], [`One::is_one`] and [`One::is_non_one`].
-//!
-//! ```
-//! use core::num::traits::One;
-//!
-//! let one = One::<felt252>::one();
-//! assert!(one.is_one());
-//! assert!(!one.is_non_one());
-//! ```
+//! The implementations defined in this module can be accessed by using the traits directly.
 
 /// Implementation of the `Zero` trait for the `felt252` type.
 pub(crate) impl Felt252Zero of crate::num::traits::Zero<felt252> {
