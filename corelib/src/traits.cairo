@@ -142,7 +142,7 @@ pub trait PartialEq<T> {
     /// Returns whether `lhs` and `rhs` equal, and is used by `==`.
     fn eq(lhs: @T, rhs: @T) -> bool;
 
-    // Returns whether two values of the same type `T` are not equal.
+    /// Returns whether `lhs` and `rhs` are not equal, and is used by `!=`
     fn ne(lhs: @T, rhs: @T) -> bool {
         !Self::eq(lhs, rhs)
     }
