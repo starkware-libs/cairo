@@ -126,17 +126,24 @@ pub fn colon_colon_completions(
         .resolve_concrete_path(&mut diagnostics, segments, NotFoundItemType::Identifier)
         .ok()?;
 
+    let current_module_id = module_file_id.0;
+
     Some(match item {
         ResolvedConcreteItem::Module(module_id) => db
             .module_items(module_id)
             .ok()?
             .iter()
-            .map(|item| CompletionItem {
-                label: item.name(db.upcast()).to_string(),
-                kind: ResolvedGenericItem::from_module_item(db, *item)
-                    .ok()
-                    .map(resolved_generic_item_completion_kind),
-                ..CompletionItem::default()
+            .filter_map(|item| {
+                let resolved_item = ResolvedGenericItem::from_module_item(db, *item).ok()?;
+                let item_info = db.module_item_info_by_name(module_id, item.name(db)).ok()??;
+
+                peek_visible_in(db, item_info.visibility, module_id, current_module_id).then(|| {
+                    CompletionItem {
+                        label: item.name(db.upcast()).to_string(),
+                        kind: Some(resolved_generic_item_completion_kind(resolved_item)),
+                        ..CompletionItem::default()
+                    }
+                })
             })
             .collect(),
         ResolvedConcreteItem::Trait(item) => db
