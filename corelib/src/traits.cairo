@@ -137,7 +137,10 @@ pub trait DivRem<T> {
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
 }
 
-/// `PartialEq` trait for checking for equality or inequality between two values of the same type.
+/// Trait for comparisons using the equality operator.
+///
+/// Implementing this trait for types provides the `==` and `!=` operators for
+/// those types.
 pub trait PartialEq<T> {
     /// Returns whether `lhs` and `rhs` equal, and is used by `==`.
     fn eq(lhs: @T, rhs: @T) -> bool;
