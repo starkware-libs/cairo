@@ -322,15 +322,22 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             return;
         };
 
-        let Some(var_usage) = remapping.get(&candidate.match_variable) else {
-            // Revoke the candidate.
-            info.candidate = None;
-            return;
-        };
         let orig_match_variable = candidate.match_variable;
-        candidate.match_variable = var_usage.var_id;
 
-        if remapping.len() > 1 {
+        // The term 'additional_remappings' refers to remappings for variables other than the match
+        // variable.
+        let goto_has_additional_remappings =
+            if let Some(var_usage) = remapping.get(&candidate.match_variable) {
+                candidate.match_variable = var_usage.var_id;
+                remapping.len() > 1
+            } else {
+                // Note that remapping.is_empty() is false here.
+                true
+            };
+
+        if goto_has_additional_remappings {
+            // here, we have remappings for variables other than the match variable.
+
             if candidate.future_merge || candidate.additional_remappings.is_some() {
                 // TODO(ilya): Support multiple remappings with future merges.
 
