@@ -14,6 +14,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         missing_trait: "missing_trait.txt",
         macro_expand: "macro_expand.txt",
+        fill_struct_fields: "fill_struct_fields.txt",
     },
     test_quick_fix
 );
