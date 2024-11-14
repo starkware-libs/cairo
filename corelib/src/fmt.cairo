@@ -215,6 +215,8 @@ impl TupleDebugHelperTuple2<
     }
 }
 
+// `Debug` impl for tuples of size 3 and above.
+// Not starting from size 1 nor 2 since we have special cases for 1 and 2.
 impl TupleDebugHelperTupleNext<
     T,
     impl TS: crate::metaprogramming::TupleSplit<T>,
@@ -244,6 +246,8 @@ impl TupleDebugHelperFixedSizedArray1<T, +TupleDebugHelper<@T>> of TupleDebugHel
     }
 }
 
+// `Debug` impl for fixed sized arrays of size 2 and above.
+// Not starting from size 1 since we have a special case for 1.
 impl TupleDebugHelperFixedSizedArrayNext<
     T,
     const N: usize,
@@ -306,8 +310,7 @@ impl SpanTDebug<T, +Debug<T>> of Debug<Span<T>> {
 }
 
 /// Implementations for `Debug` and `LowerHex` for types that can be converted into `felt252` using
-/// the `Into`
-/// trait.
+/// the `Into` trait.
 ///
 /// # Examples
 ///
