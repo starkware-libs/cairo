@@ -37,7 +37,29 @@ impl SnapshotCopy<T> of Copy<@T>;
 impl SnapshotDrop<T> of Drop<@T>;
 
 // TODO(spapini): When associated types are supported, support the general trait Add<X, Y>.
-/// `Add` trait for addition of two values of the same type.
+/// The addition operator `+`.
+/// #[derive(Copy, Drop, PartialEq)]
+/// struct Point {
+///     x: i32,
+///     y: i32,
+/// }
+///
+/// impl PointAdd of Add<Point>{
+///     fn add(lhs: Point, rhs: Point) -> Point {
+///         Point {
+///             x: lhs.x + rhs.x,
+///             y: lhs.y + rhs.y,
+///         }
+///     }
+/// }
+///
+/// fn main(){
+///     let p1 = Point { x: 1, y: 0 };
+///     let p2 = Point { x: 2, y: 3 };
+///     let p3 = p1 + p2;
+///     assert!(p3 == Point { x: 3, y: 3 });
+/// }
+///
 pub trait Add<T> {
     // Adds two values of the same type `T` and returns the result of type `T`.
     fn add(lhs: T, rhs: T) -> T;
