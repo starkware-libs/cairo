@@ -20,6 +20,16 @@ use crate::lang::lsp::LsProtoGroup;
 use crate::server::panic::is_cancelled;
 
 /// Result of refreshing diagnostics for a single file.
+///
+/// ## Comparisons
+///
+/// Diagnostics in this structure are stored as Arcs that directly come from Salsa caches.
+/// This means that equality comparisons of `FileDiagnostics` are efficient.
+///
+/// ## Virtual files
+///
+/// When collecting diagnostics using [`FileDiagnostics::collect`], all virtual files related
+/// to the given `file` will also be visited and their diagnostics collected.
 #[derive(Clone, PartialEq, Eq)]
 pub struct FileDiagnostics {
     /// The file ID these diagnostics are associated with.
@@ -92,9 +102,11 @@ impl FileDiagnostics {
         })
     }
 
-    /// Returns `true` if this `FileDiagnostics` contains no diagnostics.
-    pub fn is_empty(&self) -> bool {
-        self.semantic.is_empty() && self.lowering.is_empty() && self.parser.is_empty()
+    /// Clears all diagnostics from this `FileDiagnostics`.
+    pub fn clear(&mut self) {
+        self.parser = Diagnostics::default();
+        self.semantic = Diagnostics::default();
+        self.lowering = Diagnostics::default();
     }
 
     /// Constructs a new [`lsp_types::PublishDiagnosticsParams`] from this `FileDiagnostics`.
