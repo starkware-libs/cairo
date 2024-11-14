@@ -1,6 +1,7 @@
 //! Utilities related to printing of values at runtime.
 //! The recommended way of printing values is by using the `Display` and `Debug` traits
-//! available in the [`fmt`] module. The items in this module are not public, and are not recommended to use.
+//! available in the [`fmt`] module. The items in this module are not public, and are not
+//! recommended to use.
 
 #[allow(unused_imports)]
 use crate::array::ArrayTrait;
