@@ -48,18 +48,8 @@ impl TCopyClone<T, +Copy<T>> of Clone<T> {
     ///
     /// ```
     /// let value: u8 = 0;
-    /// let clone = (@value).clone();
-    /// assert!(clone == value);
-    /// ```
-    ///
-    /// Note that explicitly passing a snapshot to `clone` is not mandatory, as the compiler is able
-    /// to infer that a snapshot is passed.
-    ///
-    /// ```
-    /// let value: u8 = 0;
     /// let clone = value.clone();
     /// assert!(clone == value);
-    /// ```
     fn clone(self: @T) -> T {
         *self
     }
