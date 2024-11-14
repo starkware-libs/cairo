@@ -61,7 +61,7 @@ impl SnapshotDrop<T> of Drop<@T>;
 /// }
 ///
 pub trait Add<T> {
-    // Adds two values of the same type `T` and returns the result of type `T`.
+    // Performs the `+` operation.
     fn add(lhs: T, rhs: T) -> T;
 }
 
