@@ -23,6 +23,7 @@
 //! the threading utilities in [`crate::server::schedule::thread`].
 
 use std::cmp::min;
+use std::num::NonZero;
 use std::thread::available_parallelism;
 
 use crossbeam::channel::{Receiver, Sender, bounded};
@@ -39,6 +40,8 @@ pub struct Pool {
     // before we join the worker threads!
     job_sender: Sender<Job>,
     _handles: Vec<JoinHandle>,
+
+    parallelism: NonZero<usize>,
 }
 
 struct Job {
@@ -90,7 +93,7 @@ impl Pool {
             handles.push(handle);
         }
 
-        Pool { _handles: handles, job_sender }
+        Pool { _handles: handles, job_sender, parallelism: NonZero::new(threads).unwrap() }
     }
 
     pub fn spawn<F>(&self, priority: ThreadPriority, f: F)
@@ -106,5 +109,10 @@ impl Pool {
 
         let job = Job { requested_priority: priority, f };
         self.job_sender.send(job).unwrap();
+    }
+
+    /// Returns a number of tasks that this pool can run concurrently.
+    pub fn parallelism(&self) -> NonZero<usize> {
+        self.parallelism
     }
 }
