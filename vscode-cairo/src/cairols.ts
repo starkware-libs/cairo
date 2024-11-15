@@ -39,6 +39,14 @@ function safeStrictDeepEqual<T>(a: T, b: T): boolean {
   }
 }
 
+function areExecutablesEqual(a: lc.Executable, b: lc.Executable): boolean {
+  return (
+    a.command === b.command &&
+    safeStrictDeepEqual(a.args, b.args) &&
+    safeStrictDeepEqual(a.options?.env, b.options?.env)
+  );
+}
+
 async function allFoldersHaveSameLSProvider(
   ctx: Context,
   executables: LSExecutable[],
@@ -55,7 +63,7 @@ async function allFoldersHaveSameLSProvider(
     }
   }
 
-  return executables.every((x) => safeStrictDeepEqual(executables[0]!.run, x.run));
+  return executables.every((x) => areExecutablesEqual(executables[0]!.run, x.run));
 }
 
 export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient | undefined> {
