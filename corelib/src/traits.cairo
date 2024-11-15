@@ -25,10 +25,80 @@
 
 use crate::panics::Panic;
 
-/// `Copy` trait for copying values.
+/// Trait for copying values.
+///
+/// By default, variable bindings have 'move semantics'. In other
+/// words:
+///
+/// ```
+/// #[derive(Drop)]
+/// struct Point {
+///     x: u128,
+///     y: u128,
+/// }
+///
+/// fn main() {
+///     let p1 = Point { x: 5, y: 10 };
+///     foo(p1);
+///     foo(p1); // error: Variable was previously moved.
+/// }
+///
+/// fn foo(p: Point) { // do something with p
+/// }
+/// ```
+///
+/// However, if a type implements `Copy`, it instead has 'copy semantics'.
+/// We can derive a `Copy` implementation. Most basic types implement it by default.
+///
+/// ```
+/// #[derive(Copy, Drop)]
+/// struct Point {
+///     x: u128,
+///     y: u128,
+/// }
+///
+/// fn main() {
+///     let p1 = Point { x: 5, y: 10 };
+///     foo(p1);
+///     foo(p1); // no error, `p1` is copied when passed to `foo` at the previous line.
+/// }
+///
+/// fn foo(p: Point) { // do something with p
+/// }
+/// ```
 pub trait Copy<T>;
 
-/// `Drop` trait for dropping values.
+/// Trait for dropping values.
+///
+/// Types that implement the `Drop` trait are automatically destroyed when going out of scope.
+/// This destruction does nothing, it is a no-op - simply a hint to the compiler that this type
+/// can safely be destroyed once it's no longer useful. We call this "dropping" a value.
+///
+/// ```
+/// struct Point {
+/// x: u128,
+/// y: u128,
+/// }
+///
+/// fn foo(p: Point) { // do something with p
+/// }
+/// ```
+///
+/// This won't compile as `p` is not dropped at the end of `foo` execution.
+/// We can derive a `Drop` implementation. Most basic types implement it by default.
+///
+/// ```
+/// #[derive(Drop)]
+/// /// struct Point {
+/// x: u128,
+/// y: u128,
+/// }
+///
+/// fn foo(p: Point) { // do something with p
+/// }
+/// ```
+///
+/// Now `p` derives `Drop`, it can be destroyed at the end of `foo` execution.
 pub trait Drop<T>;
 
 /// `Copy` implementation for a snapshot of any type.
@@ -324,7 +394,7 @@ impl PartialOrdSnap<T, +PartialOrd<T>, +Copy<T>> of PartialOrd<@T> {
 pub trait Into<T, S> {
     /// Converts a type into another in safely manner.
     ///
-    /// # Exampels
+    /// # Examples
     ///
     /// ```
     /// let a: u8 = 1;
