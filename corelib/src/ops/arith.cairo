@@ -1,6 +1,6 @@
 //! Assignment operator traits for arithmetic operations.
-//! 
-//! This module provides traits for implementing assignment operators like `+=`, `-=`, 
+//!
+//! This module provides traits for implementing assignment operators like `+=`, `-=`,
 //! `*=`, `/=` and `%=`. These traits allow types to define how they handle
 //! arithmetic operations that modify values in place.
 
