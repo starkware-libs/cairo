@@ -1,4 +1,4 @@
-//! The `EthAddress` structure contains a 160 bits address represented as a `felt252.`.
+//! The `EthAddress` structure contains a 160 bits address represented as a `felt252`.
 //!
 //! This module implements some basic traits for the `EthAddress` type, such as [`Serde`],
 //! [`Zero`], and [`Debug`]. It also provides an implementation for [`StorePacking`] trait.
