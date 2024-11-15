@@ -5,38 +5,37 @@
 //!
 //! # Examples
 //!
-//! Creating a new `ByteArray` and appending a single byte with [`ByteArrayTrait::append_byte`]:
+//! There are multiple ways to create a new `ByteArray`:
+//! - From a string litteral:
+//! ```
+//! let s = "Hello";
+//!```
+//! - Using the `format!` macro:
+//!```
+//! let max_tps:u16 = 850;
+//! let s = format!("Starknet's max TPS is: {}", max_tps);
+//! ```
+//! You can append bytes to an existing `ByteArray`  with [`ByteArrayTrait::append_byte`]:
 //!
 //! ```
 //! let mut ba: ByteArray = "";
 //! ba.append_byte(0x41); // Appending a single byte 'A'
 //! ```
 //!
-//! Appending another `ByteArray` with [`ByteArrayTrait::append`]:
+//! You can create a new `ByteArray` from an existing one by concatenating with
+//! `+`:
 //!
 //! ```
-//! let mut ba: ByteArray = "";
-//! let mut other_ba: ByteArray = "";
-//! ba.append(@other_ba);
-//! ```
+//! let s = "Hello";
 //!
-//! Accessing a single byte with [`ByteArrayTrait::at`]:
-//!
+//! let message = s + " world!";
 //! ```
-//! let mut ba: ByteArray = "";
-//! ba.append_byte(0x41);
-//! if let Option::Some(byte) = ba.at(0) {
-//!     assert!(byte == 0x41);
-//! }
-//! ```
-//!
-//! The `ByteArray` type also supports operations like addition, which can be used for
-//! concatenation:
+//! Indexing operations are available on the `ByteArray` type as well:
 //!
 //! ```
-//! let mut ba: ByteArray = "";
-//! let mut other_ba: ByteArray = "";
-//! let concatenated = ba + other_ba;
+//! let mut ba: ByteArray = "ABC";
+//! let first_bytes = ba[0]
+//! assert!(first_byte == 0x41);
 //! ```
 
 use crate::array::{ArrayTrait, SpanTrait};
