@@ -9,14 +9,18 @@
 //!
 //! There are multiple ways to create a new `ByteArray`:
 //! - From a string litteral:
+//!
 //! ```
 //! let s = "Hello";
-//!```
+//! ```
+//!
 //! - Using the `format!` macro:
-//!```
+//!
+//! ```
 //! let max_tps:u16 = 850;
 //! let s = format!("Starknet's max TPS is: {}", max_tps);
 //! ```
+//!
 //! You can append bytes to an existing `ByteArray`  with [`ByteArrayTrait::append_byte`]:
 //!
 //! ```
@@ -29,9 +33,9 @@
 //!
 //! ```
 //! let s = "Hello";
-//!
 //! let message = s + " world!";
 //! ```
+//!
 //! Indexing operations are available on the `ByteArray` type as well:
 //!
 //! ```
@@ -66,8 +70,7 @@ const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
-/// A dynamic, growable array of bytes where bytes are stored in multiples of 31 bytes,
-/// with a `felt252` pending word used for bytes that don't complete a full `bytes31` word.
+/// Cairo's `String` type.
 #[derive(Drop, Clone, PartialEq, Serde, Default)]
 pub struct ByteArray {
     /// An array of full "words" of 31 bytes each.
