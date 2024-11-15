@@ -33,6 +33,9 @@
 //! let node = BinaryTree::Node((2, BoxTrait::new(leaf), BoxTrait::new(leaf)));
 //! println!("{:?}", node);
 //!```
+//!
+//! NOTE: A `Box<T>` is a smart pointer type that provides a way to store a value of type `T` in
+//! Cairo VM's _boxed_ segment, leaving only a pointer in the execution segment.
 
 /// A `Box` is a type that points to a wrapped value.
 /// It allows for cheap moving around of the value, as its size is small, and may wrap a large size.
@@ -127,7 +130,3 @@ impl BoxDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Box<T>>
         TDebug::fmt(self.as_snapshot().unbox(), ref f)
     }
 }
-// NOTE: A `Box<T>` is a smart pointer type that provides a way to store a value of type `T` in
-// Cairo VM's _boxed_ segment, leaving only a pointer in the execution segment.
-
-
