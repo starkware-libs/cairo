@@ -1,22 +1,33 @@
+//! Elliptic Curve Digital Signature Algorithm (ECDSA) for Secp256k1 and Secp256r1 curves.
+//!
+//! This module provides traits and functions for working with ECDSA signatures
+//! on the Secp256k1 and the Secp256r1 curves.
+//!
+//! Utility functions are provided for creating signatures from
+//! the `v`, `r`, and `s` values, as well as for validating signatures and recovering
+//! public keys from signatures.
+
 #[allow(unused_imports)]
 use core::array::ArrayTrait;
-use core::math::{u256_mul_mod_n, u256_inv_mod};
-use core::option::OptionTrait;
-#[allow(unused_imports)]
-use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, SyscallResultTrait};
-use core::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use core::integer::U256TryIntoNonZero;
+use core::math::{u256_mul_mod_n, u256_inv_mod};
+use core::option::OptionTrait;
+use core::traits::{Into, TryInto};
+#[allow(unused_imports)]
+use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, SyscallResultTrait};
 
 /// Secp256{k/r}1 ECDSA signature.
 #[derive(Copy, Drop, Debug, PartialEq, Serde, Hash)]
 pub struct Signature {
+    /// `r` component of the signature.
     pub r: u256,
+    /// `s` component of the signature.
     pub s: u256,
-    // The parity of the y coordinate of the ec point whose x coordinate is `r`.
-    // `y_parity` == true means that the y coordinate is odd.
-    // Some places use non boolean v instead of y_parity.
-    // In that case, `signature_from_vrs` should be used.
+    /// The parity of the y coordinate of the ec point whose x coordinate is `r`.
+    /// `y_parity` == true means that the y coordinate is odd.
+    /// Some places use non boolean v instead of y_parity.
+    /// In that case, `signature_from_vrs` should be used.
     pub y_parity: bool,
 }
 
@@ -24,6 +35,7 @@ impl SignatureStorePacking of starknet::StorePacking<Signature, (u256, u256, boo
     fn pack(value: Signature) -> (u256, u256, bool) {
         (value.r, value.s, value.y_parity)
     }
+
     fn unpack(value: (u256, u256, bool)) -> Signature {
         let (r, s, y_parity) = value;
         Signature { r, s, y_parity }
@@ -38,19 +50,36 @@ pub fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
     Signature { r, s, y_parity: v % 2 == 0 }
 }
 
+/// Trait for interacting with Secp256{k/r}1 curves.
+/// Provides methods for getting the curve size and generator point, as well as
+/// creating new curve points and getting points from x-coordinates.
 pub trait Secp256Trait<Secp256Point> {
+    /// Returns the curve size.
     fn get_curve_size() -> u256;
+
+    /// Returns the generator point for the given curve.
     fn get_generator_point() -> Secp256Point;
 
+    /// Returns the curve point given x and y coordinates.
     fn secp256_ec_new_syscall(x: u256, y: u256) -> SyscallResult<Option<Secp256Point>>;
+
+    /// Returns the curve point given x coordinate and `y_parity`.
     fn secp256_ec_get_point_from_x_syscall(
         x: u256, y_parity: bool,
     ) -> SyscallResult<Option<Secp256Point>>;
 }
 
+/// Trait for operating on Secp256k1 curve points.
+/// Includes methods for getting point coordinates, adding points, and multiplying
+/// points by scalars.
 pub trait Secp256PointTrait<Secp256Point> {
+    /// Returns x and y coordinates given a curve point.
     fn get_coordinates(self: Secp256Point) -> SyscallResult<(u256, u256)>;
+
+    /// Adds two points on the curve and returns the resulting curve point.
     fn add(self: Secp256Point, other: Secp256Point) -> SyscallResult<Secp256Point>;
+
+    /// Multiplies two points on the curve and returns the resulting curve point.
     fn mul(self: Secp256Point, scalar: u256) -> SyscallResult<Secp256Point>;
 }
 
@@ -63,6 +92,7 @@ pub fn is_signature_entry_valid<
     value != 0_u256 && value < Secp256Impl::get_curve_size()
 }
 
+/// Checks whether a signature is valid given a public key point and a message hash.
 pub fn is_valid_signature<
     Secp256Point,
     +Drop<Secp256Point>,
