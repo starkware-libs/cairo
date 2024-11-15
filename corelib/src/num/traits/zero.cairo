@@ -2,11 +2,11 @@
 //!
 //! Useful for numeric types or any type with an additive identity element.
 
-/// Zero trait for types that can be compared to zero.
+/// `Zero` trait for types that can be compared to zero.
 pub trait Zero<T> {
     /// Returns the additive identity element of `self`, 0.
     ///
-    /// This method should return a value that, when added to any other value of type T,
+    /// This method should return a value that, when added to any other value of type `T`,
     /// does not change that value.
     ///
     /// # Examples
@@ -14,7 +14,7 @@ pub trait Zero<T> {
     /// ```
     /// use core::num::traits::Zero;
     ///
-    /// assert!(Zero::<u32>::zero(), 0);
+    /// assert!(Zero::<u32>::zero() == 0);
     /// ```
     fn zero() -> T;
 
