@@ -3,6 +3,8 @@
 //! `bytes31` for full words and a `felt252` for handling partial words, optimizing for both space
 //! and performance.
 //!
+//! `ByteArray` is Cairo's `String` type, and can be created with string literals: `"hello, world!"`
+//!
 //! # Examples
 //!
 //! There are multiple ways to create a new `ByteArray`:
