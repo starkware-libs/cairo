@@ -31,14 +31,14 @@ impl ProjectDiagnostics {
     /// Inserts new diagnostics for a file if they update the existing diagnostics.
     ///
     /// Returns `true` if stored diagnostics were updated; otherwise, returns `false`.
-    pub fn insert(&self, file_url: &Url, new_file_diagnostics: FileDiagnostics) -> bool {
-        if let Some(old_file_diagnostics) = self
+    pub fn insert(&self, diags: FileDiagnostics) -> bool {
+        if let Some(old_diags) = self
             .file_diagnostics
             .read()
             .expect("file diagnostics are poisoned, bailing out")
-            .get(file_url)
+            .get(&diags.url)
         {
-            if *old_file_diagnostics == new_file_diagnostics {
+            if *old_diags == diags {
                 return false;
             }
         };
@@ -46,7 +46,7 @@ impl ProjectDiagnostics {
         self.file_diagnostics
             .write()
             .expect("file diagnostics are poisoned, bailing out")
-            .insert(file_url.clone(), new_file_diagnostics);
+            .insert(diags.url.clone(), diags);
         true
     }
 

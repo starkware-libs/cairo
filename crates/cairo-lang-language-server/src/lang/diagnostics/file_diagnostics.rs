@@ -12,6 +12,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::{LookupIntern, Upcast};
+use lsp_types::Url;
 use tracing::{error, info_span};
 
 use crate::lang::db::AnalysisDatabase;
@@ -32,8 +33,8 @@ use crate::server::panic::is_cancelled;
 /// to the given `file` will also be visited and their diagnostics collected.
 #[derive(Clone, PartialEq, Eq)]
 pub struct FileDiagnostics {
-    /// The file ID these diagnostics are associated with.
-    pub file: FileId,
+    /// The file URL these diagnostics are associated with.
+    pub url: Url,
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
@@ -69,6 +70,7 @@ impl FileDiagnostics {
             };
         }
 
+        let url = query!(db.url_for_file(file)).ok()??;
         let module_ids = query!(db.file_modules(file)).ok()?.ok()?;
 
         let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
@@ -96,7 +98,7 @@ impl FileDiagnostics {
         let parser_file_diagnostics = query!(db.file_syntax_diagnostics(file)).unwrap_or_default();
 
         Some(FileDiagnostics {
-            file,
+            url,
             parser: parser_file_diagnostics,
             semantic: Diagnostics::from_iter(semantic_file_diagnostics),
             lowering: Diagnostics::from_iter(lowering_file_diagnostics),
@@ -116,31 +118,35 @@ impl FileDiagnostics {
         db: &AnalysisDatabase,
         trace_macro_diagnostics: bool,
     ) -> Option<lsp_types::PublishDiagnosticsParams> {
-        let uri = db.url_for_file(self.file)?;
+        let file = db.file_for_url(&self.url)?;
 
         let mut diagnostics = Vec::new();
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
             &mut diagnostics,
             &self.parser,
-            self.file,
+            file,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
             &mut diagnostics,
             &self.semantic,
-            self.file,
+            file,
             trace_macro_diagnostics,
         );
         map_cairo_diagnostics_to_lsp(
             (*db).upcast(),
             &mut diagnostics,
             &self.lowering,
-            self.file,
+            file,
             trace_macro_diagnostics,
         );
 
-        Some(lsp_types::PublishDiagnosticsParams { uri, diagnostics, version: None })
+        Some(lsp_types::PublishDiagnosticsParams {
+            uri: self.url.clone(),
+            diagnostics,
+            version: None,
+        })
     }
 }
