@@ -54,7 +54,7 @@ pub(crate) impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
     }
 }
 
-impl ClassHashZero of core::num::traits<ClassHash> {
+impl ClassHashZero of core::num::traits::Zero<ClassHash> {
     fn zero() -> ClassHash {
         class_hash_const::<0>()
     }
