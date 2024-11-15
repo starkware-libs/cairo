@@ -75,7 +75,7 @@ pub struct ByteArray {
     /// It is represented as a `felt252` to improve performance of building the byte array.
     /// The first byte is the most significant byte among the `pending_word_len` bytes in the word.
     pub(crate) pending_word: felt252,
-    /// `pending_word_len` represents the number of bytes in `pending_word`.
+    /// The number of bytes in `pending_word`.
     /// Its value should be in the range [0, 30].
     pub(crate) pending_word_len: usize,
 }
