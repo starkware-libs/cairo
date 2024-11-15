@@ -3,12 +3,10 @@
 //! `bytes31` for full words and a `felt252` for handling partial words, optimizing for both space
 //! and performance.
 //!
-//! `ByteArray` is Cairo's `String` type, and can be created with string literals: `"hello, world!"`
-//!
 //! # Examples
 //!
 //! There are multiple ways to create a new `ByteArray`:
-//! - From a string litteral:
+//! - From a string literal:
 //!
 //! ```
 //! let s = "Hello";
@@ -70,7 +68,7 @@ const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
-/// Cairo's `String` type.
+/// Byte array type.
 #[derive(Drop, Clone, PartialEq, Serde, Default)]
 pub struct ByteArray {
     /// An array of full "words" of 31 bytes each.
