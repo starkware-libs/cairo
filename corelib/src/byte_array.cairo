@@ -204,6 +204,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
 
     /// Concatenates two `ByteArray` and returns the result.
     ///
+    /// The content of `left` is cloned in a new memory segment.
     /// # Examples
     ///
     /// ```
