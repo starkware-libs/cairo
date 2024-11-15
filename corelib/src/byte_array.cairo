@@ -71,7 +71,7 @@ pub struct ByteArray {
     /// An array of full "words" of 31 bytes each.
     /// The first byte of each word in the byte array is the most significant byte in the word.
     pub(crate) data: Array<bytes31>,
-    /// `pending_word` field is a `felt252` that actually represents a `bytes31`, with < 31 bytes.
+    /// A `felt252` that actually represents a `bytes31`, with less than 31 bytes.
     /// It is represented as a `felt252` to improve performance of building the byte array.
     /// The first byte is the most significant byte among the `pending_word_len` bytes in the word.
     pub(crate) pending_word: felt252,
