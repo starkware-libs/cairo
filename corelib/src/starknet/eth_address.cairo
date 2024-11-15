@@ -1,3 +1,8 @@
+//! The `EthAddress` structure contains a 160 bits address represented as a `felt252.`.
+//!
+//! This module implements some basic traits for the `EthAddress` type, such as [`Serde`],
+//! [`Zero`], and [`Debug`]. It also provides an implementation for [`StorePacking`] trait.
+
 use core::debug::PrintTrait;
 #[allow(unused_imports)]
 use core::integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
@@ -5,9 +10,10 @@ use core::option::{Option, OptionTrait};
 use core::serde::Serde;
 use core::traits::{Into, TryInto};
 
-// An Ethereum address (160 bits).
+/// An Ethereum address of 160 bits.
 #[derive(Copy, Drop, Hash, PartialEq)]
 pub struct EthAddress {
+    /// The address represented as a `felt252`.
     address: felt252,
 }
 
@@ -15,6 +21,7 @@ impl EthAddressStorePacking of starknet::StorePacking<EthAddress, felt252> {
     fn pack(value: EthAddress) -> felt252 {
         value.address
     }
+
     fn unpack(value: felt252) -> EthAddress {
         EthAddress { address: value }
     }
@@ -31,11 +38,13 @@ pub(crate) impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
         }
     }
 }
+
 pub(crate) impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
     fn into(self: EthAddress) -> felt252 {
         self.address
     }
 }
+
 pub(crate) impl U256IntoEthAddress of Into<u256, EthAddress> {
     fn into(self: u256) -> EthAddress {
         // The Ethereum address is the 20 least significant bytes (=160=128+32 bits) of the value.
@@ -46,22 +55,27 @@ pub(crate) impl U256IntoEthAddress of Into<u256, EthAddress> {
         }
     }
 }
+
 pub(crate) impl EthAddressSerde of Serde<EthAddress> {
     fn serialize(self: @EthAddress, ref output: Array<felt252>) {
         self.address.serialize(ref output);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<EthAddress> {
         Serde::<felt252>::deserialize(ref serialized)?.try_into()
     }
 }
+
 impl EthAddressZero of core::num::traits::Zero<EthAddress> {
     fn zero() -> EthAddress {
         0.try_into().unwrap()
     }
+
     #[inline]
     fn is_zero(self: @EthAddress) -> bool {
         core::num::traits::Zero::<felt252>::is_zero(self.address)
     }
+
     #[inline]
     fn is_non_zero(self: @EthAddress) -> bool {
         !self.is_zero()
