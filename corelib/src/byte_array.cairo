@@ -249,7 +249,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         self.pending_word_len = 0;
     }
 
-    /// Returns the length of the `ByteArray` as a `usize` value.
+    /// Returns the length of the `ByteArray`.
     ///
     /// # Examples
     ///
