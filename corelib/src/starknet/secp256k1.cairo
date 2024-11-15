@@ -2,7 +2,7 @@
 //!
 //! This module contains functions and constructs related to elliptic curve operations on the
 //! Secp256k1 curve.
-//! It provides implementations for `Secp256Trait` and `Secp256k1Point` defined in `secp256_trait`
+//! It provides implementations for `Secp256Trait` and `Secp256PointTrait` defined in `secp256_trait`
 //! module.
 
 use core::gas::GasBuiltin;
