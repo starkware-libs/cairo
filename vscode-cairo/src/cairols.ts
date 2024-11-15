@@ -11,7 +11,7 @@ import {
   registerVfsProvider,
   registerViewAnalyzedCratesProvider,
 } from "./textDocumentProviders";
-import assert from "node:assert";
+import assert, { AssertionError } from "node:assert";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
@@ -26,6 +26,19 @@ function notifyScarbMissing(ctx: Context) {
   ctx.log.error(errorMessage);
 }
 
+// Deep equality (based on native nodejs assertion), without throwing an error
+function safeStrictDeepEqual<T>(a: T, b: T): boolean {
+  try {
+    assert.deepStrictEqual(a, b);
+    return true;
+  } catch (err) {
+    if (err instanceof AssertionError) {
+      return false;
+    }
+    throw err;
+  }
+}
+
 async function allFoldersHaveSameLSProvider(
   ctx: Context,
   executables: LSExecutable[],
@@ -34,17 +47,18 @@ async function allFoldersHaveSameLSProvider(
     return true;
   }
 
-  // If every executable is scarb based, check if the versions match
+  // If every executable is scarb based, check if the versions match additionally
   if (executables.every((v) => !!v.scarb)) {
     const versions = await Promise.all(executables.map((v) => v.scarb!.getVersion(ctx)));
-
-    return versions.every((x) => x === versions[0]);
+    if (!versions.every((x) => versions[0] === x)) {
+      return false;
+    }
   }
 
-  return executables.every((x) => executables[0]!.run.command === x.run.command);
+  return executables.every((x) => safeStrictDeepEqual(executables[0]!.run, x.run));
 }
 
-export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
+export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient | undefined> {
   const executables = (
     await Promise.all(
       (vscode.workspace.workspaceFolders || []).map((workspaceFolder) =>
@@ -54,7 +68,12 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
   ).filter((x) => !!x) as LSExecutable[];
 
   const sameProvider = await allFoldersHaveSameLSProvider(ctx, executables);
-  assert(sameProvider, "Multiple versions of scarb in one workspace is not supported");
+  if (!sameProvider) {
+    await vscode.window.showErrorMessage(
+      "Multiple versions of scarb in one workspace is not supported",
+    );
+    return;
+  }
 
   // First one is good as any of them since they should be all the same at this point
   const lsExecutable = executables[0];
