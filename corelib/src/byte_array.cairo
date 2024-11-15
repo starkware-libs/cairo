@@ -82,7 +82,7 @@ pub struct ByteArray {
 
 pub(crate) impl ByteArrayStringLiteral of crate::string::StringLiteral<ByteArray>;
 
-/// Basic trait for the `ByteArray` type.
+/// Functions associated with the `ByteArray` type.
 #[generate_trait]
 pub impl ByteArrayImpl of ByteArrayTrait {
     // TODO(yuval): add a `new` function for initialization.
