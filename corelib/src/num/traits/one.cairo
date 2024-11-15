@@ -6,7 +6,7 @@
 pub trait One<T> {
     /// Returns the multiplicative identity element of `self`, 1.
     ///
-    /// This method should return a value that, when multiplied by any other value of type T,
+    /// This method should return a value that, when multiplied by any other value of type `T`,
     /// does not change that value.
     ///
     /// # Examples
