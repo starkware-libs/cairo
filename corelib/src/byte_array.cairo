@@ -68,7 +68,7 @@ const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
 /// with a `felt252` pending word used for bytes that don't complete a full `bytes31` word.
 #[derive(Drop, Clone, PartialEq, Serde, Default)]
 pub struct ByteArray {
-    /// `data` field is an array of full "words" of 31 bytes each.
+    /// An array of full "words" of 31 bytes each.
     /// The first byte of each word in the byte array is the most significant byte in the word.
     pub(crate) data: Array<bytes31>,
     /// `pending_word` field is a `felt252` that actually represents a `bytes31`, with < 31 bytes.
