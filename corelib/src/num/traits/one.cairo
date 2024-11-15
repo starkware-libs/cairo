@@ -2,7 +2,7 @@
 //!
 //! Useful for numeric types or any type with a multiplicative identity element.
 
-/// `One` trait for types that can be compared to one.
+/// Trait for types that can be compared to one.
 pub trait One<T> {
     /// Returns the multiplicative identity element of `self`, 1.
     ///
