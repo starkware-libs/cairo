@@ -1,8 +1,12 @@
+//! Secp256k1 Elliptic Curve Implementation.
+//!
 //! This module contains functions and constructs related to elliptic curve operations on the
-//! secp256k1 curve.
+//! Secp256k1 curve.
+//! It provides implementations for `Secp256Trait` and `Secp256k1Point` defined in `secp256_trait`
+//! module.
 
-use core::option::OptionTrait;
 use core::gas::GasBuiltin;
+use core::option::OptionTrait;
 #[allow(unused_imports)]
 use starknet::{
     secp256_trait::{
@@ -11,16 +15,18 @@ use starknet::{
     SyscallResult, SyscallResultTrait,
 };
 
+/// Secp256k1 curve size.
+const CURVE_SIZE: u256 = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141;
+
 /// A point on the Secp256k1 curve.
 #[derive(Copy, Drop)]
 pub extern type Secp256k1Point;
 
 pub(crate) impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
-    // TODO(yuval): change to constant once u256 constants are supported.
     fn get_curve_size() -> u256 {
-        0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
+        CURVE_SIZE
     }
-    /// Creates the generator point of the secp256k1 curve.
+
     fn get_generator_point() -> Secp256k1Point {
         secp256k1_new_syscall(
             0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,
@@ -33,6 +39,7 @@ pub(crate) impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
     fn secp256_ec_new_syscall(x: u256, y: u256) -> SyscallResult<Option<Secp256k1Point>> {
         secp256k1_new_syscall(x, y)
     }
+
     fn secp256_ec_get_point_from_x_syscall(
         x: u256, y_parity: bool,
     ) -> SyscallResult<Option<Secp256k1Point>> {
@@ -44,25 +51,28 @@ pub(crate) impl Secp256k1PointImpl of Secp256PointTrait<Secp256k1Point> {
     fn get_coordinates(self: Secp256k1Point) -> SyscallResult<(u256, u256)> {
         secp256k1_get_xy_syscall(self)
     }
+
     fn add(self: Secp256k1Point, other: Secp256k1Point) -> SyscallResult<Secp256k1Point> {
         secp256k1_add_syscall(self, other)
     }
+
     fn mul(self: Secp256k1Point, scalar: u256) -> SyscallResult<Secp256k1Point> {
         secp256k1_mul_syscall(self, scalar)
     }
 }
 
-/// Creates a secp256k1 EC point from the given x and y coordinates.
+/// Creates a secp256k1 ec point from the given x and y coordinates.
 /// Returns None if the given coordinates do not correspond to a point on the curve.
 extern fn secp256k1_new_syscall(
     x: u256, y: u256,
 ) -> SyscallResult<Option<Secp256k1Point>> implicits(GasBuiltin, System) nopanic;
 
-/// Computes the addition of secp256k1 EC points `p0 + p1`.
+/// Computes the addition of secp256k1 ec points `p0 + p1`.
 extern fn secp256k1_add_syscall(
     p0: Secp256k1Point, p1: Secp256k1Point,
 ) -> SyscallResult<Secp256k1Point> implicits(GasBuiltin, System) nopanic;
-/// Computes the product of a secp256k1 EC point `p` by the given scalar `scalar`.
+
+/// Computes the product of a secp256k1 ec point `p` by the given scalar `scalar`.
 extern fn secp256k1_mul_syscall(
     p: Secp256k1Point, scalar: u256,
 ) -> SyscallResult<Secp256k1Point> implicits(GasBuiltin, System) nopanic;
@@ -84,6 +94,7 @@ impl Secp256k1PointSerde of Serde<Secp256k1Point> {
         let point = (*self).get_coordinates().unwrap();
         point.serialize(ref output);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<Secp256k1Point> {
         let (x, y) = Serde::<(u256, u256)>::deserialize(ref serialized)?;
         secp256k1_new_syscall(x, y).unwrap_syscall()
