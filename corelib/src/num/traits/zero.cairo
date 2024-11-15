@@ -2,7 +2,7 @@
 //!
 //! Useful for numeric types or any type with an additive identity element.
 
-/// `Zero` trait for types that can be compared to zero.
+/// Trait for types that can be compared to zero.
 pub trait Zero<T> {
     /// Returns the additive identity element of `self`, 0.
     ///
