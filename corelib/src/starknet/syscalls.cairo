@@ -1,8 +1,14 @@
+//! Syscall functions for interacting with the Starknet operating system.
+//!
+//! This module provides a set of functions that represent system calls.
+//! These functions allow contracts to interact with the Starknet operating system and perform various
+//! operations, such as calling other contracts, deploying new contracts, and managing storage.
+
+use core::gas::GasBuiltin;
 use starknet::{
     SyscallResult, storage_access::StorageAddress, class_hash::ClassHash,
     contract_address::ContractAddress,
 };
-use core::gas::GasBuiltin;
 
 /// Calls a given contract.
 /// `address` - The address of the called contract.
