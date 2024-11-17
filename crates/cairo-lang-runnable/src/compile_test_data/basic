@@ -10,9 +10,27 @@ fn main() {}
 //! > generated_casm_code
 # builtins: 
 # header #
+%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+%{ raise NotImplementedError("memory[ap + 2].. = params[1])") %}
+ap += 4;
 call rel 3;
 ret;
 # sierra based code #
+[fp + -5] = [ap + 0] + [fp + -6], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 13;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+ret;
+ap += 2;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
 ret;
 # footer #
 ret;
@@ -36,12 +54,58 @@ fn main(a: felt252, b: felt252) -> felt252 {
 # builtins: 
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-%{ raise NotImplementedError("memory[ap + 1].. = params[1])") %}
-ap += 2;
+%{ raise NotImplementedError("memory[ap + 2].. = params[1])") %}
+ap += 4;
 call rel 3;
 ret;
 # sierra based code #
-[ap + 0] = [fp + -4] + [fp + -3], ap++;
+[fp + -5] = [ap + 0] + [fp + -6], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 54;
+[ap + 0] = [fp + -6] + 1, ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [[fp + -6] + 0], ap++;
+[ap + -2] = [ap + 0] + [ap + -3], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 32;
+[ap + 0] = [ap + -4] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [[ap + -6] + 0], ap++;
+[ap + -2] = [ap + 0] + [ap + -3], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 13;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+ret;
+ap += 1;
+[ap + 0] = [ap + -7] + [ap + -3], ap++;
+[ap + -1] = [[fp + -3] + 0];
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3] + 1, ap++;
+ret;
+ap += 4;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492913, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
+ret;
+ap += 8;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492912, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 1, ap++;
 ret;
 # footer #
 ret;
@@ -70,12 +134,169 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 # header #
 [ap + 0] = [fp + -3], ap++;
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-%{ raise NotImplementedError("memory[ap + 1].. = params[1])") %}
-%{ raise NotImplementedError("memory[ap + 2].. = params[2])") %}
-ap += 3;
+%{ raise NotImplementedError("memory[ap + 2].. = params[1])") %}
+ap += 4;
 call rel 3;
 ret;
 # sierra based code #
+[fp + -5] = [ap + 0] + [fp + -6], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 10;
+[ap + 0] = [fp + -6] + 1, ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -6], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 199 if [ap + -2] != 0;
+[ap + 0] = [[ap + -1] + 0], ap++;
+%{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
+jmp rel 22 if [ap + 0] != 0, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], 340282366920938463463374607431768211456) %}
+[ap + 3] = [[fp + -7] + 0], ap++;
+[ap + 3] = [[fp + -7] + 1], ap++;
+[ap + -2] = [ap + 1] * 340282366920938463463374607431768211456, ap++;
+[ap + -5] = [ap + -3] + [ap + 1], ap++;
+[ap + -3] = [ap + -1] + -10633823966279327296825105735305134080, ap++;
+jmp rel 6 if [ap + -4] != 0;
+[ap + -3] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 4;
+[ap + -3] = [ap + -2] + 329648542954659136166549501696463077376;
+[ap + -3] = [[fp + -7] + 2];
+jmp rel 174 if [ap + -2] != 0;
+[fp + -1] = [fp + -1] + 1;
+[ap + -2] = [[fp + -7] + 0];
+[ap + 0] = [fp + -7] + 1, ap++;
+[ap + -6] = [ap + 0] + [ap + -7], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 10;
+[ap + 0] = [ap + -8] + 1, ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -11], ap++;
+jmp rel 8;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 135 if [ap + -2] != 0;
+[ap + 0] = [[ap + -1] + 0], ap++;
+%{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
+jmp rel 22 if [ap + 0] != 0, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], 340282366920938463463374607431768211456) %}
+[ap + 3] = [[ap + -8] + 0], ap++;
+[ap + 3] = [[ap + -9] + 1], ap++;
+[ap + -2] = [ap + 1] * 340282366920938463463374607431768211456, ap++;
+[ap + -5] = [ap + -3] + [ap + 1], ap++;
+[ap + -3] = [ap + -1] + -10633823966279327296825105735305134080, ap++;
+jmp rel 6 if [ap + -4] != 0;
+[ap + -3] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 4;
+[ap + -3] = [ap + -2] + 329648542954659136166549501696463077376;
+[ap + -3] = [[ap + -13] + 2];
+jmp rel 110 if [ap + -2] != 0;
+[fp + -1] = [fp + -1] + 1;
+[ap + -2] = [[ap + -8] + 0];
+[ap + 0] = [ap + -8] + 1, ap++;
+[ap + -6] = [ap + 0] + [ap + -7], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 10;
+[ap + 0] = [ap + -8] + 1, ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -11], ap++;
+jmp rel 8;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 71 if [ap + -2] != 0;
+[ap + 0] = [[ap + -1] + 0], ap++;
+%{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
+jmp rel 22 if [ap + 0] != 0, ap++;
+%{ (memory[ap + 3], memory[ap + 4]) = divmod(memory[ap + -2], 340282366920938463463374607431768211456) %}
+[ap + 3] = [[ap + -8] + 0], ap++;
+[ap + 3] = [[ap + -9] + 1], ap++;
+[ap + -2] = [ap + 1] * 340282366920938463463374607431768211456, ap++;
+[ap + -5] = [ap + -3] + [ap + 1], ap++;
+[ap + -3] = [ap + -1] + -10633823966279327296825105735305134080, ap++;
+jmp rel 6 if [ap + -4] != 0;
+[ap + -3] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 4;
+[ap + -3] = [ap + -2] + 329648542954659136166549501696463077376;
+[ap + -3] = [[ap + -13] + 2];
+jmp rel 46 if [ap + -2] != 0;
+[fp + -1] = [fp + -1] + 1;
+[ap + -2] = [[ap + -8] + 0];
+[ap + 0] = [ap + -8] + 1, ap++;
+[ap + -6] = [ap + 0] + [ap + -7], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 14;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -5] + 1, ap++;
+ret;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [ap + -21], ap++;
+[ap + 0] = [ap + -14], ap++;
+[ap + 0] = [ap + -7], ap++;
+call rel 69;
+jmp rel 10 if [ap + -3] != 0;
+[ap + -1] = [[fp + -3] + 0];
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3] + 1, ap++;
+ret;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -4], ap++;
+ret;
+[ap + 0] = [ap + -13] + 3, ap++;
+jmp rel 3;
+[ap + 0] = [ap + -6], ap++;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492914, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -5] + 1, ap++;
+ret;
+[ap + 0] = [ap + -13] + 3, ap++;
+jmp rel 3;
+[ap + 0] = [ap + -6], ap++;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492913, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -5] + 1, ap++;
+ret;
+[ap + 0] = [fp + -7] + 3, ap++;
+jmp rel 3;
+[ap + 0] = [fp + -7], ap++;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 485748461484230571791265682659113160264223489397539653310998840191492912, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -5] + 1, ap++;
+ret;
 jmp rel 9 if [fp + -3] != 0;
 [ap + 0] = [fp + -6], ap++;
 [ap + 0] = 0, ap++;
