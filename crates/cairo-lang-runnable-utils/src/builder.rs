@@ -159,8 +159,9 @@ impl RunnableBuilder {
     pub fn assemble_function_program(
         &self,
         func: &Function,
+        config: EntryCodeConfig,
     ) -> Result<(AssembledCairoProgram, Vec<BuiltinName>), BuildError> {
-        let (header, builtins) = self.create_entry_code(func)?;
+        let (header, builtins) = self.create_entry_code(func, config)?;
         let footer = create_code_footer();
 
         let assembled_cairo_program = self.casm_program.assemble_ex(&header, &footer);
@@ -168,8 +169,12 @@ impl RunnableBuilder {
     }
 
     /// CASM style string representation of the program.
-    pub fn casm_function_program(&self, func: &Function) -> Result<String, BuildError> {
-        let (header, builtins) = self.create_entry_code(func)?;
+    pub fn casm_function_program(
+        &self,
+        func: &Function,
+        config: EntryCodeConfig,
+    ) -> Result<String, BuildError> {
+        let (header, builtins) = self.create_entry_code(func, config)?;
         let footer = create_code_footer();
 
         Ok(chain!(
@@ -193,6 +198,7 @@ impl RunnableBuilder {
     fn create_entry_code(
         &self,
         func: &Function,
+        config: EntryCodeConfig,
     ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), BuildError> {
         let param_types = self.generic_id_and_size_from_concrete(&func.signature.param_types);
         let return_types = self.generic_id_and_size_from_concrete(&func.signature.ret_types);
@@ -201,14 +207,18 @@ impl RunnableBuilder {
         let code_offset =
             self.casm_program.debug_info.sierra_statement_info[entry_point].start_offset;
         // Finalizing for proof only if all returned values are builtins or droppable.
-        // (To handle cases such as a function returning a non-squashed dict, which can't be
-        // provable by itself)
-        let finalize_for_proof = func.signature.ret_types.iter().all(|ty| {
+        let droppable_return_value = func.signature.ret_types.iter().all(|ty| {
             let info = self.type_info(ty);
             info.droppable || !self.is_user_arg_type(&info.long_id.generic_id)
         });
+        if !droppable_return_value {
+            assert!(
+                !config.finalize_segment_arena,
+                "Cannot finalize the segment arena when returning non-droppable values."
+            );
+        }
 
-        create_entry_code_from_params(&param_types, &return_types, code_offset, finalize_for_proof)
+        create_entry_code_from_params(&param_types, &return_types, code_offset, config)
     }
 
     /// Converts array of `ConcreteTypeId`s into corresponding `GenericTypeId`s and their sizes
@@ -228,6 +238,27 @@ impl RunnableBuilder {
     }
 }
 
+/// Configuration for the entry code creation.
+#[derive(Clone, Debug)]
+pub struct EntryCodeConfig {
+    /// Whether to finalize the segment arena after calling the function.
+    pub finalize_segment_arena: bool,
+}
+impl EntryCodeConfig {
+    /// Returns a configuration for testing purposes.
+    ///
+    /// This configuration will not finalize the segment arena after calling the function, to
+    /// prevent failure in case of functions returning values.
+    pub fn testing() -> Self {
+        Self { finalize_segment_arena: false }
+    }
+
+    /// Returns a configuration for proving purposes.
+    pub fn provable() -> Self {
+        Self { finalize_segment_arena: true }
+    }
+}
+
 /// Returns the entry code to call the function with `param_types` as its inputs and
 /// `return_types` as outputs, located at `code_offset`. If `finalize_for_proof` is true,
 /// will make sure to remove the segment arena after calling the function. For testing purposes,
@@ -236,7 +267,7 @@ pub fn create_entry_code_from_params(
     param_types: &[(GenericTypeId, i16)],
     return_types: &[(GenericTypeId, i16)],
     code_offset: usize,
-    finalize_for_proof: bool,
+    config: EntryCodeConfig,
 ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), BuildError> {
     let mut ctx = CasmBuilder::default();
     let mut builtin_offset = 3;
@@ -267,7 +298,7 @@ pub fn create_entry_code_from_params(
     let emulated_builtins = UnorderedHashSet::<_>::from_iter([SystemType::ID]);
 
     let got_segment_arena = param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID);
-    let has_post_calculation_loop = got_segment_arena && finalize_for_proof;
+    let has_post_calculation_loop = got_segment_arena && config.finalize_segment_arena;
 
     let mut local_exprs = vec![];
     if has_post_calculation_loop {
@@ -352,7 +383,7 @@ pub fn create_entry_code_from_params(
             casm_build_extend!(ctx, assert local_cell = cell;);
         }
     }
-    if got_segment_arena && finalize_for_proof {
+    if got_segment_arena && config.finalize_segment_arena {
         let segment_arena = builtin_vars[&SegmentArenaType::ID];
         // Validating the segment arena's segments are one after the other.
         casm_build_extend! {ctx,
