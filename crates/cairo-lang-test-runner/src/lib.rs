@@ -229,11 +229,12 @@ impl TestCompiler {
             let mut b = RootDatabase::builder();
             if !gas_enabled {
                 b.skip_auto_withdraw_gas();
+            } else {
+                b.with_add_redeposit_gas();
             }
             b.detect_corelib();
             b.with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]));
             b.with_plugin_suite(test_plugin_suite());
-            b.with_add_redeposit_gas();
             if config.starknet {
                 b.with_plugin_suite(starknet_plugin_suite());
             }
