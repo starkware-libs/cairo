@@ -128,8 +128,16 @@ impl Struct2Index of Index<Struct2, usize, felt252> {
 
 //! > expected_diagnostics
 error: Type `test::Struct1` could not be indexed.
+<<<<<<< HEAD
 Candidate `core::ops::index::Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<test::Struct1, ?3>.
 Candidate `core::ops::index::IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<test::Struct1, ?3>.
+||||||| 14b1d8c15
+Candidate `Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<test::Struct1, ?2>.
+Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<test::Struct1, ?2>.
+=======
+Candidate `Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<test::Struct1, ?3>.
+Candidate `IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<test::Struct1, ?3>.
+>>>>>>> origin/dev-v2.8.5
  --> lib.cairo:21:15
     let _y1 = x1[0];
               ^***^

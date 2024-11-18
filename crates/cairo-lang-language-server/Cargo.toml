@@ -11,6 +11,7 @@ testing = []
 
 [dependencies]
 anyhow.workspace = true
+<<<<<<< HEAD
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.8.4" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.8.4" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.8.4" }
@@ -26,6 +27,37 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.8.4" }
 cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.8.4" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.4" }
 crossbeam = "0.8.4"
+||||||| 14b1d8c15
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.8.2" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.8.2" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.8.2" }
+cairo-lang-doc = { path = "../cairo-lang-doc", version = "~2.8.2" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.8.2" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.8.2" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "~2.8.2" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.8.2" }
+cairo-lang-project = { path = "../cairo-lang-project", version = "~2.8.2" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.8.2" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.8.2" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.8.2" }
+cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.8.2" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.2" }
+=======
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.8.5" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.8.5" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.8.5" }
+cairo-lang-doc = { path = "../cairo-lang-doc", version = "~2.8.5" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.8.5" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.8.5" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "~2.8.5" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.8.5" }
+cairo-lang-project = { path = "../cairo-lang-project", version = "~2.8.5" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.8.5" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.8.5" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.8.5" }
+cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.8.5" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.8.5" }
+>>>>>>> origin/dev-v2.8.5
 indent.workspace = true
 indoc.workspace = true
 itertools.workspace = true

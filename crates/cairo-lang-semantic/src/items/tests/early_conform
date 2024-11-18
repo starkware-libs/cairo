@@ -981,13 +981,25 @@ impl MyIndexView of IndexView<u64, MyType, ()> {
 
 //! > expected_diagnostics
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
+<<<<<<< HEAD
 Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
+||||||| 14b1d8c15
+Candidate `MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?3>.
+=======
+Candidate `MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?1>.
+>>>>>>> origin/dev-v2.8.5
  --> lib.cairo:15:13
     x[3_u16.my_into()];
             ^*****^
 
 error[E0002]: Method `my_into` could not be called on type `core::integer::u16`.
+<<<<<<< HEAD
 Candidate `test::MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?4>.
+||||||| 14b1d8c15
+Candidate `MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?5>.
+=======
+Candidate `MyInto::my_into` inference failed with: Trait has no implementation in context: test::MyInto::<core::integer::u16, ?4>.
+>>>>>>> origin/dev-v2.8.5
  --> lib.cairo:16:17
     3_u64[3_u16.my_into()];
                 ^*****^

@@ -48,7 +48,13 @@ fn cairo_projects() {
                         Version {
                             major: 2,
                             minor: 8,
+<<<<<<< HEAD
                             patch: 4,
+||||||| 14b1d8c15
+                            patch: 2,
+=======
+                            patch: 5,
+>>>>>>> origin/dev-v2.8.5
                         },
                     ),
                     cfg_set: None,

@@ -258,11 +258,98 @@ impl Backend {
         Self::initialize(tricks, connection_initializer)
     }
 
+<<<<<<< HEAD
     /// Initializes the connection and crate a ready to run [`Backend`] instance.
     ///
     /// As part of the initialization flow, this function exchanges client and server capabilities.
     fn initialize(tricks: Tricks, connection_initializer: ConnectionInitializer) -> Result<Self> {
         let (id, init_params) = connection_initializer.initialize_start()?;
+||||||| 14b1d8c15
+    // TODO(spapini): Consider managing vfs in a different way, using the
+    // client.send_notification::<UpdateVirtualFile> call.
+
+    /// Refresh diagnostics and send diffs to client.
+    #[tracing::instrument(level = "debug", skip_all)]
+    async fn refresh_diagnostics(&self) -> LSPResult<()> {
+        // Making sure only a single thread is refreshing diagnostics at a time, and that at most
+        // one thread is waiting to start refreshing. This allows changed to be grouped
+        // together before querying the database, as well as releasing extra threads waiting to
+        // start diagnostics updates.
+        // TODO(orizi): Consider removing when request cancellation is supported.
+        let Ok(waiter_permit) = self.refresh_waiters_semaphore.try_acquire() else { return Ok(()) };
+        let refresh_lock = self.refresh_lock.lock().await;
+        let open_files = self.state_mut().await.open_files.clone();
+
+        // First, refresh diagnostics for each open file.
+        async {
+            for uri in &open_files {
+                self.refresh_file_diagnostics(uri).await;
+            }
+        }
+        .instrument(trace_span!("refresh_open_files_diagnostics"))
+        .await;
+
+        // Second, refresh diagnostics for the rest of the compilation unit.
+        let files_set = async {
+            let db = self.db_mut().await;
+            let mut files_set = HashSet::new();
+            for crate_id in db.crates() {
+                for module_files in db
+                    .crate_modules(crate_id)
+                    .iter()
+                    .filter_map(|module_id| db.module_files(*module_id).ok())
+                {
+                    for file_id in module_files.iter() {
+                        files_set.insert(db.url_for_file(*file_id));
+                    }
+                }
+            }
+            files_set
+        }
+        .instrument(trace_span!("get_all_files"))
+        .await;
+=======
+    /// Refresh diagnostics and send diffs to client.
+    #[tracing::instrument(level = "debug", skip_all)]
+    async fn refresh_diagnostics(&self) -> LSPResult<()> {
+        // Making sure only a single thread is refreshing diagnostics at a time, and that at most
+        // one thread is waiting to start refreshing. This allows changed to be grouped
+        // together before querying the database, as well as releasing extra threads waiting to
+        // start diagnostics updates.
+        // TODO(orizi): Consider removing when request cancellation is supported.
+        let Ok(waiter_permit) = self.refresh_waiters_semaphore.try_acquire() else { return Ok(()) };
+        let refresh_lock = self.refresh_lock.lock().await;
+        let open_files = self.state_mut().await.open_files.clone();
+
+        // First, refresh diagnostics for each open file.
+        async {
+            for uri in &open_files {
+                self.refresh_file_diagnostics(uri).await;
+            }
+        }
+        .instrument(trace_span!("refresh_open_files_diagnostics"))
+        .await;
+
+        // Second, refresh diagnostics for the rest of the compilation unit.
+        let files_set = async {
+            let db = self.db_mut().await;
+            let mut files_set = HashSet::new();
+            for crate_id in db.crates() {
+                for module_files in db
+                    .crate_modules(crate_id)
+                    .iter()
+                    .filter_map(|module_id| db.module_files(*module_id).ok())
+                {
+                    for file_id in module_files.iter() {
+                        files_set.insert(db.url_for_file(*file_id));
+                    }
+                }
+            }
+            files_set
+        }
+        .instrument(trace_span!("get_all_files"))
+        .await;
+>>>>>>> origin/dev-v2.8.5
 
         let client_capabilities = init_params.capabilities;
         let server_capabilities = collect_server_capabilities(&client_capabilities);
