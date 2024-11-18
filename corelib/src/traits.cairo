@@ -1,4 +1,4 @@
-//! Traits module provides a collection of common traits and related functionality for working with
+//! Provides a collection of common traits and related functionality for working with
 //! various types.
 //!
 //! The main components of this module are:
