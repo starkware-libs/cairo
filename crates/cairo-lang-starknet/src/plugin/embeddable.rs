@@ -60,7 +60,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             let first_generic_param = elements.next();
             let is_valid_params = first_generic_param
                 .and_then(|param| try_extract_matches!(param, ast::GenericParam::Type))
-                .map_or(false, |param| param.name(db).text(db) == GENERIC_CONTRACT_STATE_NAME);
+                .is_some_and(|param| param.name(db).text(db) == GENERIC_CONTRACT_STATE_NAME);
             let generic_args = RewriteNode::interspersed(
                 chain!(
                     [RewriteNode::text(GENERIC_CONTRACT_STATE_NAME)],
