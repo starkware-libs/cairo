@@ -3560,7 +3560,6 @@ pub fn compute_statement_semantic(
                 stable_ptr: syntax.stable_ptr(),
             })
         }
-<<<<<<< HEAD
         ast::Statement::Item(stmt_item_syntax) => {
             let item_syntax = &stmt_item_syntax.item(syntax_db);
             match item_syntax {
@@ -3668,11 +3667,6 @@ pub fn compute_statement_semantic(
             }
             semantic::Statement::Item(semantic::StatementItem { stable_ptr: syntax.stable_ptr() })
         }
-||||||| 14b1d8c15
-        ast::Statement::Item(_) => todo!(),
-=======
-        ast::Statement::Item(item) => return Err(ctx.diagnostics.report(item, Unsupported)),
->>>>>>> origin/dev-v2.8.5
         ast::Statement::Missing(_) => todo!(),
     };
     ctx.resolver.data.feature_config.restore(feature_restore);

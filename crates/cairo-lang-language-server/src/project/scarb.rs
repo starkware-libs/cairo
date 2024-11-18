@@ -8,18 +8,11 @@ use cairo_lang_filesystem::db::{
     CrateSettings, DependencySettings, Edition, ExperimentalFeaturesConfig,
 };
 use itertools::Itertools;
-<<<<<<< HEAD
 use scarb_metadata::{
     CompilationUnitComponentDependencyMetadata, CompilationUnitComponentId, Metadata,
     PackageMetadata,
 };
 use smol_str::ToSmolStr;
-||||||| 14b1d8c15
-use scarb_metadata::{CompilationUnitMetadata, Metadata, PackageMetadata};
-use serde_json::Value;
-=======
-use scarb_metadata::{Metadata, PackageMetadata};
->>>>>>> origin/dev-v2.8.5
 use tracing::{debug, error, warn};
 
 use crate::lang::db::AnalysisDatabase;

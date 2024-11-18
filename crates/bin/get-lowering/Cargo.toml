@@ -11,25 +11,6 @@ anyhow.workspace = true
 clap.workspace = true
 convert_case.workspace = true
 itertools.workspace = true
-<<<<<<< HEAD
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.8.4" }
-cairo-lang-debug = { path = "../../cairo-lang-debug", version = "2.8.4" }
-cairo-lang-defs = { path = "../../cairo-lang-defs", version = "2.8.4" }
-cairo-lang-filesystem = { path = "../../cairo-lang-filesystem", version = "~2.8.4" }
-cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.8.4" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "~2.8.4" }
-cairo-lang-semantic = { path = "../../cairo-lang-semantic", version = "~2.8.4" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.8.4" }
-||||||| 14b1d8c15
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.8.2" }
-cairo-lang-debug = { path = "../../cairo-lang-debug", version = "2.8.2" }
-cairo-lang-defs = { path = "../../cairo-lang-defs", version = "2.8.2" }
-cairo-lang-filesystem = { path = "../../cairo-lang-filesystem", version = "~2.8.2" }
-cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.8.2" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "~2.8.2" }
-cairo-lang-semantic = { path = "../../cairo-lang-semantic", version = "~2.8.2" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.8.2" }
-=======
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.8.5" }
 cairo-lang-debug = { path = "../../cairo-lang-debug", version = "2.8.5" }
 cairo-lang-defs = { path = "../../cairo-lang-defs", version = "2.8.5" }
@@ -38,4 +19,3 @@ cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.8.5" }
 cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "~2.8.5" }
 cairo-lang-semantic = { path = "../../cairo-lang-semantic", version = "~2.8.5" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.8.5" }
->>>>>>> origin/dev-v2.8.5
