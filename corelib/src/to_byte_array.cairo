@@ -28,8 +28,7 @@ use crate::option::OptionTrait;
 use crate::traits::{Into, TryInto};
 use crate::zeroable::Zeroable;
 
-/// `AppendFormattedToByteArray` trait formats a type that behaves like `uint` to its ASCII
-/// representation and appends the formatted result into the given `ByteArray`.
+/// A trait for appending the ASCII representation of a number to an existing ByteArray.
 pub trait AppendFormattedToByteArray<T> {
     // Takes a snapshot of any type and a `NonZero` base value, and appends to the referenced
     // `ByteArray`
