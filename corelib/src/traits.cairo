@@ -74,22 +74,22 @@ pub trait Copy<T>;
 ///
 /// ```
 /// struct Point {
-/// x: u128,
-/// y: u128,
+///     x: u128,
+///     y: u128,
 /// }
 ///
 /// fn foo(p: Point) { // do something with p
 /// }
 /// ```
 ///
-/// This won't compile as `p` is not dropped at the end of `foo` execution.
-/// We can derive a `Drop` implementation. Most basic types implement it by default.
+/// This won't compile as `p` is not dropped at the end of `foo`.
+/// We can derive `Drop` on `Point` to allow `p` to go out of scope trivially. All basic types implement the`Drop` trait, except the `Felt252Dict` type.
 ///
 /// ```
 /// #[derive(Drop)]
-/// /// struct Point {
-/// x: u128,
-/// y: u128,
+/// struct Point {
+///     x: u128,
+///     y: u128,
 /// }
 ///
 /// fn foo(p: Point) { // do something with p
