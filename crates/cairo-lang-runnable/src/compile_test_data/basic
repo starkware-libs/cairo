@@ -8,12 +8,19 @@ CompileRunnableTestRunner(expect_diagnostics: false)
 fn main() {}
 
 //! > generated_casm_code
-# builtins: 
+# builtins: output
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-%{ raise NotImplementedError("memory[ap + 2].. = params[1])") %}
+[ap + 2] = [fp + -3] + 1, ap++;
+[ap + 2] = [ap + 1], ap++;
 ap += 4;
-call rel 3;
+call rel 12;
+jmp rel 5 if [ap + -3] != 0, ap++;
+[ap + -1] = [ap + -2];
+jmp rel 4;
+[ap + -1] = [fp + -3] + 1;
+[ap + -4] = [[fp + -3] + 0];
+[ap + 0] = [ap + -1], ap++;
 ret;
 # sierra based code #
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
@@ -51,12 +58,19 @@ fn main(a: felt252, b: felt252) -> felt252 {
 }
 
 //! > generated_casm_code
-# builtins: 
+# builtins: output
 # header #
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-%{ raise NotImplementedError("memory[ap + 2].. = params[1])") %}
+[ap + 2] = [fp + -3] + 1, ap++;
+[ap + 2] = [ap + 1], ap++;
 ap += 4;
-call rel 3;
+call rel 12;
+jmp rel 5 if [ap + -3] != 0, ap++;
+[ap + -1] = [ap + -2];
+jmp rel 4;
+[ap + -1] = [fp + -3] + 1;
+[ap + -4] = [[fp + -3] + 0];
+[ap + 0] = [ap + -1], ap++;
 ret;
 # sierra based code #
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
@@ -130,13 +144,21 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 }
 
 //! > generated_casm_code
-# builtins: range_check
+# builtins: output, range_check
 # header #
 [ap + 0] = [fp + -3], ap++;
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
-%{ raise NotImplementedError("memory[ap + 2].. = params[1])") %}
+[ap + 2] = [fp + -4] + 1, ap++;
+[ap + 2] = [ap + 1], ap++;
 ap += 4;
-call rel 3;
+call rel 13;
+jmp rel 5 if [ap + -3] != 0, ap++;
+[ap + -1] = [ap + -2];
+jmp rel 4;
+[ap + -1] = [fp + -4] + 1;
+[ap + -4] = [[fp + -4] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -6], ap++;
 ret;
 # sierra based code #
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
@@ -341,6 +363,38 @@ ap += 1;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -4], ap++;
 [ap + 0] = [ap + -5] + 1, ap++;
+ret;
+# footer #
+ret;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test raw runnable.
+
+//! > test_runner_name
+CompileRunnableTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[runnable_raw]
+fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) {}
+
+//! > generated_casm_code
+# builtins: output
+# header #
+%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+[ap + 2] = [fp + -3] + 1, ap++;
+[ap + 2] = [ap + 1], ap++;
+ap += 4;
+call rel 7;
+[ap + 0] = 0, ap++;
+[ap + -1] = [[fp + -3] + 0];
+[ap + 0] = [ap + -2], ap++;
+ret;
+# sierra based code #
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
 ret;
 # footer #
 ret;

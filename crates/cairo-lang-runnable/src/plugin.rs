@@ -1,17 +1,31 @@
+use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
+use cairo_lang_semantic::{GenericArgumentId, Mutability, corelib};
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{OptionWrappedGenericParamListHelper, QueryAttrs};
+use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use indoc::formatdoc;
 use itertools::Itertools;
 
 pub const RUNNABLE_ATTR: &str = "runnable";
 pub const RUNNABLE_RAW_ATTR: &str = "runnable_raw";
 pub const RUNNABLE_PREFIX: &str = "__runnable_wrapper__";
+
+/// Returns a plugin suite with the `RunnablePlugin` and `RawRunnableAnalyzer`.
+pub fn runnable_plugin_suite() -> PluginSuite {
+    std::mem::take(
+        PluginSuite::default()
+            .add_plugin::<RunnablePlugin>()
+            .add_analyzer_plugin::<RawRunnableAnalyzer>(),
+    )
+}
+
 const IMPLICIT_PRECEDENCE: &[&str] = &[
     "core::pedersen::Pedersen",
     "core::RangeCheck",
@@ -25,7 +39,7 @@ const IMPLICIT_PRECEDENCE: &[&str] = &[
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
-pub struct RunnablePlugin;
+struct RunnablePlugin;
 
 impl MacroPlugin for RunnablePlugin {
     fn generate_code(
@@ -118,5 +132,79 @@ impl MacroPlugin for RunnablePlugin {
 
     fn executable_attributes(&self) -> Vec<String> {
         vec![RUNNABLE_RAW_ATTR.to_string()]
+    }
+}
+
+/// Plugin to add diagnostics on bad `#[runnable_raw]` annotations.
+#[derive(Default, Debug)]
+struct RawRunnableAnalyzer;
+
+impl AnalyzerPlugin for RawRunnableAnalyzer {
+    fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
+        let syntax_db = db.upcast();
+        let mut diagnostics = vec![];
+        let Ok(free_functions) = db.module_free_functions(module_id) else {
+            return diagnostics;
+        };
+        for (id, item) in free_functions.iter() {
+            if !item.has_attr(syntax_db, RUNNABLE_RAW_ATTR) {
+                continue;
+            }
+            let Ok(signature) = db.free_function_signature(*id) else {
+                continue;
+            };
+            if signature.return_type != corelib::unit_ty(db) {
+                diagnostics.push(PluginDiagnostic::error(
+                    &signature.stable_ptr.lookup(syntax_db).ret_ty(syntax_db),
+                    "Invalid return type for `#[runnable_raw]` function, expected `()`."
+                        .to_string(),
+                ));
+            }
+            let [input, output] = &signature.params[..] else {
+                diagnostics.push(PluginDiagnostic::error(
+                    &signature.stable_ptr.lookup(syntax_db).parameters(syntax_db),
+                    "Invalid number of params for `#[runnable_raw]` function, expected 2."
+                        .to_string(),
+                ));
+                continue;
+            };
+            if input.ty
+                != corelib::get_core_ty_by_name(db, "Span".into(), vec![GenericArgumentId::Type(
+                    corelib::core_felt252_ty(db),
+                )])
+            {
+                diagnostics.push(PluginDiagnostic::error(
+                    input.stable_ptr.untyped(),
+                    "Invalid first param type for `#[runnable_raw]` function, expected \
+                     `Span<felt252>`."
+                        .to_string(),
+                ));
+            }
+            if input.mutability == Mutability::Reference {
+                diagnostics.push(PluginDiagnostic::error(
+                    input.stable_ptr.untyped(),
+                    "Invalid first param mutability for `#[runnable_raw]` function, got \
+                     unexpected `ref`."
+                        .to_string(),
+                ));
+            }
+            if output.ty != corelib::core_array_felt252_ty(db) {
+                diagnostics.push(PluginDiagnostic::error(
+                    output.stable_ptr.untyped(),
+                    "Invalid second param type for `#[runnable_raw]` function, expected \
+                     `Array<felt252>`."
+                        .to_string(),
+                ));
+            }
+            if output.mutability != Mutability::Reference {
+                diagnostics.push(PluginDiagnostic::error(
+                    output.stable_ptr.untyped(),
+                    "Invalid second param mutability for `#[runnable_raw]` function, expected \
+                     `ref`."
+                        .to_string(),
+                ));
+            }
+        }
+        diagnostics
     }
 }
