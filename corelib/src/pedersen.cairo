@@ -1,4 +1,4 @@
-//! Pedersen module that provides an implementation of the Pedersen hash function, which is a
+//! Provides an implementation of the Pedersen hash function, which is a
 //! collision-resistant cryptographic hash function.
 //!
 //! The `HashState` struct represents the state of a Pedersen hash computation. It contains a
