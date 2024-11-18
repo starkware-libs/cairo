@@ -224,7 +224,10 @@ pub trait RemEq<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait DivRem<X, Y>.
-/// Combination of the division operator `/` and the remainder operator `%`.
+/// Performs division with remainder, returning both the quotient and remainder.
+///
+/// This trait provides a way to compute both division and remainder in a single operation,
+/// which can be more efficient than computing them separately.
 pub trait DivRem<T> {
     /// Performs the `/` and the `%` operation.
     ///
