@@ -244,7 +244,7 @@ pub trait DivRem<T> {
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
 }
 
-/// Trait for comparisons using the equality operator.
+/// A trait for comparisons using the equality operator.
 ///
 /// Implementing this trait for types provides the `==` and `!=` operators for
 /// those types.
@@ -277,7 +277,7 @@ impl PartialEqSnap<T, +PartialEq<T>> of PartialEq<@T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitAnd<X, Y>.
-/// Trait for computing the AND bitwise operation between two values of the same type.
+/// A trait for computing the bitwise AND operator `&`.
 pub trait BitAnd<T> {
     /// Computes the result of the AND operation between two values of the same type.
     ///
@@ -290,7 +290,7 @@ pub trait BitAnd<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitOr<X, Y>.
-/// Trait for computing the OR bitwise operation between two values of the same type.
+/// A trait for computing the bitwise OR operator `|`.
 pub trait BitOr<T> {
     /// Computes the result of the OR operation between two values of the same type.
     ///
@@ -303,7 +303,7 @@ pub trait BitOr<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitXor<X, Y>.
-/// Trait for computing the XOR bitwise operation between two values of the same type.
+/// A trait for computing the bitwise XOR operator `^`.
 pub trait BitXor<T> {
     /// Computes the result of the XOR operation between two values of the same type.
     ///
@@ -315,7 +315,7 @@ pub trait BitXor<T> {
     fn bitxor(lhs: T, rhs: T) -> T;
 }
 
-/// Trait for computing the NOT bitwise operation between two values of the same type.
+/// A trait for computing the bitwise NOT operator `~`.
 pub trait BitNot<T> {
     /// Computes the result of the NOT operation between two values of the same type.
     ///
@@ -327,7 +327,7 @@ pub trait BitNot<T> {
     fn bitnot(a: T) -> T;
 }
 
-/// Trait for comparing two values of the same type.
+/// A trait for comparing two values of the same type.
 pub trait PartialOrd<T> {
     /// Returns whether `lhs` is lower than `rhs` as a boolean.
     ///
@@ -435,7 +435,7 @@ impl TryIntoFromInto<From, To, +Into<From, To>> of TryInto<From, To> {
     }
 }
 
-/// Trait for computing the negated value of a value of any type.
+/// A trait for computing the unary negation operator `-`.
 pub trait Neg<T> {
     /// Computes the negation of a given value.
     ///
@@ -448,7 +448,7 @@ pub trait Neg<T> {
     fn neg(a: T) -> T;
 }
 
-/// Trait for computing the logically negated value of a value of any type.
+/// A trait for computing the unary logical negation operator `!`.
 pub trait Not<T> {
     /// Computes the logical negation of a given value.
     ///
