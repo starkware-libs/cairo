@@ -1,4 +1,4 @@
-//! Traits module provides a collection of common traits and related functionality for working with
+//! Provides a collection of common traits and related functionality for working with
 //! various types.
 //!
 //! The main components of this module are:
@@ -10,8 +10,6 @@
 //! - **Comparison Traits**: Traits for comparing values, including `PartialEq` and `PartialOrd`.
 //! - **Conversion Traits**: Traits for converting between types, including `Into` and `TryInto`.
 //! - **Unary Operation Traits**: Traits for unary operations, such as `Neg` and `Not`.
-//! - **Index Traits**: Deprecated traits for indexing into collections, replaced by `IndexView`
-//!   and `Index` from the Index module.
 //! - **Destruct Traits**: Traits for destructing values, including `Destruct` and `PanicDestruct`.
 //! - **Default Trait**: The `Default` trait, which provides a way to create a default value of a
 //!   given type.
@@ -76,35 +74,33 @@ pub trait Copy<T>;
 ///
 /// ```
 /// struct Point {
-/// x: u128,
-/// y: u128,
+///     x: u128,
+///     y: u128,
 /// }
 ///
 /// fn foo(p: Point) { // do something with p
 /// }
 /// ```
 ///
-/// This won't compile as `p` is not dropped at the end of `foo` execution.
-/// We can derive a `Drop` implementation. Most basic types implement it by default.
+/// This won't compile as `p` is not dropped at the end of `foo`.
+/// We can derive `Drop` on `Point` to allow `p` to go out of scope trivially. All basic types implement the`Drop` trait, except the `Felt252Dict` type.
 ///
 /// ```
 /// #[derive(Drop)]
-/// /// struct Point {
-/// x: u128,
-/// y: u128,
+/// struct Point {
+///     x: u128,
+///     y: u128,
 /// }
 ///
 /// fn foo(p: Point) { // do something with p
 /// }
 /// ```
 ///
-/// Now `p` derives `Drop`, it can be destroyed at the end of `foo` execution.
+/// Now `p` derives `Drop`, it can be dropped at the end of the execution of `foo`.
 pub trait Drop<T>;
 
-/// `Copy` implementation for a snapshot of any type.
 impl SnapshotCopy<T> of Copy<@T>;
 
-/// `Drop` implementation for a snapshot of any type.
 impl SnapshotDrop<T> of Drop<@T>;
 
 // TODO(spapini): When associated types are supported, support the general trait Add<X, Y>.
@@ -228,7 +224,10 @@ pub trait RemEq<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait DivRem<X, Y>.
-/// Combination of the division operator `/` and the remainder operator `%`.
+/// Performs division with remainder, returning both the quotient and remainder.
+///
+/// This trait provides a way to compute both division and remainder in a single operation,
+/// which can be more efficient than computing them separately.
 pub trait DivRem<T> {
     /// Performs the `/` and the `%` operation.
     ///
@@ -237,9 +236,7 @@ pub trait DivRem<T> {
     /// ```
     /// use core::traits::DivRem;
     ///
-    /// let numerator: u32 = 12;
-    /// let denominator: NonZero<u32> = 10;
-    /// assert!(DivRem::div_rem(numerator, denominator) == (1, 2));
+    /// assert!(DivRem::div_rem(12_u32, 10) == (1, 2));
     /// ```
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
 }
@@ -437,7 +434,7 @@ impl TryIntoFromInto<From, To, +Into<From, To>> of TryInto<From, To> {
 
 /// A trait for computing the unary negation operator `-`.
 pub trait Neg<T> {
-    /// Computes the negation of a given value.
+    /// Performs the unary `-` operation.
     ///
     /// # Examples
     ///
@@ -450,7 +447,7 @@ pub trait Neg<T> {
 
 /// A trait for computing the unary logical negation operator `!`.
 pub trait Not<T> {
-    /// Computes the logical negation of a given value.
+    /// Performs the unary `!` operation.
     ///
     /// # Examples
     ///
