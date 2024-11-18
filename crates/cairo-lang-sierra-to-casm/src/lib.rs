@@ -3,6 +3,7 @@
 pub mod annotations;
 pub mod circuit;
 pub mod compiler;
+pub mod compiler_version;
 pub mod environment;
 pub mod invocations;
 pub mod metadata;

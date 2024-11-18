@@ -24,6 +24,7 @@ use cairo_lang_sierra::program::{
     Function, FunctionSignature, GenericArg, Invocation, LibfuncDeclaration, Param, Program,
     Statement, StatementIdx, TypeDeclaration,
 };
+use cairo_lang_sierra_to_casm::compiler_version::VersionId;
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::require;
@@ -33,7 +34,6 @@ use num_traits::{Signed, ToPrimitive};
 use smol_str::SmolStr;
 use thiserror::Error;
 
-use crate::compiler_version::VersionId;
 use crate::felt252_vec_compression::{compress, decompress};
 use crate::keccak::starknet_keccak;
 
@@ -85,7 +85,7 @@ pub fn sierra_to_felt252s(
 ///
 /// Returns (sierra_version_id, compiler_version_id, remaining),
 /// where 'remaining' are all the felts other than the ones dedicated to the version, unprocessed.
-/// See [crate::compiler_version].
+/// See [cairo_lang_sierra_to_casm::compiler_version].
 pub fn version_id_from_felt252s(
     sierra_program: &[BigUintAsHex],
 ) -> Result<(VersionId, VersionId, &[BigUintAsHex]), Felt252SerdeError> {
@@ -97,7 +97,7 @@ pub fn version_id_from_felt252s(
 /// Deserializes a Sierra program represented as a slice of felt252s.
 ///
 /// Returns (sierra_version_id, compiler_version_id, program).
-/// See [crate::compiler_version].
+/// See [cairo_lang_sierra_to_casm::compiler_version].
 pub fn sierra_from_felt252s(
     sierra_program: &[BigUintAsHex],
 ) -> Result<(VersionId, VersionId, Program), Felt252SerdeError> {
