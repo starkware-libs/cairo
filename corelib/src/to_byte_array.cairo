@@ -45,8 +45,7 @@ pub trait AppendFormattedToByteArray<T> {
     fn append_formatted_to_byte_array(self: @T, ref byte_array: ByteArray, base: NonZero<T>);
 }
 
-/// `FormatAsByteArray` trait formats the given input of a type that behaves like `uint` to its
-/// ASCII representation in a `ByteArray`.
+/// A trait for formatting values into their ASCII string representation in a ByteArray.
 pub trait FormatAsByteArray<T> {
     // Takes a snapshot of any type and a `NonZero` base value, and returns a `ByteArray` containing
     // the formatted value.
