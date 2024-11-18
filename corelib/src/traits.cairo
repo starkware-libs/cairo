@@ -10,8 +10,6 @@
 //! - **Comparison Traits**: Traits for comparing values, including `PartialEq` and `PartialOrd`.
 //! - **Conversion Traits**: Traits for converting between types, including `Into` and `TryInto`.
 //! - **Unary Operation Traits**: Traits for unary operations, such as `Neg` and `Not`.
-//! - **Index Traits**: Deprecated traits for indexing into collections, replaced by `IndexView`
-//!   and `Index` from the Index module.
 //! - **Destruct Traits**: Traits for destructing values, including `Destruct` and `PanicDestruct`.
 //! - **Default Trait**: The `Default` trait, which provides a way to create a default value of a
 //!   given type.
