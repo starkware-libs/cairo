@@ -434,7 +434,7 @@ impl TryIntoFromInto<From, To, +Into<From, To>> of TryInto<From, To> {
 
 /// Trait for computing the negated value of a value of any type.
 pub trait Neg<T> {
-    /// Computes the negation of a given value.
+    /// Performs the unary `-` operation.
     ///
     /// # Examples
     ///
