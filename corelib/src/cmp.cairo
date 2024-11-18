@@ -1,18 +1,16 @@
 //! Utilities for comparing and ordering values.
 //! This module contains functions that rely on the `PartialOrd` trait for comparing values.
 //!
-//! ### Examples
+//! # Examples
 //!
 //! ```
 //! use core::cmp::{min, max, minmax};
 //!
-//! let a = 10;
-//! let b = 20;
-//! assert!(min(a, b) == 10);
-//! assert!(max(a, b) == 20);
+//! assert!(min(10, 20) == 10);
+//! assert!(max(10, 20) == 20);
 //!
-//! let (min_value, max_value) = minmax(a, b);
-//! assert!((min_value, max_value) == (10, 20));
+//! assert!(minmax(20, 10) == (10, 20));
+//! assert!(minmax(10, 20) == (10, 20));
 //! ```
 
 /// Takes two comparable values `a` and `b` and returns
@@ -23,10 +21,7 @@
 /// ```
 /// use core::cmp::min;
 ///
-/// let a = 0;
-/// let b = 1;
-/// let min = min(a,b);
-/// assert!(min == 0);
+/// assert!(min(0, 1) == 0);
 /// ```
 #[must_use]
 pub fn min<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
@@ -45,10 +40,7 @@ pub fn min<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
 /// ```
 /// use core::cmp::max;
 ///
-/// let a = 0;
-/// let b = 1;
-/// let max = max(a,b);
-/// assert!(min == 1);
+/// assert!(max(0, 1) == 1);
 /// ```
 #[must_use]
 pub fn max<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
@@ -67,10 +59,8 @@ pub fn max<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
 /// ```
 /// use core::cmp::minmax;
 ///
-/// let a = 0;
-/// let b = 1;
-/// let minmax_tuple = minmax(a,b);
-/// assert!(minmax_tuple == (0, 1));
+/// assert!(minmax(0, 1) == (0, 1));
+/// assert!(minmax(1, 0) == (0, 1));
 /// ```
 #[must_use]
 pub fn minmax<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> (T, T) {
