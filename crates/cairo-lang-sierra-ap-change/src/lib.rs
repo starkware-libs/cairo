@@ -46,8 +46,6 @@ pub enum ApChange {
 pub enum ApChangeError {
     #[error("error from the program registry")]
     ProgramRegistryError(#[from] Box<ProgramRegistryError>),
-    #[error("found an illegal statement index during ap change calculations")]
-    StatementOutOfBounds(StatementIdx),
     #[error("got a statement out of order during ap change calculations")]
     StatementOutOfOrder(StatementIdx),
     #[error("Wrong number of libfunc branches in ap-change information")]

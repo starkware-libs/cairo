@@ -157,8 +157,7 @@ impl EquationGenerator {
         idx: &StatementIdx,
         info: StatementInfo,
     ) -> Result<(), ApChangeError> {
-        let entry =
-            self.statement_info.get_mut(idx.0).ok_or(ApChangeError::StatementOutOfBounds(*idx))?;
+        let entry = &mut self.statement_info[idx.0];
         if let Some(other) = entry {
             if other.past_locals != info.past_locals {
                 return Err(ApChangeError::BadMergeAllocatedLocalsMismatch(*idx));
