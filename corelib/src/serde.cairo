@@ -1,17 +1,77 @@
 //! Serialization and deserialization of types.
 //!
-//! This module provides a set of traits and implementations for serializing and deserializing
-//! types in a type-safe manner.
+//! This module provides traits and implementations for converting Cairo types into a sequence
+//! of `felt252` values (serialization) and back (deserialization).
 //!
-//! `Serde<T>` is the main trait that defines the serialization and deserialization behavior for a
-//! type `T`.
-//! Implementations of this trait are provided for tuples, and other implementations can found in
-//! the corresponding modules.
+//! When passing values between Cairo and an external environment, serialization and deserialization
+//! are necessary to convert Cairo's data types into a format that can be transmitted and vice
+//! versa.
+//!
+//! Cairo's native types like `u256` are serialized into multiple `felt252` values, while custom
+//! types are serialized by implementing the `Serde` trait.
+//!
+//! Implementations of this trait are provided for tuples in this module, and other implementations
+//! can be found in the corresponding modules.
 
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
 
-/// A trait that allows for serializing and deseriaziling values of any type.
+//! A trait that allows for serializing and deserializing values of any type.
+//!
+//! The `Serde<T>` trait defines two core operations:
+//! - `serialize`: Converts a value into a sequence of `felt252`s
+//! - `deserialize`: Reconstructs a value from a sequence of `felt252`s
+//!
+//! # Examples
+//!
+//! ## Simple Types (u8, u16, u32, u64, u128)
+//!
+//! Simple types are serialized into a single `felt252`:
+//!
+//! ```
+//! let value: u8 = 42;
+//! let mut output: Array<felt252> = array![];
+//! value.serialize(ref output);
+//! assert!(output == array![42]); // Single felt252
+//! ```
+//!
+//! ## Complex Types (u256)
+//!
+//! Complex types may require multiple felt252s:
+//!
+//! ```
+//! let value: u256 = u256 { low: 1, high: 2 };
+//! let mut output: Array<felt252> = array![];
+//! value.serialize(ref output);
+//! assert!(output == array![1, 2]); // Two `felt252`s: low and high
+//! ```
+//!
+//! # Implementing `Serde`
+//!
+//! ## Using the `Derive` Macro
+//!
+//! For structs and enums, you can use the `#[derive(Serde)]` attribute:
+//!
+//! ```
+//! #[derive(Serde)]
+//! struct Point { x: u32, y: u32 }
+//! ```
+//!
+//! ## Manual Implementation
+//!
+//! You can implement `Serde` manually for custom types:
+//!
+//! ```
+//! impl CustomTypeSerde of Serde<CustomType> {
+//!     fn serialize(self: @CustomType, ref output: Array<felt252>) {
+//!         // Convert your type to `felt252`(s) and append to output
+//!     }
+//!
+//!     fn deserialize(ref serialized: Span<felt252>) -> Option<CustomType> {
+//!         // Reconstruct your type from `felt252`s
+//!     }
+//! }
+//! ```
 pub trait Serde<T> {
     /// Takes a snapshot of a value of any type and a referenced output `Array<felt252`, serializes
     /// the value and appends the result to the output.
@@ -25,6 +85,7 @@ pub trait Serde<T> {
     /// assert!(output == array![1, 0]) // `output` contains low and high parts of the `u256` value
     /// ```
     fn serialize(self: @T, ref output: Array<felt252>);
+
     /// Takes a `Span<felt252>` serialized value and deserializes it.
     /// Returns an option of the deserialized result if the operation is successful, `Option::None`
     /// otherwise.
@@ -54,6 +115,7 @@ impl SerdeTuple<
     }
 }
 
+// Helper trait for serializing tuple style structs.
 trait SerializeTuple<T> {
     fn serialize(value: T, ref output: Array<felt252>);
 }
@@ -116,18 +178,18 @@ impl DeserializeTupleNext<
     }
 }
 
-/// `Serde` implementation for types that can be converted into `felt252` using the `Into` trait and
-/// from `felt252` using the `TryInto` trait.
-///
-/// # Examples
-///
-/// ```
-/// impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`
-/// ```
 pub mod into_felt252_based {
     use crate::traits::{Into, TryInto};
     use crate::array::ArrayTrait;
 
+    /// `Serde` implementation for types that can be converted into `felt252` using the `Into` trait
+    /// and from `felt252` using the `TryInto` trait.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`
+    /// ```
     pub impl SerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::Serde<T> {
         #[inline]
         fn serialize(self: @T, ref output: Array<felt252>) {
