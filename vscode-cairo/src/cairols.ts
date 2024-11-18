@@ -78,7 +78,7 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
   const sameProvider = await allFoldersHaveSameLSProvider(ctx, executables);
   if (!sameProvider) {
     await vscode.window.showErrorMessage(
-      "Multiple versions of scarb in one workspace is not supported",
+      "Using multiple Scarb versions in one workspace are not supported.",
     );
     return;
   }
