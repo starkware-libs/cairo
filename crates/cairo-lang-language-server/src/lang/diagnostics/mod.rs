@@ -130,8 +130,6 @@ impl DiagnosticsControllerThread {
 
     /// Shortcut for spawning a worker task which does the boilerplate around cloning state parts
     /// and catching panics.
-    // FIXME(mkaput): Spawning tasks seems to hang on initial loads, this is probably due to
-    //   task queue being overloaded.
     fn spawn_worker(&self, f: impl FnOnce(ProjectDiagnostics, Notifier) + Send + 'static) {
         let project_diagnostics = self.project_diagnostics.clone();
         let notifier = self.notifier.clone();
