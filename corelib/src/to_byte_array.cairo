@@ -47,8 +47,16 @@ pub trait AppendFormattedToByteArray<T> {
 
 /// A trait for formatting values into their ASCII string representation in a ByteArray.
 pub trait FormatAsByteArray<T> {
-    // Takes a snapshot of any type and a `NonZero` base value, and returns a `ByteArray` containing
-    // the formatted value.
+    /// Returns a new ByteArray containing the ASCII representation of the value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::to_byte_array::FormatAsByteArray;
+    /// let num: u32 = 42;
+    /// let formatted = num.format_as_byte_array(16);
+    /// assert!(formatted, "2a");
+    /// ```
     fn format_as_byte_array(self: @T, base: NonZero<T>) -> ByteArray;
 }
 
