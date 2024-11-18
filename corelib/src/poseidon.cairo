@@ -67,7 +67,7 @@ impl HashStateDefault of Default<HashState> {
     }
 }
 
-/// `HashStateTrait` allowing to update the Poseidon state and finalize it to return the hash.
+/// Implementation of hash state operations for Poseidon.
 impl HashStateImpl of HashStateTrait<HashState> {
     /// Takes the current state and a `felt252` value used to update
     /// the state using the Hades permutation.
