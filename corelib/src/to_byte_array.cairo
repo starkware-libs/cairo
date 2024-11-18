@@ -139,9 +139,7 @@ impl Felt252AppendFormattedToByteArray of AppendFormattedToByteArray<felt252> {
 // Formats a type that behaves like uint to its ASCII representation and appends the formatted
 // result into the given `ByteArray`.
 // `base` must be in the range [2, 36]. Otherwise, this function panics.
-fn append_formatted_to_byte_array<
-    T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, +Zeroable<T>,
->(
+fn append_formatted_to_byte_array<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, +Zeroable<T>>(
     mut value: @T, ref byte_array: ByteArray, base_nz: NonZero<T>,
 ) {
     let base: T = base_nz.into();
