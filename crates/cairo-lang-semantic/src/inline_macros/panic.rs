@@ -131,4 +131,11 @@ impl InlineMacroExprPlugin for PanicMacro {
             diagnostics: vec![],
         }
     }
+     /// Returns the documentation for the panic macro.
+    fn documentation(&self) -> &'static str {
+        "The `panic` macro triggers a panic with an optional formatted message. \
+         It accepts a format string as the first argument and any number of additional \
+         arguments that will be formatted into the message. If no arguments are provided, \
+         a default panic message is used."
+    }
 }
