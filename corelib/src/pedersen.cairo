@@ -64,7 +64,9 @@ impl HashStateImpl of crate::hash::HashStateTrait<HashState> {
         HashState { state: pedersen(self.state, value) }
     }
 
-    /// Returns the final hash result corresponding to the current Pedersen state.
+    /// Finalizes the hash computation.
+    ///
+    /// For Pedersen, this simply returns the current state as the final hash value.
     ///
     /// # Examples
     ///
