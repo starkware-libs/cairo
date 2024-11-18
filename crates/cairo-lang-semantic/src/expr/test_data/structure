@@ -22,7 +22,7 @@ foo
 //! > module_code
 struct A {
     a: felt252,
-    b: ()
+    b: (),
 }
 
 //! > expected_diagnostics

@@ -2,7 +2,7 @@ use crate::array::{ArrayTrait, SpanTrait};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, one_shift_left_bytes_felt252, one_shift_left_bytes_u128,
-    POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31
+    POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
 };
 use crate::clone::Clone;
 use crate::cmp::min;
@@ -68,7 +68,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
                 .append(
                     (word + self.pending_word * one_shift_left_bytes_felt252(len))
                         .try_into()
-                        .unwrap()
+                        .unwrap(),
                 );
             self.pending_word = 0;
             self.pending_word_len = 0;
@@ -107,7 +107,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
                     Option::Some(current_word) => {
                         self.append_split_index_16((*current_word).into());
                     },
-                    Option::None => { break; }
+                    Option::None => { break; },
                 };
             };
         } else if self.pending_word_len < BYTES_IN_U128 {
@@ -116,10 +116,10 @@ pub impl ByteArrayImpl of ByteArrayTrait {
                     Option::Some(current_word) => {
                         self
                             .append_split_index_lt_16(
-                                (*current_word).into(), self.pending_word_len
+                                (*current_word).into(), self.pending_word_len,
                             );
                     },
-                    Option::None => { break; }
+                    Option::None => { break; },
                 };
             };
         } else {
@@ -129,10 +129,10 @@ pub impl ByteArrayImpl of ByteArrayTrait {
                     Option::Some(current_word) => {
                         self
                             .append_split_index_gt_16(
-                                (*current_word).into(), self.pending_word_len
+                                (*current_word).into(), self.pending_word_len,
                             );
                     },
-                    Option::None => { break; }
+                    Option::None => { break; },
                 };
             };
         }
@@ -178,7 +178,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// Returns the byte at the given index, or None if the index is out of bounds.
     fn at(self: @ByteArray, index: usize) -> Option<u8> {
         let (word_index, index_in_word) = DivRem::div_rem(
-            index, BYTES_IN_BYTES31.try_into().unwrap()
+            index, BYTES_IN_BYTES31.try_into().unwrap(),
         );
 
         let data_len = self.data.len();
@@ -214,7 +214,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
                 Option::Some(current_word) => {
                     result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
                 },
-                Option::None => { break; }
+                Option::None => { break; },
             };
         };
         result
@@ -286,7 +286,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         let u256 { low, high } = word.into();
 
         let (low_quotient, low_remainder) = u128_safe_divmod(
-            low, one_shift_left_bytes_u128(split_index).try_into().unwrap()
+            low, one_shift_left_bytes_u128(split_index).try_into().unwrap(),
         );
         let left = high.into() * one_shift_left_bytes_u128(BYTES_IN_U128 - split_index).into()
             + low_quotient.into();
@@ -321,7 +321,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         let u256 { low, high } = word.into();
 
         let (high_quotient, high_remainder) = u128_safe_divmod(
-            high, one_shift_left_bytes_u128(split_index - BYTES_IN_U128).try_into().unwrap()
+            high, one_shift_left_bytes_u128(split_index - BYTES_IN_U128).try_into().unwrap(),
         );
         let right = high_remainder.into() * POW_2_128 + low.into();
 

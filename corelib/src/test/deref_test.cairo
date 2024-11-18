@@ -1,7 +1,7 @@
 #[derive(Drop, Copy)]
 struct S1 {
     a: usize,
-    b: felt252
+    b: felt252,
 }
 
 #[derive(Drop, Copy)]
@@ -12,7 +12,7 @@ struct S2 {
 
 #[derive(Drop, Copy)]
 struct S3 {
-    inner: S2
+    inner: S2,
 }
 
 
@@ -136,7 +136,7 @@ impl UsizeTupleDeref of crate::ops::deref::Deref<(usize, usize)> {
     type Target = ArithOps;
     fn deref(self: (usize, usize)) -> ArithOps {
         let (x, y) = self;
-        ArithOps { add: x + y, sub: x - y, mul: x * y, div: x / y, }
+        ArithOps { add: x + y, sub: x - y, mul: x * y, div: x / y }
     }
 }
 
@@ -144,7 +144,7 @@ impl UsizeFixedSizeArrayDeref of crate::ops::deref::Deref<[usize; 2]> {
     type Target = ArithOps;
     fn deref(self: [usize; 2]) -> ArithOps {
         let [x, y] = self;
-        ArithOps { add: x + y, sub: x - y, mul: x * y, div: x / y, }
+        ArithOps { add: x + y, sub: x - y, mul: x * y, div: x / y }
     }
 }
 

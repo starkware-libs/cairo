@@ -122,7 +122,7 @@ impl U256AppendFormattedToByteArray of AppendFormattedToByteArray<u256> {
 
 impl Felt252AppendFormattedToByteArray of AppendFormattedToByteArray<felt252> {
     fn append_formatted_to_byte_array(
-        self: @felt252, ref byte_array: ByteArray, base: NonZero<felt252>
+        self: @felt252, ref byte_array: ByteArray, base: NonZero<felt252>,
     ) {
         let self_as_u256: u256 = (*self).into();
         let base: felt252 = base.into();

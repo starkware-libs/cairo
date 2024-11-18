@@ -32,7 +32,7 @@ pub extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nop
 /// internally happen in calls to `withdraw_gas`.
 /// Should be used with caution.
 pub extern fn withdraw_gas_all(
-    costs: BuiltinCosts
+    costs: BuiltinCosts,
 ) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
 

@@ -11,11 +11,11 @@ use crate::gas::GasBuiltin;
 pub(crate) extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
 
 extern fn felt252_dict_entry_get<T>(
-    dict: Felt252Dict<T>, key: felt252
+    dict: Felt252Dict<T>, key: felt252,
 ) -> (Felt252DictEntry<T>, T) nopanic;
 
 extern fn felt252_dict_entry_finalize<T>(
-    dict_entry: Felt252DictEntry<T>, new_value: T
+    dict_entry: Felt252DictEntry<T>, new_value: T,
 ) -> Felt252Dict<T> nopanic;
 
 /// Squashes the dictionary and returns SquashedFelt252Dict.
@@ -24,7 +24,7 @@ extern fn felt252_dict_entry_finalize<T>(
 /// libfunc directly will result in multiple unnecessary copies of the libfunc in the compiled CASM
 /// code.
 pub(crate) extern fn felt252_dict_squash<T>(
-    dict: Felt252Dict<T>
+    dict: Felt252Dict<T>,
 ) -> SquashedFelt252Dict<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
 
 pub trait Felt252DictTrait<T> {
@@ -99,7 +99,7 @@ impl Felt252DictEntryDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Fel
 }
 
 impl Felt252DictIndex<
-    T, +Felt252DictTrait<T>, +Copy<T>, +Destruct<Felt252DictEntry<T>>
+    T, +Felt252DictTrait<T>, +Copy<T>, +Destruct<Felt252DictEntry<T>>,
 > of Index<Felt252Dict<T>, felt252, T> {
     #[inline]
     fn index(ref self: Felt252Dict<T>, index: felt252) -> T {

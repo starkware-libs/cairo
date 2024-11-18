@@ -1,9 +1,8 @@
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::hints::StarknetHint;
+use cairo_lang_casm::hints::ExternalHint;
 use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::operand::ResOperand;
 use cairo_lang_casm::{casm, casm_build_extend, deref};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
@@ -26,12 +25,11 @@ use cairo_lang_sierra_to_casm::metadata::{
     Metadata, MetadataComputationConfig, MetadataError, calc_metadata, calc_metadata_ap_change_only,
 };
 use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
-use cairo_lang_utils::bigint::BigIntAsHex;
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_vm::types::builtin_name::BuiltinName;
-use itertools::Itertools;
-use num_bigint::BigInt;
+use itertools::{Itertools, chain};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -169,6 +167,27 @@ impl RunnableBuilder {
         Ok((assembled_cairo_program, builtins))
     }
 
+    /// CASM style string representation of the program.
+    pub fn casm_function_program(&self, func: &Function) -> Result<String, BuildError> {
+        let (header, builtins) = self.create_entry_code(func)?;
+        let footer = create_code_footer();
+
+        Ok(chain!(
+            [
+                format!("# builtins: {}\n", builtins.into_iter().map(|b| b.to_str()).join(", ")),
+                "# header #\n".to_string()
+            ],
+            header.into_iter().map(|i| format!("{i};\n")),
+            [
+                "# sierra based code #\n".to_string(),
+                self.casm_program.to_string(),
+                "# footer #\n".to_string()
+            ],
+            footer.into_iter().map(|i| format!("{i};\n")),
+        )
+        .join(""))
+    }
+
     /// Returns the instructions to add to the beginning of the code to successfully call the main
     /// function, as well as the builtins required to execute the program.
     fn create_entry_code(
@@ -247,20 +266,9 @@ pub fn create_entry_code_from_params(
 
     let emulated_builtins = UnorderedHashSet::<_>::from_iter([SystemType::ID]);
 
-    let mut args_vars = vec![];
-    for (ty, size) in param_types {
-        if !builtin_vars.contains_key(ty)
-            && !emulated_builtins.contains(ty)
-            && ty != &SegmentArenaType::ID
-        {
-            args_vars.push((0..*size).map(|_| ctx.alloc_var(false)).collect_vec());
-        }
-    }
     let got_segment_arena = param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID);
     let has_post_calculation_loop = got_segment_arena && finalize_for_proof;
 
-    // Giving space for the VM to fill the arguments, as well as local params.
-    let params_size: usize = args_vars.iter().map(Vec::len).sum();
     let mut local_exprs = vec![];
     if has_post_calculation_loop {
         for (ty, size) in return_types {
@@ -271,14 +279,16 @@ pub fn create_entry_code_from_params(
                 }
             }
         }
+        if !local_exprs.is_empty() {
+            casm_build_extend!(ctx, ap += local_exprs.len(););
+        }
     }
-    casm_build_extend!(ctx, ap += params_size + local_exprs.len(););
     if got_segment_arena {
         casm_build_extend! {ctx,
             tempvar segment_arena;
             tempvar infos;
-            hint AllocSegment {} into {dst: segment_arena};
-            hint AllocSegment {} into {dst: infos};
+            hint AllocSegment into {dst: segment_arena};
+            hint AllocSegment into {dst: infos};
             const czero = 0;
             tempvar zero = czero;
             // Write Infos segment, n_constructed (0), and n_destructed (0) to the segment.
@@ -289,21 +299,34 @@ pub fn create_entry_code_from_params(
         // Adding the segment arena to the builtins var map.
         builtin_vars.insert(SegmentArenaType::ID, segment_arena);
     }
-    let mut args_vars_iter = args_vars.into_iter();
-    for (generic_ty, _) in param_types {
+    let mut unallocated_count = 0;
+    let mut param_index = 0;
+    for (generic_ty, ty_size) in param_types {
         if let Some(var) = builtin_vars.get(generic_ty).cloned() {
             casm_build_extend!(ctx, tempvar _builtin = var;);
         } else if emulated_builtins.contains(generic_ty) {
             casm_build_extend! {ctx,
                 tempvar system;
-                hint AllocSegment {} into {dst: system};
-                ap += 1;
+                hint AllocSegment into {dst: system};
             };
+            unallocated_count += ty_size;
         } else {
-            for cell in args_vars_iter.next().unwrap() {
-                casm_build_extend!(ctx, tempvar _cell = cell;);
+            if *ty_size > 0 {
+                casm_build_extend! { ctx,
+                    tempvar first;
+                    const param_index = param_index;
+                    hint ExternalHint::WriteRunParam { index: param_index } into { dst: first };
+                };
+                for _ in 1..*ty_size {
+                    casm_build_extend!(ctx, tempvar _cell;);
+                }
             }
+            param_index += 1;
+            unallocated_count += ty_size;
         };
+    }
+    if unallocated_count > 0 {
+        casm_build_extend!(ctx, ap += unallocated_count.into_or_panic::<usize>(););
     }
     casm_build_extend! (ctx, let () = call FUNCTION;);
     let mut unprocessed_return_size = return_types.iter().map(|(_, size)| size).sum::<i16>();
@@ -351,26 +374,11 @@ pub fn create_entry_code_from_params(
             STILL_LEFT_LOOP:
             tempvar prev_end = infos[1];
             tempvar curr_start = infos[3];
-        };
-        ctx.add_hint(
-            |[], [curr_start, prev_end]| StarknetHint::Cheatcode {
-                selector: BigIntAsHex {
-                    value: BigInt::from_bytes_be(num_bigint::Sign::Plus, b"add_relocation_rule"),
-                },
-                // Ignored inputs, to be handled as an empty list.
-                input_start: ResOperand::Deref(curr_start),
-                input_end: ResOperand::Deref(curr_start),
-                // The actual data for the hint.
-                output_start: curr_start,
-                output_end: prev_end,
-            },
-            [],
-            [curr_start, prev_end],
-        );
-        casm_build_extend! {ctx,
             const one = 1;
-            const three = 3;
+            let expected_curr_start = prev_end + one;
+            hint ExternalHint::AddRelocationRule { src: curr_start, dst: expected_curr_start };
             assert curr_start = prev_end + one;
+            const three = 3;
             tempvar next_infos = infos + three;
             tempvar next_remaining_segments = remaining_segments - one;
             rescope{infos = next_infos, remaining_segments = next_remaining_segments};

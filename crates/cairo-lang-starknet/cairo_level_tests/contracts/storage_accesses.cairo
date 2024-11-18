@@ -11,7 +11,7 @@ trait IERC20<TContractState> {
     fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn increase_allowance(ref self: TContractState, spender: ContractAddress, added_value: u256);
     fn decrease_allowance(
-        ref self: TContractState, spender: ContractAddress, subtracted_value: u256
+        ref self: TContractState, spender: ContractAddress, subtracted_value: u256,
     );
     fn write_info(ref self: TContractState, user_info: UserInfo);
     fn get_info(self: @TContractState) -> UserInfo;
@@ -39,7 +39,7 @@ mod storage_accesses {
     use super::{UserInfo, TransactionInfo};
     use starknet::storage::{
         StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess
+        StorageMapWriteAccess,
     };
 
     #[storage]
@@ -55,7 +55,7 @@ mod storage_accesses {
         symbol_: felt252,
         decimals_: u8,
         initial_supply: u256,
-        recipient: ContractAddress
+        recipient: ContractAddress,
     ) {
         self.user_info.name.write(name_);
         self.user_info.symbol.write(symbol_);
@@ -88,32 +88,32 @@ mod storage_accesses {
         }
 
         fn allowance(
-            self: @ContractState, owner: ContractAddress, spender: ContractAddress
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress,
         ) -> u256 {
             self.transaction_info.allowances.entry(owner).read(spender)
         }
 
         fn increase_allowance(
-            ref self: ContractState, spender: ContractAddress, added_value: u256
+            ref self: ContractState, spender: ContractAddress, added_value: u256,
         ) {
             let caller = get_caller_address();
             self
                 .set_transaction_info(
                     caller,
                     spender,
-                    self.transaction_info.allowances.entry(caller).read(spender) + added_value
+                    self.transaction_info.allowances.entry(caller).read(spender) + added_value,
                 );
         }
 
         fn decrease_allowance(
-            ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+            ref self: ContractState, spender: ContractAddress, subtracted_value: u256,
         ) {
             let caller = get_caller_address();
             self
                 .set_transaction_info(
                     caller,
                     spender,
-                    self.transaction_info.allowances.entry(caller).read(spender) - subtracted_value
+                    self.transaction_info.allowances.entry(caller).read(spender) - subtracted_value,
                 );
         }
 
@@ -132,7 +132,7 @@ mod storage_accesses {
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
-            amount: u256
+            amount: u256,
         ) {
             self
                 .transaction_info
@@ -145,7 +145,7 @@ mod storage_accesses {
         }
 
         fn set_transaction_info(
-            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256,
         ) {
             self.transaction_info.allowances.entry(owner).entry(spender).write(amount);
         }

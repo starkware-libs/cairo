@@ -14,8 +14,8 @@ use cairo_lang_utils::Upcast;
 use lsp_types::{CodeAction, CodeActionKind, Range, TextEdit, Url, WorkspaceEdit};
 use tracing::debug;
 
-use crate::ide::utils::find_methods_for_type;
 use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::inspect::methods::find_methods_for_type;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
 /// Create a Quick Fix code action to add a missing trait given a `CannotCallMethod` diagnostic.

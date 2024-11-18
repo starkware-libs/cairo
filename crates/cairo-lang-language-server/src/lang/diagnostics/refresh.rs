@@ -1,27 +1,18 @@
 use std::collections::{HashMap, HashSet};
-use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
-use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_semantic::SemanticDiagnostic;
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_utils::{LookupIntern, Upcast};
+use cairo_lang_utils::LookupIntern;
 use lsp_types::notification::PublishDiagnostics;
 use lsp_types::{PublishDiagnosticsParams, Url};
-use tracing::{error, info_span, trace};
+use tracing::{info_span, trace};
 
 use crate::lang::db::AnalysisDatabase;
-use crate::lang::diagnostics::lsp::map_cairo_diagnostics_to_lsp;
+use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
 use crate::lang::lsp::LsProtoGroup;
 use crate::server::client::Notifier;
-use crate::server::panic::is_cancelled;
-use crate::state::FileDiagnostics;
 
 /// Refresh diagnostics and send diffs to the client.
 #[tracing::instrument(skip_all)]
@@ -39,15 +30,12 @@ pub fn refresh_diagnostics(
         open_files.iter().filter_map(|uri| db.file_for_url(uri)).collect::<HashSet<FileId>>()
     });
 
-    let open_files_modules = get_files_modules(db, open_files_ids.iter().copied());
-
     // Refresh open files modules first for better UX
     info_span!("refresh_open_files_modules").in_scope(|| {
-        for (file, file_modules_ids) in open_files_modules {
+        for &file in &open_files_ids {
             refresh_file_diagnostics(
                 db,
-                &file,
-                &file_modules_ids,
+                file,
                 trace_macro_diagnostics,
                 &mut processed_modules,
                 &mut files_with_set_diagnostics,
@@ -73,15 +61,12 @@ pub fn refresh_diagnostics(
         rest_of_files
     });
 
-    let rest_of_files_modules = get_files_modules(db, rest_of_files.iter().copied());
-
     // Refresh the rest of files after, since they are not viewed currently
     info_span!("refresh_other_files_modules").in_scope(|| {
-        for (file, file_modules_ids) in rest_of_files_modules {
+        for file in rest_of_files {
             refresh_file_diagnostics(
                 db,
-                &file,
-                &file_modules_ids,
+                file,
                 trace_macro_diagnostics,
                 &mut processed_modules,
                 &mut files_with_set_diagnostics,
@@ -114,64 +99,22 @@ pub fn refresh_diagnostics(
 }
 
 /// Refresh diagnostics for a single file.
-#[expect(clippy::too_many_arguments)]
 fn refresh_file_diagnostics(
     db: &AnalysisDatabase,
-    file: &FileId,
-    modules_ids: &Vec<ModuleId>,
+    file: FileId,
     trace_macro_diagnostics: bool,
     processed_modules: &mut HashSet<ModuleId>,
     files_with_set_diagnostics: &mut HashSet<Url>,
     file_diagnostics: &mut HashMap<Url, FileDiagnostics>,
     notifier: &Notifier,
 ) {
-    let Some(file_uri) = db.url_for_file(*file) else {
+    let Some(file_uri) = db.url_for_file(file) else {
         trace!("url for file not found: {:?}", file.lookup_intern(db));
         return;
     };
 
-    let mut semantic_file_diagnostics: Vec<SemanticDiagnostic> = vec![];
-    let mut lowering_file_diagnostics: Vec<LoweringDiagnostic> = vec![];
-
-    macro_rules! diags {
-        ($db:ident. $query:ident($file_id:expr), $f:expr) => {
-            info_span!(stringify!($query)).in_scope(|| {
-                catch_unwind(AssertUnwindSafe(|| $db.$query($file_id)))
-                    .map($f)
-                    .map_err(|err| {
-                        if is_cancelled(err.as_ref()) {
-                            resume_unwind(err);
-                        } else {
-                            error!("caught panic when computing diagnostics for file {file_uri}");
-                            err
-                        }
-                    })
-                    .unwrap_or_default()
-            })
-        };
-    }
-
-    for module_id in modules_ids {
-        if !processed_modules.contains(module_id) {
-            semantic_file_diagnostics.extend(
-                diags!(db.module_semantic_diagnostics(*module_id), Result::unwrap_or_default)
-                    .get_all(),
-            );
-            lowering_file_diagnostics.extend(
-                diags!(db.module_lowering_diagnostics(*module_id), Result::unwrap_or_default)
-                    .get_all(),
-            );
-
-            processed_modules.insert(*module_id);
-        }
-    }
-
-    let parser_file_diagnostics = diags!(db.file_syntax_diagnostics(*file), |r| r);
-
-    let new_file_diagnostics = FileDiagnostics {
-        parser: parser_file_diagnostics,
-        semantic: Diagnostics::from_iter(semantic_file_diagnostics),
-        lowering: Diagnostics::from_iter(lowering_file_diagnostics),
+    let Some(new_file_diagnostics) = FileDiagnostics::collect(db, file, processed_modules) else {
+        return;
     };
 
     if !new_file_diagnostics.is_empty() {
@@ -187,47 +130,7 @@ fn refresh_file_diagnostics(
         file_diagnostics.insert(file_uri.clone(), new_file_diagnostics.clone());
     };
 
-    let mut diags = Vec::new();
-    map_cairo_diagnostics_to_lsp(
-        (*db).upcast(),
-        &mut diags,
-        &new_file_diagnostics.parser,
-        file,
-        trace_macro_diagnostics,
-    );
-    map_cairo_diagnostics_to_lsp(
-        (*db).upcast(),
-        &mut diags,
-        &new_file_diagnostics.semantic,
-        file,
-        trace_macro_diagnostics,
-    );
-    map_cairo_diagnostics_to_lsp(
-        (*db).upcast(),
-        &mut diags,
-        &new_file_diagnostics.lowering,
-        file,
-        trace_macro_diagnostics,
-    );
-
-    notifier.notify::<PublishDiagnostics>(PublishDiagnosticsParams {
-        uri: file_uri,
-        diagnostics: diags,
-        version: None,
-    });
-}
-
-/// Gets the mapping of files to their respective modules.
-#[tracing::instrument(skip_all)]
-fn get_files_modules(
-    db: &AnalysisDatabase,
-    files_ids: impl Iterator<Item = FileId>,
-) -> HashMap<FileId, Vec<ModuleId>> {
-    let mut result = HashMap::default();
-    for file_id in files_ids {
-        if let Ok(file_modules) = db.file_modules(file_id) {
-            result.insert(file_id, file_modules.iter().cloned().collect::<Vec<_>>());
-        }
+    if let Some(params) = new_file_diagnostics.to_lsp(db, trace_macro_diagnostics) {
+        notifier.notify::<PublishDiagnostics>(params);
     }
-    result
 }

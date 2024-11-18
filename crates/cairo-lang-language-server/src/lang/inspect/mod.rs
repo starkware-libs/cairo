@@ -2,3 +2,4 @@
 
 pub mod crates;
 pub mod defs;
+pub mod methods;

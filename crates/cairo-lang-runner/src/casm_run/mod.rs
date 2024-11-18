@@ -5,7 +5,7 @@ use std::ops::{Shl, Sub};
 use std::vec::IntoIter;
 
 use ark_ff::{BigInteger, PrimeField};
-use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, StarknetHint};
+use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, ExternalHint, Hint, StarknetHint};
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
@@ -45,7 +45,7 @@ use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 use self::contract_address::calculate_contract_address;
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
-use crate::{Arg, RunResultValue, SierraCasmRunner, StarknetExecutionResources};
+use crate::{Arg, RunResultValue, SierraCasmRunner, StarknetExecutionResources, args_size};
 
 #[cfg(test)]
 mod test;
@@ -86,6 +86,11 @@ struct Secp256r1ExecutionScope {
 pub struct CairoHintProcessor<'a> {
     /// The Cairo runner.
     pub runner: Option<&'a SierraCasmRunner>,
+    /// The user arguments for the run.
+    ///
+    /// We have a vector of the arguments per parameter, as a parameter type may be composed of
+    /// several user args.
+    pub user_args: Vec<Vec<Arg>>,
     /// A mapping from a string that represents a hint to the hint object.
     pub string_to_hint: HashMap<String, Hint>,
     /// The starknet state.
@@ -414,10 +419,13 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         let hint = match hint {
+            Hint::Starknet(hint) => hint,
             Hint::Core(core_hint_base) => {
                 return execute_core_hint_base(vm, exec_scopes, core_hint_base);
             }
-            Hint::Starknet(hint) => hint,
+            Hint::External(hint) => {
+                return self.execute_external_hint(vm, hint);
+            }
         };
         match hint {
             StarknetHint::SystemCall { system } => {
@@ -1158,7 +1166,7 @@ impl CairoHintProcessor<'_> {
         let mut res = runner
             .run_function_with_starknet_context(
                 function,
-                &[Arg::Array(calldata.into_iter().map(Arg::Value).collect())],
+                vec![Arg::Array(calldata.into_iter().map(Arg::Value).collect())],
                 // The costs of the relevant syscall include `ENTRY_POINT_INITIAL_BUDGET` so we
                 // need to refund it here before running the entry point to avoid double charging.
                 Some(*gas_counter + gas_costs::ENTRY_POINT_INITIAL_BUDGET),
@@ -1279,13 +1287,6 @@ impl CairoHintProcessor<'_> {
                     res_segment.write_data(payload.iter())?;
                 }
             }
-            "add_relocation_rule" => {
-                vm.add_relocation_rule(
-                    get_ptr(vm, output_start, &Felt252::ZERO)?,
-                    get_ptr(vm, output_end, &Felt252::ONE)?,
-                )?;
-                return Ok(());
-            }
             _ => Err(HintError::CustomHint(Box::from(format!(
                 "Unknown cheatcode selector: {selector}"
             ))))?,
@@ -1294,6 +1295,43 @@ impl CairoHintProcessor<'_> {
         insert_value_to_cellref!(vm, output_start, res_segment_start)?;
         insert_value_to_cellref!(vm, output_end, res_segment_end)?;
         Ok(())
+    }
+
+    /// Executes an external hint.
+    fn execute_external_hint(
+        &self,
+        vm: &mut VirtualMachine,
+        core_hint: &ExternalHint,
+    ) -> Result<(), HintError> {
+        match core_hint {
+            ExternalHint::AddRelocationRule { src, dst } => Ok(vm.add_relocation_rule(
+                extract_relocatable(vm, src)?,
+                extract_relocatable(vm, dst)?,
+            )?),
+            ExternalHint::WriteRunParam { index, dst } => {
+                let index = get_val(vm, index)?.to_usize().expect("Got a bad index.");
+                let mut stack = vec![(cell_ref_to_relocatable(dst, vm), &self.user_args[index])];
+                while let Some((mut buffer, values)) = stack.pop() {
+                    for value in values {
+                        match value {
+                            Arg::Value(v) => {
+                                vm.insert_value(buffer, v)?;
+                                buffer += 1;
+                            }
+                            Arg::Array(arr) => {
+                                let arr_buffer = vm.add_memory_segment();
+                                stack.push((arr_buffer, arr));
+                                vm.insert_value(buffer, arr_buffer)?;
+                                buffer += 1;
+                                vm.insert_value(buffer, (arr_buffer + args_size(arr))?)?;
+                                buffer += 1;
+                            }
+                        }
+                    }
+                }
+                Ok(())
+            }
+        }
     }
 }
 
@@ -1684,7 +1722,7 @@ fn alloc_memory(
 pub fn execute_core_hint(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
-    core_hint: &cairo_lang_casm::hints::CoreHint,
+    core_hint: &CoreHint,
 ) -> Result<(), HintError> {
     match core_hint {
         CoreHint::AllocSegment { dst } => {
