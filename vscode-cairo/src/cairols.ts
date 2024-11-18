@@ -11,6 +11,7 @@ import {
   registerVfsProvider,
   registerViewAnalyzedCratesProvider,
 } from "./textDocumentProviders";
+import assert, { AssertionError } from "node:assert";
 
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
@@ -25,13 +26,74 @@ function notifyScarbMissing(ctx: Context) {
   ctx.log.error(errorMessage);
 }
 
-export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient> {
-  // TODO(mkaput): Support multi-root workspaces.
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+// Deep equality (based on native nodejs assertion), without throwing an error
+function safeStrictDeepEqual<T>(a: T, b: T): boolean {
+  try {
+    assert.deepStrictEqual(a, b);
+    return true;
+  } catch (err) {
+    if (err instanceof AssertionError) {
+      return false;
+    }
+    throw err;
+  }
+}
 
-  const scarb = await findScarbForWorkspaceFolder(workspaceFolder, ctx);
+function areExecutablesEqual(a: lc.Executable, b: lc.Executable): boolean {
+  return (
+    a.command === b.command &&
+    safeStrictDeepEqual(a.args, b.args) &&
+    safeStrictDeepEqual(a.options?.env, b.options?.env)
+  );
+}
 
-  const serverOptions = await getServerOptions(workspaceFolder, scarb, ctx);
+async function allFoldersHaveSameLSProvider(
+  ctx: Context,
+  executables: LSExecutable[],
+): Promise<boolean> {
+  if (executables.length < 2) {
+    return true;
+  }
+
+  // If every executable is scarb based, check if the versions match additionally
+  if (executables.every((v) => !!v.scarb)) {
+    const versions = await Promise.all(executables.map((v) => v.scarb!.getVersion(ctx)));
+    if (!versions.every((x) => versions[0] === x)) {
+      return false;
+    }
+  }
+
+  return executables.every((x) => areExecutablesEqual(executables[0]!.run, x.run));
+}
+
+export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient | undefined> {
+  const executables = (
+    await Promise.all(
+      (vscode.workspace.workspaceFolders || []).map((workspaceFolder) =>
+        getLanguageServerExecutable(workspaceFolder, ctx),
+      ),
+    )
+  ).filter((x) => !!x) as LSExecutable[]; // TODO(6684): Remove this when typescript is upgraded
+
+  const sameProvider = await allFoldersHaveSameLSProvider(ctx, executables);
+  if (!sameProvider) {
+    await vscode.window.showErrorMessage(
+      "Using multiple Scarb versions in one workspace are not supported.",
+    );
+    return;
+  }
+
+  // First one is good as any of them since they should be all the same at this point
+  const lsExecutable = executables[0];
+
+  assert(lsExecutable, "Failed to start Cairo LS");
+
+  const { run, scarb } = lsExecutable;
+  setupEnv(run, ctx);
+
+  ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
+
+  const serverOptions = { run, debug: run };
 
   const client = new lc.LanguageClient(
     "cairoLanguageServer",
@@ -154,33 +216,23 @@ async function findScarbForWorkspaceFolder(
   }
 }
 
-async function getServerOptions(
+interface LSExecutable {
+  run: lc.Executable;
+  scarb: Scarb | undefined;
+}
+
+async function getLanguageServerExecutable(
   workspaceFolder: vscode.WorkspaceFolder | undefined,
-  scarb: Scarb | undefined,
   ctx: Context,
-): Promise<lc.ServerOptions> {
-  let serverExecutableProvider: LanguageServerExecutableProvider | undefined;
+): Promise<LSExecutable | undefined> {
+  const scarb = await findScarbForWorkspaceFolder(workspaceFolder, ctx);
   try {
-    serverExecutableProvider = await determineLanguageServerExecutableProvider(
-      workspaceFolder,
-      scarb,
-      ctx,
-    );
+    const provider = await determineLanguageServerExecutableProvider(workspaceFolder, scarb, ctx);
+    return { run: provider.languageServerExecutable(), scarb };
   } catch (e) {
     ctx.log.error(`${e}`);
   }
-
-  const run = serverExecutableProvider?.languageServerExecutable();
-  if (run == undefined) {
-    ctx.log.error("failed to start CairoLS");
-    throw new Error("failed to start CairoLS");
-  }
-
-  setupEnv(run, ctx);
-
-  ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
-
-  return { run, debug: run };
+  return undefined;
 }
 
 async function determineLanguageServerExecutableProvider(
