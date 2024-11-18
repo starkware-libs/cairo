@@ -7,14 +7,46 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_runnable_utils::builder::{EntryCodeConfig, RunnableBuilder};
+use cairo_lang_runnable_utils::builder::{
+    CasmProgramWrapperInfo, EntryCodeConfig, RunnableBuilder,
+};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
-use cairo_lang_utils::Upcast;
+use cairo_lang_sierra_to_casm::compiler::CairoProgram;
+use cairo_lang_utils::{Upcast, write_comma_separated};
 use itertools::Itertools;
 
 use crate::plugin::{RUNNABLE_PREFIX, RUNNABLE_RAW_ATTR, runnable_plugin_suite};
+
+/// The CASM compilation result.
+pub struct CompiledFunction {
+    /// The compiled CASM program.
+    pub program: CairoProgram,
+    /// The wrapper information for the program.
+    pub wrapper: CasmProgramWrapperInfo,
+}
+impl std::fmt::Display for CompiledFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "# builtins:")?;
+        if !self.wrapper.builtins.is_empty() {
+            write!(f, " ")?;
+            write_comma_separated(f, self.wrapper.builtins.iter().map(|b| b.to_str()))?;
+        }
+        writeln!(f)?;
+        writeln!(f, "# header #")?;
+        for instruction in &self.wrapper.header {
+            writeln!(f, "{};", instruction)?;
+        }
+        writeln!(f, "# sierra based code #")?;
+        write!(f, "{}", self.program)?;
+        writeln!(f, "# footer #")?;
+        for instruction in &self.wrapper.footer {
+            writeln!(f, "{};", instruction)?;
+        }
+        Ok(())
+    }
+}
 
 /// Compile the function given by path.
 /// Errors if there is ambiguity.
@@ -22,7 +54,7 @@ pub fn compile_runnable(
     path: &Path,
     runnable_path: Option<&str>,
     diagnostics_reporter: DiagnosticsReporter<'_>,
-) -> Result<String> {
+) -> Result<CompiledFunction> {
     let mut db = RootDatabase::builder()
         .detect_corelib()
         .with_plugin_suite(runnable_plugin_suite())
@@ -41,7 +73,7 @@ pub fn compile_runnable_in_prepared_db(
     runnable_path: Option<&str>,
     main_crate_ids: Vec<CrateId>,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
-) -> Result<String> {
+) -> Result<CompiledFunction> {
     let mut runnables: Vec<_> = find_executable_function_ids(db, main_crate_ids)
         .into_iter()
         .filter_map(|(id, labels)| labels.into_iter().any(|l| l == RUNNABLE_RAW_ATTR).then_some(id))
@@ -101,7 +133,7 @@ pub fn compile_runnable_function_in_prepared_db(
     db: &RootDatabase,
     runnable: ConcreteFunctionWithBodyId,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
-) -> Result<String> {
+) -> Result<CompiledFunction> {
     diagnostics_reporter.ensure(db)?;
     let SierraProgramWithDebug { program: sierra_program, debug_info: _ } = Arc::unwrap_or_clone(
         db.get_sierra_program_for_functions(vec![runnable])
@@ -110,5 +142,6 @@ pub fn compile_runnable_function_in_prepared_db(
     );
     let runnable_func = sierra_program.funcs[0].clone();
     let builder = RunnableBuilder::new(sierra_program, None)?;
-    Ok(builder.casm_function_program(&runnable_func, EntryCodeConfig::provable())?)
+    let wrapper = builder.create_wrapper_info(&runnable_func, EntryCodeConfig::provable())?;
+    Ok(CompiledFunction { program: builder.casm_program().clone(), wrapper })
 }
