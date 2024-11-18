@@ -99,7 +99,6 @@ pub trait Copy<T>;
 /// Now `p` derives `Drop`, it can be dropped at the end of the execution of `foo`.
 pub trait Drop<T>;
 
-/// `Copy` implementation for a snapshot of any type.
 impl SnapshotCopy<T> of Copy<@T>;
 
 /// `Drop` implementation for a snapshot of any type.
