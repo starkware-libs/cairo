@@ -32,7 +32,7 @@ impl State {
         tricks: Tricks,
     ) -> Self {
         let notifier = Client::new(sender).notifier();
-        let scarb_toolchain = ScarbToolchain::new(notifier);
+        let scarb_toolchain = ScarbToolchain::new(notifier.clone());
         let db_swapper = AnalysisDatabaseSwapper::new(scarb_toolchain.clone());
 
         Self {
@@ -43,7 +43,7 @@ impl State {
             scarb_toolchain,
             db_swapper,
             tricks: Owned::new(tricks.into()),
-            diagnostics_controller: DiagnosticsController::new(),
+            diagnostics_controller: DiagnosticsController::new(notifier),
         }
     }
 
