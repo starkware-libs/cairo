@@ -101,7 +101,6 @@ pub trait Drop<T>;
 
 impl SnapshotCopy<T> of Copy<@T>;
 
-/// `Drop` implementation for a snapshot of any type.
 impl SnapshotDrop<T> of Drop<@T>;
 
 // TODO(spapini): When associated types are supported, support the general trait Add<X, Y>.
