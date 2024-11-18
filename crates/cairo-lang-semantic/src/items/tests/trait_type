@@ -2276,7 +2276,7 @@ trait MyTrait {
 impl MyImpl of MyTrait {}
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'ty'.
+error[E0004]: Not all trait items are implemented. Missing: 'ty'.
  --> lib.cairo:4:6
 impl MyImpl of MyTrait {}
      ^****^
@@ -2428,7 +2428,7 @@ error: Trait has no implementation in context: test::TraitWithInferredParams::<c
 
 //! > ==========================================================================
 
-//! > Associated type bounds, only bound associated types to another associated type. 
+//! > Associated type bounds, only bound associated types to another associated type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
@@ -2469,7 +2469,7 @@ impl MyImplfelt252 of MyTrait {
 
 //! > ==========================================================================
 
-//! > Associated type bounds, only bound associated types to another associated type wrong type. 
+//! > Associated type bounds, only bound associated types to another associated type wrong type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -2513,7 +2513,7 @@ error: Trait has no implementation in context: core::metaprogramming::TypeEqual:
 
 //! > ==========================================================================
 
-//! > Associated type bounds, only bound associated types to another associated inferring type. 
+//! > Associated type bounds, only bound associated types to another associated inferring type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -2546,7 +2546,7 @@ error: Trait has no implementation in context: core::metaprogramming::TypeEqual:
 
 //! > ==========================================================================
 
-//! > Reimplementing TypeEqual trait. 
+//! > Reimplementing TypeEqual trait.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -2568,7 +2568,7 @@ impl I of core::metaprogramming::TypeEqual<u32, felt252>;
 
 //! > ==========================================================================
 
-//! > TypeEqual with 3 generic parameters. 
+//! > TypeEqual with 3 generic parameters.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
