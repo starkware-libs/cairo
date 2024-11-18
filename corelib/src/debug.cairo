@@ -15,6 +15,23 @@ fn print_felt252(message: felt252) {
     print(array![message]);
 }
 
+/// A trait for printing values for debugging purposes.
+/// Accessible with prelude editions prior to `2024_07`.
+///
+/// # Examples
+///
+/// ```
+/// use core::debug::PrintTrait;
+///
+/// 1.print();
+/// (1 == 2).print();
+///
+/// let mut arr = array![];
+/// arr.append('1234567890123456789012345678901');
+/// arr.append('Sca');
+/// arr.append('SomeVeryLongMessage');
+/// arr.print();
+/// ```
 pub(crate) trait PrintTrait<T> {
     fn print(self: T);
 }
