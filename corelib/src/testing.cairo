@@ -1,7 +1,7 @@
-//! Testing module that provides a single function for evaluating the amount of gas available.
+//! Measurement of gas consumption for testing purpose.
 //!
-//! The `get_available_gas` function is useful for asserting the amount of gas consumed by a
-//! particular operation or function call.
+//! This module provides the `get_available_gas` function, useful for asserting the amount of gas
+//! consumed by a particular operation or function call.
 //! By calling `get_available_gas` before and after the operation, you can calculate the exact
 //! amount of gas used.
 
