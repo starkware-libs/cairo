@@ -1,7 +1,7 @@
 //! Serialization and deserialization of types.
 //!
 //! This module provides a set of traits and implementations for serializing and deserializing
-//! data structures in a type-safe manner.
+//! types in a type-safe manner.
 //!
 //! `Serde<T>` is the main trait that defines the serialization and deserialization behavior for a
 //! type `T`.
