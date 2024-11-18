@@ -32,6 +32,17 @@ pub fn definition(
             md
         }
 
+        SymbolDef::Module(module) => {
+            let mut md = String::new();
+            md += &fenced_code_block(&module.definition_path());
+            md += &fenced_code_block(&module.signature());
+            if let Some(doc) = module.documentation(db) {
+                md += RULE;
+                md += &doc;
+            }
+            md
+        }
+
         SymbolDef::Variable(var) => fenced_code_block(&var.signature(db)),
         SymbolDef::ExprInlineMacro(macro_name) => {
             let mut md = fenced_code_block(macro_name);
