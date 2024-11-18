@@ -61,7 +61,7 @@ pub impl PoseidonImpl of PoseidonTrait {
 }
 
 impl HashStateDefault of Default<HashState> {
-    /// Returns a new Poseidon state.
+    /// Returns the default zero-initialized state.
     fn default() -> HashState {
         PoseidonTrait::new()
     }
