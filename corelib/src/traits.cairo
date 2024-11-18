@@ -236,9 +236,7 @@ pub trait DivRem<T> {
     /// ```
     /// use core::traits::DivRem;
     ///
-    /// let numerator: u32 = 12;
-    /// let denominator: NonZero<u32> = 10;
-    /// assert!(DivRem::div_rem(numerator, denominator) == (1, 2));
+    /// assert!(DivRem::div_rem(12_u32, 10) == (1, 2));
     /// ```
     fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
 }
