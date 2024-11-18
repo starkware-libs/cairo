@@ -1,4 +1,6 @@
-//! Provides an implementation of the Pedersen hash function, which is a
+//! Pedersen hash related traits implementations.
+//!
+//! This module provides an implementation of the Pedersen hash function, which is a
 //! collision-resistant cryptographic hash function.
 //!
 //! The `HashState` struct represents the state of a Pedersen hash computation. It contains a
@@ -6,8 +8,8 @@
 //!
 //! The `PedersenTrait` provides a `new` method to create a new `HashState` from a base value.
 //!
-//! The `HashStateTrait` defined in the Hash module provides the `update` and `finalize` methods to
-//! update the hash state and obtain the final hash value, respectively.
+//! The [`HashStateTrait`] defined in the Hash module provides the `update` and `finalize` methods
+//! to update the hash state and obtain the final hash value, respectively.
 //!
 //!
 //! # Examples
@@ -20,20 +22,24 @@
 //! state = state.update(1);
 //! state = state.update(2);
 //! let hash = state.finalize();
+//! assert!(hash == state.state);
 //! ```
 
 pub extern type Pedersen;
 
 pub extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
 
-/// State for Pedersen hash.
+/// Represents the current state of a Pedersen hash computation.
+///
+/// The state is maintained as a single `felt252` value, which is updated
+/// through the [`HashStateTrait::finalize`] method.
 #[derive(Copy, Drop, Debug)]
 pub struct HashState {
     /// The current hash state
     pub state: felt252,
 }
 
-/// `PedersenTrait` implementation.
+/// `PedersenTrait` implementation for updating a hash state and finalizing the hash computation.
 #[generate_trait]
 pub impl PedersenImpl of PedersenTrait {
     /// Creates a new Pedersen hash state with the given base value.
