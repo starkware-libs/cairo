@@ -30,9 +30,18 @@ use crate::zeroable::Zeroable;
 
 /// A trait for appending the ASCII representation of a number to an existing ByteArray.
 pub trait AppendFormattedToByteArray<T> {
-    // Takes a snapshot of any type and a `NonZero` base value, and appends to the referenced
-    // `ByteArray`
-    // the formatted value.
+    /// Appends the ASCII representation of the value to the provided ByteArray.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::to_byte_array::AppendFormattedToByteArray;
+    ///
+    /// let mut buffer = "Count: ";
+    /// let num: u32 = 42;
+    /// num.append_formatted_to_byte_array(ref buffer, 10);
+    /// assert!(buffer == "Count: 42");
+    /// ```
     fn append_formatted_to_byte_array(self: @T, ref byte_array: ByteArray, base: NonZero<T>);
 }
 
