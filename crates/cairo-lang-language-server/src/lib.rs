@@ -38,6 +38,7 @@
 //! }
 //! ```
 
+use std::collections::HashSet;
 use std::panic::RefUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -65,7 +66,7 @@ use crate::lsp::capabilities::server::{
 use crate::lsp::ext::{CorelibVersionMismatch, ScarbMetadataFailed};
 use crate::lsp::result::LSPResult;
 use crate::project::ProjectManifestPath;
-use crate::project::scarb::update_crate_roots;
+use crate::project::scarb::{get_workspace_members_manifests, update_crate_roots};
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::{Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
@@ -368,6 +369,7 @@ impl Backend {
             &state.config,
             &state.tricks,
             &notifier,
+            &mut state.loaded_scarb_manifests,
         );
     }
 
@@ -385,9 +387,14 @@ impl Backend {
         config: &Config,
         file_path: &Path,
         notifier: &Notifier,
+        loaded_scarb_manifests: &mut HashSet<PathBuf>,
     ) {
         match ProjectManifestPath::discover(file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
+                if loaded_scarb_manifests.contains(&manifest_path) {
+                    return;
+                }
+
                 let metadata = scarb_toolchain
                     .metadata(&manifest_path)
                     .with_context(|| {
@@ -400,6 +407,11 @@ impl Backend {
                     .ok();
 
                 if let Some(metadata) = metadata {
+                    let manifests = get_workspace_members_manifests(&metadata);
+                    for manifest in manifests {
+                        loaded_scarb_manifests.insert(manifest);
+                    }
+
                     update_crate_roots(&metadata, db);
                 } else {
                     // Try to set up a corelib at least.
@@ -440,6 +452,7 @@ impl Backend {
         notifier: &Notifier,
         requester: &mut Requester<'_>,
     ) -> LSPResult<()> {
+        state.loaded_scarb_manifests.clear();
         state.config.reload(requester, &state.client_capabilities)?;
 
         for uri in state.open_files.iter() {
@@ -451,6 +464,7 @@ impl Backend {
                     &state.config,
                     &file_path,
                     notifier,
+                    &mut state.loaded_scarb_manifests,
                 );
             }
         }

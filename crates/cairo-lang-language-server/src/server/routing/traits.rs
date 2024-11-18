@@ -250,6 +250,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
                 &state.config,
                 &path,
                 &notifier,
+                &mut state.loaded_scarb_manifests,
             );
         }
 

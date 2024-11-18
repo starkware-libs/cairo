@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
@@ -56,6 +57,7 @@ impl AnalysisDatabaseSwapper {
         config: &Config,
         tricks: &Tricks,
         notifier: &Notifier,
+        loaded_scarb_manifests: &mut HashSet<PathBuf>,
     ) {
         let Ok(elapsed) = self.last_replace.elapsed() else {
             warn!("system time went backwards, skipping db swap");
@@ -71,7 +73,7 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
-        self.swap(db, open_files, config, tricks, notifier)
+        self.swap(db, open_files, config, tricks, notifier, loaded_scarb_manifests)
     }
 
     /// Swaps the database.
@@ -83,11 +85,20 @@ impl AnalysisDatabaseSwapper {
         config: &Config,
         tricks: &Tricks,
         notifier: &Notifier,
+        loaded_scarb_manifests: &mut HashSet<PathBuf>,
     ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
+            loaded_scarb_manifests.clear();
+
             let mut new_db = AnalysisDatabase::new(tricks);
             self.migrate_file_overrides(&mut new_db, db, open_files);
-            self.detect_crates_for_open_files(&mut new_db, open_files, config, notifier);
+            self.detect_crates_for_open_files(
+                &mut new_db,
+                open_files,
+                config,
+                notifier,
+                loaded_scarb_manifests,
+            );
             new_db
         })) else {
             error!("caught panic when preparing new db for swap");
@@ -130,6 +141,7 @@ impl AnalysisDatabaseSwapper {
         open_files: &HashSet<Url>,
         config: &Config,
         notifier: &Notifier,
+        loaded_scarb_manifests: &mut HashSet<PathBuf>,
     ) {
         for uri in open_files {
             let Ok(file_path) = uri.to_file_path() else {
@@ -137,7 +149,14 @@ impl AnalysisDatabaseSwapper {
                 continue;
             };
 
-            Backend::detect_crate_for(new_db, &self.scarb_toolchain, config, &file_path, notifier);
+            Backend::detect_crate_for(
+                new_db,
+                &self.scarb_toolchain,
+                config,
+                &file_path,
+                notifier,
+                loaded_scarb_manifests,
+            );
         }
     }
 }
