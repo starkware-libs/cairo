@@ -73,7 +73,7 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
         getLanguageServerExecutable(workspaceFolder, ctx),
       ),
     )
-  ).filter((x) => !!x) as LSExecutable[];
+  ).filter((x) => !!x) as LSExecutable[]; // TODO(6684): Remove this when typescript is upgraded
 
   const sameProvider = await allFoldersHaveSameLSProvider(ctx, executables);
   if (!sameProvider) {
