@@ -36,7 +36,7 @@ pub struct HashState {
 /// `PedersenTrait` implementation.
 #[generate_trait]
 pub impl PedersenImpl of PedersenTrait {
-    /// Returns a Pedersen state from a base `felt252` value.
+    /// Creates a new Pedersen hash state with the given base value.
     ///
     /// # Examples
     ///
