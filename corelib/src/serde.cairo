@@ -1,4 +1,6 @@
-//! Serde module that provides a set of traits and implementations for serializing and deserializing
+//! Serialization and deserialization of data structures.
+//!
+//! This module provides a set of traits and implementations for serializing and deserializing
 //! data structures in a type-safe manner.
 //!
 //! `Serde<T>` is the main trait that defines the serialization and deserialization behavior for a
@@ -9,18 +11,34 @@
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
 
-/// `Serde<T>` generic trait that allows serializing and deseriaziling values of any type.
+/// A trait that allows for serializing and deseriaziling values of any type.
 pub trait Serde<T> {
     /// Takes a snapshot of a value of any type and referenced output `Array<felt252`, serializes
     /// the value and appends the result to the output.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let value: u256 = 1;
+    /// let mut output: Array<felt252> = array![];
+    /// value.serialize(ref output);
+    /// assert!(output == array![1, 0]) // `output` contains low and high parts of the `u256` value
+    /// ```
     fn serialize(self: @T, ref output: Array<felt252>);
-    // Takes a `Span<felt252>` serialized value and deserializes it.
-    // Returns an option of the deserialized result if the operation is successful, `Option::None`
-    // otherwise.
+    /// Takes a `Span<felt252>` serialized value and deserializes it.
+    /// Returns an option of the deserialized result if the operation is successful, `Option::None`
+    /// otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut span: Span<felt252> = array![1, 0].span();
+    /// let value:  u256 = Serde::deserialize(ref span).unwrap();
+    /// assert!(value == 1);
+    /// ```
     fn deserialize(ref serialized: Span<felt252>) -> Option<T>;
 }
 
-/// Tuple style structs `Serde` implementation.
 impl SerdeTuple<
     T,
     impl TSF: crate::metaprogramming::TupleSnapForward<T>,
@@ -30,6 +48,7 @@ impl SerdeTuple<
     fn serialize(self: @T, ref output: Array<felt252>) {
         Serialize::serialize(TSF::snap_forward(self), ref output);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<T> {
         Deserialize::deserialize(ref serialized)
     }
@@ -114,6 +133,7 @@ pub mod into_felt252_based {
         fn serialize(self: @T, ref output: Array<felt252>) {
             output.append((*self).into());
         }
+
         #[inline]
         fn deserialize(ref serialized: Span<felt252>) -> Option<T> {
             Option::Some((*serialized.pop_front()?).try_into()?)
