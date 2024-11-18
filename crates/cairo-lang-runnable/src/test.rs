@@ -80,7 +80,7 @@ impl TestFileRunner for CompileRunnableTestRunner {
         let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
         TestRunnerResult {
             outputs: OrderedHashMap::from([
-                ("generated_casm_code".into(), result),
+                ("generated_casm_code".into(), result.to_string()),
                 ("expected_diagnostics".into(), semantic_diagnostics),
             ]),
             error,

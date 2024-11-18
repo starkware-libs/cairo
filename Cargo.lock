@@ -780,6 +780,7 @@ dependencies = [
  "cairo-lang-runnable-utils",
  "cairo-lang-semantic",
  "cairo-lang-sierra-generator",
+ "cairo-lang-sierra-to-casm",
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -803,7 +804,6 @@ dependencies = [
  "cairo-lang-sierra-type-size",
  "cairo-lang-utils",
  "cairo-vm",
- "itertools 0.12.1",
  "thiserror",
 ]
 

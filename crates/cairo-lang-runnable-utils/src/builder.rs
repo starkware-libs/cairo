@@ -29,7 +29,6 @@ use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_vm::types::builtin_name::BuiltinName;
-use itertools::{Itertools, chain};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -155,42 +154,25 @@ impl RunnableBuilder {
         !self.non_args_types.contains(ty)
     }
 
+    /// Creates the wrapper info for a given function.
+    pub fn create_wrapper_info(
+        &self,
+        func: &Function,
+        config: EntryCodeConfig,
+    ) -> Result<CasmProgramWrapperInfo, BuildError> {
+        let (header, builtins) = self.create_entry_code(func, config)?;
+        Ok(CasmProgramWrapperInfo { header, builtins, footer: create_code_footer() })
+    }
+
     /// Assembles a function program for a given function.
     pub fn assemble_function_program(
         &self,
         func: &Function,
         config: EntryCodeConfig,
     ) -> Result<(AssembledCairoProgram, Vec<BuiltinName>), BuildError> {
-        let (header, builtins) = self.create_entry_code(func, config)?;
-        let footer = create_code_footer();
-
-        let assembled_cairo_program = self.casm_program.assemble_ex(&header, &footer);
-        Ok((assembled_cairo_program, builtins))
-    }
-
-    /// CASM style string representation of the program.
-    pub fn casm_function_program(
-        &self,
-        func: &Function,
-        config: EntryCodeConfig,
-    ) -> Result<String, BuildError> {
-        let (header, builtins) = self.create_entry_code(func, config)?;
-        let footer = create_code_footer();
-
-        Ok(chain!(
-            [
-                format!("# builtins: {}\n", builtins.into_iter().map(|b| b.to_str()).join(", ")),
-                "# header #\n".to_string()
-            ],
-            header.into_iter().map(|i| format!("{i};\n")),
-            [
-                "# sierra based code #\n".to_string(),
-                self.casm_program.to_string(),
-                "# footer #\n".to_string()
-            ],
-            footer.into_iter().map(|i| format!("{i};\n")),
-        )
-        .join(""))
+        let info = self.create_wrapper_info(func, config)?;
+        let assembled_cairo_program = self.casm_program.assemble_ex(&info.header, &info.footer);
+        Ok((assembled_cairo_program, info.builtins))
     }
 
     /// Returns the instructions to add to the beginning of the code to successfully call the main
@@ -263,6 +245,16 @@ impl EntryCodeConfig {
     pub fn provable() -> Self {
         Self { finalize_segment_arena: true, outputting_function: true }
     }
+}
+
+/// Information about a CASM program.
+pub struct CasmProgramWrapperInfo {
+    /// The builtins used in the program.
+    pub builtins: Vec<BuiltinName>,
+    /// The instructions before the program.
+    pub header: Vec<Instruction>,
+    /// The instructions after the program.
+    pub footer: Vec<Instruction>,
 }
 
 /// Returns the entry code to call the function with `param_types` as its inputs and
