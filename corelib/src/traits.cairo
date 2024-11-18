@@ -23,7 +23,7 @@
 
 use crate::panics::Panic;
 
-/// Trait for copying values.
+/// A trait for copying values.
 ///
 /// By default, variable bindings have 'move semantics'. In other
 /// words:
@@ -66,7 +66,7 @@ use crate::panics::Panic;
 /// ```
 pub trait Copy<T>;
 
-/// Trait for dropping values.
+/// A trait for dropping values.
 ///
 /// Types that implement the `Drop` trait are automatically destroyed when going out of scope.
 /// This destruction does nothing, it is a no-op - simply a hint to the compiler that this type
@@ -83,7 +83,8 @@ pub trait Copy<T>;
 /// ```
 ///
 /// This won't compile as `p` is not dropped at the end of `foo`.
-/// We can derive `Drop` on `Point` to allow `p` to go out of scope trivially. All basic types implement the`Drop` trait, except the `Felt252Dict` type.
+/// We can derive `Drop` on `Point` to allow `p` to go out of scope trivially. All basic types
+/// implement the`Drop` trait, except the `Felt252Dict` type.
 ///
 /// ```
 /// #[derive(Drop)]
@@ -224,12 +225,10 @@ pub trait RemEq<T> {
 }
 
 // TODO(spapini): When associated types are supported, support the general trait DivRem<X, Y>.
-/// Performs division with remainder, returning both the quotient and remainder.
-///
 /// This trait provides a way to compute both division and remainder in a single operation,
 /// which can be more efficient than computing them separately.
 pub trait DivRem<T> {
-    /// Performs the `/` and the `%` operation.
+    /// Performs the `/` and the `%` operations, returning both the quotient and remainder.
     ///
     /// # Examples
     ///
@@ -255,7 +254,7 @@ pub trait PartialEq<T> {
     /// ```
     fn eq(lhs: @T, rhs: @T) -> bool;
 
-    /// Returns whether `lhs` and `rhs` are not equal, and is used by `!=`
+    /// Returns whether `lhs` and `rhs` are not equal, and is used by `!=`.
     ///
     /// # Examples
     ///
@@ -387,7 +386,7 @@ impl PartialOrdSnap<T, +PartialOrd<T>, +Copy<T>> of PartialOrd<@T> {
     }
 }
 
-/// Trait for safe conversion between types.
+/// A trait for safe conversion between types.
 pub trait Into<T, S> {
     /// Converts a type into another in safely manner.
     ///
@@ -407,14 +406,10 @@ impl TIntoT<T> of Into<T, T> {
     }
 }
 
-/// Trait for fallible conversion between types.
+/// A trait for fallible conversion between types.
 pub trait TryInto<T, S> {
     /// Converts a type into another and returns an option of the value if the conversion is
-    /// successful.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the conversion is not successful.
+    /// successful, `Option::None` otherwise.
     ///
     /// # Examples
     ///
@@ -458,6 +453,9 @@ pub trait Not<T> {
     fn not(a: T) -> T;
 }
 
+// The following two traits are for implementing the `[]` operator. Only one should be implemented
+// for each type. Both are not consuming of `self`, the first gets a snapshot of the object and
+// the second gets a reference.
 #[deprecated(
     feature: "deprecated-index-traits", note: "Use `core::ops::index::IndexView`.", since: "2.7.0"
 )]
@@ -472,9 +470,19 @@ pub trait Index<C, I, V> {
     fn index(ref self: C, index: I) -> V;
 }
 
-/// Trait for destructing a value of any type.
+/// A trait that allows for custom destruction behavior of a type.
+///
+/// Types implementing this trait will have their `destruct` method called
+/// automatically when they go out of scope.
+///
+/// This trait is particularly important for types that need to perform
+/// cleanup operations or side-effects when being destroyed, such as
+/// the `Felt252Dict` type that needs to be "squashed" before going out of scope.
 pub trait Destruct<T> {
-    /// Manually destruct and removing a type instance out of scope.
+    /// Destroys the value, performing any necessary cleanup operations.
+    ///
+    /// This method is called automatically when the value goes out of scope,
+    /// allowing for custom destruction behavior.
     ///
     /// # Examples
     ///
@@ -482,7 +490,7 @@ pub trait Destruct<T> {
     /// use core::dict::Felt252Dict;
     ///
     /// let dict: Felt252Dict<u8> = Default::default();
-    /// dict.destruct();
+    /// dict.destruct(); // Manual destruction during execution
     /// ```
     fn destruct(self: T) nopanic;
 }
@@ -493,7 +501,9 @@ impl DestructFromDrop<T, +Drop<T>> of Destruct<T> {
     fn destruct(self: T) nopanic {}
 }
 
-/// Trait for destructing a value of any type in the case of a panic.
+/// A trait that allows for destruction of a value in case of a panic.
+///
+/// This trait is automatically implemented from the `Destruct` implementation for a type.
 pub trait PanicDestruct<T> {
     fn panic_destruct(self: T, ref panic: Panic) nopanic;
 }
@@ -505,7 +515,7 @@ pub(crate) impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
     }
 }
 
-/// Trait for creating a default value of any type.
+/// A trait for giving a default value to a type.
 pub trait Default<T> {
     /// Creates a default instance for any type.
     ///
@@ -527,7 +537,7 @@ impl SnapshotDefault<T, +Default<T>, +Drop<T>> of Default<@T> {
     }
 }
 
-/// Trait that allows to return default values for types used as values in a dictionary.
+/// A trait that allows to return default values for types used as values in a dictionary.
 pub trait Felt252DictValue<T> {
     /// Returns the default value for this type as a value in a `Felt252Dict`.
     /// Should be logically equivalent to 0.
@@ -565,6 +575,7 @@ impl TuplePartialEq<
     }
 }
 
+// A trait helper for implementing `PartialEq` for tuples.
 trait TuplePartialEqHelper<T> {
     fn eq(lhs: T, rhs: T) -> bool;
     fn ne(lhs: T, rhs: T) -> bool;
