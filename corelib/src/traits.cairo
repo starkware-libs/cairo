@@ -447,7 +447,7 @@ pub trait Neg<T> {
 
 /// Trait for computing the logically negated value of a value of any type.
 pub trait Not<T> {
-    /// Computes the logical negation of a given value.
+    /// Performs the unary `!` operation.
     ///
     /// # Examples
     ///
