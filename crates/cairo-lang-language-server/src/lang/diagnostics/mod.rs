@@ -5,13 +5,15 @@ use lsp_types::Url;
 use tracing::{error, trace};
 
 use self::file_diagnostics::FileDiagnostics;
+use self::refresh::refresh_diagnostics;
 use self::trigger::trigger;
-use crate::lang::diagnostics::refresh::refresh_diagnostics;
+use crate::lang::diagnostics::file_batches::{batches, find_primary_files, find_secondary_files};
 use crate::server::client::Notifier;
 use crate::server::panic::cancelled_anyhow;
 use crate::server::schedule::thread::{self, JoinHandle, ThreadPriority};
 use crate::state::StateSnapshot;
 
+mod file_batches;
 mod file_diagnostics;
 mod lsp;
 mod refresh;
@@ -59,13 +61,7 @@ impl DiagnosticsController {
 
         while let Some(WorkerArgs { state, notifier }) = receiver.wait() {
             if let Err(err) = catch_unwind(AssertUnwindSafe(|| {
-                refresh_diagnostics(
-                    &state.db,
-                    &state.open_files,
-                    state.config.trace_macro_diagnostics,
-                    &mut file_diagnostics,
-                    notifier,
-                );
+                Self::control_tick(state, &mut file_diagnostics, notifier);
             })) {
                 if let Ok(err) = cancelled_anyhow(err, "diagnostics refreshing has been cancelled")
                 {
@@ -74,6 +70,28 @@ impl DiagnosticsController {
                     error!("caught panic while refreshing diagnostics");
                 }
             }
+        }
+    }
+
+    /// Runs a single tick of the diagnostics controller's event loop.
+    #[tracing::instrument(skip_all)]
+    fn control_tick(
+        state: StateSnapshot,
+        file_diagnostics: &mut HashMap<Url, FileDiagnostics>,
+        notifier: Notifier,
+    ) {
+        // TODO(mkaput): Make multiple batches and run them in parallel.
+        let primary_files = find_primary_files(&state.db, &state.open_files);
+        let secondary_files = find_secondary_files(&state.db, &primary_files);
+        let files = primary_files.into_iter().chain(secondary_files).collect::<Vec<_>>();
+        for batch in batches(&files, 1.try_into().unwrap()) {
+            refresh_diagnostics(
+                &state.db,
+                batch,
+                state.config.trace_macro_diagnostics,
+                file_diagnostics,
+                notifier.clone(),
+            );
         }
     }
 }
