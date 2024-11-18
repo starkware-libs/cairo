@@ -11,5 +11,13 @@ anyhow.workspace = true
 clap.workspace = true
 serde = { workspace = true, default-features = true }
 
+<<<<<<< HEAD
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.8.4" }
 cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "~2.8.4" }
+||||||| 14b1d8c15
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.8.2" }
+cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "~2.8.2" }
+=======
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.8.5" }
+cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "~2.8.5" }
+>>>>>>> origin/dev-v2.8.5
