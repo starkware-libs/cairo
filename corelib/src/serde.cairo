@@ -1,4 +1,4 @@
-//! Serialization and deserialization of data structures.
+//! Serialization and deserialization of types.
 //!
 //! This module provides a set of traits and implementations for serializing and deserializing
 //! data structures in a type-safe manner.
