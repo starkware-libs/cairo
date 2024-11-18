@@ -1,4 +1,4 @@
-//! ToByteArray module that provides traits and functions for formatting numeric types as their
+//! Formatting of numeric types into ASCII representations within ByteArrays.
 //! ASCII representations and appending them to a `ByteArray`.
 //!
 //! The main purpose of this module is to provide a standardized way to convert numeric values
