@@ -1,5 +1,6 @@
-//! Poseidon hash module that provides cryptographic hash functions based on the Poseidon
-//! permutation.
+//! Poseidon hash related traits implementations and functions.
+//!
+//! This module provides cryptographic hash functions based on the Poseidon permutation.
 //!
 //! The Poseidon hash function is an arithmetic-friendly hash function optimized for use in
 //! zero-knowledge proof systems. This module implements the Poseidon hash using a sponge
@@ -42,7 +43,7 @@ pub struct HashState {
     pub odd: bool,
 }
 
-/// `PoseidonTrait` used to create a new Poseidon state.
+/// `PoseidonTrait` implementation used to create a new Poseidon state.
 #[generate_trait]
 pub impl PoseidonImpl of PoseidonTrait {
     /// Creates an initial state with all fields set to 0.
