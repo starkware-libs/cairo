@@ -13,7 +13,7 @@ use crate::array::{ArrayTrait, SpanTrait};
 
 /// A trait that allows for serializing and deseriaziling values of any type.
 pub trait Serde<T> {
-    /// Takes a snapshot of a value of any type and referenced output `Array<felt252`, serializes
+    /// Takes a snapshot of a value of any type and a referenced output `Array<felt252`, serializes
     /// the value and appends the result to the output.
     ///
     /// # Examples
