@@ -51,7 +51,10 @@ pub impl PedersenImpl of PedersenTrait {
 }
 
 impl HashStateImpl of crate::hash::HashStateTrait<HashState> {
-    /// Returns a new Pedersen state given a current state and a `felt252` value.
+    /// Updates the hash state with a new value.
+    ///
+    /// Applies the Pedersen commitment function to the current state and new value.
+    ///
     ///
     /// # Examples
     ///
