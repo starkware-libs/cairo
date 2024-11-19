@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::sync::Mutex;
+
 use anyhow::{Context, Result, anyhow, ensure};
 use connection::ProcMacroServerConnection;
 use crossbeam::channel::Sender;
@@ -5,6 +8,10 @@ use scarb_proc_macro_server_types::jsonrpc::{RequestId, RpcRequest};
 use scarb_proc_macro_server_types::methods::Method;
 use scarb_proc_macro_server_types::methods::defined_macros::{
     DefinedMacros, DefinedMacrosParams, DefinedMacrosResponse,
+};
+use scarb_proc_macro_server_types::methods::expand::{
+    ExpandAttribute, ExpandAttributeParams, ExpandDerive, ExpandDeriveParams, ExpandInline,
+    ExpandInlineMacroParams,
 };
 pub use status::ClientStatus;
 use tracing::error;
@@ -14,15 +21,41 @@ mod id_generator;
 pub mod status;
 
 #[derive(Debug)]
+#[allow(dead_code)]
+pub enum RequestParams {
+    Attribute(ExpandAttributeParams),
+    Derive(ExpandDeriveParams),
+    Inline(ExpandInlineMacroParams),
+}
+
+#[derive(Debug)]
 pub struct ProcMacroClient {
     connection: ProcMacroServerConnection,
     id_generator: id_generator::IdGenerator,
+    requests_params: Mutex<HashMap<RequestId, RequestParams>>,
     error_channel: Sender<()>,
 }
 
 impl ProcMacroClient {
     pub fn new(connection: ProcMacroServerConnection, error_channel: Sender<()>) -> Self {
-        Self { connection, id_generator: Default::default(), error_channel }
+        Self {
+            connection,
+            id_generator: Default::default(),
+            requests_params: Default::default(),
+            error_channel,
+        }
+    }
+
+    pub fn request_attribute(&self, params: ExpandAttributeParams) {
+        self.send_request::<ExpandAttribute>(params, RequestParams::Attribute)
+    }
+
+    pub fn request_derives(&self, params: ExpandDeriveParams) {
+        self.send_request::<ExpandDerive>(params, RequestParams::Derive)
+    }
+
+    pub fn request_inline_macros(&self, params: ExpandInlineMacroParams) {
+        self.send_request::<ExpandInline>(params, RequestParams::Inline)
     }
 
     pub fn start_initialize(&self) {
@@ -85,6 +118,28 @@ impl ProcMacroClient {
                 value: serde_json::to_value(params).unwrap(),
             })
             .with_context(|| anyhow!("sending request {id} failed"))
+    }
+
+    fn send_request<M: Method>(
+        &self,
+        params: M::Params,
+        map: impl FnOnce(M::Params) -> RequestParams,
+    ) {
+        let id = self.id_generator.unique_id();
+        // This must be locked before sending request so sending request and tracking is atomic
+        // operation.
+        let mut requests_params = self.requests_params.lock().unwrap();
+
+        match self.send_request_untracked::<M>(id, &params) {
+            Ok(()) => {
+                requests_params.insert(id, map(params));
+            }
+            Err(err) => {
+                error!("Sending request to proc-macro-server failed: {err:?}");
+
+                self.failed();
+            }
+        }
     }
 
     fn failed(&self) {
