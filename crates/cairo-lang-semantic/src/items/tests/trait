@@ -72,7 +72,7 @@ error: Type not found.
     fn param_test(ref a: u128) -> bad_type nopanic;
                                   ^******^
 
-error: Not all trait items are implemented. Missing: 'param_test', 'no_ret_ty'.
+error[E0004]: Not all trait items are implemented. Missing: 'param_test', 'no_ret_ty'.
  --> lib.cairo:7:6
 impl MyImpl of MyTrait::<A>;
      ^****^
@@ -425,7 +425,7 @@ trait MyTrait {
 impl MyImpl of MyTrait;
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo2'.
+error[E0004]: Not all trait items are implemented. Missing: 'foo1', 'foo2'.
  --> lib.cairo:5:6
 impl MyImpl of MyTrait;
      ^****^
@@ -456,7 +456,7 @@ impl MyImpl of MyTrait;
 // TODO(TomerStarkware): improve diagnostics for missing impls.
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C'.
+error[E0004]: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C'.
  --> lib.cairo:9:6
 impl MyImpl of MyTrait;
      ^****^
@@ -509,7 +509,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D'.
+error[E0004]: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D'.
  --> lib.cairo:16:6
 impl MyImpl of MyTrait {
      ^****^
