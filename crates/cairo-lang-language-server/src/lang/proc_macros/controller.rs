@@ -2,6 +2,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
 
+use cairo_lang_semantic::plugin::PluginSuite;
 use crossbeam::channel::{Receiver, Sender};
 use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
@@ -13,6 +14,7 @@ use super::client::connection::ProcMacroServerConnection;
 use super::client::status::ClientStatus;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
+use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
 use crate::toolchain::scarb::ScarbToolchain;
 
 /// Manages lifecycle of proc-macro-server client.
@@ -36,6 +38,7 @@ use crate::toolchain::scarb::ScarbToolchain;
 /// ```
 pub struct ProcMacroClientController {
     scarb: ScarbToolchain,
+    plugin_suite: Option<PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: Option<ProcMacroChannelsSenders>,
 }
@@ -54,6 +57,7 @@ impl ProcMacroClientController {
     pub fn new(scarb: ScarbToolchain) -> Self {
         Self {
             scarb,
+            plugin_suite: Default::default(),
             initialization_retries: RateLimiter::direct(
                 Quota::with_period(
                     Duration::from_secs(180 / 5), // Across 3 minutes (180 seconds) / 5 retries.
@@ -87,13 +91,19 @@ impl ProcMacroClientController {
     pub fn on_response(&mut self, db: &mut AnalysisDatabase) {
         match db.proc_macro_client_status() {
             ClientStatus::Starting(client) => {
-                let Ok(_defined_macros) = client.finish_initialize() else {
+                let Ok(defined_macros) = client.finish_initialize() else {
                     self.handle_error(db);
 
                     return;
                 };
 
-                // TODO setup db plugins.
+                let new_plugin_suite = proc_macro_plugin_suite(defined_macros);
+
+                // Store current plugins for identity comparison, so we can remove them if we
+                // restart proc-macro-server.
+                let previous_plugin_suite = self.plugin_suite.replace(new_plugin_suite.clone());
+
+                db.replace_plugin_suite(previous_plugin_suite, new_plugin_suite);
 
                 db.set_proc_macro_client_status(ClientStatus::Ready(client));
             }
