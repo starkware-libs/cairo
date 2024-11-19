@@ -22,7 +22,7 @@
 //! state = state.update(1);
 //! state = state.update(2);
 //! let hash = state.finalize();
-//! assert!(hash == state.state);
+//! assert!(hash == 0x07546be9ecb576c12cd00962356afd90b615d8ef50605bc13badfd1fd218c0d5);
 //! ```
 
 pub extern type Pedersen;
@@ -39,7 +39,7 @@ pub struct HashState {
     pub state: felt252,
 }
 
-/// `PedersenTrait` implementation for updating a hash state and finalizing the hash computation.
+/// A trait for computing Pedersen hashes.
 #[generate_trait]
 pub impl PedersenImpl of PedersenTrait {
     /// Creates a new Pedersen hash state with the given base value.
