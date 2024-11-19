@@ -15,6 +15,7 @@ use tracing::error;
 use super::client::connection::ProcMacroServerConnection;
 use super::client::status::ClientStatus;
 use super::client::{ProcMacroClient, RequestParams};
+use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
@@ -83,28 +84,28 @@ impl ProcMacroClientController {
         }
     }
 
-    /// Start proc-macro-server.
+    /// Start proc-macro-server after config reload.
     /// Note that this will only try to go from `ClientStatus::Pending` to
-    /// `ClientStatus::Starting`.
-    pub fn initialize_once(&mut self, db: &mut AnalysisDatabase) {
+    /// `ClientStatus::Starting` if config allows this.
+    pub fn initialize_once(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         if db.proc_macro_client_status().is_uninitialized() {
-            self.try_initialize(db);
+            self.try_initialize(db, config);
         }
     }
 
-    pub fn handle_error(&mut self, db: &mut AnalysisDatabase) {
-        if !self.try_initialize(db) {
+    pub fn handle_error(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+        if !self.try_initialize(db, config) {
             self.fatal_failed(db, ProcMacroServerInitializationFailedParams::NoMoreRetries);
         }
     }
 
     /// Check if there was error reported, if so try to restart.
     /// If client is ready applies all available responses.
-    pub fn on_response(&mut self, db: &mut AnalysisDatabase) {
+    pub fn on_response(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         match db.proc_macro_client_status() {
             ClientStatus::Starting(client) => {
                 let Ok(defined_macros) = client.finish_initialize() else {
-                    self.handle_error(db);
+                    self.handle_error(db, config);
 
                     return;
                 };
@@ -124,17 +125,19 @@ impl ProcMacroClientController {
                 // possible with salsa public api. if there are snapshots running we
                 // can skip this job, this will lead to more updates at once later
                 // and less cancellation.
-                self.apply_responses(db, &client);
+                self.apply_responses(db, config, &client);
             }
             _ => {}
         }
     }
 
-    /// Tries starting proc-macro-server initialization process.
+    /// Tries starting proc-macro-server initialization process, if allowed by config.
     ///
     /// Returns value indicating if initialization was attempted.
-    fn try_initialize(&mut self, db: &mut AnalysisDatabase) -> bool {
-        let initialize = self.initialization_retries.check().is_ok();
+    fn try_initialize(&mut self, db: &mut AnalysisDatabase, config: &Config) -> bool {
+        // Keep the rate limiter check as second condition when config doesn't allow it to make
+        // sure it is not impacted.
+        let initialize = config.enable_proc_macros && self.initialization_retries.check().is_ok();
 
         if initialize {
             self.spawn_server(db);
@@ -176,7 +179,12 @@ impl ProcMacroClientController {
         self.notifier.notify::<ProcMacroServerInitializationFailed>(params);
     }
 
-    fn apply_responses(&mut self, db: &mut AnalysisDatabase, client: &ProcMacroClient) {
+    fn apply_responses(
+        &mut self,
+        db: &mut AnalysisDatabase,
+        config: &Config,
+        client: &ProcMacroClient,
+    ) {
         let mut attribute_resolutions = db.attribute_macro_resolution();
         let mut attribute_resolutions_changed = false;
 
@@ -207,7 +215,7 @@ impl ProcMacroClientController {
                 Err(error) => {
                     error!("{error:#?}");
 
-                    self.handle_error(db)
+                    self.handle_error(db, config)
                 }
             }
         });
