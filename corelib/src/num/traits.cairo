@@ -15,6 +15,7 @@ pub mod ops;
 pub use ops::overflowing::{OverflowingAdd, OverflowingSub, OverflowingMul};
 pub use ops::wrapping::{WrappingAdd, WrappingSub, WrappingMul};
 pub use ops::checked::{CheckedAdd, CheckedSub, CheckedMul};
+pub use ops::pow::Pow;
 pub use ops::saturating::{SaturatingAdd, SaturatingSub, SaturatingMul};
 pub use ops::widemul::WideMul;
 pub use ops::widesquare::WideSquare;
