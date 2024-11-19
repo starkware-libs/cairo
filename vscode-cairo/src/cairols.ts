@@ -148,6 +148,22 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
   });
 
   client.onNotification(
+    new lc.NotificationType<"NoMoreRetries" | "SpawnFail">(
+      "cairo/procMacroServerInitializationFailed",
+    ),
+    async (errorMessage) => {
+      const noMoreRetries =
+        "Starting proc-macro-server failed 5 times in 3 minutes, no more action will be taken";
+      const spawnFail =
+        "Starting proc-macro-server with `scarb proc-macro-server` failed, no more action will be taken";
+
+      await vscode.window.showErrorMessage(
+        errorMessage == "NoMoreRetries" ? noMoreRetries : spawnFail,
+      );
+    },
+  );
+
+  client.onNotification(
     new lc.NotificationType<string>("cairo/corelib-version-mismatch"),
     async (errorMessage) => {
       const restart = "Restart CairoLS";
