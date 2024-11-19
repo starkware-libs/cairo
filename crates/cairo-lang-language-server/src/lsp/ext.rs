@@ -59,3 +59,19 @@ impl Notification for ScarbMetadataFailed {
     type Params = ();
     const METHOD: &'static str = "cairo/scarb-metadata-failed";
 }
+
+/// Notifies about `proc-macro-server` fatal fail.
+#[derive(Debug)]
+pub struct ProcMacroServerInitializationFailed;
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", rename_all_fields = "camelCase", tag = "reason")]
+pub enum ProcMacroServerInitializationFailedParams {
+    NoMoreRetries { retries: u32, in_minutes: u64 },
+    SpawnFail,
+}
+
+impl Notification for ProcMacroServerInitializationFailed {
+    type Params = ProcMacroServerInitializationFailedParams;
+    const METHOD: &'static str = "cairo/procMacroServerInitializationFailed";
+}
