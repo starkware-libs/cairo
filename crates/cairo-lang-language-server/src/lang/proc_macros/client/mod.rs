@@ -4,7 +4,7 @@ use anyhow::{Context, Result, anyhow, ensure};
 use connection::ProcMacroServerConnection;
 use crossbeam::channel::Sender;
 use rustc_hash::FxHashMap;
-use scarb_proc_macro_server_types::jsonrpc::{RequestId, RpcRequest};
+use scarb_proc_macro_server_types::jsonrpc::{RequestId, RpcRequest, RpcResponse};
 use scarb_proc_macro_server_types::methods::Method;
 use scarb_proc_macro_server_types::methods::defined_macros::{
     DefinedMacros, DefinedMacrosParams, DefinedMacrosResponse,
@@ -21,7 +21,6 @@ mod id_generator;
 pub mod status;
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub enum RequestParams {
     Attribute(ExpandAttributeParams),
     Derive(ExpandDeriveParams),
@@ -69,6 +68,18 @@ impl ProcMacroClient {
     pub fn finish_initialize(&self) -> Result<DefinedMacrosResponse> {
         self.handle_defined_macros()
             .inspect_err(|err| error!("failed to fetch defined macros: {err:?}"))
+    }
+
+    /// Calls `job` for all available responses without waiting for new ones.
+    pub fn for_available_responses(&self, mut job: impl FnMut(RequestParams, RpcResponse)) {
+        let mut responses = self.connection.responses.lock().unwrap();
+        let mut requests = self.requests_params.lock().unwrap();
+
+        while let Some(response) = responses.pop_front() {
+            let params = requests.remove(&response.id).unwrap();
+
+            job(params, response);
+        }
     }
 
     fn request_defined_macros(&self) -> Result<()> {
