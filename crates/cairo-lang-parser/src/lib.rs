@@ -10,7 +10,6 @@ pub mod lexer;
 pub mod operators;
 pub mod parser;
 pub mod printer;
-pub mod quote;
 pub mod recovery;
 pub mod types;
 pub mod utils;

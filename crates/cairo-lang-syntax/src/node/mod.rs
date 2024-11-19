@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
-use cairo_lang_utils::{Intern, LookupIntern, require};
+use cairo_lang_utils::{require, Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use self::ast::TriviaGreen;
@@ -26,6 +26,7 @@ pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
 pub mod utils;
+pub mod with_db;
 
 #[cfg(test)]
 mod ast_test;
