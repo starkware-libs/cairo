@@ -18,10 +18,15 @@ use super::client::{ProcMacroClient, RequestParams};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
+use crate::lsp::ext::{
+    ProcMacroServerInitializationFailed, ProcMacroServerInitializationFailedParams,
+};
+use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 
 /// Manages lifecycle of proc-macro-server client.
 pub struct ProcMacroClientController {
+    notifier: Notifier,
     scarb: ScarbToolchain,
     plugin_suite: Option<PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
@@ -39,8 +44,9 @@ impl ProcMacroClientController {
         (error_receiver, response_receiver)
     }
 
-    pub fn new(scarb: ScarbToolchain) -> Self {
+    pub fn new(notifier: Notifier, scarb: ScarbToolchain) -> Self {
         Self {
+            notifier,
             scarb,
             plugin_suite: Default::default(),
             initialization_retries: RateLimiter::direct(
@@ -96,20 +102,24 @@ impl ProcMacroClientController {
             Err(err) => {
                 error!("spawning proc-macro-server failed: {err:?}");
 
-                self.fatal_failed(db)
+                self.fatal_failed(db, ProcMacroServerInitializationFailedParams::SpawnFail)
             }
         }
     }
 
-    fn fatal_failed(&self, db: &mut AnalysisDatabase) {
+    fn fatal_failed(
+        &self,
+        db: &mut AnalysisDatabase,
+        params: ProcMacroServerInitializationFailedParams,
+    ) {
         db.set_proc_macro_client_status(ClientStatus::FailedToInitialize);
 
-        // TODO Send notification.
+        self.notifier.notify::<ProcMacroServerInitializationFailed>(params);
     }
 
     pub fn handle_error(&mut self, db: &mut AnalysisDatabase) {
         if !self.try_initialize(db) {
-            self.fatal_failed(db);
+            self.fatal_failed(db, ProcMacroServerInitializationFailedParams::NoMoreRetries);
         }
     }
 
