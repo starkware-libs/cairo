@@ -14,6 +14,10 @@ pub enum ClientStatus {
 }
 
 impl ClientStatus {
+    pub fn ready(&self) -> Option<&ProcMacroClient> {
+        if let Self::Ready(client) = self { Some(client) } else { None }
+    }
+
     pub fn is_pending(&self) -> bool {
         matches!(self, Self::Pending)
     }
