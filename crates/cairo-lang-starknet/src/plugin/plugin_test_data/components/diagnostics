@@ -1674,7 +1674,7 @@ warning: Plugin diagnostic: Impls with the embeddable attribute must implement a
     #[embeddable_as(MyImpl)]
     ^**********************^
 
-error: Not all trait items are implemented. Missing: 'no_self', 'self_of_wrong_type'.
+error[E0004]: Not all trait items are implemented. Missing: 'no_self', 'self_of_wrong_type'.
  --> lib.cairo:8:21
     #[embeddable_as(MyImpl)]
                     ^****^
