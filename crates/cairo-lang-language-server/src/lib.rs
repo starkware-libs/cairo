@@ -51,6 +51,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::plugin::PluginSuite;
+use crossbeam::select;
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use salsa::{Database, Durability};
@@ -345,16 +346,31 @@ impl Backend {
     // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69 |
     // +--------------------------------------------------+
     fn event_loop(connection: &Connection, mut scheduler: Scheduler<'_>) -> Result<()> {
-        for msg in connection.incoming() {
-            if connection.handle_shutdown(&msg)? {
-                break;
-            }
-            let task = match msg {
-                Message::Request(req) => server::request(req),
-                Message::Notification(notification) => server::notification(notification),
-                Message::Response(response) => scheduler.response(response),
+        macro_rules! unwrap_or_break {
+            ($result:expr) => {
+                match $result {
+                    Ok(ok) => ok,
+                    Err(_) => break,
+                }
             };
-            scheduler.dispatch(task);
+        }
+
+        loop {
+            select! {
+                recv(connection.incoming()) -> msg => {
+                    let msg = unwrap_or_break!(msg);
+
+                    if connection.handle_shutdown(&msg)? {
+                        break;
+                    }
+                    let task = match msg {
+                        Message::Request(req) => server::request(req),
+                        Message::Notification(notification) => server::notification(notification),
+                        Message::Response(response) => scheduler.response(response),
+                    };
+                    scheduler.dispatch(task);
+                }
+            }
         }
 
         Ok(())
