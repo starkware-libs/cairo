@@ -108,10 +108,19 @@ fn visible_traits_in_module_ex(
     if visited_modules.contains(&module_id) {
         return Some(result.into());
     }
+
+    let user_module_crate = module_id.owning_crate(db.upcast());
+    let user_module_edition =
+        db.crate_config(user_module_crate).map(|c| c.settings.edition).unwrap_or_default();
+    let ignore_visibility = user_module_edition.ignore_visibility();
     // Check if an item in the current module is visible from the user module.
     let is_visible = |item_name: SmolStr| {
-        let item_info = db.module_item_info_by_name(module_id, item_name).ok()??;
-        Some(peek_visible_in(db.upcast(), item_info.visibility, module_id, user_module_id))
+        if ignore_visibility {
+            Some(true)
+        } else {
+            let item_info = db.module_item_info_by_name(module_id, item_name).ok()??;
+            Some(peek_visible_in(db.upcast(), item_info.visibility, module_id, user_module_id))
+        }
     };
     visited_modules.insert(module_id);
     let mut modules_to_visit = vec![];
