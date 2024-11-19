@@ -38,6 +38,16 @@ pub struct Config {
     /// The property is set by the user under the `cairo1.traceMacroDiagnostics` key in client
     /// configuration.
     pub trace_macro_diagnostics: bool,
+    /// Whether to resolve procedural macros or ignore them.
+    ///
+    /// The property is set by the user under the `cairo1.disableProcMacros` key in client
+    /// configuration.
+    ///
+    /// - `false`: Procedural macro server will start.
+    /// - `true`: Procedural macro server will **not** start.
+    /// - `None`: Temporarily behaves like `false` until the configuration is loaded from the
+    ///   client. This prevents the server from starting prematurely.
+    pub disable_proc_macros: Option<bool>,
 }
 
 impl Config {
@@ -60,6 +70,10 @@ impl Config {
             ConfigurationItem {
                 scope_uri: None,
                 section: Some("cairo1.traceMacroDiagnostics".to_owned()),
+            },
+            ConfigurationItem {
+                scope_uri: None,
+                section: Some("cairo1.disableProcMacros".to_owned()),
             },
         ];
         let expected_len = items.len();
@@ -86,8 +100,13 @@ impl Config {
                     .map(Into::into);
                 state.config.trace_macro_diagnostics =
                     response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default();
+                state.config.disable_proc_macros = Some(
+                    response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default(),
+                );
 
                 debug!("reloaded configuration: {:#?}", state.config);
+
+                state.proc_macro_controller.initialize_once(&mut state.db, &state.config);
             })
         };
 
