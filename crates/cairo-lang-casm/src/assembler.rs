@@ -75,6 +75,8 @@ pub struct InstructionRepr {
 }
 
 /// An assembled representation of a cairo program.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[derive(Debug, Clone)]
 pub struct AssembledCairoProgram {
     /// The bytecode of the program.
     pub bytecode: Vec<BigInt>,
