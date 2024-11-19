@@ -73,8 +73,7 @@ use crate::array::{ArrayTrait, SpanTrait};
 //! }
 //! ```
 pub trait Serde<T> {
-    /// Takes a snapshot of a value of any type and a referenced output `Array<felt252`, serializes
-    /// the value and appends the result to the output.
+    /// Serializes a value into a sequence of `felt252`s.
     ///
     /// # Examples
     ///
@@ -86,8 +85,8 @@ pub trait Serde<T> {
     /// ```
     fn serialize(self: @T, ref output: Array<felt252>);
 
-    /// Takes a `Span<felt252>` serialized value and deserializes it.
-    /// Returns an option of the deserialized result if the operation is successful, `Option::None`
+    /// Deserializes a value from a sequence of `felt252`s.
+    /// If the value cannot be deserialized, returns `Option::None`.
     /// otherwise.
     ///
     /// # Examples
@@ -182,13 +181,8 @@ pub mod into_felt252_based {
     use crate::traits::{Into, TryInto};
     use crate::array::ArrayTrait;
 
-    /// `Serde` implementation for types that can be converted into `felt252` using the `Into` trait
+    /// A generic `Serde` implementation for types that can be converted into `felt252` using the `Into` trait
     /// and from `felt252` using the `TryInto` trait.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`
     /// ```
     pub impl SerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::Serde<T> {
         #[inline]
