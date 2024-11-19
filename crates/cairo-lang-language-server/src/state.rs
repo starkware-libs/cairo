@@ -38,7 +38,8 @@ impl State {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
         let db_swapper = AnalysisDatabaseSwapper::new(scarb_toolchain.clone());
-        let proc_macro_controller = ProcMacroClientController::new(scarb_toolchain.clone());
+        let proc_macro_controller =
+            ProcMacroClientController::new(scarb_toolchain.clone(), notifier.clone());
 
         Self {
             db: AnalysisDatabase::new(&tricks),

@@ -18,7 +18,14 @@ use super::client::{ProcMacroClient, RequestParams};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
+use crate::lsp::ext::{
+    ProcMacroServerInitializationFailed, ProcMacroServerInitializationFailedParams,
+};
+use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
+
+const RATE_LIMITER_PERIOD_SEC: u64 = 180;
+const RATE_LIMITER_RETRIES: u32 = 5;
 
 /// Manages lifecycle of proc-macro-server client.
 ///
@@ -41,6 +48,7 @@ use crate::toolchain::scarb::ScarbToolchain;
 /// ```
 pub struct ProcMacroClientController {
     scarb: ScarbToolchain,
+    notifier: Notifier,
     plugin_suite: Option<PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
     channels: Option<ProcMacroChannelsSenders>,
@@ -57,17 +65,19 @@ impl ProcMacroClientController {
         ProcMacroChannelsReceivers { error: error_receiver, response: response_receiver }
     }
 
-    pub fn new(scarb: ScarbToolchain) -> Self {
+    pub fn new(scarb: ScarbToolchain, notifier: Notifier) -> Self {
         Self {
             scarb,
+            notifier,
             plugin_suite: Default::default(),
             initialization_retries: RateLimiter::direct(
-                Quota::with_period(
-                    Duration::from_secs(180 / 5), // Across 3 minutes (180 seconds) / 5 retries.
-                )
+                Quota::with_period(Duration::from_secs(
+                    RATE_LIMITER_PERIOD_SEC / RATE_LIMITER_RETRIES as u64,
+                ))
                 .unwrap()
                 .allow_burst(
-                    NonZeroU32::new(5).unwrap(), // All 5 retries can be used as fast as possible.
+                    // All retries can be used as fast as possible.
+                    NonZeroU32::new(RATE_LIMITER_RETRIES).unwrap(),
                 ),
             ),
             channels: Default::default(),
@@ -86,7 +96,10 @@ impl ProcMacroClientController {
     /// Check if an error was reported. If so, try to restart.
     pub fn handle_error(&mut self, db: &mut AnalysisDatabase) {
         if !self.try_initialize(db) {
-            self.fatal_failed(db);
+            self.fatal_failed(db, ProcMacroServerInitializationFailedParams::NoMoreRetries {
+                retries: RATE_LIMITER_RETRIES,
+                in_minutes: RATE_LIMITER_PERIOD_SEC / 60,
+            });
         }
     }
 
@@ -148,15 +161,19 @@ impl ProcMacroClientController {
             Err(err) => {
                 error!("spawning proc-macro-server failed: {err:?}");
 
-                self.fatal_failed(db)
+                self.fatal_failed(db, ProcMacroServerInitializationFailedParams::SpawnFail);
             }
         }
     }
 
-    fn fatal_failed(&self, db: &mut AnalysisDatabase) {
+    fn fatal_failed(
+        &self,
+        db: &mut AnalysisDatabase,
+        params: ProcMacroServerInitializationFailedParams,
+    ) {
         db.set_proc_macro_client_status(ClientStatus::Crashed);
 
-        // TODO Send notification.
+        self.notifier.notify::<ProcMacroServerInitializationFailed>(params);
     }
 
     fn apply_responses(&mut self, db: &mut AnalysisDatabase, client: &ProcMacroClient) {
