@@ -1,10 +1,11 @@
-use std::sync::Mutex;
+use std::collections::VecDeque;
+use std::sync::{Mutex, MutexGuard};
 
 use anyhow::{Context, Result, anyhow, ensure};
 use connection::ProcMacroServerConnection;
 use crossbeam::channel::Sender;
 use rustc_hash::FxHashMap;
-use scarb_proc_macro_server_types::jsonrpc::{RequestId, RpcRequest};
+use scarb_proc_macro_server_types::jsonrpc::{RequestId, RpcRequest, RpcResponse};
 use scarb_proc_macro_server_types::methods::Method;
 use scarb_proc_macro_server_types::methods::defined_macros::{
     DefinedMacros, DefinedMacrosParams, DefinedMacrosResponse,
@@ -21,7 +22,6 @@ mod id_generator;
 pub mod status;
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub enum RequestParams {
     Attribute(ExpandAttributeParams),
     Derive(ExpandDeriveParams),
@@ -69,6 +69,16 @@ impl ProcMacroClient {
     pub fn finish_initialize(&self) -> Result<DefinedMacrosResponse> {
         self.handle_defined_macros()
             .inspect_err(|err| error!("failed to fetch defined macros: {err:?}"))
+    }
+
+    /// Returns an iterator over all available responses. This iterator does not wait for new
+    /// responses. As long as this iterator is not dropped, any attempt to send requests will be
+    /// blocked.
+    pub fn available_responses(&self) -> Responses<'_> {
+        let responses = self.connection.responses.lock().unwrap();
+        let requests = self.requests_params.lock().unwrap();
+
+        Responses { responses, requests }
     }
 
     fn request_defined_macros(&self) -> Result<()> {
@@ -138,5 +148,21 @@ impl ProcMacroClient {
 
     fn failed(&self) {
         let _ = self.error_channel.try_send(());
+    }
+}
+
+pub struct Responses<'a> {
+    responses: MutexGuard<'a, VecDeque<RpcResponse>>,
+    requests: MutexGuard<'a, FxHashMap<RequestId, RequestParams>>,
+}
+
+impl<'a> Iterator for Responses<'a> {
+    type Item = (RequestParams, RpcResponse);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let response = self.responses.pop_front()?;
+        let params = self.requests.remove(&response.id).unwrap();
+
+        Some((params, response))
     }
 }
