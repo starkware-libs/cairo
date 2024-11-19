@@ -18,7 +18,7 @@ use crate::toolchain::scarb::ScarbToolchain;
 pub struct State {
     pub db: AnalysisDatabase,
     pub open_files: Owned<HashSet<Url>>,
-    pub loaded_scarb_manifests: HashSet<PathBuf>,
+    pub loaded_scarb_manifests: Owned<HashSet<PathBuf>>,
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
     pub scarb_toolchain: ScarbToolchain,

@@ -18,6 +18,7 @@ use tracing::{debug, error, warn};
 use crate::lang::db::AnalysisDatabase;
 use crate::project::crate_data::Crate;
 
+/// Get paths to manifests of the workspace members.
 pub fn get_workspace_members_manifests(metadata: &Metadata) -> Vec<PathBuf> {
     metadata
         .workspace

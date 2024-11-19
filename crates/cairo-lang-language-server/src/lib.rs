@@ -55,7 +55,7 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use salsa::{Database, Durability};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info, trace, warn};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
@@ -392,6 +392,7 @@ impl Backend {
         match ProjectManifestPath::discover(file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
                 if loaded_scarb_manifests.contains(&manifest_path) {
+                    trace!("Project with manifest {} is already loaded", manifest_path.display());
                     return;
                 }
 
@@ -407,11 +408,7 @@ impl Backend {
                     .ok();
 
                 if let Some(metadata) = metadata {
-                    let manifests = get_workspace_members_manifests(&metadata);
-                    for manifest in manifests {
-                        loaded_scarb_manifests.insert(manifest);
-                    }
-
+                    loaded_scarb_manifests.extend(get_workspace_members_manifests(&metadata));
                     update_crate_roots(&metadata, db);
                 } else {
                     // Try to set up a corelib at least.
