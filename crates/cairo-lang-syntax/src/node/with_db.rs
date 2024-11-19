@@ -1,6 +1,7 @@
 use cairo_lang_stable_token::{StableSpan, StableToken, ToStableTokenStream};
 
-use super::{db::SyntaxGroup, SyntaxNode};
+use super::SyntaxNode;
+use super::db::SyntaxGroup;
 
 pub struct SyntaxNodeWithDb<'a, Db: SyntaxGroup> {
     node: SyntaxNode,

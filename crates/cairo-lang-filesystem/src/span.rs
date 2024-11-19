@@ -61,14 +61,14 @@ impl TextOffset {
         TextOffset(self.0 - width)
     }
     pub fn take_from(self, content: &str) -> &str {
-        &content[(self.0 .0 as usize)..]
+        &content[(self.0.0 as usize)..]
     }
 }
 impl Sub for TextOffset {
     type Output = TextWidth;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        TextWidth(self.0 .0 - rhs.0 .0)
+        TextWidth(self.0.0 - rhs.0.0)
     }
 }
 
@@ -88,7 +88,7 @@ impl TextSpan {
         self.start <= other.start && self.end >= other.end
     }
     pub fn take(self, content: &str) -> &str {
-        &content[(self.start.0 .0 as usize)..(self.end.0 .0 as usize)]
+        &content[(self.start.0.0 as usize)..(self.end.0.0 as usize)]
     }
     pub fn n_chars(self, content: &str) -> usize {
         self.take(content).chars().count()
@@ -104,7 +104,7 @@ impl TextSpan {
 
     /// Returns self.start..self.end as [`Range<usize>`]
     pub fn to_str_range(&self) -> Range<usize> {
-        self.start.0 .0 as usize..self.end.0 .0 as usize
+        self.start.0.0 as usize..self.end.0.0 as usize
     }
 
     /// Convert this span to a [`TextPositionSpan`] in the file.

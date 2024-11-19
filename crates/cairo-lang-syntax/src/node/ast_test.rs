@@ -171,10 +171,9 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     let terminal5 = TerminalLiteralNumber::new_green(db, no_trivia, token5, no_trivia);
     let expr = ExprBinary::new_green(
         db,
-        ExprPath::new_green(
-            db,
-            vec![PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
-        )
+        ExprPath::new_green(db, vec![
+            PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into(),
+        ])
         .into(),
         terminal_plus.into(),
         terminal5.into(),
