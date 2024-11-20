@@ -2,10 +2,8 @@ use std::collections::HashSet;
 
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::ids::FileId;
-use cairo_lang_utils::LookupIntern;
 use lsp_types::Url;
 use lsp_types::notification::PublishDiagnostics;
-use tracing::trace;
 
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::diagnostics::file_diagnostics::FileDiagnostics;
@@ -46,16 +44,11 @@ fn refresh_file_diagnostics(
     project_diagnostics: &ProjectDiagnostics,
     notifier: &Notifier,
 ) {
-    let Some(file_uri) = db.url_for_file(file) else {
-        trace!("url for file not found: {:?}", file.lookup_intern(db));
-        return;
-    };
-
     let Some(new_file_diagnostics) = FileDiagnostics::collect(db, file, processed_modules) else {
         return;
     };
 
-    if project_diagnostics.insert(&file_uri, new_file_diagnostics.clone()) {
+    if project_diagnostics.insert(new_file_diagnostics.clone()) {
         if let Some(params) = new_file_diagnostics.to_lsp(db, trace_macro_diagnostics) {
             notifier.notify::<PublishDiagnostics>(params);
         }
