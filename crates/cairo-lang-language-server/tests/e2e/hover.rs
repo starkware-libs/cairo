@@ -17,6 +17,8 @@ cairo_lang_test_utils::test_file_test!(
         partial: "partial.txt",
         starknet: "starknet.txt",
         literals: "literals.txt",
+        structs: "structs.txt",
+        paths: "paths.txt",
     },
     test_hover
 );

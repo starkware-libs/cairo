@@ -27,6 +27,9 @@ impl TextWidth {
     pub fn new_for_testing(value: u32) -> Self {
         Self(value)
     }
+    pub fn as_u32(self) -> u32 {
+        self.0
+    }
 }
 impl Add for TextWidth {
     type Output = Self;
@@ -62,6 +65,9 @@ impl TextOffset {
     }
     pub fn take_from(self, content: &str) -> &str {
         &content[(self.0.0 as usize)..]
+    }
+    pub fn as_u32(self) -> u32 {
+        self.0.as_u32()
     }
 }
 impl Sub for TextOffset {

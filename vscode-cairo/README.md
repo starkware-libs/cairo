@@ -41,7 +41,7 @@ Happy coding!
 ## Configuration
 
 This extension can be configured through VS Code's configuration settings.
-All settings all under the `cairo1.*` section.
+All settings are under the `cairo1.*` section.
 Consult the settings UI in VS Code for more documentation.
 
 ## Support

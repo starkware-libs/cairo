@@ -1,6 +1,5 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::hints::CoreHint;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::circuit::{
@@ -247,7 +246,7 @@ fn build_circuit_eval(
         assert modulus3 = mul_mod[3];
         assert values = mul_mod[4];
         assert mul_mod_offsets = mul_mod[5];
-        hint CoreHint::EvalCircuit {
+        hint EvalCircuit {
             n_add_mods: n_adds, add_mod_builtin: add_mod,
             n_mul_mods: n_muls, mul_mod_builtin: mul_mod
         };
@@ -394,7 +393,7 @@ fn build_failure_guarantee_verify(
         // Create a circuit that checks that
         //   `values[inv_input_offset] * values[nullifier_offset] = 0 (mod modulus)`.
         tempvar mul_mod_offsets;
-        hint AllocSegment {} into {dst: mul_mod_offsets};
+        hint AllocSegment into {dst: mul_mod_offsets};
 
         assert nullifier_offset = mul_mod_offsets[0];
         assert inv_input_offset = mul_mod_offsets[1];

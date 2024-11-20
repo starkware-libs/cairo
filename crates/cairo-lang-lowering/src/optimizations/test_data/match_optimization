@@ -97,8 +97,8 @@ blk3:
 Statements:
 End:
   Match(match_enum(v2) {
-    Option::Some(v12) => blk7,
-    Option::None(v13) => blk8,
+    Option::Some(v13) => blk8,
+    Option::None(v12) => blk7,
   })
 
 blk4:
@@ -123,12 +123,12 @@ End:
 blk7:
 Statements:
 End:
-  Goto(blk4, {v12 -> v5})
+  Goto(blk5, {v12 -> v6})
 
 blk8:
 Statements:
 End:
-  Goto(blk5, {v13 -> v6})
+  Goto(blk4, {v13 -> v5})
 
 //! > ==========================================================================
 
@@ -436,8 +436,8 @@ blk3:
 Statements:
 End:
   Match(match_enum(v2) {
-    Option::Some(v26) => blk10,
-    Option::None(v27) => blk11,
+    Option::Some(v29) => blk13,
+    Option::None(v28) => blk12,
   })
 
 blk4:
@@ -457,8 +457,8 @@ blk6:
 Statements:
 End:
   Match(match_enum(v10) {
-    Option::Some(v28) => blk12,
-    Option::None(v29) => blk13,
+    Option::Some(v27) => blk11,
+    Option::None(v26) => blk10,
   })
 
 blk7:
@@ -489,22 +489,22 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk4, {v26 -> v5})
+  Goto(blk8, {v26 -> v14})
 
 blk11:
 Statements:
 End:
-  Goto(blk5, {v27 -> v6})
+  Goto(blk7, {v27 -> v13})
 
 blk12:
 Statements:
 End:
-  Goto(blk7, {v28 -> v13})
+  Goto(blk5, {v28 -> v6})
 
 blk13:
 Statements:
 End:
-  Goto(blk8, {v29 -> v14})
+  Goto(blk4, {v29 -> v5})
 
 //! > ==========================================================================
 
@@ -609,8 +609,8 @@ blk3:
 Statements:
 End:
   Match(match_enum(v2) {
-    Option::Some(v18) => blk7,
-    Option::None(v19) => blk8,
+    Option::Some(v19) => blk8,
+    Option::None(v18) => blk7,
   })
 
 blk4:
@@ -640,12 +640,12 @@ End:
 blk7:
 Statements:
 End:
-  Goto(blk4, {v18 -> v6})
+  Goto(blk5, {v18 -> v7})
 
 blk8:
 Statements:
 End:
-  Goto(blk5, {v19 -> v7})
+  Goto(blk4, {v19 -> v6})
 
 //! > ==========================================================================
 
@@ -904,17 +904,17 @@ blk1:
 Statements:
   (v6: core::integer::u32) <- 0
 End:
-  Goto(blk6, {v2 -> v12, v6 -> v20})
+  Goto(blk6, {v2 -> v12, v6 -> v22})
 
 blk2:
 Statements:
 End:
-  Goto(blk7, {v3 -> v13, v0 -> v22})
+  Goto(blk7, {v3 -> v13, v0 -> v20})
 
 blk3:
 Statements:
 End:
-  Goto(blk7, {v4 -> v13, v0 -> v22})
+  Goto(blk7, {v4 -> v13, v0 -> v20})
 
 blk4:
 Statements:
@@ -925,8 +925,8 @@ blk5:
 Statements:
 End:
   Match(match_enum(v9) {
-    Color::Red(v21) => blk10,
-    Color::Green(v23) => blk11,
+    Color::Red(v23) => blk11,
+    Color::Green(v21) => blk10,
     Color::Blue(v14) => blk8,
     Color::White(v15) => blk9,
   })
@@ -935,13 +935,13 @@ blk6:
 Statements:
   (v16: test::Color) <- Color::Red(v12)
 End:
-  Return(v20, v16)
+  Return(v22, v16)
 
 blk7:
 Statements:
   (v17: test::Color) <- Color::Green(v13)
 End:
-  Return(v22, v17)
+  Return(v20, v17)
 
 blk8:
 Statements:
@@ -958,12 +958,12 @@ End:
 blk10:
 Statements:
 End:
-  Goto(blk6, {v21 -> v12, v8 -> v20})
+  Goto(blk7, {v21 -> v13, v8 -> v20})
 
 blk11:
 Statements:
 End:
-  Goto(blk7, {v23 -> v13, v8 -> v22})
+  Goto(blk6, {v23 -> v12, v8 -> v22})
 
 //! > ==========================================================================
 
@@ -1157,3 +1157,426 @@ blk10:
 Statements:
 End:
   Return(v8, v17)
+
+//! > ==========================================================================
+
+//! > Match optimization with multiple remappings in the way.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(ref a: Array<felt252>, ref b: Array<felt252>) -> Option<()> {
+    let _ = double_merge(ref a, ref b)?;
+    let _ = double_merge(ref a, ref b)?;
+    Option::Some(())
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn double_merge(ref a: Array<felt252>, ref b: Array<felt252>) -> Option<felt252> {
+    if let Option::Some(q) = a.pop_front() {
+        if q == 0 {
+            return Option::Some(q);
+        }
+    }
+    b.pop_front()
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v0) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- core::box::unbox::<core::felt252>(v3)
+  (v6: core::option::Option::<core::felt252>) <- Option::Some(v5)
+End:
+  Goto(blk3, {v2 -> v7, v6 -> v8})
+
+blk2:
+Statements:
+  (v9: ()) <- struct_construct()
+  (v10: core::option::Option::<core::felt252>) <- Option::None(v9)
+End:
+  Goto(blk3, {v4 -> v7, v10 -> v8})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v8) {
+    Option::Some(v11) => blk4,
+    Option::None(v12) => blk7,
+  })
+
+blk4:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v11) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v13) => blk6,
+  })
+
+blk5:
+Statements:
+  (v14: core::option::Option::<core::felt252>) <- Option::Some(v11)
+End:
+  Goto(blk11, {v1 -> v15, v14 -> v16})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v1) {
+    Option::Some(v17, v18) => blk9,
+    Option::None(v19) => blk10,
+  })
+
+blk9:
+Statements:
+  (v20: core::felt252) <- core::box::unbox::<core::felt252>(v18)
+  (v21: core::option::Option::<core::felt252>) <- Option::Some(v20)
+End:
+  Goto(blk11, {v17 -> v15, v21 -> v16})
+
+blk10:
+Statements:
+  (v22: ()) <- struct_construct()
+  (v23: core::option::Option::<core::felt252>) <- Option::None(v22)
+End:
+  Goto(blk11, {v19 -> v15, v23 -> v16})
+
+blk11:
+Statements:
+End:
+  Match(match_enum(v16) {
+    Option::Some(v24) => blk12,
+    Option::None(v25) => blk26,
+  })
+
+blk12:
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v7) {
+    Option::Some(v26, v27) => blk13,
+    Option::None(v28) => blk14,
+  })
+
+blk13:
+Statements:
+  (v29: core::felt252) <- core::box::unbox::<core::felt252>(v27)
+  (v30: core::option::Option::<core::felt252>) <- Option::Some(v29)
+End:
+  Goto(blk15, {v26 -> v31, v30 -> v32})
+
+blk14:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::felt252>) <- Option::None(v33)
+End:
+  Goto(blk15, {v28 -> v31, v34 -> v32})
+
+blk15:
+Statements:
+End:
+  Match(match_enum(v32) {
+    Option::Some(v35) => blk16,
+    Option::None(v36) => blk19,
+  })
+
+blk16:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v35) {
+    IsZeroResult::Zero => blk17,
+    IsZeroResult::NonZero(v37) => blk18,
+  })
+
+blk17:
+Statements:
+  (v38: core::option::Option::<core::felt252>) <- Option::Some(v35)
+End:
+  Goto(blk23, {v15 -> v39, v38 -> v40})
+
+blk18:
+Statements:
+End:
+  Goto(blk20, {})
+
+blk19:
+Statements:
+End:
+  Goto(blk20, {})
+
+blk20:
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v15) {
+    Option::Some(v41, v42) => blk21,
+    Option::None(v43) => blk22,
+  })
+
+blk21:
+Statements:
+  (v44: core::felt252) <- core::box::unbox::<core::felt252>(v42)
+  (v45: core::option::Option::<core::felt252>) <- Option::Some(v44)
+End:
+  Goto(blk23, {v41 -> v39, v45 -> v40})
+
+blk22:
+Statements:
+  (v46: ()) <- struct_construct()
+  (v47: core::option::Option::<core::felt252>) <- Option::None(v46)
+End:
+  Goto(blk23, {v43 -> v39, v47 -> v40})
+
+blk23:
+Statements:
+End:
+  Match(match_enum(v40) {
+    Option::Some(v48) => blk24,
+    Option::None(v49) => blk25,
+  })
+
+blk24:
+Statements:
+  (v50: ()) <- struct_construct()
+  (v51: core::option::Option::<()>) <- Option::Some(v50)
+End:
+  Return(v31, v39, v51)
+
+blk25:
+Statements:
+  (v52: core::option::Option::<()>) <- Option::None(v49)
+End:
+  Return(v31, v39, v52)
+
+blk26:
+Statements:
+  (v53: core::option::Option::<()>) <- Option::None(v25)
+End:
+  Return(v7, v15, v53)
+
+//! > after
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v0) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::felt252) <- core::box::unbox::<core::felt252>(v3)
+  (v6: core::option::Option::<core::felt252>) <- Option::Some(v5)
+End:
+  Goto(blk3, {v2 -> v7, v6 -> v8})
+
+blk2:
+Statements:
+  (v9: ()) <- struct_construct()
+  (v10: core::option::Option::<core::felt252>) <- Option::None(v9)
+End:
+  Goto(blk3, {v4 -> v7, v10 -> v8})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v8) {
+    Option::Some(v11) => blk4,
+    Option::None(v12) => blk7,
+  })
+
+blk4:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v11) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v13) => blk6,
+  })
+
+blk5:
+Statements:
+End:
+  Goto(blk12, {v11 -> v24, v1 -> v60})
+
+blk6:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v1) {
+    Option::Some(v17, v18) => blk9,
+    Option::None(v19) => blk10,
+  })
+
+blk9:
+Statements:
+  (v20: core::felt252) <- core::box::unbox::<core::felt252>(v18)
+End:
+  Goto(blk12, {v20 -> v24, v17 -> v60})
+
+blk10:
+Statements:
+  (v22: ()) <- struct_construct()
+End:
+  Goto(blk26, {v22 -> v25, v19 -> v58})
+
+blk11:
+Statements:
+End:
+  Match(match_enum(v16) {
+    Option::Some(v61) => blk30,
+    Option::None(v59) => blk29,
+  })
+
+blk12:
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v7) {
+    Option::Some(v26, v27) => blk13,
+    Option::None(v28) => blk14,
+  })
+
+blk13:
+Statements:
+  (v29: core::felt252) <- core::box::unbox::<core::felt252>(v27)
+  (v30: core::option::Option::<core::felt252>) <- Option::Some(v29)
+End:
+  Goto(blk15, {v26 -> v31, v30 -> v32})
+
+blk14:
+Statements:
+  (v33: ()) <- struct_construct()
+  (v34: core::option::Option::<core::felt252>) <- Option::None(v33)
+End:
+  Goto(blk15, {v28 -> v31, v34 -> v32})
+
+blk15:
+Statements:
+End:
+  Match(match_enum(v32) {
+    Option::Some(v35) => blk16,
+    Option::None(v36) => blk19,
+  })
+
+blk16:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v35) {
+    IsZeroResult::Zero => blk17,
+    IsZeroResult::NonZero(v37) => blk18,
+  })
+
+blk17:
+Statements:
+End:
+  Goto(blk24, {v35 -> v48, v60 -> v56})
+
+blk18:
+Statements:
+End:
+  Goto(blk20, {})
+
+blk19:
+Statements:
+End:
+  Goto(blk20, {})
+
+blk20:
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v60) {
+    Option::Some(v41, v42) => blk21,
+    Option::None(v43) => blk22,
+  })
+
+blk21:
+Statements:
+  (v44: core::felt252) <- core::box::unbox::<core::felt252>(v42)
+End:
+  Goto(blk24, {v44 -> v48, v41 -> v56})
+
+blk22:
+Statements:
+  (v46: ()) <- struct_construct()
+End:
+  Goto(blk25, {v46 -> v49, v43 -> v54})
+
+blk23:
+Statements:
+End:
+  Match(match_enum(v40) {
+    Option::Some(v57) => blk28,
+    Option::None(v55) => blk27,
+  })
+
+blk24:
+Statements:
+  (v50: ()) <- struct_construct()
+  (v51: core::option::Option::<()>) <- Option::Some(v50)
+End:
+  Return(v31, v56, v51)
+
+blk25:
+Statements:
+  (v52: core::option::Option::<()>) <- Option::None(v49)
+End:
+  Return(v31, v54, v52)
+
+blk26:
+Statements:
+  (v53: core::option::Option::<()>) <- Option::None(v25)
+End:
+  Return(v7, v58, v53)
+
+blk27:
+Statements:
+End:
+  Goto(blk25, {v55 -> v49, v39 -> v54})
+
+blk28:
+Statements:
+End:
+  Goto(blk24, {v57 -> v48, v39 -> v56})
+
+blk29:
+Statements:
+End:
+  Goto(blk26, {v59 -> v25, v15 -> v58})
+
+blk30:
+Statements:
+End:
+  Goto(blk12, {v61 -> v24, v15 -> v60})
+
+//! > lowering_diagnostics

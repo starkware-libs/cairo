@@ -1,18 +1,30 @@
+//! Utilities related to printing of values at runtime.
+//! The recommended way of printing values is by using the `Display` and `Debug` traits
+//! available in the [`fmt`] module. The items in this module are not public, and are not
+//! recommended to use.
+
 #[allow(unused_imports)]
 use crate::array::ArrayTrait;
 use crate::traits::Into;
 #[allow(unused_imports)]
 use crate::option::Option;
 
-/// Usage:
+pub(crate) extern fn print(message: Array<felt252>) nopanic;
+
+fn print_felt252(message: felt252) {
+    print(array![message]);
+}
+
+/// A trait for printing values for debugging purposes.
+/// Accessible with prelude editions prior to `2024_07`.
+///
+/// # Examples
+///
 /// ```
-/// use crate::debug::PrintTrait;
+/// use core::debug::PrintTrait;
 ///
 /// 1.print();
-///
 /// (1 == 2).print();
-///
-/// get_caller_address().print();
 ///
 /// let mut arr = array![];
 /// arr.append('1234567890123456789012345678901');
@@ -20,12 +32,6 @@ use crate::option::Option;
 /// arr.append('SomeVeryLongMessage');
 /// arr.print();
 /// ```
-pub(crate) extern fn print(message: Array<felt252>) nopanic;
-
-fn print_felt252(message: felt252) {
-    print(array![message]);
-}
-
 pub(crate) trait PrintTrait<T> {
     fn print(self: T);
 }
@@ -125,7 +131,14 @@ pub(crate) impl ArrayGenericPrintImpl of PrintTrait<Array<felt252>> {
     }
 }
 
-/// Prints a byte array as a string.
+/// Prints a `ByteArray` as a string.
+///
+/// # Examples
+///
+/// ```
+/// let ba: ByteArray = "123";
+/// print_byte_array_as_string(@ba);
+/// ```
 pub fn print_byte_array_as_string(self: @ByteArray) {
     let mut serialized = array![crate::byte_array::BYTE_ARRAY_MAGIC];
     self.serialize(ref serialized);

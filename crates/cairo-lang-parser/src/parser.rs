@@ -17,6 +17,7 @@ use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
 use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
+use crate::types::TokenStream;
 use crate::validation::{validate_literal_number, validate_short_string, validate_string};
 
 #[cfg(test)]
@@ -156,6 +157,43 @@ impl<'a> Parser<'a> {
             );
         }
         Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
+    }
+
+    /// Parses a token stream.
+    pub fn parse_token_stream(
+        db: &'a dyn SyntaxGroup,
+        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+        file_id: FileId,
+        token_stream: &'a dyn TokenStream,
+    ) -> SyntaxFile {
+        let parser = Parser::new(db, file_id, token_stream.as_str(), diagnostics);
+        let green = parser.parse_syntax_file();
+        SyntaxFile::from_syntax_node(
+            db,
+            SyntaxNode::new_root_with_offset(db, file_id, green.0, token_stream.get_start_offset()),
+        )
+    }
+
+    /// Parses a token stream expression.
+    pub fn parse_token_stream_expr(
+        db: &'a dyn SyntaxGroup,
+        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+        file_id: FileId,
+        token_stream: &'a dyn TokenStream,
+    ) -> Expr {
+        let mut parser = Parser::new(db, file_id, token_stream.as_str(), diagnostics);
+        let green = parser.parse_expr();
+        if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
+            parser.diagnostics.add(ParserDiagnostic {
+                file_id: parser.file_id,
+                kind: ParserDiagnosticKind::SkippedElement { element_name: "end of expr".into() },
+                span,
+            });
+        }
+        Expr::from_syntax_node(
+            db,
+            SyntaxNode::new_root_with_offset(db, file_id, green.0, token_stream.get_start_offset()),
+        )
     }
 
     /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.

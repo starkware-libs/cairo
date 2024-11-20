@@ -78,9 +78,9 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     // If there is another fix for the same match arm, the same variable will be used.
     let mut var_renaming = UnorderedHashMap::<(VariableId, usize), VariableId>::default();
 
-    // Fixes were added in reverse order, so we apply them in reverse.
-    // Either order will result in correct code, but this way variables with smaller ids appear
-    // earlier.
+    // Fixes were added in reverse order and need to be applied in that order.
+    // This is because `additional_remapping` in later blocks may need to be renamed by fixes from
+    // earlier blocks.
     for FixInfo {
         statement_location,
         match_block,
@@ -89,7 +89,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         remapping,
         reachable_blocks,
         additional_remapping,
-    } in ctx.fixes.into_iter().rev()
+    } in ctx.fixes
     {
         // Choose new variables for each destination of the additional remappings (see comment
         // above).

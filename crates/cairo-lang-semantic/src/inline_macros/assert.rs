@@ -9,7 +9,7 @@ use cairo_lang_defs::plugin_utils::{
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
-use indoc::formatdoc;
+use indoc::{formatdoc, indoc};
 
 /// Macro for assertion.
 #[derive(Default, Debug)]
@@ -110,5 +110,45 @@ impl InlineMacroExprPlugin for AssertMacro {
             }),
             diagnostics: vec![],
         }
+    }
+
+    fn documentation(&self) -> Option<String> {
+        Some(
+            indoc! {r#"
+            Asserts that a condition is true at runtime.
+            The `assert!` macro checks a boolean expression; if it evaluates to `false`, \ 
+            it panics with an optional custom error message. Useful for debugging and \ 
+            ensuring conditions hold during execution.
+
+            # Syntax
+            ```cairo
+            assert!(condition);
+            assert!(condition, "error message");
+            assert!(condition, "formatted error: {}", value);
+            ```
+            # Parameters
+            - `condition`: A boolean expression to evaluate.
+            - `format_string` (optional): A string literal for format placeholders.
+            - `args` (optional): Values for placeholders in `format_string`.
+    
+            # Examples
+            ```cairo
+            assert!(2 + 2 == 4); // Passes, does nothing.
+            assert!(2 + 2 == 5); // Panics with "assertion failed: `2 + 2 == 5`."
+            let age = 18;
+            assert!(age >= 21, "Age must be at least 21, found {}", age);
+            // Panics with "Age must be at least 21, found 18."
+            let x = -1;
+            assert!(x >= 0, "Invalid value: x = {}", x);
+            assert!(x >= 0, "Invalid value: x = {x}");
+            // Panics with "Invalid value: x = -1."
+            ```
+            # Notes
+            - Use to catch programming errors and enforce invariants.
+            - May impact performance; consider `debug_assert!` for debug-only checks.
+            - For recoverable errors, prefer using `Result` or `Option` instead of panicking.
+            "#}
+            .to_string(),
+        )
     }
 }

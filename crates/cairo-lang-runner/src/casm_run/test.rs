@@ -124,10 +124,12 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
     let (hints_dict, string_to_hint) = build_hints_dict(&program.hints);
     let mut hint_processor = CairoHintProcessor {
         runner: None,
+        user_args: vec![],
         string_to_hint,
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
         syscalls_used_resources: Default::default(),
+        no_temporary_segments: true,
     };
 
     let RunFunctionResult { ap, memory, .. } =
@@ -151,10 +153,12 @@ fn test_allocate_segment() {
     let (hints_dict, string_to_hint) = build_hints_dict(&program.hints);
     let mut hint_processor = CairoHintProcessor {
         runner: None,
+        user_args: vec![],
         string_to_hint,
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
         syscalls_used_resources: Default::default(),
+        no_temporary_segments: true,
     };
 
     let RunFunctionResult { ap, memory, .. } =

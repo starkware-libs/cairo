@@ -53,6 +53,7 @@ use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::plugin::PluginSuite;
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
+use salsa::{Database, Durability};
 use tracing::{debug, error, info, warn};
 
 use crate::config::Config;
@@ -293,6 +294,9 @@ impl Backend {
 
             let result = Self::event_loop(&connection, scheduler);
 
+            // Trigger cancellation in any background tasks that might still be running.
+            state.db.salsa_runtime_mut().synthetic_write(Durability::LOW);
+
             if let Err(err) = connection.close() {
                 error!("failed to close connection to the language server: {err:?}");
             }
@@ -368,8 +372,8 @@ impl Backend {
     }
 
     /// Calls [`lang::diagnostics::DiagnosticsController::refresh`] to do its work.
-    fn refresh_diagnostics(state: &mut State, notifier: Notifier) {
-        state.diagnostics_controller.refresh(state.snapshot(), notifier);
+    fn refresh_diagnostics(state: &mut State, _notifier: Notifier) {
+        state.diagnostics_controller.refresh(state);
     }
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the

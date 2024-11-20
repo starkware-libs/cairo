@@ -60,7 +60,7 @@ asciidoctor-pdf src/Summary.adoc
 
 - Convert all files
 ```bash
-asciidoctor-pdf src/*.adoc`
+asciidoctor-pdf src/*.adoc
 ```
 
 Now `PDF` versions of the documentation will be generated.
