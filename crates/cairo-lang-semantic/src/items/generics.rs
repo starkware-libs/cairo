@@ -9,6 +9,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::node::ast::OptionAssociatedTypeArgs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, LookupIntern, extract_matches, try_extract_matches};
 use syntax::node::TypedStablePtr;
@@ -450,10 +451,17 @@ fn semantic_from_generic_param_ast(
         }
         ast::GenericParam::ImplNamed(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
+            if !matches!(syntax.type_constrains(db.upcast()), OptionAssociatedTypeArgs::Empty(_)) {
+                diagnostics.report(syntax, SemanticDiagnosticKind::Unsupported);
+            }
+
             GenericParam::Impl(impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id))
         }
         ast::GenericParam::ImplAnonymous(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
+            if !matches!(syntax.type_constrains(db.upcast()), OptionAssociatedTypeArgs::Empty(_)) {
+                diagnostics.report(syntax, SemanticDiagnosticKind::Unsupported);
+            }
             GenericParam::Impl(impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id))
         }
         ast::GenericParam::NegativeImpl(syntax) => {
