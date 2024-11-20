@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    LanguageElementId, ModuleId, NamedLanguageElementId, TraitFunctionId, TraitId,
+    FileIndex, LanguageElementId, ModuleFileId, ModuleId, NamedLanguageElementId, TraitFunctionId,
+    TraitId,
 };
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
@@ -10,9 +11,10 @@ use smol_str::SmolStr;
 
 use crate::corelib::{core_submodule, get_submodule};
 use crate::db::SemanticGroup;
+use crate::expr::inference::InferenceId;
 use crate::items::us::SemanticUseEx;
 use crate::items::visibility::peek_visible_in;
-use crate::resolve::ResolvedGenericItem;
+use crate::resolve::{ResolvedGenericItem, Resolver};
 use crate::types::TypeHead;
 
 /// A filter for types.
@@ -87,12 +89,18 @@ pub fn methods_in_crate(
 pub fn visible_traits_in_module(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-    user_module_id: ModuleId,
+    user_module_file_id: ModuleFileId,
     include_parent: bool,
 ) -> Arc<[(TraitId, String)]> {
     let mut visited_modules = UnorderedHashSet::default();
-    visible_traits_in_module_ex(db, module_id, user_module_id, include_parent, &mut visited_modules)
-        .unwrap_or_else(|| Vec::new().into())
+    visible_traits_in_module_ex(
+        db,
+        module_id,
+        user_module_file_id,
+        include_parent,
+        &mut visited_modules,
+    )
+    .unwrap_or_else(|| Vec::new().into())
 }
 
 /// Returns the visible traits in a module, including the traits in the parent module if needed.
@@ -100,7 +108,7 @@ pub fn visible_traits_in_module(
 fn visible_traits_in_module_ex(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-    user_module_id: ModuleId,
+    user_module_file_id: ModuleFileId,
     include_parent: bool,
     visited_modules: &mut UnorderedHashSet<ModuleId>,
 ) -> Option<Arc<[(TraitId, String)]>> {
@@ -109,17 +117,20 @@ fn visible_traits_in_module_ex(
         return Some(result.into());
     }
 
-    let user_module_crate = module_id.owning_crate(db.upcast());
-    let user_module_edition =
-        db.crate_config(user_module_crate).map(|c| c.settings.edition).unwrap_or_default();
-    let ignore_visibility = user_module_edition.ignore_visibility();
+    let resolver = Resolver::new(db, user_module_file_id, InferenceId::NoContext);
+    let ignore_visibility = resolver.ignore_visibility_checks(module_id);
     // Check if an item in the current module is visible from the user module.
     let is_visible = |item_name: SmolStr| {
         if ignore_visibility {
             Some(true)
         } else {
             let item_info = db.module_item_info_by_name(module_id, item_name).ok()??;
-            Some(peek_visible_in(db.upcast(), item_info.visibility, module_id, user_module_id))
+            Some(peek_visible_in(
+                db.upcast(),
+                item_info.visibility,
+                module_id,
+                user_module_file_id.0,
+            ))
         }
     };
     visited_modules.insert(module_id);
@@ -159,7 +170,7 @@ fn visible_traits_in_module_ex(
         for (trait_id, path) in visible_traits_in_module_ex(
             db,
             submodule,
-            user_module_id,
+            user_module_file_id,
             include_parent,
             visited_modules,
         )?
@@ -177,7 +188,7 @@ fn visible_traits_in_module_ex(
                 for (trait_id, path) in visible_traits_in_module_ex(
                     db,
                     parent_module_id,
-                    user_module_id,
+                    user_module_file_id,
                     include_parent,
                     visited_modules,
                 )?
@@ -195,11 +206,11 @@ fn visible_traits_in_module_ex(
 pub fn visible_traits_in_crate(
     db: &dyn SemanticGroup,
     crate_id: CrateId,
-    user_module_id: ModuleId,
+    user_module_file_id: ModuleFileId,
 ) -> Arc<[(TraitId, String)]> {
     let crate_name = crate_id.name(db.upcast());
     let crate_as_module = ModuleId::CrateRoot(crate_id);
-    db.visible_traits_in_module(crate_as_module, user_module_id, false)
+    db.visible_traits_in_module(crate_as_module, user_module_file_id, false)
         .iter()
         .cloned()
         .map(|(trait_id, path)| (trait_id, format!("{crate_name}::{path}",)))
@@ -210,8 +221,9 @@ pub fn visible_traits_in_crate(
 /// Query implementation of [crate::db::SemanticGroup::visible_traits_from_module].
 pub fn visible_traits_from_module(
     db: &dyn SemanticGroup,
-    module_id: ModuleId,
+    module_file_id: ModuleFileId,
 ) -> Option<Arc<OrderedHashMap<TraitId, String>>> {
+    let module_id = module_file_id.0;
     let mut current_top_module = module_id;
     while let ModuleId::Submodule(submodule_id) = current_top_module {
         current_top_module = submodule_id.parent_module(db.upcast());
@@ -224,19 +236,20 @@ pub fn visible_traits_from_module(
     let prelude_submodule_name = edition.prelude_submodule_name();
     let core_prelude_submodule = core_submodule(db, "prelude");
     let prelude_submodule = get_submodule(db, core_prelude_submodule, prelude_submodule_name)?;
+    let prelude_submodule_file_id = ModuleFileId(prelude_submodule, FileIndex(0));
 
     let mut module_visible_traits = Vec::new();
     module_visible_traits.extend_from_slice(
-        &db.visible_traits_in_module(prelude_submodule, prelude_submodule, false)[..],
+        &db.visible_traits_in_module(prelude_submodule, prelude_submodule_file_id, false)[..],
     );
     module_visible_traits
-        .extend_from_slice(&db.visible_traits_in_module(module_id, module_id, true)[..]);
+        .extend_from_slice(&db.visible_traits_in_module(module_id, module_file_id, true)[..]);
     for crate_id in db.crates() {
         if crate_id == current_crate_id {
             continue;
         }
         module_visible_traits
-            .extend_from_slice(&db.visible_traits_in_crate(crate_id, module_id)[..]);
+            .extend_from_slice(&db.visible_traits_in_crate(crate_id, module_file_id)[..]);
     }
     let mut result: OrderedHashMap<TraitId, String> = OrderedHashMap::default();
     for (trait_id, path) in module_visible_traits {
