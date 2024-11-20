@@ -392,7 +392,7 @@ impl Backend {
         match ProjectManifestPath::discover(file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
                 if loaded_scarb_manifests.contains(&manifest_path) {
-                    trace!("Project with manifest `{}` is already loaded", manifest_path.display());
+                    trace!("scarb project is already loaded: {}", manifest_path.display());
                     return;
                 }
 
