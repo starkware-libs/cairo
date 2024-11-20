@@ -4,61 +4,141 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(a: u128, b: u128) -> bool {
-    a < b
+const POW_2: [u32; 2] = [
+    0b1,
+    0b10,
+];
+
+/// Returns `2^n`.
+pub fn pow2(n: u32) -> u32 {
+    *(POW_2.span()[n])
 }
 
 //! > casm
-[fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
-jmp rel 7 if [ap + -1] != 0, ap++;
-[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
-jmp rel 10;
-[ap + -1] = [[fp + -5] + 0];
-ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 0, ap++;
-ret;
-[ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 1, ap++;
+[ap + 0] = 2, ap++;
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 0] = __boxed_segment
+__boxed_segment += 2
+%}
+[ap + -2] = [[ap + 0] + 0], ap++;
+[ap + -2] = [[ap + -1] + 1];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 2, ap++;
+[ap + -1] = [ap + 0] + [ap + -2], ap++;
+%{ memory[ap + 0] = memory[fp + -3] < memory[ap + -1] %}
+jmp rel 6 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + [ap + -2], ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 15;
+[ap + 0] = [fp + -3] + 1, ap++;
+[ap + -3] = [ap + 0] + [ap + -1], ap++;
+[ap + -1] = [[fp + -4] + 0];
+[ap + 0] = [ap + -6] + [fp + -3], ap++;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[ap + -4] + 0], ap++;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 1637570914057682275393755530660268060279989363, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -5] + 1, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 770})
+test::pow2: OrderedHashMap({Const: 1870})
 
 //! > sierra_code
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u32, u32> = Struct<ut@Tuple, u32, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 1637570914057682275393755530660268060279989363> = Const<felt252, 1637570914057682275393755530660268060279989363> [storable: false, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u32> = Struct<ut@Tuple, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::PanicResult::<(core::integer::u32,)> = Enum<ut@core::panics::PanicResult::<(core::integer::u32,)>, Tuple<u32>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Box<u32> = Box<u32> [storable: true, drop: true, dup: true, zero_sized: false];
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
-type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
-type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<u32> = Array<u32> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<u32>> = Snapshot<Array<u32>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::integer::u32> = Struct<ut@core::array::Span::<core::integer::u32>, Snapshot<Array<u32>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Tuple<u32, u32>> = Box<Tuple<u32, u32>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<Tuple<u32, u32>, Const<u32, 1>, Const<u32, 2>> = Const<Tuple<u32, u32>, Const<u32, 1>, Const<u32, 2>> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u32, 2> = Const<u32, 2> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<u32, 1> = Const<u32, 1> [storable: false, drop: false, dup: false, zero_sized: false];
 
-libfunc u128_overflowing_sub = u128_overflowing_sub;
+libfunc const_as_immediate<Const<Tuple<u32, u32>, Const<u32, 1>, Const<u32, 2>>> = const_as_immediate<Const<Tuple<u32, u32>, Const<u32, 1>, Const<u32, 2>>>;
+libfunc snapshot_take<Tuple<u32, u32>> = snapshot_take<Tuple<u32, u32>>;
+libfunc drop<Tuple<u32, u32>> = drop<Tuple<u32, u32>>;
+libfunc store_temp<Tuple<u32, u32>> = store_temp<Tuple<u32, u32>>;
+libfunc into_box<Tuple<u32, u32>> = into_box<Tuple<u32, u32>>;
+libfunc span_from_tuple<Tuple<u32, u32>> = span_from_tuple<Tuple<u32, u32>>;
+libfunc struct_construct<core::array::Span::<core::integer::u32>> = struct_construct<core::array::Span::<core::integer::u32>>;
+libfunc snapshot_take<core::array::Span::<core::integer::u32>> = snapshot_take<core::array::Span::<core::integer::u32>>;
+libfunc drop<core::array::Span::<core::integer::u32>> = drop<core::array::Span::<core::integer::u32>>;
+libfunc store_temp<core::array::Span::<core::integer::u32>> = store_temp<core::array::Span::<core::integer::u32>>;
+libfunc struct_deconstruct<core::array::Span::<core::integer::u32>> = struct_deconstruct<core::array::Span::<core::integer::u32>>;
+libfunc rename<Snapshot<Array<u32>>> = rename<Snapshot<Array<u32>>>;
+libfunc array_get<u32> = array_get<u32>;
 libfunc branch_align = branch_align;
-libfunc drop<u128> = drop<u128>;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc store_temp<Box<u32>> = store_temp<Box<u32>>;
+libfunc unbox<u32> = unbox<u32>;
+libfunc rename<u32> = rename<u32>;
+libfunc struct_construct<Tuple<u32>> = struct_construct<Tuple<u32>>;
+libfunc enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 0> = enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc store_temp<core::panics::PanicResult::<(core::integer::u32,)>> = store_temp<core::panics::PanicResult::<(core::integer::u32,)>>;
+libfunc array_new<felt252> = array_new<felt252>;
+libfunc const_as_immediate<Const<felt252, 1637570914057682275393755530660268060279989363>> = const_as_immediate<Const<felt252, 1637570914057682275393755530660268060279989363>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc array_append<felt252> = array_append<felt252>;
+libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
+libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
+libfunc enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 1> = enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 1>;
 
-u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 8([5], [6]) }; // 0
-branch_align() -> (); // 1
-drop<u128>([4]) -> (); // 2
-struct_construct<Unit>() -> ([7]); // 3
-enum_init<core::bool, 0>([7]) -> ([8]); // 4
-store_temp<RangeCheck>([3]) -> ([3]); // 5
-store_temp<core::bool>([8]) -> ([8]); // 6
-return([3], [8]); // 7
-branch_align() -> (); // 8
-drop<u128>([6]) -> (); // 9
-struct_construct<Unit>() -> ([9]); // 10
-enum_init<core::bool, 1>([9]) -> ([10]); // 11
-store_temp<RangeCheck>([5]) -> ([5]); // 12
-store_temp<core::bool>([10]) -> ([10]); // 13
-return([5], [10]); // 14
+const_as_immediate<Const<Tuple<u32, u32>, Const<u32, 1>, Const<u32, 2>>>() -> ([2]); // 0
+snapshot_take<Tuple<u32, u32>>([2]) -> ([3], [4]); // 1
+drop<Tuple<u32, u32>>([3]) -> (); // 2
+store_temp<Tuple<u32, u32>>([4]) -> ([4]); // 3
+into_box<Tuple<u32, u32>>([4]) -> ([5]); // 4
+span_from_tuple<Tuple<u32, u32>>([5]) -> ([6]); // 5
+struct_construct<core::array::Span::<core::integer::u32>>([6]) -> ([7]); // 6
+snapshot_take<core::array::Span::<core::integer::u32>>([7]) -> ([8], [9]); // 7
+drop<core::array::Span::<core::integer::u32>>([8]) -> (); // 8
+store_temp<core::array::Span::<core::integer::u32>>([9]) -> ([9]); // 9
+struct_deconstruct<core::array::Span::<core::integer::u32>>([9]) -> ([10]); // 10
+rename<Snapshot<Array<u32>>>([10]) -> ([11]); // 11
+array_get<u32>([0], [11], [1]) { fallthrough([12], [13]) 22([14]) }; // 12
+branch_align() -> (); // 13
+store_temp<Box<u32>>([13]) -> ([13]); // 14
+unbox<u32>([13]) -> ([15]); // 15
+rename<u32>([15]) -> ([16]); // 16
+struct_construct<Tuple<u32>>([16]) -> ([17]); // 17
+enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 0>([17]) -> ([18]); // 18
+store_temp<RangeCheck>([12]) -> ([12]); // 19
+store_temp<core::panics::PanicResult::<(core::integer::u32,)>>([18]) -> ([18]); // 20
+return([12], [18]); // 21
+branch_align() -> (); // 22
+array_new<felt252>() -> ([19]); // 23
+const_as_immediate<Const<felt252, 1637570914057682275393755530660268060279989363>>() -> ([20]); // 24
+store_temp<felt252>([20]) -> ([20]); // 25
+array_append<felt252>([19], [20]) -> ([21]); // 26
+struct_construct<core::panics::Panic>() -> ([22]); // 27
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([22], [21]) -> ([23]); // 28
+enum_init<core::panics::PanicResult::<(core::integer::u32,)>, 1>([23]) -> ([24]); // 29
+store_temp<RangeCheck>([14]) -> ([14]); // 30
+store_temp<core::panics::PanicResult::<(core::integer::u32,)>>([24]) -> ([24]); // 31
+return([14], [24]); // 32
 
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
+test::pow2@0([0]: RangeCheck, [1]: u32) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u32,)>);
 
 //! > ==========================================================================
 
