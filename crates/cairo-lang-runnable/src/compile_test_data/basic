@@ -13,7 +13,7 @@ fn main() {}
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
-ap += 4;
+ap += 2;
 call rel 12;
 jmp rel 5 if [ap + -3] != 0, ap++;
 [ap + -1] = [ap + -2];
@@ -63,7 +63,7 @@ fn main(a: felt252, b: felt252) -> felt252 {
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
-ap += 4;
+ap += 2;
 call rel 12;
 jmp rel 5 if [ap + -3] != 0, ap++;
 [ap + -1] = [ap + -2];
@@ -150,7 +150,7 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -4] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
-ap += 4;
+ap += 2;
 call rel 13;
 jmp rel 5 if [ap + -3] != 0, ap++;
 [ap + -1] = [ap + -2];
@@ -386,7 +386,7 @@ fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) {}
 %{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
 [ap + 2] = [fp + -3] + 1, ap++;
 [ap + 2] = [ap + 1], ap++;
-ap += 4;
+ap += 2;
 call rel 7;
 [ap + 0] = 0, ap++;
 [ap + -1] = [[fp + -3] + 0];

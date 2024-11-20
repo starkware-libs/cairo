@@ -374,7 +374,7 @@ pub fn create_entry_code_from_params(
             tempvar output_start = output_ptr + user_data_offset;
             tempvar output_end = output_start;
         };
-        unallocated_count += 4;
+        unallocated_count += 2;
     }
     if unallocated_count > 0 {
         casm_build_extend!(ctx, ap += unallocated_count.into_or_panic::<usize>(););
