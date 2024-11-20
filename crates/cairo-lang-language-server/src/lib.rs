@@ -38,6 +38,7 @@
 //! }
 //! ```
 
+use std::collections::HashSet;
 use std::panic::RefUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -55,7 +56,7 @@ use crossbeam::select;
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use salsa::{Database, Durability};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info, trace, warn};
 
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
@@ -66,7 +67,7 @@ use crate::lsp::capabilities::server::{
 use crate::lsp::ext::{CorelibVersionMismatch, ScarbMetadataFailed};
 use crate::lsp::result::LSPResult;
 use crate::project::ProjectManifestPath;
-use crate::project::scarb::update_crate_roots;
+use crate::project::scarb::{get_workspace_members_manifests, update_crate_roots};
 use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::{Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
@@ -377,6 +378,7 @@ impl Backend {
             &state.config,
             &state.tricks,
             &notifier,
+            &mut state.loaded_scarb_manifests,
         );
     }
 
@@ -394,9 +396,15 @@ impl Backend {
         config: &Config,
         file_path: &Path,
         notifier: &Notifier,
+        loaded_scarb_manifests: &mut HashSet<PathBuf>,
     ) {
         match ProjectManifestPath::discover(file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
+                if loaded_scarb_manifests.contains(&manifest_path) {
+                    trace!("scarb project is already loaded: {}", manifest_path.display());
+                    return;
+                }
+
                 let metadata = scarb_toolchain
                     .metadata(&manifest_path)
                     .with_context(|| {
@@ -409,6 +417,7 @@ impl Backend {
                     .ok();
 
                 if let Some(metadata) = metadata {
+                    loaded_scarb_manifests.extend(get_workspace_members_manifests(&metadata));
                     update_crate_roots(&metadata, db);
                 } else {
                     // Try to set up a corelib at least.
@@ -449,6 +458,7 @@ impl Backend {
         notifier: &Notifier,
         requester: &mut Requester<'_>,
     ) -> LSPResult<()> {
+        state.loaded_scarb_manifests.clear();
         state.config.reload(requester, &state.client_capabilities)?;
 
         for uri in state.open_files.iter() {
@@ -460,6 +470,7 @@ impl Backend {
                     &state.config,
                     &file_path,
                     notifier,
+                    &mut state.loaded_scarb_manifests,
                 );
             }
         }
