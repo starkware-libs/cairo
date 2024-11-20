@@ -6,14 +6,19 @@ pub struct StableSpan {
     pub end: usize,
 }
 
-pub struct StableToken(pub String, pub Option<StableSpan>);
+pub struct StableToken {
+    pub content: String,
+    pub span: Option<StableSpan>,
+}
 
 impl StableToken {
     pub fn new(content: String, span: Option<StableSpan>) -> Self {
-        Self(content, span)
+        Self { content, span }
     }
 }
 
 pub trait ToStableTokenStream {
-    fn to_stable_token_stream(&self) -> impl Iterator<Item = StableToken>;
+    type Iter: Iterator<Item = StableToken>;
+
+    fn to_stable_token_stream(&self) -> Self::Iter;
 }

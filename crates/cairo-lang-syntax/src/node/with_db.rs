@@ -14,14 +14,21 @@ impl<'a, Db: SyntaxGroup> SyntaxNodeWithDb<'a, Db> {
     }
 }
 
-impl<Db: SyntaxGroup> ToStableTokenStream for SyntaxNodeWithDb<'_, Db> {
-    fn to_stable_token_stream(&self) -> impl Iterator<Item = StableToken> {
-        self.node.tokens(self.db).map(|token| {
-            let span = token.span(self.db).to_str_range();
-            StableToken::new(
-                token.get_text(self.db),
-                Some(StableSpan { start: span.start, end: span.end }),
-            )
-        })
+impl<'a, Db: SyntaxGroup> ToStableTokenStream for SyntaxNodeWithDb<'a, Db> {
+    type Iter = Box<dyn Iterator<Item = StableToken> + 'a>;
+    fn to_stable_token_stream(&self) -> Self::Iter {
+        let tokens: Vec<StableToken> = self
+            .node
+            .tokens(self.db)
+            .map(|token| {
+                let span = token.span(self.db).to_str_range();
+                StableToken::new(
+                    token.get_text(self.db),
+                    Some(StableSpan { start: span.start, end: span.end }),
+                )
+            })
+            .collect();
+
+        Box::new(tokens.into_iter())
     }
 }
