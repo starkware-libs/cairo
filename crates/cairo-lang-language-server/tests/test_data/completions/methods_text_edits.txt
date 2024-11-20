@@ -82,6 +82,10 @@ Completion: is_non_one()
 Insert text: is_non_one($0)
 Text edit: use core::num::traits::One;
 --------------------------
+Completion: pow()
+Insert text: pow($0)
+Text edit: use core::num::traits::Pow;
+--------------------------
 Completion: add_assign()
 Insert text: add_assign($0)
 Text edit: use core::ops::AddAssign;
@@ -216,6 +220,10 @@ Text edit: use core::num::traits::One;
 Completion: is_non_one()
 Insert text: is_non_one($0)
 Text edit: use core::num::traits::One;
+--------------------------
+Completion: pow()
+Insert text: pow($0)
+Text edit: use core::num::traits::Pow;
 --------------------------
 Completion: add_assign()
 Insert text: add_assign($0)
