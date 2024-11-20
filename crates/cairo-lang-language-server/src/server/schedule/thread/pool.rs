@@ -22,11 +22,10 @@
 //! The thread pool is implemented entirely using
 //! the threading utilities in [`crate::server::schedule::thread`].
 
-use std::cmp::min;
 use std::num::NonZero;
 use std::thread::available_parallelism;
 
-use crossbeam::channel::{Receiver, Sender, bounded};
+use crossbeam::channel;
 
 use super::{Builder, JoinHandle, ThreadPriority};
 
@@ -38,7 +37,7 @@ pub struct Pool {
     // make sure to keep `job_sender` above `handles`
     // so that the channel is actually closed
     // before we join the worker threads!
-    job_sender: Sender<Job>,
+    job_sender: channel::Sender<Job>,
     _handles: Vec<JoinHandle>,
 
     parallelism: NonZero<usize>,
@@ -67,8 +66,7 @@ impl Pool {
 
         let threads = available_parallelism().map(usize::from).unwrap_or(DEFAULT_PARALLELISM);
 
-        // Channel buffer capacity is between 2 and 4, depending on the pool size.
-        let (job_sender, job_receiver) = bounded(min(threads * 2, DEFAULT_PARALLELISM));
+        let (job_sender, job_receiver) = channel::unbounded();
 
         let mut handles = Vec::with_capacity(threads);
         for i in 0..threads {
@@ -76,7 +74,7 @@ impl Pool {
                 .stack_size(STACK_SIZE)
                 .name(format!("cairo-ls:worker:{i}"))
                 .spawn({
-                    let job_receiver: Receiver<Job> = job_receiver.clone();
+                    let job_receiver: channel::Receiver<Job> = job_receiver.clone();
                     move || {
                         let mut current_priority = INITIAL_PRIORITY;
                         for job in job_receiver {
