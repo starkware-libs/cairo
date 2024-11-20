@@ -2554,13 +2554,28 @@ impl<'a> Parser<'a> {
                 let name = self.parse_identifier();
                 let colon = self.parse_token::<TerminalColon>();
                 let trait_path = self.parse_type_path();
-                Ok(GenericParamImplNamed::new_green(self.db, impl_kw, name, colon, trait_path)
-                    .into())
+                let associated_item_constraints = self.parse_optional_associated_item_constraints();
+                Ok(GenericParamImplNamed::new_green(
+                    self.db,
+                    impl_kw,
+                    name,
+                    colon,
+                    trait_path,
+                    associated_item_constraints,
+                )
+                .into())
             }
             SyntaxKind::TerminalPlus => {
                 let plus = self.take::<TerminalPlus>();
                 let trait_path = self.parse_type_path();
-                Ok(GenericParamImplAnonymous::new_green(self.db, plus, trait_path).into())
+                let associated_item_constraints = self.parse_optional_associated_item_constraints();
+                Ok(GenericParamImplAnonymous::new_green(
+                    self.db,
+                    plus,
+                    trait_path,
+                    associated_item_constraints,
+                )
+                .into())
             }
             SyntaxKind::TerminalMinus => {
                 let minus = self.take::<TerminalMinus>();
@@ -2569,6 +2584,47 @@ impl<'a> Parser<'a> {
             }
             _ => Ok(GenericParamType::new_green(self.db, self.try_parse_identifier()?).into()),
         }
+    }
+
+    /// Assumes the current token is LBrack.
+    /// Expected pattern: `[ <associated_item_constraints_list> ]>`
+    fn expect_associated_item_constraints(&mut self) -> AssociatedItemConstraintsGreen {
+        let lbrack = self.take::<TerminalLBrack>();
+        let associated_item_constraints_list = AssociatedItemConstraintList::new_green(
+            self.db,
+            self.parse_separated_list::<AssociatedItemConstraint, TerminalComma, AssociatedItemConstraintListElementOrSeparatorGreen>(
+                Self::try_parse_associated_item_constraint,
+                is_of_kind!(rbrack,rangle, rparen, block, lbrace, rbrace, module_item_kw),
+                "associated type argument",
+            ),
+        );
+        let rangle = self.parse_token::<TerminalRBrack>();
+        AssociatedItemConstraints::new_green(
+            self.db,
+            lbrack,
+            associated_item_constraints_list,
+            rangle,
+        )
+    }
+
+    fn parse_optional_associated_item_constraints(
+        &mut self,
+    ) -> OptionAssociatedItemConstraintsGreen {
+        if self.peek().kind != SyntaxKind::TerminalLBrack {
+            return OptionAssociatedItemConstraintsEmpty::new_green(self.db).into();
+        }
+        self.expect_associated_item_constraints().into()
+    }
+
+    /// Returns a GreenId of a node with kind AssociatedTypeArg or TryParseFailure if an associated
+    /// type argument can't be parsed.
+    fn try_parse_associated_item_constraint(
+        &mut self,
+    ) -> TryParseResult<AssociatedItemConstraintGreen> {
+        let ident = self.try_parse_identifier()?;
+        let colon = self.parse_token::<TerminalColon>();
+        let ty = self.parse_type_expr();
+        Ok(AssociatedItemConstraint::new_green(self.db, ident, colon, ty))
     }
 
     // ------------------------------- Helpers -------------------------------
