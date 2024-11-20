@@ -35,8 +35,8 @@ fn test_location_marks() {
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: second_line.add_width(TextWidth::new(13)),
-            end: second_line.add_width(TextWidth::new(13)),
+            start: second_line.add_width(TextWidth::new_for_testing(13)),
+            end: second_line.add_width(TextWidth::new_for_testing(13)),
         },
     };
 
@@ -49,8 +49,8 @@ fn test_location_marks() {
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: third_line.add_width(TextWidth::new(3)),
-            end: third_line.add_width(TextWidth::new(4)),
+            start: third_line.add_width(TextWidth::new_for_testing(3)),
+            end: third_line.add_width(TextWidth::new_for_testing(4)),
         },
     };
 
@@ -63,8 +63,8 @@ fn test_location_marks() {
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: third_line.add_width(TextWidth::new(3)),
-            end: third_line.add_width(TextWidth::new(5)),
+            start: third_line.add_width(TextWidth::new_for_testing(3)),
+            end: third_line.add_width(TextWidth::new_for_testing(5)),
         },
     };
 
@@ -77,8 +77,8 @@ fn test_location_marks() {
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: second_line.add_width(TextWidth::new(7)),
-            end: second_line.add_width(TextWidth::new(12)),
+            start: second_line.add_width(TextWidth::new_for_testing(7)),
+            end: second_line.add_width(TextWidth::new_for_testing(12)),
         },
     };
 
@@ -91,8 +91,8 @@ fn test_location_marks() {
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: second_line.add_width(TextWidth::new(7)),
-            end: third_line.add_width(TextWidth::new(2)),
+            start: second_line.add_width(TextWidth::new_for_testing(7)),
+            end: third_line.add_width(TextWidth::new_for_testing(2)),
         },
     };
 
@@ -105,7 +105,7 @@ fn test_location_marks() {
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan {
-            start: third_line.add_width(TextWidth::new(7)),
+            start: third_line.add_width(TextWidth::new_for_testing(7)),
             end: summary.last_offset.add_width(TextWidth::from_char('\n')),
         },
     };

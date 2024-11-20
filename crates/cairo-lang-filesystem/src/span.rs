@@ -24,7 +24,7 @@ impl TextWidth {
     pub fn from_str(s: &str) -> Self {
         Self(s.len() as u32)
     }
-    pub fn new(value: u32) -> Self {
+    pub fn new_for_testing(value: u32) -> Self {
         Self(value)
     }
 }
