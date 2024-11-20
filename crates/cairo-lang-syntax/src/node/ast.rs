@@ -17904,6 +17904,462 @@ impl From<&GenericArgList> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct AssociatedTypeArg {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl AssociatedTypeArg {
+    pub const INDEX_ITEM: usize = 0;
+    pub const INDEX_COLON: usize = 1;
+    pub const INDEX_TY: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        item: TerminalIdentifierGreen,
+        colon: TerminalColonGreen,
+        ty: ExprGreen,
+    ) -> AssociatedTypeArgGreen {
+        let children: Vec<GreenId> = vec![item.0, colon.0, ty.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        AssociatedTypeArgGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedTypeArg,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl AssociatedTypeArg {
+    pub fn item(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
+        TerminalColon::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedTypeArgPtr(pub SyntaxStablePtrId);
+impl AssociatedTypeArgPtr {}
+impl TypedStablePtr for AssociatedTypeArgPtr {
+    type SyntaxNode = AssociatedTypeArg;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> AssociatedTypeArg {
+        AssociatedTypeArg::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<AssociatedTypeArgPtr> for SyntaxStablePtrId {
+    fn from(ptr: AssociatedTypeArgPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedTypeArgGreen(pub GreenId);
+impl TypedSyntaxNode for AssociatedTypeArg {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AssociatedTypeArg);
+    type StablePtr = AssociatedTypeArgPtr;
+    type Green = AssociatedTypeArgGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        AssociatedTypeArgGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedTypeArg,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalIdentifier::missing(db).0,
+                        TerminalColon::missing(db).0,
+                        Expr::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::AssociatedTypeArg,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::AssociatedTypeArg
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        AssociatedTypeArgPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&AssociatedTypeArg> for SyntaxStablePtrId {
+    fn from(node: &AssociatedTypeArg) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct AssociatedTypeArgs {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl AssociatedTypeArgs {
+    pub const INDEX_LBRACK: usize = 0;
+    pub const INDEX_ASSOCIATED_TYPE_ARGS: usize = 1;
+    pub const INDEX_RBRACK: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrack: TerminalLBrackGreen,
+        associated_type_args: AssociatedTypeArgListGreen,
+        rbrack: TerminalRBrackGreen,
+    ) -> AssociatedTypeArgsGreen {
+        let children: Vec<GreenId> = vec![lbrack.0, associated_type_args.0, rbrack.0];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        AssociatedTypeArgsGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedTypeArgs,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl AssociatedTypeArgs {
+    pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
+        TerminalLBrack::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn associated_type_args(&self, db: &dyn SyntaxGroup) -> AssociatedTypeArgList {
+        AssociatedTypeArgList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
+        TerminalRBrack::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedTypeArgsPtr(pub SyntaxStablePtrId);
+impl AssociatedTypeArgsPtr {}
+impl TypedStablePtr for AssociatedTypeArgsPtr {
+    type SyntaxNode = AssociatedTypeArgs;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> AssociatedTypeArgs {
+        AssociatedTypeArgs::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<AssociatedTypeArgsPtr> for SyntaxStablePtrId {
+    fn from(ptr: AssociatedTypeArgsPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedTypeArgsGreen(pub GreenId);
+impl TypedSyntaxNode for AssociatedTypeArgs {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AssociatedTypeArgs);
+    type StablePtr = AssociatedTypeArgsPtr;
+    type Green = AssociatedTypeArgsGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        AssociatedTypeArgsGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedTypeArgs,
+                details: GreenNodeDetails::Node {
+                    children: vec![
+                        TerminalLBrack::missing(db).0,
+                        AssociatedTypeArgList::missing(db).0,
+                        TerminalRBrack::missing(db).0,
+                    ],
+                    width: TextWidth::default(),
+                },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::AssociatedTypeArgs,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::AssociatedTypeArgs
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        AssociatedTypeArgsPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&AssociatedTypeArgs> for SyntaxStablePtrId {
+    fn from(node: &AssociatedTypeArgs) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct AssociatedTypeArgList(ElementList<AssociatedTypeArg, 2>);
+impl Deref for AssociatedTypeArgList {
+    type Target = ElementList<AssociatedTypeArg, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl AssociatedTypeArgList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<AssociatedTypeArgListElementOrSeparatorGreen>,
+    ) -> AssociatedTypeArgListGreen {
+        let width = children.iter().map(|id| id.id().lookup_intern(db).width()).sum();
+        AssociatedTypeArgListGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedTypeArgList,
+                details: GreenNodeDetails::Node {
+                    children: children.iter().map(|x| x.id()).collect(),
+                    width,
+                },
+            })
+            .intern(db),
+        )
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedTypeArgListPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for AssociatedTypeArgListPtr {
+    type SyntaxNode = AssociatedTypeArgList;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> AssociatedTypeArgList {
+        AssociatedTypeArgList::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<AssociatedTypeArgListPtr> for SyntaxStablePtrId {
+    fn from(ptr: AssociatedTypeArgListPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum AssociatedTypeArgListElementOrSeparatorGreen {
+    Separator(TerminalCommaGreen),
+    Element(AssociatedTypeArgGreen),
+}
+impl From<TerminalCommaGreen> for AssociatedTypeArgListElementOrSeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        AssociatedTypeArgListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<AssociatedTypeArgGreen> for AssociatedTypeArgListElementOrSeparatorGreen {
+    fn from(value: AssociatedTypeArgGreen) -> Self {
+        AssociatedTypeArgListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl AssociatedTypeArgListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            AssociatedTypeArgListElementOrSeparatorGreen::Separator(green) => green.0,
+            AssociatedTypeArgListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AssociatedTypeArgListGreen(pub GreenId);
+impl TypedSyntaxNode for AssociatedTypeArgList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AssociatedTypeArgList);
+    type StablePtr = AssociatedTypeArgListPtr;
+    type Green = AssociatedTypeArgListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        AssociatedTypeArgListGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::AssociatedTypeArgList,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        AssociatedTypeArgListPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&AssociatedTypeArgList> for SyntaxStablePtrId {
+    fn from(node: &AssociatedTypeArgList) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionAssociatedTypeArgs {
+    Empty(OptionAssociatedTypeArgsEmpty),
+    AssociatedTypeArgs(AssociatedTypeArgs),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAssociatedTypeArgsPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for OptionAssociatedTypeArgsPtr {
+    type SyntaxNode = OptionAssociatedTypeArgs;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionAssociatedTypeArgs {
+        OptionAssociatedTypeArgs::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionAssociatedTypeArgsPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionAssociatedTypeArgsPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<OptionAssociatedTypeArgsEmptyPtr> for OptionAssociatedTypeArgsPtr {
+    fn from(value: OptionAssociatedTypeArgsEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<AssociatedTypeArgsPtr> for OptionAssociatedTypeArgsPtr {
+    fn from(value: AssociatedTypeArgsPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionAssociatedTypeArgsEmptyGreen> for OptionAssociatedTypeArgsGreen {
+    fn from(value: OptionAssociatedTypeArgsEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<AssociatedTypeArgsGreen> for OptionAssociatedTypeArgsGreen {
+    fn from(value: AssociatedTypeArgsGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAssociatedTypeArgsGreen(pub GreenId);
+impl TypedSyntaxNode for OptionAssociatedTypeArgs {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionAssociatedTypeArgsPtr;
+    type Green = OptionAssociatedTypeArgsGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionAssociatedTypeArgsEmpty => OptionAssociatedTypeArgs::Empty(
+                OptionAssociatedTypeArgsEmpty::from_syntax_node(db, node),
+            ),
+            SyntaxKind::AssociatedTypeArgs => OptionAssociatedTypeArgs::AssociatedTypeArgs(
+                AssociatedTypeArgs::from_syntax_node(db, node),
+            ),
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionAssociatedTypeArgs"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionAssociatedTypeArgs::Empty(x) => x.as_syntax_node(),
+            OptionAssociatedTypeArgs::AssociatedTypeArgs(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionAssociatedTypeArgsPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&OptionAssociatedTypeArgs> for SyntaxStablePtrId {
+    fn from(node: &OptionAssociatedTypeArgs) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl OptionAssociatedTypeArgs {
+    /// Checks if a kind of a variant of [OptionAssociatedTypeArgs].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::OptionAssociatedTypeArgsEmpty | SyntaxKind::AssociatedTypeArgs)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionAssociatedTypeArgsEmpty {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl OptionAssociatedTypeArgsEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionAssociatedTypeArgsEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        OptionAssociatedTypeArgsEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionAssociatedTypeArgsEmpty,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl OptionAssociatedTypeArgsEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAssociatedTypeArgsEmptyPtr(pub SyntaxStablePtrId);
+impl OptionAssociatedTypeArgsEmptyPtr {}
+impl TypedStablePtr for OptionAssociatedTypeArgsEmptyPtr {
+    type SyntaxNode = OptionAssociatedTypeArgsEmpty;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionAssociatedTypeArgsEmpty {
+        OptionAssociatedTypeArgsEmpty::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionAssociatedTypeArgsEmptyPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionAssociatedTypeArgsEmptyPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAssociatedTypeArgsEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionAssociatedTypeArgsEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionAssociatedTypeArgsEmpty);
+    type StablePtr = OptionAssociatedTypeArgsEmptyPtr;
+    type Green = OptionAssociatedTypeArgsEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionAssociatedTypeArgsEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionAssociatedTypeArgsEmpty,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionAssociatedTypeArgsEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionAssociatedTypeArgsEmpty
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionAssociatedTypeArgsEmptyPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&OptionAssociatedTypeArgsEmpty> for SyntaxStablePtrId {
+    fn from(node: &OptionAssociatedTypeArgsEmpty) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum OptionWrappedGenericParamList {
     Empty(OptionWrappedGenericParamListEmpty),
     WrappedGenericParamList(WrappedGenericParamList),
@@ -18616,14 +19072,17 @@ impl GenericParamImplNamed {
     pub const INDEX_NAME: usize = 1;
     pub const INDEX_COLON: usize = 2;
     pub const INDEX_TRAIT_PATH: usize = 3;
+    pub const INDEX_TYPE_CONSTRAINS: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         impl_kw: TerminalImplGreen,
         name: TerminalIdentifierGreen,
         colon: TerminalColonGreen,
         trait_path: ExprPathGreen,
+        type_constrains: OptionAssociatedTypeArgsGreen,
     ) -> GenericParamImplNamedGreen {
-        let children: Vec<GreenId> = vec![impl_kw.0, name.0, colon.0, trait_path.0];
+        let children: Vec<GreenId> =
+            vec![impl_kw.0, name.0, colon.0, trait_path.0, type_constrains.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         GenericParamImplNamedGreen(
             Arc::new(GreenNode {
@@ -18646,6 +19105,9 @@ impl GenericParamImplNamed {
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn type_constrains(&self, db: &dyn SyntaxGroup) -> OptionAssociatedTypeArgs {
+        OptionAssociatedTypeArgs::from_syntax_node(db, self.children[4].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18690,6 +19152,7 @@ impl TypedSyntaxNode for GenericParamImplNamed {
                         TerminalIdentifier::missing(db).0,
                         TerminalColon::missing(db).0,
                         ExprPath::missing(db).0,
+                        OptionAssociatedTypeArgs::missing(db).0,
                     ],
                     width: TextWidth::default(),
                 },
@@ -18729,12 +19192,14 @@ pub struct GenericParamImplAnonymous {
 impl GenericParamImplAnonymous {
     pub const INDEX_PLUS: usize = 0;
     pub const INDEX_TRAIT_PATH: usize = 1;
+    pub const INDEX_TYPE_CONSTRAINS: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         plus: TerminalPlusGreen,
         trait_path: ExprPathGreen,
+        type_constrains: OptionAssociatedTypeArgsGreen,
     ) -> GenericParamImplAnonymousGreen {
-        let children: Vec<GreenId> = vec![plus.0, trait_path.0];
+        let children: Vec<GreenId> = vec![plus.0, trait_path.0, type_constrains.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         GenericParamImplAnonymousGreen(
             Arc::new(GreenNode {
@@ -18751,6 +19216,9 @@ impl GenericParamImplAnonymous {
     }
     pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn type_constrains(&self, db: &dyn SyntaxGroup) -> OptionAssociatedTypeArgs {
+        OptionAssociatedTypeArgs::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -18781,7 +19249,11 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
             Arc::new(GreenNode {
                 kind: SyntaxKind::GenericParamImplAnonymous,
                 details: GreenNodeDetails::Node {
-                    children: vec![TerminalPlus::missing(db).0, ExprPath::missing(db).0],
+                    children: vec![
+                        TerminalPlus::missing(db).0,
+                        ExprPath::missing(db).0,
+                        OptionAssociatedTypeArgs::missing(db).0,
+                    ],
                     width: TextWidth::default(),
                 },
             })

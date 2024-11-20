@@ -2554,13 +2554,28 @@ impl<'a> Parser<'a> {
                 let name = self.parse_identifier();
                 let colon = self.parse_token::<TerminalColon>();
                 let trait_path = self.parse_type_path();
-                Ok(GenericParamImplNamed::new_green(self.db, impl_kw, name, colon, trait_path)
-                    .into())
+                let associated_type_args = self.parse_optional_associated_type_args();
+                Ok(GenericParamImplNamed::new_green(
+                    self.db,
+                    impl_kw,
+                    name,
+                    colon,
+                    trait_path,
+                    associated_type_args,
+                )
+                .into())
             }
             SyntaxKind::TerminalPlus => {
                 let plus = self.take::<TerminalPlus>();
                 let trait_path = self.parse_type_path();
-                Ok(GenericParamImplAnonymous::new_green(self.db, plus, trait_path).into())
+                let associated_type_args = self.parse_optional_associated_type_args();
+                Ok(GenericParamImplAnonymous::new_green(
+                    self.db,
+                    plus,
+                    trait_path,
+                    associated_type_args,
+                )
+                .into())
             }
             SyntaxKind::TerminalMinus => {
                 let minus = self.take::<TerminalMinus>();
@@ -2569,6 +2584,38 @@ impl<'a> Parser<'a> {
             }
             _ => Ok(GenericParamType::new_green(self.db, self.try_parse_identifier()?).into()),
         }
+    }
+
+    /// Assumes the current token is LBrack.
+    /// Expected pattern: `[ <associated_type_arg_list> ]>`
+    fn expect_associated_type_args(&mut self) -> AssociatedTypeArgsGreen {
+        let lbrack = self.take::<TerminalLBrack>();
+        let associated_type_args_list = AssociatedTypeArgList::new_green(
+            self.db,
+            self.parse_separated_list::<AssociatedTypeArg, TerminalComma, AssociatedTypeArgListElementOrSeparatorGreen>(
+                Self::try_parse_associated_type_arg,
+                is_of_kind!(rbrack,rangle, rparen, block, lbrace, rbrace, module_item_kw),
+                "associated type argument",
+            ),
+        );
+        let rangle = self.parse_token::<TerminalRBrack>();
+        AssociatedTypeArgs::new_green(self.db, lbrack, associated_type_args_list, rangle)
+    }
+
+    fn parse_optional_associated_type_args(&mut self) -> OptionAssociatedTypeArgsGreen {
+        if self.peek().kind != SyntaxKind::TerminalLBrack {
+            return OptionAssociatedTypeArgsEmpty::new_green(self.db).into();
+        }
+        self.expect_associated_type_args().into()
+    }
+
+    /// Returns a GreenId of a node with kind AssociatedTypeArg or TryParseFailure if an associated
+    /// type argument can't be parsed.
+    fn try_parse_associated_type_arg(&mut self) -> TryParseResult<AssociatedTypeArgGreen> {
+        let ident = self.try_parse_identifier()?;
+        let colon = self.parse_token::<TerminalColon>();
+        let ty = self.parse_type_expr();
+        Ok(AssociatedTypeArg::new_green(self.db, ident, colon, ty))
     }
 
     // ------------------------------- Helpers -------------------------------
