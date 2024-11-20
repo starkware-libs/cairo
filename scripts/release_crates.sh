@@ -45,6 +45,7 @@ CRATES_TO_PUBLISH=(
     cairo-format
     cairo-language-server
     cairo-run
+    cairo-prove
     cairo-test
     sierra-compile
     starknet-compile

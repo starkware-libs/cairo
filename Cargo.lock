@@ -1178,6 +1178,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-prove"
+version = "2.8.5"
+dependencies = [
+ "anyhow",
+ "cairo-lang-compiler",
+ "cairo-lang-runnable",
+ "cairo-lang-runner",
+ "cairo-vm",
+ "clap",
+ "num-bigint",
+]
+
+[[package]]
 name = "cairo-run"
 version = "2.8.5"
 dependencies = [
