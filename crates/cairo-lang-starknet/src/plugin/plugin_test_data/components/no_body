@@ -19,7 +19,7 @@ error: Plugin diagnostic: Components without body are not supported.
 #[starknet::component]
 ^********************^
 
-error: Module file not found. Expected path: test_component.cairo
+error[E0004]: Module file not found. Expected path: test_component.cairo
  --> lib.cairo:1:1
 #[starknet::component]
 ^********************^
