@@ -39,7 +39,7 @@ function safeStrictDeepEqual<T>(a: T, b: T): boolean {
   }
 }
 
-function areExecutablesEqual(a: lc.Executable, b: lc.Executable): boolean {
+function commandsEqual(a: lc.Executable, b: lc.Executable): boolean {
   return (
     a.command === b.command &&
     safeStrictDeepEqual(a.args, b.args) &&
@@ -47,48 +47,66 @@ function areExecutablesEqual(a: lc.Executable, b: lc.Executable): boolean {
   );
 }
 
-async function allFoldersHaveSameLSProvider(
+export async function lsExecutablesEqual(
+  a: LSExecutable,
+  b: LSExecutable,
   ctx: Context,
+): Promise<boolean> {
+  return (
+    commandsEqual(a.preparedInvocation, b.preparedInvocation) &&
+    (await a.scarb?.getVersion(ctx)) === (await b.scarb?.getVersion(ctx))
+  );
+}
+
+export async function allUnderlyingCommandsEqual(
   executables: LSExecutable[],
+  ctx: Context,
 ): Promise<boolean> {
   if (executables.length < 2) {
     return true;
   }
 
-  // If every executable is scarb based, check if the versions match additionally
-  if (executables.every((v) => !!v.scarb)) {
-    const versions = await Promise.all(executables.map((v) => v.scarb!.getVersion(ctx)));
-    if (!versions.every((x) => versions[0] === x)) {
+  for (const executable of executables) {
+    if (!(await lsExecutablesEqual(executables[0]!, executable, ctx))) {
       return false;
     }
   }
-
-  return executables.every((x) => areExecutablesEqual(executables[0]!.run, x.run));
+  return true;
 }
 
-export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClient | undefined> {
-  const executables = (
+export async function getLSExecutables(
+  workspaceFolders: readonly vscode.WorkspaceFolder[],
+  ctx: Context,
+): Promise<LSExecutable[]> {
+  return (
     await Promise.all(
-      (vscode.workspace.workspaceFolders || []).map((workspaceFolder) =>
-        getLanguageServerExecutable(workspaceFolder, ctx),
-      ),
+      workspaceFolders.map((workspaceFolder) => getLSExecutable(workspaceFolder, ctx)),
     )
   ).filter((x) => !!x);
+}
 
-  const sameProvider = await allFoldersHaveSameLSProvider(ctx, executables);
-  if (!sameProvider) {
+export async function setupLanguageServer(
+  ctx: Context,
+): Promise<[lc.LanguageClient, LSExecutable] | undefined> {
+  const executables = await getLSExecutables(vscode.workspace.workspaceFolders || [], ctx);
+
+  if (!executables.length) {
+    return;
+  }
+
+  const sameCommand = await allUnderlyingCommandsEqual(executables, ctx);
+  if (!sameCommand) {
     await vscode.window.showErrorMessage(
-      "Using multiple Scarb versions in one workspace are not supported.",
+      "Using multiple Scarb versions in one workspace is not supported.",
     );
     return;
   }
 
   // First one is good as any of them since they should be all the same at this point
   const lsExecutable = executables[0];
+  assert(lsExecutable, "An executable should be present by this time");
 
-  assert(lsExecutable, "Failed to start Cairo LS");
-
-  const { run, scarb } = lsExecutable;
+  const { preparedInvocation: run, scarb } = lsExecutable;
   setupEnv(run, ctx);
 
   ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
@@ -193,7 +211,7 @@ export async function setupLanguageServer(ctx: Context): Promise<lc.LanguageClie
 
   await client.start();
 
-  return client;
+  return [client, lsExecutable];
 }
 
 async function findScarbForWorkspaceFolder(
@@ -216,19 +234,21 @@ async function findScarbForWorkspaceFolder(
   }
 }
 
-interface LSExecutable {
-  run: lc.Executable;
+export interface LSExecutable {
+  preparedInvocation: lc.Executable;
+  workspaceFolder: vscode.WorkspaceFolder | undefined;
   scarb: Scarb | undefined;
 }
 
-async function getLanguageServerExecutable(
+export async function getLSExecutable(
   workspaceFolder: vscode.WorkspaceFolder | undefined,
   ctx: Context,
 ): Promise<LSExecutable | undefined> {
   const scarb = await findScarbForWorkspaceFolder(workspaceFolder, ctx);
   try {
     const provider = await determineLanguageServerExecutableProvider(workspaceFolder, scarb, ctx);
-    return { run: provider.languageServerExecutable(), scarb };
+    const preparedInvocation = provider.languageServerExecutable();
+    return { preparedInvocation, scarb, workspaceFolder };
   } catch (e) {
     ctx.log.error(`${e}`);
   }

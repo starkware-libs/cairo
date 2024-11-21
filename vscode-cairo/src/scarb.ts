@@ -18,6 +18,8 @@ export class Scarb implements LanguageServerExecutableProvider {
      * hence we associate workspace folder reference with the Scarb instance.
      */
     public readonly workspaceFolder?: vscode.WorkspaceFolder | undefined,
+
+    private version?: string | undefined,
   ) {}
 
   /**
@@ -88,8 +90,11 @@ export class Scarb implements LanguageServerExecutableProvider {
   }
 
   public async getVersion(ctx: Context): Promise<string> {
-    const output = await this.execWithOutput(["--version"], ctx);
-    return output.trim();
+    if (this.version) {
+      return this.version;
+    }
+    this.version = (await this.execWithOutput(["--version"], ctx)).trim();
+    return this.version;
   }
 
   public async cacheClean(ctx: Context): Promise<void> {
