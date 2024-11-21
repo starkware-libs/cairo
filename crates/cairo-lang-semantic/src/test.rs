@@ -120,9 +120,9 @@ fn test_mapping_translate_consecutive_spans() {
     let diags = diags.format(db);
     assert_eq!(diags, indoc! {r#"
         error: Cannot assign to an immutable variable.
-         --> lib.cairo[virt1]:3:5
+         --> lib.cairo:3:5
             x = 2;
-            ^***^
+            ^****^
 
     "#});
 }
