@@ -96,9 +96,48 @@ pub trait DefsGroup:
     // Plugins.
     // ========
     #[salsa::input]
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
-    #[salsa::input]
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>; // TODO: Delete in favour or [`default_macro_plugins`]
+    #[salsa::input] // TODO: Delete in favour or [`default_inline_macro_plugins`]
     fn inline_macro_plugins(&self) -> Arc<OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>>;
+
+    #[salsa::input]
+    fn default_macro_plugins(&self) -> Vec<MacroPluginId>;
+
+    #[salsa::input]
+    fn override_crate_macro_plugins(&self, crate_id: CrateId) -> Vec<MacroPluginId>;
+
+    #[salsa::interned]
+    fn intern_macro_plugin(&self, plugin: MacroPluginLongId) -> MacroPluginId;
+
+    /// Returns [`MacroPluginId`]s of the plugins set for the crate with [`CrateId`].
+    /// Provides an override if it has been set with
+    /// [`DefsGroup::set_override_crate_macro_plugins`] or the default
+    /// ([`DefsGroup::default_macro_plugins`]) otherwise.
+    fn crate_macro_plugins(&self, crate_id: CrateId) -> Vec<MacroPluginId>;
+
+    #[salsa::input]
+    fn default_inline_macro_plugins(&self) -> OrderedHashMap<String, InlineMacroExprPluginId>;
+
+    #[salsa::input]
+    fn override_crate_inline_macro_plugins(
+        &self,
+        crate_id: CrateId,
+    ) -> OrderedHashMap<String, InlineMacroExprPluginId>;
+
+    #[salsa::interned]
+    fn intern_inline_macro_plugin(
+        &self,
+        plugin: InlineMacroExprPluginLongId,
+    ) -> InlineMacroExprPluginId;
+
+    /// Returns [`InlineMacroExprPluginId`]s of the plugins set for the crate with [`CrateId`].
+    /// Provides an override if it has been set with
+    /// [`DefsGroup::set_override_crate_inline_macro_plugins`] or the default
+    /// ([`DefsGroup::default_inline_macro_plugins`]) otherwise.
+    fn crate_inline_macro_plugins(
+        &self,
+        crate_id: CrateId,
+    ) -> OrderedHashMap<String, InlineMacroExprPluginId>;
 
     /// Returns the set of attributes allowed anywhere.
     /// An attribute on any item that is not in this set will be handled as an unknown attribute.
@@ -259,6 +298,27 @@ pub trait DefsGroup:
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<PluginFileDiagnosticNotes>>;
+}
+
+fn crate_macro_plugins(db: &dyn DefsGroup, _crate_id: CrateId) -> Vec<MacroPluginId> {
+    // Cannot do this at the moment
+    // catch_unwind(|| db.override_crate_macro_plugins(crate_id))
+    //     .unwrap_or_else(|_| db.default_macro_plugins())
+
+    // TODO: Change this
+    db.default_macro_plugins()
+}
+
+fn crate_inline_macro_plugins(
+    db: &dyn DefsGroup,
+    _crate_id: CrateId,
+) -> OrderedHashMap<String, InlineMacroExprPluginId> {
+    // Cannot do this at the moment
+    // catch_unwind(|| db.override_crate_inline_macro_plugins(crate_id))
+    //     .unwrap_or_else(|_| db.default_inline_macro_plugins())
+
+    // TODO: Change this
+    db.default_inline_macro_plugins()
 }
 
 fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
