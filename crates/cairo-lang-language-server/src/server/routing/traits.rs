@@ -20,9 +20,9 @@ use lsp_types::{
     CodeActionParams, CodeActionResponse, CompletionParams, CompletionResponse,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
     DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
-    DocumentFormattingParams, ExecuteCommandParams, GotoDefinitionParams, GotoDefinitionResponse,
-    Hover, HoverParams, SemanticTokensParams, SemanticTokensResult, TextDocumentContentChangeEvent,
-    TextDocumentPositionParams, TextEdit, Url,
+    DocumentFormattingParams, ExecuteCommandParams, FileChangeType, GotoDefinitionParams,
+    GotoDefinitionResponse, Hover, HoverParams, SemanticTokensParams, SemanticTokensResult,
+    TextDocumentContentChangeEvent, TextDocumentPositionParams, TextEdit, Url,
 };
 use serde_json::Value;
 use tracing::error;
@@ -184,8 +184,18 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
         // Invalidate changed cairo files.
         for change in &params.changes {
             if is_cairo_file_path(&change.uri) {
-                let Some(file) = state.db.file_for_url(&change.uri) else { continue };
-                PrivRawFileContentQuery.in_db_mut(state.db.as_files_group_mut()).invalidate(&file);
+                if change.typ == FileChangeType::CREATED {
+                    if let Some(file_id) = state.db.file_for_url(&change.uri) {
+                        if let Ok(text) = std::fs::read_to_string(change.uri.path()) {
+                            state.db.override_file_content(file_id, Some(text.into()));
+                        }
+                    }
+                } else {
+                    let Some(file) = state.db.file_for_url(&change.uri) else { continue };
+                    PrivRawFileContentQuery
+                        .in_db_mut(state.db.as_files_group_mut())
+                        .invalidate(&file);
+                }
             }
         }
 
