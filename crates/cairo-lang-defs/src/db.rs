@@ -659,11 +659,13 @@ fn priv_module_sub_files(
                     .as_intern_id(),
                 )
                 .intern(db);
+                let mut code_mappings = generated.code_mappings;
+                code_mappings.sort_by_key(|mapping| mapping.span.end);
                 files.insert(generated_file_id, VirtualFile {
                     parent: Some(file_id),
                     name: generated.name,
                     content: generated.content.into(),
-                    code_mappings: generated.code_mappings.into(),
+                    code_mappings: code_mappings.into(),
                     kind: FileKind::Module,
                 });
                 aux_data.push(generated.aux_data);

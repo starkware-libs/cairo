@@ -356,8 +356,14 @@ pub fn get_originating_location(
 }
 
 fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<TextSpan> {
-    let mut matched = code_mapping
+    let to_skip = code_mapping
+        .binary_search_by_key(&span.start, |mapping| mapping.span.end)
+        // We use the result both when it's `Ok` and `Err`, as we do not look for exact value.
+        .unwrap_or_else(|found| found);
+
+    let matched = code_mapping
         .iter()
+        .skip(to_skip)
         .filter(|mapping| {
             // Omit mappings to the left or to the right of current span.
             !(mapping.span.end < span.start || mapping.span.start > span.end)
@@ -372,8 +378,6 @@ fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<Te
     if matched.is_empty() {
         return None;
     }
-
-    matched.sort_by_key(|mapping| mapping.span);
 
     // We know that the location is contained by the sum of mappings in matched vec.
     let (first, matched) = matched.split_first().expect("non-empty vec always has first element");
