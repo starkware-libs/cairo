@@ -12,8 +12,8 @@ use smol_str::{SmolStr, ToSmolStr};
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
-    CodeMapping, CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId,
-    VirtualFile,
+    CodeMapping, CodeOrigin, CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId,
+    FlagLongId, VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -345,7 +345,7 @@ pub fn get_originating_location(
     mut span: TextSpan,
 ) -> (FileId, TextSpan) {
     while let Some((parent, code_mappings)) = get_parent_and_mapping(db, file_id) {
-        if let Some(origin) = code_mappings.iter().find_map(|mapping| mapping.translate(span)) {
+        if let Some(origin) = translate_location(&code_mappings, span) {
             span = origin;
             file_id = parent;
         } else {
@@ -353,6 +353,52 @@ pub fn get_originating_location(
         }
     }
     (file_id, span)
+}
+
+fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<TextSpan> {
+    let mut matched = code_mapping
+        .iter()
+        .filter(|mapping| {
+            // Omit mappings to the left or to the right of current span.
+            !(mapping.span.end < span.start || mapping.span.start > span.end)
+        })
+        .collect::<Vec<_>>();
+
+    if let Some(containing) = matched.iter().find(|mapping| mapping.span.contains(span)) {
+        // Found a span that fully contains the current one - translates it.
+        return containing.translate(span);
+    }
+
+    if matched.is_empty() {
+        return None;
+    }
+
+    matched.sort_by_key(|mapping| mapping.span);
+
+    // We know that the location is contained by the sum of mappings in matched vec.
+    let (first, matched) = matched.split_first().expect("non-empty vec always has first element");
+
+    // We only consider mappings consecutive to first.
+    let mut last = first;
+    for mapping in matched {
+        if mapping.span.start > last.span.end {
+            break;
+        }
+        last = mapping;
+    }
+
+    // We use the boundaries of the first and last mappings to calculate the new span.
+    let start = match first.origin {
+        CodeOrigin::Start(origin_start) => origin_start.add_width(span.start - first.span.start),
+        CodeOrigin::Span(span) => span.start,
+    };
+
+    let end = match last.origin {
+        CodeOrigin::Start(_) => start.add_width(span.width()),
+        CodeOrigin::Span(span) => span.end,
+    };
+
+    Some(TextSpan { start, end })
 }
 
 /// Returns the parent file and the code mappings of the file.
