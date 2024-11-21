@@ -9,6 +9,9 @@ use dyn_hash::DynHash;
 
 use crate::db::SemanticGroup;
 
+dyn_eq::eq_trait_object!(AnalyzerPlugin);
+dyn_hash::hash_trait_object!(AnalyzerPlugin);
+
 /// A trait for an analyzer plugin: external plugin that generates additional diagnostics for
 /// modules.
 pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send + DynEq + DynHash {

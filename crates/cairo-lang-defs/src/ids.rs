@@ -21,6 +21,8 @@
 //
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
+use std::sync::Arc;
+
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 pub use cairo_lang_filesystem::ids::UnstableSalsaId;
@@ -37,6 +39,7 @@ use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
 use crate::diagnostic_utils::StableLocation;
+use crate::plugin::{InlineMacroExprPlugin, MacroPlugin};
 
 // A trait for an id for a language element.
 pub trait LanguageElementId {
@@ -319,6 +322,104 @@ define_short_id!(
     DefsGroup,
     lookup_intern_plugin_generated_file,
     intern_plugin_generated_file
+);
+
+/// An Id allowing interning [`MacroPlugin`] into Salsa database.
+#[derive(Debug, Hash)]
+pub struct MacroPluginLongId(pub Arc<dyn MacroPlugin>);
+
+impl MacroPlugin for MacroPluginLongId {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        metadata: &crate::plugin::MacroPluginMetadata<'_>,
+    ) -> crate::plugin::PluginResult {
+        self.0.generate_code(db, item_ast, metadata)
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        self.0.declared_attributes()
+    }
+
+    fn declared_derives(&self) -> Vec<String> {
+        self.0.declared_derives()
+    }
+
+    fn executable_attributes(&self) -> Vec<String> {
+        self.0.executable_attributes()
+    }
+
+    fn phantom_type_attributes(&self) -> Vec<String> {
+        self.0.phantom_type_attributes()
+    }
+}
+
+impl Clone for MacroPluginLongId {
+    fn clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
+    }
+}
+
+// `PartialEq` cannot be derived because of the `Arc`, but since [`MacroPlugin`] has `DynEq`
+// providing `PartialEq`'s functionality, the implementation is easily delegated.
+impl PartialEq for MacroPluginLongId {
+    fn eq(&self, other: &Self) -> bool {
+        &*self.0 == &*other.0
+    }
+}
+
+impl Eq for MacroPluginLongId {}
+
+define_short_id!(
+    MacroPluginId,
+    MacroPluginLongId,
+    DefsGroup,
+    lookup_intern_macro_plugin,
+    intern_macro_plugin
+);
+
+/// An Id allowing interning [`InlineExprMacroPlugin`] into Salsa database.
+#[derive(Debug, Hash)]
+pub struct InlineMacroExprPluginLongId(pub Arc<dyn InlineMacroExprPlugin>);
+
+impl InlineMacroExprPlugin for InlineMacroExprPluginLongId {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: &ast::ExprInlineMacro,
+        metadata: &crate::plugin::MacroPluginMetadata<'_>,
+    ) -> crate::plugin::InlinePluginResult {
+        self.0.generate_code(db, item_ast, metadata)
+    }
+
+    fn documentation(&self) -> Option<String> {
+        self.0.documentation()
+    }
+}
+
+impl Clone for InlineMacroExprPluginLongId {
+    fn clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
+    }
+}
+
+// `PartialEq` cannot be derived because of the `Arc`, but since [`InlineMacroExprPlugin`] has
+// `DynEq` providing `PartialEq`'s functionality, the implementation is easily delegated.
+impl PartialEq for InlineMacroExprPluginLongId {
+    fn eq(&self, other: &Self) -> bool {
+        &*self.0 == &*other.0
+    }
+}
+
+impl Eq for InlineMacroExprPluginLongId {}
+
+define_short_id!(
+    InlineMacroExprPluginId,
+    InlineMacroExprPluginLongId,
+    DefsGroup,
+    lookup_intern_inline_macro_plugin,
+    intern_inline_macro_plugin
 );
 
 define_language_element_id_as_enum! {
