@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
@@ -14,9 +13,10 @@ use tracing::{error, warn};
 use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
+use crate::project::ProjectController;
 use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
-use crate::{Backend, Tricks, env_config};
+use crate::{Tricks, env_config};
 
 /// Swaps entire [`AnalysisDatabase`] with empty one periodically.
 ///
@@ -57,7 +57,7 @@ impl AnalysisDatabaseSwapper {
         config: &Config,
         tricks: &Tricks,
         notifier: &Notifier,
-        loaded_scarb_manifests: &mut HashSet<PathBuf>,
+        project_controller: &mut ProjectController,
     ) {
         let Ok(elapsed) = self.last_replace.elapsed() else {
             warn!("system time went backwards, skipping db swap");
@@ -73,7 +73,7 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
-        self.swap(db, open_files, config, tricks, notifier, loaded_scarb_manifests)
+        self.swap(db, open_files, config, tricks, notifier, project_controller)
     }
 
     /// Swaps the database.
@@ -85,10 +85,10 @@ impl AnalysisDatabaseSwapper {
         config: &Config,
         tricks: &Tricks,
         notifier: &Notifier,
-        loaded_scarb_manifests: &mut HashSet<PathBuf>,
+        project_controller: &mut ProjectController,
     ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
-            loaded_scarb_manifests.clear();
+            project_controller.clear_loaded_workspaces();
 
             let mut new_db = AnalysisDatabase::new(tricks);
             self.migrate_file_overrides(&mut new_db, db, open_files);
@@ -97,7 +97,7 @@ impl AnalysisDatabaseSwapper {
                 open_files,
                 config,
                 notifier,
-                loaded_scarb_manifests,
+                project_controller,
             );
             new_db
         })) else {
@@ -141,7 +141,7 @@ impl AnalysisDatabaseSwapper {
         open_files: &HashSet<Url>,
         config: &Config,
         notifier: &Notifier,
-        loaded_scarb_manifests: &mut HashSet<PathBuf>,
+        project_controller: &mut ProjectController,
     ) {
         for uri in open_files {
             let Ok(file_path) = uri.to_file_path() else {
@@ -149,13 +149,12 @@ impl AnalysisDatabaseSwapper {
                 continue;
             };
 
-            Backend::detect_crate_for(
+            project_controller.detect_crate_for(
                 new_db,
                 &self.scarb_toolchain,
                 config,
                 &file_path,
                 notifier,
-                loaded_scarb_manifests,
             );
         }
     }
