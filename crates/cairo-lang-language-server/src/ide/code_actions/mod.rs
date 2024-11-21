@@ -11,6 +11,7 @@ use crate::lang::db::{AnalysisDatabase, LsSyntaxGroup};
 use crate::lang::lsp::{LsProtoGroup, ToCairo};
 
 mod add_missing_trait;
+mod create_module_file;
 mod expand_macro;
 mod fill_struct_fields;
 mod rename_unused_variable;
@@ -87,6 +88,13 @@ fn get_code_actions_for_diagnostics(
             "E0003" => fill_struct_fields::fill_struct_fields(db, node.clone(), params)
                 .map(|result| vec![result])
                 .unwrap_or_default(),
+            "E0004" => create_module_file::create_module_file(
+                db,
+                node.clone(),
+                params.text_document.uri.clone(),
+            )
+            .map(|result| vec![result])
+            .unwrap_or_default(),
             _ => {
                 debug!("no code actions for diagnostic code: {code}");
                 vec![]

@@ -54,7 +54,7 @@ fn test_missing_module_file() {
     assert_eq!(
         db.module_semantic_diagnostics(ModuleId::Submodule(submodule_id)).unwrap().format(db),
         indoc! {"
-            error: Module file not found. Expected path: abc.cairo
+            error[E0004]: Module file not found. Expected path: abc.cairo
              --> lib.cairo:3:9
                     mod abc;
                     ^******^
