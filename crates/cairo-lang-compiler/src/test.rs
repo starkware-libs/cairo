@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 use crate::db::RootDatabase;
 use crate::{CompilerConfig, compile_prepared_db_program_artifact};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct MockExecutablePlugin {}
 
 impl MacroPlugin for MockExecutablePlugin {

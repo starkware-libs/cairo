@@ -12,7 +12,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 
 /// Macro for assertion.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Eq, Hash)]
 pub struct AssertMacro;
 impl NamedPlugin for AssertMacro {
     const NAME: &'static str = "assert";

@@ -66,7 +66,7 @@ fn try_handle_simple_panic(
 }
 
 /// Macro for panicking with a format string.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Eq, Hash)]
 pub struct PanicMacro;
 impl NamedPlugin for PanicMacro {
     const NAME: &'static str = "panic";

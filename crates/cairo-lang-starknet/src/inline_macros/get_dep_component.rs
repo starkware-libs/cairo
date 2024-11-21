@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
 
 /// Macro for getting a component given a contract state that has it.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct GetDepComponentMacro;
 impl NamedPlugin for GetDepComponentMacro {
     const NAME: &'static str = "get_dep_component";
@@ -26,7 +26,7 @@ impl InlineMacroExprPlugin for GetDepComponentMacro {
 }
 
 /// Macro for getting a mutable component given a mutable contract state that has it.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct GetDepComponentMutMacro;
 impl NamedPlugin for GetDepComponentMutMacro {
     const NAME: &'static str = "get_dep_component_mut";

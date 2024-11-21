@@ -13,12 +13,16 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.9.1" 
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.9.1" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.9.1" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.9.1" }
+dyn-eq.workspace = true
+dyn-hash.workspace = true
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
 smol_str.workspace = true
 
 [dev-dependencies]
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = [
+    "testing",
+] }
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true

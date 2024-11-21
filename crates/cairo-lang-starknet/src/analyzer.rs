@@ -26,7 +26,7 @@ const ALLOW_NO_DEFAULT_VARIANT_ATTR: &str = "starknet::store_no_default_variant"
 const ALLOW_COLLIDING_PATHS_ATTR: &str = "starknet::colliding_storage_paths";
 
 /// Plugin to add diagnostics for contracts for bad ABI generation.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Eq, Hash)]
 pub struct ABIAnalyzer;
 
 impl AnalyzerPlugin for ABIAnalyzer {
@@ -88,7 +88,7 @@ fn add_abi_diagnostics(
 }
 
 /// Plugin to add diagnostics for contracts with multiple paths to the same location in storage.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Eq, Hash)]
 pub struct StorageAnalyzer;
 
 impl AnalyzerPlugin for StorageAnalyzer {

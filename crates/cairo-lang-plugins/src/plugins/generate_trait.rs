@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct GenerateTraitPlugin;
 

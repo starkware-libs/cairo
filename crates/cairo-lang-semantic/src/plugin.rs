@@ -4,12 +4,14 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin, NamedPlugin, PluginDiagnostic};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use dyn_eq::DynEq;
+use dyn_hash::DynHash;
 
 use crate::db::SemanticGroup;
 
 /// A trait for an analyzer plugin: external plugin that generates additional diagnostics for
 /// modules.
-pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send {
+pub trait AnalyzerPlugin: std::fmt::Debug + Sync + Send + DynEq + DynHash {
     /// Runs the plugin on a module.
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic>;
     /// Allows this plugin supplies.

@@ -10,6 +10,8 @@ use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use dyn_eq::DynEq;
+use dyn_hash::DynHash;
 use smol_str::SmolStr;
 
 /// A trait for arbitrary data that a macro generates along with a generated file.
@@ -95,9 +97,12 @@ pub struct MacroPluginMetadata<'a> {
     pub edition: Edition,
 }
 
+dyn_eq::eq_trait_object!(MacroPlugin);
+dyn_hash::hash_trait_object!(MacroPlugin);
+
 // TOD(spapini): Move to another place.
 /// A trait for a macro plugin: external plugin that generates additional code for items.
-pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
+pub trait MacroPlugin: std::fmt::Debug + Sync + Send + DynEq + DynHash {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
     /// with that name and content should be created.
@@ -149,7 +154,10 @@ pub struct InlinePluginResult {
     pub diagnostics: Vec<PluginDiagnostic>,
 }
 
-pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send {
+dyn_eq::eq_trait_object!(InlineMacroExprPlugin);
+dyn_hash::hash_trait_object!(InlineMacroExprPlugin);
+
+pub trait InlineMacroExprPlugin: std::fmt::Debug + Sync + Send + DynEq + DynHash {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
     /// with that name and content should be created.

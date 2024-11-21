@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 
 /// Plugin that allows writing item level `compile_error!` causing a diagnostic.
 /// Useful for testing that `cfg` attributes are valid.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct CompileErrorPlugin;
 

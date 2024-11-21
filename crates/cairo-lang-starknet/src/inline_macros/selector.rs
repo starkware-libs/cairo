@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 
 /// Macro for expanding a selector to a string literal.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct SelectorMacro;
 impl NamedPlugin for SelectorMacro {
     const NAME: &'static str = "selector";

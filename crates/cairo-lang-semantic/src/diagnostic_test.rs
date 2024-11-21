@@ -67,7 +67,7 @@ fn test_missing_module_file() {
 // A dummy plugin that adds an inline module with a semantic error (per function
 // in the original module).
 // Used to test error location inside plugin generated inline modules.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 struct AddInlineModuleDummyPlugin;
 
 impl MacroPlugin for AddInlineModuleDummyPlugin {
@@ -206,7 +206,7 @@ fn test_inline_inline_module_diagnostics() {
     );
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 struct NoU128RenameAnalyzerPlugin;
 impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {

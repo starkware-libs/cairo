@@ -16,7 +16,7 @@ use num_bigint::{BigInt, Sign};
 pub const FELT252_BYTES: usize = 31;
 
 /// Macro for writing into a formatter.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct WriteMacro;
 impl NamedPlugin for WriteMacro {
     const NAME: &'static str = "write";
@@ -61,7 +61,7 @@ impl InlineMacroExprPlugin for WriteMacro {
 }
 
 /// Macro for writing into a formatter with an additional new line.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct WritelnMacro;
 impl NamedPlugin for WritelnMacro {
     const NAME: &'static str = "writeln";
