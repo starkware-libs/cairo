@@ -5,10 +5,10 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
-    ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId,
-    LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
-    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
-    VariantId,
+    ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId,
+    InlineMacroExprPluginLongId, LanguageElementId, LookupItemId, MacroPluginLongId, ModuleFileId,
+    ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
+    TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -23,6 +23,7 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
+use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
@@ -1559,6 +1560,11 @@ pub trait SemanticGroup:
     #[salsa::input]
     fn analyzer_plugins(&self) -> Vec<Arc<dyn AnalyzerPlugin>>;
 
+    #[salsa::input]
+    fn crate_analyzer_plugins(&self, crate_id: CrateId) -> Vec<AnalyzerPluginId>;
+    #[salsa::interned]
+    fn intern_analyzer_plugin(&self, plugin: AnalyzerPluginLongId) -> AnalyzerPluginId;
+
     /// Returns the set of `allow` that were declared as by a plugin.
     /// An allow that is not in this set will be handled as an unknown allow.
     fn declared_allows(&self) -> Arc<OrderedHashSet<String>>;
@@ -1868,6 +1874,35 @@ pub trait PluginSuiteInput: SemanticGroup {
         self.set_macro_plugins(plugins);
         self.set_inline_macro_plugins(Arc::new(inline_macro_plugins));
         self.set_analyzer_plugins(analyzer_plugins);
+    }
+
+    /// Sets macro, inline macro and analyzer plugins present in the [`PluginSuite`] for a crate
+    /// pointed to by the [`CrateId`].
+    /// ---
+    /// NOTE: A replacement for `set_macro_plugin_from_suite` defined above.
+    fn set_crate_plugins_from_suite(&mut self, crate_id: CrateId, suite: PluginSuite) {
+        let PluginSuite { plugins, inline_macro_plugins, analyzer_plugins } = suite;
+
+        let macro_plugins = plugins
+            .into_iter()
+            .map(|plugin| self.intern_macro_plugin(MacroPluginLongId(plugin)))
+            .collect();
+
+        let inline_macro_plugins = inline_macro_plugins
+            .into_iter()
+            .map(|(name, plugin)| {
+                (name, self.intern_inline_macro_plugin(InlineMacroExprPluginLongId(plugin)))
+            })
+            .collect();
+
+        let analyzer_plugins = analyzer_plugins
+            .into_iter()
+            .map(|plugin| self.intern_analyzer_plugin(AnalyzerPluginLongId(plugin)))
+            .collect();
+
+        self.set_crate_macro_plugins(crate_id, macro_plugins);
+        self.set_crate_inline_macro_plugins(crate_id, inline_macro_plugins);
+        self.set_crate_analyzer_plugins(crate_id, analyzer_plugins);
     }
 }
 
