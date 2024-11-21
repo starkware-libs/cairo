@@ -23,6 +23,7 @@ use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::inference::{self, ImplVar, ImplVarId};
+use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::{ConstValueId, Constant, ImplConstantId};
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
@@ -1559,6 +1560,21 @@ pub trait SemanticGroup:
     #[salsa::input]
     fn analyzer_plugins(&self) -> Vec<Arc<dyn AnalyzerPlugin>>;
 
+    #[salsa::input]
+    fn default_analyzer_plugins(&self) -> Arc<[AnalyzerPluginId]>;
+
+    #[salsa::input]
+    fn override_crate_analyzer_plugins(&self, crate_id: CrateId) -> Arc<[AnalyzerPluginId]>;
+
+    #[salsa::interned]
+    fn intern_analyzer_plugin(&self, plugin: AnalyzerPluginLongId) -> AnalyzerPluginId;
+
+    /// Returns [`AnalyzerPluginId`]s of the plugins set for the crate with [`CrateId`].
+    /// Returns
+    /// [`SemanticGroup::override_crate_analyzer_plugins`] if it has been set,
+    /// or the ([`SemanticGroup::default_analyzer_plugins`]) otherwise.
+    fn crate_analyzer_plugins(&self, crate_id: CrateId) -> Arc<[AnalyzerPluginId]>;
+
     /// Returns the set of `allow` that were declared as by a plugin.
     /// An allow that is not in this set will be handled as an unknown allow.
     fn declared_allows(&self) -> Arc<OrderedHashSet<String>>;
@@ -1706,6 +1722,11 @@ fn module_semantic_diagnostics(
     }
 
     Ok(diagnostics.build())
+}
+
+fn crate_analyzer_plugins(db: &dyn SemanticGroup, _crate_id: CrateId) -> Arc<[AnalyzerPluginId]> {
+    // TODO: Implement this properly
+    db.default_analyzer_plugins()
 }
 
 fn declared_allows(db: &dyn SemanticGroup) -> Arc<OrderedHashSet<String>> {
