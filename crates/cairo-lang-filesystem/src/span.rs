@@ -30,6 +30,9 @@ impl TextWidth {
     pub fn as_u32(self) -> u32 {
         self.0
     }
+    pub fn from_u32(value: u32) -> Self {
+        Self(value)
+    }
 }
 impl Add for TextWidth {
     type Output = Self;
