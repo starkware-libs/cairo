@@ -240,3 +240,72 @@ At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, 
 //! > Code action #1
             self.balance.read(<caret>)
 No code actions.
+
+//! > ==========================================================================
+
+//! > Test adding trait visible only in editions without visibility constraints.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2023_10"
+
+//! > cairo_code
+mod hidden_trait {
+
+    trait ATrait1<T> {
+        fn some_method(self: @T);
+    }
+    impl Felt252ATraitImpl of ATrait1<felt252> {
+        fn some_method(self: @felt252) {}
+    }
+}
+mod inner_mod {
+    fn main() {
+        let x = 5_felt252;
+        x.some_me<caret>thod(<caret>);
+    }
+}
+
+//! > Code action #0
+        x.some_me<caret>thod();
+Title: Import super::hidden_trait::ATrait1
+Add new text: "use super::hidden_trait::ATrait1;
+"
+At: Range { start: Position { line: 10, character: 4 }, end: Position { line: 10, character: 4 } }
+
+//! > Code action #1
+        x.some_method(<caret>);
+No code actions.
+
+//! > ==========================================================================
+
+//! > Test adding trait from corelib visible only from crates with editions without visibility constraints.
+
+//! > test_runner_name
+test_quick_fix
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+[config.global]
+edition = "2023_10"
+
+//! > cairo_code
+fn func() {
+    // This is a method from a trait from `core` that is `pub (crate)`.
+    let (_x, _): (u8, bool) = 5_i8.abs_an<caret>d_sign();
+}
+
+//! > Code action #0
+    let (_x, _): (u8, bool) = 5_i8.abs_an<caret>d_sign();
+Title: Import core::integer::AbsAndSign
+Add new text: "use core::integer::AbsAndSign;
+"
+At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail, ensure};
 use cairo_lang_filesystem::cfg::CfgSet;
@@ -17,6 +17,16 @@ use tracing::{debug, error, warn};
 
 use crate::lang::db::AnalysisDatabase;
 use crate::project::crate_data::Crate;
+
+/// Get paths to manifests of the workspace members.
+pub fn get_workspace_members_manifests(metadata: &Metadata) -> Vec<PathBuf> {
+    metadata
+        .workspace
+        .members
+        .iter()
+        .map(|package_id| metadata[package_id].manifest_path.clone().into())
+        .collect()
+}
 
 /// Updates crate roots in the database with the information from Scarb metadata.
 ///

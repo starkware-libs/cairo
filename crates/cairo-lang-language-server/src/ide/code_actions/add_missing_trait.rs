@@ -14,7 +14,7 @@ use cairo_lang_utils::Upcast;
 use lsp_types::{CodeAction, CodeActionKind, Range, TextEdit, Url, WorkspaceEdit};
 use tracing::debug;
 
-use crate::lang::db::{AnalysisDatabase, LsSemanticGroup};
+use crate::lang::db::{AnalysisDatabase, LsSemanticGroup, LsSyntaxGroup};
 use crate::lang::inspect::methods::find_methods_for_type;
 use crate::lang::lsp::{LsProtoGroup, ToLsp};
 
@@ -46,11 +46,11 @@ fn missing_traits_actions(
         db,
         resolver_data.as_ref().clone_with_inference_id(db, InferenceId::NoContext),
     );
-    let mut expr_node = node.clone();
-    while expr_node.kind(db.upcast()) != SyntaxKind::ExprBinary {
-        expr_node = expr_node.parent()?;
-    }
-    let expr_node = ast::ExprBinary::from_syntax_node(db.upcast(), expr_node).lhs(db.upcast());
+    let expr_node = node.clone();
+    let binary_expr_node = db.first_ancestor_of_kind(expr_node, SyntaxKind::ExprBinary)?;
+
+    let expr_node =
+        ast::ExprBinary::from_syntax_node(db.upcast(), binary_expr_node).lhs(db.upcast());
     let stable_ptr = expr_node.stable_ptr().untyped();
     // Get its semantic model.
     let expr_id = db.lookup_expr_by_ptr(function_with_body, expr_node.stable_ptr()).ok()?;
@@ -76,7 +76,7 @@ fn missing_traits_actions(
     let module_start_position =
         module_start_offset.position_in_file(db.upcast(), file_id).unwrap().to_lsp();
     let relevant_methods = find_methods_for_type(db, resolver, ty, stable_ptr);
-    let current_module = db.find_module_containing_node(node)?;
+    let current_module = db.find_module_file_containing_node(node)?;
     let module_visible_traits = db.visible_traits_from_module(current_module)?;
     let mut code_actions = vec![];
     for method in relevant_methods {

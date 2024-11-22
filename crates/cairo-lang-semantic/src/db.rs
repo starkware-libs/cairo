@@ -6,8 +6,8 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplConstantDefId, ImplDefId,
     ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId, LookupItemId,
-    ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId, TraitFunctionId, TraitId,
-    TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
+    ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId,
+    TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -1556,25 +1556,25 @@ pub trait SemanticGroup:
     #[salsa::invoke(lsp_helpers::visible_traits_from_module)]
     fn visible_traits_from_module(
         &self,
-        module_id: ModuleId,
+        module_id: ModuleFileId,
     ) -> Option<Arc<OrderedHashMap<TraitId, String>>>;
     /// Returns all visible traits in a module, alongside a visible use path to the trait.
-    /// `user_module_id` is the module from which the traits are should be visible. If
+    /// `user_module_file_id` is the module from which the traits are should be visible. If
     /// `include_parent` is true, the parent module of `module_id` is also considered.
     #[salsa::invoke(lsp_helpers::visible_traits_in_module)]
     fn visible_traits_in_module(
         &self,
         module_id: ModuleId,
-        user_module_id: ModuleId,
+        user_module_file_id: ModuleFileId,
         include_parent: bool,
     ) -> Arc<[(TraitId, String)]>;
     /// Returns all visible traits in a crate, alongside a visible use path to the trait.
-    /// `user_module_id` is the module from which the traits are should be visible.
+    /// `user_module_file_id` is the module from which the traits are should be visible.
     #[salsa::invoke(lsp_helpers::visible_traits_in_crate)]
     fn visible_traits_in_crate(
         &self,
         crate_id: CrateId,
-        user_module_id: ModuleId,
+        user_module_file_id: ModuleFileId,
     ) -> Arc<[(TraitId, String)]>;
 }
 
