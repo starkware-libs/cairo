@@ -24,6 +24,7 @@ CRATES_TO_PUBLISH=(
     cairo-lang-project
     cairo-lang-sierra
     cairo-lang-sierra-type-size
+    cairo-lang-stable-token
     cairo-lang-sierra-ap-change
     cairo-lang-sierra-gas
     cairo-lang-sierra-to-casm
