@@ -292,6 +292,7 @@ fn generate_derive_code_for_type(
             code_mappings,
             content,
             aux_data: None,
+            diagnostics_notes: Vec::new(),
         }),
         diagnostics,
         remove_original_item: false,

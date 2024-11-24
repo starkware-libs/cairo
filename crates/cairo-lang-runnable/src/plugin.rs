@@ -120,6 +120,7 @@ impl MacroPlugin for RunnablePlugin {
                 content,
                 code_mappings,
                 aux_data: None,
+                diagnostics_notes: Vec::new(),
             }),
             diagnostics,
             remove_original_item: false,

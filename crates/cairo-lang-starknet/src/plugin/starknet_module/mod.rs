@@ -241,6 +241,7 @@ pub(super) fn handle_module_by_storage(
                 }
                 StarknetModuleKind::Component => None,
             },
+            diagnostics_notes: Vec::new(),
         }),
         diagnostics,
         remove_original_item: backwards_compatible_storage(metadata.edition),

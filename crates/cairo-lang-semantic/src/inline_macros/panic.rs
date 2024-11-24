@@ -127,6 +127,7 @@ impl InlineMacroExprPlugin for PanicMacro {
                 content,
                 code_mappings,
                 aux_data: None,
+                diagnostics_notes: Vec::new(),
             }),
             diagnostics: vec![],
         }

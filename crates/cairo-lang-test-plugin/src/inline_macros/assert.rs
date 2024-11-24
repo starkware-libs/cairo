@@ -180,6 +180,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 content,
                 code_mappings,
                 aux_data: None,
+                diagnostics_notes: Vec::new(),
             }),
             diagnostics,
         }
