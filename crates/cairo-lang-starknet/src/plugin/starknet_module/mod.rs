@@ -1,6 +1,5 @@
 use std::vec;
 
-use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile,
@@ -10,10 +9,9 @@ use cairo_lang_filesystem::db::Edition;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{BodyItems, GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, require};
 
 use self::component::generate_component_specific_code;
@@ -183,8 +181,6 @@ pub(super) fn handle_module_by_storage(
     // Whether an event exists in the given module. If it doesn't, we need to generate an empty one.
     let mut has_event = false;
     let mut event_variants = vec![];
-    // Use declarations to add to the internal submodules. Mapping from 'use' items to their path.
-    let mut extra_uses = OrderedHashMap::default();
     for item in body.iter_items_in_cfg(db, metadata.cfg_set) {
         if let Some(variants) =
             get_starknet_event_variants(db, &mut diagnostics, &item, module_kind)
@@ -192,20 +188,11 @@ pub(super) fn handle_module_by_storage(
             has_event = true;
             event_variants = variants;
         }
-
-        maybe_add_extra_use(db, item, &mut extra_uses);
     }
 
     if !has_event {
         common_data.event_code = RewriteNode::text(EMPTY_EVENT_CODE);
     }
-
-    common_data.extra_uses_node = RewriteNode::new_modified(
-        extra_uses
-            .values()
-            .map(|use_path| RewriteNode::Text(format!("\n        use {use_path};")))
-            .collect(),
-    );
 
     // Generate the specific code for contract/component according to the module kind.
     let module_kind_specific_code = match module_kind {
@@ -245,43 +232,6 @@ pub(super) fn handle_module_by_storage(
         diagnostics,
         remove_original_item: backwards_compatible_storage(metadata.edition),
     })
-}
-
-/// Adds extra uses, to be used in the generated submodules.
-fn maybe_add_extra_use(
-    db: &dyn SyntaxGroup,
-    item: ast::ModuleItem,
-    extra_uses: &mut OrderedHashMap<smol_str::SmolStr, String>,
-) {
-    if let Some(ident) = match item {
-        ast::ModuleItem::Use(item) => {
-            for leaf in get_all_path_leaves(db, &item) {
-                extra_uses
-                    .entry(leaf.stable_ptr().identifier(db))
-                    .or_insert_with_key(|ident| format!("super::{}", ident));
-            }
-            None
-        }
-        ast::ModuleItem::Constant(item) => Some(item.name(db)),
-        ast::ModuleItem::Module(item) => Some(item.name(db)),
-        ast::ModuleItem::Impl(item) => Some(item.name(db)),
-        // Skip the storage struct, that only generates other code, but its code itself is ignored.
-        ast::ModuleItem::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME => None,
-        ast::ModuleItem::Struct(item) => Some(item.name(db)),
-        ast::ModuleItem::Enum(item) => Some(item.name(db)),
-        ast::ModuleItem::TypeAlias(item) => Some(item.name(db)),
-        // These items are not directly required in generated inner modules.
-        ast::ModuleItem::ExternFunction(_)
-        | ast::ModuleItem::ExternType(_)
-        | ast::ModuleItem::Trait(_)
-        | ast::ModuleItem::FreeFunction(_)
-        | ast::ModuleItem::ImplAlias(_)
-        | ast::ModuleItem::Missing(_)
-        | ast::ModuleItem::InlineMacro(_)
-        | ast::ModuleItem::HeaderDoc(_) => None,
-    } {
-        extra_uses.entry(ident.text(db)).or_insert_with_key(|ident| format!("super::{}", ident));
-    }
 }
 
 /// If the grand grand parent of the given item is a starknet module, returns its kind
