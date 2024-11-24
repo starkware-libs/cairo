@@ -266,6 +266,7 @@ impl InnerAttrExpansionContext {
                 content: expanded,
                 aux_data: None,
                 code_mappings,
+                diagnostics_note: Default::default(),
             }),
             diagnostics: self.diagnostics,
             remove_original_item: true,
@@ -476,6 +477,7 @@ fn expand_derives(
                     }],
                     content,
                     aux_data: None,
+                    diagnostics_note: Default::default(),
                 })
             },
             diagnostics: into_cairo_diagnostics(result.diagnostics, stable_ptr),
@@ -547,6 +549,7 @@ fn expand_attribute(
             }],
             content,
             aux_data: None,
+            diagnostics_note: Default::default(),
         }),
         diagnostics: into_cairo_diagnostics(result.diagnostics, stable_ptr),
         remove_original_item: true,

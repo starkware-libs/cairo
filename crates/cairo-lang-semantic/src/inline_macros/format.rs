@@ -61,6 +61,7 @@ impl InlineMacroExprPlugin for FormatMacro {
                 content,
                 code_mappings,
                 aux_data: None,
+                diagnostics_note: Default::default(),
             }),
             diagnostics: vec![],
         }
@@ -85,7 +86,7 @@ impl InlineMacroExprPlugin for FormatMacro {
             # Examples
             ```cairo
             format!("hello"); // => "hello".
-            let world: ByteArray = "world"; 
+            let world: ByteArray = "world";
             format!("hello {}", world_ba); // => "hello world".
             format!("hello {world_ba}"); // => "hello world".
             let (x, y) = (1, 2);

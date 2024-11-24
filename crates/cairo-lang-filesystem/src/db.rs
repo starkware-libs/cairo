@@ -343,11 +343,18 @@ pub fn get_originating_location(
     db: &dyn FilesGroup,
     mut file_id: FileId,
     mut span: TextSpan,
+    mut parent_files: Option<&mut Vec<FileId>>,
 ) -> (FileId, TextSpan) {
+    if let Some(ref mut parent_files) = parent_files {
+        parent_files.push(file_id);
+    }
     while let Some((parent, code_mappings)) = get_parent_and_mapping(db, file_id) {
         if let Some(origin) = code_mappings.iter().find_map(|mapping| mapping.translate(span)) {
             span = origin;
             file_id = parent;
+            if let Some(ref mut parent_files) = parent_files {
+                parent_files.push(file_id);
+            }
         } else {
             break;
         }
