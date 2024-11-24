@@ -48,52 +48,9 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
         NotFoundItemType::Identifier,
         None,
     );
-    let resolver_data = Arc::new(resolver.data);
+    let resolver_data: Arc<ResolverData> = Arc::new(resolver.data);
 
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data })
-}
-
-/// Query implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
-pub fn priv_global_use_semantic_data(
-    db: &dyn SemanticGroup,
-    global_use_id: GlobalUseId,
-) -> Maybe<UseGlobalData> {
-    let module_file_id = global_use_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::default();
-    let inference_id = InferenceId::GlobalUseStar(global_use_id);
-    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
-
-    let item = star_ast.get_item(db.upcast());
-    let segments = get_use_path_segments(db.upcast(), star_ast.clone())?;
-    resolver.set_feature_config(&global_use_id, &item, &mut diagnostics);
-    let resolved_item = resolver.resolve_generic_path(
-        &mut diagnostics,
-        segments,
-        NotFoundItemType::Identifier,
-        None,
-    );
-    let resolver_data = Arc::new(resolver.data);
-    let imported_module = resolved_item.and_then(|item| {
-        if let ResolvedGenericItem::Module(module_id) = item {
-            Ok(module_id)
-        } else {
-            Err(diagnostics.report(&star_ast, UnexpectedElement {
-                expected: vec![ElementKind::Module],
-                actual: (&item).into(),
-            }))
-        }
-    });
-
-    Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module, resolver_data })
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct UseGlobalData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    imported_module: Maybe<ModuleId>,
-    resolver_data: Arc<ResolverData>,
 }
 
 /// Returns the segments that are the parts of the use path.
@@ -205,3 +162,85 @@ pub trait SemanticUseEx<'a>: Upcast<dyn SemanticGroup + 'a> {
 }
 
 impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticUseEx<'a> for T {}
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct UseGlobalData {
+    diagnostics: Diagnostics<SemanticDiagnostic>,
+    imported_module: Maybe<ModuleId>,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
+pub fn priv_global_use_semantic_data(
+    db: &dyn SemanticGroup,
+    global_use_id: GlobalUseId,
+) -> Maybe<UseGlobalData> {
+    let module_file_id = global_use_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::default();
+    let inference_id = InferenceId::GlobalUseStar(global_use_id);
+    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+
+    let item = star_ast.get_item(db.upcast());
+    let segments = get_use_path_segments(db.upcast(), star_ast.clone())?;
+    if segments.is_empty() {
+        let imported_module = Err(diagnostics.report(star_ast.stable_ptr(), UseStarEmptyPath));
+        return Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module });
+    }
+    resolver.set_feature_config(&global_use_id, &item, &mut diagnostics);
+    let resolved_item = resolver.resolve_generic_path(
+        &mut diagnostics,
+        segments.clone(),
+        NotFoundItemType::Identifier,
+        None,
+    )?;
+    // unwrap always safe as the resolver already resolved the entire path.
+    let last_segment = segments.last().unwrap();
+    let imported_module = match resolved_item {
+        ResolvedGenericItem::Module(module_id) => Ok(module_id),
+        _ => Err(diagnostics.report(last_segment.stable_ptr(), UnexpectedElement {
+            expected: vec![ElementKind::Module],
+            actual: (&resolved_item).into(),
+        })),
+    };
+    Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_global_use_imported_module].
+pub fn priv_global_use_imported_module(
+    db: &dyn SemanticGroup,
+    global_use_id: GlobalUseId,
+) -> Maybe<ModuleId> {
+    db.priv_global_use_semantic_data(global_use_id)?.imported_module
+}
+
+/// Query implementation of [crate::db::SemanticGroup::global_use_semantic_diagnostics].
+pub fn global_use_semantic_diagnostics(
+    db: &dyn SemanticGroup,
+    global_use_id: GlobalUseId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_global_use_semantic_data(global_use_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::priv_global_use_semantic_data].
+pub fn priv_global_use_semantic_data_cycle(
+    db: &dyn SemanticGroup,
+    cycle: &salsa::Cycle,
+    global_use_id: &GlobalUseId,
+) -> Maybe<UseGlobalData> {
+    let mut diagnostics = SemanticDiagnostics::default();
+    let global_use_ast = db.module_global_use_by_id(*global_use_id)?.to_maybe()?;
+    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(*global_use_id)?.to_maybe()?);
+    let segments = get_use_path_segments(db.upcast(), star_ast)?;
+    let err = if cycle.participant_keys().count() <= 2 && segments.len() == 1 {
+        // `use bad_name::*`, will attempt to find `bad_name` in the current module's global
+        // uses, but which includes itself - but we don't want to report a cycle in this case.
+        diagnostics.report(
+            segments.last().unwrap().stable_ptr(),
+            PathNotFound(NotFoundItemType::Identifier),
+        )
+    } else {
+        diagnostics.report(&global_use_ast, UseCycle)
+    };
+    Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module: Err(err) })
+}

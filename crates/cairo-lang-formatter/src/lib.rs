@@ -77,6 +77,8 @@ pub struct FormatterConfig {
     sort_module_level_items: bool,
     tuple_breaking_behavior: CollectionsBreakingBehavior,
     fixed_array_breaking_behavior: CollectionsBreakingBehavior,
+    merge_use_items: bool,
+    allow_duplicate_uses: bool,
 }
 
 // Config params
@@ -91,6 +93,8 @@ impl FormatterConfig {
         sort_module_level_items: bool,
         tuple_breaking_behavior: CollectionsBreakingBehavior,
         fixed_array_breaking_behavior: CollectionsBreakingBehavior,
+        merge_use_items: bool,
+        allow_duplicate_uses: bool,
     ) -> Self {
         Self {
             tab_size,
@@ -98,6 +102,8 @@ impl FormatterConfig {
             sort_module_level_items,
             tuple_breaking_behavior,
             fixed_array_breaking_behavior,
+            merge_use_items,
+            allow_duplicate_uses,
         }
     }
 
@@ -115,6 +121,14 @@ impl FormatterConfig {
         self.fixed_array_breaking_behavior = behavior;
         self
     }
+    pub fn merge_use_items(mut self, merge: bool) -> Self {
+        self.merge_use_items = merge;
+        self
+    }
+    pub fn allow_duplicate_uses(mut self, allow: bool) -> Self {
+        self.allow_duplicate_uses = allow;
+        self
+    }
 }
 impl Default for FormatterConfig {
     fn default() -> Self {
@@ -124,6 +138,8 @@ impl Default for FormatterConfig {
             sort_module_level_items: false,
             tuple_breaking_behavior: CollectionsBreakingBehavior::LineByLine,
             fixed_array_breaking_behavior: CollectionsBreakingBehavior::SingleBreakPoint,
+            merge_use_items: false,
+            allow_duplicate_uses: false,
         }
     }
 }
