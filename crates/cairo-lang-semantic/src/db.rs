@@ -4,10 +4,11 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
-    FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplConstantDefId, ImplDefId,
-    ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId,
-    TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
+    FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
+    ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId,
+    LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
+    VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -174,6 +175,13 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::us::use_resolver_data)]
     #[salsa::cycle(items::us::use_resolver_data_cycle)]
     fn use_resolver_data(&self, use_id: UseId) -> Maybe<Arc<ResolverData>>;
+
+    // Global Use.
+    // ====
+    /// Private query to compute data about a global use.
+    #[salsa::invoke(items::us::priv_global_use_semantic_data)]
+    fn priv_global_use_semantic_data(&self, use_id: GlobalUseId)
+    -> Maybe<items::us::UseGlobalData>;
 
     // Module.
     // ====
