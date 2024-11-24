@@ -491,14 +491,14 @@ pub fn create_entry_code_from_params(
     if config.outputting_function {
         for name in [
             BuiltinName::output,
-            BuiltinName::mul_mod,
-            BuiltinName::add_mod,
-            BuiltinName::range_check96,
-            BuiltinName::poseidon,
-            BuiltinName::ec_op,
-            BuiltinName::bitwise,
-            BuiltinName::range_check,
             BuiltinName::pedersen,
+            BuiltinName::range_check,
+            BuiltinName::bitwise,
+            BuiltinName::ec_op,
+            BuiltinName::poseidon,
+            BuiltinName::range_check96,
+            BuiltinName::add_mod,
+            BuiltinName::mul_mod,
         ] {
             if let Some(var) = builtin_vars.get(&name).copied() {
                 casm_build_extend!(ctx, tempvar cell = var;);
