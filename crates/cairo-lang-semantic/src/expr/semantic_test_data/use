@@ -1030,9 +1030,12 @@ Block(
 //! > test_runner_name
 test_expr_semantics(expect_diagnostics: false)
 
+//! > crate_settings
+edition = "2024_07"
+
 //! > module_code
 pub mod a {
-    const IN_A: u8 = 2;
+    pub const IN_A: u8 = 2;
 }
 pub mod use_a_star {
     use super::a::*;
@@ -1059,6 +1062,9 @@ Constant(
 
 //! > test_runner_name
 test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
 
 //! > module_code
 mod a {
@@ -1090,7 +1096,10 @@ Block(
 //! > Testing use star recursive import
 
 //! > test_runner_name
-test_expr_semantics(expect_diagnostics: false)
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > crate_settings
+edition = "2024_07"
 
 //! > module_code
 mod a {
@@ -1109,6 +1118,166 @@ Block(
         statements: [],
         tail: None,
         ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning: Unused import: `test::a::b`
+ --> lib.cairo:3:18
+    use a::a::a::a as b;
+                 ^****^
+
+//! > ==========================================================================
+
+//! > Testing use star imported non public module
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        pub const ACCESSIBLE: u8 = 1;
+    }
+}
+
+use a::b::*;
+
+//! > function_body
+
+//! > expr_code
+ACCESSIBLE
+
+//! > expected_semantics
+Constant(
+    ExprConstant {
+        const_value_id: 1,
+        ty: core::integer::u8,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star public path
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        pub const C: u8 = 1;
+    }
+}
+
+mod c {
+    pub mod d {
+        pub use super::super::a::b::*;
+    }
+}
+
+use c::d::*;
+
+//! > function_body
+
+//! > expr_code
+C
+
+//! > expected_semantics
+Constant(
+    ExprConstant {
+        const_value_id: 1,
+        ty: core::integer::u8,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star accessible module crate
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        pub const C: u8 = 1;
+    }
+}
+
+use a::*;
+
+//! > function_body
+
+//! > expr_code
+b::C
+
+//! > expected_semantics
+Constant(
+    ExprConstant {
+        const_value_id: 1,
+        ty: core::integer::u8,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star taking best path
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        pub const C: u8 = 1;
+    }
+}
+
+mod c {
+    pub mod d {
+        pub use super::super::a::b::*;
+    }
+}
+
+mod e {
+    pub mod f {
+        use super::super::a::b::*;
+    }
+}
+
+use c::d::*;
+
+use e::f::*;
+
+//! > function_body
+
+//! > expr_code
+C
+
+//! > expected_semantics
+Constant(
+    ExprConstant {
+        const_value_id: 1,
+        ty: core::integer::u8,
     },
 )
 

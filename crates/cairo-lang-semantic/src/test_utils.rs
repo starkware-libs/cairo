@@ -266,10 +266,12 @@ pub fn setup_test_expr(
     expr_code: &str,
     module_code: &str,
     function_body: &str,
+    crate_settings: Option<&str>,
 ) -> WithStringDiagnostics<TestExpr> {
     let function_code = format!("fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
     let (test_function, diagnostics) =
-        setup_test_function(db, &function_code, "test_func", module_code).split();
+        setup_test_function_ex(db, &function_code, "test_func", module_code, crate_settings)
+            .split();
     let semantic::ExprBlock { statements, .. } = extract_matches!(
         db.expr_semantic(test_function.function_id, test_function.body),
         semantic::Expr::Block
@@ -307,7 +309,7 @@ pub fn setup_test_block(
     module_code: &str,
     function_body: &str,
 ) -> WithStringDiagnostics<TestExpr> {
-    setup_test_expr(db, &format!("{{ \n{expr_code}\n }}"), module_code, function_body)
+    setup_test_expr(db, &format!("{{ \n{expr_code}\n }}"), module_code, function_body, None)
 }
 
 pub fn test_expr_diagnostics(
@@ -321,6 +323,7 @@ pub fn test_expr_diagnostics(
         inputs["expr_code"].as_str(),
         inputs["module_code"].as_str(),
         inputs["function_body"].as_str(),
+        inputs.get("crate_settings").map(|x| x.as_str()),
     )
     .get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);
