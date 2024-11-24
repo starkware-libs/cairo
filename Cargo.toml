@@ -59,6 +59,7 @@ members = [
     "crates/bin/cairo-compile",
     "crates/bin/cairo-format",
     "crates/bin/cairo-language-server",
+    "crates/bin/cairo-prove",
     "crates/bin/cairo-run",
     "crates/bin/cairo-test",
     "crates/bin/generate-syntax",
