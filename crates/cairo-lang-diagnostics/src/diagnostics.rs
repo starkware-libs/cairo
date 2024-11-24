@@ -7,6 +7,7 @@ use cairo_lang_filesystem::db::{FilesGroup, get_originating_location};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Upcast;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 use crate::error_code::{ErrorCode, OptionErrorCodeExt};
@@ -277,7 +278,11 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     }
 
     /// Format entries to pairs of severity and message.
-    pub fn format_with_severity(&self, db: &TEntry::DbType) -> Vec<FormattedDiagnosticEntry> {
+    pub fn format_with_severity(
+        &self,
+        db: &TEntry::DbType,
+        file_notes: Arc<OrderedHashMap<FileId, Vec<DiagnosticNote>>>,
+    ) -> Vec<FormattedDiagnosticEntry> {
         let mut res: Vec<FormattedDiagnosticEntry> = Vec::new();
 
         let files_db = db.upcast();
@@ -286,6 +291,11 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
             msg += &format_diagnostics(files_db, &entry.format(db), entry.location(db));
             for note in entry.notes(db) {
                 msg += &format!("note: {:?}\n", note.debug(files_db))
+            }
+            if let Some(notes) = file_notes.get(&entry.location(db).file_id) {
+                for note in notes {
+                    msg += &format!("note: {:?}\n", note.debug(files_db))
+                }
             }
             msg += "\n";
 
@@ -298,7 +308,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 
     /// Format entries to a [`String`] with messages prefixed by severity.
     pub fn format(&self, db: &TEntry::DbType) -> String {
-        self.format_with_severity(db).iter().map(ToString::to_string).join("")
+        self.format_with_severity(db, Default::default()).iter().map(ToString::to_string).join("")
     }
 
     /// Asserts that no diagnostic has occurred, panicking with an error message on failure.

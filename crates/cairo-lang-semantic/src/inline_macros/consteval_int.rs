@@ -57,6 +57,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
                         origin: CodeOrigin::Span(syntax.as_syntax_node().span(db)),
                     }],
                     aux_data: None,
+                    diagnostics_notes: Default::default(),
                 }
             }),
             diagnostics,

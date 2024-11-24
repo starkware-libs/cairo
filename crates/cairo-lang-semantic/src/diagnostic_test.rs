@@ -120,6 +120,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                         content,
                         code_mappings,
                         aux_data: None,
+                        diagnostics_notes: Default::default(),
                     }),
                     diagnostics: vec![],
                     remove_original_item: false,

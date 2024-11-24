@@ -134,6 +134,7 @@ fn generate_code_inner(
             content,
             code_mappings,
             aux_data: None,
+            diagnostics_notes: Default::default(),
         }),
         diagnostics: vec![],
     }

@@ -161,6 +161,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                             content: "#[second] struct A {}\n".to_string(),
                             code_mappings: Default::default(),
                             aux_data: None,
+                            diagnostics_notes: Default::default(),
                         }),
                         ..PluginResult::default()
                     }
@@ -171,6 +172,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
                             content: "struct B {}\n".to_string(),
                             code_mappings: Default::default(),
                             aux_data: None,
+                            diagnostics_notes: Default::default(),
                         }),
                         ..PluginResult::default()
                     }

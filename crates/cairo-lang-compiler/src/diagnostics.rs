@@ -1,13 +1,17 @@
 use std::fmt::Write;
+use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, Severity};
-use cairo_lang_filesystem::ids::{CrateId, FileLongId};
+use cairo_lang_diagnostics::{
+    DiagnosticEntry, DiagnosticNote, Diagnostics, FormattedDiagnosticEntry, Severity,
+};
+use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::LookupIntern;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use thiserror::Error;
 
@@ -166,6 +170,9 @@ impl<'a> DiagnosticsReporter<'a> {
             let modules = db.crate_modules(*crate_id);
             let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {
+                let diagnostic_notes =
+                    db.module_plugin_diagnostics_notes(*module_id).unwrap_or_default();
+
                 if let Ok(module_files) = db.module_files(*module_id) {
                     for file_id in module_files.iter().copied() {
                         if processed_file_ids.insert(file_id) {
@@ -173,14 +180,19 @@ impl<'a> DiagnosticsReporter<'a> {
                                 db.upcast(),
                                 db.file_syntax_diagnostics(file_id),
                                 ignore_warnings_in_crate,
+                                diagnostic_notes.clone(),
                             );
                         }
                     }
                 }
 
                 if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
-                    found_diagnostics |=
-                        self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
+                    found_diagnostics |= self.check_diag_group(
+                        db.upcast(),
+                        group,
+                        ignore_warnings_in_crate,
+                        diagnostic_notes.clone(),
+                    );
                 }
 
                 if self.skip_lowering_diagnostics {
@@ -188,8 +200,12 @@ impl<'a> DiagnosticsReporter<'a> {
                 }
 
                 if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
-                    found_diagnostics |=
-                        self.check_diag_group(db.upcast(), group, ignore_warnings_in_crate);
+                    found_diagnostics |= self.check_diag_group(
+                        db.upcast(),
+                        group,
+                        ignore_warnings_in_crate,
+                        diagnostic_notes.clone(),
+                    );
                 }
             }
         }
@@ -203,9 +219,10 @@ impl<'a> DiagnosticsReporter<'a> {
         db: &TEntry::DbType,
         group: Diagnostics<TEntry>,
         skip_warnings: bool,
+        file_notes: Arc<OrderedHashMap<FileId, Vec<DiagnosticNote>>>,
     ) -> bool {
         let mut found: bool = false;
-        for entry in group.format_with_severity(db) {
+        for entry in group.format_with_severity(db, file_notes) {
             if skip_warnings && entry.severity() == Severity::Warning {
                 continue;
             }

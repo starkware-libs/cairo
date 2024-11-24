@@ -61,6 +61,7 @@ impl InlineMacroExprPlugin for FormatMacro {
                 content,
                 code_mappings,
                 aux_data: None,
+                diagnostics_notes: Default::default(),
             }),
             diagnostics: vec![],
         }
