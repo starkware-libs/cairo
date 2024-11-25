@@ -122,20 +122,17 @@ use X::R as RR;
 
 //! > expr_code
 { 
-    let _y = RR { a: 3 };
+    RR { a: 3 };
     use X::R;
-    let _x = R { a: 4 }; 
+    R { a: 4 }
 }
 
 //! > expected_semantics
 Block(
     ExprBlock {
         statements: [
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _y,
-                    ),
+            Expr(
+                StatementExpr {
                     expr: StructCtor(
                         ExprStructCtor {
                             concrete_struct_id: test::X::R,
@@ -159,34 +156,28 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: StructCtor(
-                        ExprStructCtor {
-                            concrete_struct_id: test::X::R,
-                            members: [
-                                (
-                                    MemberId(test::X::a),
-                                    Literal(
-                                        ExprLiteral {
-                                            value: 4,
-                                            ty: core::integer::u8,
-                                        },
-                                    ),
-                                ),
-                            ],
-                            base_struct: None,
-                            ty: test::X::R,
-                        },
-                    ),
+        ],
+        tail: Some(
+            StructCtor(
+                ExprStructCtor {
+                    concrete_struct_id: test::X::R,
+                    members: [
+                        (
+                            MemberId(test::X::a),
+                            Literal(
+                                ExprLiteral {
+                                    value: 4,
+                                    ty: core::integer::u8,
+                                },
+                            ),
+                        ),
+                    ],
+                    base_struct: None,
+                    ty: test::X::R,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R,
     },
 )
 
@@ -211,20 +202,17 @@ use X::R as RR;
 
 //! > expr_code
 { 
-    let _y = RR::<u8> { a: 3 };
+    RR::<u8> { a: 3 };
     use X::R;
-    let _x = R::<u8> { a: 4 }; 
+    R::<u8> { a: 4 }
 }
 
 //! > expected_semantics
 Block(
     ExprBlock {
         statements: [
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _y,
-                    ),
+            Expr(
+                StatementExpr {
                     expr: StructCtor(
                         ExprStructCtor {
                             concrete_struct_id: test::X::R::<core::integer::u8>,
@@ -248,34 +236,28 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: StructCtor(
-                        ExprStructCtor {
-                            concrete_struct_id: test::X::R::<core::integer::u8>,
-                            members: [
-                                (
-                                    MemberId(test::X::a),
-                                    Literal(
-                                        ExprLiteral {
-                                            value: 4,
-                                            ty: core::integer::u8,
-                                        },
-                                    ),
-                                ),
-                            ],
-                            base_struct: None,
-                            ty: test::X::R::<core::integer::u8>,
-                        },
-                    ),
+        ],
+        tail: Some(
+            StructCtor(
+                ExprStructCtor {
+                    concrete_struct_id: test::X::R::<core::integer::u8>,
+                    members: [
+                        (
+                            MemberId(test::X::a),
+                            Literal(
+                                ExprLiteral {
+                                    value: 4,
+                                    ty: core::integer::u8,
+                                },
+                            ),
+                        ),
+                    ],
+                    base_struct: None,
+                    ty: test::X::R::<core::integer::u8>,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R::<core::integer::u8>,
     },
 )
 
@@ -301,20 +283,17 @@ use X::R as RR;
 
 //! > expr_code
 { 
-    let _y = RR::A(2);
+    RR::A(2);
     use X::R;
-    let _x = R::B(3); 
+    R::B(3)
 }
 
 //! > expected_semantics
 Block(
     ExprBlock {
         statements: [
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _y,
-                    ),
+            Expr(
+                StatementExpr {
                     expr: EnumVariantCtor(
                         ExprEnumVariantCtor {
                             variant: R::A,
@@ -332,28 +311,22 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: R::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::X::R,
+        ],
+        tail: Some(
+            EnumVariantCtor(
+                ExprEnumVariantCtor {
+                    variant: R::B,
+                    value_expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u16,
                         },
                     ),
+                    ty: test::X::R,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R,
     },
 )
 
@@ -379,20 +352,17 @@ use X::R as RR;
 
 //! > expr_code
 { 
-    let _y = RR::<u8>::A(2);
+    RR::<u8>::A(2);
     use X::R;
-    let _x = R::<u16>::B(3); 
+    R::<u16>::B(3)
 }
 
 //! > expected_semantics
 Block(
     ExprBlock {
         statements: [
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _y,
-                    ),
+            Expr(
+                StatementExpr {
                     expr: EnumVariantCtor(
                         ExprEnumVariantCtor {
                             variant: R::A,
@@ -410,28 +380,22 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: R::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::X::R::<core::integer::u16>,
+        ],
+        tail: Some(
+            EnumVariantCtor(
+                ExprEnumVariantCtor {
+                    variant: R::B,
+                    value_expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u16,
                         },
                     ),
+                    ty: test::X::R::<core::integer::u16>,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R::<core::integer::u16>,
     },
 )
 
@@ -608,8 +572,8 @@ mod R {
 //! > expr_code
 { 
     use X::R;
-    let _y = R::C;
-    let _x = R::B(3); 
+    R::C;
+    R::B(3)
 }
 
 //! > expected_semantics
@@ -619,11 +583,8 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _y,
-                    ),
+            Expr(
+                StatementExpr {
                     expr: Missing(
                         ExprMissing {
                             ty: <missing>,
@@ -631,36 +592,30 @@ Block(
                     ),
                 },
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: R::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::X::R,
+        ],
+        tail: Some(
+            EnumVariantCtor(
+                ExprEnumVariantCtor {
+                    variant: R::B,
+                    value_expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u16,
                         },
                     ),
+                    ty: test::X::R,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R,
     },
 )
 
 //! > expected_diagnostics
 error: Enum "test::X::R" has no variant "C"
- --> lib.cairo:14:17
-    let _y = R::C;
-                ^
+ --> lib.cairo:14:8
+    R::C;
+       ^
 
 //! > ==========================================================================
 
@@ -685,7 +640,7 @@ const R: u8 = 3;
 { 
     use X::R;
     let _y = R;
-    let _x = R::B(3);
+    R::B(3)
 }
 
 //! > expected_semantics
@@ -707,28 +662,22 @@ Block(
                     ),
                 },
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: R::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::X::R,
+        ],
+        tail: Some(
+            EnumVariantCtor(
+                ExprEnumVariantCtor {
+                    variant: R::B,
+                    value_expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u16,
                         },
                     ),
+                    ty: test::X::R,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R,
     },
 )
 
@@ -760,9 +709,8 @@ use X::R;
 //! > expr_code
 { 
     const R: u8 = 3;
-
     let _y = R;
-    let _x = R::B(3);
+    R::B(3)
 }
 
 //! > expected_semantics
@@ -785,28 +733,22 @@ Block(
                     ),
                 },
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: R::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::X::R,
+        ],
+        tail: Some(
+            EnumVariantCtor(
+                ExprEnumVariantCtor {
+                    variant: R::B,
+                    value_expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u16,
                         },
                     ),
+                    ty: test::X::R,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R,
     },
 )
 
@@ -837,13 +779,11 @@ use generic_type::E as EE;
 //! > expr_code
 { 
     use generic_type::E;
-    let b = EE::B(3);
-    match b {
+    match EE::B(3) {
         EE::A(_) => {},
         EE::B(_) => {},
     }
-    let e = E::A(1);
-    match e {
+    match E::A(1) {
         E::A(_) => {},
         E::B(_) => {},
     }
@@ -856,31 +796,21 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        b,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: E::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::generic_type::E,
-                        },
-                    ),
-                },
-            ),
             Expr(
                 StatementExpr {
                     expr: Match(
                         ExprMatch {
-                            matched_expr: Var(
-                                LocalVarId(test::b),
+                            matched_expr: EnumVariantCtor(
+                                ExprEnumVariantCtor {
+                                    variant: E::B,
+                                    value_expr: Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u16,
+                                        },
+                                    ),
+                                    ty: test::generic_type::E,
+                                },
                             ),
                             arms: [
                                 MatchArm {
@@ -937,12 +867,11 @@ Block(
                     ),
                 },
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        e,
-                    ),
-                    expr: EnumVariantCtor(
+        ],
+        tail: Some(
+            Match(
+                ExprMatch {
+                    matched_expr: EnumVariantCtor(
                         ExprEnumVariantCtor {
                             variant: E::A,
                             value_expr: Literal(
@@ -953,15 +882,6 @@ Block(
                             ),
                             ty: test::generic_type::E,
                         },
-                    ),
-                },
-            ),
-        ],
-        tail: Some(
-            Match(
-                ExprMatch {
-                    matched_expr: Var(
-                        LocalVarId(test::e),
                     ),
                     arms: [
                         MatchArm {
