@@ -2,16 +2,19 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::Duration;
 
+use anyhow::{Context, Result, anyhow};
 use cairo_lang_semantic::plugin::PluginSuite;
 use crossbeam::channel::{Receiver, Sender};
 use governor::clock::QuantaClock;
 use governor::state::{InMemoryState, NotKeyed};
 use governor::{Quota, RateLimiter};
+use scarb_proc_macro_server_types::jsonrpc::RpcResponse;
+use scarb_proc_macro_server_types::methods::ProcMacroResult;
 use tracing::error;
 
-use super::client::ProcMacroClient;
 use super::client::connection::ProcMacroServerConnection;
 use super::client::status::ClientStatus;
+use super::client::{ProcMacroClient, RequestParams};
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::lang::proc_macros::plugins::proc_macro_plugin_suite;
@@ -107,8 +110,8 @@ impl ProcMacroClientController {
 
                 db.set_proc_macro_client_status(ClientStatus::Ready(client));
             }
-            ClientStatus::Ready(_client) => {
-                // TODO handle responses
+            ClientStatus::Ready(client) => {
+                self.apply_responses(db, &client);
             }
             _ => {}
         }
@@ -155,6 +158,72 @@ impl ProcMacroClientController {
 
         // TODO Send notification.
     }
+
+    fn apply_responses(&mut self, db: &mut AnalysisDatabase, client: &ProcMacroClient) {
+        let mut attribute_resolutions = Arc::unwrap_or_clone(db.attribute_macro_resolution());
+        let mut attribute_resolutions_changed = false;
+
+        let mut derive_resolutions = Arc::unwrap_or_clone(db.derive_macro_resolution());
+        let mut derive_resolutions_changed = false;
+
+        let mut inline_macro_resolutions = Arc::unwrap_or_clone(db.inline_macro_resolution());
+        let mut inline_macro_resolutions_changed = false;
+
+        let mut error_occurred = false;
+
+        for (params, response) in client.available_responses() {
+            match parse_proc_macro_response(response) {
+                Ok(result) => {
+                    match params {
+                        RequestParams::Attribute(params) => {
+                            attribute_resolutions.insert(params, result);
+                            attribute_resolutions_changed = true;
+                        }
+                        RequestParams::Derive(params) => {
+                            derive_resolutions.insert(params, result);
+                            derive_resolutions_changed = true;
+                        }
+                        RequestParams::Inline(params) => {
+                            inline_macro_resolutions.insert(params, result);
+                            inline_macro_resolutions_changed = true;
+                        }
+                    };
+                }
+                Err(error) => {
+                    error_occurred = true;
+
+                    error!("{error:#?}");
+                    break;
+                }
+            }
+        }
+
+        // This must be called AFTER `client.available_responses()` is dropped, otherwise we can
+        // deadlock.
+        if error_occurred {
+            self.handle_error(db);
+        }
+
+        // Set input only if resolution changed, this way we don't recompute queries if there were
+        // no updates.
+        if attribute_resolutions_changed {
+            db.set_attribute_macro_resolution(Arc::new(attribute_resolutions));
+        }
+        if derive_resolutions_changed {
+            db.set_derive_macro_resolution(Arc::new(derive_resolutions));
+        }
+        if inline_macro_resolutions_changed {
+            db.set_inline_macro_resolution(Arc::new(inline_macro_resolutions));
+        }
+    }
+}
+
+fn parse_proc_macro_response(response: RpcResponse) -> Result<ProcMacroResult> {
+    let success = response
+        .into_result()
+        .map_err(|error| anyhow!("proc-macro-server responded with error: {error:?}"))?;
+
+    serde_json::from_value(success).context("failed to deserialize response into `ProcMacroResult`")
 }
 
 #[derive(Clone)]
