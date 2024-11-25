@@ -46,7 +46,6 @@ export async function setupLanguageServer(
   const scarb = lsExecutable.scarb;
 
   setupEnv(run, ctx);
-
   ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
 
   const serverOptions = { run, debug: run };

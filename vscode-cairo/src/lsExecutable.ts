@@ -1,6 +1,5 @@
 import * as lc from "vscode-languageclient/node";
 import * as vscode from "vscode";
-import assert, { AssertionError } from "assert";
 
 import { Scarb } from "./scarb";
 import { findScarbForWorkspaceFolder } from "./cairols";
@@ -56,17 +55,23 @@ export class LSExecutable {
   }
 
   public async equals(other: LSExecutable): Promise<boolean> {
-    return (
-      // Check if the invocations match
-      this.preparedInvocation.command === other.preparedInvocation.command &&
-      safeStrictDeepEqual(this.preparedInvocation.args, other.preparedInvocation.args) &&
-      safeStrictDeepEqual(
-        this.preparedInvocation.options?.env,
-        other.preparedInvocation.options?.env,
-      ) &&
-      // Also check the scarb versions, if there are any present
-      (await this.scarb?.getVersion(this.context)) === (await other.scarb?.getVersion(this.context))
-    );
+    const commandsEqual = this.preparedInvocation.command === other.preparedInvocation.command;
+
+    const argsEqual =
+      this.preparedInvocation.args === other.preparedInvocation.args ||
+      (Array.isArray(this.preparedInvocation.args) &&
+        Array.isArray(other.preparedInvocation.args) &&
+        this.preparedInvocation.args.length === other.preparedInvocation.args.length &&
+        this.preparedInvocation.args.every(
+          (value, index) => value === other.preparedInvocation.args![index],
+        ));
+
+    // Also check the scarb versions, if there are any present
+    const scarbVersionsEqual =
+      (await this.scarb?.getVersion(this.context)) ===
+      (await other.scarb?.getVersion(this.context));
+
+    return commandsEqual && argsEqual && scarbVersionsEqual;
   }
 }
 
@@ -118,18 +123,5 @@ export async function determineLanguageServerExecutableProvider(
       log.trace("could not find standalone LS and Scarb has no LS extension, will error out");
       throw e;
     }
-  }
-}
-
-// Deep equality (based on native nodejs assertion), without throwing an error
-export function safeStrictDeepEqual<T>(a: T, b: T): boolean {
-  try {
-    assert.deepStrictEqual(a, b);
-    return true;
-  } catch (err) {
-    if (err instanceof AssertionError) {
-      return false;
-    }
-    throw err;
   }
 }

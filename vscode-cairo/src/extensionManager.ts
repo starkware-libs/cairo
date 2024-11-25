@@ -6,49 +6,6 @@ import { Context } from "./context";
 import assert from "node:assert";
 
 export class CairoExtensionManager {
-  handleWorkspaceFoldersRemoved() {
-    this.tryStartClient();
-  }
-
-  async handleWorkspaceFoldersAdded(added: readonly vscode.WorkspaceFolder[]) {
-    const ctx = this.context;
-
-    const newExecutables = await getLSExecutables(added, ctx);
-    if (!newExecutables.length) {
-      return;
-    }
-
-    // Check if new ones are of same provider
-    const newExecutablesHaveSameProvider = await executablesEqual(newExecutables);
-
-    if (newExecutablesHaveSameProvider) {
-      // In case we weren't running anything previously, we can start up a new server
-      const started = await this.tryStartClient();
-      if (started) {
-        return;
-      }
-      assert(this.runningExecutable, "An executable should be present by this point"); // We disallow this by trying to run the start procedure beforehand
-
-      // If there's already a LS running, we'd like to check if the added folder has the same LS
-      ctx.log.debug(
-        `added folder(s) (${added.map((x) => x.uri.fsPath)} ) have same provider - trying to start the client`,
-      );
-      const consistentWithPreviousLS = await executablesEqual([
-        ...newExecutables,
-        this.runningExecutable,
-      ]);
-
-      // If it's not consistent, we need to stop LS and show an error, it's better to show no analysis results than broken ones
-      // For example - a person can turn on a project with incompatible corelib version
-      if (!consistentWithPreviousLS) {
-        await this.stopClient();
-        vscode.window.showErrorMessage(
-          "Analysis disabled: the added folder does not have the same version of Scarb as the rest of the workspace. Please remove this folder from the workspace, or update its Scarb version to match the others.",
-        );
-      }
-    }
-  }
-
   private constructor(
     public readonly context: Context,
     private client: lc.LanguageClient | undefined,
@@ -83,5 +40,44 @@ export class CairoExtensionManager {
 
   public getClient(): lc.LanguageClient | undefined {
     return this.client;
+  }
+
+  handleWorkspaceFoldersRemoved() {
+    this.tryStartClient();
+  }
+
+  async handleWorkspaceFoldersAdded(added: readonly vscode.WorkspaceFolder[]) {
+    const ctx = this.context;
+
+    const newExecutables = await getLSExecutables(added, ctx);
+    if (!newExecutables.length) {
+      return;
+    }
+
+    // Check if new ones are of same provider
+    const newExecutablesHaveSameProvider = await executablesEqual(newExecutables);
+
+    if (newExecutablesHaveSameProvider) {
+      // In case we weren't running anything previously, we can start up a new server
+      const started = await this.tryStartClient();
+      if (started) {
+        return;
+      }
+      assert(this.runningExecutable, "An executable should be present by this point"); // We disallow this by trying to run the start procedure beforehand
+
+      const consistentWithPreviousLS = await executablesEqual([
+        ...newExecutables,
+        this.runningExecutable,
+      ]);
+
+      // If it's not consistent, we need to stop LS and show an error, it's better to show no analysis results than broken ones
+      // For example - a person can turn on a project with incompatible corelib version
+      if (!consistentWithPreviousLS) {
+        await this.stopClient();
+        vscode.window.showErrorMessage(
+          "Analysis disabled: the added folder does not have the same version of Scarb as the rest of the workspace. Please remove this folder from the workspace, or update its Scarb version to match the others.",
+        );
+      }
+    }
   }
 }
