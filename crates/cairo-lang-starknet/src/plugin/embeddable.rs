@@ -198,7 +198,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             content,
             code_mappings,
             aux_data: None,
-            diagnostics_notes: Default::default(),
+            diagnostics_note: Default::default(),
         }),
         diagnostics,
         remove_original_item: false,

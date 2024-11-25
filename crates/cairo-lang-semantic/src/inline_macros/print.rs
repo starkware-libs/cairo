@@ -39,7 +39,7 @@ impl InlineMacroExprPlugin for PrintMacro {
             # Examples
             ```cairo
             println!(\"hello\"); // Prints "hello".
-            let world: ByteArray = "world"; 
+            let world: ByteArray = "world";
             println!("hello {}", world_ba); // Prints "hello world".
             println!("hello {world_ba}"); // Prints "hello world".
             ```
@@ -78,7 +78,7 @@ impl InlineMacroExprPlugin for PrintlnMacro {
             ```cairo
             println!(); // Prints an empty line.
             println!(\"hello\"); // Prints "hello".
-            let world: ByteArray = "world"; 
+            let world: ByteArray = "world";
             println!("hello {}", world_ba); // Prints "hello world".
             println!("hello {world_ba}"); // Prints "hello world".
             ```
@@ -134,7 +134,7 @@ fn generate_code_inner(
             content,
             code_mappings,
             aux_data: None,
-            diagnostics_notes: Default::default(),
+            diagnostics_note: Default::default(),
         }),
         diagnostics: vec![],
     }
