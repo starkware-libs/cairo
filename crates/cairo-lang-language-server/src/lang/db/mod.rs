@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use cairo_lang_doc::db::DocDatabase;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -13,7 +15,7 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_test_plugin::test_plugin_suite;
+use cairo_lang_test_plugin::test_assert_suite;
 use cairo_lang_utils::Upcast;
 
 pub use self::semantic::*;
@@ -54,14 +56,19 @@ impl AnalysisDatabase {
 
         db.set_cfg_set(Self::initial_cfg_set().into());
 
-        let plugin_suite =
-            [get_default_plugin_suite(), starknet_plugin_suite(), test_plugin_suite()]
-                .into_iter()
-                .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))
-                .fold(PluginSuite::default(), |mut acc, suite| {
-                    acc.add(suite);
-                    acc
-                });
+        let plugin_suite = [
+            get_default_plugin_suite(),
+            starknet_plugin_suite(),
+            // TODO(#6551): Restore this.
+            // test_plugin_suite()
+            test_assert_suite(),
+        ]
+        .into_iter()
+        .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))
+        .fold(PluginSuite::default(), |mut acc, suite| {
+            acc.add(suite);
+            acc
+        });
         db.apply_plugin_suite(plugin_suite);
 
         db
@@ -87,6 +94,50 @@ impl AnalysisDatabase {
         self.set_macro_plugins(plugin_suite.plugins);
         self.set_inline_macro_plugins(plugin_suite.inline_macro_plugins.into());
         self.set_analyzer_plugins(plugin_suite.analyzer_plugins);
+    }
+
+    /// Updates the plugin list in the database.
+    ///
+    /// This function modifies the database by removing plugins specified in `plugins_to_remove`,
+    /// adding plugins from `plugins_to_add`, and retaining all other existing plugins. Plugins are
+    /// considered identical based on their [`Arc`] reference.
+    pub fn replace_plugin_suite(
+        &mut self,
+        plugins_to_remove: Option<PluginSuite>,
+        plugins_to_add: PluginSuite,
+    ) {
+        let mut macro_plugins = self.macro_plugins();
+        let mut analyzer_plugins = self.analyzer_plugins();
+        let mut inline_macro_plugins = Arc::unwrap_or_clone(self.inline_macro_plugins());
+
+        if let Some(plugins_to_remove) = plugins_to_remove {
+            macro_plugins.retain(|plugin| {
+                plugins_to_remove
+                    .plugins
+                    .iter()
+                    .all(|previous_plugin| !Arc::ptr_eq(previous_plugin, plugin))
+            });
+            analyzer_plugins.retain(|plugin| {
+                plugins_to_remove
+                    .analyzer_plugins
+                    .iter()
+                    .all(|previous_plugin| !Arc::ptr_eq(previous_plugin, plugin))
+            });
+            inline_macro_plugins.retain(|_, plugin| {
+                plugins_to_remove
+                    .inline_macro_plugins
+                    .iter()
+                    .all(|(_, previous_plugin)| !Arc::ptr_eq(previous_plugin, plugin))
+            });
+        }
+
+        macro_plugins.extend(plugins_to_add.plugins);
+        analyzer_plugins.extend(plugins_to_add.analyzer_plugins);
+        inline_macro_plugins.extend(plugins_to_add.inline_macro_plugins);
+
+        self.set_macro_plugins(macro_plugins);
+        self.set_analyzer_plugins(analyzer_plugins);
+        self.set_inline_macro_plugins(Arc::new(inline_macro_plugins));
     }
 }
 
