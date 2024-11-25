@@ -648,6 +648,7 @@ dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-language-server",
  "cairo-lang-lowering",
+ "cairo-lang-macro",
  "cairo-lang-parser",
  "cairo-lang-project",
  "cairo-lang-semantic",
