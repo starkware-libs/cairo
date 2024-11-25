@@ -42,7 +42,7 @@ export class StatusBar {
     await this.updateScarbVersion();
   }
 
-  async updateScarbVersion(): Promise<void> {
+  private async updateScarbVersion(): Promise<void> {
     try {
       const scarb = await Scarb.find(vscode.workspace.workspaceFolders?.[0], this.context);
       if (scarb) {

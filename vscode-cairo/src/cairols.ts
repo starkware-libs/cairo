@@ -4,18 +4,12 @@ import { SemanticTokensFeature } from "vscode-languageclient/lib/common/semantic
 import * as lc from "vscode-languageclient/node";
 import { Context } from "./context";
 import { Scarb } from "./scarb";
-import { isScarbProject } from "./scarbProject";
-import { StandaloneLS } from "./standalonels";
 import {
   registerMacroExpandProvider,
   registerVfsProvider,
   registerViewAnalyzedCratesProvider,
 } from "./textDocumentProviders";
-import assert, { AssertionError } from "node:assert";
-
-export interface LanguageServerExecutableProvider {
-  languageServerExecutable(): lc.Executable;
-}
+import { executablesEqual, getLSExecutables, LSExecutable } from "./lsExecutable";
 
 function notifyScarbMissing(ctx: Context) {
   const errorMessage =
@@ -26,75 +20,15 @@ function notifyScarbMissing(ctx: Context) {
   ctx.log.error(errorMessage);
 }
 
-// Deep equality (based on native nodejs assertion), without throwing an error
-function safeStrictDeepEqual<T>(a: T, b: T): boolean {
-  try {
-    assert.deepStrictEqual(a, b);
-    return true;
-  } catch (err) {
-    if (err instanceof AssertionError) {
-      return false;
-    }
-    throw err;
-  }
-}
-
-function commandsEqual(a: lc.Executable, b: lc.Executable): boolean {
-  return (
-    a.command === b.command &&
-    safeStrictDeepEqual(a.args, b.args) &&
-    safeStrictDeepEqual(a.options?.env, b.options?.env)
-  );
-}
-
-export async function lsExecutablesEqual(
-  a: LSExecutable,
-  b: LSExecutable,
-  ctx: Context,
-): Promise<boolean> {
-  return (
-    commandsEqual(a.preparedInvocation, b.preparedInvocation) &&
-    (await a.scarb?.getVersion(ctx)) === (await b.scarb?.getVersion(ctx))
-  );
-}
-
-export async function allUnderlyingCommandsEqual(
-  executables: LSExecutable[],
-  ctx: Context,
-): Promise<boolean> {
-  if (executables.length < 2) {
-    return true;
-  }
-
-  for (const executable of executables) {
-    if (!(await lsExecutablesEqual(executables[0]!, executable, ctx))) {
-      return false;
-    }
-  }
-  return true;
-}
-
-export async function getLSExecutables(
-  workspaceFolders: readonly vscode.WorkspaceFolder[],
-  ctx: Context,
-): Promise<LSExecutable[]> {
-  return (
-    await Promise.all(
-      workspaceFolders.map((workspaceFolder) => getLSExecutable(workspaceFolder, ctx)),
-    )
-  ).filter((x) => !!x);
-}
-
 export async function setupLanguageServer(
   ctx: Context,
 ): Promise<[lc.LanguageClient, LSExecutable] | undefined> {
   const executables = await getLSExecutables(vscode.workspace.workspaceFolders || [], ctx);
-
   if (!executables.length) {
     return;
   }
 
-  const sameCommand = await allUnderlyingCommandsEqual(executables, ctx);
+  const sameCommand = await executablesEqual(executables);
   if (!sameCommand) {
     await vscode.window.showErrorMessage(
       "Using multiple Scarb versions in one workspace is not supported.",
@@ -104,9 +38,13 @@ export async function setupLanguageServer(
 
   // First one is good as any of them since they should be all the same at this point
   const lsExecutable = executables[0];
-  assert(lsExecutable, "An executable should be present by this time");
+  if (!lsExecutable) {
+    throw new Error("Executable should be present at this point"); // Should be checked at this point
+  }
 
-  const { preparedInvocation: run, scarb } = lsExecutable;
+  const run = lsExecutable.preparedInvocation;
+  const scarb = lsExecutable.scarb;
+
   setupEnv(run, ctx);
 
   ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
@@ -214,7 +152,7 @@ export async function setupLanguageServer(
   return [client, lsExecutable];
 }
 
-async function findScarbForWorkspaceFolder(
+export async function findScarbForWorkspaceFolder(
   workspaceFolder: vscode.WorkspaceFolder | undefined,
   ctx: Context,
 ): Promise<Scarb | undefined> {
@@ -230,73 +168,6 @@ async function findScarbForWorkspaceFolder(
       ctx.log.error(`${e}`);
       ctx.log.error("note: Scarb integration is disabled due to this error");
       return undefined;
-    }
-  }
-}
-
-export interface LSExecutable {
-  preparedInvocation: lc.Executable;
-  workspaceFolder: vscode.WorkspaceFolder | undefined;
-  scarb: Scarb | undefined;
-}
-
-export async function getLSExecutable(
-  workspaceFolder: vscode.WorkspaceFolder | undefined,
-  ctx: Context,
-): Promise<LSExecutable | undefined> {
-  const scarb = await findScarbForWorkspaceFolder(workspaceFolder, ctx);
-  try {
-    const provider = await determineLanguageServerExecutableProvider(workspaceFolder, scarb, ctx);
-    const preparedInvocation = provider.languageServerExecutable();
-    return { preparedInvocation, scarb, workspaceFolder };
-  } catch (e) {
-    ctx.log.error(`${e}`);
-  }
-  return undefined;
-}
-
-async function determineLanguageServerExecutableProvider(
-  workspaceFolder: vscode.WorkspaceFolder | undefined,
-  scarb: Scarb | undefined,
-  ctx: Context,
-): Promise<LanguageServerExecutableProvider> {
-  const log = ctx.log.span("determineLanguageServerExecutableProvider");
-  const standalone = () => StandaloneLS.find(workspaceFolder, scarb, ctx);
-
-  if (!scarb) {
-    log.trace("Scarb is missing");
-    return await standalone();
-  }
-
-  if (await isScarbProject()) {
-    log.trace("this is a Scarb project");
-
-    if (!ctx.config.get("preferScarbLanguageServer", true)) {
-      log.trace("`preferScarbLanguageServer` is false, using standalone LS");
-      return await standalone();
-    }
-
-    if (await scarb.hasCairoLS(ctx)) {
-      log.trace("using Scarb LS");
-      return scarb;
-    }
-
-    log.trace("Scarb has no LS extension, falling back to standalone");
-    return await standalone();
-  } else {
-    log.trace("this is *not* a Scarb project, looking for standalone LS");
-
-    try {
-      return await standalone();
-    } catch (e) {
-      log.trace("could not find standalone LS, trying Scarb LS");
-      if (await scarb.hasCairoLS(ctx)) {
-        log.trace("using Scarb LS");
-        return scarb;
-      }
-
-      log.trace("could not find standalone LS and Scarb has no LS extension, will error out");
-      throw e;
     }
   }
 }

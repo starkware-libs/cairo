@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
-import type { LanguageServerExecutableProvider } from "./cairols";
+import type { LanguageServerExecutableProvider } from "./lsExecutable";
 import type { Context } from "./context";
 import { checkTool, findToolInAsdf, findToolInPath } from "./toolchain";
 
