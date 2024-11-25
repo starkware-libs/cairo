@@ -244,13 +244,12 @@ impl SyncNotificationHandler for DidOpenTextDocument {
         if uri.scheme() == "file" {
             let Ok(path) = uri.to_file_path() else { return Ok(()) };
 
-            Backend::detect_crate_for(
+            state.project_controller.detect_crate_for(
                 &mut state.db,
                 &state.scarb_toolchain,
                 &state.config,
                 &path,
                 &notifier,
-                &mut state.loaded_scarb_manifests,
             );
         }
 

@@ -38,45 +38,34 @@
 //! }
 //! ```
 
-use std::collections::HashSet;
 use std::panic::RefUnwindSafe;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::SystemTime;
 use std::{io, panic};
 
-use anyhow::{Context, Result};
-use cairo_lang_compiler::db::validate_corelib;
-use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
+use anyhow::Result;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
-use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::plugin::PluginSuite;
 use crossbeam::select;
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use salsa::{Database, Durability};
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, info};
 
-use crate::config::Config;
-use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::controller::ProcMacroChannelsReceivers;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
-use crate::lsp::ext::{CorelibVersionMismatch, ScarbMetadataFailed};
 use crate::lsp::result::LSPResult;
-use crate::project::ProjectManifestPath;
-use crate::project::scarb::{get_workspace_members_manifests, update_crate_roots};
-use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
 use crate::server::client::{Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
 use crate::state::State;
-use crate::toolchain::scarb::ScarbToolchain;
 
 mod config;
 mod env_config;
@@ -408,7 +397,7 @@ impl Backend {
             &state.config,
             &state.tricks,
             &notifier,
-            &mut state.loaded_scarb_manifests,
+            &mut state.project_controller,
         );
     }
 
@@ -417,90 +406,24 @@ impl Backend {
         state.diagnostics_controller.refresh(state);
     }
 
-    /// Tries to detect the crate root the config that contains a cairo file, and add it to the
-    /// system.
-    #[tracing::instrument(skip_all)]
-    fn detect_crate_for(
-        db: &mut AnalysisDatabase,
-        scarb_toolchain: &ScarbToolchain,
-        config: &Config,
-        file_path: &Path,
-        notifier: &Notifier,
-        loaded_scarb_manifests: &mut HashSet<PathBuf>,
-    ) {
-        match ProjectManifestPath::discover(file_path) {
-            Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                if loaded_scarb_manifests.contains(&manifest_path) {
-                    trace!("scarb project is already loaded: {}", manifest_path.display());
-                    return;
-                }
-
-                let metadata = scarb_toolchain
-                    .metadata(&manifest_path)
-                    .with_context(|| {
-                        format!("failed to refresh scarb workspace: {}", manifest_path.display())
-                    })
-                    .inspect_err(|err| {
-                        warn!("{err:?}");
-                        notifier.notify::<ScarbMetadataFailed>(());
-                    })
-                    .ok();
-
-                if let Some(metadata) = metadata {
-                    loaded_scarb_manifests.extend(get_workspace_members_manifests(&metadata));
-                    update_crate_roots(&metadata, db);
-                } else {
-                    // Try to set up a corelib at least.
-                    try_to_init_unmanaged_core(db, config, scarb_toolchain);
-                }
-
-                if let Err(result) = validate_corelib(db) {
-                    notifier.notify::<CorelibVersionMismatch>(result.to_string());
-                }
-            }
-
-            Some(ProjectManifestPath::CairoProject(config_path)) => {
-                // The base path of ProjectConfig must be absolute to ensure that all paths in Salsa
-                // DB will also be absolute.
-                assert!(config_path.is_absolute());
-
-                try_to_init_unmanaged_core(db, config, scarb_toolchain);
-
-                if let Ok(config) = ProjectConfig::from_file(&config_path) {
-                    update_crate_roots_from_project_config(db, &config);
-                };
-            }
-
-            None => {
-                try_to_init_unmanaged_core(db, config, scarb_toolchain);
-
-                if let Err(err) = setup_project(&mut *db, file_path) {
-                    let file_path_s = file_path.to_string_lossy();
-                    error!("error loading file {file_path_s} as a single crate: {err}");
-                }
-            }
-        }
-    }
-
     /// Reload crate detection for all open files.
     fn reload(
         state: &mut State,
         notifier: &Notifier,
         requester: &mut Requester<'_>,
     ) -> LSPResult<()> {
-        state.loaded_scarb_manifests.clear();
+        state.project_controller.clear_loaded_workspaces();
         state.config.reload(requester, &state.client_capabilities)?;
 
         for uri in state.open_files.iter() {
             let Some(file_id) = state.db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = state.db.lookup_intern_file(file_id) {
-                Backend::detect_crate_for(
+                state.project_controller.detect_crate_for(
                     &mut state.db,
                     &state.scarb_toolchain,
                     &state.config,
                     &file_path,
                     notifier,
-                    &mut state.loaded_scarb_manifests,
                 );
             }
         }
