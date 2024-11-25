@@ -92,7 +92,7 @@ impl SyncRequestHandler for ExecuteCommand {
     )]
     fn run(
         state: &mut State,
-        notifier: Notifier,
+        _notifier: Notifier,
         requester: &mut Requester<'_>,
         params: ExecuteCommandParams,
     ) -> LSPResult<Option<Value>> {
@@ -101,7 +101,7 @@ impl SyncRequestHandler for ExecuteCommand {
         if let Ok(cmd) = command {
             match cmd {
                 ServerCommands::Reload => {
-                    Backend::reload(state, &notifier, requester)?;
+                    Backend::reload(state, requester)?;
                 }
             }
         }
@@ -177,7 +177,7 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
     #[tracing::instrument(name = "workspace/didChangeWatchedFiles", skip_all)]
     fn run(
         state: &mut State,
-        notifier: Notifier,
+        _notifier: Notifier,
         requester: &mut Requester<'_>,
         params: DidChangeWatchedFilesParams,
     ) -> LSPResult<()> {
@@ -197,7 +197,7 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
             //  metadata call, so it is easy to fall in a loop here.
             if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
             {
-                Backend::reload(state, &notifier, requester)?;
+                Backend::reload(state, requester)?;
             }
         }
 
@@ -233,7 +233,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
     )]
     fn run(
         state: &mut State,
-        notifier: Notifier,
+        _notifier: Notifier,
         _requester: &mut Requester<'_>,
         params: DidOpenTextDocumentParams,
     ) -> LSPResult<()> {
@@ -244,13 +244,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
         if uri.scheme() == "file" {
             let Ok(path) = uri.to_file_path() else { return Ok(()) };
 
-            state.project_controller.detect_crate_for(
-                &mut state.db,
-                &state.scarb_toolchain,
-                &state.config,
-                &path,
-                &notifier,
-            );
+            state.project_controller.update_project_for(&state.scarb_toolchain, &path);
         }
 
         if let Some(file_id) = state.db.file_for_url(&uri) {

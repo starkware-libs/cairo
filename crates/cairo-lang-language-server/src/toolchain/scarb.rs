@@ -8,6 +8,7 @@ use scarb_metadata::{Metadata, MetadataCommand};
 use tracing::{error, warn};
 
 use crate::env_config;
+use crate::lsp::ext::ScarbMetadataFailed;
 use crate::server::client::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
@@ -126,6 +127,10 @@ impl ScarbToolchain {
 
         if !self.is_silent {
             self.notifier.notify::<ScarbResolvingFinish>(());
+
+            if result.is_err() {
+                self.notifier.notify::<ScarbMetadataFailed>(());
+            }
         }
 
         result
