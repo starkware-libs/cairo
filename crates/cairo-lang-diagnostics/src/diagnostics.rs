@@ -281,7 +281,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     pub fn format_with_severity(
         &self,
         db: &TEntry::DbType,
-        file_notes: Arc<OrderedHashMap<FileId, Vec<DiagnosticNote>>>,
+        file_notes: Arc<OrderedHashMap<FileId, DiagnosticNote>>,
     ) -> Vec<FormattedDiagnosticEntry> {
         let mut res: Vec<FormattedDiagnosticEntry> = Vec::new();
 
@@ -292,10 +292,8 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
             for note in entry.notes(db) {
                 msg += &format!("note: {:?}\n", note.debug(files_db))
             }
-            if let Some(notes) = file_notes.get(&entry.location(db).file_id) {
-                for note in notes {
-                    msg += &format!("note: {:?}\n", note.debug(files_db))
-                }
+            if let Some(note) = file_notes.get(&entry.location(db).file_id) {
+                msg += &format!("note: {:?}\n", note.debug(files_db))
             }
             msg += "\n";
 

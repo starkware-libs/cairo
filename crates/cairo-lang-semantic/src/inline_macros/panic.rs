@@ -127,7 +127,7 @@ impl InlineMacroExprPlugin for PanicMacro {
                 content,
                 code_mappings,
                 aux_data: None,
-                diagnostics_notes: Default::default(),
+                diagnostics_note: Default::default(),
             }),
             diagnostics: vec![],
         }
@@ -137,9 +137,9 @@ impl InlineMacroExprPlugin for PanicMacro {
         Some(
             indoc! {r#"
             Terminates the program immediately with an error message.
-            The `panic!` macro halts execution when an unrecoverable error \ 
-            occurs. It prints an error message and exits the program. \ 
-            Accepts a format string and arguments, similar to `format!`, \ 
+            The `panic!` macro halts execution when an unrecoverable error \
+            occurs. It prints an error message and exits the program. \
+            Accepts a format string and arguments, similar to `format!`, \
             for detailed error messages.
 
             # Syntax
@@ -168,7 +168,7 @@ impl InlineMacroExprPlugin for PanicMacro {
             assert!(x >= 0, "Invalid value: x = {x}");
             // Panics with "Invalid value: x = -1."
             ```
-    
+
             # Notes
             - Use `panic!` only for unrecoverable errors.
             - In library code, prefer returning `Result` or `Option` to let callers handle errors.

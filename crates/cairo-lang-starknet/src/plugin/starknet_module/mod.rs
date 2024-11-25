@@ -228,7 +228,7 @@ pub(super) fn handle_module_by_storage(
                 }
                 StarknetModuleKind::Component => None,
             },
-            diagnostics_notes: Default::default(),
+            diagnostics_note: Default::default(),
         }),
         diagnostics,
         remove_original_item: backwards_compatible_storage(metadata.edition),

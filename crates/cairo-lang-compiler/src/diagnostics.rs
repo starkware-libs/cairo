@@ -219,7 +219,7 @@ impl<'a> DiagnosticsReporter<'a> {
         db: &TEntry::DbType,
         group: Diagnostics<TEntry>,
         skip_warnings: bool,
-        file_notes: Arc<OrderedHashMap<FileId, Vec<DiagnosticNote>>>,
+        file_notes: Arc<OrderedHashMap<FileId, DiagnosticNote>>,
     ) -> bool {
         let mut found: bool = false;
         for entry in group.format_with_severity(db, file_notes) {
