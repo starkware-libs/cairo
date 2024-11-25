@@ -10,11 +10,9 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_types::Url;
 use tracing::{error, warn};
 
-use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::project::ProjectController;
-use crate::server::client::Notifier;
 use crate::toolchain::scarb::ScarbToolchain;
 use crate::{Tricks, env_config};
 
@@ -54,9 +52,7 @@ impl AnalysisDatabaseSwapper {
         &mut self,
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
-        config: &Config,
         tricks: &Tricks,
-        notifier: &Notifier,
         project_controller: &mut ProjectController,
     ) {
         let Ok(elapsed) = self.last_replace.elapsed() else {
@@ -73,7 +69,7 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
-        self.swap(db, open_files, config, tricks, notifier, project_controller)
+        self.swap(db, open_files, tricks, project_controller)
     }
 
     /// Swaps the database.
@@ -82,9 +78,7 @@ impl AnalysisDatabaseSwapper {
         &mut self,
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
-        config: &Config,
         tricks: &Tricks,
-        notifier: &Notifier,
         project_controller: &mut ProjectController,
     ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
@@ -92,13 +86,7 @@ impl AnalysisDatabaseSwapper {
 
             let mut new_db = AnalysisDatabase::new(tricks);
             self.migrate_file_overrides(&mut new_db, db, open_files);
-            self.detect_crates_for_open_files(
-                &mut new_db,
-                open_files,
-                config,
-                notifier,
-                project_controller,
-            );
+            self.detect_crates_for_open_files(open_files, project_controller);
             new_db
         })) else {
             error!("caught panic when preparing new db for swap");
@@ -137,10 +125,7 @@ impl AnalysisDatabaseSwapper {
     /// Ensures all open files have their crates detected to regenerate crates state.
     fn detect_crates_for_open_files(
         &self,
-        new_db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
-        config: &Config,
-        notifier: &Notifier,
         project_controller: &mut ProjectController,
     ) {
         for uri in open_files {
@@ -149,13 +134,7 @@ impl AnalysisDatabaseSwapper {
                 continue;
             };
 
-            project_controller.detect_crate_for(
-                new_db,
-                &self.scarb_toolchain,
-                config,
-                &file_path,
-                notifier,
-            );
+            project_controller.update_project_for(&self.scarb_toolchain, &file_path);
         }
     }
 }

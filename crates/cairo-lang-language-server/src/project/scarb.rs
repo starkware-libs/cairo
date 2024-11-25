@@ -28,22 +28,19 @@ pub fn get_workspace_members_manifests(metadata: &Metadata) -> Vec<PathBuf> {
         .collect()
 }
 
-/// Updates crate roots in the database with the information from Scarb metadata.
+/// Extract information about crates that should be loaded to db from Scarb metadata.
 ///
-/// This function attempts to be graceful. Any erroneous cases will be reported as warnings in logs,
-/// and the database will be left intact for problematic crates.
+/// This function attempts to be graceful. Any erroneous cases will be reported as warnings in logs.
 ///
-/// In all real-world scenarios, this function should always initialize the `core` crate.
+/// In all real-world scenarios, this function should always extract info about the `core` crate.
 /// Technically, it is possible for `scarb metadata` to omit `core` if working on a `no-core`
 /// package, but in reality enabling `no-core` makes sense only for the `core` package itself. To
 /// leave a trace of unreal cases, this function will log a warning if `core` is missing.
-///
-/// Package ID is used as a discriminator for all crates except `core`.
-// FIXME(mkaput): Currently this logic is feeding all compilation units of the single package at
+// FIXME(mkaput): Currently this logic is collecting all compilation units of the single package at
 //  once. Often packages declare several targets (lib, starknet-contract, test), which currently
 //  causes overriding of the crate within single call of this function. This is an UX problem, for
 //  which we do not know the solution yet.
-pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
+pub fn extract_crates(metadata: &Metadata) -> Vec<Crate> {
     // A crate can appear as a component in multiple compilation units.
     // We use a map here to make sure we include dependencies and cfg sets from all CUs.
     // We can keep components with assigned group id separately as they are not affected by this;
@@ -243,15 +240,11 @@ pub fn update_crate_roots(metadata: &Metadata, db: &mut AnalysisDatabase) {
         });
     }
 
-    debug!("updating crate roots from scarb metadata: {crates:#?}");
-
     if !crates.iter().any(Crate::is_core) {
         warn!("core crate is missing in scarb metadata, did not initialize it");
     }
 
-    for cr in crates {
-        cr.apply(db);
-    }
+    crates
 }
 
 /// Perform sanity checks on crate _source path_, and chop it into directory path and file stem.
