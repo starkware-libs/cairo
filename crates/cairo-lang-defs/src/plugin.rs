@@ -51,7 +51,7 @@ pub struct PluginGeneratedFile {
     /// Arbitrary data that the plugin generates along with the file.
     pub aux_data: Option<DynGeneratedFileAuxData>,
     /// Diagnostic notes for the file.
-    pub diagnostics_notes: Vec<String>,
+    pub diagnostics_note: Option<String>,
 }
 
 /// Result of plugin code generation.

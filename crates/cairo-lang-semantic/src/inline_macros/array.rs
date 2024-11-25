@@ -46,7 +46,7 @@ impl InlineMacroExprPlugin for ArrayMacro {
                 content,
                 code_mappings,
                 aux_data: None,
-                diagnostics_notes: Default::default(),
+                diagnostics_note: Default::default(),
             }),
             diagnostics: vec![],
         }
@@ -56,16 +56,16 @@ impl InlineMacroExprPlugin for ArrayMacro {
         Some(
             indoc! {r#"
             Creates a new array containing the provided elements.
-            The `array!` macro allows you to create an array by specifying a list of elements. \ 
+            The `array!` macro allows you to create an array by specifying a list of elements. \
             The elements are added to a new array in the order they are provided.
-    
+
             # Syntax
             ```cairo
             array![element1, element2, element3, ...]
             ```
             # Returns
             An array containing the specified elements.
-    
+
             # Examples
             ```cairo
             let arr = array![]; // Creates an empty array.

@@ -48,7 +48,7 @@ impl InlineMacroExprPlugin for WriteMacro {
             ```cairo
             let f: core::fmt::Formatter = Default::default();
             write!(f, "hello"); // `f` contains "hello".
-            let world: ByteArray = "world"; 
+            let world: ByteArray = "world";
             write!(f, "hello {}", world_ba); // `f` contains "hellohello world".
             write!(f, "hello {world_ba}"); // `f` contains "hellohello worldhello world".
             let (x, y) = (1, 2);
@@ -93,7 +93,7 @@ impl InlineMacroExprPlugin for WritelnMacro {
             ```cairo
             let f: core::fmt::Formatter = Default::default();
             writeln!(f, "hello"); // `f` contains "hello\n".
-            let world: ByteArray = "world"; 
+            let world: ByteArray = "world";
             writeln!(f, "hello {}", world_ba); // `f` contains "hello\nhello world\n".
             writeln!(f, "hello {world_ba}"); // `f` contains "hello\nhello world\nhello world\n".
             let (x, y) = (1, 2);
@@ -127,7 +127,7 @@ fn generate_code_inner(
             content,
             code_mappings,
             aux_data: None,
-            diagnostics_notes: Default::default(),
+            diagnostics_note: Default::default(),
         }),
         diagnostics: vec![],
     }

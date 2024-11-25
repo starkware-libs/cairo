@@ -1,5 +1,4 @@
 use std::fmt::Write;
-use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
@@ -180,7 +179,7 @@ impl<'a> DiagnosticsReporter<'a> {
                                 db.upcast(),
                                 db.file_syntax_diagnostics(file_id),
                                 ignore_warnings_in_crate,
-                                diagnostic_notes.clone(),
+                                &diagnostic_notes,
                             );
                         }
                     }
@@ -191,7 +190,7 @@ impl<'a> DiagnosticsReporter<'a> {
                         db.upcast(),
                         group,
                         ignore_warnings_in_crate,
-                        diagnostic_notes.clone(),
+                        &diagnostic_notes,
                     );
                 }
 
@@ -204,7 +203,7 @@ impl<'a> DiagnosticsReporter<'a> {
                         db.upcast(),
                         group,
                         ignore_warnings_in_crate,
-                        diagnostic_notes.clone(),
+                        &diagnostic_notes,
                     );
                 }
             }
@@ -219,7 +218,7 @@ impl<'a> DiagnosticsReporter<'a> {
         db: &TEntry::DbType,
         group: Diagnostics<TEntry>,
         skip_warnings: bool,
-        file_notes: Arc<OrderedHashMap<FileId, Vec<DiagnosticNote>>>,
+        file_notes: &OrderedHashMap<FileId, DiagnosticNote>,
     ) -> bool {
         let mut found: bool = false;
         for entry in group.format_with_severity(db, file_notes) {

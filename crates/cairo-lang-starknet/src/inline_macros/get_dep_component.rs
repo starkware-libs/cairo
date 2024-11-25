@@ -106,7 +106,7 @@ fn get_dep_component_generate_code_helper(
             content,
             code_mappings,
             aux_data: None,
-            diagnostics_notes: Default::default(),
+            diagnostics_note: Default::default(),
         }),
         diagnostics: vec![],
     }

@@ -197,7 +197,7 @@ fn format_input(
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
     if diagnostics.check_error_free().is_err() {
         return Err(FormattingError::ParsingError(
-            diagnostics.format_with_severity(&db, Default::default()).into(),
+            diagnostics.format_with_severity(&db, &Default::default()).into(),
         ));
     }
     let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
