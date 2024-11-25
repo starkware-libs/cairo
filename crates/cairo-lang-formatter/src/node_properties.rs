@@ -458,6 +458,20 @@ impl SyntaxNodeFormat for SyntaxNode {
                 ))
             }
             _ => match self.kind(db) {
+                SyntaxKind::PatternStructParamList => {
+                    let leading_break_point = BreakLinePointProperties::new(
+                        2,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        true,
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
+                }
                 SyntaxKind::ExprList | SyntaxKind::PatternList => {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
