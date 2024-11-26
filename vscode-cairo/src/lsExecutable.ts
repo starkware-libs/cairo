@@ -75,7 +75,7 @@ export class LSExecutable {
   }
 }
 
-// TODO: Get rid of this interface, it's an extra level of abstraction we don't need (we call it immediataly anyways)
+// TODO(6740): Get rid of this interface, it's an extra level of abstraction we don't need (we call it immediataly anyways).
 export interface LanguageServerExecutableProvider {
   languageServerExecutable(): lc.Executable;
 }

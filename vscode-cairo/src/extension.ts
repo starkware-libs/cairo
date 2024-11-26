@@ -27,23 +27,15 @@ export async function activate(extensionContext: vscode.ExtensionContext) {
       ),
     );
 
-    // React to workspace folders changes (additions, deletions)
+    // React to workspace folders changes (additions, deletions).
     ctx.extension.subscriptions.push(
       vscode.workspace.onDidChangeWorkspaceFolders(
-        async (event) => {
-          if (event.added.length) {
-            extensionManager.handleWorkspaceFoldersAdded(event.added);
-          }
-
-          if (event.removed.length) {
-            extensionManager.handleWorkspaceFoldersRemoved();
-          }
-        },
+        extensionManager.handleDidChangeWorkspaceFolders,
         null,
         ctx.extension.subscriptions,
       ),
     );
-    ctx.extension.subscriptions.push({ dispose: extensionManager.stopClient });
+    ctx.extension.subscriptions.push(extensionManager);
     ctx.statusBar.setup(extensionManager.getClient());
   } else {
     ctx.log.warn("language server is disabled");

@@ -10,6 +10,7 @@ import {
   registerViewAnalyzedCratesProvider,
 } from "./textDocumentProviders";
 import { executablesEqual, getLSExecutables, LSExecutable } from "./lsExecutable";
+import assert from "node:assert";
 
 function notifyScarbMissing(ctx: Context) {
   const errorMessage =
@@ -37,13 +38,8 @@ export async function setupLanguageServer(
   }
 
   // First one is good as any of them since they should be all the same at this point
-  const lsExecutable = executables[0];
-  if (!lsExecutable) {
-    throw new Error("Executable should be present at this point"); // Should be checked at this point
-  }
-
-  const run = lsExecutable.preparedInvocation;
-  const scarb = lsExecutable.scarb;
+  assert(executables[0], "executable should be present at this point");
+  const [{ preparedInvocation: run, scarb }] = executables;
 
   setupEnv(run, ctx);
   ctx.log.debug(`using CairoLS: ${quoteServerExecutable(run)}`);
@@ -148,7 +144,7 @@ export async function setupLanguageServer(
 
   await client.start();
 
-  return [client, lsExecutable];
+  return [client, executables[0]];
 }
 
 export async function findScarbForWorkspaceFolder(
