@@ -65,7 +65,7 @@ To generate a profile file, paste the following into your `.vscode/settings.json
 ```
 
 This will generate a trace file that you'll be able to further analyze.
-CairoLS will print the path to this trace file and instructions how to analyze it on its standard
+CairoLS will print the path to this trace file and instructions on how to analyze it on its standard
 error.
 In Visual Studio Code you will find this output in the `Output` → `Cairo Language Server` panel.
 We're not copying these here because nobody will bother keeping this document in sync.
@@ -74,7 +74,7 @@ We're not copying these here because nobody will bother keeping this document in
 
 If you find a short reproduction of your problem, we strongly suggest writing an E2E test and
 including it in your PR.
-Not only this will make your development cycle faster (because checking your changes will be now
+Not only will this make your development cycle faster (because checking your changes will be now
 automated),
 but you will also enable future developers not to fall into the pitfall that caused the bug you
 found and debugged 🤓.
