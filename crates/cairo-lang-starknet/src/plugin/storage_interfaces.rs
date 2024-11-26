@@ -4,17 +4,21 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_defs::plugin_utils::extract_single_unnamed_arg;
 use cairo_lang_filesystem::ids::CodeMapping;
+use cairo_lang_syntax::attribute::structured::{
+    AttributeArg, AttributeArgVariant, AttributeStructurize,
+};
 use cairo_lang_syntax::node::ast::OptionArgListParenthesized;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
+use itertools::zip_eq;
 
 use super::starknet_module::backwards_compatible_storage;
-use super::utils::has_derive;
+use super::utils::{has_derive, validate_v0};
 use super::{
-    FLAT_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR, STORAGE_SUB_POINTERS_ATTR, STORE_TRAIT,
-    SUBSTORAGE_ATTR,
+    FLAT_ATTR, RENAME_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR, STORAGE_SUB_POINTERS_ATTR,
+    STORE_TRAIT, SUBSTORAGE_ATTR,
 };
 
 /// Generates an impl for the `starknet::StorageNode` to point to a generate a struct to to be
@@ -85,8 +89,9 @@ impl MacroPlugin for StorageInterfacesPlugin {
                 if !diagnostics.is_empty() {
                     return PluginResult { code: None, diagnostics, remove_original_item: false };
                 }
+                let configs = struct_members_storage_configs(db, &struct_ast, &mut diagnostics);
                 let (content, code_mappings) =
-                    handle_storage_interface_struct(db, &struct_ast, metadata).build();
+                    handle_storage_interface_struct(db, &struct_ast, &configs, metadata).build();
                 PluginResult {
                     code: Some(PluginGeneratedFile {
                         name: "storage_node".into(),
@@ -95,7 +100,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
                         aux_data: None,
                         diagnostics_note: Default::default(),
                     }),
-                    diagnostics: vec![],
+                    diagnostics,
                     remove_original_item: false,
                 }
             }
@@ -159,7 +164,11 @@ impl MacroPlugin for StorageInterfacesPlugin {
     }
 
     fn declared_attributes(&self) -> Vec<String> {
-        vec![STORAGE_NODE_ATTR.to_string(), STORAGE_SUB_POINTERS_ATTR.to_string()]
+        vec![
+            STORAGE_NODE_ATTR.to_string(),
+            STORAGE_SUB_POINTERS_ATTR.to_string(),
+            RENAME_ATTR.to_string(),
+        ]
     }
 
     fn phantom_type_attributes(&self) -> Vec<String> {
@@ -376,7 +385,7 @@ impl<'a> StorageInterfaceInfo<'a> {
                 "        let __$field_name$_value__ = \
                  starknet::storage::PendingStoragePathTrait::new(
                         @self,
-                        selector!(\"$field_name$\")
+                        selector!(\"$field_selector_name$\")
                     );
                     "
                 .to_string()
@@ -406,7 +415,7 @@ impl<'a> StorageInterfaceInfo<'a> {
                     .to_string()
                 } else {
                     "        let __$field_name$_value__ = starknet::storage::StorageBase \
-                     {__base_address__: selector!(\"$field_name$\")};
+                     {__base_address__: selector!(\"$field_selector_name$\")};
 "
                     .to_string()
                 }
@@ -429,6 +438,7 @@ impl<'a> StorageInterfaceInfo<'a> {
 fn handle_storage_interface_for_interface_type(
     db: &dyn SyntaxGroup,
     struct_ast: &ast::ItemStruct,
+    configs: &[StorageMemberConfig],
     metadata: &MacroPluginMetadata<'_>,
     storage_node_type: StorageInterfaceType,
     builder: &mut PatchBuilder<'_>,
@@ -437,12 +447,12 @@ fn handle_storage_interface_for_interface_type(
         StorageInterfaceInfo { db, node_type: storage_node_type.clone(), is_mutable: false };
     // Create Info with type and false for is_mutable
     add_interface_struct_definition(db, builder, struct_ast, &storage_node_info, metadata);
-    add_interface_impl(db, builder, struct_ast, &storage_node_info);
+    add_interface_impl(db, builder, struct_ast, configs, &storage_node_info);
     let mutable_storage_node_info =
         StorageInterfaceInfo { db, node_type: storage_node_type, is_mutable: true };
     // Create Info with type and true for is_mutable
     add_interface_struct_definition(db, builder, struct_ast, &mutable_storage_node_info, metadata);
-    add_interface_impl(db, builder, struct_ast, &mutable_storage_node_info);
+    add_interface_impl(db, builder, struct_ast, configs, &mutable_storage_node_info);
 }
 
 /// Adds the storage interface structs (two variants, mutable and immutable) and their constructor
@@ -453,6 +463,7 @@ fn handle_storage_interface_for_interface_type(
 pub fn handle_storage_interface_struct<'a>(
     db: &'a dyn SyntaxGroup,
     struct_ast: &ast::ItemStruct,
+    configs: &[StorageMemberConfig],
     metadata: &MacroPluginMetadata<'_>,
 ) -> PatchBuilder<'a> {
     // Run for both StorageNode and StorageTrait
@@ -474,6 +485,7 @@ pub fn handle_storage_interface_struct<'a>(
         handle_storage_interface_for_interface_type(
             db,
             struct_ast,
+            configs,
             metadata,
             interface_type,
             &mut builder,
@@ -566,6 +578,7 @@ fn add_interface_impl(
     db: &dyn SyntaxGroup,
     builder: &mut PatchBuilder<'_>,
     struct_ast: &ast::ItemStruct,
+    configs: &[StorageMemberConfig],
     storage_node_info: &StorageInterfaceInfo<'_>,
 ) {
     let struct_name = RewriteNode::from_ast_trimmed(&struct_ast.name(db));
@@ -590,15 +603,21 @@ fn add_interface_impl(
     ));
 
     let fields = struct_ast.members(db).elements(db);
-    let mut fields_iter = fields.iter().peekable();
-    while let Some(field) = fields_iter.next() {
+    let mut fields_iter = zip_eq(&fields, configs).peekable();
+    while let Some((field, config)) = fields_iter.next() {
         let field_name = RewriteNode::from_ast_trimmed(&field.name(db));
         let field_type = RewriteNode::from_ast_trimmed(&field.type_clause(db).ty(db));
+        let field_selector_name =
+            config.rename.as_deref().map_or_else(|| field_name.clone(), RewriteNode::text);
         let is_last = fields_iter.peek().is_none();
         builder.add_modified(RewriteNode::interpolate_patched(
             &storage_node_info.node_constructor_field_init_code(is_last, field),
-            &[("field_name".to_string(), field_name), ("field_type".to_string(), field_type)]
-                .into(),
+            &[
+                ("field_selector_name".to_string(), field_selector_name),
+                ("field_name".to_string(), field_name),
+                ("field_type".to_string(), field_type),
+            ]
+            .into(),
         ));
     }
 
@@ -718,4 +737,100 @@ fn add_node_enum_impl(
         builder.add_str("        _ => panic!(\"Invalid selector value\"),\n");
     }
     builder.add_str("    }\n}\n}\n");
+}
+
+/// The configuration of a storage struct member.
+#[derive(Debug)]
+pub struct StorageMemberConfig {
+    pub kind: StorageMemberKind,
+    pub rename: Option<String>,
+}
+
+/// The kind of a storage struct member.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum StorageMemberKind {
+    /// A basic storage member - would be stored in a separate storage slot.
+    Basic,
+    /// A flat storage member - would be stored in the same storage slot as the struct.
+    Flat,
+    /// A sub-storage member - would be stored in the same storage slot, but used for components.
+    SubStorage,
+}
+
+/// Gets the storage configuration for members of a struct.
+pub fn struct_members_storage_configs(
+    db: &dyn SyntaxGroup,
+    struct_ast: &ast::ItemStruct,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Vec<StorageMemberConfig> {
+    struct_ast
+        .members(db)
+        .elements(db)
+        .into_iter()
+        .map(|member| get_member_storage_config(db, &member, diagnostics))
+        .collect()
+}
+
+/// Gets the storage configuration of a struct member.
+pub fn get_member_storage_config(
+    db: &dyn SyntaxGroup,
+    member: &ast::Member,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> StorageMemberConfig {
+    let mut result = StorageMemberConfig { kind: StorageMemberKind::Basic, rename: None };
+    for attr in member.query_attr(db, FLAT_ATTR) {
+        let attr = attr.structurize(db);
+        if result.kind != StorageMemberKind::Basic {
+            diagnostics.push(PluginDiagnostic::error(
+                attr.stable_ptr,
+                "Multiple storage attributes are not allowed.".to_string(),
+            ));
+        }
+        if !attr.args.is_empty() {
+            diagnostics.push(PluginDiagnostic::error(
+                attr.args_stable_ptr,
+                "Unexpected arguments.".to_string(),
+            ));
+        }
+        result.kind = StorageMemberKind::Flat;
+    }
+    for attr in member.query_attr(db, SUBSTORAGE_ATTR) {
+        if result.kind != StorageMemberKind::Basic {
+            diagnostics.push(PluginDiagnostic::error(
+                &attr,
+                "Multiple storage attributes are not allowed.".to_string(),
+            ));
+        }
+        validate_v0(db, diagnostics, &attr, SUBSTORAGE_ATTR);
+        result.kind = StorageMemberKind::SubStorage;
+    }
+    for attr in member.query_attr(db, RENAME_ATTR) {
+        if result.kind != StorageMemberKind::Basic {
+            diagnostics.push(PluginDiagnostic::error(
+                &attr,
+                "The `rename` attribute cannot be used with other storage attributes.".to_string(),
+            ));
+        }
+        if result.rename.is_some() {
+            diagnostics.push(PluginDiagnostic::error(
+                &attr,
+                "Multiple `rename` attributes are not allowed.".to_string(),
+            ));
+        }
+        let attr = attr.structurize(db);
+        let [
+            AttributeArg {
+                variant: AttributeArgVariant::Unnamed(ast::Expr::String(value)), ..
+            },
+        ] = &attr.args[..]
+        else {
+            diagnostics.push(PluginDiagnostic::error(
+                attr.args_stable_ptr,
+                "Unexpected arguments, expected single string argument.".to_string(),
+            ));
+            continue;
+        };
+        result.rename = value.string_value(db);
+    }
+    result
 }

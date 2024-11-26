@@ -16,9 +16,10 @@ use smol_str::SmolStr;
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
 use crate::contract::module_contract;
 use crate::plugin::consts::{
-    COMPONENT_ATTR, CONTRACT_ATTR, EMBEDDABLE_ATTR, FLAT_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR,
-    STORAGE_STRUCT_NAME, STORE_TRAIT, SUBSTORAGE_ATTR,
+    COMPONENT_ATTR, CONTRACT_ATTR, EMBEDDABLE_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR,
+    STORAGE_STRUCT_NAME, STORE_TRAIT,
 };
+use crate::plugin::storage_interfaces::{StorageMemberKind, get_member_storage_config};
 use crate::plugin::utils::has_derive;
 
 const ALLOW_NO_DEFAULT_VARIANT_ATTR: &str = "starknet::store_no_default_variant";
@@ -218,14 +219,12 @@ fn member_analyze(
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
     user_data_path.push(member_name.clone());
-    if !(member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr(db.upcast(), FLAT_ATTR)
-        || member
-            .id
-            .stable_ptr(db.upcast())
-            .lookup(db.upcast())
-            .has_attr(db.upcast(), SUBSTORAGE_ATTR))
-    {
-        paths_data.handle(member_name, user_data_path.clone(), pointer_to_code, diagnostics);
+    let member_ast = member.id.stable_ptr(db.upcast()).lookup(db.upcast());
+    // Ignoring diagnostics as these would have been reported previously.
+    let config = get_member_storage_config(db.upcast(), &member_ast, &mut vec![]);
+    if config.kind == StorageMemberKind::Basic {
+        let name = config.rename.map(Into::into).unwrap_or(member_name);
+        paths_data.handle(name, user_data_path.clone(), pointer_to_code, diagnostics);
         user_data_path.pop();
         return;
     }
