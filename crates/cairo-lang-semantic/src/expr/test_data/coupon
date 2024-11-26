@@ -244,4 +244,5 @@ edition = "2023_01"
 
 [experimental_features]
 negative_impls = false
+associated_item_constraints = false
 coupons = false
