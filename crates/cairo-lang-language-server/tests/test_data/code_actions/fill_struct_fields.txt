@@ -50,39 +50,39 @@ mod unhappy_cases {
 }
 
 //! > Code action #0
-        let _a = Struct { <caret> };
+let _a = Struct { <caret> };
 Title: Fill struct fields
 Add new text: " x: (), y: (), z: ()"
 At: Range { start: Position { line: 14, character: 25 }, end: Position { line: 14, character: 25 } }
 
 //! > Code action #1
-        let _b = Struct { x: 0x0, <caret> };
+let _b = Struct { x: 0x0, <caret> };
 Title: Fill struct fields
 Add new text: " y: (), z: ()"
 At: Range { start: Position { line: 16, character: 33 }, end: Position { line: 16, character: 33 } }
 
 //! > Code action #2
-        let _c = Struct { <caret>..s };
+let _c = Struct { <caret>..s };
 No code actions.
 
 //! > Code action #3
-        let _a = Struct { <caret> };
+let _a = Struct { <caret> };
 Title: Fill struct fields
 Add new text: " y: (), z: ()"
 At: Range { start: Position { line: 26, character: 25 }, end: Position { line: 26, character: 25 } }
 
 //! > Code action #4
-        let _b = Struct { y: 0x0, <caret> };
+let _b = Struct { y: 0x0, <caret> };
 Title: Fill struct fields
 Add new text: " z: ()"
 At: Range { start: Position { line: 27, character: 33 }, end: Position { line: 27, character: 33 } }
 
 //! > Code action #5
-        let _c = Struct { y: 0x0, x: 0x0, <caret> }
+let _c = Struct { y: 0x0, x: 0x0, <caret> }
 Title: Fill struct fields
 Add new text: " z: ()"
 At: Range { start: Position { line: 28, character: 41 }, end: Position { line: 28, character: 41 } }
 
 //! > Code action #6
-        let _a = NonexsitentStruct { <caret> };
+let _a = NonexsitentStruct { <caret> };
 No code actions.

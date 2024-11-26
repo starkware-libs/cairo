@@ -26,14 +26,14 @@ mod inner_mod {
 }
 
 //! > Code action #0
-        x.some_me<caret>thod();
+x.some_me<caret>thod();
 Title: Import super::ATrait
 Add new text: "use super::ATrait;
 "
 At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
 
 //! > Code action #1
-        x.some_method(<caret>);
+x.some_method(<caret>);
 No code actions.
 
 //! > ==========================================================================
@@ -63,11 +63,11 @@ mod inner_mod {
 }
 
 //! > Code action #0
-        x.some_me<caret>thod();
+x.some_me<caret>thod();
 No code actions.
 
 //! > Code action #1
-        x.some_method(<caret>);
+x.some_method(<caret>);
 No code actions.
 
 //! > ==========================================================================
@@ -88,13 +88,13 @@ edition = "2024_07"
 trait ATrait1<T> {
     fn some_method(self: @T);
 }
-impl Felt252ATraitImpl of ATrait1<felt252> {
+impl Felt252ATraitImpl1 of ATrait1<felt252> {
     fn some_method(self: @felt252) {}
 }
 trait ATrait2<T> {
     fn some_method(self: @T);
 }
-impl Felt252ATraitImpl of ATrait2<felt252> {
+impl Felt252ATraitImpl2 of ATrait2<felt252> {
     fn some_method(self: @felt252) {}
 }
 
@@ -153,14 +153,14 @@ mod inner_mod {
 }
 
 //! > Code action #0
-        x.some_me<caret>thod();
+x.some_me<caret>thod();
 Title: Import super::ATrait1
 Add new text: "use super::ATrait1;
 "
 At: Range { start: Position { line: 11, character: 4 }, end: Position { line: 11, character: 4 } }
 
 //! > Code action #1
-        x.some_method(<caret>);
+x.some_method(<caret>);
 No code actions.
 
 //! > ==========================================================================
@@ -184,14 +184,14 @@ fn main() {
 }
 
 //! > Code action #0
-    let _y = x.upda<caret>te(3_felt252);
+let _y = x.upda<caret>te(3_felt252);
 Title: Import core::hash::HashStateTrait
 Add new text: "use core::hash::HashStateTrait;
 "
 At: Range { start: Position { line: 0, character: 0 }, end: Position { line: 0, character: 0 } }
 
 //! > Code action #1
-    let _y = x.update(3_felt252<caret>);
+let _y = x.update(3_felt252<caret>);
 No code actions.
 
 //! > ==========================================================================
@@ -231,14 +231,14 @@ mod hello_starknet {
 }
 
 //! > Code action #0
-            self.balance.rea<caret>d()
+self.balance.rea<caret>d()
 Title: Import starknet::storage::StoragePointerReadAccess
 Add new text: "use starknet::storage::StoragePointerReadAccess;
 "
 At: Range { start: Position { line: 8, character: 4 }, end: Position { line: 8, character: 4 } }
 
 //! > Code action #1
-            self.balance.read(<caret>)
+self.balance.read(<caret>)
 No code actions.
 
 //! > ==========================================================================
@@ -273,14 +273,14 @@ mod inner_mod {
 }
 
 //! > Code action #0
-        x.some_me<caret>thod();
+x.some_me<caret>thod();
 Title: Import super::hidden_trait::ATrait1
 Add new text: "use super::hidden_trait::ATrait1;
 "
 At: Range { start: Position { line: 10, character: 4 }, end: Position { line: 10, character: 4 } }
 
 //! > Code action #1
-        x.some_method(<caret>);
+x.some_method(<caret>);
 No code actions.
 
 //! > ==========================================================================
@@ -304,7 +304,7 @@ fn func() {
 }
 
 //! > Code action #0
-    let (_x, _): (u8, bool) = 5_i8.abs_an<caret>d_sign();
+let (_x, _): (u8, bool) = 5_i8.abs_an<caret>d_sign();
 Title: Import core::integer::AbsAndSign
 Add new text: "use core::integer::AbsAndSign;
 "

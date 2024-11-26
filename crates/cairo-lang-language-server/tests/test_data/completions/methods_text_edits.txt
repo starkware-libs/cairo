@@ -30,7 +30,7 @@ mod inner_mod {
 }
 
 //! > Completions #0
-        x.some_me<caret>
+x.some_me<caret>
 --------------------------
 Completion: add_eq()
 Insert text: add_eq($0)
@@ -169,7 +169,7 @@ mod inner_mod {
 }
 
 //! > Completions #0
-        x.some_me<caret>
+x.some_me<caret>
 --------------------------
 Completion: add_eq()
 Insert text: add_eq($0)

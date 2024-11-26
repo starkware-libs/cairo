@@ -22,17 +22,17 @@ fn calculate_area(rectangle: Rectangle) -> u64 {
 }
 
 //! > Goto definition #0
-    rec<caret>tangle.width * rectangle.height
+rec<caret>tangle.width * rectangle.height
 fn calculate_area(<sel>rectangle: Rectangle</sel>) -> u64 {
 
 //! > Goto definition #1
-    rectangle.wi<caret>dth * rectangle.height
+rectangle.wi<caret>dth * rectangle.height
     <sel>width: u64</sel>,
 
 //! > Goto definition #2
-    rectangle.width * rectangle<caret>.height
+rectangle.width * rectangle<caret>.height
 fn calculate_area(<sel>rectangle: Rectangle</sel>) -> u64 {
 
 //! > Goto definition #3
-    rectangle.width * rectangle.<caret>height
+rectangle.width * rectangle.<caret>height
     <sel>height: u64</sel>,

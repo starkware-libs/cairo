@@ -61,7 +61,7 @@ mod unhappy_cases {
 }
 
 //! > Completions #0
-        let a = Struct { <caret> };
+let a = Struct { <caret> };
 --------------------------
 Completion: x
 Detail: core::integer::u32
@@ -73,7 +73,7 @@ Completion: z
 Detail: core::integer::i16
 
 //! > Completions #1
-        let b = Struct { x: 0x0, <caret> };
+let b = Struct { x: 0x0, <caret> };
 --------------------------
 Completion: y
 Detail: core::felt252
@@ -82,7 +82,7 @@ Completion: z
 Detail: core::integer::i16
 
 //! > Completions #2
-            <caret>
+<caret>
 --------------------------
 Completion: y
 Detail: core::felt252
@@ -91,7 +91,7 @@ Completion: z
 Detail: core::integer::i16
 
 //! > Completions #3
-            <caret>..s
+<caret>..s
 --------------------------
 Completion: core
 --------------------------
@@ -114,7 +114,7 @@ Completion: d
 Completion: e
 
 //! > Completions #4
-        let e = Struct { <caret>..s };
+let e = Struct { <caret>..s };
 --------------------------
 Completion: x
 Detail: core::integer::u32
@@ -126,7 +126,7 @@ Completion: z
 Detail: core::integer::i16
 
 //! > Completions #5
-        let a = Struct { <caret> };
+let a = Struct { <caret> };
 --------------------------
 Completion: y
 Detail: core::felt252
@@ -135,16 +135,16 @@ Completion: z
 Detail: core::integer::i16
 
 //! > Completions #6
-        let b = Struct { y: 0x0, <caret> };
+let b = Struct { y: 0x0, <caret> };
 --------------------------
 Completion: z
 Detail: core::integer::i16
 
 //! > Completions #7
-        let c = Struct { y: 0x0, x: 0x0, <caret> }
+let c = Struct { y: 0x0, x: 0x0, <caret> }
 --------------------------
 Completion: z
 Detail: core::integer::i16
 
 //! > Completions #8
-        let a = NonexsitentStruct { <caret> };
+let a = NonexsitentStruct { <caret> };
