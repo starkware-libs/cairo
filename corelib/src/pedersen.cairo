@@ -39,7 +39,7 @@ pub struct HashState {
     pub state: felt252,
 }
 
-/// A trait for computing Pedersen hashes.
+/// A trait for creating a new Pedersen hash state.
 #[generate_trait]
 pub impl PedersenImpl of PedersenTrait {
     /// Creates a new Pedersen hash state with the given base value.
