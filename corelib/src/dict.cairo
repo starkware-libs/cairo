@@ -217,7 +217,6 @@ impl Felt252DictEntryImpl<T, +Felt252DictValue<T>> of Felt252DictEntryTrait<T> {
     }
 }
 
-/// `Default` trait implementation to create a new empty dictionary.
 impl Felt252DictDefault<T> of Default<Felt252Dict<T>> {
     /// Returns a new empty dictionary.
     ///
