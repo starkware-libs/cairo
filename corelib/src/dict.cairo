@@ -107,7 +107,7 @@ pub(crate) extern fn felt252_dict_squash<T>(
     dict: Felt252Dict<T>
 ) -> SquashedFelt252Dict<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
 
-/// Basic trait for the `Felt252Dict` dictionary type.
+/// Basic trait for the `Felt252Dict` type.
 pub trait Felt252DictTrait<T> {
     fn insert<+Destruct<T>>(ref self: Felt252Dict<T>, key: felt252, value: T);
     fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T;
