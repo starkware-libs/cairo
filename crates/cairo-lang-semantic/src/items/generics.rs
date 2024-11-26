@@ -1,3 +1,4 @@
+use std::hash::Hash;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
@@ -9,8 +10,9 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::node::ast::OptionAssociatedItemConstraints;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::ast::{AssociatedItemConstraints, OptionAssociatedItemConstraints};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::{Intern, LookupIntern, extract_matches, try_extract_matches};
 use syntax::node::TypedStablePtr;
 use syntax::node::db::SyntaxGroup;
@@ -18,6 +20,7 @@ use syntax::node::db::SyntaxGroup;
 use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
 use super::resolve_trait_path;
+use super::trt::ConcreteTraitTypeId;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
@@ -114,7 +117,7 @@ pub enum GenericArgumentHead {
 }
 
 /// Generic parameter.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericParam {
     Type(GenericParamType),
     // TODO(spapini): Add expression.
@@ -187,11 +190,22 @@ pub struct GenericParamConst {
     pub id: GenericParamId,
     pub ty: TypeId,
 }
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamImpl {
     pub id: GenericParamId,
     pub concrete_trait: Maybe<ConcreteTraitId>,
+    pub type_constraints: OrderedHashMap<ConcreteTraitTypeId, TypeId>,
+}
+impl Hash for GenericParamImpl {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.concrete_trait.hash(state);
+        self.type_constraints.iter().for_each(|(trait_type_id, type_id)| {
+            trait_type_id.hash(state);
+            type_id.hash(state);
+        });
+    }
 }
 
 /// The result of the computation of the semantic model of a generic parameter.
@@ -433,6 +447,16 @@ fn are_negative_impls_enabled(db: &dyn SemanticGroup, module_file_id: ModuleFile
     config.settings.experimental_features.negative_impls
 }
 
+/// Returns true if associated_item_constraints is enabled in the module.
+fn is_associated_item_constraints_enabled(
+    db: &dyn SemanticGroup,
+    module_file_id: ModuleFileId,
+) -> bool {
+    let owning_crate = module_file_id.0.owning_crate(db.upcast());
+    let Some(config) = db.crate_config(owning_crate) else { return false };
+    config.settings.experimental_features.associated_item_constraints
+}
+
 /// Computes the semantic model of a generic parameter give its ast.
 fn semantic_from_generic_param_ast(
     db: &dyn SemanticGroup,
@@ -443,6 +467,18 @@ fn semantic_from_generic_param_ast(
     parent_item_id: GenericItemId,
 ) -> GenericParam {
     let id = GenericParamLongId(module_file_id, param_syntax.stable_ptr()).intern(db);
+    let mut item_constraints_into_option = |constraint| match constraint {
+        OptionAssociatedItemConstraints::Empty(_) => None,
+        OptionAssociatedItemConstraints::AssociatedItemConstraints(associated_type_args) => {
+            if !is_associated_item_constraints_enabled(db, module_file_id) {
+                diagnostics.report(
+                    associated_type_args.stable_ptr(),
+                    SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled,
+                );
+            }
+            Some(associated_type_args)
+        }
+    };
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
         ast::GenericParam::Const(syntax) => {
@@ -451,24 +487,27 @@ fn semantic_from_generic_param_ast(
         }
         ast::GenericParam::ImplNamed(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
-            if !matches!(
-                syntax.type_constrains(db.upcast()),
-                OptionAssociatedItemConstraints::Empty(_)
-            ) {
-                diagnostics.report(syntax, SemanticDiagnosticKind::Unsupported);
-            }
-
-            GenericParam::Impl(impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id))
+            let item_constrains = item_constraints_into_option(syntax.type_constrains(db.upcast()));
+            GenericParam::Impl(impl_generic_param_semantic(
+                db,
+                resolver,
+                diagnostics,
+                &path_syntax,
+                item_constrains,
+                id,
+            ))
         }
         ast::GenericParam::ImplAnonymous(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
-            if !matches!(
-                syntax.type_constrains(db.upcast()),
-                OptionAssociatedItemConstraints::Empty(_)
-            ) {
-                diagnostics.report(syntax, SemanticDiagnosticKind::Unsupported);
-            }
-            GenericParam::Impl(impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id))
+            let item_constrains = item_constraints_into_option(syntax.type_constrains(db.upcast()));
+            GenericParam::Impl(impl_generic_param_semantic(
+                db,
+                resolver,
+                diagnostics,
+                &path_syntax,
+                item_constrains,
+                id,
+            ))
         }
         ast::GenericParam::NegativeImpl(syntax) => {
             if !are_negative_impls_enabled(db, module_file_id) {
@@ -481,9 +520,11 @@ fn semantic_from_generic_param_ast(
 
             let path_syntax = syntax.trait_path(db.upcast());
             GenericParam::NegImpl(impl_generic_param_semantic(
+                db,
                 resolver,
                 diagnostics,
                 &path_syntax,
+                None,
                 id,
             ))
         }
@@ -492,9 +533,11 @@ fn semantic_from_generic_param_ast(
 
 /// Computes the semantic model of an impl generic parameter given its trait path.
 fn impl_generic_param_semantic(
+    db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
     diagnostics: &mut SemanticDiagnostics,
     path_syntax: &ast::ExprPath,
+    item_constraints: Option<AssociatedItemConstraints>,
     id: GenericParamId,
 ) -> GenericParamImpl {
     let concrete_trait = resolver
@@ -504,5 +547,59 @@ fn impl_generic_param_semantic(
                 diagnostics.report(path_syntax, SemanticDiagnosticKind::UnknownTrait)
             })
         });
-    GenericParamImpl { id, concrete_trait }
+    let type_constraints = concrete_trait
+        .ok()
+        .and_then(|concrete_trait| {
+            item_constraints.map(|type_constraints| (concrete_trait, type_constraints))
+        })
+        .map(|(concrete_trait_id, constraints)| {
+            constraints
+                .associated_item_constraints(db.upcast())
+                .elements(db.upcast())
+                .into_iter()
+                .fold(OrderedHashMap::default(), |mut map, constraint| {
+                    let Some(trait_type_id) = db
+                        .trait_type_by_name(
+                            concrete_trait_id.trait_id(db),
+                            constraint.item(db.upcast()).text(db.upcast()),
+                        )
+                        .unwrap()
+                    else {
+                        diagnostics.report(
+                            constraint.stable_ptr(),
+                            SemanticDiagnosticKind::NonTraitTypeConstrained {
+                                identifier: constraint.item(db.upcast()).text(db.upcast()),
+                                concrete_trait_id,
+                            },
+                        );
+                        return map;
+                    };
+
+                    let concrete_trait_type_id =
+                        ConcreteTraitTypeId::new(db, concrete_trait_id, trait_type_id);
+                    match map.entry(concrete_trait_type_id) {
+                        Entry::Vacant(entry) => {
+                            entry.insert(resolve_type(
+                                db,
+                                diagnostics,
+                                resolver,
+                                &constraint.value(db.upcast()),
+                            ));
+                        }
+                        Entry::Occupied(_) => {
+                            diagnostics.report(
+                                path_syntax,
+                                SemanticDiagnosticKind::DuplicateTypeConstraint {
+                                    concrete_trait_type_id,
+                                },
+                            );
+                        }
+                    }
+
+                    map
+                })
+        })
+        .unwrap_or_default();
+
+    GenericParamImpl { id, concrete_trait, type_constraints }
 }
