@@ -236,17 +236,9 @@ impl Felt252DictDefault<T> of Default<Felt252Dict<T>> {
 }
 
 impl Felt252DictDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Felt252Dict<T>> {
-    /// `destruct` method is called right before a dictionary goes out of scope,
-    /// but it is still possible to call it manually.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use core::dict::Felt252Dict;
-    ///
-    /// let dict: Felt252Dict<u8> = Default::default();
-    /// dict.destruct();
-    /// ```
+    /// Allows the dictionary to go out of scope safely by ensuring it is squashed before going out of scope.
+    /// A `Felt252Dict` cannot be "dropped" trivially because we need to ensure it is squashed before the end of a program for soundness purposes. As such, `destruct` squashes the dictionary, and the returned `SquashedFelt252Dict` is dropped trivially.
+    /// `destruct` is automatically called when a dictionary goes out of scope.
     #[inline]
     fn destruct(self: Felt252Dict<T>) nopanic {
         self.squash();
