@@ -79,7 +79,7 @@ impl DiagnosticLocation {
     /// Get the location of the originating user code,
     /// along with [`DiagnosticNote`]s for this translation.
     /// The notes are collected from the parent files of the originating location.
-    pub fn user_location_with_notes(
+    pub fn user_location_with_plugin_notes(
         &self,
         db: &dyn FilesGroup,
         file_notes: &PluginFileDiagnosticNotes,
@@ -313,7 +313,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
             let mut msg = String::new();
             let diag_location = entry.location(db);
             let (user_location, parent_file_notes) =
-                diag_location.user_location_with_notes(files_db, file_notes);
+                diag_location.user_location_with_plugin_notes(files_db, file_notes);
             msg += &format_diagnostics(files_db, &entry.format(db), user_location);
             for note in entry.notes(db) {
                 msg += &format!("note: {:?}\n", note.debug(files_db))

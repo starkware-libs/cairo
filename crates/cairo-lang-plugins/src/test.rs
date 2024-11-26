@@ -15,7 +15,7 @@ use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, VirtualFile,
 };
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
-use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
+use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
@@ -23,8 +23,6 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast};
-use indoc::indoc;
-use itertools::Itertools;
 
 use crate::get_base_plugins;
 use crate::test_utils::expand_module_text;
