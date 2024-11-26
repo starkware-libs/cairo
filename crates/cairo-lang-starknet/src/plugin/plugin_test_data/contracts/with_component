@@ -226,6 +226,7 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub test_component_storage: starknet::storage::FlattenedStorage<super::test_component::Storage>,
     pub normal_member1: starknet::storage::StorageBase<usize>,
     pub normal_member2: starknet::storage::StorageBase<usize>,
@@ -247,6 +248,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub test_component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::test_component::Storage>>,
     pub normal_member1: starknet::storage::StorageBase<starknet::storage::Mutable::<usize>>,
     pub normal_member2: starknet::storage::StorageBase<starknet::storage::Mutable::<usize>>,
@@ -267,6 +269,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub test_component_storage: super::test_component::ComponentState<ContractState>,
 }
 
@@ -828,7 +831,9 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub component1_storage: starknet::storage::FlattenedStorage<super::component1::Storage>,
+        #[substorage(v0)]
     pub component2_storage: starknet::storage::FlattenedStorage<super::component2::Storage>,
 }
 #[doc(hidden)]
@@ -846,7 +851,9 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub component1_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component1::Storage>>,
+        #[substorage(v0)]
     pub component2_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component2::Storage>>,
 }
 #[doc(hidden)]
@@ -863,7 +870,9 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub component1_storage: super::component1::ComponentState<ContractState>,
+        #[substorage(v0)]
         pub component2_storage: super::component2::ComponentState<ContractState>,
 }
 
@@ -1472,7 +1481,9 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub component1_storage: starknet::storage::FlattenedStorage<super::component1::Storage>,
+        #[substorage(v0)]
     pub component2_storage: starknet::storage::FlattenedStorage<super::component2::Storage>,
 }
 #[doc(hidden)]
@@ -1490,7 +1501,9 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub component1_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component1::Storage>>,
+        #[substorage(v0)]
     pub component2_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component2::Storage>>,
 }
 #[doc(hidden)]
@@ -1507,7 +1520,9 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub component1_storage: super::component1::ComponentState<ContractState>,
+        #[substorage(v0)]
         pub component2_storage: super::component2::ComponentState<ContractState>,
 }
 
