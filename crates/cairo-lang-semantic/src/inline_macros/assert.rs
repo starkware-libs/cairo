@@ -56,7 +56,7 @@ impl InlineMacroExprPlugin for AssertMacro {
                         let mut {f}: core::fmt::Formatter = core::traits::Default::default();
                 "#,
             },
-            &[("value".to_string(), RewriteNode::new_trimmed(value.as_syntax_node()))].into(),
+            &[("value".to_string(), RewriteNode::from_ast_trimmed(&value))].into(),
         ));
         if format_args.is_empty() {
             builder.add_str(&formatdoc!(
@@ -75,18 +75,16 @@ impl InlineMacroExprPlugin for AssertMacro {
                 &[
                     (
                         "lparen".to_string(),
-                        RewriteNode::new_trimmed(arguments_syntax.lparen(db).as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&arguments_syntax.lparen(db)),
                     ),
                     (
                         "rparen".to_string(),
-                        RewriteNode::new_trimmed(arguments_syntax.rparen(db).as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&arguments_syntax.rparen(db)),
                     ),
                     (
                         "args".to_string(),
                         RewriteNode::interspersed(
-                            format_args
-                                .iter()
-                                .map(|arg| RewriteNode::new_trimmed(arg.as_syntax_node())),
+                            format_args.iter().map(RewriteNode::from_ast_trimmed),
                             RewriteNode::text(", "),
                         ),
                     ),

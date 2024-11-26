@@ -4,9 +4,9 @@ use cairo_lang_defs::plugin::{
     PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ast::{Arg, WrappedArgList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 use num_bigint::BigUint;
 
@@ -101,18 +101,16 @@ impl InlineMacroExprPlugin for PanicMacro {
                 &[
                     (
                         "lparen".to_string(),
-                        RewriteNode::new_trimmed(arguments_syntax.lparen(db).as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&arguments_syntax.lparen(db)),
                     ),
                     (
                         "rparen".to_string(),
-                        RewriteNode::new_trimmed(arguments_syntax.rparen(db).as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&arguments_syntax.rparen(db)),
                     ),
                     (
                         "args".to_string(),
                         RewriteNode::interspersed(
-                            arguments
-                                .iter()
-                                .map(|arg| RewriteNode::new_trimmed(arg.as_syntax_node())),
+                            arguments.iter().map(RewriteNode::from_ast_trimmed),
                             RewriteNode::text(", "),
                         ),
                     ),
