@@ -54,6 +54,10 @@ pub trait DiagnosticEntry: Clone + fmt::Debug + Eq + Hash {
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
 
+/// Diagnostic notes for diagnostics originating in the plugin generated files identified by
+/// [`FileId`].
+pub type PluginFileDiagnosticNotes = OrderedHashMap<FileId, DiagnosticNote>;
+
 // The representation of a source location inside a diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticLocation {
@@ -72,10 +76,13 @@ impl DiagnosticLocation {
         Self { file_id, span }
     }
 
+    /// Get the location of the originating user code,
+    /// along with [`DiagnosticNote`]s for this translation.
+    /// The notes are collected from the parent files of the originating location.
     pub fn user_location_with_notes(
         &self,
         db: &dyn FilesGroup,
-        file_notes: &OrderedHashMap<FileId, DiagnosticNote>,
+        file_notes: &PluginFileDiagnosticNotes,
     ) -> (Self, Vec<DiagnosticNote>) {
         let mut parent_files = Vec::new();
         let (file_id, span) =
