@@ -158,27 +158,40 @@ impl MacroPlugin for DoubleIndirectionPlugin {
         item_ast: ast::ModuleItem,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult {
+        let node = item_ast.as_syntax_node();
+        let orig_span = node.span(db);
+        let code_mappings = |content: &str| {
+            vec![CodeMapping {
+                span: TextSpan {
+                    start: TextOffset::default(),
+                    end: TextOffset::default().add_width(TextWidth::from_str(content)),
+                },
+                origin: CodeOrigin::Start(orig_span.start),
+            }]
+        };
         match item_ast {
             ast::ModuleItem::Struct(struct_ast) => {
                 if struct_ast.has_attr(db, "first") {
+                    let content = "#[second] struct A {}\n".to_string();
                     PluginResult {
                         code: Some(PluginGeneratedFile {
                             name: "virt1".into(),
-                            content: "#[second] struct A {}\n".to_string(),
-                            code_mappings: Default::default(),
+                            code_mappings: code_mappings(content.as_str()),
+                            content,
                             aux_data: None,
-                            diagnostics_note: Default::default(),
+                            diagnostics_note: Some("first note".to_string()),
                         }),
                         ..PluginResult::default()
                     }
                 } else if struct_ast.has_attr(db, "second") {
+                    let content = "struct B {}\n".to_string();
                     PluginResult {
                         code: Some(PluginGeneratedFile {
                             name: "virt2".into(),
-                            content: "struct B {}\n".to_string(),
-                            code_mappings: Default::default(),
+                            code_mappings: code_mappings(content.as_str()),
+                            content,
                             aux_data: None,
-                            diagnostics_note: Default::default(),
+                            diagnostics_note: Some("second note".to_string()),
                         }),
                         ..PluginResult::default()
                     }
