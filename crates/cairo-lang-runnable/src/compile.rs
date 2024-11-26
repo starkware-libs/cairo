@@ -56,6 +56,7 @@ pub fn compile_runnable(
     diagnostics_reporter: DiagnosticsReporter<'_>,
 ) -> Result<CompiledFunction> {
     let mut db = RootDatabase::builder()
+        .skip_auto_withdraw_gas()
         .detect_corelib()
         .with_plugin_suite(runnable_plugin_suite())
         .build()?;

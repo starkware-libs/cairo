@@ -867,3 +867,364 @@ error: Are you missing a `::`?.
  --> lib.cairo:4:18
   let _fail = bar<felt252>(1);
                  ^
+
+//! > ==========================================================================
+
+//! > Testing use star not on a module
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+const NOT_MODULE: u8 = 2;
+pub mod a {
+    use super::NOT_MODULE::*;
+}
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Expected module, found constant.
+ --> lib.cairo:3:16
+    use super::NOT_MODULE::*;
+               ^********^
+
+//! > ==========================================================================
+
+//! > Testing use star ambiguous path
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+pub mod a {
+    pub const AMBIGUOUS: u8 = 1;
+}
+
+pub mod b {
+    pub const AMBIGUOUS: u8 = 4;
+}
+
+use a::*;
+use b::*;
+
+//! > function_body
+
+//! > expr_code
+AMBIGUOUS
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Ambiguous path. Multiple matching items: `test::a::AMBIGUOUS`, `test::b::AMBIGUOUS`
+ --> lib.cairo:12:1
+AMBIGUOUS
+^*******^
+
+//! > ==========================================================================
+
+//! > Testing use star path does not exist
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+use undefined_item::*;
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Identifier not found.
+ --> lib.cairo:1:5
+use undefined_item::*;
+    ^************^
+
+//! > ==========================================================================
+
+//! > Testing use star unresolved import due to cycle
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+mod a {
+    use super::*;
+    use a::a::a::a::*;
+}
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'use' items.
+ --> lib.cairo:3:21
+    use a::a::a::a::*;
+                    ^
+
+//! > ==========================================================================
+
+//! > Testing use star empty path
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+use *;
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: `*` in `use` items is not allowed for empty path.
+ --> lib.cairo:1:5
+use *;
+    ^
+
+//! > ==========================================================================
+
+//! > Testing use star inaccessible item
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    const INACCESSIBLE: u8 = 1;
+}
+
+use a::*;
+
+//! > function_body
+
+//! > expr_code
+INACCESSIBLE
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Item `test::a::INACCESSIBLE` is not visible in this context through module `test::a`.
+ --> lib.cairo:7:1
+INACCESSIBLE
+^**********^
+
+//! > ==========================================================================
+
+//! > Testing use star inaccessible module
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    mod inaccessible {
+        pub const C: u8 = 1;
+    }
+}
+
+use a::*;
+
+//! > function_body
+
+//! > expr_code
+inaccessible::C
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Item `test::a::inaccessible` is not visible in this context through module `test::a`.
+ --> lib.cairo:9:1
+inaccessible::C
+^**********^
+
+//! > ==========================================================================
+
+//! > Testing use star imported inaccessible module
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    mod b {
+        pub const C: u8 = 1;
+    }
+}
+
+mod c {
+    pub mod d {
+        use super::super::a::b::*;
+    }
+}
+
+use c::d::*;
+
+//! > function_body
+
+//! > expr_code
+C
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+ --> lib.cairo:15:1
+C
+^
+
+error: Item `test::a::b` is not visible in this context.
+ --> lib.cairo:9:30
+        use super::super::a::b::*;
+                             ^
+
+//! > ==========================================================================
+
+//! > Testing use star imported inaccessible item
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        const C: u8 = 1;
+    }
+}
+
+mod c {
+    pub mod d {
+        pub use super::super::a::b::*;
+    }
+}
+
+use c::d::*;
+
+//! > function_body
+
+//! > expr_code
+C
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+ --> lib.cairo:15:1
+C
+^
+
+//! > ==========================================================================
+
+//! > Testing use star imported inaccessible middle global use
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        pub const C: u8 = 1;
+    }
+}
+
+mod c {
+    pub mod d {
+        use super::super::a::b::*;
+    }
+}
+
+mod e {
+    pub mod f {
+        pub use super::super::c::d::*;
+    }
+}
+
+use e::f::*;
+
+//! > function_body
+
+//! > expr_code
+C
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
+ --> lib.cairo:21:1
+C
+^
+
+//! > ==========================================================================
+
+//! > Testing use star imported inaccessible end module
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    mod b {
+        pub const C: u8 = 1;
+    }
+}
+
+mod c {
+    pub mod d {
+        pub use super::super::a::b::*;
+    }
+}
+
+mod e {
+    pub mod f {
+        pub use super::super::c::d::*;
+    }
+}
+
+use e::f::*;
+
+//! > function_body
+
+//! > expr_code
+C
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Item `test::a::b` is not visible in this context.
+ --> lib.cairo:9:34
+        pub use super::super::a::b::*;
+                                 ^

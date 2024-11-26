@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::ops::{Deref, DerefMut};
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use lsp_types::{ClientCapabilities, Url};
@@ -10,6 +9,8 @@ use crate::Tricks;
 use crate::config::Config;
 use crate::lang::db::{AnalysisDatabase, AnalysisDatabaseSwapper};
 use crate::lang::diagnostics::DiagnosticsController;
+use crate::lang::proc_macros::controller::ProcMacroClientController;
+use crate::project::ProjectController;
 use crate::server::client::Client;
 use crate::server::connection::ClientSender;
 use crate::toolchain::scarb::ScarbToolchain;
@@ -18,13 +19,14 @@ use crate::toolchain::scarb::ScarbToolchain;
 pub struct State {
     pub db: AnalysisDatabase,
     pub open_files: Owned<HashSet<Url>>,
-    pub loaded_scarb_manifests: Owned<HashSet<PathBuf>>,
     pub config: Owned<Config>,
     pub client_capabilities: Owned<ClientCapabilities>,
     pub scarb_toolchain: ScarbToolchain,
     pub db_swapper: AnalysisDatabaseSwapper,
     pub tricks: Owned<Tricks>,
     pub diagnostics_controller: DiagnosticsController,
+    pub proc_macro_controller: ProcMacroClientController,
+    pub project_controller: ProjectController,
 }
 
 impl State {
@@ -36,17 +38,19 @@ impl State {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
         let db_swapper = AnalysisDatabaseSwapper::new(scarb_toolchain.clone());
+        let proc_macro_controller = ProcMacroClientController::new(scarb_toolchain.clone());
 
         Self {
             db: AnalysisDatabase::new(&tricks),
             open_files: Default::default(),
-            loaded_scarb_manifests: Default::default(),
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
             scarb_toolchain,
             db_swapper,
             tricks: Owned::new(tricks.into()),
             diagnostics_controller: DiagnosticsController::new(notifier),
+            proc_macro_controller,
+            project_controller: ProjectController::new(),
         }
     }
 

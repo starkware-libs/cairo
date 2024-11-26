@@ -3,13 +3,13 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
-use cairo_lang_sierra::program::StatementIdx;
+use cairo_lang_sierra_gas::core_libfunc_cost::InvocationCostInfoProvider;
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigInt;
 
 use super::misc::get_pointer_after_program_code;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError, misc};
+use crate::environment::gas_wallet::GasWallet;
 use crate::invocations::{
     BuiltinInfo, CostValidationInfo, add_input_variables, get_non_fallthrough_statement_id,
 };
@@ -40,11 +40,10 @@ fn build_withdraw_gas(
         buffer(1) range_check;
         deref gas_counter;
     };
-    let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-    validate_all_casm_token_vars_available(variable_values, builder.idx)?;
+    builder.validate_token_vars_availability()?;
 
     // Check if we need to fetch the builtin cost table.
-    if CostTokenType::iter_precost().any(|token| variable_values[&(builder.idx, *token)] > 0) {
+    if CostTokenType::iter_precost().any(|token| builder.token_usages(*token) > 0) {
         let (pre_instructions, cost_builtin_ptr) =
             add_cost_builtin_ptr_fetch_code(&mut casm_builder);
         casm_build_extend!(casm_builder, tempvar cost_builtin = cost_builtin_ptr;);
@@ -55,10 +54,7 @@ fn build_withdraw_gas(
             pre_instructions,
         );
     }
-    let requested_count: i64 = variable_values
-        .get(&(builder.idx, CostTokenType::Const))
-        .copied()
-        .ok_or(InvocationError::UnknownVariableData)?;
+    let requested_count = builder.token_usages(CostTokenType::Const);
 
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
@@ -91,7 +87,7 @@ fn build_withdraw_gas(
                 start: orig_range_check,
                 end: range_check,
             }],
-            extra_costs: Some([-requested_count as i32, 0]),
+            extra_costs: Some([-requested_count.into_or_panic::<i32>(), 0]),
         },
     ))
 }
@@ -101,11 +97,10 @@ fn build_redeposit_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [gas_counter] = builder.try_get_single_cells()?;
-    let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-    validate_all_casm_token_vars_available(variable_values, builder.idx)?;
-    let requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];
+    builder.validate_token_vars_availability()?;
+    let requested_count = builder.token_usages(CostTokenType::Const);
     // Check if we need to fetch the builtin cost table.
-    if CostTokenType::iter_precost().all(|token| variable_values[&(builder.idx, *token)] == 0) {
+    if CostTokenType::iter_precost().all(|token| builder.token_usages(*token) == 0) {
         let gas_counter_value =
             gas_counter.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
@@ -156,10 +151,7 @@ fn build_builtin_withdraw_gas(
         deref gas_counter;
         deref builtin_cost;
     };
-    validate_all_casm_token_vars_available(
-        &builder.program_info.metadata.gas_info.variable_values,
-        builder.idx,
-    )?;
+    builder.validate_token_vars_availability()?;
     build_withdraw_gas_given_cost_table(
         builder,
         casm_builder,
@@ -209,7 +201,7 @@ fn build_withdraw_gas_given_cost_table(
                 start: orig_range_check,
                 end: range_check,
             }],
-            extra_costs: Some([-requested_count as i32, 0]),
+            extra_costs: Some([-requested_count.into_or_panic::<i32>(), 0]),
         },
         pre_instructions,
     ))
@@ -222,13 +214,12 @@ fn add_get_total_requested_count_code(
     builder: &CompiledInvocationBuilder<'_>,
     casm_builder: &mut CasmBuilder,
     builtin_cost: Var,
-) -> Result<(i64, Var), InvocationError> {
-    let variable_values = &builder.program_info.metadata.gas_info.variable_values;
-    let const_requested_count: i64 = variable_values[&(builder.idx, CostTokenType::Const)];
+) -> Result<(usize, Var), InvocationError> {
+    let const_requested_count = builder.token_usages(CostTokenType::Const);
     let mut total_requested_count =
         casm_builder.add_var(CellExpression::Immediate(BigInt::from(const_requested_count)));
     for token_type in CostTokenType::iter_precost() {
-        let token_requested_count = variable_values[&(builder.idx, *token_type)];
+        let token_requested_count = builder.token_usages(*token_type);
         if token_requested_count == 0 {
             continue;
         }
@@ -257,17 +248,19 @@ fn add_get_total_requested_count_code(
     Ok((const_requested_count, total_requested_count))
 }
 
-/// Validates that all the cost token variables are available for statement at `idx`.
-fn validate_all_casm_token_vars_available(
-    variable_values: &OrderedHashMap<(StatementIdx, CostTokenType), i64>,
-    idx: StatementIdx,
-) -> Result<(), InvocationError> {
-    for token in CostTokenType::iter_casm_tokens() {
-        if !variable_values.contains_key(&(idx, *token)) {
-            return Err(InvocationError::UnknownVariableData);
+impl CompiledInvocationBuilder<'_> {
+    /// Validates that all the cost token variables are available for statement at `idx`.
+    fn validate_token_vars_availability(&self) -> Result<(), InvocationError> {
+        if !matches!(self.environment.gas_wallet, GasWallet::Disabled) {
+            for token in CostTokenType::iter_casm_tokens() {
+                let values = &self.program_info.metadata.gas_info.variable_values;
+                if !values.contains_key(&(self.idx, *token)) {
+                    return Err(InvocationError::UnknownVariableData);
+                }
+            }
         }
+        Ok(())
     }
-    Ok(())
 }
 
 /// Handles the get_builtin_costs invocation.

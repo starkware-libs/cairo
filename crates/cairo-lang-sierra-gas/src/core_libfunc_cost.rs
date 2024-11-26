@@ -19,10 +19,10 @@ struct Ops<'a> {
     idx: StatementIdx,
 }
 impl CostOperations for Ops<'_> {
-    type CostType = Option<OrderedHashMap<CostTokenType, i64>>;
+    type CostType = OrderedHashMap<CostTokenType, i64>;
 
     fn cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
-        Some(OrderedHashMap::from_iter([(token_type, value as i64)]))
+        OrderedHashMap::from_iter([(token_type, value as i64)])
     }
 
     fn function_token_cost(
@@ -30,26 +30,28 @@ impl CostOperations for Ops<'_> {
         function: &cairo_lang_sierra::program::Function,
         token_type: CostTokenType,
     ) -> Self::CostType {
-        let function_cost = self.gas_info.function_costs.get(&function.id)?;
-        Some(OrderedHashMap::from_iter([(
-            token_type,
-            function_cost.get(&token_type).copied().unwrap_or_default(),
-        )]))
+        if let Some(function_cost) = self.gas_info.function_costs.get(&function.id) {
+            if let Some(v) = function_cost.get(&token_type) {
+                return OrderedHashMap::from_iter([(token_type, *v)]);
+            }
+        }
+        OrderedHashMap::default()
     }
 
     fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
-        Some(OrderedHashMap::from_iter([(
-            token_type,
-            *self.gas_info.variable_values.get(&(self.idx, token_type))?,
-        )]))
+        if let Some(v) = self.gas_info.variable_values.get(&(self.idx, token_type)) {
+            OrderedHashMap::from_iter([(token_type, *v)])
+        } else {
+            OrderedHashMap::default()
+        }
     }
 
     fn add(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
-        Some(add_maps(lhs?, rhs?))
+        add_maps(lhs, rhs)
     }
 
     fn sub(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
-        Some(sub_maps(lhs?, rhs?))
+        sub_maps(lhs, rhs)
     }
 }
 
@@ -60,24 +62,20 @@ pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     idx: &StatementIdx,
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
-) -> Vec<Option<OrderedHashMap<CostTokenType, i64>>> {
+) -> Vec<OrderedHashMap<CostTokenType, i64>> {
     let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
     let postcost = core_libfunc_postcost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
     zip_eq(precost, postcost)
         .map(|(precost, postcost)| {
-            let precost = precost?;
-            let postcost = postcost?;
-            Some(
-                CostTokenType::iter_casm_tokens()
-                    .map(|token| {
-                        (
-                            *token,
-                            precost.get(token).copied().unwrap_or_default()
-                                + postcost.get(token).copied().unwrap_or_default(),
-                        )
-                    })
-                    .collect(),
-            )
+            CostTokenType::iter_casm_tokens()
+                .map(|token| {
+                    (
+                        *token,
+                        precost.get(token).copied().unwrap_or_default()
+                            + postcost.get(token).copied().unwrap_or_default(),
+                    )
+                })
+                .collect()
         })
         .collect()
 }

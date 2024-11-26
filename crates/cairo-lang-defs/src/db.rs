@@ -41,6 +41,8 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_use(&self, id: UseLongId) -> UseId;
     #[salsa::interned]
+    fn intern_global_use(&self, id: GlobalUseLongId) -> GlobalUseId;
+    #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
     fn intern_impl_type_def(&self, id: ImplTypeDefLongId) -> ImplTypeDefId;
@@ -162,6 +164,10 @@ pub trait DefsGroup:
         free_function_id: FreeFunctionId,
     ) -> Maybe<Option<ast::FunctionWithBody>>;
     fn module_items(&self, module_id: ModuleId) -> Maybe<Arc<[ModuleItemId]>>;
+    fn module_global_uses(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>>;
     /// Returns the stable ptr of the name of a module item.
     fn module_item_name_stable_ptr(
         &self,
@@ -174,6 +180,10 @@ pub trait DefsGroup:
     ) -> Maybe<Arc<OrderedHashMap<UseId, ast::UsePathLeaf>>>;
     fn module_uses_ids(&self, module_id: ModuleId) -> Maybe<Arc<[UseId]>>;
     fn module_use_by_id(&self, use_id: UseId) -> Maybe<Option<ast::UsePathLeaf>>;
+    fn module_global_use_by_id(
+        &self,
+        global_use_id: GlobalUseId,
+    ) -> Maybe<Option<ast::UsePathStar>>;
     fn module_structs(
         &self,
         module_id: ModuleId,
@@ -394,6 +404,7 @@ pub struct ModuleData {
     impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
     extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
     extern_functions: Arc<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>,
+    global_uses: Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>,
 
     files: Vec<FileId>,
     /// Generation info for each file. Virtual files have Some. Other files have None.
@@ -452,6 +463,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let mut impls = OrderedHashMap::default();
     let mut extern_types = OrderedHashMap::default();
     let mut extern_functions = OrderedHashMap::default();
+    let mut global_uses = OrderedHashMap::default();
     let mut aux_data = Vec::new();
     let mut files = Vec::new();
     let mut plugin_diagnostics = Vec::new();
@@ -486,6 +498,10 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         let id = UseLongId(module_file_id, leaf.stable_ptr()).intern(db);
                         uses.insert(id, leaf);
                         items.push(ModuleItemId::Use(id));
+                    }
+                    for star in get_all_path_stars(db.upcast(), &us) {
+                        let id = GlobalUseLongId(module_file_id, star.stable_ptr()).intern(db);
+                        global_uses.insert(id, star);
                     }
                 }
                 ast::ModuleItem::FreeFunction(function) => {
@@ -568,6 +584,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         impls: impls.into(),
         extern_types: extern_types.into(),
         extern_functions: extern_functions.into(),
+        global_uses: global_uses.into(),
         files,
         generated_file_aux_data: aux_data,
         plugin_diagnostics,
@@ -773,6 +790,24 @@ pub fn get_all_path_leaves(db: &dyn SyntaxGroup, use_item: &ast::ItemUse) -> Vec
             ast::UsePath::Multi(use_path) => {
                 stack.extend(use_path.use_paths(db).elements(db).into_iter().rev())
             }
+            ast::UsePath::Star(_) => {}
+        }
+    }
+    res
+}
+
+/// Returns all the path stars under a given use item.
+pub fn get_all_path_stars(db: &dyn SyntaxGroup, use_item: &ast::ItemUse) -> Vec<ast::UsePathStar> {
+    let mut res = vec![];
+    let mut stack = vec![use_item.use_path(db)];
+    while let Some(use_path) = stack.pop() {
+        match use_path {
+            ast::UsePath::Leaf(_) => {}
+            ast::UsePath::Single(use_path) => stack.push(use_path.use_path(db)),
+            ast::UsePath::Multi(use_path) => {
+                stack.extend(use_path.use_paths(db).elements(db).into_iter().rev())
+            }
+            ast::UsePath::Star(use_path) => res.push(use_path),
         }
     }
     res
@@ -850,6 +885,15 @@ pub fn module_uses_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<[Us
 pub fn module_use_by_id(db: &dyn DefsGroup, use_id: UseId) -> Maybe<Option<ast::UsePathLeaf>> {
     let module_uses = db.module_uses(use_id.module_file_id(db.upcast()).0)?;
     Ok(module_uses.get(&use_id).cloned())
+}
+
+/// Returns the `use *` of the given module, by its ID.
+pub fn module_global_use_by_id(
+    db: &dyn DefsGroup,
+    global_use_id: GlobalUseId,
+) -> Maybe<Option<ast::UsePathStar>> {
+    let module_global_uses = db.module_global_uses(global_use_id.module_file_id(db.upcast()).0)?;
+    Ok(module_global_uses.get(&global_use_id).cloned())
 }
 
 /// Returns all the structs of the given module.
@@ -1035,6 +1079,13 @@ pub fn module_plugin_diagnostics(
 
 fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<[ModuleItemId]>> {
     Ok(db.priv_module_data(module_id)?.items)
+}
+
+fn module_global_uses(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Arc<OrderedHashMap<GlobalUseId, ast::UsePathStar>>> {
+    Ok(db.priv_module_data(module_id)?.global_uses)
 }
 
 fn module_item_name_stable_ptr(

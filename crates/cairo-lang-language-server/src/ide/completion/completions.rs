@@ -197,7 +197,7 @@ pub fn dot_completions(
     // Get a resolver in the current context.
     let lookup_item_id = lookup_items.into_iter().next()?;
     let function_with_body = lookup_item_id.function_with_body()?;
-    let module_id = function_with_body.module_file_id(db.upcast()).0;
+    let module_file_id = function_with_body.module_file_id(db.upcast());
     let resolver_data = lookup_item_id.resolver_data(db).ok()?;
     let resolver = Resolver::with_data(
         db,
@@ -235,7 +235,7 @@ pub fn dot_completions(
 
     let mut completions = Vec::new();
     for trait_function in relevant_methods {
-        let Some(completion) = completion_for_method(db, module_id, trait_function, position)
+        let Some(completion) = completion_for_method(db, module_file_id, trait_function, position)
         else {
             continue;
         };
@@ -261,7 +261,7 @@ pub fn dot_completions(
 /// Returns a completion item for a method.
 pub fn completion_for_method(
     db: &AnalysisDatabase,
-    module_id: ModuleId,
+    module_file_id: ModuleFileId,
     trait_function: TraitFunctionId,
     position: Position,
 ) -> Option<CompletionItem> {
@@ -274,8 +274,8 @@ pub fn completion_for_method(
     let mut additional_text_edits = vec![];
 
     // If the trait is not in scope, add a use statement.
-    if !module_has_trait(db, module_id, trait_id)? {
-        if let Some(trait_path) = db.visible_traits_from_module(module_id)?.get(&trait_id) {
+    if !module_has_trait(db, module_file_id.0, trait_id)? {
+        if let Some(trait_path) = db.visible_traits_from_module(module_file_id)?.get(&trait_id) {
             additional_text_edits.push(TextEdit {
                 range: Range::new(position, position),
                 new_text: format!("use {};\n", trait_path),

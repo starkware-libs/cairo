@@ -1,17 +1,138 @@
 use std::cmp::Ordering;
 use std::fmt;
 
+use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_parser::ParserDiagnostic;
+use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
 use cairo_lang_syntax::node::ast::UsePath;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
-use itertools::Itertools;
+use cairo_lang_utils::Intern;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::{Itertools, chain};
 use syntax::node::helpers::QueryAttrs;
 use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
+
+/// Represents a tree structure for organizing and merging `use` statements.
+#[derive(Default, Debug)]
+struct UseTree {
+    /// A map of child nodes, where the key is the segment of the `use` path and the value is
+    /// another `UseTree` representing the nested structure.
+    children: OrderedHashMap<String, UseTree>,
+    /// A list of `Leaf` nodes, representing individual `use` path endpoints
+    /// or aliases. Each leaf contains optional alias information.
+    leaves: Vec<Leaf>,
+}
+
+/// Represents a terminal node in a `UseTree`, corresponding to a specific `use` path.
+#[derive(Default, Debug, Clone)]
+struct Leaf {
+    name: String,
+    alias: Option<String>,
+}
+
+impl UseTree {
+    /// Inserts a path into the `UseTree`, creating nested entries as needed.
+    fn insert_path(&mut self, db: &dyn SyntaxGroup, use_path: UsePath) {
+        match use_path {
+            UsePath::Leaf(leaf) => {
+                let name = leaf.extract_ident(db);
+                let alias = leaf.extract_alias(db);
+                self.leaves.push(Leaf { name, alias });
+            }
+            UsePath::Single(single) => {
+                let segment = single.extract_ident(db);
+                let subtree = self.children.entry(segment).or_default();
+                subtree.insert_path(db, single.use_path(db));
+            }
+            UsePath::Multi(multi) => {
+                for sub_path in multi.use_paths(db).elements(db) {
+                    self.insert_path(db, sub_path);
+                }
+            }
+            UsePath::Star(_) => {
+                self.leaves.push(Leaf { name: "*".to_string(), alias: None });
+            }
+        }
+    }
+
+    /// Merge and organize the `use` paths in a hierarchical structure.
+    /// Additionally returns whether the returned elements are a single leaf.
+    pub fn create_merged_use_items(self, allow_duplicate_uses: bool) -> (Vec<String>, bool) {
+        let mut leaf_paths: Vec<_> = self
+            .leaves
+            .into_iter()
+            .map(|leaf| {
+                if let Some(alias) = leaf.alias {
+                    format!("{} as {alias}", leaf.name)
+                } else {
+                    leaf.name
+                }
+            })
+            .collect();
+
+        let mut nested_paths = vec![];
+        for (segment, subtree) in self.children {
+            let (subtree_merged_use_items, is_single_leaf) =
+                subtree.create_merged_use_items(allow_duplicate_uses);
+
+            let formatted_subtree_paths =
+                subtree_merged_use_items.into_iter().map(|child| format!("{segment}::{child}"));
+
+            if is_single_leaf {
+                leaf_paths.extend(formatted_subtree_paths);
+            } else {
+                nested_paths.extend(formatted_subtree_paths);
+            }
+        }
+
+        if !allow_duplicate_uses {
+            leaf_paths.sort();
+            leaf_paths.dedup();
+        }
+
+        match leaf_paths.len() {
+            0 => {}
+            1 if nested_paths.is_empty() => return (leaf_paths, true),
+            1 => nested_paths.extend(leaf_paths),
+            _ => nested_paths.push(format!("{{{}}}", leaf_paths.join(", "))),
+        }
+
+        (nested_paths, false)
+    }
+
+    /// Formats `use` items, creates a virtual file, and parses it into a syntax node.
+    pub fn generate_syntax_node_from_use(
+        self,
+        db: &dyn SyntaxGroup,
+        allow_duplicate_uses: bool,
+        decorations: String,
+    ) -> SyntaxNode {
+        let mut formatted_use_items = String::new();
+        for statement in self.create_merged_use_items(allow_duplicate_uses).0 {
+            formatted_use_items.push_str(&format!("{decorations}use {statement};\n"));
+        }
+
+        // Create a virtual file ID for the formatted statements.
+        let file_id = FileLongId::Virtual(VirtualFile {
+            parent: None,
+            name: "parser_input".into(),
+            content: formatted_use_items.clone().into(),
+            code_mappings: [].into(),
+            kind: FileKind::Module,
+        })
+        .intern(db);
+
+        let mut diagnostics = DiagnosticsBuilder::<ParserDiagnostic>::default();
+        Parser::parse_file(db, &mut diagnostics, file_id, &formatted_use_items).as_syntax_node()
+    }
+}
 
 #[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord)]
 /// Defines the break point behaviour.
@@ -72,10 +193,9 @@ pub struct BreakLinePointProperties {
 }
 impl Ord for BreakLinePointProperties {
     fn cmp(&self, other: &Self) -> Ordering {
-        match (self.is_empty_line_breakpoint, other.is_empty_line_breakpoint) {
-            (true, true) | (false, false) => self.precedence.cmp(&other.precedence),
-            (true, false) => Ordering::Greater,
-            (false, true) => Ordering::Less,
+        match self.is_empty_line_breakpoint.cmp(&other.is_empty_line_breakpoint) {
+            Ordering::Equal => self.precedence.cmp(&other.precedence),
+            other => other,
         }
     }
 }
@@ -802,6 +922,7 @@ pub struct FormatterImpl<'a> {
     is_current_line_whitespaces: bool,
     /// Indicates whether the last element handled was a comment.
     is_last_element_comment: bool,
+    is_merging_use_items: bool,
 }
 
 impl<'a> FormatterImpl<'a> {
@@ -813,6 +934,7 @@ impl<'a> FormatterImpl<'a> {
             empty_lines_allowance: 0,
             is_current_line_whitespaces: true,
             is_last_element_comment: false,
+            is_merging_use_items: false,
         }
     }
     /// Gets a root of a syntax tree and returns the formatted string of the code it represents.
@@ -823,6 +945,11 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode) {
+        if self.is_merging_use_items {
+            // When merging, only format this node once and return to avoid recursion.
+            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
+            return;
+        }
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
@@ -854,9 +981,8 @@ impl<'a> FormatterImpl<'a> {
             }
             self.append_break_line_point(Some(trailing_break_point));
         }
-
-        // self.append_break_line_point(node_break_points.trailing());
     }
+
     /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode) {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
@@ -865,19 +991,26 @@ impl<'a> FormatterImpl<'a> {
         // TODO(ilya): consider not copying here.
         let mut children = self.db.get_children(syntax_node.clone()).to_vec();
         let n_children = children.len();
+
+        if self.config.merge_use_items {
+            self.merge_use_items(&mut children);
+        }
+
         if self.config.sort_module_level_items {
+            self.sort_items_sections(&mut children);
             if let SyntaxKind::UsePathList = syntax_node.kind(self.db) {
                 self.sort_inner_use_path(&mut children);
-            } else {
-                self.sort_items_sections(&mut children);
             }
         }
+
+        // Format each child node, inserting breaks where specified.
         for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
-                // Skip empty nodes.
                 continue;
             }
+
             self.format_node(child);
+
             if let BreakLinePointsPositions::List { properties, breaking_frequency } =
                 &internal_break_line_points_positions
             {
@@ -885,9 +1018,83 @@ impl<'a> FormatterImpl<'a> {
                     self.append_break_line_point(Some(properties.clone()));
                 }
             }
-
             self.empty_lines_allowance = allowed_empty_between;
         }
+    }
+
+    /// Merges `use` statements within a given set of syntax nodes, organizing and deduplicating
+    /// them into a clean, structured format.
+    fn merge_use_items(&mut self, children: &mut Vec<SyntaxNode>) {
+        let mut new_children = Vec::new();
+
+        for (section_kind, section_nodes) in extract_sections(children, self.db) {
+            if section_kind != SortKind::UseItem {
+                new_children.extend(section_nodes.iter().cloned());
+                continue;
+            }
+
+            let mut decoration_to_use_tree: OrderedHashMap<String, UseTree> =
+                OrderedHashMap::default();
+
+            for node in section_nodes {
+                // Check if the node has any non-trivial trivia (i.e., comments).
+                let has_non_whitespace_trivia = !node.descendants(self.db).all(|descendant| {
+                    if descendant.kind(self.db) == SyntaxKind::Trivia {
+                        ast::Trivia::from_syntax_node(self.db, descendant)
+                            .elements(self.db)
+                            .into_iter()
+                            .all(|element| {
+                                matches!(
+                                    element,
+                                    ast::Trivium::Whitespace(_) | ast::Trivium::Newline(_)
+                                )
+                            })
+                    } else {
+                        true
+                    }
+                });
+
+                if has_non_whitespace_trivia {
+                    new_children.push(node.clone());
+                    continue;
+                }
+
+                let use_item = ast::ItemUse::from_syntax_node(self.db, node.clone());
+
+                let decorations = chain!(
+                    use_item
+                        .attributes(self.db)
+                        .elements(self.db)
+                        .into_iter()
+                        .map(|attr| attr.as_syntax_node().get_text_without_trivia(self.db)),
+                    [use_item.visibility(self.db).as_syntax_node().get_text(self.db)],
+                )
+                .join("\n");
+
+                let tree = decoration_to_use_tree.entry(decorations).or_default();
+                tree.insert_path(self.db, use_item.use_path(self.db));
+            }
+
+            // Generate merged syntax nodes from the `decoration_to_use_tree`.
+            for (decorations, tree) in decoration_to_use_tree {
+                let merged_node = tree.generate_syntax_node_from_use(
+                    self.db,
+                    self.config.allow_duplicate_uses,
+                    decorations,
+                );
+
+                // Add merged children to the new_children list.
+                let children = self.db.get_children(merged_node.clone()).to_vec();
+                if !children.is_empty() {
+                    let grandchildren = self.db.get_children(children[0].clone()).to_vec();
+                    for child in grandchildren {
+                        new_children.push(child.clone());
+                    }
+                }
+            }
+        }
+
+        *children = new_children;
     }
 
     /// Sorting function for `UsePathMulti` children.
@@ -918,42 +1125,40 @@ impl<'a> FormatterImpl<'a> {
     }
 
     /// Sorting function for module-level items.
-    fn sort_items_sections(&self, children: &mut [SyntaxNode]) {
-        let mut start_idx = 0;
-        while start_idx < children.len() {
-            let kind = children[start_idx].as_sort_kind(self.db);
-            let mut end_idx = start_idx + 1;
-            // Find the end of the current section.
-            while end_idx < children.len() {
-                if kind != children[end_idx].as_sort_kind(self.db) {
-                    break;
-                }
-                end_idx += 1;
-            }
-            // Sort within this section if it's `Module` or `UseItem`.
-            match kind {
+    fn sort_items_sections(&self, children: &mut Vec<SyntaxNode>) {
+        let sections = extract_sections(children, self.db);
+        let mut sorted_children = Vec::with_capacity(children.len());
+        for (section_kind, section_nodes) in sections {
+            match section_kind {
                 SortKind::Module => {
-                    children[start_idx..end_idx].sort_by_key(|node| {
+                    // Sort `Module` items alphabetically by their name.
+                    let mut sorted_section = section_nodes.to_vec();
+                    sorted_section.sort_by_key(|node| {
                         ast::ItemModule::from_syntax_node(self.db, node.clone())
                             .name(self.db)
                             .text(self.db)
                     });
+                    sorted_children.extend(sorted_section);
                 }
                 SortKind::UseItem => {
-                    children[start_idx..end_idx].sort_by(|a, b| {
+                    // Sort `UseItem` items based on their use paths.
+                    let mut sorted_section = section_nodes.to_vec();
+                    sorted_section.sort_by(|a, b| {
                         compare_use_paths(
                             &ast::ItemUse::from_syntax_node(self.db, a.clone()).use_path(self.db),
                             &ast::ItemUse::from_syntax_node(self.db, b.clone()).use_path(self.db),
                             self.db,
                         )
                     });
+                    sorted_children.extend(sorted_section);
                 }
                 SortKind::Immovable => {
-                    // Do nothing for immovable sections.
+                    sorted_children.extend(section_nodes.iter().cloned());
                 }
             }
-            start_idx = end_idx;
         }
+
+        *children = sorted_children;
     }
 
     /// Formats a terminal node and appends the formatted string to the result.
@@ -1040,10 +1245,6 @@ impl<'a> FormatterImpl<'a> {
 /// Compares two `UsePath` nodes to determine their ordering.
 fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering {
     match (a, b) {
-        // Case for multi vs non-multi: multi paths are always ordered before non-multi paths.
-        (UsePath::Multi(_), UsePath::Leaf(_) | UsePath::Single(_)) => Ordering::Greater,
-        (UsePath::Leaf(_) | UsePath::Single(_), UsePath::Multi(_)) => Ordering::Less,
-
         // Case for multi vs multi.
         (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
             let get_min_child = |multi: &ast::UsePathMulti| {
@@ -1061,14 +1262,18 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
             }
         }
 
+        // Case for multi is always after other types of paths.
+        (UsePath::Multi(_), _) => Ordering::Greater,
+        (_, UsePath::Multi(_)) => Ordering::Less,
+
         // Case for Leaf vs Single and Single vs Leaf.
         (UsePath::Leaf(a_leaf), UsePath::Single(b_single)) => {
             let a_str = a_leaf.extract_ident(db);
             let b_str = b_single.extract_ident(db);
 
             match a_str.cmp(&b_str) {
-                Ordering::Equal => Ordering::Less, // Leaf is always ordered before Single if
-                // equal.
+                // Leaf is always ordered before Single if equal.
+                Ordering::Equal => Ordering::Less,
                 other => other,
             }
         }
@@ -1079,7 +1284,8 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
 
             // Compare the extracted identifiers.
             match a_str.cmp(&b_str) {
-                Ordering::Equal => Ordering::Greater, // Single is ordered after Leaf if equal.
+                // Single is ordered after Leaf if equal.
+                Ordering::Equal => Ordering::Greater,
                 other => other,
             }
         }
@@ -1096,17 +1302,18 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
         // Case for Single vs Single: compare their identifiers, then move to the next segment if
         // equal.
         (UsePath::Single(a_single), UsePath::Single(b_single)) => {
-            // this is the problem. it takes the whole path instead of only the single before the ::
-            let a_str = a_single.extract_ident(db);
-            let b_str = b_single.extract_ident(db);
-            match a_str.cmp(&b_str) {
+            match a_single.extract_ident(db).cmp(&b_single.extract_ident(db)) {
                 Ordering::Equal => {
-                    // If the identifiers are equal, compare the next path segment.
                     compare_use_paths(&a_single.use_path(db), &b_single.use_path(db), db)
                 }
                 other => other,
             }
         }
+
+        // Star is always considered first.
+        (UsePath::Star(_), UsePath::Star(_)) => Ordering::Equal,
+        (UsePath::Star(_), _) => Ordering::Less,
+        (_, UsePath::Star(_)) => Ordering::Greater,
     }
 }
 
@@ -1121,6 +1328,9 @@ fn extract_use_path(node: &SyntaxNode, db: &dyn SyntaxGroup) -> Option<ast::UseP
         }
         SyntaxKind::UsePathMulti => {
             Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, node.clone())))
+        }
+        SyntaxKind::UsePathStar => {
+            Some(ast::UsePath::Star(ast::UsePathStar::from_syntax_node(db, node.clone())))
         }
         _ => None,
     }
@@ -1155,6 +1365,27 @@ impl IdentExtractor for ast::UsePathSingle {
     fn extract_alias(&self, _db: &dyn SyntaxGroup) -> Option<String> {
         None
     }
+}
+
+/// Extracts sections of syntax nodes based on their `SortKind`.
+fn extract_sections<'a>(
+    children: &'a [SyntaxNode],
+    db: &'a dyn SyntaxGroup,
+) -> Vec<(SortKind, &'a [SyntaxNode])> {
+    let mut sections = Vec::new();
+    let mut start_idx = 0;
+
+    while start_idx < children.len() {
+        let kind = children[start_idx].as_sort_kind(db);
+        let mut end_idx = start_idx + 1;
+        while end_idx < children.len() && kind == children[end_idx].as_sort_kind(db) {
+            end_idx += 1;
+        }
+        sections.push((kind, &children[start_idx..end_idx]));
+        start_idx = end_idx;
+    }
+
+    sections
 }
 
 /// Represents the kind of sections in the syntax tree that can be sorted.
