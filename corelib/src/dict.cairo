@@ -265,7 +265,6 @@ impl Felt252DictIndex<
     ///
     /// ```
     /// use core::dict::Felt252Dict;
-    /// use core::ops::Index;
     ///
     /// let mut dict: Felt252Dict<u8> = Default::default();
     /// dict.insert(0, 10);
