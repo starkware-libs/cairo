@@ -77,7 +77,7 @@ use crate::traits::{Index, Default, Felt252DictValue};
 /// A dictionary that maps `felt252` keys to a value of any type.
 pub extern type Felt252Dict<T>;
 
-/// A squashed dictionary that cannot be used to insert or retrieve values associated with a
+/// A dictionary in a squashed state. It cannot be mutated anymore
 /// `felt252` key.
 pub extern type SquashedFelt252Dict<T>;
 
