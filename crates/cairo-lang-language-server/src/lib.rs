@@ -269,8 +269,6 @@ impl Backend {
     fn run(self) -> Result<JoinHandle<Result<()>>> {
         event_loop_thread(move || {
             let Self { mut state, connection } = self;
-
-            state.proc_macro_controller.initialize_once(&mut state.db);
             let proc_macro_channels = state.proc_macro_controller.init_channels();
 
             let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
@@ -380,13 +378,13 @@ impl Backend {
     /// Calls [`lang::proc_macros::controller::ProcMacroClientController::handle_error`] to do its
     /// work.
     fn on_proc_macro_error(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
-        state.proc_macro_controller.handle_error(&mut state.db);
+        state.proc_macro_controller.handle_error(&mut state.db, &state.config);
     }
 
     /// Calls [`lang::proc_macros::controller::ProcMacroClientController::on_response`] to do its
     /// work.
     fn on_proc_macro_response(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
-        state.proc_macro_controller.on_response(&mut state.db);
+        state.proc_macro_controller.on_response(&mut state.db, &state.config);
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.

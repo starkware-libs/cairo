@@ -141,6 +141,12 @@
             "default": true,
             "description": "Show CairoLS information in the status bar.",
             "scope": "window"
+          },
+          "cairo1.enableProcMacros": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable support for procedural macros.",
+            "scope": "window"
           }
         }
       }
