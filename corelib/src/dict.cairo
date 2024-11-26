@@ -1,6 +1,25 @@
-//! Dictionary module introducing a dictionary-like data structure, which maps `felt252` keys to
-//! values of any type. It provides a way to store, retrieve, update, and remove key-value
-//! pairs with efficient operations.
+//! A dictionary-like data structure that maps `felt252` keys to values of any type. 
+//!
+//! The `Felt252Dict` provides efficient key-value storage with operations for inserting,
+//! retrieving, and updating values. Each operation creates a new entry that can be validated
+//! through a process called squashing.
+//!
+//! Due to Cairo's immutable memory model, dictionaries are implemented as an append-only list
+//! of dictionary access entries. Each entry is a triple of:
+//! - `key`: The dictionary key being accessed (`felt252`)
+//! - `prev_value`: The previous value associated with this key
+//! - `new_value`: The new value being associated with this key
+//!
+//! Every dictionary operation (insert, get, etc.) creates a new entry:
+//! - An `insert(k, v)` creates an entry with the previous value and `v` as the new value
+//! - A `get(k)` creates an entry where `prev_value` equals `new_value`
+//!
+//! When a dictionary goes out of scope, it undergoes a process called "squashing" that validates
+//! the consistency of all accesses. For any key k, if we have multiple entries:
+//! - The `new_value` of entry `i` must equal the `prev_value` of entry `i+1`
+//! - The squashed result contains one entry per key, with:
+//!   - `prev_value`: The value before the first access
+//!   - `new_value`: The value after the last access
 //!
 //! # Examples
 //!
