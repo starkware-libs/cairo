@@ -16,7 +16,6 @@ use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
 use crate::lang::proc_macros::db::ProcMacroGroup;
 use crate::project::ProjectController;
-use crate::toolchain::scarb::ScarbToolchain;
 use crate::{Tricks, env_config};
 
 /// Swaps entire [`AnalysisDatabase`] with empty one periodically.
@@ -37,16 +36,14 @@ use crate::{Tricks, env_config};
 pub struct AnalysisDatabaseSwapper {
     last_replace: SystemTime,
     db_replace_interval: Duration,
-    scarb_toolchain: ScarbToolchain,
 }
 
 impl AnalysisDatabaseSwapper {
     /// Creates a new `AnalysisDatabaseSwapper`.
-    pub fn new(scarb_toolchain: ScarbToolchain) -> Self {
+    pub fn new() -> Self {
         Self {
             last_replace: SystemTime::now(),
             db_replace_interval: env_config::db_replace_interval(),
-            scarb_toolchain,
         }
     }
 
@@ -90,7 +87,7 @@ impl AnalysisDatabaseSwapper {
             let mut new_db = AnalysisDatabase::new(tricks);
             self.migrate_proc_macro_state(&mut new_db, db);
             self.migrate_file_overrides(&mut new_db, db, open_files);
-            self.detect_crates_for_open_files(open_files, project_controller);
+            self.update_project_for_open_files(open_files, project_controller);
             new_db
         })) else {
             error!("caught panic when preparing new db for swap");
@@ -142,7 +139,7 @@ impl AnalysisDatabaseSwapper {
     }
 
     /// Ensures all open files have their crates detected to regenerate crates state.
-    fn detect_crates_for_open_files(
+    fn update_project_for_open_files(
         &self,
         open_files: &HashSet<Url>,
         project_controller: &mut ProjectController,
@@ -153,7 +150,7 @@ impl AnalysisDatabaseSwapper {
                 continue;
             };
 
-            project_controller.update_project_for(&self.scarb_toolchain, &file_path);
+            project_controller.update_project_for_file(&file_path);
         }
     }
 }

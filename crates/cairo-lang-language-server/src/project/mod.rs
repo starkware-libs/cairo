@@ -26,11 +26,16 @@ mod unmanaged_core_crate;
 pub struct ProjectController {
     loaded_scarb_manifests: Owned<HashSet<PathBuf>>,
     sender: OnceCell<Sender<ProjectUpdate>>,
+    scarb_toolchain: ScarbToolchain,
 }
 
 impl ProjectController {
-    pub fn new() -> Self {
-        ProjectController { loaded_scarb_manifests: Default::default(), sender: Default::default() }
+    pub fn new(scarb_toolchain: ScarbToolchain) -> Self {
+        ProjectController {
+            loaded_scarb_manifests: Default::default(),
+            sender: Default::default(),
+            scarb_toolchain,
+        }
     }
 
     pub fn init_channel(&mut self) -> Receiver<ProjectUpdate> {
@@ -42,7 +47,7 @@ impl ProjectController {
 
     /// Tries to fetch changes to the project model that are necessary for the file analysis.
     #[tracing::instrument(skip_all)]
-    pub fn update_project_for(&mut self, scarb_toolchain: &ScarbToolchain, file_path: &Path) {
+    pub fn update_project_for_file(&mut self, file_path: &Path) {
         let project_update = match ProjectManifestPath::discover(file_path) {
             Some(ProjectManifestPath::Scarb(manifest_path)) => {
                 if self.loaded_scarb_manifests.contains(&manifest_path) {
@@ -50,7 +55,8 @@ impl ProjectController {
                     return;
                 }
 
-                let metadata = scarb_toolchain
+                let metadata = self
+                    .scarb_toolchain
                     .metadata(&manifest_path)
                     .with_context(|| {
                         format!("failed to refresh scarb workspace: {}", manifest_path.display())

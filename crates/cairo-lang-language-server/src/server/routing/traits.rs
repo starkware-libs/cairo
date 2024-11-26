@@ -244,7 +244,7 @@ impl SyncNotificationHandler for DidOpenTextDocument {
         if uri.scheme() == "file" {
             let Ok(path) = uri.to_file_path() else { return Ok(()) };
 
-            state.project_controller.update_project_for(&state.scarb_toolchain, &path);
+            state.project_controller.update_project_for_file(&path);
         }
 
         if let Some(file_id) = state.db.file_for_url(&uri) {
