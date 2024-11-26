@@ -329,6 +329,7 @@ fn scarb_package_experimental_features(
 
     ExperimentalFeaturesConfig {
         negative_impls: contains("negative_impls"),
+        type_constraints_syntax: contains("type_constraints_syntax"),
         coupons: contains("coupons"),
     }
 }

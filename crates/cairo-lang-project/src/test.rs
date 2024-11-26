@@ -39,6 +39,7 @@ fn test_serde() {
                     dependencies: Default::default(),
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: true,
+                        type_constraints_syntax: false,
                         coupons: false,
                     },
                     cfg_set: Default::default(),

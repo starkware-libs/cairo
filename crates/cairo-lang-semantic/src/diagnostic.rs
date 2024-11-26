@@ -20,6 +20,7 @@ use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
+use crate::items::trt::ConcreteTraitTypeId;
 use crate::resolve::ResolvedConcreteItem;
 use crate::types::peel_snapshots;
 use crate::{ConcreteTraitId, semantic};
@@ -876,6 +877,25 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::MutableCapturedVariable => {
                 "Capture of mutable variables in a closure is not supported".into()
             }
+            SemanticDiagnosticKind::NonTraitTypeConstrained { identifier, concrete_trait_id } => {
+                format!(
+                    "associated type `{}` not found for `{:?}`",
+                    identifier,
+                    concrete_trait_id.debug(db)
+                )
+            }
+            SemanticDiagnosticKind::DuplicateTypeConstraint {
+                concrete_trait_type_id: trait_type_id,
+            } => {
+                format!(
+                    "the value of the associated type `{:?}` in trait `{:?}` is already specified",
+                    trait_type_id.trait_type(db).name(db.upcast()),
+                    trait_type_id.concrete_trait(db).debug(db)
+                )
+            }
+            SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled => {
+                "Type constraints syntax is not enabled in the current crate.".into()
+            }
         }
     }
 
@@ -1239,6 +1259,14 @@ pub enum SemanticDiagnosticKind {
     },
     RefClosureArgument,
     MutableCapturedVariable,
+    NonTraitTypeConstrained {
+        identifier: SmolStr,
+        concrete_trait_id: ConcreteTraitId,
+    },
+    DuplicateTypeConstraint {
+        concrete_trait_type_id: ConcreteTraitTypeId,
+    },
+    TypeConstraintsSyntaxNotEnabled,
 }
 
 /// The kind of an expression with multiple possible return types.

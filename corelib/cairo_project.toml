@@ -7,4 +7,5 @@ edition = "2024_07"
 
 [config.global.experimental_features]
 negative_impls = true
+type_constraints_syntax = true
 coupons = true

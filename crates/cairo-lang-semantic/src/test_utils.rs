@@ -136,6 +136,7 @@ pub fn setup_test_crate_ex(
     .intern(db);
 
     let settings: CrateSettings = if let Some(crate_settings) = crate_settings {
+        println!("crate_settings: {}", crate_settings);
         toml::from_str(crate_settings).expect("Invalid config.")
     } else {
         CrateSettings {
@@ -145,6 +146,7 @@ pub fn setup_test_crate_ex(
             dependencies: Default::default(),
             experimental_features: ExperimentalFeaturesConfig {
                 negative_impls: true,
+                type_constraints_syntax: true,
                 coupons: true,
             },
             cfg_set: Default::default(),
