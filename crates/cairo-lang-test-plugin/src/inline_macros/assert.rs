@@ -62,7 +62,7 @@ trait CompareAssertionPlugin: NamedPlugin {
         // Checks if the expression is a variable, to not create an extra variable.
         let is_var = |expr: &ast::Expr| matches!(expr, ast::Expr::Path(path) if path.elements(db).len() == 1);
         let (lhs_value, maybe_assign_lhs) = if is_var(&lhs) {
-            (RewriteNode::new_trimmed(lhs.as_syntax_node()), "")
+            (RewriteNode::from_ast_trimmed(&lhs), "")
         } else {
             (
                 RewriteNode::mapped_text(
@@ -74,7 +74,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             )
         };
         let (rhs_value, maybe_assign_rhs) = if is_var(&rhs) {
-            (RewriteNode::new_trimmed(rhs.as_syntax_node()), "")
+            (RewriteNode::from_ast_trimmed(&rhs), "")
         } else {
             (
                 RewriteNode::mapped_text(
@@ -100,8 +100,8 @@ trait CompareAssertionPlugin: NamedPlugin {
             "#,
             },
             &[
-                ("lhs".to_string(), RewriteNode::new_trimmed(lhs.as_syntax_node())),
-                ("rhs".to_string(), RewriteNode::new_trimmed(rhs.as_syntax_node())),
+                ("lhs".to_string(), RewriteNode::from_ast_trimmed(&lhs)),
+                ("rhs".to_string(), RewriteNode::from_ast_trimmed(&rhs)),
                 ("lhs_value".to_string(), lhs_value.clone()),
                 ("rhs_value".to_string(), rhs_value.clone()),
             ]
@@ -125,18 +125,18 @@ trait CompareAssertionPlugin: NamedPlugin {
                 &[
                     (
                         "lparen".to_string(),
-                        RewriteNode::new_trimmed(arguments_syntax.lparen(db).as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&arguments_syntax.lparen(db)),
                     ),
                     (
                         "rparen".to_string(),
-                        RewriteNode::new_trimmed(arguments_syntax.rparen(db).as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&arguments_syntax.rparen(db)),
                     ),
                     (
                         "args".to_string(),
                         RewriteNode::interspersed(
                             format_args
                                 .iter()
-                                .map(|arg| RewriteNode::new_trimmed(arg.as_syntax_node())),
+                                .map(RewriteNode::from_ast_trimmed),
                             RewriteNode::text(", "),
                         ),
                     ),

@@ -90,11 +90,8 @@ fn get_dep_component_generate_code_helper(
             "
         ),
         &[
-            ("contract_path".to_string(), RewriteNode::new_trimmed(contract_arg.as_syntax_node())),
-            (
-                "component_impl_path".to_string(),
-                RewriteNode::new_trimmed(component_impl_arg.as_syntax_node()),
-            ),
+            ("contract_path".to_string(), RewriteNode::from_ast_trimmed(&contract_arg)),
+            ("component_impl_path".to_string(), RewriteNode::from_ast_trimmed(&component_impl_arg)),
         ]
         .into(),
     ));

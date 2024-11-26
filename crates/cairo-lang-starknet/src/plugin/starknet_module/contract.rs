@@ -105,22 +105,10 @@ impl ComponentsGenerationData {
        "
                 ),
                 &[
-                    (
-                        "component_name".to_string(),
-                        RewriteNode::new_trimmed(component_name.as_syntax_node()),
-                    ),
-                    (
-                        "component_path".to_string(),
-                        RewriteNode::new_trimmed(component_path.as_syntax_node()),
-                    ),
-                    (
-                        "storage_name".to_string(),
-                        RewriteNode::new_trimmed(storage_name.as_syntax_node()),
-                    ),
-                    (
-                        "event_name".to_string(),
-                        RewriteNode::new_trimmed(event_name.as_syntax_node()),
-                    ),
+                    ("component_name".to_string(), RewriteNode::from_ast_trimmed(&component_name)),
+                    ("component_path".to_string(), RewriteNode::from_ast_trimmed(component_path)),
+                    ("storage_name".to_string(), RewriteNode::from_ast_trimmed(storage_name)),
+                    ("event_name".to_string(), RewriteNode::from_ast_trimmed(event_name)),
                 ]
                 .into(),
             )
@@ -380,7 +368,7 @@ fn handle_contract_free_function(
         return;
     };
     let function_name = item_function.declaration(db).name(db);
-    let function_name_node = RewriteNode::new_trimmed(function_name.as_syntax_node());
+    let function_name_node = RewriteNode::from_ast_trimmed(&function_name);
     handle_contract_entry_point(
         entry_point_kind,
         item_function,
@@ -408,7 +396,7 @@ fn handle_contract_impl(
         return;
     };
     let impl_name = imp.name(db);
-    let impl_name_node = RewriteNode::new_trimmed(impl_name.as_syntax_node());
+    let impl_name_node = RewriteNode::from_ast_trimmed(&impl_name);
     for item in impl_body.iter_items_in_cfg(db, metadata.cfg_set) {
         if abi_config == ImplAbiConfig::Embed {
             forbid_attributes_in_impl(db, diagnostics, &item, "#[abi(embed_v0)]");
@@ -435,7 +423,7 @@ fn handle_contract_impl(
             "$impl_name$::$func_name$",
             &[
                 ("impl_name".to_string(), impl_name_node.clone()),
-                ("func_name".to_string(), RewriteNode::new_trimmed(function_name.as_syntax_node())),
+                ("func_name".to_string(), RewriteNode::from_ast_trimmed(&function_name)),
             ]
             .into(),
         );
@@ -541,7 +529,7 @@ fn handle_embed_impl_alias(
     }
     let impl_name = impl_final_part.identifier_ast(db);
     let impl_module = RewriteNode::interspersed(
-        impl_module.iter().map(|segment| RewriteNode::new_trimmed(segment.as_syntax_node())),
+        impl_module.iter().map(RewriteNode::from_ast_trimmed),
         RewriteNode::text("::"),
     );
     data.generated_wrapper_functions.push(
@@ -555,7 +543,7 @@ fn handle_embed_impl_alias(
             }}
         "},
             &[
-                ("impl_name".to_string(), RewriteNode::new_trimmed(impl_name.as_syntax_node())),
+                ("impl_name".to_string(), RewriteNode::from_ast_trimmed(&impl_name)),
                 ("impl_module".to_string(), impl_module),
             ]
             .into(),
