@@ -300,8 +300,7 @@ fn struct_line_breaking() {
         long_long_long_long_key_a,
         long_long_long_long_key_b,
         long_long_long_long_key_c,
-        long_long_long_long_key_b,
-        long_long_long_long_key_b,
-    } =
-        my_val;
+        long_long_long_long_key_d,
+        long_long_long_long_key_e,
+    } = my_val;
 }

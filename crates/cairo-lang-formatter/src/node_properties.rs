@@ -324,31 +324,50 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::PatternFixedSizeArray => Some(10),
                 _ => None,
             },
-            Some(SyntaxKind::StatementLet) => match self.kind(db) {
-                SyntaxKind::ExprBinary
-                | SyntaxKind::ExprBlock
-                | SyntaxKind::ExprErrorPropagate
-                | SyntaxKind::ExprFieldInitShorthand
-                | SyntaxKind::ExprFunctionCall
-                | SyntaxKind::ExprIf
-                | SyntaxKind::ExprList
-                | SyntaxKind::ExprMatch
-                | SyntaxKind::ExprMissing
-                | SyntaxKind::ExprParenthesized
-                | SyntaxKind::ExprPath
-                | SyntaxKind::ExprStructCtorCall
-                | SyntaxKind::ExprListParenthesized
-                | SyntaxKind::ArgListBraced
-                | SyntaxKind::ArgListBracketed
-                | SyntaxKind::ExprUnary => Some(1),
-                SyntaxKind::TerminalEq => Some(10),
-                SyntaxKind::PatternEnum
-                | SyntaxKind::PatternTuple
-                | SyntaxKind::PatternStruct
-                | SyntaxKind::PatternFixedSizeArray => Some(11),
-                SyntaxKind::TypeClause => Some(12),
-                _ => None,
-            },
+            Some(SyntaxKind::StatementLet) => {
+                let let_statement = ast::StatementLet::from_syntax_node(db, self.parent().unwrap());
+                let pattern = let_statement.pattern(db).as_syntax_node();
+
+                // Calculate the number of child syntax nodes for the pattern (LHS) and the RHS
+                // of the `let` statement. The `rhs_count` reflects the structural complexity of
+                // the RHS expression, with more child nodes indicating a potentially more
+                // intricate or multi-part expression.
+                let pattern_count = pattern.descendants(db).count();
+                let rhs_count = let_statement.rhs(db).as_syntax_node().descendants(db).count();
+
+                // If the pattern is a struct and has more children (indicating more complexity)
+                // than the RHS, it gets higher precedence, so we break lines to favor the
+                // pattern. Otherwise, use the default precedence logic.
+                if pattern_count > rhs_count && pattern.kind(db) == SyntaxKind::PatternStruct {
+                    Some(9)
+                } else {
+                    match self.kind(db) {
+                        SyntaxKind::ExprBinary
+                        | SyntaxKind::ExprBlock
+                        | SyntaxKind::ExprErrorPropagate
+                        | SyntaxKind::ExprFieldInitShorthand
+                        | SyntaxKind::ExprFunctionCall
+                        | SyntaxKind::ExprIf
+                        | SyntaxKind::ExprList
+                        | SyntaxKind::ExprMatch
+                        | SyntaxKind::ExprMissing
+                        | SyntaxKind::ExprParenthesized
+                        | SyntaxKind::ExprPath
+                        | SyntaxKind::ExprStructCtorCall
+                        | SyntaxKind::ExprListParenthesized
+                        | SyntaxKind::ArgListBraced
+                        | SyntaxKind::ArgListBracketed
+                        | SyntaxKind::ExprUnary => Some(1),
+                        SyntaxKind::TerminalEq => Some(10),
+                        SyntaxKind::PatternEnum
+                        | SyntaxKind::PatternTuple
+                        | SyntaxKind::PatternStruct
+                        | SyntaxKind::PatternFixedSizeArray => Some(11),
+                        SyntaxKind::TypeClause => Some(12),
+                        _ => None,
+                    }
+                }
+            }
             Some(SyntaxKind::ItemConstant) => match self.kind(db) {
                 SyntaxKind::ExprBinary
                 | SyntaxKind::ExprBlock
