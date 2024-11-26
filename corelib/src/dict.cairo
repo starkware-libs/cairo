@@ -281,9 +281,6 @@ impl Felt252DictIndex<
     /// let mut dict: Felt252Dict<u8> = Default::default();
     /// dict.insert(0, 10);
     ///
-    /// let value = dict.index(0);
-    /// assert!(value == 10);
-    ///
     /// let value = dict[0];
     /// assert!(value == 10);
     /// ```
