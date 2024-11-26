@@ -62,13 +62,40 @@ use crate::array::{ArrayTrait, SpanTrait};
 //! You can implement `Serde` manually for custom types:
 //!
 //! ```
-//! impl CustomTypeSerde of Serde<CustomType> {
-//!     fn serialize(self: @CustomType, ref output: Array<felt252>) {
+//! impl PointSerde of Serde<Point> {
+//!     fn serialize(self: @Point, ref output: Array<felt252>) {
 //!         // Convert your type to `felt252`(s) and append to output
+//!         output.append((*self.x).into());
+//!         output.append((*self.y).into());
 //!     }
 //!
-//!     fn deserialize(ref serialized: Span<felt252>) -> Option<CustomType> {
+//!     fn deserialize(ref serialized: Span<felt252>) -> Option<Point> {
 //!         // Reconstruct your type from `felt252`s
+//!         let x = match serialized.pop_front() {
+//!             Option::Some(felt_value) => {
+//!                 match (*felt_value).try_into() {
+//!                     Option::Some(value) => Option::Some(value),
+//!                     Option::None => Option::None
+//!                 }
+//!             },
+//!             Option::None => Option::None
+//!         };
+//!
+//!         let y = match serialized.pop_front() {
+//!             Option::Some(felt_value) => {
+//!                 match (*felt_value).try_into() {
+//!                     Option::Some(value) => Option::Some(value),
+//!                     Option::None => Option::None
+//!                 }
+//!             },
+//!             Option::None => Option::None
+//!         };
+//!
+//!         if x == Option::None || y == Option::None {
+//!             return Option::None;
+//!         };
+//!
+//!         Option::Some(Point { x: x.unwrap(), y: y.unwrap() })
 //!     }
 //! }
 //! ```
@@ -87,7 +114,6 @@ pub trait Serde<T> {
 
     /// Deserializes a value from a sequence of `felt252`s.
     /// If the value cannot be deserialized, returns `Option::None`.
-    /// otherwise.
     ///
     /// # Examples
     ///
