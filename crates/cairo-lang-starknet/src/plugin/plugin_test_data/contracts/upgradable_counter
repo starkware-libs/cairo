@@ -81,7 +81,9 @@ mod counter_contract {
 #[doc(hidden)]
 struct StorageStorageBase {
     counter: starknet::storage::StorageBase<u128>,
+        #[substorage(v0)]
     upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
 }
 #[doc(hidden)]
@@ -102,7 +104,9 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[doc(hidden)]
 struct StorageStorageBaseMut {
     counter: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
+        #[substorage(v0)]
     upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
 }
 #[doc(hidden)]
@@ -121,7 +125,9 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          upgradable: upgradable_comp::ComponentState<ContractState>,
+        #[substorage(v0)]
          ownable: ownable_comp::ComponentState<ContractState>,
 }
 
@@ -1059,7 +1065,9 @@ impl ICounterContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<IC
 #[doc(hidden)]
 struct StorageStorageBase {
     counter: starknet::storage::StorageBase<u128>,
+        #[substorage(v0)]
     upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
 }
 #[doc(hidden)]
@@ -1080,7 +1088,9 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[doc(hidden)]
 struct StorageStorageBaseMut {
     counter: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
+        #[substorage(v0)]
     upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
+        #[substorage(v0)]
     ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
 }
 #[doc(hidden)]
@@ -1099,7 +1109,9 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          upgradable: upgradable_comp::ComponentState<ContractState>,
+        #[substorage(v0)]
          ownable: ownable_comp::ComponentState<ContractState>,
 }
 

@@ -79,8 +79,11 @@ mod mintable_erc20_ownable {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
+        #[substorage(v0)]
     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+        #[substorage(v0)]
     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+        #[substorage(v0)]
     mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
 }
 #[doc(hidden)]
@@ -100,8 +103,11 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
+        #[substorage(v0)]
     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
+        #[substorage(v0)]
     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+        #[substorage(v0)]
     mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<mintable_comp::Storage>>,
 }
 #[doc(hidden)]
@@ -120,8 +126,11 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          erc20_storage: erc20_comp::ComponentState<ContractState>,
+        #[substorage(v0)]
          ownable_storage: ownable_comp::ComponentState<ContractState>,
+        #[substorage(v0)]
          mintable_storage: mintable_comp::ComponentState<ContractState>,
 }
 
@@ -926,8 +935,11 @@ impl GetSupplySafeDispatcherSubPointersMutCopy of core::traits::Copy::<GetSupply
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
+        #[substorage(v0)]
     erc20_storage: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
+        #[substorage(v0)]
     ownable_storage: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+        #[substorage(v0)]
     mintable_storage: starknet::storage::FlattenedStorage<mintable_comp::Storage>,
 }
 #[doc(hidden)]
@@ -947,8 +959,11 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
+        #[substorage(v0)]
     erc20_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
+        #[substorage(v0)]
     ownable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+        #[substorage(v0)]
     mintable_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<mintable_comp::Storage>>,
 }
 #[doc(hidden)]
@@ -967,8 +982,11 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          erc20_storage: erc20_comp::ComponentState<ContractState>,
+        #[substorage(v0)]
          ownable_storage: ownable_comp::ComponentState<ContractState>,
+        #[substorage(v0)]
          mintable_storage: mintable_comp::ComponentState<ContractState>,
 }
 

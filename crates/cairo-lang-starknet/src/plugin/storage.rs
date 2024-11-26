@@ -165,8 +165,9 @@ fn get_substorage_member_code(
 
                     Some((
                         RewriteNode::interpolate_patched(
-                            &format!("\n        $member_visibility$ $name$: $component_path$::{CONCRETE_COMPONENT_STATE_NAME},"),
+                            &format!("\n$attributes$        $member_visibility$ $name$: $component_path$::{CONCRETE_COMPONENT_STATE_NAME},"),
                             &[
+                                ("attributes".to_string(), RewriteNode::from_ast(&member.attributes(db))),
                                 (
                                     "member_visibility".to_string(),
                                     member_visibility,
@@ -228,56 +229,44 @@ fn get_simple_member_code(
     } else {
         RewriteNode::from_ast(&member.visibility(db))
     };
+    let patches = [
+        ("attributes".to_string(), RewriteNode::from_ast(&member.attributes(db))),
+        ("member_visibility".to_string(), member_visibility.clone()),
+        ("member_wrapper_type".to_string(), member_wrapper_type.clone()),
+        ("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone())),
+        ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
+    ]
+    .into();
 
     SimpleMemberGeneratedCode {
         struct_code: RewriteNode::interpolate_patched(
-            "\n    $member_visibility$ $member_name$: \
+            "\n$attributes$    $member_visibility$ $member_name$: \
              starknet::storage::$member_wrapper_type$<$member_type$>,",
-            &[
-                ("member_visibility".to_string(), member_visibility.clone()),
-                ("member_wrapper_type".to_string(), member_wrapper_type.clone()),
-                ("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone())),
-                ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
-            ]
-            .into(),
+            &patches,
         )
         .mapped(db, member),
         struct_code_mut: RewriteNode::interpolate_patched(
-            "\n    $member_visibility$ $member_name$: \
+            "\n$attributes$    $member_visibility$ $member_name$: \
              starknet::storage::$member_wrapper_type$<starknet::storage::Mutable<$member_type$>>,",
-            &[
-                ("member_visibility".to_string(), member_visibility.clone()),
-                ("member_wrapper_type".to_string(), member_wrapper_type.clone()),
-                ("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone())),
-                ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
-            ]
-            .into(),
+            &patches,
         )
         .mapped(db, member),
         init_code: if member.has_attr(db, SUBSTORAGE_ATTR) || member.has_attr(db, FLAT_ATTR) {
             RewriteNode::interpolate_patched(
                 "\n           $member_name$: starknet::storage::FlattenedStorage{},",
-                &[("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone()))]
-                    .into(),
+                &patches,
             )
         } else {
             RewriteNode::interpolate_patched(
                 "\n           $member_name$: starknet::storage::StorageBase{ address: \
                  selector!(\"$member_name$\") },",
-                &[("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone()))]
-                    .into(),
+                &patches,
             )
         }
         .mapped(db, member),
         storage_member: RewriteNode::interpolate_patched(
             "\n$attributes$        $member_visibility$ $member_name$: $member_type$,",
-            &[
-                ("attributes".to_string(), RewriteNode::from_ast(&member.attributes(db))),
-                ("member_visibility".to_string(), member_visibility),
-                ("member_name".to_string(), RewriteNode::new_trimmed(member_name.clone())),
-                ("member_type".to_string(), RewriteNode::new_trimmed(member_type.clone())),
-            ]
-            .into(),
+            &patches,
         )
         .mapped(db, member),
     }

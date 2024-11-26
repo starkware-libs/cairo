@@ -545,8 +545,11 @@ fn add_interface_struct_definition(
         };
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("    $field_visibility$$field_name$: {concrete_node_members_type},\n",),
+            &format!(
+                "$attributes$    $field_visibility$$field_name$: {concrete_node_members_type},\n",
+            ),
             &[
+                ("attributes".to_string(), RewriteNode::from_ast(&field.attributes(db))),
                 ("field_visibility".to_string(), field_visibility),
                 ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
                 ("field_type".to_string(), RewriteNode::new_trimmed(field_type)),
@@ -647,8 +650,9 @@ fn add_node_enum_definition(
         };
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("    $field_name$: {concrete_node_members_type},\n",),
+            &format!("$attributes$    $field_name$: {concrete_node_members_type},\n",),
             &[
+                ("attributes".to_string(), RewriteNode::from_ast(&variant.attributes(db))),
                 ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
                 ("field_type".to_string(), field_type),
             ]

@@ -1349,6 +1349,7 @@ storage_node:
 #[doc(hidden)]
 pub struct BalancePairStorageBase {
     pub balance1: starknet::storage::StorageBase<u256>,
+    #[flat]
     pub balance2: starknet::storage::FlattenedStorage<felt252>,
 }
 #[doc(hidden)]
@@ -1367,6 +1368,7 @@ impl BalancePairStorageImpl of starknet::storage::StorageTrait<BalancePair> {
 #[doc(hidden)]
 pub struct BalancePairStorageBaseMut {
     pub balance1: starknet::storage::StorageBase<starknet::storage::Mutable::<u256>>,
+    #[flat]
     pub balance2: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<felt252>>,
 }
 #[doc(hidden)]
@@ -1385,6 +1387,7 @@ impl BalancePairStorageMutImpl of starknet::storage::StorageTraitMut<BalancePair
 #[doc(hidden)]
 pub struct BalancePairStorageNode {
     pub balance1: starknet::storage::PendingStoragePath<u256>,
+    #[flat]
     pub balance2: starknet::storage::StoragePath<felt252>,
 }
 #[doc(hidden)]
@@ -1406,6 +1409,7 @@ impl BalancePairStorageNodeImpl of starknet::storage::StorageNode<BalancePair> {
 #[doc(hidden)]
 pub struct BalancePairStorageNodeMut {
     pub balance1: starknet::storage::PendingStoragePath<starknet::storage::Mutable::<u256>>,
+    #[flat]
     pub balance2: starknet::storage::StoragePath<starknet::storage::Mutable::<felt252>>,
 }
 #[doc(hidden)]
