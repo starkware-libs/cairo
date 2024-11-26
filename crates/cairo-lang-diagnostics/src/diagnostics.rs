@@ -54,6 +54,10 @@ pub trait DiagnosticEntry: Clone + fmt::Debug + Eq + Hash {
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
 
+/// Diagnostic notes for diagnostics originating in the plugin generated files identified by
+/// [`FileId`].
+pub type PluginFileDiagnosticNotes = OrderedHashMap<FileId, DiagnosticNote>;
+
 // The representation of a source location inside a diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticLocation {

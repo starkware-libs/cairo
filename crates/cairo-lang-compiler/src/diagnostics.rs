@@ -3,14 +3,13 @@ use std::fmt::Write;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::{
-    DiagnosticEntry, DiagnosticNote, Diagnostics, FormattedDiagnosticEntry, Severity,
+    DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, PluginFileDiagnosticNotes, Severity,
 };
-use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
+use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::LookupIntern;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use thiserror::Error;
 
@@ -218,7 +217,7 @@ impl<'a> DiagnosticsReporter<'a> {
         db: &TEntry::DbType,
         group: Diagnostics<TEntry>,
         skip_warnings: bool,
-        file_notes: &OrderedHashMap<FileId, DiagnosticNote>,
+        file_notes: &PluginFileDiagnosticNotes,
     ) -> bool {
         let mut found: bool = false;
         for entry in group.format_with_severity(db, file_notes) {
