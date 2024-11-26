@@ -41,7 +41,7 @@
 //! assert!(dict.get(1) == 20);
 //!
 //! dict.insert(0, 20);
-//! assert!(dict.get(0) == )
+//! assert!(dict.get(0) == 20
 //! ```
 //!
 //! It also possible to use the [`Felt252DictTrait::entry`] method to retrieve the last entry given
