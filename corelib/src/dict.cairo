@@ -247,19 +247,8 @@ impl Felt252DictDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Felt252D
 
 /// `Destruct` trait implementation to allow squashing a `Felt252DictEntry` type.
 impl Felt252DictEntryDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Felt252DictEntry<T>> {
-    /// `destruct` method can be called on a `Felt252DictEntry` and squashes the associated
-    /// dictionary.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use core::dict::Felt252Dict;
-    ///
-    /// let mut dict: Felt252Dict<u8> = Default::default();
-    /// dict.insert(0, 10);
-    /// let (entry, prev_value) = dict.entry(0);
-    /// entry.destruct();
-    /// ```
+    /// Allows the `Felt252DictEntry` to go out of scope safely by ensuring the dictionary it is related to is squashed before going out of scope.
+    /// `destruct` is automatically called when a dictionary entry goes out of scope.
     #[inline]
     fn destruct(self: Felt252DictEntry::<T>) nopanic {
         felt252_dict_entry_finalize(self, Felt252DictValue::zero_default());
