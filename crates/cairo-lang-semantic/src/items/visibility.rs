@@ -60,3 +60,15 @@ pub fn peek_visible_in(
         Visibility::Private => db.module_ancestors(user_module_id).contains(&containing_module_id),
     }
 }
+
+/// Check whether a module member is visible to user module.
+pub fn check_item_visibility(
+    db: &dyn DefsGroup,
+    diagnostics: &mut DiagnosticsBuilder<SemanticDiagnostic>,
+    item_visibility: &ast::Visibility,
+    containing_module: ModuleId,
+    user_module: ModuleId,
+) -> bool {
+    let item_visibility = Visibility::from_ast(db.upcast(), diagnostics, item_visibility);
+    peek_visible_in(db, item_visibility, containing_module, user_module)
+}

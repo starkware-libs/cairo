@@ -18,6 +18,7 @@ use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::OptionTypeClause;
+use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -59,6 +60,7 @@ use super::type_aliases::{
     TypeAliasData, type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper,
 };
+use super::visibility::check_item_visibility;
 use super::{TraitOrImplContext, resolve_trait_path};
 use crate::corelib::{
     CoreTraitContext, concrete_destruct_trait, concrete_drop_trait, copy_trait, core_crate,
@@ -1354,24 +1356,12 @@ pub fn module_impl_ids_for_trait_filter(
     module_id: ModuleId,
     trait_filter: TraitFilter,
 ) -> Maybe<Vec<UninferredImpl>> {
-    let mut uninferred_impls = Vec::new();
-    if let Ok(impl_ids) = db.module_impls_ids(module_id) {
-        uninferred_impls.extend(impl_ids.iter().copied().map(UninferredImpl::Def));
-    }
-    if let Ok(impl_aliases_ids) = db.module_impl_aliases_ids(module_id) {
-        uninferred_impls.extend(impl_aliases_ids.iter().copied().map(UninferredImpl::ImplAlias));
-    }
-    if let Ok(uses_ids) = db.module_uses_ids(module_id) {
-        for use_id in uses_ids.iter().copied() {
-            match db.use_resolved_item(use_id) {
-                Ok(ResolvedGenericItem::Impl(impl_def_id)) => {
-                    uninferred_impls.push(UninferredImpl::Def(impl_def_id));
-                }
-                Ok(ResolvedGenericItem::GenericImplAlias(impl_alias_id)) => {
-                    uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
-                }
-                _ => {}
-            }
+    let mut uninferred_impls: OrderedHashSet<UninferredImpl> =
+        OrderedHashSet::from_iter(module_impl_ids(db, module_id, module_id));
+    for (user_module, containing_module) in &db.priv_module_use_star_modules(module_id).accessible {
+        let local_uninferred_impls = module_impl_ids(db, *user_module, *containing_module);
+        for curr_uniferred_impl in local_uninferred_impls {
+            uninferred_impls.insert(curr_uniferred_impl);
         }
     }
     let mut res = Vec::new();
@@ -1387,8 +1377,70 @@ pub fn module_impl_ids_for_trait_filter(
             res.push(uninferred_impl);
         }
     }
-
     Ok(res)
+}
+
+/// Returns the uninferred impls in a module.
+fn module_impl_ids(
+    db: &dyn SemanticGroup,
+    user_module: ModuleId,
+    containing_module: ModuleId,
+) -> Vec<UninferredImpl> {
+    let defs_db = db.upcast();
+    let mut uninferred_impls = Vec::new();
+    let diagnostics = &mut DiagnosticsBuilder::default();
+    if let Ok(impl_ids) = db.module_impls_ids(containing_module) {
+        for impl_id in impl_ids.iter().copied() {
+            let item_impl = impl_id.stable_ptr(defs_db).lookup(db.upcast());
+            if check_item_visibility(
+                defs_db,
+                diagnostics,
+                &item_impl.visibility(db.upcast()),
+                containing_module,
+                user_module,
+            ) {
+                uninferred_impls.push(UninferredImpl::Def(impl_id));
+            }
+        }
+    }
+    if let Ok(impl_aliases_ids) = db.module_impl_aliases_ids(containing_module) {
+        for impl_alias_id in impl_aliases_ids.iter() {
+            let item_impl = impl_alias_id.stable_ptr(defs_db).lookup(db.upcast());
+            if check_item_visibility(
+                defs_db,
+                diagnostics,
+                &item_impl.visibility(db.upcast()),
+                containing_module,
+                user_module,
+            ) {
+                uninferred_impls.push(UninferredImpl::ImplAlias(*impl_alias_id));
+            }
+        }
+    }
+    if let Ok(uses_ids) = db.module_uses_ids(containing_module) {
+        for use_id in uses_ids.iter().copied() {
+            let use_ast = use_id.stable_ptr(defs_db).lookup(db.upcast());
+            let item_use = ast::UsePath::Leaf(use_ast).get_item(db.upcast());
+            if check_item_visibility(
+                defs_db,
+                diagnostics,
+                &item_use.visibility(db.upcast()),
+                containing_module,
+                user_module,
+            ) {
+                match db.use_resolved_item(use_id) {
+                    Ok(ResolvedGenericItem::Impl(impl_def_id)) => {
+                        uninferred_impls.push(UninferredImpl::Def(impl_def_id));
+                    }
+                    Ok(ResolvedGenericItem::GenericImplAlias(impl_alias_id)) => {
+                        uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    uninferred_impls
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
@@ -1551,7 +1603,7 @@ impl ImplLookupContext {
     }
 }
 
-/// An candidate impl for later inference.
+/// A candidate impl for later inference.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum UninferredImpl {
     Def(ImplDefId),
