@@ -135,7 +135,6 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
     }
 
     /// Returns a copy of the value at the given key.
-    /// Requires that the value type implements the `Copy` trait.
     ///
     /// # Examples
     ///
