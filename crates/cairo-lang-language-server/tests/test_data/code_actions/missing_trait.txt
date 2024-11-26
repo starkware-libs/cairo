@@ -107,10 +107,6 @@ mod inner_mod {
 
 //! > Code action #0
         x.some_me<caret>thod();
-Title: Import super::ATrait1
-Add new text: "use super::ATrait1;
-"
-At: Range { start: Position { line: 14, character: 4 }, end: Position { line: 14, character: 4 } }
 Title: Import super::ATrait2
 Add new text: "use super::ATrait2;
 "
