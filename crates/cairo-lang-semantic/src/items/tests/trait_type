@@ -2643,3 +2643,354 @@ error: Type mismatch: `core::felt252` and `core::integer::u16`.
  --> lib.cairo:13:31
     let _: felt252 = MyTrait::my_function();
                               ^*********^
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn bar<+MyTrait[ty: felt252]>(_y: MyTrait::ty) -> felt252 {
+    _y + 3
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax transitive.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<impl I1: MyTrait[ty: u32], impl I2: MyTrait[ty: I1::ty]>() -> I2::ty {
+    3_u8
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u8".
+ --> lib.cairo:4:77
+fn bar<impl I1: MyTrait[ty: u32], impl I2: MyTrait[ty: I1::ty]>() -> I2::ty {
+                                                                            ^
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax conflicts.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<+MyTrait[ty: felt252], +core::metaprogramming::TypeEqual<MyTrait::ty, u32>>(
+    _y: MyTrait::ty,
+) -> MyTrait::ty {
+    _y
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `core::felt252` and `core::integer::u32`.
+ --> lib.cairo:6:18
+) -> MyTrait::ty {
+                 ^
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax, only bound associated types to another associated type. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn bar<impl I1: MyTrait, impl I2: MyTrait[ty: I1::ty]>() -> I1::ty {
+    I2::foo()
+}
+fn foo() {
+    bar::<MyImplu32, MyImplu32>();
+    bar::<MyImplfelt252, MyImplfelt252>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
+impl MyImplu32 of MyTrait {
+    type ty = u32;
+    fn foo() -> Self::ty {
+        3
+    }
+}
+impl MyImplfelt252 of MyTrait {
+    type ty = felt252;
+    fn foo() -> Self::ty {
+        3
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax, only bound associated types to another associated type wrong type. 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<impl I1: MyTrait[ty: I2::ty], impl I2: MyTrait>() -> I1::ty {
+    I2::foo()
+}
+fn foo() {
+    bar::<MyImplu32, MyImplfelt252>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
+impl MyImplu32 of MyTrait {
+    type ty = u32;
+    fn foo() -> Self::ty {
+        3
+    }
+}
+impl MyImplfelt252 of MyTrait {
+    type ty = felt252;
+    fn foo() -> Self::ty {
+        3
+    }
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `core::integer::u32` and `I2::ty`.
+ --> lib.cairo:20:10
+fn foo() {
+         ^
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax, passing unconstrained type into constrained one.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<impl I1: MyTrait[ty: felt252]>() -> I1::ty {
+    I1::foo()
+}
+fn bar2<impl J1: MyTrait>() -> J1::ty {
+    bar()
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "J1::ty", found: "core::felt252".
+ --> lib.cairo:8:39
+fn bar2<impl J1: MyTrait>() -> J1::ty {
+                                      ^
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax, passing constrained type into the same constrained type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
+    I1::foo()
+}
+
+fn bar2<impl J1: MyTrait[ty: u32]>() -> J1::ty {
+    bar()
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax, passing wrong constrained type into another constrained type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
+    I1::foo()
+}
+fn bar2<impl I1: MyTrait[ty: u8]>() -> I1::ty {
+    bar()
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u32".
+ --> lib.cairo:8:47
+fn bar2<impl I1: MyTrait[ty: u8]>() -> I1::ty {
+                                              ^
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax, multiple implementations.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
+    I1::foo()
+}
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
+
+impl I1 of MyTrait {
+    type ty = u32;
+    fn foo() -> u32 {
+        3
+    }
+}
+
+impl I2 of MyTrait {
+    type ty = u8;
+    fn foo() -> u8 {
+        3
+    }
+}
+
+//! > expected_diagnostics
+error: Trait `test::MyTrait` has multiple implementations, in: `test::I1`, `test::I2`
+ --> lib.cairo:23:5
+    bar();
+    ^*^
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax, non type bound.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<impl I1: MyTrait[ty: u32]>() -> u32 {
+    I1::foo()
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    const ty: u32;
+
+    fn foo() -> u32;
+}
+
+//! > expected_diagnostics
+error: associated type `ty` not found for `test::MyTrait`
+ --> lib.cairo:6:25
+fn bar<impl I1: MyTrait[ty: u32]>() -> u32 {
+                        ^*****^
+
+//! > ==========================================================================
+
+//! > Associated type bounds syntax, repeated type bound.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<impl I1: MyTrait[ty: u32, ty: felt252]>() -> u32 {
+    I1::foo()
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
+
+//! > expected_diagnostics
+error: the value of the associated type `"ty"` in trait `test::MyTrait` is already specified
+ --> lib.cairo:5:17
+fn bar<impl I1: MyTrait[ty: u32, ty: felt252]>() -> u32 {
+                ^*****^

@@ -1202,9 +1202,9 @@ impl<'db> Resolver<'db> {
 
         for generic_param in generic_params.iter() {
             let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
-                .rewrite(*generic_param)?;
+                .rewrite(generic_param.clone())?;
             let generic_arg = self.resolve_generic_arg(
-                generic_param,
+                &generic_param,
                 arg_syntax_per_param
                     .get(&generic_param.id())
                     .and_then(|arg_syntax| {
@@ -1288,7 +1288,7 @@ impl<'db> Resolver<'db> {
     /// If a syntax Expr is provided, it will be resolved by type.
     fn resolve_generic_arg(
         &mut self,
-        generic_param: GenericParam,
+        generic_param: &GenericParam,
         generic_arg_syntax_opt: Option<&ast::Expr>,
         stable_ptr: SyntaxStablePtrId,
         diagnostics: &mut SemanticDiagnostics,
@@ -1297,7 +1297,7 @@ impl<'db> Resolver<'db> {
             let lookup_context = self.impl_lookup_context();
             let inference = &mut self.data.inference_data.inference(self.db);
             return inference
-                .infer_generic_arg(&generic_param, lookup_context, Some(stable_ptr))
+                .infer_generic_arg(generic_param, lookup_context, Some(stable_ptr))
                 .map_err(|err_set| {
                     inference.report_on_pending_error(err_set, diagnostics, stable_ptr)
                 });
@@ -1362,6 +1362,15 @@ impl<'db> Resolver<'db> {
                         actual_trt: impl_def_concrete_trait,
                     });
                     self.inference().consume_reported_error(err_set, diag_added);
+                }
+                for (trait_ty, ty1) in param.type_constraints.iter() {
+                    let ty0 = TypeLongId::ImplType(ImplTypeId::new(
+                        resolved_impl,
+                        trait_ty.trait_type(self.db),
+                        self.db,
+                    ))
+                    .intern(self.db);
+                    self.inference().conform_ty(ty0, *ty1).ok();
                 }
                 GenericArgumentId::Impl(resolved_impl)
             }
