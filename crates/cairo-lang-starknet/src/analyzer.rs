@@ -22,6 +22,7 @@ use crate::plugin::consts::{
 use crate::plugin::utils::has_derive;
 
 const ALLOW_NO_DEFAULT_VARIANT_ATTR: &str = "starknet::store_no_default_variant";
+const ALLOW_COLLIDING_PATHS_ATTR: &str = "starknet::colliding_storage_paths";
 
 /// Plugin to add diagnostics for contracts for bad ABI generation.
 #[derive(Default, Debug)]
@@ -123,7 +124,7 @@ impl AnalyzerPlugin for StorageAnalyzer {
     }
 
     fn declared_allows(&self) -> Vec<String> {
-        vec![ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string()]
+        vec![ALLOW_NO_DEFAULT_VARIANT_ATTR.to_string(), ALLOW_COLLIDING_PATHS_ATTR.to_string()]
     }
 }
 
@@ -135,11 +136,21 @@ fn add_storage_struct_diags(
     id: StructId,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
+    if id.has_attr_with_arg(db, "allow", ALLOW_COLLIDING_PATHS_ATTR) == Ok(true) {
+        return;
+    }
     let Ok(members) = db.struct_members(id) else {
         return;
     };
+    let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
     for (member_name, member) in members.iter() {
+        if member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr_with_arg(
+            db.upcast(),
+            "allow",
+            ALLOW_COLLIDING_PATHS_ATTR,
+        ) {
+            continue;
+        }
         member_analyze(
             db,
             member,
@@ -176,7 +187,8 @@ impl StorageStructMembers {
             diagnostics.push(PluginDiagnostic::warning(
                 pointer_to_code,
                 format!(
-                    "The path `{}` collides with existing path `{}`.",
+                    "The path `{}` collides with existing path `{}`. Fix or add \
+                     `#[allow({ALLOW_COLLIDING_PATHS_ATTR})]` if intentional.",
                     path_to_member.join("."),
                     existing_path.join(".")
                 ),
