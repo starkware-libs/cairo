@@ -43,7 +43,7 @@ pub struct HashState {
     pub odd: bool,
 }
 
-/// `PoseidonTrait` implementation used to create a new Poseidon state.
+/// A trait for creating a new initial Poseidon state.
 #[generate_trait]
 pub impl PoseidonImpl of PoseidonTrait {
     /// Creates an initial state with all fields set to 0.
@@ -62,13 +62,11 @@ pub impl PoseidonImpl of PoseidonTrait {
 }
 
 impl HashStateDefault of Default<HashState> {
-    /// Returns the default zero-initialized state.
     fn default() -> HashState {
         PoseidonTrait::new()
     }
 }
 
-/// Implementation of hash state operations for Poseidon.
 impl HashStateImpl of HashStateTrait<HashState> {
     /// Takes the current state and a `felt252` value used to update
     /// the state using the Hades permutation.
