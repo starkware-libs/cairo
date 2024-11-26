@@ -1737,12 +1737,14 @@ pub fn find_closure_generated_candidate(
                             trait_id,
                             generic_args: vec![GenericArgumentId::Type(*ty)],
                         })),
+                        type_constraints: OrderedHashMap::default(),
                     })
                 }),
                 neg_impl_trait.map(|neg_impl_trait| {
                     GenericParam::NegImpl(GenericParamImpl {
                         id,
                         concrete_trait: Maybe::Ok(neg_impl_trait),
+                        type_constraints: OrderedHashMap::default(),
                     })
                 })
             )

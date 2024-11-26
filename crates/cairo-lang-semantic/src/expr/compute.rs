@@ -66,7 +66,7 @@ use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
-use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
+use crate::items::imp::{ImplLongId, filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
@@ -77,7 +77,7 @@ use crate::resolve::{
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
-    ClosureTypeLongId, ConcreteTypeId, add_type_based_diagnostics, are_coupons_enabled,
+    ClosureTypeLongId, ConcreteTypeId, ImplTypeId, add_type_based_diagnostics, are_coupons_enabled,
     extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex,
     resolve_type_with_environment, verify_fixed_size_array_size, wrap_in_snapshots,
 };
@@ -1047,6 +1047,16 @@ pub fn compute_root_expr(
         let Ok(concrete_trait_id) = imp.concrete_trait else {
             continue;
         };
+        for (concrete_trait_type_id, ty1) in imp.type_constraints {
+            let trait_ty = concrete_trait_type_id.trait_type(ctx.db);
+            let impl_type = ImplTypeId::new(
+                ImplLongId::GenericParameter(*param).intern(ctx.db),
+                trait_ty,
+                ctx.db,
+            );
+            let ty0 = inference.impl_type_assignment(impl_type);
+            inference.conform_ty(ty0, ty1).ok();
+        }
         let ConcreteTraitLongId { trait_id, generic_args } =
             concrete_trait_id.lookup_intern(ctx.db);
         if trait_id == crate::corelib::fn_once_trait(ctx.db) {
