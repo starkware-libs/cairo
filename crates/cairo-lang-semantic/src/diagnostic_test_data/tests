@@ -875,6 +875,9 @@ error: Are you missing a `::`?.
 //! > test_runner_name
 test_expr_diagnostics(expect_diagnostics: true)
 
+//! > crate_settings
+edition = "2024_07"
+
 //! > module_code
 const NOT_MODULE: u8 = 2;
 pub mod a {
@@ -900,6 +903,9 @@ error: Expected module, found constant.
 
 //! > test_runner_name
 test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
 
 //! > module_code
 pub mod a {
@@ -933,6 +939,9 @@ AMBIGUOUS
 //! > test_runner_name
 test_expr_diagnostics(expect_diagnostics: true)
 
+//! > crate_settings
+edition = "2024_07"
+
 //! > module_code
 use undefined_item::*;
 
@@ -955,6 +964,9 @@ use undefined_item::*;
 
 //! > test_runner_name
 test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
 
 //! > module_code
 mod a {
@@ -981,6 +993,9 @@ error: Cycle detected while resolving 'use' items.
 
 //! > test_runner_name
 test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
 
 //! > module_code
 use *;
@@ -1228,3 +1243,42 @@ error: Item `test::a::b` is not visible in this context.
  --> lib.cairo:9:34
         pub use super::super::a::b::*;
                                  ^
+
+//! > ==========================================================================
+
+//! > Testing use star not supported in edition
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2023_01"
+
+//! > module_code
+mod a {
+    pub const C: u8 = 1;
+}
+mod b {
+    pub const D: u8 = 2;
+}
+use a::*;
+
+use b::*;
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+
+//! > expected_diagnostics
+error: Global `use` item is not supported in v2023_01 edition.
+ --> lib.cairo:7:8
+use a::*;
+       ^
+
+error: Global `use` item is not supported in v2023_01 edition.
+ --> lib.cairo:9:8
+use b::*;
+       ^

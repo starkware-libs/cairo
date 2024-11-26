@@ -113,12 +113,23 @@ pub fn priv_module_semantic_data(
         }
     }
 
+    let edition = db
+        .crate_config(module_id.owning_crate(db.upcast()))
+        .map(|cfg| cfg.settings.edition)
+        .unwrap_or_default();
+    let allow_global_uses = !edition.ignore_visibility();
     let global_uses = db
         .module_global_uses(module_id)?
         .iter()
         .map(|(global_use_id, use_path_star)| {
             let item = ast::UsePath::Star(use_path_star.clone()).get_item(syntax_db);
             let visibility = item.visibility(syntax_db);
+            if !allow_global_uses {
+                diagnostics.report(
+                    use_path_star,
+                    SemanticDiagnosticKind::GlobalUsesNotSupportedInEdition(edition),
+                );
+            }
             (*global_use_id, Visibility::from_ast(db.upcast(), &mut diagnostics, &visibility))
         })
         .collect();
