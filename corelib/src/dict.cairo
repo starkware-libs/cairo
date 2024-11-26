@@ -235,7 +235,6 @@ impl Felt252DictDefault<T> of Default<Felt252Dict<T>> {
     }
 }
 
-/// `Destruct` trait implementation to allow squashing dictionaries.
 impl Felt252DictDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Felt252Dict<T>> {
     /// `destruct` method is called right before a dictionary goes out of scope,
     /// but it is still possible to call it manually.
