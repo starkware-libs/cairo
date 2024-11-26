@@ -324,31 +324,43 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::PatternFixedSizeArray => Some(10),
                 _ => None,
             },
-            Some(SyntaxKind::StatementLet) => match self.kind(db) {
-                SyntaxKind::ExprBinary
-                | SyntaxKind::ExprBlock
-                | SyntaxKind::ExprErrorPropagate
-                | SyntaxKind::ExprFieldInitShorthand
-                | SyntaxKind::ExprFunctionCall
-                | SyntaxKind::ExprIf
-                | SyntaxKind::ExprList
-                | SyntaxKind::ExprMatch
-                | SyntaxKind::ExprMissing
-                | SyntaxKind::ExprParenthesized
-                | SyntaxKind::ExprPath
-                | SyntaxKind::ExprStructCtorCall
-                | SyntaxKind::ExprListParenthesized
-                | SyntaxKind::ArgListBraced
-                | SyntaxKind::ArgListBracketed
-                | SyntaxKind::ExprUnary => Some(1),
-                SyntaxKind::TerminalEq => Some(10),
-                SyntaxKind::PatternEnum
-                | SyntaxKind::PatternTuple
-                | SyntaxKind::PatternStruct
-                | SyntaxKind::PatternFixedSizeArray => Some(11),
-                SyntaxKind::TypeClause => Some(12),
-                _ => None,
-            },
+            Some(SyntaxKind::StatementLet) => {
+                let let_statement = ast::StatementLet::from_syntax_node(db, self.parent().unwrap());
+                let pattern_len = let_statement.pattern(db).as_syntax_node().get_text(db).len();
+                let rhs_len = let_statement.rhs(db).as_syntax_node().get_text(db).len();
+                if pattern_len > rhs_len
+                    && let_statement.pattern(db).as_syntax_node().kind(db)
+                        == SyntaxKind::PatternStruct
+                {
+                    Some(9)
+                } else {
+                    match self.kind(db) {
+                        SyntaxKind::ExprBinary
+                        | SyntaxKind::ExprBlock
+                        | SyntaxKind::ExprErrorPropagate
+                        | SyntaxKind::ExprFieldInitShorthand
+                        | SyntaxKind::ExprFunctionCall
+                        | SyntaxKind::ExprIf
+                        | SyntaxKind::ExprList
+                        | SyntaxKind::ExprMatch
+                        | SyntaxKind::ExprMissing
+                        | SyntaxKind::ExprParenthesized
+                        | SyntaxKind::ExprPath
+                        | SyntaxKind::ExprStructCtorCall
+                        | SyntaxKind::ExprListParenthesized
+                        | SyntaxKind::ArgListBraced
+                        | SyntaxKind::ArgListBracketed
+                        | SyntaxKind::ExprUnary => Some(1),
+                        SyntaxKind::TerminalEq => Some(10),
+                        SyntaxKind::PatternEnum
+                        | SyntaxKind::PatternTuple
+                        | SyntaxKind::PatternStruct
+                        | SyntaxKind::PatternFixedSizeArray => Some(11),
+                        SyntaxKind::TypeClause => Some(12),
+                        _ => None,
+                    }
+                }
+            }
             Some(SyntaxKind::ItemConstant) => match self.kind(db) {
                 SyntaxKind::ExprBinary
                 | SyntaxKind::ExprBlock
