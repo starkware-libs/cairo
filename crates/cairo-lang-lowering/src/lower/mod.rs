@@ -1,4 +1,4 @@
-use std::{iter, vec};
+use std::vec;
 
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
@@ -7,7 +7,7 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::corelib::{ErrorPropagationType, unwrap_error_propagation_type};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use cairo_lang_semantic::items::imp::{GeneratedImplItems, GeneratedImplLongId, ImplLongId};
+use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{
     ConcreteFunction, ConcreteTraitLongId, ExprVar, LocalVariable, VarId, corelib,
@@ -1780,11 +1780,11 @@ fn add_closure_call_function(
     encapsulated_ctx: &mut LoweringContext<'_, '_>,
     expr: &semantic::ExprClosure,
     closure_info: &ClosureInfo,
+    trait_id: cairo_lang_defs::ids::TraitId,
 ) -> Maybe<()> {
-    let semantic_db = encapsulated_ctx.db.upcast();
+    let semantic_db: &dyn SemanticGroup = encapsulated_ctx.db.upcast();
     let closure_ty = extract_matches!(expr.ty.lookup_intern(semantic_db), TypeLongId::Closure);
     let expr_location = encapsulated_ctx.get_location(expr.stable_ptr.untyped());
-    let trait_id = semantic::corelib::fn_once_trait(semantic_db);
     let parameters_ty = TypeLongId::Tuple(closure_ty.param_tys.clone()).intern(semantic_db);
     let concrete_trait = ConcreteTraitLongId {
         trait_id,
@@ -1794,18 +1794,26 @@ fn add_closure_call_function(
         ],
     }
     .intern(semantic_db);
-    let trait_function = semantic::corelib::fn_once_call_trait_fn(semantic_db);
+    let Ok(impl_id) = semantic::types::get_impl_at_context(
+        semantic_db,
+        encapsulated_ctx.variables.lookup_context.clone(),
+        concrete_trait,
+        None,
+    ) else {
+        // If the impl doesn't exist, there won't be a call to the call-function, so we don't need
+        // to generate it.
+        return Ok(());
+    };
+    if !matches!(impl_id.lookup_intern(semantic_db), ImplLongId::GeneratedImpl(_)) {
+        // If the impl is not generated, we don't need to generate a lowering for it.
+        return Ok(());
+    }
 
-    let ret_ty = semantic_db.trait_type_by_name(trait_id, "Output".into()).unwrap().unwrap();
-    let impl_id = ImplLongId::GeneratedImpl(
-        GeneratedImplLongId {
-            concrete_trait,
-            generic_params: vec![],
-            impl_items: GeneratedImplItems(iter::once((ret_ty, closure_ty.ret_ty)).collect()),
-        }
-        .intern(semantic_db),
-    )
-    .intern(semantic_db);
+    let trait_function: cairo_lang_defs::ids::TraitFunctionId = semantic_db
+        .trait_function_by_name(trait_id, "call".into())
+        .unwrap()
+        .expect("Call function must exist for an Fn trait.");
+
     let generic_function =
         GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function: trait_function });
     let function = semantic::FunctionLongId {
@@ -1827,49 +1835,65 @@ fn add_closure_call_function(
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut builder = BlockBuilder::root(&mut ctx, root_block_id);
 
+    let (closure_param_var_id, closure_var) = if trait_id
+        == semantic::corelib::fn_once_trait(semantic_db)
+    {
+        // If the closure is FnOnce, the closure is passed by value.
+        let closure_param_var = ctx.new_var(VarRequest { ty: expr.ty, location: expr_location });
+        let closure_var = VarUsage { var_id: closure_param_var, location: expr_location };
+        (closure_param_var, closure_var)
+    } else {
+        // If the closure is Fn the closure argument will be a snapshot, so we need to desnap it.
+        let closure_param_var = ctx.new_var(VarRequest {
+            ty: wrap_in_snapshots(semantic_db, expr.ty, 1),
+            location: expr_location,
+        });
+
+        let closure_var = generators::Desnap {
+            input: VarUsage { var_id: closure_param_var, location: expr_location },
+            location: expr_location,
+        }
+        .add(&mut ctx, &mut builder.statements);
+        (closure_param_var, closure_var)
+    };
     let parameters: Vec<VariableId> = [
-        ctx.new_var(VarRequest { ty: expr.ty, location: expr_location }),
+        closure_param_var_id,
         ctx.new_var(VarRequest { ty: parameters_ty, location: expr_location }),
     ]
     .into();
-
-    let root_ok = {
-        let captured_vars = generators::StructDestructure {
-            input: VarUsage { var_id: parameters[0], location: expr_location },
-            var_reqs: chain!(closure_info.members.iter(), closure_info.snapshots.iter())
-                .map(|(_, ty)| VarRequest { ty: *ty, location: expr_location })
-                .collect_vec(),
-        }
-        .add(&mut ctx, &mut builder.statements);
-        for (i, (param, _)) in closure_info.members.iter().enumerate() {
-            builder.semantics.introduce(param.clone(), captured_vars[i]);
-        }
-        for (i, (param, _)) in closure_info.snapshots.iter().enumerate() {
-            builder
-                .snapped_semantics
-                .insert(param.clone(), captured_vars[i + closure_info.members.len()]);
-        }
-        let param_vars = generators::StructDestructure {
-            input: VarUsage { var_id: parameters[1], location: expr_location },
-            var_reqs: closure_ty
-                .param_tys
-                .iter()
-                .map(|ty| VarRequest { ty: *ty, location: expr_location })
-                .collect_vec(),
-        }
-        .add(&mut ctx, &mut builder.statements);
-        for (param_var, param) in param_vars.into_iter().zip(expr.params.iter()) {
-            builder
-                .semantics
-                .introduce((&parameter_as_member_path(param.clone())).into(), param_var);
-        }
-        let lowered_expr = lower_expr(&mut ctx, &mut builder, expr.body);
-        let maybe_sealed_block = lowered_expr_to_block_scope_end(&mut ctx, builder, lowered_expr);
-        maybe_sealed_block.and_then(|block_sealed| {
-            wrap_sealed_block_as_function(&mut ctx, block_sealed, expr.stable_ptr.untyped())?;
-            Ok(root_block_id)
-        })
-    };
+    let captured_vars = generators::StructDestructure {
+        input: closure_var,
+        var_reqs: chain!(closure_info.members.iter(), closure_info.snapshots.iter())
+            .map(|(_, ty)| VarRequest { ty: *ty, location: expr_location })
+            .collect_vec(),
+    }
+    .add(&mut ctx, &mut builder.statements);
+    for (i, (param, _)) in closure_info.members.iter().enumerate() {
+        builder.semantics.introduce(param.clone(), captured_vars[i]);
+    }
+    for (i, (param, _)) in closure_info.snapshots.iter().enumerate() {
+        builder
+            .snapped_semantics
+            .insert(param.clone(), captured_vars[i + closure_info.members.len()]);
+    }
+    let param_vars = generators::StructDestructure {
+        input: VarUsage { var_id: parameters[1], location: expr_location },
+        var_reqs: closure_ty
+            .param_tys
+            .iter()
+            .map(|ty| VarRequest { ty: *ty, location: expr_location })
+            .collect_vec(),
+    }
+    .add(&mut ctx, &mut builder.statements);
+    for (param_var, param) in param_vars.into_iter().zip(expr.params.iter()) {
+        builder.semantics.introduce((&parameter_as_member_path(param.clone())).into(), param_var);
+    }
+    let lowered_expr = lower_expr(&mut ctx, &mut builder, expr.body);
+    let maybe_sealed_block = lowered_expr_to_block_scope_end(&mut ctx, builder, lowered_expr);
+    let root_ok = maybe_sealed_block.and_then(|block_sealed| {
+        wrap_sealed_block_as_function(&mut ctx, block_sealed, expr.stable_ptr.untyped())?;
+        Ok(root_block_id)
+    });
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
         .unwrap_or_else(FlatBlocks::new_errored);
@@ -1910,8 +1934,14 @@ fn lower_expr_closure(
         ctx,
         expr,
         builder.semantics.closures.get(&capture_var_usage.var_id).unwrap(),
+        if ctx.variables[capture_var_usage.var_id].copyable.is_ok() {
+            semantic::corelib::fn_trait(ctx.db.upcast())
+        } else {
+            semantic::corelib::fn_once_trait(ctx.db.upcast())
+        },
     )
     .map_err(LoweringFlowError::Failed)?;
+
     Ok(closure_variable)
 }
 

@@ -892,8 +892,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     )
                 }
             }
-            SemanticDiagnosticKind::TypeEqualTraitReImplementation => {
-                "Type equals trait should not be re-implemented.".into()
+            SemanticDiagnosticKind::CallExpressionRequiresFunction { ty, inference_errors } => {
+                if inference_errors.is_empty() {
+                    format!("Call expression requires a function, found `{}`.", ty.format(db))
+                } else {
+                    format!(
+                        "Call expression requires a function, found `{}`.\n{}",
+                        ty.format(db),
+                        inference_errors.format(db)
+                    )
+                }
+            }
+            SemanticDiagnosticKind::CompilerTraitReImplementation { trait_id } => {
+                format!("Trait `{}` should not be re-implemented.", trait_id.full_path(db.upcast()))
             }
             SemanticDiagnosticKind::ClosureInGlobalScope => {
                 "Closures are not allowed in this context.".into()
@@ -1224,7 +1235,12 @@ pub enum SemanticDiagnosticKind {
         trait_name: SmolStr,
         inference_errors: TraitInferenceErrors,
     },
+    CallExpressionRequiresFunction {
+        ty: semantic::TypeId,
+        inference_errors: TraitInferenceErrors,
+    },
     MultipleImplementationOfIndexOperator(semantic::TypeId),
+
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
     InlineAttrForExternFunctionNotAllowed,
@@ -1266,7 +1282,9 @@ pub enum SemanticDiagnosticKind {
     DerefCycle {
         deref_chain: String,
     },
-    TypeEqualTraitReImplementation,
+    CompilerTraitReImplementation {
+        trait_id: TraitId,
+    },
     ClosureInGlobalScope,
     MaybeMissingColonColon,
     CallingShadowedFunction {
