@@ -1,6 +1,7 @@
-//! Panics module that provides the core panic mechanism for handling unrecoverable errors.
-//! It implements a panic system that can carry error data and
-//! supports both raw felt252 arrays and structured byte array messages.
+//! Core panic mechanism for handling unrecoverable errors.
+//!
+//! This module implements a panic system that can carry error data and
+//! supports both raw `felt252` arrays and structured byte array messages.
 //!
 //! The panic system uses a special magic value `BYTE_ARRAY_MAGIC` to distinguish
 //! between raw panic data and structured byte array messages. When using
@@ -16,7 +17,7 @@
 //! panic(array![]);
 //! ```
 //!
-//! ... but using `ByteArray` error message is often more suitable:
+//! ... but using `ByteArray` error message is generally more suitable:
 //!
 //! ```
 //! use core::panics::panic_with_byte_array;
