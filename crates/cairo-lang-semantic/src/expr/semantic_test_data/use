@@ -1202,3 +1202,171 @@ Constant(
 )
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star import impl by trait.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub trait MyTrait<T> {
+        fn foo(self: T) -> T;
+    }
+}
+mod b {
+    pub struct V {}
+    impl VMyTrait of super::a::MyTrait<V> {
+        fn foo(self: V) -> V {
+            self
+        }
+    }
+}
+
+use a::*;
+
+//! > function_body
+
+//! > expr_code
+b::V {}.foo()
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: test::b::VMyTrait::foo,
+        args: [
+            Value(
+                StructCtor(
+                    ExprStructCtor {
+                        concrete_struct_id: test::b::V,
+                        members: [],
+                        base_struct: None,
+                        ty: test::b::V,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: None,
+        ty: test::b::V,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star import trait by impl.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub trait MyTrait<T> {
+        fn foo(self: T) -> T;
+    }
+}
+mod b {
+    pub impl VMyTrait of super::a::MyTrait<super::c::V> {
+        fn foo(self: super::c::V) -> super::c::V {
+            self
+        }
+    }
+}
+
+mod c {
+    pub struct V {}
+}
+
+use b::*;
+
+//! > function_body
+
+//! > expr_code
+c::V {}.foo()
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: test::b::VMyTrait::foo,
+        args: [
+            Value(
+                StructCtor(
+                    ExprStructCtor {
+                        concrete_struct_id: test::c::V,
+                        members: [],
+                        base_struct: None,
+                        ty: test::c::V,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: None,
+        ty: test::c::V,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star struct import trait.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+pub trait MyTrait<T> {
+    fn foo(t: T) -> T;
+}
+mod b {
+    pub impl VMyTrait of super::MyTrait<super::c::V> {
+        fn foo(t: super::c::V) -> super::c::V {
+            t
+        }
+    }
+}
+
+mod c {
+    use super::b::*;
+    pub struct V {}
+}
+
+//! > function_body
+
+//! > expr_code
+MyTrait::foo(c::V {})
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: test::b::VMyTrait::foo,
+        args: [
+            Value(
+                StructCtor(
+                    ExprStructCtor {
+                        concrete_struct_id: test::c::V,
+                        members: [],
+                        base_struct: None,
+                        ty: test::c::V,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: None,
+        ty: test::c::V,
+    },
+)
+
+//! > expected_diagnostics

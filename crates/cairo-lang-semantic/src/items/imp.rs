@@ -59,6 +59,7 @@ use super::type_aliases::{
     TypeAliasData, type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper,
 };
+use super::visibility::peek_visible_in;
 use super::{TraitOrImplContext, resolve_trait_path};
 use crate::corelib::{
     CoreTraitContext, concrete_destruct_trait, concrete_drop_trait, copy_trait, core_crate,
@@ -1354,24 +1355,12 @@ pub fn module_impl_ids_for_trait_filter(
     module_id: ModuleId,
     trait_filter: TraitFilter,
 ) -> Maybe<Vec<UninferredImpl>> {
-    let mut uninferred_impls = Vec::new();
-    if let Ok(impl_ids) = db.module_impls_ids(module_id) {
-        uninferred_impls.extend(impl_ids.iter().copied().map(UninferredImpl::Def));
-    }
-    if let Ok(impl_aliases_ids) = db.module_impl_aliases_ids(module_id) {
-        uninferred_impls.extend(impl_aliases_ids.iter().copied().map(UninferredImpl::ImplAlias));
-    }
-    if let Ok(uses_ids) = db.module_uses_ids(module_id) {
-        for use_id in uses_ids.iter().copied() {
-            match db.use_resolved_item(use_id) {
-                Ok(ResolvedGenericItem::Impl(impl_def_id)) => {
-                    uninferred_impls.push(UninferredImpl::Def(impl_def_id));
-                }
-                Ok(ResolvedGenericItem::GenericImplAlias(impl_alias_id)) => {
-                    uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
-                }
-                _ => {}
-            }
+    let mut uninferred_impls: OrderedHashSet<UninferredImpl> =
+        OrderedHashSet::from_iter(module_impl_ids(db, module_id, module_id)?);
+    for (user_module, containing_module) in &db.priv_module_use_star_modules(module_id).accessible {
+        let local_uninferred_impls = module_impl_ids(db, *user_module, *containing_module)?;
+        for curr_uniferred_impl in local_uninferred_impls {
+            uninferred_impls.insert(curr_uniferred_impl);
         }
     }
     let mut res = Vec::new();
@@ -1387,8 +1376,47 @@ pub fn module_impl_ids_for_trait_filter(
             res.push(uninferred_impl);
         }
     }
-
     Ok(res)
+}
+
+/// Returns the uninferred impls in a module.
+fn module_impl_ids(
+    db: &dyn SemanticGroup,
+    user_module: ModuleId,
+    containing_module: ModuleId,
+) -> Maybe<Vec<UninferredImpl>> {
+    let defs_db = db.upcast();
+    let mut uninferred_impls = Vec::new();
+    for item in db.priv_module_semantic_data(containing_module)?.items.values() {
+        if !matches!(
+            item.item_id,
+            ModuleItemId::Impl(_) | ModuleItemId::ImplAlias(_) | ModuleItemId::Use(_)
+        ) {
+            continue;
+        }
+        if !peek_visible_in(defs_db, item.visibility, containing_module, user_module) {
+            continue;
+        }
+        match item.item_id {
+            ModuleItemId::Impl(impl_def_id) => {
+                uninferred_impls.push(UninferredImpl::Def(impl_def_id));
+            }
+            ModuleItemId::ImplAlias(impl_alias_id) => {
+                uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
+            }
+            ModuleItemId::Use(use_id) => match db.use_resolved_item(use_id) {
+                Ok(ResolvedGenericItem::Impl(impl_def_id)) => {
+                    uninferred_impls.push(UninferredImpl::Def(impl_def_id));
+                }
+                Ok(ResolvedGenericItem::GenericImplAlias(impl_alias_id)) => {
+                    uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+    Ok(uninferred_impls)
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
@@ -1551,7 +1579,7 @@ impl ImplLookupContext {
     }
 }
 
-/// An candidate impl for later inference.
+/// A candidate impl for later inference.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum UninferredImpl {
     Def(ImplDefId),
