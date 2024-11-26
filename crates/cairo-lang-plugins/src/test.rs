@@ -1,3 +1,4 @@
+use std::default::Default;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
@@ -10,15 +11,20 @@ use cairo_lang_filesystem::db::{
     AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
     init_files_group,
 };
-use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
-use cairo_lang_parser::db::ParserDatabase;
-use cairo_lang_syntax::node::ast;
+use cairo_lang_filesystem::ids::{
+    CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, VirtualFile,
+};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast};
+use indoc::indoc;
+use itertools::Itertools;
 
 use crate::get_base_plugins;
 use crate::test_utils::expand_module_text;
@@ -193,4 +199,153 @@ impl MacroPlugin for DoubleIndirectionPlugin {
     fn declared_attributes(&self) -> Vec<String> {
         vec!["first".to_string(), "second".to_string()]
     }
+}
+
+#[derive(Debug, Default)]
+struct FirstNotePlugin;
+impl MacroPlugin for FirstNotePlugin {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult {
+        diagnostic_notes_generate_code(db, item_ast, "test_src/lib.cairo", "virt1", "first note")
+    }
+    fn declared_attributes(&self) -> Vec<String> {
+        Vec::new()
+    }
+}
+
+#[derive(Debug, Default)]
+struct SecondNotePlugin;
+impl MacroPlugin for SecondNotePlugin {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ModuleItem,
+        _metadata: &MacroPluginMetadata<'_>,
+    ) -> PluginResult {
+        diagnostic_notes_generate_code(
+            db,
+            item_ast,
+            "test_src/lib.cairo[virt1]",
+            "virt2",
+            "second note",
+        )
+    }
+    fn declared_attributes(&self) -> Vec<String> {
+        Vec::new()
+    }
+}
+
+fn diagnostic_notes_generate_code(
+    db: &dyn SyntaxGroup,
+    item_ast: ast::ModuleItem,
+    input_file_name: &str,
+    result_file_name: &str,
+    note: &str,
+) -> PluginResult {
+    // Only run plugin in the specified test file.
+    let ptr = item_ast.stable_ptr();
+    let file = ptr.0.file_id(db);
+    let path = file.full_path(db.upcast());
+    if path != input_file_name {
+        return PluginResult::default();
+    }
+
+    // Content to be returned.
+    let content = indoc! {r#"
+            fn main() -> felt252 {
+                let x = 42
+                x
+            }
+        "#};
+
+    // Create code mappings.
+    let node = item_ast.as_syntax_node();
+    let orig_span = node.span(db);
+    let code_mappings = vec![CodeMapping {
+        span: TextSpan {
+            start: TextOffset::default(),
+            end: TextOffset::default().add_width(TextWidth::from_str(content)),
+        },
+        origin: CodeOrigin::Start(orig_span.start),
+    }];
+
+    PluginResult {
+        code: Some(PluginGeneratedFile {
+            name: result_file_name.into(),
+            aux_data: None,
+            code_mappings,
+            content: content.to_string(),
+            diagnostics_note: Some(note.to_string()),
+        }),
+        remove_original_item: true,
+        ..PluginResult::default()
+    }
+}
+
+#[test]
+fn can_emit_plugin_diagnostic_notes() {
+    // Setup test db.
+    let db = &mut DatabaseForTesting::default();
+    let mut plugins = db.macro_plugins();
+    plugins.push(Arc::new(FirstNotePlugin));
+    plugins.push(Arc::new(SecondNotePlugin));
+    db.set_macro_plugins(plugins);
+
+    // Setup test crate.
+    let crate_id = CrateId::plain(db, "test");
+    let root = Directory::Real("test_src".into());
+    db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
+    let module_id = ModuleId::CrateRoot(crate_id);
+
+    // Create main module file.
+    let content = indoc! {r#"
+            fn main() -> felt252 {
+                let x = 42
+                x
+            }
+        "#};
+    let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db);
+    db.as_files_group_mut().override_file_content(file_id, Some(content.into()));
+
+    // Get diagnostic notes and check their number.
+    let diagnostic_notes = db.module_plugin_diagnostics_notes(module_id).unwrap();
+    assert_eq!(diagnostic_notes.len(), 2);
+
+    // Get formatted diagnostics and their content.
+    let diags = db
+        .module_files(module_id)
+        .unwrap()
+        .iter()
+        .map(|file_id| {
+            let file_diagnostics = db.file_syntax_diagnostics(*file_id);
+            let formatted = file_diagnostics.format_with_severity(db, &diagnostic_notes);
+            formatted.into_iter().map(|d| d.message().to_string()).join("\n")
+        })
+        .join("\n");
+    assert_eq!(diags, indoc! {r#"
+        Missing token TerminalSemicolon.
+         --> test_src/lib.cairo:2:15
+            let x = 42
+                      ^
+
+
+        Missing token TerminalSemicolon.
+         --> test_src/lib.cairo:2:15
+            let x = 42
+                      ^
+        note: first note
+
+
+        Missing token TerminalSemicolon.
+         --> test_src/lib.cairo:2:15
+            let x = 42
+                      ^
+        note: first note
+        note: second note
+
+    "#});
 }
