@@ -12,6 +12,7 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
     error_code,
 };
+use cairo_lang_filesystem::db::Edition;
 use cairo_lang_syntax as syntax;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -533,6 +534,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UseStarEmptyPath => {
                 "`*` in `use` items is not allowed for empty path.".into()
+            }
+            SemanticDiagnosticKind::GlobalUsesNotSupportedInEdition(edition) => {
+                format!("Global `use` item is not supported in `{edition:?}` edition.")
             }
             SemanticDiagnosticKind::TraitInTraitMustBeExplicit => {
                 "In a trait, paths of the same trait must be fully explicit. Either use `Self` if \
@@ -1166,6 +1170,7 @@ pub enum SemanticDiagnosticKind {
     PathNotFound(NotFoundItemType),
     AmbiguousPath(Vec<ModuleItemId>),
     UseStarEmptyPath,
+    GlobalUsesNotSupportedInEdition(Edition),
     TraitInTraitMustBeExplicit,
     ImplInImplMustBeExplicit,
     TraitItemForbiddenInTheTrait,
