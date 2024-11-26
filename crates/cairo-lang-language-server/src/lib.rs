@@ -48,7 +48,7 @@ use anyhow::Result;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_semantic::plugin::PluginSuite;
-use crossbeam::select;
+use crossbeam::channel::{Receiver, select_biased};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use salsa::{Database, Durability};
@@ -60,6 +60,7 @@ use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
 use crate::lsp::result::LSPResult;
+use crate::project::{ProjectController, ProjectUpdate};
 use crate::server::client::{Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::panic::is_cancelled;
@@ -271,6 +272,7 @@ impl Backend {
             let Self { mut state, connection } = self;
             let proc_macro_channels = state.proc_macro_controller.init_channels();
 
+            let project_updates_receiver = state.project_controller.init_channel();
             let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
 
             Self::dispatch_setup_tasks(&mut scheduler);
@@ -285,7 +287,12 @@ impl Backend {
             // we basically never hit such a case in CairoLS in happy paths.
             scheduler.on_sync_task(Self::refresh_diagnostics);
 
-            let result = Self::event_loop(&connection, proc_macro_channels, scheduler);
+            let result = Self::event_loop(
+                &connection,
+                proc_macro_channels,
+                project_updates_receiver,
+                scheduler,
+            );
 
             // Trigger cancellation in any background tasks that might still be running.
             state.db.salsa_runtime_mut().synthetic_write(Durability::LOW);
@@ -340,12 +347,21 @@ impl Backend {
     fn event_loop(
         connection: &Connection,
         proc_macro_channels: ProcMacroChannelsReceivers,
+        project_updates_receiver: Receiver<ProjectUpdate>,
         mut scheduler: Scheduler<'_>,
     ) -> Result<()> {
         let incoming = connection.incoming();
 
         loop {
-            select! {
+            select_biased! {
+                // Project updates may significantly change the state, therefore
+                // they should be handled first in case of multiple operations being ready at once.
+                // To ensure it, keep project updates channel in the first arm of `select_biased!`.
+                recv(project_updates_receiver) -> project_update => {
+                    let Ok(project_update) = project_update else { break };
+
+                    scheduler.local(move |state, notifier, _, _| ProjectController::handle_update(state, notifier, project_update));
+                }
                 recv(incoming) -> msg => {
                     let Ok(msg) = msg else { break };
 
@@ -388,13 +404,11 @@ impl Backend {
     }
 
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, notifier: Notifier) {
+    fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
         state.db_swapper.maybe_swap(
             &mut state.db,
             &state.open_files,
-            &state.config,
             &state.tricks,
-            &notifier,
             &mut state.project_controller,
         );
     }
@@ -405,24 +419,14 @@ impl Backend {
     }
 
     /// Reload crate detection for all open files.
-    fn reload(
-        state: &mut State,
-        notifier: &Notifier,
-        requester: &mut Requester<'_>,
-    ) -> LSPResult<()> {
+    fn reload(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
         state.project_controller.clear_loaded_workspaces();
         state.config.reload(requester, &state.client_capabilities)?;
 
         for uri in state.open_files.iter() {
             let Some(file_id) = state.db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = state.db.lookup_intern_file(file_id) {
-                state.project_controller.detect_crate_for(
-                    &mut state.db,
-                    &state.scarb_toolchain,
-                    &state.config,
-                    &file_path,
-                    notifier,
-                );
+                state.project_controller.update_project_for(&state.scarb_toolchain, &file_path);
             }
         }
 
