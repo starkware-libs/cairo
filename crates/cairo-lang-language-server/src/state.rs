@@ -50,7 +50,7 @@ impl State {
             tricks: Owned::new(tricks.into()),
             diagnostics_controller: DiagnosticsController::new(notifier),
             proc_macro_controller,
-            project_controller: ProjectController::new(scarb_toolchain),
+            project_controller: ProjectController::initialize(scarb_toolchain),
         }
     }
 
