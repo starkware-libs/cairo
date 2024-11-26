@@ -98,7 +98,7 @@ extern fn felt252_dict_entry_finalize<T>(
     dict_entry: Felt252DictEntry<T>, new_value: T
 ) -> Felt252Dict<T> nopanic;
 
-/// Squashes the dictionary and returns a `SquashedFelt252Dict` type.
+/// Squashes the dictionary and returns a `SquashedFelt252Dict`.
 ///
 /// NOTE: Never use this libfunc directly. Use Felt252DictTrait::squash() instead. Using this
 /// libfunc directly will result in multiple unnecessary copies of the libfunc in the compiled CASM
