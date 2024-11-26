@@ -4,10 +4,14 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use indoc::formatdoc;
+use itertools::zip_eq;
 
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::{StarknetModuleKind, backwards_compatible_storage};
-use super::storage_interfaces::handle_storage_interface_struct;
+use super::storage_interfaces::{
+    StorageMemberConfig, StorageMemberKind, handle_storage_interface_struct,
+    struct_members_storage_configs,
+};
 use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, FLAT_ATTR, STORAGE_STRUCT_NAME};
 use crate::plugin::SUBSTORAGE_ATTR;
 
@@ -31,8 +35,9 @@ pub fn handle_storage_struct(
     let mut substorage_members_struct_code = vec![];
     let mut substorage_members_init_code = vec![];
     let mut storage_struct_members = vec![];
-    for member in struct_ast.members(db).elements(db) {
-        if member.has_attr(db, SUBSTORAGE_ATTR) {
+    let configs = struct_members_storage_configs(db, &struct_ast, diagnostics);
+    for (member, config) in zip_eq(struct_ast.members(db).elements(db), &configs) {
+        if config.kind == StorageMemberKind::SubStorage {
             if let Some((struct_code, init_code)) =
                 get_substorage_member_code(db, &member, metadata)
             {
@@ -49,7 +54,7 @@ pub fn handle_storage_struct(
             }
         }
         let SimpleMemberGeneratedCode { struct_code, struct_code_mut, init_code, storage_member } =
-            get_simple_member_code(db, &member, metadata);
+            get_simple_member_code(db, &member, config, metadata);
         members_struct_code.push(struct_code);
         members_struct_code_mut.push(struct_code_mut);
         members_init_code.push(init_code);
@@ -70,7 +75,7 @@ pub fn handle_storage_struct(
         "".to_string()
     };
     let storage_base_code =
-        handle_storage_interface_struct(db, &struct_ast, metadata).into_rewrite_node();
+        handle_storage_interface_struct(db, &struct_ast, &configs, metadata).into_rewrite_node();
     data.state_struct_code = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
@@ -211,10 +216,11 @@ struct SimpleMemberGeneratedCode {
 fn get_simple_member_code(
     db: &dyn SyntaxGroup,
     member: &ast::Member,
+    config: &StorageMemberConfig,
     metadata: &MacroPluginMetadata<'_>,
 ) -> SimpleMemberGeneratedCode {
     let member_wrapper_type = RewriteNode::text(
-        if member.has_attr(db, SUBSTORAGE_ATTR) || member.has_attr(db, FLAT_ATTR) {
+        if matches!(config.kind, StorageMemberKind::SubStorage | StorageMemberKind::Flat) {
             "FlattenedStorage"
         } else {
             "StorageBase"
@@ -226,11 +232,14 @@ fn get_simple_member_code(
         RewriteNode::from_ast(&member.visibility(db))
     };
     let member_name = RewriteNode::from_ast_trimmed(&member.name(db));
+    let member_selector_name =
+        config.rename.as_deref().map_or_else(|| member_name.clone(), RewriteNode::text);
     let patches = [
         ("attributes".to_string(), RewriteNode::from_ast(&member.attributes(db))),
         ("member_visibility".to_string(), member_visibility.clone()),
         ("member_wrapper_type".to_string(), member_wrapper_type.clone()),
         ("member_name".to_string(), member_name),
+        ("member_selector_name".to_string(), member_selector_name),
         ("member_type".to_string(), RewriteNode::from_ast_trimmed(&member.type_clause(db).ty(db))),
     ]
     .into();
@@ -256,7 +265,7 @@ fn get_simple_member_code(
         } else {
             RewriteNode::interpolate_patched(
                 "\n           $member_name$: starknet::storage::StorageBase{ address: \
-                 selector!(\"$member_name$\") },",
+                 selector!(\"$member_selector_name$\") },",
                 &patches,
             )
         }

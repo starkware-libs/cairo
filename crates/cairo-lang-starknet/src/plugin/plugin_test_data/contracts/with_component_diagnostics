@@ -1969,6 +1969,11 @@ impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Only #[substorage(v0)] is supported.
+ --> lib.cairo:19:9
+        #[substorage]
+        ^***********^
+
 error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
  --> lib.cairo:14:9
         #[substorage(v0)]
