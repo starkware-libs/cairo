@@ -180,6 +180,12 @@ pub fn priv_global_use_semantic_data(
     let inference_id = InferenceId::GlobalUseStar(global_use_id);
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let edition = resolver.settings.edition;
+    if edition.ignore_visibility() {
+        let imported_module =
+            Err(diagnostics.report(&star_ast, GlobalUsesNotSupportedInEdition(edition)));
+        return Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module });
+    }
 
     let item = star_ast.get_item(db.upcast());
     let segments = get_use_path_segments(db.upcast(), star_ast.clone())?;
