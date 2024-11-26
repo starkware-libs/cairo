@@ -50,8 +50,8 @@
 //! After that, using the [`Felt252DictEntryTrait::finalize`] allows to create a new entry in the
 //! dictionary.
 //! Using `entry` and `finalize` methods can be very useful given that it does not require the type
-//! in the dictionnary to be copyable, meaning that we can use non-copyable types like arrays as
-//! dictionnary values.
+//! in the dictionary to be copyable, meaning that we can use non-copyable types like arrays as
+//! dictionary values.
 //!
 //! ```
 //! use core::dict::Felt252Dict;
