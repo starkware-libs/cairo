@@ -1,4 +1,4 @@
-//! A dictionary-like data structure that maps `felt252` keys to values of any type. 
+//! A dictionary-like data structure that maps `felt252` keys to values of any type.
 //!
 //! The `Felt252Dict` provides efficient key-value storage with operations for inserting,
 //! retrieving, and updating values. Each operation creates a new entry that can be validated
@@ -11,11 +11,11 @@
 //! - `new_value`: The new value being associated with this key
 //!
 //! Every dictionary operation (insert, get, etc.) creates a new entry:
-//! - An `insert(k, v)` creates an entry with the previous value and `v` as the new value
-//! - A `get(k)` creates an entry where `prev_value` equals `new_value`
+//! - An `insert(k, v)` creates an entry with the previous value and `v` as the new value.
+//! - A `get(k)` creates an entry where `prev_value` equals `new_value`.
 //!
 //! When a dictionary goes out of scope, it undergoes a process called "squashing" that validates
-//! the consistency of all accesses. For any key k, if we have multiple entries:
+//! the consistency of all accesses. For any key `k`, if we have multiple entries:
 //! - The `new_value` of entry `i` must equal the `prev_value` of entry `i+1`
 //! - The squashed result contains one entry per key, with:
 //!   - `prev_value`: The value before the first access
@@ -44,11 +44,14 @@
 //! assert!(dict.get(0) == 20
 //! ```
 //!
-//! It also possible to use the [`Felt252DictTrait::entry`] method to retrieve the last entry given
-//! a certain key.
+//! It is also possible to use the [`Felt252DictTrait::entry`] method to retrieve the last entry
+//! given a certain key.
 //! In this case, the method takes ownership of the dictionary and returns the entry to update.
 //! After that, using the [`Felt252DictEntryTrait::finalize`] allows to create a new entry in the
 //! dictionary.
+//! Using `entry` and `finalize` methods can be very useful given that it does not require the type
+//! in the dictionnary to be copyable, meaning that we can use non-copyable types like arrays as
+//! dictionnary values.
 //!
 //! ```
 //! use core::dict::Felt252Dict;
@@ -61,15 +64,14 @@
 //! dict = entry.finalize(new_value);
 //! ```
 //!
-//! The process of squashing is as follows: given all entries with certain key k, taken in the same
-//! order as they were inserted, verify that the ith entry `new_value` is equal to the ith + 1 entry
-//! `prev_value`.
+//! The process of squashing is as follows: given all entries with certain key `k`, taken in the
+//! same order as they were inserted, verify that the ith entry `new_value` is equal to the ith + 1
+//! entry `prev_value`.
 //! Squashing is done automatically right before a dictionary goes out scope via the
 //! `Felt252Dict<T>` implementation of the `Destruct` trait.
 //!
 //! However, it is still possible to manually squash a dictionary using the
-//! `Felt252DictTrait::squash` method,
-// !preventing any future usage of the dictionary.
+//! `Felt252DictTrait::squash` method, preventing any future usage of the dictionary.
 
 #[feature("deprecated-index-traits")]
 use crate::traits::{Index, Default, Felt252DictValue};
@@ -77,14 +79,16 @@ use crate::traits::{Index, Default, Felt252DictValue};
 /// A dictionary that maps `felt252` keys to a value of any type.
 pub extern type Felt252Dict<T>;
 
-/// A dictionary in a squashed state. It cannot be mutated anymore
-/// `felt252` key.
+/// A dictionary in a squashed state. It cannot be mutated anymore.
 pub extern type SquashedFelt252Dict<T>;
 
-/// An intermediate type that is returned after calling the `entry` method that consumes ownership of the dictionary. This ensures that the dictionary cannot be mutated until the entry is finalized, which restores ownership of the dictionary.
+/// An intermediate type that is returned after calling the `entry` method that consumes ownership
+/// of the dictionary. This ensures that the dictionary cannot be mutated until the entry is
+/// finalized, which restores ownership of the dictionary.
 pub extern type Felt252DictEntry<T>;
 
 impl SquashedFelt252DictDrop<T, +Drop<T>> of Drop<SquashedFelt252Dict<T>>;
+
 use crate::{RangeCheck, SegmentArena};
 use crate::gas::GasBuiltin;
 
@@ -98,25 +102,17 @@ extern fn felt252_dict_entry_finalize<T>(
     dict_entry: Felt252DictEntry<T>, new_value: T
 ) -> Felt252Dict<T> nopanic;
 
-/// Squashes the dictionary and returns a `SquashedFelt252Dict`.
-///
-/// NOTE: Never use this libfunc directly. Use Felt252DictTrait::squash() instead. Using this
-/// libfunc directly will result in multiple unnecessary copies of the libfunc in the compiled CASM
-/// code.
+// Squashes the dictionary and returns a `SquashedFelt252Dict`.
+//
+// NOTE: Never use this libfunc directly. Use Felt252DictTrait::squash() instead. Using this
+// libfunc directly will result in multiple unnecessary copies of the libfunc in the compiled CASM
+// code.
 pub(crate) extern fn felt252_dict_squash<T>(
     dict: Felt252Dict<T>
 ) -> SquashedFelt252Dict<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
 
 /// Basic trait for the `Felt252Dict` type.
 pub trait Felt252DictTrait<T> {
-    fn insert<+Destruct<T>>(ref self: Felt252Dict<T>, key: felt252, value: T);
-    fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T;
-    fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic;
-    #[must_use]
-    fn entry(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic;
-}
-
-impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
     /// Inserts the given value for the given key.
     /// Requires the `Destruct` trait, as the previous value is dropped.
     ///
@@ -128,11 +124,7 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
     /// let mut dict: Felt252Dict<u8> = Default::default();
     /// dict.insert(0, 10);
     /// ```
-    #[inline]
-    fn insert<+Destruct<T>>(ref self: Felt252Dict<T>, key: felt252, value: T) {
-        let (entry, _prev_value) = felt252_dict_entry_get(self, key);
-        self = felt252_dict_entry_finalize(entry, value);
-    }
+    fn insert<+Destruct<T>>(ref self: Felt252Dict<T>, key: felt252, value: T);
 
     /// Returns a copy of the value at the given key.
     ///
@@ -146,13 +138,7 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
     /// let value = dict.get(0);
     /// assert!(value == 10);
     /// ```
-    #[inline]
-    fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T {
-        let (entry, prev_value) = felt252_dict_entry_get(self, key);
-        let return_value = prev_value;
-        self = felt252_dict_entry_finalize(entry, prev_value);
-        return_value
-    }
+    fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T;
 
     /// Allows to manually squash a dictionary and returns a `SquashedFelt252Dict` type.
     ///
@@ -165,10 +151,7 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
     /// dict.insert(0, 10);
     /// let squashed_dict = dict.squash();
     /// ```
-    #[inline(never)]
-    fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic {
-        felt252_dict_squash(self)
-    }
+    fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic;
 
     /// Retrieves the last entry given a certain key.
     /// This method takes ownership of the dictionary and returns the entry to update
@@ -184,6 +167,30 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
     /// let (entry, prev_value) = dict.entry(0);
     /// assert!(prev_value == 10);
     /// ```
+    #[must_use]
+    fn entry(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic;
+}
+
+impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
+    #[inline]
+    fn insert<+Destruct<T>>(ref self: Felt252Dict<T>, key: felt252, value: T) {
+        let (entry, _prev_value) = felt252_dict_entry_get(self, key);
+        self = felt252_dict_entry_finalize(entry, value);
+    }
+
+    #[inline]
+    fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T {
+        let (entry, prev_value) = felt252_dict_entry_get(self, key);
+        let return_value = prev_value;
+        self = felt252_dict_entry_finalize(entry, prev_value);
+        return_value
+    }
+
+    #[inline(never)]
+    fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic {
+        felt252_dict_squash(self)
+    }
+
     #[inline]
     fn entry(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic {
         felt252_dict_entry_get(self, key)
@@ -192,25 +199,30 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
 
 /// Basic trait for the `Felt252DictEntryTrait` dictionary entry type.
 pub trait Felt252DictEntryTrait<T> {
-    fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>;
-}
-
-impl Felt252DictEntryImpl<T, +Felt252DictValue<T>> of Felt252DictEntryTrait<T> {
     /// Allows to create a new entry in the dictionary while giving back
     /// the ownership of the dictionary.
     ///
     /// # Examples
     ///
     /// ```
-    /// use core::dict::Felt252Dict;
+    /// use core::dict::Felt252DictEntryTrait;
     ///
-    /// let mut dict: Felt252Dict<u8> = Default::default();
-    /// dict.insert(0, 10);
+    /// // Create a dictionary that stores arrays
+    /// let mut dict: Felt252Dict<Nullable<Array<felt252>>> = Default::default();
+    ///
+    /// // Create the array to insert
+    /// let a = array![1, 2, 3];
+    ///
+    /// dict.insert(0, NullableTrait::new(a));
     ///
     /// let (entry, prev_value) = dict.entry(0);
-    /// let new_value: u8 = 20;
+    /// let new_value = NullableTrait::new(array![4, 5, 6]);
     /// dict = entry.finalize(new_value);
     /// ```
+    fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>;
+}
+
+impl Felt252DictEntryImpl<T, +Felt252DictValue<T>> of Felt252DictEntryTrait<T> {
     #[inline]
     fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T> {
         felt252_dict_entry_finalize(self, new_value)
@@ -234,8 +246,11 @@ impl Felt252DictDefault<T> of Default<Felt252Dict<T>> {
 }
 
 impl Felt252DictDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Felt252Dict<T>> {
-    /// Allows the dictionary to go out of scope safely by ensuring it is squashed before going out of scope.
-    /// A `Felt252Dict` cannot be "dropped" trivially because we need to ensure it is squashed before the end of a program for soundness purposes. As such, `destruct` squashes the dictionary, and the returned `SquashedFelt252Dict` is dropped trivially.
+    /// Allows the dictionary to go out of scope safely by ensuring it is squashed before going out
+    /// of scope.
+    /// A `Felt252Dict` cannot be "dropped" trivially because we need to ensure it is squashed
+    /// before the end of a program for soundness purposes. As such, `destruct` squashes the
+    /// dictionary, and the returned `SquashedFelt252Dict` is dropped trivially.
     /// `destruct` is automatically called when a dictionary goes out of scope.
     #[inline]
     fn destruct(self: Felt252Dict<T>) nopanic {
@@ -243,9 +258,9 @@ impl Felt252DictDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Felt252D
     }
 }
 
-/// `Destruct` trait implementation to allow squashing a `Felt252DictEntry` type.
 impl Felt252DictEntryDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Felt252DictEntry<T>> {
-    /// Allows the `Felt252DictEntry` to go out of scope safely by ensuring the dictionary it is related to is squashed before going out of scope.
+    /// Allows the `Felt252DictEntry` to go out of scope safely by ensuring the dictionary it is
+    /// related to is squashed before going out of scope.
     /// `destruct` is automatically called when a dictionary entry goes out of scope.
     #[inline]
     fn destruct(self: Felt252DictEntry::<T>) nopanic {
