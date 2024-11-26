@@ -13,7 +13,7 @@ use cairo_lang_utils::Upcast;
 
 use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind::*;
+use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
@@ -178,8 +178,17 @@ pub fn priv_global_use_semantic_data(
     let module_file_id = global_use_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::GlobalUseStar(global_use_id);
-    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?.to_maybe()?);
+    let use_path_star = db.module_global_use_by_id(global_use_id)?.to_maybe()?;
+    let star_ast = ast::UsePath::Star(use_path_star.clone());
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let edition = resolver.settings.edition;
+    if edition.ignore_visibility() {
+        let imported_module = Err(diagnostics.report(
+            &use_path_star,
+            SemanticDiagnosticKind::GlobalUsesNotSupportedInEdition(edition),
+        ));
+        return Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module });
+    }
 
     let item = star_ast.get_item(db.upcast());
     let segments = get_use_path_segments(db.upcast(), star_ast.clone())?;
