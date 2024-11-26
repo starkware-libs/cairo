@@ -28,14 +28,14 @@ const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
 pub struct ByteArray {
     // Full "words" of 31 bytes each. The first byte of each word in the byte array
     // is the most significant byte in the word.
-    pub(crate) data: Array<bytes31>,
+    pub data: Array<bytes31>,
     // This felt252 actually represents a bytes31, with < 31 bytes.
     // It is represented as a felt252 to improve performance of building the byte array.
     // The number of bytes in here is specified in `pending_word_len`.
     // The first byte is the most significant byte among the `pending_word_len` bytes in the word.
-    pub(crate) pending_word: felt252,
+    pub pending_word: felt252,
     // Should be in range [0, 30].
-    pub(crate) pending_word_len: usize,
+    pub pending_word_len: usize,
 }
 
 pub(crate) impl ByteArrayStringLiteral of crate::string::StringLiteral<ByteArray>;
