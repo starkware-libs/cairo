@@ -20,15 +20,18 @@ error: Macro `compile_error` must have exactly 1 unnamed arguments.
 compile_error!();
 ^***************^
 
+
 error: `compiler_error!` argument must be an unnamed string argument.
  --> test_src/lib.cairo:3:16
 compile_error!(1);
                ^
 
+
 error: Macro `compile_error` must have exactly 1 unnamed arguments.
  --> test_src/lib.cairo:5:1
 compile_error!("message", "extra");
 ^*********************************^
+
 
 error: "error message"
  --> test_src/lib.cairo:7:1

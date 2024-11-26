@@ -43,6 +43,7 @@ pub fn inline_macro_generate_code(
                 }],
                 content,
                 aux_data: None,
+                diagnostics_note: Default::default(),
             }),
             diagnostics,
         }

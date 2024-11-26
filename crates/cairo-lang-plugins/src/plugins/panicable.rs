@@ -144,6 +144,7 @@ fn generate_panicable_code(
             content,
             code_mappings,
             aux_data: None,
+            diagnostics_note: Default::default(),
         }),
         diagnostics,
         remove_original_item: false,

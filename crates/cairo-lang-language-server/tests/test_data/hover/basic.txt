@@ -106,7 +106,7 @@ Panics if any of the formatting of arguments fails.
 ```cairo
 println!(); // Prints an empty line.
 println!(\"hello\"); // Prints "hello".
-let world: ByteArray = "world"; 
+let world: ByteArray = "world";
 println!("hello {}", world_ba); // Prints "hello world".
 println!("hello {world_ba}"); // Prints "hello world".
 ```
