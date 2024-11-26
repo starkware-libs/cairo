@@ -25,7 +25,7 @@ use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
-use itertools::chain;
+use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use profiling::{ProfilingInfo, user_function_idx_by_sierra_statement_idx};
@@ -270,6 +270,9 @@ impl SierraCasmRunner {
         // runner). The header is not counted, and the footer is, but then the relevant
         // entry is removed.
         let mut sierra_statement_weights = UnorderedHashMap::default();
+        // Total weight of Sierra statements grouped by the respective (collapsed) user function
+        // call stack.
+        let mut scoped_sierra_statement_weights = OrderedHashMap::default();
         for step in trace.iter() {
             // Skip the header.
             if step.pc < real_pc_0 {
@@ -299,6 +302,19 @@ impl SierraCasmRunner {
             );
 
             *sierra_statement_weights.entry(sierra_statement_idx).or_insert(0) += 1;
+
+            if profiling_config.collect_scoped_sierra_statement_weights {
+                // The current stack trace, including the current function (recursive calls
+                // collapsed).
+                let cur_stack: Vec<usize> =
+                    chain!(function_stack.iter().map(|&(idx, _)| idx), [user_function_idx])
+                        .dedup()
+                        .collect();
+
+                *scoped_sierra_statement_weights
+                    .entry((cur_stack, sierra_statement_idx))
+                    .or_insert(0) += 1;
+            }
 
             let Some(gen_statement) =
                 self.builder.sierra_program().statements.get(sierra_statement_idx.0)
@@ -344,7 +360,11 @@ impl SierraCasmRunner {
         // Remove the footer.
         sierra_statement_weights.remove(&StatementIdx(sierra_len));
 
-        ProfilingInfo { sierra_statement_weights, stack_trace_weights }
+        ProfilingInfo {
+            sierra_statement_weights,
+            stack_trace_weights,
+            scoped_sierra_statement_weights,
+        }
     }
 
     fn sierra_statement_index_by_pc(&self, pc: usize) -> StatementIdx {
@@ -601,7 +621,13 @@ impl SierraCasmRunner {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct ProfilingInfoCollectionConfig {
     /// The maximum depth of the stack trace to collect.
-    max_stack_trace_depth: usize,
+    pub max_stack_trace_depth: usize,
+    /// If this flag is set, in addition to the Sierra statement weights and stack trace weights
+    /// the runner will also collect weights for Sierra statements taking into account current call
+    /// stack and collapsing recursive calls (which also includes loops).
+    /// The resulting dictionary can be pretty huge hence this feature is optional and disabled by
+    /// default.
+    pub collect_scoped_sierra_statement_weights: bool,
 }
 
 impl ProfilingInfoCollectionConfig {
@@ -627,6 +653,7 @@ impl Default for ProfilingInfoCollectionConfig {
             } else {
                 MAX_STACK_TRACE_DEPTH_DEFAULT
             },
+            collect_scoped_sierra_statement_weights: false,
         }
     }
 }

@@ -1,0 +1,46 @@
+//! > Test trivial pow2 by add loop
+
+//! > test_runner_name
+test_profiling
+
+//! > collect_scoped_sierra_statement_weights
+true
+
+//! > scoped_mode
+true
+
+//! > cairo_code
+fn pow2_14000() {
+    pow2_by_add_loop(14000, 1);
+}
+
+fn pow2_by_add_loop(n: felt252, x: felt252) -> felt252 {
+    if n == 0 {
+        return x;
+    } else {
+        return pow2_by_add_loop(n - 1, x + x);
+    }
+}
+
+//! > max_stack_trace_depth
+100
+
+//! > function_name
+pow2_14000
+
+//! > expected_profiling_info
+test::pow2_14000;store_temp<RangeCheck> 1
+test::pow2_14000;store_temp<GasBuiltin> 1
+test::pow2_14000;store_temp<felt252> 1
+test::pow2_14000;function_call<user@test::pow2_by_add_loop> 1
+test::pow2_14000;test::pow2_by_add_loop;withdraw_gas 42003
+test::pow2_14000;test::pow2_by_add_loop;store_temp<RangeCheck> 1
+test::pow2_14000;test::pow2_by_add_loop;felt252_is_zero 14001
+test::pow2_14000;test::pow2_by_add_loop;store_temp<GasBuiltin> 1
+test::pow2_14000;test::pow2_by_add_loop;store_temp<felt252> 14000
+test::pow2_14000;test::pow2_by_add_loop;function_call<user@test::pow2_by_add_loop> 14000
+test::pow2_14000;test::pow2_by_add_loop;store_temp<core::panics::PanicResult::<(core::felt252,)>> 3
+test::pow2_14000;test::pow2_by_add_loop;return 14000
+test::pow2_14000;enum_match<core::panics::PanicResult::<(core::felt252,)>> 1
+test::pow2_14000;store_temp<core::panics::PanicResult::<((),)>> 3
+test::pow2_14000;return 1
