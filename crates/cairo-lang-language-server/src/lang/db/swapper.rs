@@ -150,7 +150,7 @@ impl AnalysisDatabaseSwapper {
                 continue;
             };
 
-            project_controller.update_project_for_file(&file_path);
+            project_controller.update_project_for_file(file_path);
         }
     }
 }

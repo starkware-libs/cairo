@@ -271,8 +271,8 @@ impl Backend {
         event_loop_thread(move || {
             let Self { mut state, connection } = self;
             let proc_macro_channels = state.proc_macro_controller.init_channels();
+            let project_updates_receiver = state.project_controller.response_receiver();
 
-            let project_updates_receiver = state.project_controller.init_channel();
             let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
 
             Self::dispatch_setup_tasks(&mut scheduler);
@@ -426,7 +426,7 @@ impl Backend {
         for uri in state.open_files.iter() {
             let Some(file_id) = state.db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = state.db.lookup_intern_file(file_id) {
-                state.project_controller.update_project_for_file(&file_path);
+                state.project_controller.update_project_for_file(file_path);
             }
         }
 
