@@ -35,9 +35,20 @@
 //!}
 //! ```
 
-/// `Clone` trait defines the interface for cloning values.
+/// A common trait for the ability to explicitly duplicate an object.
+///
+/// Differs from `Copy` in that `Copy` is implicit and inexpensive, while
+/// `Clone` is always explicit and may or may not be expensive.
+///
+/// Since `Clone` is more general than `Copy`, you can automatically make anything
+/// `Copy` be `Clone` as well.
+///
+/// ## Derivable
+///
+/// This trait can be used with `#[derive]` if all fields are `Clone`. The `derive`
+/// implementation of `Clone` calls `clone` method on each field.
 pub trait Clone<T> {
-    /// Takes a snapshot of a copyable value and returns a clone of that value.
+    /// Takes a snapshot of a value and returns a clone of that value.
     ///
     /// # Examples
     ///
