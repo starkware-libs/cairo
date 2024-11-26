@@ -81,8 +81,7 @@ pub extern type Felt252Dict<T>;
 /// `felt252` key.
 pub extern type SquashedFelt252Dict<T>;
 
-/// A type that is returned after calling `entry` method, on which it is possible to call `finalize`
-/// method in order to regain ownership of a dictionary after adding a new entry.
+/// An intermediate type that is returned after calling the `entry` method that consumes ownership of the dictionary. This ensures that the dictionary cannot be mutated until the entry is finalized, which restores ownership of the dictionary.
 pub extern type Felt252DictEntry<T>;
 
 impl SquashedFelt252DictDrop<T, +Drop<T>> of Drop<SquashedFelt252Dict<T>>;
