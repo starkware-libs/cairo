@@ -1,6 +1,0 @@
-//! > cairo_code
-skipped tokens
-
-//! > syntax
-skipped              source.cairo variable.other.cairo
-tokens               source.cairo variable.other.cairo
