@@ -1,4 +1,4 @@
-//! Metaprogramming module that provides metaprogramming utilities for working with tuples.
+//! Metaprogramming utilities for working with tuples.
 
 /// A trait that can be used to disable implementations based on the types of the generic args.
 /// Assumes that `TypeEqualImpl` is the only implementation of this trait.
