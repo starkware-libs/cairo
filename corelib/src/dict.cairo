@@ -4,23 +4,6 @@
 //! retrieving, and updating values. Each operation creates a new entry that can be validated
 //! through a process called squashing.
 //!
-//! Due to Cairo's immutable memory model, dictionaries are implemented as an append-only list
-//! of dictionary access entries. Each entry is a triple of:
-//! - `key`: The dictionary key being accessed (`felt252`)
-//! - `prev_value`: The previous value associated with this key
-//! - `new_value`: The new value being associated with this key
-//!
-//! Every dictionary operation (insert, get, etc.) creates a new entry:
-//! - An `insert(k, v)` creates an entry with the previous value and `v` as the new value.
-//! - A `get(k)` creates an entry where `prev_value` equals `new_value`.
-//!
-//! When a dictionary goes out of scope, it undergoes a process called "squashing" that validates
-//! the consistency of all accesses. For any key `k`, if we have multiple entries:
-//! - The `new_value` of entry `i` must equal the `prev_value` of entry `i+1`
-//! - The squashed result contains one entry per key, with:
-//!   - `prev_value`: The value before the first access
-//!   - `new_value`: The value after the last access
-//!
 //! # Examples
 //!
 //! One can create a new dictionary using the [`Default::default`] method:
@@ -64,14 +47,30 @@
 //! dict = entry.finalize(new_value);
 //! ```
 //!
-//! The process of squashing is as follows: given all entries with certain key `k`, taken in the
-//! same order as they were inserted, verify that the ith entry `new_value` is equal to the ith + 1
-//! entry `prev_value`.
+//! # Implementation details
+//!
+//! Note: These implementation details are hidden from users, who can only interact with
+//! dictionaries through the provided trait methods.
+//!
+//! Dictionaries are implemented as an append-only list of dictionary access entries. Each entry is
+//! a tuple of:
+//! - `key`: The dictionary key being accessed (`felt252`)
+//! - `prev_value`: The previous value associated with this key
+//! - `new_value`: The new value being associated with this key
+//!
+//! Every dictionary operation (insert, get, etc.) creates a new entry:
+//! - An `insert(k, v)` creates an entry with the previous value and `v` as the new value.
+//! - A `get(k)` creates an entry where `prev_value` equals `new_value`.
+//!
+//! When a dictionary goes out of scope, it undergoes a process called "squashing" that validates
+//! the consistency of all accesses. For any key `k`, if we have multiple entries:
+//! - The `new_value` of entry `i` must equal the `prev_value` of entry `i+1`
+//! - The squashed result contains one entry per key, with:
+//!   - `prev_value`: The initial value before the first access - the default value for type T
+//!   - `new_value`: The value after the last access
+//!
 //! Squashing is done automatically right before a dictionary goes out scope via the
 //! `Felt252Dict<T>` implementation of the `Destruct` trait.
-//!
-//! However, it is still possible to manually squash a dictionary using the
-//! `Felt252DictTrait::squash` method, preventing any future usage of the dictionary.
 
 #[feature("deprecated-index-traits")]
 use crate::traits::{Index, Default, Felt252DictValue};
