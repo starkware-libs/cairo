@@ -218,12 +218,9 @@ fn member_analyze(
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
     user_data_path.push(member_name.clone());
-    if !(member.id.stable_ptr(db.upcast()).lookup(db.upcast()).has_attr(db.upcast(), FLAT_ATTR)
-        || member
-            .id
-            .stable_ptr(db.upcast())
-            .lookup(db.upcast())
-            .has_attr(db.upcast(), SUBSTORAGE_ATTR))
+    let member_ast = member.id.stable_ptr(db.upcast()).lookup(db.upcast());
+    if !(member_ast.has_attr(db.upcast(), FLAT_ATTR)
+        || member_ast.has_attr(db.upcast(), SUBSTORAGE_ATTR))
     {
         paths_data.handle(member_name, user_data_path.clone(), pointer_to_code, diagnostics);
         user_data_path.pop();
