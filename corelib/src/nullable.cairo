@@ -1,19 +1,15 @@
-//! Nullable module that provides a nullable wrapper type for handling optional values.
+//! Nullable wrapper type for handling optional values.
 //!
-//! `Nullable<T>` is a smart pointer type that can either point to a value or be null in the absence
-//! of value.
-//! The wrapped value is stored inside a `Box<T>` data type that uses the `boxed_segment` memory
-//! segment to store data.
+//! `Nullable<T>` is a smart pointer type that can either point to a value stored inside a `Box<T>`
+//! data type or be null in the absence of value.
 //!
 //! This type is useful for avoiding null pointer dereferences. It is especially used in
-//! dictionaries that store complex data structure that don't implement the `zero_default` method
+//! dictionaries that store complex data structures that don't implement the `zero_default` method
 //! of the `Felt252DictValue` trait which is called when a value does not exist in the dictionary.
 //!
 //! # Examples
 //!
 //! ```
-//! use core::nullable::NullableTrait;
-//!
 //! // Create a nullable value
 //! let value: Nullable<u32> = NullableTrait::new(10);
 //!
@@ -39,7 +35,7 @@ use crate::traits::Felt252DictValue;
 #[derive(Copy, Drop)]
 pub extern type Nullable<T>;
 
-/// `FromNullableResult` enum that stores either `null` or the boxed value.
+/// An enum that stores either `null` or the boxed value.
 pub enum FromNullableResult<T> {
     Null,
     NotNull: Box<T>,
@@ -52,11 +48,19 @@ extern fn nullable_forward_snapshot<T>(value: @Nullable<T>) -> Nullable<@T> nopa
 
 impl NullableDeref<T> of crate::ops::Deref<Nullable<T>> {
     type Target = T;
-    /// `deref` implementation for `Nullable<T>` that returns the wrapped value.
+    /// `Deref` implementation for `Nullable<T>` that returns the wrapped value.
     ///
     /// # Panics
     ///
     /// Panics if the wrapped value is `Null`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let wrapped_value: Nullable<u32> = NullableTrait::new(10);
+    /// let value = wrapped_value.deref(); // Panics if the value is `Null`
+    /// assert!(value == 10);
+    /// ```
     fn deref(self: Nullable<T>) -> T {
         match match_nullable(self) {
             FromNullableResult::Null => crate::panic_with_felt252('Attempted to deref null value'),
@@ -65,16 +69,14 @@ impl NullableDeref<T> of crate::ops::Deref<Nullable<T>> {
     }
 }
 
-/// `NullableTrait`containing basic methods to manipulate `Nullable<T>` smart pointers.
+/// A trait to manipulate `Nullable<T>` smart pointers.
 #[generate_trait]
 pub impl NullableImpl<T> of NullableTrait<T> {
-    /// Takes a value of type <T> and returns a `Nullable<T>` smart pointer.
+    /// Takes a value of type `T` and returns a `Nullable<T>` smart pointer.
     ///
     /// # Examples
     ///
     /// ```
-    /// use core::nullable::NullableTrait;
-    ///
     /// let wrapped_value: Nullable<u32> = NullableTrait::new(10);
     /// ```
     #[must_use]
@@ -91,10 +93,9 @@ pub impl NullableImpl<T> of NullableTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::nullable::NullableTrait;
-    ///
     /// let wrapped_value: Nullable<u32> = NullableTrait::new(10);
-    /// let value = wrapped_value.deref();
+    /// let value = wrapped_value.deref(); // Panics if the value is `Null`
+    /// assert!(value == 10);
     /// ```
     fn deref(nullable: Nullable<T>) -> T {
         nullable.deref()
@@ -106,10 +107,9 @@ pub impl NullableImpl<T> of NullableTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::nullable::NullableTrait;
-    ///
     /// let wrapped_value: Nullable<u32> = NullableTrait::new(10);
     /// let value = wrapped_value.deref_or(0);
+    /// assert!(value == 10);
     /// ```
     fn deref_or<+Drop<T>>(self: Nullable<T>, default: T) -> T {
         match match_nullable(self) {
@@ -124,10 +124,9 @@ pub impl NullableImpl<T> of NullableTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// use core::nullable::NullableTrait;
-    ///
     /// let wrapped_value: Nullable<u32> = NullableTrait::new(10);
-    /// let result = wrapped_value.is_null();
+    /// let is_null = wrapped_value.is_null();
+    /// assert!(!is_null);
     /// ```
     #[must_use]
     fn is_null(self: @Nullable<T>) -> bool {
@@ -137,16 +136,15 @@ pub impl NullableImpl<T> of NullableTrait<T> {
         }
     }
 
-    /// Takes a snapshot of a `Nullable<T>` smart pointer and returns a nullable smart pointer
+    /// Takes a snapshot of a `Nullable<T>` smart pointer and returns a `Nullable<T>`` smart pointer
     /// that points to a snapshot of the `T` value.
     ///
     /// # Examples
     ///
     /// ```
-    /// use core::nullable::NullableTrait;
-    ///
     /// let wrapped_value: Nullable<u32> = NullableTrait::new(10);
     /// let snapshot = wrapped_value.as_snapshot();
+    /// assert!(snapshot.deref() == @10);
     /// ```
     fn as_snapshot(self: @Nullable<T>) -> Nullable<@T> nopanic {
         nullable_forward_snapshot(self)
@@ -155,6 +153,13 @@ pub impl NullableImpl<T> of NullableTrait<T> {
 
 impl NullableDefault<T> of Default<Nullable<T>> {
     /// Returns a `Nullable<T>` smart pointer with `Null` value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let wrapped_value: Nullable<u32> = Default::default();
+    /// assert!(wrapped_value.is_null());
+    /// ```
     #[inline]
     #[must_use]
     fn default() -> Nullable<T> nopanic {
@@ -164,6 +169,15 @@ impl NullableDefault<T> of Default<Nullable<T>> {
 
 impl NullableFelt252DictValue<T> of Felt252DictValue<Nullable<T>> {
     /// Returns a `Nullable<T>` smart pointer with `Null` value.
+    /// This method is automatically called when accessing a dictionary that doesn't contain any
+    /// entry for a given key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let wrapped_value: Nullable<u32> = Felt252DictValue::zero_default();
+    /// assert!(wrapped_value.is_null());
+    /// ```
     #[inline]
     #[must_use]
     fn zero_default() -> Nullable<T> nopanic {
