@@ -5,8 +5,8 @@ use anyhow::Context;
 use bincode::enc::write::Writer;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::check_compiler_path;
-use cairo_lang_runnable::compile::compile_runnable;
-use cairo_lang_runnable::runnable::{EntryPointKind, Runnable};
+use cairo_lang_executable::compile::compile_executable;
+use cairo_lang_executable::executable::{EntryPointKind, Executable};
 use cairo_lang_runner::{Arg, CairoHintProcessor, build_hints_dict};
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
 use cairo_vm::types::layout_name::LayoutName;
@@ -16,7 +16,7 @@ use cairo_vm::{Felt252, cairo_run};
 use clap::Parser;
 use num_bigint::BigInt;
 
-/// Compiles a Cairo project and runs a function marked `#[runnable]`.
+/// Compiles a Cairo project and runs a function marked `#[executable]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
@@ -47,14 +47,14 @@ struct BuildArgs {
     /// Allows the compilation to succeed with warnings.
     #[arg(long, conflicts_with = "prebuilt")]
     allow_warnings: bool,
-    /// Path to the runnable function.
+    /// Path to the executable function.
     #[arg(long, conflicts_with = "prebuilt")]
-    runnable: Option<String>,
+    executable: Option<String>,
 }
 
 #[derive(Parser, Debug)]
 struct RunArgs {
-    /// Serialized arguments to the runnable function.
+    /// Serialized arguments to the executable function.
     #[arg(long, value_delimiter = ',', conflicts_with = "build_only")]
     args: Vec<BigInt>,
     /// Whether to print the outputs.
@@ -104,10 +104,10 @@ struct ProofModeArgs {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let runnable = {
+    let executable = {
         if args.prebuilt {
             serde_json::from_reader(std::fs::File::open(&args.path)?)
-                .with_context(|| "Failed reading prebuilt runnable.")?
+                .with_context(|| "Failed reading prebuilt executable.")?
         } else {
             // Check if args.path is a file or a directory.
             check_compiler_path(args.build.single_file, &args.path)?;
@@ -115,20 +115,24 @@ fn main() -> anyhow::Result<()> {
             if args.build.allow_warnings {
                 reporter = reporter.allow_warnings();
             }
-            Runnable::new(compile_runnable(&args.path, args.build.runnable.as_deref(), reporter)?)
+            Executable::new(compile_executable(
+                &args.path,
+                args.build.executable.as_deref(),
+                reporter,
+            )?)
         }
     };
     if let Some(path) = &args.build_only {
-        serde_json::to_writer(std::fs::File::create(path)?, &runnable)
-            .with_context(|| "Failed writing runnable.")?;
+        serde_json::to_writer(std::fs::File::create(path)?, &executable)
+            .with_context(|| "Failed writing executable.")?;
         return Ok(());
     }
 
     let data =
-        runnable.program.bytecode.iter().map(Felt252::from).map(MaybeRelocatable::from).collect();
-    let (hints, string_to_hint) = build_hints_dict(&runnable.program.hints);
+        executable.program.bytecode.iter().map(Felt252::from).map(MaybeRelocatable::from).collect();
+    let (hints, string_to_hint) = build_hints_dict(&executable.program.hints);
     let program = if args.run.proof_mode {
-        let entrypoint = runnable
+        let entrypoint = executable
             .entrypoints
             .iter()
             .find(|e| matches!(e.kind, EntryPointKind::NonReturning))
@@ -145,7 +149,7 @@ fn main() -> anyhow::Result<()> {
             None,
         )
     } else {
-        let entrypoint = runnable
+        let entrypoint = executable
             .entrypoints
             .iter()
             .find(|e| matches!(e.kind, EntryPointKind::Function))
