@@ -132,6 +132,7 @@ pub fn poseidon_hash_span(mut span: Span<felt252>) -> felt252 {
     _poseidon_hash_span_inner(crate::gas::get_builtin_costs(), (0, 0, 0), ref span)
 }
 
+/// Helper function for poseidon_hash_span.
 fn _poseidon_hash_span_inner(
     builtin_costs: crate::gas::BuiltinCosts,
     state: (felt252, felt252, felt252),
