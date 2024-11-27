@@ -418,7 +418,7 @@ impl Backend {
         state.diagnostics_controller.refresh(state);
     }
 
-    /// Reload crate detection for all open files.
+    /// Reload config and update project model for all open files.
     fn reload(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
         state.project_controller.clear_loaded_workspaces();
         state.config.reload(requester, &state.client_capabilities)?;
@@ -426,7 +426,7 @@ impl Backend {
         for uri in state.open_files.iter() {
             let Some(file_id) = state.db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = state.db.lookup_intern_file(file_id) {
-                state.project_controller.update_project_for(&state.scarb_toolchain, &file_path);
+                state.project_controller.update_project_for_file(&file_path);
             }
         }
 

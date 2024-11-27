@@ -37,7 +37,6 @@ impl State {
     ) -> Self {
         let notifier = Client::new(sender).notifier();
         let scarb_toolchain = ScarbToolchain::new(notifier.clone());
-        let db_swapper = AnalysisDatabaseSwapper::new(scarb_toolchain.clone());
         let proc_macro_controller =
             ProcMacroClientController::new(scarb_toolchain.clone(), notifier.clone());
 
@@ -46,12 +45,12 @@ impl State {
             open_files: Default::default(),
             config: Default::default(),
             client_capabilities: Owned::new(client_capabilities.into()),
-            scarb_toolchain,
-            db_swapper,
+            scarb_toolchain: scarb_toolchain.clone(),
+            db_swapper: AnalysisDatabaseSwapper::new(),
             tricks: Owned::new(tricks.into()),
             diagnostics_controller: DiagnosticsController::new(notifier),
             proc_macro_controller,
-            project_controller: ProjectController::new(),
+            project_controller: ProjectController::new(scarb_toolchain),
         }
     }
 
