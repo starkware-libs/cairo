@@ -222,7 +222,7 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
 // The expected return value of the `__validate__` functions of an accounted contract.
 pub const VALIDATED: felt252 = 'VALID';
 
-// Module for starknet testing only.
-// Provides functions useful for testing event emission, Starknet state information, and the
-// cheatcode concept in general.
+/// Module for starknet testing only.
+/// Provides functions useful for testing event emission, Starknet state information, and the
+/// cheatcode concept in general.
 pub mod testing;
