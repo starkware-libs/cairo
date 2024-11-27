@@ -145,6 +145,7 @@ cairo_lang_test_utils::test_file_test!(
         expr_diagnostics: "expr_diagnostics",
         enum_diagnostics: "enum_diagnostics",
         fn_: "fn",
+        generic_params: "generic_params",
         if_: "if",
         illegal_string_escapes: "illegal_string_escapes",
         match_: "match",

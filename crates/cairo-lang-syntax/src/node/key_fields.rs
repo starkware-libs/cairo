@@ -367,6 +367,16 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::GenericArgList => vec![],
+        SyntaxKind::AssociatedItemConstraint => {
+            vec![]
+        }
+        SyntaxKind::AssociatedItemConstraints => {
+            vec![]
+        }
+        SyntaxKind::AssociatedItemConstraintList => vec![],
+        SyntaxKind::OptionAssociatedItemConstraintsEmpty => {
+            vec![]
+        }
         SyntaxKind::OptionWrappedGenericParamListEmpty => {
             vec![]
         }
