@@ -1,5 +1,4 @@
-//! Starknet module that provides a comprehensive set of utilities and abstractions for interacting
-//! with the Starknet network.
+//! Utilities and abstractions for interacting with the Starknet network.
 //!
 //! # Core Components
 //!
@@ -38,7 +37,6 @@ use core::zeroable::Zeroable;
 
 /// Storage access module containing `Store<T>` trait and implementations for various types.
 pub mod storage_access;
-/// Re-imports
 pub use storage_access::{Store, StorageAddress};
 #[allow(unused_imports)]
 use storage_access::{
@@ -94,7 +92,7 @@ use class_hash::{
 };
 
 /// Execution information module.
-/// Not `pub` on purpose, only used for direct reexport by the next line.
+// Not `pub` on purpose, only used for direct reexport by the next line.
 mod info;
 pub use info::{
     v2::ExecutionInfo as ExecutionInfo, BlockInfo, v2::TxInfo as TxInfo, get_execution_info,
@@ -184,23 +182,23 @@ pub mod storage;
 
 pub extern type System;
 
-/// A helper function to force the inclusion of `System` in the list of implicits.
+// A helper function to force the inclusion of `System` in the list of implicits.
 #[deprecated(
     feature: "use_system_implicit",
     note: "Use `core::internal::require_implicit::<System>` instead.",
 )]
 fn use_system_implicit() implicits(System) {}
 
-/// The result type for a syscall.
+/// The `Result` type for a syscall.
 pub type SyscallResult<T> = Result<T, Array<felt252>>;
 
-/// `SyscallResultTrait` that allows to unwrap the result of a syscall.
+/// A trait that allows to unwrap the result of a syscall.
 pub trait SyscallResultTrait<T> {
     /// Takes a `SyscallResult` and returns `x` if the return value is `Result::Ok(x)`.
     ///
     /// # Panics
     ///
-    /// Panics if the syscall call is not successful.
+    /// Panics if the syscall is not successful.
     ///
     /// # Examples
     ///
@@ -221,10 +219,10 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
     }
 }
 
-/// The expected return value of the `__validate__` functions of an accounted contract.
+// The expected return value of the `__validate__` functions of an accounted contract.
 pub const VALIDATED: felt252 = 'VALID';
 
-/// Module for starknet testing only.
-/// Provides functions useful for testing event emission, Starknet state information, and the
-/// cheatcode concept in general.
+// Module for starknet testing only.
+// Provides functions useful for testing event emission, Starknet state information, and the
+// cheatcode concept in general.
 pub mod testing;
