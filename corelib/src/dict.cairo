@@ -114,7 +114,6 @@ pub(crate) extern fn felt252_dict_squash<T>(
 /// Basic trait for the `Felt252Dict` type.
 pub trait Felt252DictTrait<T> {
     /// Inserts the given value for the given key.
-    /// Requires the `Destruct` trait, as the previous value is dropped.
     ///
     /// # Examples
     ///
@@ -126,7 +125,8 @@ pub trait Felt252DictTrait<T> {
     /// ```
     fn insert<+Destruct<T>>(ref self: Felt252Dict<T>, key: felt252, value: T);
 
-    /// Returns a copy of the value at the given key.
+    /// Returns the value stored at the given key. If no value was previously inserted at this key,
+    /// returns the default value for type T.
     ///
     /// # Examples
     ///
@@ -140,7 +140,7 @@ pub trait Felt252DictTrait<T> {
     /// ```
     fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T;
 
-    /// Allows to manually squash a dictionary and returns a `SquashedFelt252Dict` type.
+    /// Squashes a dictionary and returns the associated `SquashedFelt252Dict`.
     ///
     /// # Examples
     ///
@@ -153,8 +153,8 @@ pub trait Felt252DictTrait<T> {
     /// ```
     fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic;
 
-    /// Retrieves the last entry given a certain key.
-    /// This method takes ownership of the dictionary and returns the entry to update
+    /// Retrieves the last entry for a certain key.
+    /// This method takes ownership of the dictionary and returns the entry to update,
     /// as well as the previous value at the given key.
     ///
     /// # Examples
@@ -197,10 +197,10 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
     }
 }
 
-/// Basic trait for the `Felt252DictEntryTrait` dictionary entry type.
+/// Basic trait for the `Felt252DictEntryTrait` type.
 pub trait Felt252DictEntryTrait<T> {
-    /// Allows to create a new entry in the dictionary while giving back
-    /// the ownership of the dictionary.
+    /// Finalizes the changes made to a dictionary entry and gives back the ownership of the
+    /// dictionary.
     ///
     /// # Examples
     ///
@@ -210,14 +210,14 @@ pub trait Felt252DictEntryTrait<T> {
     /// // Create a dictionary that stores arrays
     /// let mut dict: Felt252Dict<Nullable<Array<felt252>>> = Default::default();
     ///
-    /// // Create the array to insert
     /// let a = array![1, 2, 3];
-    ///
     /// dict.insert(0, NullableTrait::new(a));
     ///
     /// let (entry, prev_value) = dict.entry(0);
     /// let new_value = NullableTrait::new(array![4, 5, 6]);
     /// dict = entry.finalize(new_value);
+    /// assert!(prev_value == a);
+    /// assert!(dict.get(0) == new_value);
     /// ```
     fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>;
 }
@@ -268,7 +268,8 @@ impl Felt252DictEntryDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Fel
     }
 }
 
-/// `Index` trait implementation to allow accessing elements by index.
+/// Implementation of the `Index` trait for `Felt252Dict<T>`.
+/// Allows accessing dictionary elements using the index operator `[]`.
 impl Felt252DictIndex<
     T, +Felt252DictTrait<T>, +Copy<T>, +Destruct<Felt252DictEntry<T>>
 > of Index<Felt252Dict<T>, felt252, T> {
