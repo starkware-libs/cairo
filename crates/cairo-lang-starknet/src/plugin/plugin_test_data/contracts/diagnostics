@@ -8161,6 +8161,7 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub component_storage: starknet::storage::FlattenedStorage<super::component::Storage>,
 }
 #[doc(hidden)]
@@ -8176,6 +8177,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component::Storage>>,
 }
 #[doc(hidden)]
@@ -8190,6 +8192,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub component_storage: super::component::ComponentState<ContractState>,
 }
 
@@ -12718,6 +12721,7 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub component_member: starknet::storage::FlattenedStorage<super::test_component::Storage>,
 }
 #[doc(hidden)]
@@ -12733,6 +12737,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub component_member: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::test_component::Storage>>,
 }
 #[doc(hidden)]
@@ -12747,6 +12752,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub component_member: super::test_component::ComponentState<ContractState>,
 }
 
@@ -14674,6 +14680,7 @@ pub struct Storage {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBase {
+        #[substorage(v0)]
     pub component_storage: starknet::storage::FlattenedStorage<super::component::Storage>,
 }
 #[doc(hidden)]
@@ -14689,6 +14696,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 pub struct StorageStorageBaseMut {
+        #[substorage(v0)]
     pub component_storage: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<super::component::Storage>>,
 }
 #[doc(hidden)]
@@ -14703,6 +14711,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
         pub component_storage: super::component::ComponentState<ContractState>,
 }
 
