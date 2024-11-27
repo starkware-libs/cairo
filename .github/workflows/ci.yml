@@ -60,7 +60,7 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-test-utils
           - test --profile=ci-dev -p cairo-lang-utils --features=serde,parity-scale-codec,schemars,testing,env_logger
           - test --profile=ci-dev -p cairo-lang-utils --no-default-features --features=serde,parity-scale-codec
-          - test --profile=ci-dev -p cairo-lang-stable-token
+          - test --profile=ci-dev -p cairo-lang-primitive-token
           - test --profile=ci-dev -p tests
     steps:
       - uses: actions/checkout@v4

@@ -1,4 +1,4 @@
-use cairo_lang_stable_token::{StableSpan, StableToken, ToStableTokenStream};
+use cairo_lang_primitive_token::{PrimitiveSpan, PrimitiveToken, ToPrimitiveTokenStream};
 
 use super::SyntaxNode;
 use super::db::SyntaxGroup;
@@ -14,10 +14,10 @@ impl<'a, Db: SyntaxGroup> SyntaxNodeWithDb<'a, Db> {
     }
 }
 
-impl<'a, Db: SyntaxGroup> ToStableTokenStream for SyntaxNodeWithDb<'a, Db> {
+impl<'a, Db: SyntaxGroup> ToPrimitiveTokenStream for SyntaxNodeWithDb<'a, Db> {
     type Iter = SyntaxNodeWithDbIterator<'a, Db>;
 
-    fn to_stable_token_stream(&self) -> Self::Iter {
+    fn to_primitive_token_stream(&self) -> Self::Iter {
         // The lifetime of the iterator should extend 'a because it derives from both node and db
         SyntaxNodeWithDbIterator::new(Box::new(self.node.tokens(self.db)), self.db)
     }
@@ -35,14 +35,14 @@ impl<'a, Db: SyntaxGroup> SyntaxNodeWithDbIterator<'a, Db> {
 }
 
 impl<Db: SyntaxGroup> Iterator for SyntaxNodeWithDbIterator<'_, Db> {
-    type Item = StableToken;
+    type Item = PrimitiveToken;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|node| {
             let span = node.span(self.db).to_str_range();
-            StableToken {
+            PrimitiveToken {
                 content: node.get_text(self.db),
-                span: Some(StableSpan { start: span.start, end: span.end }),
+                span: Some(PrimitiveSpan { start: span.start, end: span.end }),
             }
         })
     }

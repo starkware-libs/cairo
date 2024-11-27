@@ -744,6 +744,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-lang-primitive-token"
+version = "1.0.0"
+
+[[package]]
 name = "cairo-lang-proc-macros"
 version = "2.8.5"
 dependencies = [
@@ -1002,10 +1006,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-lang-stable-token"
-version = "1.0.0"
-
-[[package]]
 name = "cairo-lang-starknet"
 version = "2.8.5"
 dependencies = [
@@ -1073,7 +1073,7 @@ version = "2.8.5"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
- "cairo-lang-stable-token",
+ "cairo-lang-primitive-token",
  "cairo-lang-utils",
  "env_logger",
  "num-bigint",

@@ -49,7 +49,7 @@ members = [
     "crates/cairo-lang-sierra-generator",
     "crates/cairo-lang-sierra-to-casm",
     "crates/cairo-lang-sierra-type-size",
-    "crates/cairo-lang-stable-token",
+    "crates/cairo-lang-primitive-token",
     "crates/cairo-lang-starknet",
     "crates/cairo-lang-starknet-classes",
     "crates/cairo-lang-syntax",
