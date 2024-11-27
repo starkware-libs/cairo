@@ -9,7 +9,7 @@ use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expec
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::compile;
-use crate::plugin::runnable_plugin_suite;
+use crate::plugin::executable_plugin_suite;
 
 /// Salsa database configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
@@ -18,16 +18,16 @@ pub static SHARED_DB: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
         RootDatabase::builder()
             .skip_auto_withdraw_gas()
             .detect_corelib()
-            .with_plugin_suite(runnable_plugin_suite())
+            .with_plugin_suite(executable_plugin_suite())
             .build()
             .unwrap(),
     )
 });
 
 #[derive(Default)]
-struct ExpandRunnableTestRunner {}
+struct ExpandExecutableTestRunner {}
 
-impl TestFileRunner for ExpandRunnableTestRunner {
+impl TestFileRunner for ExpandExecutableTestRunner {
     fn run(
         &mut self,
         inputs: &OrderedHashMap<String, String>,
@@ -49,19 +49,19 @@ impl TestFileRunner for ExpandRunnableTestRunner {
 }
 
 cairo_lang_test_utils::test_file_test_with_runner!(
-    expand_runnable,
+    expand_executable,
     "src/plugin_test_data",
     {
         diagnostics: "diagnostics",
         expansion: "expansion",
     },
-    ExpandRunnableTestRunner
+    ExpandExecutableTestRunner
 );
 
 #[derive(Default)]
-struct CompileRunnableTestRunner {}
+struct CompileExecutableTestRunner {}
 
-impl TestFileRunner for CompileRunnableTestRunner {
+impl TestFileRunner for CompileExecutableTestRunner {
     fn run(
         &mut self,
         inputs: &OrderedHashMap<String, String>,
@@ -70,7 +70,7 @@ impl TestFileRunner for CompileRunnableTestRunner {
         let db = SHARED_DB.lock().unwrap().snapshot();
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
         let (test_module, semantic_diagnostics) = setup_test_module(&db, &cairo_code).split();
-        let result = compile::compile_runnable_in_prepared_db(
+        let result = compile::compile_executable_in_prepared_db(
             &db,
             None,
             vec![test_module.crate_id],
@@ -89,10 +89,10 @@ impl TestFileRunner for CompileRunnableTestRunner {
 }
 
 cairo_lang_test_utils::test_file_test_with_runner!(
-    compile_runnable,
+    compile_executable,
     "src/compile_test_data",
     {
         basic: "basic",
     },
-    CompileRunnableTestRunner
+    CompileExecutableTestRunner
 );

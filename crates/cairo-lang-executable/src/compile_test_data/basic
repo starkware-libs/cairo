@@ -1,10 +1,10 @@
-//! > Basic runnable.
+//! > Basic executable.
 
 //! > test_runner_name
-CompileRunnableTestRunner(expect_diagnostics: false)
+CompileExecutableTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
-#[runnable]
+#[executable]
 fn main() {}
 
 //! > generated_casm_code
@@ -46,13 +46,13 @@ ret;
 
 //! > ==========================================================================
 
-//! > Test runnable with arguments.
+//! > Test executable with arguments.
 
 //! > test_runner_name
-CompileRunnableTestRunner(expect_diagnostics: false)
+CompileExecutableTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
-#[runnable]
+#[executable]
 fn main(a: felt252, b: felt252) -> felt252 {
     a + b
 }
@@ -128,13 +128,13 @@ ret;
 
 //! > ==========================================================================
 
-//! > Test runnable with recursion.
+//! > Test executable with recursion.
 
 //! > test_runner_name
-CompileRunnableTestRunner(expect_diagnostics: false)
+CompileExecutableTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
-#[runnable]
+#[executable]
 fn fib(a: u128, b: u128, n: u128) -> u128 {
     if n == 0 {
         a
@@ -371,13 +371,13 @@ ret;
 
 //! > ==========================================================================
 
-//! > Test raw runnable.
+//! > Test raw executable.
 
 //! > test_runner_name
-CompileRunnableTestRunner(expect_diagnostics: false)
+CompileExecutableTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
-#[runnable_raw]
+#[executable_raw]
 fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) {}
 
 //! > generated_casm_code

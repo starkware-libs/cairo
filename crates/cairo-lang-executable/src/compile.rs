@@ -17,7 +17,7 @@ use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::{Upcast, write_comma_separated};
 use itertools::Itertools;
 
-use crate::plugin::{RUNNABLE_PREFIX, RUNNABLE_RAW_ATTR, runnable_plugin_suite};
+use crate::plugin::{EXECUTABLE_PREFIX, EXECUTABLE_RAW_ATTR, executable_plugin_suite};
 
 /// The CASM compilation result.
 pub struct CompiledFunction {
@@ -50,69 +50,72 @@ impl std::fmt::Display for CompiledFunction {
 
 /// Compile the function given by path.
 /// Errors if there is ambiguity.
-pub fn compile_runnable(
+pub fn compile_executable(
     path: &Path,
-    runnable_path: Option<&str>,
+    executable_path: Option<&str>,
     diagnostics_reporter: DiagnosticsReporter<'_>,
 ) -> Result<CompiledFunction> {
     let mut db = RootDatabase::builder()
         .skip_auto_withdraw_gas()
         .detect_corelib()
-        .with_plugin_suite(runnable_plugin_suite())
+        .with_plugin_suite(executable_plugin_suite())
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 
-    compile_runnable_in_prepared_db(&db, runnable_path, main_crate_ids, diagnostics_reporter)
+    compile_executable_in_prepared_db(&db, executable_path, main_crate_ids, diagnostics_reporter)
 }
 
-/// Runs compiler on the specified runnable function.
-/// If no runnable was specified, verify that there is only one.
+/// Runs compiler on the specified executable function.
+/// If no executable was specified, verify that there is only one.
 /// Otherwise, return an error.
-pub fn compile_runnable_in_prepared_db(
+pub fn compile_executable_in_prepared_db(
     db: &RootDatabase,
-    runnable_path: Option<&str>,
+    executable_path: Option<&str>,
     main_crate_ids: Vec<CrateId>,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
 ) -> Result<CompiledFunction> {
-    let mut runnables: Vec<_> = find_executable_function_ids(db, main_crate_ids)
+    let mut executables: Vec<_> = find_executable_function_ids(db, main_crate_ids)
         .into_iter()
-        .filter_map(|(id, labels)| labels.into_iter().any(|l| l == RUNNABLE_RAW_ATTR).then_some(id))
+        .filter_map(|(id, labels)| {
+            labels.into_iter().any(|l| l == EXECUTABLE_RAW_ATTR).then_some(id)
+        })
         .collect();
 
-    if let Some(runnable_path) = runnable_path {
-        runnables.retain(|runnable| originating_function_path(db, *runnable) == runnable_path);
+    if let Some(executable_path) = executable_path {
+        executables
+            .retain(|executable| originating_function_path(db, *executable) == executable_path);
     };
-    let runnable = match runnables.len() {
+    let executable = match executables.len() {
         0 => {
-            // Report diagnostics as they might reveal the reason why no runnable was found.
+            // Report diagnostics as they might reveal the reason why no executable was found.
             diagnostics_reporter.ensure(db)?;
-            anyhow::bail!("Requested `#[runnable]` not found.");
+            anyhow::bail!("Requested `#[executable]` not found.");
         }
-        1 => runnables[0],
+        1 => executables[0],
         _ => {
-            let runnable_names = runnables
+            let executable_names = executables
                 .iter()
-                .map(|runnable| originating_function_path(db, *runnable))
+                .map(|executable| originating_function_path(db, *executable))
                 .join("\n  ");
             anyhow::bail!(
-                "More than one runnable found in the main crate: \n  {}\nUse --runnable to \
+                "More than one executable found in the main crate: \n  {}\nUse --executable to \
                  specify which to compile.",
-                runnable_names
+                executable_names
             );
         }
     };
 
-    compile_runnable_function_in_prepared_db(db, runnable, diagnostics_reporter)
+    compile_executable_function_in_prepared_db(db, executable, diagnostics_reporter)
 }
 
-/// Returns the path to the function that the runnable is wrapping.
+/// Returns the path to the function that the executable is wrapping.
 ///
-/// If the runnable is not wrapping a function, returns the full path of the runnable.
+/// If the executable is not wrapping a function, returns the full path of the executable.
 fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
     let wrapper_name = wrapper.name(db);
     let wrapper_full_path = wrapper.base_semantic_function(db).full_path(db.upcast());
-    let Some(wrapped_name) = wrapper_name.strip_suffix(RUNNABLE_PREFIX) else {
+    let Some(wrapped_name) = wrapper_name.strip_suffix(EXECUTABLE_PREFIX) else {
         return wrapper_full_path;
     };
     let Some(wrapper_path_to_module) = wrapper_full_path.strip_suffix(wrapper_name.as_str()) else {
@@ -121,28 +124,28 @@ fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBod
     format!("{}{}", wrapper_path_to_module, wrapped_name)
 }
 
-/// Runs compiler for a runnable function.
+/// Runs compiler for an executable function.
 ///
 /// # Arguments
 /// * `db` - Preloaded compilation database.
-/// * `runnable` - [`ConcreteFunctionWithBodyId`]s to compile.
+/// * `executable` - [`ConcreteFunctionWithBodyId`]s to compile.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
 /// * `Ok(Vec<String>)` - The result artifact of the compilation.
 /// * `Err(anyhow::Error)` - Compilation failed.
-pub fn compile_runnable_function_in_prepared_db(
+pub fn compile_executable_function_in_prepared_db(
     db: &RootDatabase,
-    runnable: ConcreteFunctionWithBodyId,
+    executable: ConcreteFunctionWithBodyId,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
 ) -> Result<CompiledFunction> {
     diagnostics_reporter.ensure(db)?;
     let SierraProgramWithDebug { program: sierra_program, debug_info: _ } = Arc::unwrap_or_clone(
-        db.get_sierra_program_for_functions(vec![runnable])
+        db.get_sierra_program_for_functions(vec![executable])
             .ok()
             .with_context(|| "Compilation failed without any diagnostics.")?,
     );
-    let runnable_func = sierra_program.funcs[0].clone();
+    let executable_func = sierra_program.funcs[0].clone();
     let builder = RunnableBuilder::new(sierra_program, None)?;
-    let wrapper = builder.create_wrapper_info(&runnable_func, EntryCodeConfig::provable())?;
+    let wrapper = builder.create_wrapper_info(&executable_func, EntryCodeConfig::provable())?;
     Ok(CompiledFunction { program: builder.casm_program().clone(), wrapper })
 }

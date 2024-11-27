@@ -13,16 +13,16 @@ use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use indoc::formatdoc;
 use itertools::Itertools;
 
-pub const RUNNABLE_ATTR: &str = "runnable";
-pub const RUNNABLE_RAW_ATTR: &str = "runnable_raw";
-pub const RUNNABLE_PREFIX: &str = "__runnable_wrapper__";
+pub const EXECUTABLE_ATTR: &str = "executable";
+pub const EXECUTABLE_RAW_ATTR: &str = "executable_raw";
+pub const EXECUTABLE_PREFIX: &str = "__executable_wrapper__";
 
-/// Returns a plugin suite with the `RunnablePlugin` and `RawRunnableAnalyzer`.
-pub fn runnable_plugin_suite() -> PluginSuite {
+/// Returns a plugin suite with the `ExecutablePlugin` and `RawExecutableAnalyzer`.
+pub fn executable_plugin_suite() -> PluginSuite {
     std::mem::take(
         PluginSuite::default()
-            .add_plugin::<RunnablePlugin>()
-            .add_analyzer_plugin::<RawRunnableAnalyzer>(),
+            .add_plugin::<ExecutablePlugin>()
+            .add_analyzer_plugin::<RawExecutableAnalyzer>(),
     )
 }
 
@@ -39,9 +39,9 @@ const IMPLICIT_PRECEDENCE: &[&str] = &[
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
-struct RunnablePlugin;
+struct ExecutablePlugin;
 
-impl MacroPlugin for RunnablePlugin {
+impl MacroPlugin for ExecutablePlugin {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
@@ -51,7 +51,7 @@ impl MacroPlugin for RunnablePlugin {
         let ast::ModuleItem::FreeFunction(item) = item_ast else {
             return PluginResult::default();
         };
-        if !item.has_attr(db, RUNNABLE_ATTR) {
+        if !item.has_attr(db, EXECUTABLE_ATTR) {
             return PluginResult::default();
         }
         let mut diagnostics = vec![];
@@ -61,7 +61,7 @@ impl MacroPlugin for RunnablePlugin {
         if !generics.is_empty(db) {
             diagnostics.push(PluginDiagnostic::error(
                 &generics,
-                "Runnable functions cannot have generic params.".to_string(),
+                "Executable functions cannot have generic params.".to_string(),
             ));
             return PluginResult { code: None, diagnostics, remove_original_item: false };
         }
@@ -73,8 +73,8 @@ impl MacroPlugin for RunnablePlugin {
         builder.add_modified(RewriteNode::interpolate_patched(&formatdoc! {"
 
                 $implicit_precedence$
-                #[{RUNNABLE_RAW_ATTR}]
-                fn {RUNNABLE_PREFIX}$function_name$(mut input: Span<felt252>, ref output: Array<felt252>) {{\n
+                #[{EXECUTABLE_RAW_ATTR}]
+                fn {EXECUTABLE_PREFIX}$function_name$(mut input: Span<felt252>, ref output: Array<felt252>) {{\n
             "},
             &[
                 ("implicit_precedence".into(), implicits_precedence,),
@@ -85,7 +85,7 @@ impl MacroPlugin for RunnablePlugin {
         for (param_idx, param) in params.iter().enumerate() {
             builder.add_modified(
                 RewriteNode::Text(format!(
-                    "    let __param{RUNNABLE_PREFIX}{param_idx} = Serde::deserialize(ref \
+                    "    let __param{EXECUTABLE_PREFIX}{param_idx} = Serde::deserialize(ref \
                      input).expect('Failed to deserialize param #{param_idx}');\n"
                 ))
                 .mapped(db, param),
@@ -100,7 +100,7 @@ impl MacroPlugin for RunnablePlugin {
         ));
         for (param_idx, param) in params.iter().enumerate() {
             builder.add_modified(
-                RewriteNode::Text(format!("        __param{RUNNABLE_PREFIX}{param_idx},\n"))
+                RewriteNode::Text(format!("        __param{EXECUTABLE_PREFIX}{param_idx},\n"))
                     .mapped(db, param),
             );
         }
@@ -116,7 +116,7 @@ impl MacroPlugin for RunnablePlugin {
         let (content, code_mappings) = builder.build();
         PluginResult {
             code: Some(PluginGeneratedFile {
-                name: "runnable".into(),
+                name: "executable".into(),
                 content,
                 code_mappings,
                 aux_data: None,
@@ -128,19 +128,19 @@ impl MacroPlugin for RunnablePlugin {
     }
 
     fn declared_attributes(&self) -> Vec<String> {
-        vec![RUNNABLE_ATTR.to_string(), RUNNABLE_RAW_ATTR.to_string()]
+        vec![EXECUTABLE_ATTR.to_string(), EXECUTABLE_RAW_ATTR.to_string()]
     }
 
     fn executable_attributes(&self) -> Vec<String> {
-        vec![RUNNABLE_RAW_ATTR.to_string()]
+        vec![EXECUTABLE_RAW_ATTR.to_string()]
     }
 }
 
-/// Plugin to add diagnostics on bad `#[runnable_raw]` annotations.
+/// Plugin to add diagnostics on bad `#[executable_raw]` annotations.
 #[derive(Default, Debug)]
-struct RawRunnableAnalyzer;
+struct RawExecutableAnalyzer;
 
-impl AnalyzerPlugin for RawRunnableAnalyzer {
+impl AnalyzerPlugin for RawExecutableAnalyzer {
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
         let syntax_db = db.upcast();
         let mut diagnostics = vec![];
@@ -148,7 +148,7 @@ impl AnalyzerPlugin for RawRunnableAnalyzer {
             return diagnostics;
         };
         for (id, item) in free_functions.iter() {
-            if !item.has_attr(syntax_db, RUNNABLE_RAW_ATTR) {
+            if !item.has_attr(syntax_db, EXECUTABLE_RAW_ATTR) {
                 continue;
             }
             let Ok(signature) = db.free_function_signature(*id) else {
@@ -157,14 +157,14 @@ impl AnalyzerPlugin for RawRunnableAnalyzer {
             if signature.return_type != corelib::unit_ty(db) {
                 diagnostics.push(PluginDiagnostic::error(
                     &signature.stable_ptr.lookup(syntax_db).ret_ty(syntax_db),
-                    "Invalid return type for `#[runnable_raw]` function, expected `()`."
+                    "Invalid return type for `#[executable_raw]` function, expected `()`."
                         .to_string(),
                 ));
             }
             let [input, output] = &signature.params[..] else {
                 diagnostics.push(PluginDiagnostic::error(
                     &signature.stable_ptr.lookup(syntax_db).parameters(syntax_db),
-                    "Invalid number of params for `#[runnable_raw]` function, expected 2."
+                    "Invalid number of params for `#[executable_raw]` function, expected 2."
                         .to_string(),
                 ));
                 continue;
@@ -176,7 +176,7 @@ impl AnalyzerPlugin for RawRunnableAnalyzer {
             {
                 diagnostics.push(PluginDiagnostic::error(
                     input.stable_ptr.untyped(),
-                    "Invalid first param type for `#[runnable_raw]` function, expected \
+                    "Invalid first param type for `#[executable_raw]` function, expected \
                      `Span<felt252>`."
                         .to_string(),
                 ));
@@ -184,7 +184,7 @@ impl AnalyzerPlugin for RawRunnableAnalyzer {
             if input.mutability == Mutability::Reference {
                 diagnostics.push(PluginDiagnostic::error(
                     input.stable_ptr.untyped(),
-                    "Invalid first param mutability for `#[runnable_raw]` function, got \
+                    "Invalid first param mutability for `#[executable_raw]` function, got \
                      unexpected `ref`."
                         .to_string(),
                 ));
@@ -192,7 +192,7 @@ impl AnalyzerPlugin for RawRunnableAnalyzer {
             if output.ty != corelib::core_array_felt252_ty(db) {
                 diagnostics.push(PluginDiagnostic::error(
                     output.stable_ptr.untyped(),
-                    "Invalid second param type for `#[runnable_raw]` function, expected \
+                    "Invalid second param type for `#[executable_raw]` function, expected \
                      `Array<felt252>`."
                         .to_string(),
                 ));
@@ -200,7 +200,7 @@ impl AnalyzerPlugin for RawRunnableAnalyzer {
             if output.mutability != Mutability::Reference {
                 diagnostics.push(PluginDiagnostic::error(
                     output.stable_ptr.untyped(),
-                    "Invalid second param mutability for `#[runnable_raw]` function, expected \
+                    "Invalid second param mutability for `#[executable_raw]` function, expected \
                      `ref`."
                         .to_string(),
                 ));
