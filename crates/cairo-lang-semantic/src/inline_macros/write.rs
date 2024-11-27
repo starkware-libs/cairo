@@ -213,7 +213,7 @@ impl FormattingInfo {
             return Err(diagnostics);
         }
         Ok(FormattingInfo {
-            formatter_arg_node: RewriteNode::new_trimmed(formatter_arg.as_syntax_node()),
+            formatter_arg_node: RewriteNode::from_ast_trimmed(formatter_arg),
             format_string_arg: format_string_arg.clone(),
             // `unwrap` is ok because the above `on_none` ensures it's not None.
             format_string,
@@ -244,7 +244,7 @@ impl FormattingInfo {
             self.add_indentation(builder, ident_count);
             builder.add_modified(RewriteNode::interpolate_patched(
                 &format!("let __write_macro_arg{i}__ = @($arg$);\n"),
-                &[("arg".to_string(), RewriteNode::new_trimmed(arg.as_syntax_node()))].into(),
+                &[("arg".to_string(), RewriteNode::from_ast_trimmed(arg))].into(),
             ));
         }
         while let Some((idx, c)) = format_iter.next() {

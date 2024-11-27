@@ -92,7 +92,7 @@ fn generate_panicable_code(
     };
     builder.add_node(visibility.as_syntax_node());
     builder.add_node(declaration.function_kw(db).as_syntax_node());
-    builder.add_modified(RewriteNode::new_trimmed(panicable_name.as_syntax_node()));
+    builder.add_modified(RewriteNode::from_ast_trimmed(&panicable_name));
     builder.add_node(declaration.generic_params(db).as_syntax_node());
     builder.add_node(signature.lparen(db).as_syntax_node());
     builder.add_node(signature.parameters(db).as_syntax_node());
@@ -127,12 +127,9 @@ fn generate_panicable_code(
             "#
         ),
         &[
-            ("inner_ty".to_string(), RewriteNode::new_trimmed(inner_ty.as_syntax_node())),
-            (
-                "function_name".to_string(),
-                RewriteNode::new_trimmed(declaration.name(db).as_syntax_node()),
-            ),
-            ("err_value".to_string(), RewriteNode::new_trimmed(err_value.as_syntax_node())),
+            ("inner_ty".to_string(), RewriteNode::from_ast_trimmed(&inner_ty)),
+            ("function_name".to_string(), RewriteNode::from_ast_trimmed(&declaration.name(db))),
+            ("err_value".to_string(), RewriteNode::from_ast_trimmed(&err_value)),
         ]
         .into(),
     ));

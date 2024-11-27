@@ -3,9 +3,9 @@ use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, MacroPluginMetadata, NamedPlugin,
     PluginGeneratedFile,
 };
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 
 use super::write::{WriteMacro, WritelnMacro};
@@ -120,9 +120,10 @@ fn generate_code_inner(
             ),
             (
                 "args".to_string(),
-                arguments.arg_list(db).map_or_else(RewriteNode::empty, |n| {
-                    RewriteNode::new_trimmed(n.as_syntax_node())
-                }),
+                arguments
+                    .arg_list(db)
+                    .as_ref()
+                    .map_or_else(RewriteNode::empty, RewriteNode::from_ast_trimmed),
             ),
         ]
         .into(),
