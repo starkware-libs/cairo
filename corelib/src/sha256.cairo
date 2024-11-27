@@ -1,4 +1,4 @@
-//! Sha256 module that provides an implementation of the SHA-256 cryptographic hash function.
+//! Implementation of the SHA-256 cryptographic hash function.
 //!
 //! Two functions are made available for computing SHA-256 hash:
 //! - `compute_sha256_u32_array`: Computes the SHA-256 hash of an input array of 32-bit words, with
@@ -33,11 +33,13 @@ const SHA256_INITIAL_STATE: [u32; 8] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 ];
 
-/// Computes the SHA-256 hash of the `input` array.
+/// Computes the SHA-256 hash of the input array.
+///
 /// `input` is an array of 32-bit words.
 /// `last_input_word` is used when the number of bytes in the last input word is less than 4.
 /// `last_input_num_bytes` is the number of bytes in the last input word (must be less than 4).
-/// Return the SHA-256 hash of the `input array` + `last_input_word` as big endian.
+///
+/// Return the SHA-256 hash of the `input` array + `last_input_word` as big endian.
 ///
 /// # Examples
 ///
@@ -65,7 +67,7 @@ pub fn compute_sha256_u32_array(
     sha256_state_handle_digest(state).unbox()
 }
 
-/// Computes the SHA-256 hash of the input ByteArray.
+/// Computes the SHA-256 hash of the input `ByteArray`.
 ///
 /// # Examples
 ///
