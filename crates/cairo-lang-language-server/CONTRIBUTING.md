@@ -4,10 +4,9 @@ This document is a supplement to the [general contributing guidelines](../../doc
 for the Cairo repository.
 Please read that document first carefully before proceeding with the instructions below.
 
-This document you are using Visual Studio Code with the [Cairo extension](../../vscode-cairo) as the
+This document assumes that you are using Visual Studio Code with
+the [Cairo extension](https://marketplace.visualstudio.com/items?itemName=starkware.cairo1) as the
 editor of choice for running CairoLS against.
-You might also want to check out
-the [Cairo extension's contributing guidelines](../../vscode-cairo/CONTRIBUTING.md).
 
 ## Commits
 

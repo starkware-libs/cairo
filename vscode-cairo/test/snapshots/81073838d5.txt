@@ -1,9 +1,0 @@
-//! > cairo_code
-const X = 0x1234;
-
-//! > syntax
-const                source.cairo storage.type.cairo
-X                    source.cairo constant.other.caps.cairo
-=                    source.cairo keyword.operator.assignment.equal.cairo
-0x1234               source.cairo constant.numeric.hex.cairo
-;                    source.cairo punctuation.semi.cairo
