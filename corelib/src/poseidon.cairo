@@ -43,7 +43,7 @@ pub struct HashState {
     pub odd: bool,
 }
 
-/// A trait for creating a new initial Poseidon state.
+/// A trait for creating a new Poseidon hash state.
 #[generate_trait]
 pub impl PoseidonImpl of PoseidonTrait {
     /// Creates an initial state with all fields set to 0.
@@ -68,8 +68,7 @@ impl HashStateDefault of Default<HashState> {
 }
 
 impl HashStateImpl of HashStateTrait<HashState> {
-    /// Takes the current state and a `felt252` value used to update
-    /// the state using the Hades permutation.
+    /// Takes the current state and updates it with a `felt252` value using the Hades permutation.
     ///
     /// # Examples
     ///
@@ -99,8 +98,9 @@ impl HashStateImpl of HashStateTrait<HashState> {
     /// use core::poseidon::PoseidonTrait;
     ///
     /// let mut state = PoseidonTrait::new();
-    /// state = state.update(1);
-    /// let hash = state.finalize()
+    /// let hash = state.update(1).update(2).finalize();
+    ///
+    /// assert!(hash == 0x0371cb6995ea5e7effcd2e174de264b5b407027a75a231a70c2c8d196107f0e7);
     /// ```
     #[inline]
     fn finalize(self: HashState) -> felt252 {
@@ -123,15 +123,10 @@ impl HashStateImpl of HashStateTrait<HashState> {
 /// # Examples
 ///
 /// ```
-/// let mut state = PoseidonTrait::new();
-/// state = state.update(1);
-/// state = state.update(2);
-/// let hash1 = state.finalize();
+/// let span = [1, 2].span();
+/// let hash = poseidon_hash_span(span);
 ///
-/// let span = array![1, 2].span();
-/// let hash2 = poseidon_hash_span(span);
-///
-/// assert!(hash1 == hash2);
+/// assert!(hash == 0x0371cb6995ea5e7effcd2e174de264b5b407027a75a231a70c2c8d196107f0e7);
 /// ```
 pub fn poseidon_hash_span(mut span: Span<felt252>) -> felt252 {
     _poseidon_hash_span_inner(crate::gas::get_builtin_costs(), (0, 0, 0), ref span)
