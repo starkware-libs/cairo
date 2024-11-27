@@ -3601,7 +3601,7 @@ Note: currently with components, only an enum Event directly in the contract is 
     component!(path: super::component2, storage: component2_storage, event: Comp2Event);
                                                                             ^********^
 
-warning: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`.
+warning: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:27:9
         component2_storage: super::component2::Storage,
         ^****************^
