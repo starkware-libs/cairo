@@ -35,7 +35,7 @@ CRATES_TO_PUBLISH=(
     cairo-lang-starknet-classes
     cairo-lang-starknet
     cairo-lang-runnable-utils
-    cairo-lang-runnable
+    cairo-lang-executable
     cairo-lang-runner
     cairo-lang-test-plugin
     cairo-lang-test-runner
@@ -45,7 +45,7 @@ CRATES_TO_PUBLISH=(
     cairo-format
     cairo-language-server
     cairo-run
-    cairo-prove
+    cairo-execute
     cairo-test
     sierra-compile
     starknet-compile

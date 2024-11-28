@@ -150,6 +150,8 @@ pub struct DependencySettings {
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExperimentalFeaturesConfig {
     pub negative_impls: bool,
+    /// Allows using associated item constraints.
+    pub associated_item_constraints: bool,
     /// Allows using coupon types and coupon calls.
     ///
     /// Each function has a associated `Coupon` type, which represents paying the cost of the
@@ -237,6 +239,7 @@ pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), core_lib_dir: PathB
                 dependencies: Default::default(),
                 experimental_features: ExperimentalFeaturesConfig {
                     negative_impls: true,
+                    associated_item_constraints: true,
                     coupons: true,
                 },
             },

@@ -7,7 +7,9 @@ use indent::indent_by;
 use indoc::formatdoc;
 
 use crate::plugin::consts::STORE_TRAIT;
-use crate::plugin::storage_interfaces::handle_storage_interface_struct;
+use crate::plugin::storage_interfaces::{
+    handle_storage_interface_struct, struct_members_storage_configs,
+};
 
 /// Returns the rewrite node for the `#[derive(starknet::Store)]` attribute.
 pub fn handle_store_derive(
@@ -22,7 +24,9 @@ pub fn handle_store_derive(
             // a sub-pointers implementation.
             let store_trait_code = handle_struct_store(db, struct_ast)?;
             let sub_pointers_code = if !struct_ast.members(db).elements(db).is_empty() {
-                handle_storage_interface_struct(db, struct_ast, metadata).into_rewrite_node()
+                let configs = struct_members_storage_configs(db, struct_ast, diagnostics);
+                handle_storage_interface_struct(db, struct_ast, &configs, metadata)
+                    .into_rewrite_node()
             } else {
                 RewriteNode::Text("".to_string())
             };

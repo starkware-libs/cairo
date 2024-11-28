@@ -33,6 +33,7 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-diagnostics
           - test --profile=ci-dev -p cairo-lang-doc
           - test --profile=ci-dev -p cairo-lang-eq-solver
+          - test --profile=ci-dev -p cairo-lang-executable
           - test --profile=ci-dev -p cairo-lang-filesystem
           - test --profile=ci-dev -p cairo-lang-formatter
           - test --profile=ci-dev -p cairo-lang-language-server
@@ -41,7 +42,6 @@ jobs:
           - test --profile=ci-dev -p cairo-lang-plugins
           - test --profile=ci-dev -p cairo-lang-proc-macros
           - test --profile=ci-dev -p cairo-lang-project
-          - test --profile=ci-dev -p cairo-lang-runnable
           - test --profile=ci-dev -p cairo-lang-runnable-utils
           - test --profile=ci-dev -p cairo-lang-runner
           - test --profile=ci-dev -p cairo-lang-semantic

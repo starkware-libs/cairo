@@ -225,3 +225,24 @@ struct IgnoredCollision3 {
 }
 
 //! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test collision by renames.
+
+//! > test_runner_name
+test_storage_path_check(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::storage_node]
+struct IgnoredCollision1 {
+    pub a: felt252,
+    #[rename("a")]
+    pub b: felt252,
+}
+
+//! > diagnostics
+warning: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+ --> lib.cairo:5:9
+    pub b: felt252,
+        ^

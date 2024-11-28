@@ -241,8 +241,8 @@ impl EntryCodeConfig {
         Self { finalize_segment_arena: false, outputting_function: false }
     }
 
-    /// Returns a configuration for proving purposes.
-    pub fn provable() -> Self {
+    /// Returns a configuration for execution purposes.
+    pub fn executable() -> Self {
         Self { finalize_segment_arena: true, outputting_function: true }
     }
 }
