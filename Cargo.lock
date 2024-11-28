@@ -466,6 +466,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-execute"
+version = "2.8.5"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "cairo-lang-compiler",
+ "cairo-lang-executable",
+ "cairo-lang-runner",
+ "cairo-vm",
+ "clap",
+ "num-bigint",
+ "serde_json",
+]
+
+[[package]]
 name = "cairo-format"
 version = "2.8.5"
 dependencies = [
@@ -594,6 +609,35 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "good_lp",
+ "test-log",
+]
+
+[[package]]
+name = "cairo-lang-executable"
+version = "2.8.5"
+dependencies = [
+ "anyhow",
+ "cairo-lang-casm",
+ "cairo-lang-compiler",
+ "cairo-lang-debug",
+ "cairo-lang-defs",
+ "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
+ "cairo-lang-lowering",
+ "cairo-lang-plugins",
+ "cairo-lang-runnable-utils",
+ "cairo-lang-semantic",
+ "cairo-lang-sierra-generator",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-syntax",
+ "cairo-lang-test-utils",
+ "cairo-lang-utils",
+ "cairo-vm",
+ "env_logger",
+ "indoc",
+ "itertools 0.12.1",
+ "serde",
+ "test-case",
  "test-log",
 ]
 
@@ -807,35 +851,6 @@ dependencies = [
  "serde",
  "thiserror",
  "toml",
-]
-
-[[package]]
-name = "cairo-lang-runnable"
-version = "2.8.5"
-dependencies = [
- "anyhow",
- "cairo-lang-casm",
- "cairo-lang-compiler",
- "cairo-lang-debug",
- "cairo-lang-defs",
- "cairo-lang-diagnostics",
- "cairo-lang-filesystem",
- "cairo-lang-lowering",
- "cairo-lang-plugins",
- "cairo-lang-runnable-utils",
- "cairo-lang-semantic",
- "cairo-lang-sierra-generator",
- "cairo-lang-sierra-to-casm",
- "cairo-lang-syntax",
- "cairo-lang-test-utils",
- "cairo-lang-utils",
- "cairo-vm",
- "env_logger",
- "indoc",
- "itertools 0.12.1",
- "serde",
- "test-case",
- "test-log",
 ]
 
 [[package]]
@@ -1219,21 +1234,6 @@ name = "cairo-language-server"
 version = "2.8.5"
 dependencies = [
  "cairo-lang-language-server",
-]
-
-[[package]]
-name = "cairo-prove"
-version = "2.8.5"
-dependencies = [
- "anyhow",
- "bincode",
- "cairo-lang-compiler",
- "cairo-lang-runnable",
- "cairo-lang-runner",
- "cairo-vm",
- "clap",
- "num-bigint",
- "serde_json",
 ]
 
 [[package]]

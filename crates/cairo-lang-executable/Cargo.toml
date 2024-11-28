@@ -1,10 +1,10 @@
 [package]
-name = "cairo-lang-runnable"
+name = "cairo-lang-executable"
 version.workspace = true
 edition.workspace = true
 repository.workspace = true
 license-file.workspace = true
-description = "Cairo runnable provable artifact."
+description = "Cairo executable artifact."
 
 [dependencies]
 anyhow.workspace = true
