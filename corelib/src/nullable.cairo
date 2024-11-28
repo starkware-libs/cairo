@@ -4,9 +4,8 @@
 //! or be null. It provides a safe way to handle optional values without the risk of
 //! dereferencing null pointers.
 //!
-//! This makes it particularly useful in dictionaries that store complex data structures
-//! that don't implement the `zero_default` method of the `Felt252DictValue` trait; instead,
-//! they can return a `Nullable<T>` smart pointer with a null value.
+//! This makes it particularly useful in dictionaries that store complex data structures that don't
+//! implement the `Felt252DictValue` trait; instead, they can be wrapped inside a `Nullable`.
 //!
 //! # Examples
 //!
@@ -85,17 +84,25 @@ impl NullableDeref<T> of crate::ops::Deref<Nullable<T>> {
 /// Trait for creating and manipulating `Nullable` values.
 #[generate_trait]
 pub impl NullableImpl<T> of NullableTrait<T> {
-    /// Creates a new non-null `Nullable` with the given value.
+    /// Wrapper for `Deref::deref`. Prefer using `Deref::deref` directly.
+    ///
+    /// This function exists for backwards compatibility.
     ///
     /// # Examples
     ///
+    /// Preferred way:
     /// ```
     /// let value: Nullable<u32> = NullableTrait::new(42);
-    /// assert!(!value.is_null());
+    /// let unwrapped = value.deref();
     /// ```
-    #[must_use]
-    fn new(value: T) -> Nullable<T> {
-        nullable_from_box(BoxTrait::new(value))
+    ///
+    /// This function method does the same thing:
+    /// ```
+    /// use core::nullable::NullableTrait;
+    /// let also_unwrapped = NullableTrait::deref(value);
+    /// ```
+    fn deref(nullable: Nullable<T>) -> T {
+        nullable.deref()
     }
 
     /// Returns the contained value if not null, or returns the provided default value.
@@ -114,6 +121,19 @@ pub impl NullableImpl<T> of NullableTrait<T> {
             FromNullableResult::Null => default,
             FromNullableResult::NotNull(value) => value.unbox(),
         }
+    }
+
+    /// Creates a new non-null `Nullable` with the given value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let value: Nullable<u32> = NullableTrait::new(42);
+    /// assert!(!value.is_null());
+    /// ```
+    #[must_use]
+    fn new(value: T) -> Nullable<T> {
+        nullable_from_box(BoxTrait::new(value))
     }
 
     /// Returns `true` if the value is null.
