@@ -1,0 +1,44 @@
+//! > Test handling of the `not` operator in `#[cfg(...)]` attributes.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: false)
+
+//! > cfg
+["a", ["key", "value"], ["not_key", "not_value"]]
+
+//! > cairo_code
+fn f0() -> felt252 {
+    0
+}
+
+#[cfg(not(a))]
+fn f1() -> felt252 {
+    0
+}
+
+#[cfg(not(key: "value"))]
+fn f2() -> felt252 {
+    0
+}
+
+#[cfg(not(not_key: "not_value"))]
+fn f3() -> felt252 {
+    0
+}
+
+#[cfg(not(a, key: "value"))]
+fn f4() -> felt252 {
+    0
+}
+
+#[cfg(not(key: "value", not_key: "not_value"))]
+fn f5() -> felt252 {
+    0
+}
+
+//! > expanded_cairo_code
+fn f0() -> felt252 {
+    0
+}
+
+//! > expected_diagnostics

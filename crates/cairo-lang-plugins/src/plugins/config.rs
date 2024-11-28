@@ -13,6 +13,23 @@ use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::try_extract_matches;
 
+/// Represents a predicate tree used to evaluate configuration attributes to handle nested
+/// predicates, such as logical `not` operations, and evaluate them based on a given set of
+/// configuration flags (`CfgSet`).
+#[derive(Debug, Clone)]
+enum PredicateTree {
+    Cfg(Cfg),
+    Not(Box<PredicateTree>),
+}
+
+impl PredicateTree {
+    fn evaluate(&self, cfg_set: &CfgSet) -> bool {
+        match self {
+            PredicateTree::Cfg(cfg) => cfg_set.contains(cfg),
+            PredicateTree::Not(inner) => !inner.evaluate(cfg_set),
+        }
+    }
+}
 /// Plugin that enables ignoring modules not involved in the current config.
 ///
 /// Mostly useful for marking test modules to prevent usage of their functionality out of tests,
@@ -168,72 +185,167 @@ fn should_drop<Item: QueryAttrs>(
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> bool {
     item.query_attr(db, CFG_ATTR).into_iter().any(|attr| {
-        matches!(
-            parse_predicate(db, attr.structurize(db), diagnostics),
-            Some(pattern) if !cfg_set.is_superset(&pattern)
-        )
+        if let Some(predicate_tree) = parse_predicate(db, attr.structurize(db), diagnostics) {
+            !predicate_tree.evaluate(cfg_set)
+        } else {
+            false
+        }
     })
 }
 
-/// Parse `#[cfg(...)]` attribute arguments as a predicate matching [`Cfg`] items.
+/// Parse `#[cfg(not(ghf)...)]` attribute arguments as a predicate matching [`Cfg`] items.
 fn parse_predicate(
     db: &dyn SyntaxGroup,
     attr: Attribute,
     diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<CfgSet> {
-    attr
+) -> Option<PredicateTree> {
+    let predicates: Vec<_> = attr
         .args
         .into_iter()
-        .map(|arg| parse_predicate_item(db, arg, diagnostics))
-        // NOTE: Try to parse each item eagerly, so that we will report any possible issues for all
-        //   arguments at once. Take into account that Rust's `Iterator::collect::<Option<_>>`
-        //   by itself would stop collection on first `None`.
-        .collect::<Vec<_>>()
-        .into_iter()
-        .collect::<Option<Vec<Cfg>>>()
-        .map(CfgSet::from_iter)
+        .filter_map(|arg| {
+            // NOTE: Try to parse each item eagerly, so that we will report any possible issues for
+            // all   arguments at once. Take into account that Rust's
+            // `Iterator::collect::<Option<_>>`   by itself would stop collection on
+            // first `None`.
+            let result = parse_predicate_item(db, &arg, diagnostics);
+            if result.is_none() {
+                diagnostics.push(PluginDiagnostic::error(
+                    arg.arg.as_syntax_node().stable_ptr(),
+                    "Failed to parse argument.".into(),
+                ));
+            }
+            result
+        })
+        .collect();
+    if predicates.len() == 1 { Some(predicates.into_iter().next().unwrap()) } else { None }
 }
 
 /// Parse single `#[cfg(...)]` attribute argument as a [`Cfg`] item.
 fn parse_predicate_item(
     db: &dyn SyntaxGroup,
-    arg: AttributeArg,
+    arg: &AttributeArg,
     diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<Cfg> {
-    match arg.variant {
+) -> Option<PredicateTree> {
+    match &arg.variant {
         AttributeArgVariant::FieldInitShorthand(_) => {
             diagnostics.push(PluginDiagnostic::error(
-                &arg.arg,
+                arg.arg.as_syntax_node().stable_ptr(),
                 "This attribute does not support field initialization shorthands.".into(),
             ));
             None
         }
         AttributeArgVariant::Named { name, value } => {
-            let value = match value {
+            let value_text = match value {
                 ast::Expr::ShortString(terminal) => terminal.string_value(db).unwrap_or_default(),
                 ast::Expr::String(terminal) => terminal.string_value(db).unwrap_or_default(),
                 _ => {
                     diagnostics.push(PluginDiagnostic::error(
-                        &value,
-                        "Expected a string/short-string literal.".into(),
+                        value.as_syntax_node().stable_ptr(),
+                        "Expected a string or short-string literal.".into(),
                     ));
                     return None;
                 }
             };
-
-            Some(Cfg::kv(name.text, value))
+            Some(PredicateTree::Cfg(Cfg::kv(name.text.to_string(), value_text)))
         }
         AttributeArgVariant::Unnamed(value) => {
-            let ast::Expr::Path(path) = value else {
-                diagnostics.push(PluginDiagnostic::error(&value, "Expected identifier.".into()));
-                return None;
-            };
-            let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
-                diagnostics.push(PluginDiagnostic::error(&path, "Expected simple path.".into()));
-                return None;
-            };
-            let key = segment.ident(db).text(db);
-            Some(Cfg::name(key))
+            if let ast::Expr::FunctionCall(call) = value {
+                let path = call.path(db);
+                if let Some(ast::PathSegment::Simple(segment)) = path.elements(db).first() {
+                    let function_name = segment.ident(db).text(db);
+
+                    if function_name == "not" {
+                        let args = call.arguments(db).arguments(db).elements(db);
+
+                        let mut predicates = vec![];
+                        for arg in args {
+                            let arg_clause = arg.arg_clause(db);
+
+                            match arg_clause {
+                                ast::ArgClause::Unnamed(inner_expr) => {
+                                    let inner_attribute_arg = AttributeArg {
+                                        variant: AttributeArgVariant::Unnamed(inner_expr.value(db)),
+                                        arg: arg.clone(),
+                                        modifiers: vec![],
+                                    };
+
+                                    if let Some(parsed) =
+                                        parse_predicate_item(db, &inner_attribute_arg, diagnostics)
+                                    {
+                                        predicates.push(parsed);
+                                    }
+                                }
+                                ast::ArgClause::Named(named) => {
+                                    let key_terminal = named.name(db);
+                                    let value_expr = named.value(db);
+
+                                    let key_text = key_terminal.text(db);
+                                    let value_text = match value_expr {
+                                        ast::Expr::ShortString(terminal) => {
+                                            terminal.string_value(db).unwrap_or_default()
+                                        }
+                                        ast::Expr::String(terminal) => {
+                                            terminal.string_value(db).unwrap_or_default()
+                                        }
+                                        _ => {
+                                            diagnostics.push(PluginDiagnostic::error(
+                                                value_expr.as_syntax_node().stable_ptr(),
+                                                "Expected a string or short-string literal.".into(),
+                                            ));
+                                            return None;
+                                        }
+                                    };
+
+                                    predicates.push(PredicateTree::Cfg(Cfg::kv(
+                                        key_text.to_string(),
+                                        value_text,
+                                    )));
+                                }
+                                _ => {
+                                    diagnostics.push(PluginDiagnostic::error(
+                                        arg_clause.as_syntax_node().stable_ptr(),
+                                        "Expected unnamed or named ArgClause containing an \
+                                         expression."
+                                            .into(),
+                                    ));
+                                    return None;
+                                }
+                            }
+                        }
+
+                        if predicates.is_empty() {
+                            diagnostics.push(PluginDiagnostic::error(
+                                call.as_syntax_node().stable_ptr(),
+                                "`not` operator requires at least one argument.".into(),
+                            ));
+                            return None;
+                        }
+
+                        let combined = if predicates.len() == 1 {
+                            predicates.into_iter().next().unwrap()
+                        } else {
+                            PredicateTree::Not(Box::new(PredicateTree::Cfg(Cfg::name(
+                                "group".to_string(),
+                            ))))
+                        };
+
+                        return Some(PredicateTree::Not(Box::new(combined)));
+                    }
+                }
+            }
+
+            if let ast::Expr::Path(path) = value {
+                if let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] {
+                    let key = segment.ident(db).text(db);
+                    return Some(PredicateTree::Cfg(Cfg::name(key.to_string())));
+                }
+            }
+
+            diagnostics.push(PluginDiagnostic::error(
+                value.as_syntax_node().stable_ptr(),
+                "Expected `not(...)` or identifier.".into(),
+            ));
+            None
         }
     }
 }

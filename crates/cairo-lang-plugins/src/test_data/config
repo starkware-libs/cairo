@@ -193,8 +193,18 @@ fn f5() -> felt252 {
     0
 }
 
+#[cfg(a, b, c)]
+fn f6() -> felt252 {
+    0
+}
+
 #[cfg(k: 'a', k: 'b')]
 fn f7() -> felt252 {
+    0
+}
+
+#[cfg(k: 'a', k: 'b', k: 'c')]
+fn f8() -> felt252 {
     0
 }
 
@@ -220,8 +230,16 @@ mod remove_module_item {
     fn f5() -> felt252 {
         0
     }
+    #[cfg(a, b, c)]
+    fn f6() -> felt252 {
+        0
+    }
     #[cfg(k: 'a', k: 'b')]
     fn f7() -> felt252 {
+        0
+    }
+    #[cfg(k: 'a', k: 'b', k: 'c')]
+    fn f8() -> felt252 {
         0
     }
     #[cfg(a)]
@@ -239,8 +257,12 @@ trait RemoveTraitItem {
     fn f3();
     #[cfg(a, b)]
     fn f5();
+    #[cfg(a, b, c)]
+    fn f6();
     #[cfg(k: 'a', k: 'b')]
     fn f7();
+    #[cfg(k: 'a', k: 'b', k: 'c')]
+    fn f8();
     #[cfg(a)]
     #[cfg(b)]
     fn f9();
@@ -254,8 +276,12 @@ impl RemoveTraitItem of SomeTrait {
     fn f3() {}
     #[cfg(a, b)]
     fn f5() {}
+    #[cfg(a, b, c)]
+    fn f6() {}
     #[cfg(k: 'a', k: 'b')]
     fn f7() {}
+    #[cfg(k: 'a', k: 'b', k: 'c')]
+    fn f8() {}
     #[cfg(a)]
     #[cfg(b)]
     fn f9() {}
