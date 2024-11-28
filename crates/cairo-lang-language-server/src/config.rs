@@ -96,7 +96,7 @@ impl Config {
                 state.config.trace_macro_diagnostics =
                     response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or_default();
                 state.config.enable_proc_macros =
-                    response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or(true);
+                    response.pop_front().as_ref().and_then(Value::as_bool).unwrap_or(false);
 
                 debug!("reloaded configuration: {:#?}", state.config);
 
