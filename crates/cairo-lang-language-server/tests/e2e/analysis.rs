@@ -55,6 +55,7 @@ fn cairo_projects() {
                     dependencies: {},
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: true,
+                        associated_item_constraints: true,
                         coupons: true,
                     },
                 }
@@ -69,6 +70,7 @@ fn cairo_projects() {
                     dependencies: {},
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: false,
+                        associated_item_constraints: false,
                         coupons: false,
                     },
                 }
@@ -83,6 +85,7 @@ fn cairo_projects() {
                     dependencies: {},
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: false,
+                        associated_item_constraints: false,
                         coupons: false,
                     },
                 }
@@ -97,6 +100,7 @@ fn cairo_projects() {
                     dependencies: {},
                     experimental_features: ExperimentalFeaturesConfig {
                         negative_impls: false,
+                        associated_item_constraints: false,
                         coupons: false,
                     },
                 }
