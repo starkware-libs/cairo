@@ -36,7 +36,7 @@ cairo_lang_test_utils::test_file_test!(
         derive: "derive",
         generate_trait: "generate_trait",
         panicable: "panicable",
-        external_attributes_validation: "external_attributes_validation"
+        external_attributes_validation: "external_attributes_validation",
     },
     test_expand_plugin
 );
