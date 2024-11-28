@@ -1039,7 +1039,7 @@ impl<'db> Inference<'db> {
                     })
                     .map(|generic_param| {
                         rewriter
-                            .rewrite(*generic_param)
+                            .rewrite(generic_param.clone())
                             .and_then(|generic_param| generic_param.concrete_trait)
                     });
                 validate_no_solution_set(self, canonical_impl, lookup_context, concrete_traits)

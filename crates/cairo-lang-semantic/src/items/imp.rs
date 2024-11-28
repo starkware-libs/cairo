@@ -1743,12 +1743,14 @@ pub fn find_closure_generated_candidate(
                         trait_id,
                         generic_args: vec![GenericArgumentId::Type(*ty)],
                     })),
+                    type_constraints: Default::default(),
                 })
             }),
             neg_impl_trait.map(|neg_impl_trait| {
                 GenericParam::NegImpl(GenericParamImpl {
                     id,
                     concrete_trait: Maybe::Ok(neg_impl_trait),
+                    type_constraints: Default::default(),
                 })
             })
         )
@@ -1787,6 +1789,7 @@ pub fn find_closure_generated_candidate(
                     }
                     .intern(db),
                 ),
+                type_constraints: Default::default(),
             });
             (concrete_trait, vec![param], [(ret_ty, closure_type_long.ret_ty)].into())
         }
