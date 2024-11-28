@@ -120,7 +120,11 @@ impl ProcMacroClientController {
                 // restart proc-macro-server.
                 let previous_plugin_suite = self.plugin_suite.replace(new_plugin_suite.clone());
 
-                db.replace_plugin_suite(previous_plugin_suite, new_plugin_suite);
+                if let Some(previous_plugin_suite) = previous_plugin_suite {
+                    db.replace_plugin_suite(previous_plugin_suite, new_plugin_suite);
+                } else {
+                    db.add_plugin_suite(new_plugin_suite);
+                }
 
                 db.set_proc_macro_client_status(ClientStatus::Ready(client));
             }
