@@ -17,6 +17,7 @@ use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::Upcast;
+use salsa::{Database, Durability};
 
 pub use self::semantic::*;
 pub use self::swapper::*;
@@ -88,6 +89,11 @@ impl AnalysisDatabase {
     /// included in analysis by Language Server.
     pub(crate) fn initial_cfg_set_for_deps() -> CfgSet {
         CfgSet::from_iter([Cfg::kv("target", "test")])
+    }
+
+    /// Trigger cancellation in any background tasks that might still be running.
+    pub fn cancel_all(&mut self) {
+        self.salsa_runtime_mut().synthetic_write(Durability::LOW);
     }
 
     /// Shortcut for settings compiler plugins from a [`PluginSuite`].

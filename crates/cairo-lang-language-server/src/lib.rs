@@ -51,7 +51,6 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use crossbeam::channel::{Receiver, select_biased};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
-use salsa::{Database, Durability};
 use tracing::{debug, error, info};
 
 use crate::lang::lsp::LsProtoGroup;
@@ -294,8 +293,7 @@ impl Backend {
                 scheduler,
             );
 
-            // Trigger cancellation in any background tasks that might still be running.
-            state.db.salsa_runtime_mut().synthetic_write(Durability::LOW);
+            state.db.cancel_all();
 
             if let Err(err) = connection.close() {
                 error!("failed to close connection to the language server: {err:?}");
