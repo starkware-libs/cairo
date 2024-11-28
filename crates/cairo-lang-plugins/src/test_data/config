@@ -262,3 +262,99 @@ impl RemoveTraitItem of SomeTrait {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test logical operators in config attributes.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: true)
+
+//! > cfg
+["a", "b", ["k", "a"], ["k", "b"]]
+
+//! > cairo_code
+#[cfg(not(a))]
+fn f1() -> felt252 {
+    0
+}
+
+#[cfg(not(b))]
+fn f2() -> felt252 {
+    0
+}
+
+#[cfg(not(k: "a"))]
+fn f3() -> felt252 {
+    0
+}
+
+#[cfg(and(a, b))]
+fn f4() -> felt252 {
+    0
+}
+
+#[cfg(or(a, x))]
+fn f5() -> felt252 {
+    0
+}
+
+// Invalid usage examples for diagnostics
+#[cfg(not(a, b))]
+fn f_invalid_not() -> felt252 {
+    0
+}
+
+#[cfg(and())]
+fn f_invalid_and() -> felt252 {
+    0
+}
+
+#[cfg(or(a, b, c))]
+fn f_invalid_or() -> felt252 {
+    0
+
+//! > expanded_cairo_code
+
+#[cfg(and(a, b))]
+fn f4() -> felt252 {
+    0
+}
+
+#[cfg(or(a, x))]
+fn f5() -> felt252 {
+    0
+}
+
+// Invalid usage examples for diagnostics
+#[cfg(not(a, b))]
+fn f_invalid_not() -> felt252 {
+    0
+}
+
+#[cfg(and())]
+fn f_invalid_and() -> felt252 {
+    0
+}
+
+#[cfg(or(a, b, c))]
+fn f_invalid_or() -> felt252 {
+    0
+
+//! > expected_diagnostics
+error: `not` operator expects exactly one argument.
+ --> test_src/lib.cairo:27:7
+#[cfg(not(a, b))]
+      ^*******^
+
+
+error: `and` operator expects exactly two arguments.
+ --> test_src/lib.cairo:32:7
+#[cfg(and())]
+      ^***^
+
+
+error: `or` operator expects exactly two arguments.
+ --> test_src/lib.cairo:37:7
+#[cfg(or(a, b, c))]
+      ^*********^
