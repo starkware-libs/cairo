@@ -88,13 +88,13 @@ edition = "2024_07"
 trait ATrait1<T> {
     fn some_method(self: @T);
 }
-impl Felt252ATraitImpl of ATrait1<felt252> {
+impl Felt252ATraitImpl1 of ATrait1<felt252> {
     fn some_method(self: @felt252) {}
 }
 trait ATrait2<T> {
     fn some_method(self: @T);
 }
-impl Felt252ATraitImpl of ATrait2<felt252> {
+impl Felt252ATraitImpl2 of ATrait2<felt252> {
     fn some_method(self: @felt252) {}
 }
 
