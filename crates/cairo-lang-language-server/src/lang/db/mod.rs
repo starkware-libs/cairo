@@ -126,6 +126,13 @@ impl AnalysisDatabase {
         })
     }
 
+    /// Removes plugin suit from database.
+    pub fn remove_plugin_suite(&mut self, plugins: PluginSuite) {
+        self.with_plugins(move |macro_plugins, analyzer_plugins, inline_macro_plugins| {
+            remove_plugin_suite(plugins, macro_plugins, analyzer_plugins, inline_macro_plugins)
+        })
+    }
+
     /// Adds plugin suit to database.
     pub fn add_plugin_suite(&mut self, plugins: PluginSuite) {
         self.with_plugins(move |macro_plugins, analyzer_plugins, inline_macro_plugins| {

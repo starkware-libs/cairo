@@ -88,6 +88,21 @@ impl ProcMacroClientController {
         }
     }
 
+    pub fn force_restart(&mut self, db: &mut AnalysisDatabase, config: &Config) {
+        // We have to make sure that snapshots will not report errors from previous client after we
+        // create new one.
+        db.cancel_all();
+
+        // Otherwise we can get messages from old client after initialization of new one.
+        self.channels.clear_all();
+
+        if let Some(plugin_suite) = self.plugin_suite.take() {
+            db.remove_plugin_suite(plugin_suite);
+        }
+
+        self.try_initialize(db, config);
+    }
+
     /// Check if an error was reported. If so, try to restart.
     pub fn handle_error(&mut self, db: &mut AnalysisDatabase, config: &Config) {
         if !self.try_initialize(db, config) {
@@ -271,5 +286,11 @@ impl ProcMacroChannels {
         let (error_sender, error_receiver) = crossbeam::channel::bounded(1);
 
         Self { response_sender, response_receiver, error_sender, error_receiver }
+    }
+
+    /// Make all channels empty in a non-blocking manner.
+    fn clear_all(&self) {
+        self.error_receiver.try_iter().for_each(|_| {});
+        self.response_receiver.try_iter().for_each(|_| {});
     }
 }

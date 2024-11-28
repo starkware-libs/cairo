@@ -198,6 +198,8 @@ impl SyncNotificationHandler for DidChangeWatchedFiles {
             if ["Scarb.toml", "cairo_project.toml"].map(Some).contains(&changed_file_name.to_str())
             {
                 Backend::reload(state, requester)?;
+
+                state.proc_macro_controller.force_restart(&mut state.db, &state.config);
             }
         }
 
