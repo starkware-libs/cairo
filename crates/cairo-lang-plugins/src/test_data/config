@@ -4,7 +4,7 @@
 test_expand_plugin(expect_diagnostics: false)
 
 //! > cfg
-["a", "b", ["k", "a"], ["k", "b"]]
+["a", "b", ["k", "a"], ["k", "b"], ["key", "value"], ["not_key", "not_value"]]
 
 //! > cairo_code
 fn f0() -> felt252 {
@@ -67,6 +67,31 @@ fn f10() -> felt252 {
 #[cfg(no_cfg)]
 #[unsupported_attr]
 fn f11() -> felt252 {
+    0
+}
+
+#[cfg(not(a))]
+fn f12() -> felt252 {
+    0
+}
+
+#[cfg(not(key: "value"))]
+fn f13() -> felt252 {
+    0
+}
+
+#[cfg(not(not_key: "not_value"))]
+fn f14() -> felt252 {
+    0
+}
+
+#[cfg(not(a, key: "value"))]
+fn f15() -> felt252 {
+    0
+}
+
+#[cfg(not(key: "value", not_key: "not_value"))]
+fn f16() -> felt252 {
     0
 }
 
@@ -193,8 +218,18 @@ fn f5() -> felt252 {
     0
 }
 
+#[cfg(a, b, c)]
+fn f6() -> felt252 {
+    0
+}
+
 #[cfg(k: 'a', k: 'b')]
 fn f7() -> felt252 {
+    0
+}
+
+#[cfg(k: 'a', k: 'b', k: 'c')]
+fn f8() -> felt252 {
     0
 }
 
@@ -220,8 +255,16 @@ mod remove_module_item {
     fn f5() -> felt252 {
         0
     }
+    #[cfg(a, b, c)]
+    fn f6() -> felt252 {
+        0
+    }
     #[cfg(k: 'a', k: 'b')]
     fn f7() -> felt252 {
+        0
+    }
+    #[cfg(k: 'a', k: 'b', k: 'c')]
+    fn f8() -> felt252 {
         0
     }
     #[cfg(a)]
@@ -239,8 +282,12 @@ trait RemoveTraitItem {
     fn f3();
     #[cfg(a, b)]
     fn f5();
+    #[cfg(a, b, c)]
+    fn f6();
     #[cfg(k: 'a', k: 'b')]
     fn f7();
+    #[cfg(k: 'a', k: 'b', k: 'c')]
+    fn f8();
     #[cfg(a)]
     #[cfg(b)]
     fn f9();
@@ -254,8 +301,12 @@ impl RemoveTraitItem of SomeTrait {
     fn f3() {}
     #[cfg(a, b)]
     fn f5() {}
+    #[cfg(a, b, c)]
+    fn f6() {}
     #[cfg(k: 'a', k: 'b')]
     fn f7() {}
+    #[cfg(k: 'a', k: 'b', k: 'c')]
+    fn f8() {}
     #[cfg(a)]
     #[cfg(b)]
     fn f9() {}
