@@ -35,7 +35,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
     TraitItemTypeData,
 };
-use crate::items::us::SemanticUseEx;
+use crate::items::us::{ImportedModules, SemanticUseEx};
 use crate::items::visibility::Visibility;
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
@@ -194,6 +194,9 @@ pub trait SemanticGroup:
         &self,
         global_use_id: GlobalUseId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Private query to compute the imported modules of a module, using global uses.
+    #[salsa::invoke(items::us::priv_module_use_star_modules)]
+    fn priv_module_use_star_modules(&self, module_id: ModuleId) -> Arc<ImportedModules>;
 
     // Module.
     // ====

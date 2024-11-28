@@ -10,7 +10,11 @@ use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::Upcast;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 
+use super::module::get_module_global_uses;
+use super::visibility::peek_visible_in;
 use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -237,7 +241,7 @@ pub fn priv_global_use_semantic_data_cycle(
     let global_use_ast = db.module_global_use_by_id(*global_use_id)?.to_maybe()?;
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(*global_use_id)?.to_maybe()?);
     let segments = get_use_path_segments(db.upcast(), star_ast)?;
-    let err = if cycle.participant_keys().count() <= 2 && segments.len() == 1 {
+    let err = if cycle.participant_keys().count() <= 3 && segments.len() == 1 {
         // `use bad_name::*`, will attempt to find `bad_name` in the current module's global
         // uses, but which includes itself - but we don't want to report a cycle in this case.
         diagnostics.report(
@@ -248,4 +252,61 @@ pub fn priv_global_use_semantic_data_cycle(
         diagnostics.report(&global_use_ast, UseCycle)
     };
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module: Err(err) })
+}
+
+/// The modules that are imported by a module, using global uses.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ImportedModules {
+    /// The imported modules that have a path where each step is visible by the previous module.
+    pub accessible: OrderedHashSet<(ModuleId, ModuleId)>,
+    // TODO(Tomer-StarkWare): consider changing from all_modules to inaccessible_modules
+    /// All the imported modules.
+    pub all: OrderedHashSet<ModuleId>,
+}
+/// Returns the modules that are imported with `use *` in the current module.
+/// Query implementation of [crate::db::SemanticGroup::priv_module_use_star_modules].
+pub fn priv_module_use_star_modules(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+) -> Arc<ImportedModules> {
+    let mut visited = UnorderedHashSet::<_>::default();
+    let mut stack = vec![(module_id, module_id)];
+    let mut accessible_modules = OrderedHashSet::default();
+    // Iterate over all modules that are imported through `use *`, and are accessible from the
+    // current module.
+    while let Some((user_module, containing_module)) = stack.pop() {
+        if !visited.insert((user_module, containing_module)) {
+            continue;
+        }
+        let Ok(glob_uses) = get_module_global_uses(db, containing_module) else {
+            continue;
+        };
+        for (glob_use, item_visibility) in glob_uses.iter() {
+            let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
+                continue;
+            };
+            if peek_visible_in(db.upcast(), *item_visibility, containing_module, user_module) {
+                stack.push((containing_module, module_id_found));
+                accessible_modules.insert((containing_module, module_id_found));
+            }
+        }
+    }
+    let mut visited = UnorderedHashSet::<_>::default();
+    let mut stack = vec![module_id];
+    let mut all_modules = OrderedHashSet::default();
+    // Iterate over all modules that are imported through `use *`.
+    while let Some(curr_module_id) = stack.pop() {
+        if !visited.insert(curr_module_id) {
+            continue;
+        }
+        all_modules.insert(curr_module_id);
+        let Ok(glob_uses) = get_module_global_uses(db, curr_module_id) else { continue };
+        for glob_use in glob_uses.keys() {
+            let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
+                continue;
+            };
+            stack.push(module_id_found);
+        }
+    }
+    Arc::new(ImportedModules { accessible: accessible_modules, all: all_modules })
 }
