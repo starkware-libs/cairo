@@ -54,7 +54,7 @@ use lsp_types::RegistrationParams;
 use tracing::{debug, error, info};
 
 use crate::lang::lsp::LsProtoGroup;
-use crate::lang::proc_macros::controller::ProcMacroChannelsReceivers;
+use crate::lang::proc_macros::controller::ProcMacroChannels;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
@@ -269,7 +269,7 @@ impl Backend {
     fn run(self) -> Result<JoinHandle<Result<()>>> {
         event_loop_thread(move || {
             let Self { mut state, connection } = self;
-            let proc_macro_channels = state.proc_macro_controller.init_channels();
+            let proc_macro_channels = state.proc_macro_controller.channels();
 
             let project_updates_receiver = state.project_controller.init_channel();
             let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
@@ -344,7 +344,7 @@ impl Backend {
     // +--------------------------------------------------+
     fn event_loop(
         connection: &Connection,
-        proc_macro_channels: ProcMacroChannelsReceivers,
+        proc_macro_channels: ProcMacroChannels,
         project_updates_receiver: Receiver<ProjectUpdate>,
         mut scheduler: Scheduler<'_>,
     ) -> Result<()> {
@@ -373,12 +373,12 @@ impl Backend {
                     };
                     scheduler.dispatch(task);
                 }
-                recv(proc_macro_channels.response) -> response => {
+                recv(proc_macro_channels.response_receiver) -> response => {
                     let Ok(()) = response else { break };
 
                     scheduler.local(Self::on_proc_macro_response);
                 }
-                recv(proc_macro_channels.error) -> error => {
+                recv(proc_macro_channels.error_receiver) -> error => {
                     let Ok(()) = error else { break };
 
                     scheduler.local(Self::on_proc_macro_error);

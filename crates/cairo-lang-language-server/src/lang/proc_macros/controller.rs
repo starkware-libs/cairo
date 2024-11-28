@@ -52,18 +52,12 @@ pub struct ProcMacroClientController {
     notifier: Notifier,
     plugin_suite: Option<PluginSuite>,
     initialization_retries: RateLimiter<NotKeyed, InMemoryState, QuantaClock>,
-    channels: Option<ProcMacroChannelsSenders>,
+    channels: ProcMacroChannels,
 }
 
 impl ProcMacroClientController {
-    pub fn init_channels(&mut self) -> ProcMacroChannelsReceivers {
-        let (response_sender, response_receiver) = crossbeam::channel::bounded(1);
-        let (error_sender, error_receiver) = crossbeam::channel::bounded(1);
-
-        self.channels =
-            Some(ProcMacroChannelsSenders { error: error_sender, response: response_sender });
-
-        ProcMacroChannelsReceivers { error: error_receiver, response: response_receiver }
+    pub fn channels(&mut self) -> ProcMacroChannels {
+        self.channels.clone()
     }
 
     pub fn new(scarb: ScarbToolchain, notifier: Notifier) -> Self {
@@ -81,7 +75,7 @@ impl ProcMacroClientController {
                     NonZeroU32::new(RATE_LIMITER_RETRIES).unwrap(),
                 ),
             ),
-            channels: Default::default(),
+            channels: ProcMacroChannels::new(),
         }
     }
 
@@ -154,11 +148,12 @@ impl ProcMacroClientController {
     fn spawn_server(&mut self, db: &mut AnalysisDatabase) {
         match self.scarb.proc_macro_server() {
             Ok(proc_macro_server) => {
-                let channels = self.channels.clone().unwrap();
-
                 let client = ProcMacroClient::new(
-                    ProcMacroServerConnection::stdio(proc_macro_server, channels.response),
-                    channels.error,
+                    ProcMacroServerConnection::stdio(
+                        proc_macro_server,
+                        self.channels.response_sender.clone(),
+                    ),
+                    self.channels.error_sender.clone(),
                 );
 
                 client.start_initialize();
@@ -256,19 +251,25 @@ fn parse_proc_macro_response(response: RpcResponse) -> Result<ProcMacroResult> {
 }
 
 #[derive(Clone)]
-pub struct ProcMacroChannelsReceivers {
+pub struct ProcMacroChannels {
+    // A single element queue is used to notify when client occurred an error.
+    error_sender: Sender<()>,
+
     // A single element queue is used to notify when the response queue is pushed.
-    pub response: Receiver<()>,
+    pub response_receiver: Receiver<()>,
+
+    // A single element queue is used to notify when the response queue is pushed.
+    response_sender: Sender<()>,
 
     // A single element queue is used to notify when client occurred an error.
-    pub error: Receiver<()>,
+    pub error_receiver: Receiver<()>,
 }
 
-#[derive(Clone)]
-struct ProcMacroChannelsSenders {
-    // A single element queue is used to notify when the response queue is pushed.
-    response: Sender<()>,
+impl ProcMacroChannels {
+    fn new() -> Self {
+        let (response_sender, response_receiver) = crossbeam::channel::bounded(1);
+        let (error_sender, error_receiver) = crossbeam::channel::bounded(1);
 
-    // A single element queue is used to notify when client occurred an error.
-    error: Sender<()>,
+        Self { response_sender, response_receiver, error_sender, error_receiver }
+    }
 }
