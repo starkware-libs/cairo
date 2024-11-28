@@ -1037,24 +1037,7 @@ impl<'a> FormatterImpl<'a> {
                 OrderedHashMap::default();
 
             for node in section_nodes {
-                // Check if the node has any non-trivial trivia (i.e., comments).
-                let has_non_whitespace_trivia = !node.descendants(self.db).all(|descendant| {
-                    if descendant.kind(self.db) == SyntaxKind::Trivia {
-                        ast::Trivia::from_syntax_node(self.db, descendant)
-                            .elements(self.db)
-                            .into_iter()
-                            .all(|element| {
-                                matches!(
-                                    element,
-                                    ast::Trivium::Whitespace(_) | ast::Trivium::Newline(_)
-                                )
-                            })
-                    } else {
-                        true
-                    }
-                });
-
-                if has_non_whitespace_trivia {
+                if !self.has_only_whitespace_trivia(node) {
                     new_children.push(node.clone());
                     continue;
                 }
@@ -1097,8 +1080,28 @@ impl<'a> FormatterImpl<'a> {
         *children = new_children;
     }
 
+    /// Check if the node has only trivial trivia.
+    fn has_only_whitespace_trivia(&self, node: &SyntaxNode) -> bool {
+        node.descendants(self.db).all(|descendant| {
+            if descendant.kind(self.db) == SyntaxKind::Trivia {
+                ast::Trivia::from_syntax_node(self.db, descendant)
+                    .elements(self.db)
+                    .into_iter()
+                    .all(|element| {
+                        matches!(element, ast::Trivium::Whitespace(_) | ast::Trivium::Newline(_))
+                    })
+            } else {
+                true
+            }
+        })
+    }
+
     /// Sorting function for `UsePathMulti` children.
     fn sort_inner_use_path(&self, children: &mut Vec<SyntaxNode>) {
+        // If any child has non-trivial trivia, do not sort.
+        if children.iter().any(|child| !self.has_only_whitespace_trivia(child)) {
+            return;
+        }
         // Split list into `use` path parts and TokenComma.
         let (mut sorted_elements, commas): (Vec<_>, Vec<_>) = std::mem::take(children)
             .into_iter()
