@@ -18,7 +18,6 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, LookupIntern, extract_matches, require, try_extract_matches};
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
@@ -47,12 +46,11 @@ use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
     ConcreteImplId, ConcreteImplLongId, ImplImplId, ImplLongId, ImplLookupContext,
 };
-use crate::items::module::{ModuleItemInfo, get_module_global_uses};
+use crate::items::module::ModuleItemInfo;
 use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
     ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
 };
-use crate::items::visibility::peek_visible_in;
 use crate::items::{TraitOrImplContext, visibility};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{ImplTypeId, are_coupons_enabled, resolve_type};
@@ -244,15 +242,6 @@ enum UseStarResult {
     PathNotFound,
     /// Item is not visible in the current module, considering only the `use *` imports.
     ItemNotVisible(ModuleItemId, Vec<ModuleId>),
-}
-
-/// The modules that are imported by a module, using global uses.
-struct ImportedModules {
-    /// The imported modules that have a path where each step is visible by the previous module.
-    accessible_modules: OrderedHashSet<(ModuleId, ModuleId)>,
-    // TODO(Tomer-StarkWare): consider changing from all_modules to inaccessible_modules
-    /// All the imported modules.
-    all_modules: OrderedHashSet<ModuleId>,
 }
 
 /// A trait for things that can be interpreted as a path of segments.
@@ -1139,27 +1128,27 @@ impl<'db> Resolver<'db> {
     ) -> UseStarResult {
         let mut item_info = None;
         let mut module_items_found: OrderedHashSet<ModuleItemId> = OrderedHashSet::default();
-        let imported_modules = self.module_use_star_modules(module_id);
+        let imported_modules = self.db.priv_module_use_star_modules(module_id);
         let mut containing_modules = vec![];
         let mut is_accessible = false;
-        for (star_module_id, item_module_id) in imported_modules.accessible_modules {
+        for (star_module_id, item_module_id) in &imported_modules.accessible {
             if let Some(inner_item_info) =
-                self.resolve_item_in_imported_module(item_module_id, identifier)
+                self.resolve_item_in_imported_module(*item_module_id, identifier)
             {
                 item_info = Some(inner_item_info.clone());
                 is_accessible |=
-                    self.is_item_visible(item_module_id, &inner_item_info, star_module_id)
+                    self.is_item_visible(*item_module_id, &inner_item_info, *star_module_id)
                         && self.is_item_feature_usable(&inner_item_info);
                 module_items_found.insert(inner_item_info.item_id);
             }
         }
-        for star_module_id in imported_modules.all_modules {
+        for star_module_id in &imported_modules.all {
             if let Some(inner_item_info) =
-                self.resolve_item_in_imported_module(star_module_id, identifier)
+                self.resolve_item_in_imported_module(*star_module_id, identifier)
             {
                 item_info = Some(inner_item_info.clone());
                 module_items_found.insert(inner_item_info.item_id);
-                containing_modules.push(star_module_id);
+                containing_modules.push(*star_module_id);
             }
         }
         if module_items_found.len() > 1 {
@@ -1190,56 +1179,6 @@ impl<'db> Resolver<'db> {
             return Some(inner_item_info);
         }
         None
-    }
-
-    /// Returns the modules that are imported with `use *` in the current module.
-    fn module_use_star_modules(&self, module_id: ModuleId) -> ImportedModules {
-        let mut visited = UnorderedHashSet::<_>::default();
-        let mut stack = vec![(module_id, module_id)];
-        let mut accessible_modules = OrderedHashSet::default();
-        // Iterate over all modules that are imported through `use *`, and are accessible from the
-        // current module.
-        while let Some((user_module, containing_module)) = stack.pop() {
-            if !visited.insert((user_module, containing_module)) {
-                continue;
-            }
-            let Ok(glob_uses) = get_module_global_uses(self.db, containing_module) else {
-                continue;
-            };
-            for (glob_use, item_visibility) in glob_uses.iter() {
-                let Ok(module_id_found) = self.db.priv_global_use_imported_module(*glob_use) else {
-                    continue;
-                };
-                if peek_visible_in(
-                    self.db.upcast(),
-                    *item_visibility,
-                    containing_module,
-                    user_module,
-                ) {
-                    stack.push((containing_module, module_id_found));
-                    accessible_modules.insert((containing_module, module_id_found));
-                }
-            }
-        }
-
-        let mut visited = UnorderedHashSet::<_>::default();
-        let mut stack = vec![module_id];
-        let mut all_modules = OrderedHashSet::default();
-        // Iterate over all modules that are imported through `use *`.
-        while let Some(curr_module_id) = stack.pop() {
-            if !visited.insert(curr_module_id) {
-                continue;
-            }
-            all_modules.insert(curr_module_id);
-            let Ok(glob_uses) = get_module_global_uses(self.db, curr_module_id) else { continue };
-            for glob_use in glob_uses.keys() {
-                let Ok(module_id_found) = self.db.priv_global_use_imported_module(*glob_use) else {
-                    continue;
-                };
-                stack.push(module_id_found);
-            }
-        }
-        ImportedModules { accessible_modules, all_modules }
     }
 
     /// Given the current resolved item, resolves the next segment.
