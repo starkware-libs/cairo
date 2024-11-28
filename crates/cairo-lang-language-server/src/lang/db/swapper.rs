@@ -1,22 +1,22 @@
 use std::collections::HashSet;
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern};
 use lsp_types::Url;
 use tracing::{error, warn};
 
-use crate::config::Config;
 use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
-use crate::server::client::Notifier;
-use crate::toolchain::scarb::ScarbToolchain;
-use crate::{Backend, Tricks, env_config};
+use crate::lang::proc_macros::db::ProcMacroGroup;
+use crate::project::ProjectController;
+use crate::{Tricks, env_config};
 
 /// Swaps entire [`AnalysisDatabase`] with empty one periodically.
 ///
@@ -36,16 +36,14 @@ use crate::{Backend, Tricks, env_config};
 pub struct AnalysisDatabaseSwapper {
     last_replace: SystemTime,
     db_replace_interval: Duration,
-    scarb_toolchain: ScarbToolchain,
 }
 
 impl AnalysisDatabaseSwapper {
     /// Creates a new `AnalysisDatabaseSwapper`.
-    pub fn new(scarb_toolchain: ScarbToolchain) -> Self {
+    pub fn new() -> Self {
         Self {
             last_replace: SystemTime::now(),
             db_replace_interval: env_config::db_replace_interval(),
-            scarb_toolchain,
         }
     }
 
@@ -54,10 +52,8 @@ impl AnalysisDatabaseSwapper {
         &mut self,
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
-        config: &Config,
         tricks: &Tricks,
-        notifier: &Notifier,
-        loaded_scarb_manifests: &mut HashSet<PathBuf>,
+        project_controller: &mut ProjectController,
     ) {
         let Ok(elapsed) = self.last_replace.elapsed() else {
             warn!("system time went backwards, skipping db swap");
@@ -73,7 +69,7 @@ impl AnalysisDatabaseSwapper {
             return;
         }
 
-        self.swap(db, open_files, config, tricks, notifier, loaded_scarb_manifests)
+        self.swap(db, open_files, tricks, project_controller)
     }
 
     /// Swaps the database.
@@ -82,23 +78,16 @@ impl AnalysisDatabaseSwapper {
         &mut self,
         db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
-        config: &Config,
         tricks: &Tricks,
-        notifier: &Notifier,
-        loaded_scarb_manifests: &mut HashSet<PathBuf>,
+        project_controller: &mut ProjectController,
     ) {
         let Ok(new_db) = catch_unwind(AssertUnwindSafe(|| {
-            loaded_scarb_manifests.clear();
+            project_controller.clear_loaded_workspaces();
 
             let mut new_db = AnalysisDatabase::new(tricks);
+            self.migrate_proc_macro_state(&mut new_db, db);
             self.migrate_file_overrides(&mut new_db, db, open_files);
-            self.detect_crates_for_open_files(
-                &mut new_db,
-                open_files,
-                config,
-                notifier,
-                loaded_scarb_manifests,
-            );
+            self.update_project_for_open_files(open_files, project_controller);
             new_db
         })) else {
             error!("caught panic when preparing new db for swap");
@@ -108,6 +97,21 @@ impl AnalysisDatabaseSwapper {
         *db = new_db;
 
         self.last_replace = SystemTime::now();
+    }
+
+    /// Copies current proc macro state into new db.
+    fn migrate_proc_macro_state(&self, new_db: &mut AnalysisDatabase, old_db: &AnalysisDatabase) {
+        new_db.set_macro_plugins(old_db.macro_plugins());
+        new_db.set_inline_macro_plugins(old_db.inline_macro_plugins());
+        new_db.set_analyzer_plugins(old_db.analyzer_plugins());
+
+        new_db.set_proc_macro_client_status(old_db.proc_macro_client_status());
+
+        // TODO(#6646): Probably this should not be part of migration as it will be ever growing,
+        // but diagnostics going crazy every 5 minutes are no better.
+        new_db.set_attribute_macro_resolution(old_db.attribute_macro_resolution());
+        new_db.set_derive_macro_resolution(old_db.derive_macro_resolution());
+        new_db.set_inline_macro_resolution(old_db.inline_macro_resolution());
     }
 
     /// Makes sure that all open files exist in the new db, with their current changes.
@@ -135,13 +139,10 @@ impl AnalysisDatabaseSwapper {
     }
 
     /// Ensures all open files have their crates detected to regenerate crates state.
-    fn detect_crates_for_open_files(
+    fn update_project_for_open_files(
         &self,
-        new_db: &mut AnalysisDatabase,
         open_files: &HashSet<Url>,
-        config: &Config,
-        notifier: &Notifier,
-        loaded_scarb_manifests: &mut HashSet<PathBuf>,
+        project_controller: &mut ProjectController,
     ) {
         for uri in open_files {
             let Ok(file_path) = uri.to_file_path() else {
@@ -149,14 +150,7 @@ impl AnalysisDatabaseSwapper {
                 continue;
             };
 
-            Backend::detect_crate_for(
-                new_db,
-                &self.scarb_toolchain,
-                config,
-                &file_path,
-                notifier,
-                loaded_scarb_manifests,
-            );
+            project_controller.update_project_for_file(&file_path);
         }
     }
 }

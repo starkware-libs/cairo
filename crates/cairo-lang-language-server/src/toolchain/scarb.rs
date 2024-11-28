@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, OnceLock};
 
 use anyhow::{Context, Result, bail};
@@ -7,6 +8,7 @@ use scarb_metadata::{Metadata, MetadataCommand};
 use tracing::{error, warn};
 
 use crate::env_config;
+use crate::lsp::ext::ScarbMetadataFailed;
 use crate::server::client::Notifier;
 
 pub const SCARB_TOML: &str = "Scarb.toml";
@@ -125,9 +127,29 @@ impl ScarbToolchain {
 
         if !self.is_silent {
             self.notifier.notify::<ScarbResolvingFinish>(());
+
+            if result.is_err() {
+                self.notifier.notify::<ScarbMetadataFailed>(());
+            }
         }
 
         result
+    }
+
+    pub fn proc_macro_server(&self) -> Result<Child> {
+        let Some(scarb_path) = self.discover() else { bail!("failed to get scarb path") };
+
+        let proc_macro_server = Command::new(scarb_path)
+            .arg("--quiet") // If not set scarb will print all "Compiling ..." messages we don't need (and these can crash input parsing).
+            .arg("proc-macro-server")
+            .envs(std::env::var("RUST_BACKTRACE").map(|value| ("RUST_BACKTRACE", value)))
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            // We use this channel for debugging.
+            .stderr(Stdio::inherit())
+            .spawn()?;
+
+        Ok(proc_macro_server)
     }
 }
 

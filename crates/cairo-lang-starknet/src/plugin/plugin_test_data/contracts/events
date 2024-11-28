@@ -161,6 +161,7 @@ impl StoreA of starknet::Store::<A> {
 #[doc(hidden)]
 pub struct ASubPointers {
     pub x: starknet::storage::StoragePointer<felt252>,
+    #[key]
     pub data: starknet::storage::StoragePointer<usize>,
 }
 #[doc(hidden)]
@@ -188,6 +189,7 @@ impl ASubPointersImpl of starknet::storage::SubPointers<A> {
 #[doc(hidden)]
 pub struct ASubPointersMut {
     pub x: starknet::storage::StoragePointer<starknet::storage::Mutable::<felt252>>,
+    #[key]
     pub data: starknet::storage::StoragePointer<starknet::storage::Mutable::<usize>>,
 }
 #[doc(hidden)]

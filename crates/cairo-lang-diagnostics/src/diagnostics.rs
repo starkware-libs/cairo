@@ -7,6 +7,7 @@ use cairo_lang_filesystem::db::{FilesGroup, get_originating_location};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::Upcast;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 use crate::error_code::{ErrorCode, OptionErrorCodeExt};
@@ -53,6 +54,10 @@ pub trait DiagnosticEntry: Clone + fmt::Debug + Eq + Hash {
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
 
+/// Diagnostic notes for diagnostics originating in the plugin generated files identified by
+/// [`FileId`].
+pub type PluginFileDiagnosticNotes = OrderedHashMap<FileId, DiagnosticNote>;
+
 // The representation of a source location inside a diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticLocation {
@@ -67,8 +72,27 @@ impl DiagnosticLocation {
 
     /// Get the location of the originating user code.
     pub fn user_location(&self, db: &dyn FilesGroup) -> Self {
-        let (file_id, span) = get_originating_location(db, self.file_id, self.span);
+        let (file_id, span) = get_originating_location(db, self.file_id, self.span, None);
         Self { file_id, span }
+    }
+
+    /// Get the location of the originating user code,
+    /// along with [`DiagnosticNote`]s for this translation.
+    /// The notes are collected from the parent files of the originating location.
+    pub fn user_location_with_plugin_notes(
+        &self,
+        db: &dyn FilesGroup,
+        file_notes: &PluginFileDiagnosticNotes,
+    ) -> (Self, Vec<DiagnosticNote>) {
+        let mut parent_files = Vec::new();
+        let (file_id, span) =
+            get_originating_location(db, self.file_id, self.span, Some(&mut parent_files));
+        let diagnostic_notes = parent_files
+            .into_iter()
+            .rev()
+            .filter_map(|file_id| file_notes.get(&file_id).cloned())
+            .collect_vec();
+        (Self { file_id, span }, diagnostic_notes)
     }
 
     /// Helper function to format the location of a diagnostic.
@@ -277,14 +301,24 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     }
 
     /// Format entries to pairs of severity and message.
-    pub fn format_with_severity(&self, db: &TEntry::DbType) -> Vec<FormattedDiagnosticEntry> {
+    pub fn format_with_severity(
+        &self,
+        db: &TEntry::DbType,
+        file_notes: &OrderedHashMap<FileId, DiagnosticNote>,
+    ) -> Vec<FormattedDiagnosticEntry> {
         let mut res: Vec<FormattedDiagnosticEntry> = Vec::new();
 
         let files_db = db.upcast();
         for entry in &self.get_diagnostics_without_duplicates(db) {
             let mut msg = String::new();
-            msg += &format_diagnostics(files_db, &entry.format(db), entry.location(db));
+            let diag_location = entry.location(db);
+            let (user_location, parent_file_notes) =
+                diag_location.user_location_with_plugin_notes(files_db, file_notes);
+            msg += &format_diagnostics(files_db, &entry.format(db), user_location);
             for note in entry.notes(db) {
+                msg += &format!("note: {:?}\n", note.debug(files_db))
+            }
+            for note in parent_file_notes {
                 msg += &format!("note: {:?}\n", note.debug(files_db))
             }
             msg += "\n";
@@ -298,7 +332,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 
     /// Format entries to a [`String`] with messages prefixed by severity.
     pub fn format(&self, db: &TEntry::DbType) -> String {
-        self.format_with_severity(db).iter().map(ToString::to_string).join("")
+        self.format_with_severity(db, &Default::default()).iter().map(ToString::to_string).join("")
     }
 
     /// Asserts that no diagnostic has occurred, panicking with an error message on failure.

@@ -93,6 +93,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
                         content,
                         code_mappings,
                         aux_data: None,
+                        diagnostics_note: Default::default(),
                     }),
                     diagnostics: vec![],
                     remove_original_item: false,
@@ -137,6 +138,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
                         content,
                         code_mappings,
                         aux_data: None,
+                        diagnostics_note: Default::default(),
                     }),
                     diagnostics: vec![],
                     remove_original_item: false,
@@ -503,10 +505,8 @@ fn add_interface_struct_definition(
     storage_node_info: &StorageInterfaceInfo<'_>,
     metadata: &MacroPluginMetadata<'_>,
 ) {
-    let struct_name_syntax = struct_ast.name(db).as_syntax_node();
-
     let node_type_name = storage_node_info.node_type_name();
-    let struct_name_rewrite_node = RewriteNode::new_trimmed(struct_name_syntax.clone());
+    let struct_name_rewrite_node = RewriteNode::from_ast_trimmed(&struct_ast.name(db));
     let struct_visibility = if backwards_compatible_storage(metadata.edition) {
         RewriteNode::text("pub ")
     } else {
@@ -531,8 +531,6 @@ fn add_interface_struct_definition(
     ));
 
     for field in struct_ast.members(db).elements(db) {
-        let field_name = field.name(db).as_syntax_node();
-        let field_type = field.type_clause(db).ty(db).as_syntax_node();
         let concrete_node_members_type = storage_node_info.concrete_node_members_type(&field);
         let field_visibility = if backwards_compatible_storage(metadata.edition) {
             RewriteNode::text("pub ")
@@ -545,11 +543,17 @@ fn add_interface_struct_definition(
         };
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("    $field_visibility$$field_name$: {concrete_node_members_type},\n",),
+            &format!(
+                "$attributes$    $field_visibility$$field_name$: {concrete_node_members_type},\n",
+            ),
             &[
+                ("attributes".to_string(), RewriteNode::from_ast(&field.attributes(db))),
                 ("field_visibility".to_string(), field_visibility),
-                ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
-                ("field_type".to_string(), RewriteNode::new_trimmed(field_type)),
+                ("field_name".to_string(), RewriteNode::from_ast_trimmed(&field.name(db))),
+                (
+                    "field_type".to_string(),
+                    RewriteNode::from_ast_trimmed(&field.type_clause(db).ty(db)),
+                ),
             ]
             .into(),
         ));
@@ -564,7 +568,7 @@ fn add_interface_impl(
     struct_ast: &ast::ItemStruct,
     storage_node_info: &StorageInterfaceInfo<'_>,
 ) {
-    let struct_name_syntax = struct_ast.name(db).as_syntax_node();
+    let struct_name = RewriteNode::from_ast_trimmed(&struct_ast.name(db));
     let node_type_name = storage_node_info.node_type_name();
     let node_impl_name = storage_node_info.node_impl_name();
     let node_trait_name = storage_node_info.node_trait_name();
@@ -582,35 +586,31 @@ fn add_interface_impl(
              {{{node_constructor_prefix_code}
 ",
         ),
-        &[("object_name".to_string(), RewriteNode::new_trimmed(struct_name_syntax.clone()))].into(),
+        &[("object_name".to_string(), struct_name.clone())].into(),
     ));
 
     let fields = struct_ast.members(db).elements(db);
     let mut fields_iter = fields.iter().peekable();
     while let Some(field) = fields_iter.next() {
-        let field_name = field.name(db).as_syntax_node();
-        let field_type = field.type_clause(db).ty(db).as_syntax_node();
+        let field_name = RewriteNode::from_ast_trimmed(&field.name(db));
+        let field_type = RewriteNode::from_ast_trimmed(&field.type_clause(db).ty(db));
         let is_last = fields_iter.peek().is_none();
         builder.add_modified(RewriteNode::interpolate_patched(
             &storage_node_info.node_constructor_field_init_code(is_last, field),
-            &[
-                ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
-                ("field_type".to_string(), RewriteNode::new_trimmed(field_type)),
-            ]
-            .into(),
+            &[("field_name".to_string(), field_name), ("field_type".to_string(), field_type)]
+                .into(),
         ));
     }
 
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!("        {} {{\n", storage_node_info.node_type_name()),
-        &[("object_name".to_string(), RewriteNode::new_trimmed(struct_name_syntax))].into(),
+        &[("object_name".to_string(), struct_name)].into(),
     ));
 
     for field in struct_ast.members(db).elements(db) {
-        let field_name = field.name(db).as_syntax_node();
         builder.add_modified(RewriteNode::interpolate_patched(
             "           $field_name$: __$field_name$_value__,\n",
-            &[("field_name".to_string(), RewriteNode::new_trimmed(field_name))].into(),
+            &[("field_name".to_string(), RewriteNode::from_ast_trimmed(&field.name(db)))].into(),
         ));
     }
 
@@ -625,7 +625,6 @@ fn add_node_enum_definition(
     is_mutable: bool,
 ) {
     let storage_node_info = StorageInterfaceInfo::from_enum_ast(db, enum_ast, is_mutable).unwrap();
-    let enum_name_syntax = enum_ast.name(db).as_syntax_node();
     let node_type_name = storage_node_info.node_type_name();
 
     builder.add_modified(RewriteNode::interpolate_patched(
@@ -634,22 +633,20 @@ fn add_node_enum_definition(
             enum {node_type_name} {{
                 "
         ),
-        &[("object_name".to_string(), RewriteNode::new_trimmed(enum_name_syntax.clone()))].into(),
+        &[("object_name".to_string(), RewriteNode::from_ast_trimmed(&enum_ast.name(db)))].into(),
     ));
     for variant in enum_ast.variants(db).elements(db) {
         let concrete_node_members_type = storage_node_info.concrete_node_members_type(&variant);
-        let field_name = variant.name(db).as_syntax_node();
         let field_type = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => RewriteNode::text("()"),
-            ast::OptionTypeClause::TypeClause(tc) => {
-                RewriteNode::new_trimmed(tc.ty(db).as_syntax_node())
-            }
+            ast::OptionTypeClause::TypeClause(tc) => RewriteNode::from_ast_trimmed(&tc.ty(db)),
         };
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("    $field_name$: {concrete_node_members_type},\n",),
+            &format!("$attributes$    $field_name$: {concrete_node_members_type},\n",),
             &[
-                ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
+                ("attributes".to_string(), RewriteNode::from_ast(&variant.attributes(db))),
+                ("field_name".to_string(), RewriteNode::from_ast_trimmed(&variant.name(db))),
                 ("field_type".to_string(), field_type),
             ]
             .into(),
@@ -666,7 +663,7 @@ fn add_node_enum_impl(
     is_mutable: bool,
 ) {
     let storage_node_info = StorageInterfaceInfo::from_enum_ast(db, enum_ast, is_mutable).unwrap();
-    let enum_name_syntax = enum_ast.name(db).as_syntax_node();
+    let enum_name = RewriteNode::from_ast_trimmed(&enum_ast.name(db));
     let node_type_name = storage_node_info.node_type_name();
     let node_impl_name = storage_node_info.node_impl_name();
     let node_trait_name = storage_node_info.node_trait_name();
@@ -683,7 +680,7 @@ fn add_node_enum_impl(
                         {node_constructor_prefix_code}
 ",
         ),
-        &[("object_name".to_string(), RewriteNode::new_trimmed(enum_name_syntax.clone()))].into(),
+        &[("object_name".to_string(), enum_name.clone())].into(),
     ));
 
     let mut default_index = None;
@@ -697,7 +694,6 @@ fn add_node_enum_impl(
         } else {
             index + usize::from(default_index.is_none())
         };
-        let field_name = variant.name(db).as_syntax_node();
         let field_type = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => "()".to_string(),
             ast::OptionTypeClause::TypeClause(tc) => {
@@ -708,8 +704,8 @@ fn add_node_enum_impl(
         builder.add_modified(RewriteNode::interpolate_patched(
             &storage_node_info.node_constructor_field_init_code(false, variant),
             &[
-                ("object_name".to_string(), RewriteNode::new_trimmed(enum_name_syntax.clone())),
-                ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
+                ("object_name".to_string(), enum_name.clone()),
+                ("field_name".to_string(), RewriteNode::from_ast_trimmed(&variant.name(db))),
                 ("field_type".to_string(), RewriteNode::text(&field_type)),
                 ("field_index".to_string(), RewriteNode::text(&variant_selector.to_string())),
             ]

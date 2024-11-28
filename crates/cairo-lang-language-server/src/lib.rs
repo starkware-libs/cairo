@@ -38,44 +38,35 @@
 //! }
 //! ```
 
-use std::collections::HashSet;
 use std::panic::RefUnwindSafe;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::SystemTime;
 use std::{io, panic};
 
-use anyhow::{Context, Result};
-use cairo_lang_compiler::db::validate_corelib;
-use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
+use anyhow::Result;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
-use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::plugin::PluginSuite;
-use crossbeam::select;
+use crossbeam::channel::{Receiver, select_biased};
 use lsp_server::Message;
 use lsp_types::RegistrationParams;
 use salsa::{Database, Durability};
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, info};
 
-use crate::config::Config;
-use crate::lang::db::AnalysisDatabase;
 use crate::lang::lsp::LsProtoGroup;
+use crate::lang::proc_macros::controller::ProcMacroChannelsReceivers;
 use crate::lsp::capabilities::server::{
     collect_dynamic_registrations, collect_server_capabilities,
 };
-use crate::lsp::ext::{CorelibVersionMismatch, ScarbMetadataFailed};
 use crate::lsp::result::LSPResult;
-use crate::project::ProjectManifestPath;
-use crate::project::scarb::{get_workspace_members_manifests, update_crate_roots};
-use crate::project::unmanaged_core_crate::try_to_init_unmanaged_core;
+use crate::project::{ProjectController, ProjectUpdate};
 use crate::server::client::{Notifier, Requester, Responder};
 use crate::server::connection::{Connection, ConnectionInitializer};
 use crate::server::panic::is_cancelled;
 use crate::server::schedule::thread::JoinHandle;
 use crate::server::schedule::{Scheduler, Task, event_loop_thread};
 use crate::state::State;
-use crate::toolchain::scarb::ScarbToolchain;
 
 mod config;
 mod env_config;
@@ -279,7 +270,9 @@ impl Backend {
     fn run(self) -> Result<JoinHandle<Result<()>>> {
         event_loop_thread(move || {
             let Self { mut state, connection } = self;
+            let proc_macro_channels = state.proc_macro_controller.init_channels();
 
+            let project_updates_receiver = state.project_controller.init_channel();
             let mut scheduler = Scheduler::new(&mut state, connection.make_sender());
 
             Self::dispatch_setup_tasks(&mut scheduler);
@@ -294,7 +287,12 @@ impl Backend {
             // we basically never hit such a case in CairoLS in happy paths.
             scheduler.on_sync_task(Self::refresh_diagnostics);
 
-            let result = Self::event_loop(&connection, scheduler);
+            let result = Self::event_loop(
+                &connection,
+                proc_macro_channels,
+                project_updates_receiver,
+                scheduler,
+            );
 
             // Trigger cancellation in any background tasks that might still be running.
             state.db.salsa_runtime_mut().synthetic_write(Durability::LOW);
@@ -346,11 +344,24 @@ impl Backend {
     // | File: `crates/ruff_server/src/server.rs`         |
     // | Commit: 46a457318d8d259376a2b458b3f814b9b795fe69 |
     // +--------------------------------------------------+
-    fn event_loop(connection: &Connection, mut scheduler: Scheduler<'_>) -> Result<()> {
+    fn event_loop(
+        connection: &Connection,
+        proc_macro_channels: ProcMacroChannelsReceivers,
+        project_updates_receiver: Receiver<ProjectUpdate>,
+        mut scheduler: Scheduler<'_>,
+    ) -> Result<()> {
         let incoming = connection.incoming();
 
         loop {
-            select! {
+            select_biased! {
+                // Project updates may significantly change the state, therefore
+                // they should be handled first in case of multiple operations being ready at once.
+                // To ensure it, keep project updates channel in the first arm of `select_biased!`.
+                recv(project_updates_receiver) -> project_update => {
+                    let Ok(project_update) = project_update else { break };
+
+                    scheduler.local(move |state, notifier, _, _| ProjectController::handle_update(state, notifier, project_update));
+                }
                 recv(incoming) -> msg => {
                     let Ok(msg) = msg else { break };
 
@@ -364,21 +375,41 @@ impl Backend {
                     };
                     scheduler.dispatch(task);
                 }
+                recv(proc_macro_channels.response) -> response => {
+                    let Ok(()) = response else { break };
+
+                    scheduler.local(Self::on_proc_macro_response);
+                }
+                recv(proc_macro_channels.error) -> error => {
+                    let Ok(()) = error else { break };
+
+                    scheduler.local(Self::on_proc_macro_error);
+                }
             }
         }
 
         Ok(())
     }
 
+    /// Calls [`lang::proc_macros::controller::ProcMacroClientController::handle_error`] to do its
+    /// work.
+    fn on_proc_macro_error(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        state.proc_macro_controller.handle_error(&mut state.db, &state.config);
+    }
+
+    /// Calls [`lang::proc_macros::controller::ProcMacroClientController::on_response`] to do its
+    /// work.
+    fn on_proc_macro_response(state: &mut State, _: Notifier, _: &mut Requester<'_>, _: Responder) {
+        state.proc_macro_controller.on_response(&mut state.db, &state.config);
+    }
+
     /// Calls [`lang::db::AnalysisDatabaseSwapper::maybe_swap`] to do its work.
-    fn maybe_swap_database(state: &mut State, notifier: Notifier) {
+    fn maybe_swap_database(state: &mut State, _notifier: Notifier) {
         state.db_swapper.maybe_swap(
             &mut state.db,
             &state.open_files,
-            &state.config,
             &state.tricks,
-            &notifier,
-            &mut state.loaded_scarb_manifests,
+            &mut state.project_controller,
         );
     }
 
@@ -387,91 +418,15 @@ impl Backend {
         state.diagnostics_controller.refresh(state);
     }
 
-    /// Tries to detect the crate root the config that contains a cairo file, and add it to the
-    /// system.
-    #[tracing::instrument(skip_all)]
-    fn detect_crate_for(
-        db: &mut AnalysisDatabase,
-        scarb_toolchain: &ScarbToolchain,
-        config: &Config,
-        file_path: &Path,
-        notifier: &Notifier,
-        loaded_scarb_manifests: &mut HashSet<PathBuf>,
-    ) {
-        match ProjectManifestPath::discover(file_path) {
-            Some(ProjectManifestPath::Scarb(manifest_path)) => {
-                if loaded_scarb_manifests.contains(&manifest_path) {
-                    trace!("scarb project is already loaded: {}", manifest_path.display());
-                    return;
-                }
-
-                let metadata = scarb_toolchain
-                    .metadata(&manifest_path)
-                    .with_context(|| {
-                        format!("failed to refresh scarb workspace: {}", manifest_path.display())
-                    })
-                    .inspect_err(|err| {
-                        warn!("{err:?}");
-                        notifier.notify::<ScarbMetadataFailed>(());
-                    })
-                    .ok();
-
-                if let Some(metadata) = metadata {
-                    loaded_scarb_manifests.extend(get_workspace_members_manifests(&metadata));
-                    update_crate_roots(&metadata, db);
-                } else {
-                    // Try to set up a corelib at least.
-                    try_to_init_unmanaged_core(db, config, scarb_toolchain);
-                }
-
-                if let Err(result) = validate_corelib(db) {
-                    notifier.notify::<CorelibVersionMismatch>(result.to_string());
-                }
-            }
-
-            Some(ProjectManifestPath::CairoProject(config_path)) => {
-                // The base path of ProjectConfig must be absolute to ensure that all paths in Salsa
-                // DB will also be absolute.
-                assert!(config_path.is_absolute());
-
-                try_to_init_unmanaged_core(db, config, scarb_toolchain);
-
-                if let Ok(config) = ProjectConfig::from_file(&config_path) {
-                    update_crate_roots_from_project_config(db, &config);
-                };
-            }
-
-            None => {
-                try_to_init_unmanaged_core(db, config, scarb_toolchain);
-
-                if let Err(err) = setup_project(&mut *db, file_path) {
-                    let file_path_s = file_path.to_string_lossy();
-                    error!("error loading file {file_path_s} as a single crate: {err}");
-                }
-            }
-        }
-    }
-
-    /// Reload crate detection for all open files.
-    fn reload(
-        state: &mut State,
-        notifier: &Notifier,
-        requester: &mut Requester<'_>,
-    ) -> LSPResult<()> {
-        state.loaded_scarb_manifests.clear();
+    /// Reload config and update project model for all open files.
+    fn reload(state: &mut State, requester: &mut Requester<'_>) -> LSPResult<()> {
+        state.project_controller.clear_loaded_workspaces();
         state.config.reload(requester, &state.client_capabilities)?;
 
         for uri in state.open_files.iter() {
             let Some(file_id) = state.db.file_for_url(uri) else { continue };
             if let FileLongId::OnDisk(file_path) = state.db.lookup_intern_file(file_id) {
-                Backend::detect_crate_for(
-                    &mut state.db,
-                    &state.scarb_toolchain,
-                    &state.config,
-                    &file_path,
-                    notifier,
-                    &mut state.loaded_scarb_manifests,
-                );
+                state.project_controller.update_project_for_file(&file_path);
             }
         }
 

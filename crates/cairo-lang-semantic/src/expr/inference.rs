@@ -8,9 +8,9 @@ use std::ops::{Deref, DerefMut};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
-    ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LanguageElementId, LocalVarId,
-    LookupItemId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId, TraitId,
-    TraitImplId, TraitTypeId, VarId, VariantId,
+    GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LanguageElementId,
+    LocalVarId, LookupItemId, MemberId, ParamId, StructId, TraitConstantId, TraitFunctionId,
+    TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -86,6 +86,7 @@ pub enum InferenceId {
     ImplAliasImplDef(ImplAliasId),
     GenericParam(GenericParamId),
     GenericImplParamTrait(GenericParamId),
+    GlobalUseStar(GlobalUseId),
     Canonical,
     /// For resolving that will not be used anywhere in the semantic model.
     NoContext,
@@ -307,11 +308,11 @@ impl Hash for ImplVarTraitItemMappings {
 pub struct InferenceData {
     pub inference_id: InferenceId,
     /// Current inferred assignment for type variables.
-    pub type_assignment: HashMap<LocalTypeVarId, TypeId>,
+    pub type_assignment: OrderedHashMap<LocalTypeVarId, TypeId>,
     /// Current inferred assignment for const variables.
-    pub const_assignment: HashMap<LocalConstVarId, ConstValueId>,
+    pub const_assignment: OrderedHashMap<LocalConstVarId, ConstValueId>,
     /// Current inferred assignment for impl variables.
-    pub impl_assignment: HashMap<LocalImplVarId, ImplId>,
+    pub impl_assignment: OrderedHashMap<LocalImplVarId, ImplId>,
     /// Unsolved impl variables mapping to a maps of trait items to a corresponding item variable.
     /// Upon solution of the trait conforms the fully known item to the variable.
     pub impl_vars_trait_item_mappings: HashMap<LocalImplVarId, ImplVarTraitItemMappings>,
@@ -346,9 +347,9 @@ impl InferenceData {
     pub fn new(inference_id: InferenceId) -> Self {
         Self {
             inference_id,
-            type_assignment: HashMap::new(),
-            impl_assignment: HashMap::new(),
-            const_assignment: HashMap::new(),
+            type_assignment: OrderedHashMap::default(),
+            impl_assignment: OrderedHashMap::default(),
+            const_assignment: OrderedHashMap::default(),
             impl_vars_trait_item_mappings: HashMap::new(),
             type_vars: Vec::new(),
             impl_vars: Vec::new(),
@@ -981,14 +982,18 @@ impl<'db> Inference<'db> {
                     let GenericArgumentId::Type(ty) = garg else {
                         continue;
                     };
-
+                    let ty = inference.rewrite(ty).no_err();
                     // If the negative impl has a generic argument that is not fully
                     // concrete we can't tell if we should rule out the candidate impl.
                     // For example if we have -TypeEqual<S, T> we can't tell if S and
                     // T are going to be assigned the same concrete type.
                     // We return `SolutionSet::Ambiguous` here to indicate that more
                     // information is needed.
-                    if !ty.is_fully_concrete(inference.db) {
+                    // Closure can only have one type, even if it's not fully concrete, so can use
+                    // it and not get ambiguity.
+                    if !matches!(ty.lookup_intern(inference.db), TypeLongId::Closure(_))
+                        && !ty.is_fully_concrete(inference.db)
+                    {
                         // TODO(ilya): Try to detect the ambiguity earlier in the
                         // inference process.
                         return Ok(SolutionSet::Ambiguous(

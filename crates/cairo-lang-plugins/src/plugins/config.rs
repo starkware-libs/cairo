@@ -44,6 +44,7 @@ impl MacroPlugin for ConfigPlugin {
                     content,
                     code_mappings,
                     aux_data: None,
+                    diagnostics_note: Default::default(),
                 }),
                 diagnostics,
                 remove_original_item: true,

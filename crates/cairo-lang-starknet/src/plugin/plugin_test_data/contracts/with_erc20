@@ -49,6 +49,7 @@ mod erc20_contract {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
+        #[substorage(v0)]
     erc20_token: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
 }
 #[doc(hidden)]
@@ -64,6 +65,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
+        #[substorage(v0)]
     erc20_token: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
 }
 #[doc(hidden)]
@@ -78,6 +80,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          erc20_token: erc20_comp::ComponentState<ContractState>,
 }
 
@@ -288,6 +291,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
+        #[substorage(v0)]
     erc20_token: starknet::storage::FlattenedStorage<erc20_comp::Storage>,
 }
 #[doc(hidden)]
@@ -303,6 +307,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
+        #[substorage(v0)]
     erc20_token: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<erc20_comp::Storage>>,
 }
 #[doc(hidden)]
@@ -317,6 +322,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
 }
 
 pub struct ContractState {
+        #[substorage(v0)]
          erc20_token: erc20_comp::ComponentState<ContractState>,
 }
 

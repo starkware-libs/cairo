@@ -4,10 +4,11 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
-    FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplConstantDefId, ImplDefId,
-    ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, TraitConstantId,
-    TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId, VariantId,
+    FunctionWithBodyId, GenericParamId, GenericTypeId, GlobalUseId, ImplAliasId, ImplConstantDefId,
+    ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId, ImplTypeDefId, LanguageElementId,
+    LookupItemId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId, StructId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
+    VariantId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -34,7 +35,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitId, TraitItemConstantData, TraitItemImplData,
     TraitItemTypeData,
 };
-use crate::items::us::SemanticUseEx;
+use crate::items::us::{ImportedModules, SemanticUseEx};
 use crate::items::visibility::Visibility;
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
@@ -174,6 +175,28 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::us::use_resolver_data)]
     #[salsa::cycle(items::us::use_resolver_data_cycle)]
     fn use_resolver_data(&self, use_id: UseId) -> Maybe<Arc<ResolverData>>;
+
+    // Global Use.
+    // ====
+    /// Private query to compute data about a global use.
+    #[salsa::invoke(items::us::priv_global_use_semantic_data)]
+    #[salsa::cycle(items::us::priv_global_use_semantic_data_cycle)]
+    fn priv_global_use_semantic_data(
+        &self,
+        global_use_id: GlobalUseId,
+    ) -> Maybe<items::us::UseGlobalData>;
+    /// Private query to compute the imported module, given a global use.
+    #[salsa::invoke(items::us::priv_global_use_imported_module)]
+    fn priv_global_use_imported_module(&self, global_use_id: GlobalUseId) -> Maybe<ModuleId>;
+    /// Returns the semantic diagnostics of a global use.
+    #[salsa::invoke(items::us::global_use_semantic_diagnostics)]
+    fn global_use_semantic_diagnostics(
+        &self,
+        global_use_id: GlobalUseId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Private query to compute the imported modules of a module, using global uses.
+    #[salsa::invoke(items::us::priv_module_use_star_modules)]
+    fn priv_module_use_star_modules(&self, module_id: ModuleId) -> Arc<ImportedModules>;
 
     // Module.
     // ====
@@ -1664,6 +1687,9 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.impl_alias_semantic_diagnostics(*type_alias));
             }
         }
+    }
+    for global_use in db.module_global_uses(module_id)?.keys() {
+        diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
     for analyzer_plugin in db.analyzer_plugins().iter() {

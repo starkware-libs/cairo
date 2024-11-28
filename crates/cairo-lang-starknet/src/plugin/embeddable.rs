@@ -31,7 +31,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     let generic_params = item_impl.generic_params(db);
     let impl_name = item_impl.name(db);
     let impl_name_str = impl_name.text(db);
-    let impl_name = RewriteNode::new_trimmed(impl_name.as_syntax_node());
+    let impl_name = RewriteNode::from_ast_trimmed(&impl_name);
     let (is_valid_params, maybe_generic_args, generic_params_node) = match &generic_params {
         ast::OptionWrappedGenericParamList::Empty(_) => {
             (false, RewriteNode::empty(), RewriteNode::empty())
@@ -67,7 +67,8 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                     elements.map(|param| {
                         param
                             .name(db)
-                            .map(|name| RewriteNode::new_trimmed(name.as_syntax_node()))
+                            .as_ref()
+                            .map(RewriteNode::from_ast_trimmed)
                             .unwrap_or_else(|| RewriteNode::text("_"))
                     })
                 ),
@@ -91,7 +92,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                 &[
                     (
                         "generic_params".to_string(),
-                        RewriteNode::new_trimmed(generic_params_node.as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&generic_params_node),
                     ),
                     ("impl_name".to_string(), impl_name.clone()),
                 ]
@@ -119,7 +120,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         };
         let function_name = item_function.declaration(db).name(db);
         let function_name_str = function_name.text(db);
-        let function_name = RewriteNode::new_trimmed(function_name.as_syntax_node());
+        let function_name = RewriteNode::from_ast_trimmed(&function_name);
         let function_path = RewriteNode::interpolate_patched(
             "$impl_name$$maybe_generic_args$::$func_name$",
             &[
@@ -198,6 +199,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             content,
             code_mappings,
             aux_data: None,
+            diagnostics_note: Default::default(),
         }),
         diagnostics,
         remove_original_item: false,

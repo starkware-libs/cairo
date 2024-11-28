@@ -4,9 +4,9 @@ use cairo_lang_defs::plugin::{
     PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{try_extract_unnamed_arg, unsupported_bracket_diagnostic};
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ast::{Arg, WrappedArgList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::{formatdoc, indoc};
 use num_bigint::BigUint;
 
@@ -101,18 +101,16 @@ impl InlineMacroExprPlugin for PanicMacro {
                 &[
                     (
                         "lparen".to_string(),
-                        RewriteNode::new_trimmed(arguments_syntax.lparen(db).as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&arguments_syntax.lparen(db)),
                     ),
                     (
                         "rparen".to_string(),
-                        RewriteNode::new_trimmed(arguments_syntax.rparen(db).as_syntax_node()),
+                        RewriteNode::from_ast_trimmed(&arguments_syntax.rparen(db)),
                     ),
                     (
                         "args".to_string(),
                         RewriteNode::interspersed(
-                            arguments
-                                .iter()
-                                .map(|arg| RewriteNode::new_trimmed(arg.as_syntax_node())),
+                            arguments.iter().map(RewriteNode::from_ast_trimmed),
                             RewriteNode::text(", "),
                         ),
                     ),
@@ -127,6 +125,7 @@ impl InlineMacroExprPlugin for PanicMacro {
                 content,
                 code_mappings,
                 aux_data: None,
+                diagnostics_note: Default::default(),
             }),
             diagnostics: vec![],
         }
@@ -136,9 +135,9 @@ impl InlineMacroExprPlugin for PanicMacro {
         Some(
             indoc! {r#"
             Terminates the program immediately with an error message.
-            The `panic!` macro halts execution when an unrecoverable error \ 
-            occurs. It prints an error message and exits the program. \ 
-            Accepts a format string and arguments, similar to `format!`, \ 
+            The `panic!` macro halts execution when an unrecoverable error \
+            occurs. It prints an error message and exits the program. \
+            Accepts a format string and arguments, similar to `format!`, \
             for detailed error messages.
 
             # Syntax
@@ -167,7 +166,7 @@ impl InlineMacroExprPlugin for PanicMacro {
             assert!(x >= 0, "Invalid value: x = {x}");
             // Panics with "Invalid value: x = -1."
             ```
-    
+
             # Notes
             - Use `panic!` only for unrecoverable errors.
             - In library code, prefer returning `Result` or `Option` to let callers handle errors.

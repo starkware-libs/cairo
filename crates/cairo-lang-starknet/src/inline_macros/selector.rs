@@ -42,6 +42,7 @@ impl InlineMacroExprPlugin for SelectorMacro {
                 content: format!("0x{}", selector.to_str_radix(16)),
                 code_mappings: vec![],
                 aux_data: None,
+                diagnostics_note: Default::default(),
             }),
             diagnostics: vec![],
         }

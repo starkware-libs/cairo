@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use genco::prelude::*;
-use xshell::{Shell, cmd};
+use xshell::Shell;
 
 use crate::cairo_spec::get_spec;
 use crate::spec::{Member, Node, NodeKind, Variant, Variants};
@@ -49,9 +49,9 @@ pub fn reformat_rust_code(text: String) -> String {
 }
 pub fn reformat_rust_code_inner(text: String) -> String {
     let sh = Shell::new().unwrap();
-    sh.set_var("RUSTUP_TOOLCHAIN", "nightly-2024-11-17");
-    let rustfmt_toml = project_root().join("rustfmt.toml");
-    let mut stdout = cmd!(sh, "rustfmt --config-path {rustfmt_toml}").stdin(text).read().unwrap();
+    let cmd = sh.cmd("rustfmt").env("RUSTUP_TOOLCHAIN", "nightly-2024-11-23");
+    let cmd_with_args = cmd.arg("--config-path").arg(project_root().join("rustfmt.toml"));
+    let mut stdout = cmd_with_args.stdin(text).read().unwrap();
     if !stdout.ends_with('\n') {
         stdout.push('\n');
     }

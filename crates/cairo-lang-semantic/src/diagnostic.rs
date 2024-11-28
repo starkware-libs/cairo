@@ -3,14 +3,16 @@ use std::fmt::Display;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleItemId, NamedLanguageElementId,
-    StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TraitImplId, UseId,
+    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleId, ModuleItemId,
+    NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    TraitImplId, UseId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
     error_code,
 };
+use cairo_lang_filesystem::db::Edition;
 use cairo_lang_syntax as syntax;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -20,7 +22,7 @@ use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
-use crate::resolve::ResolvedConcreteItem;
+use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use crate::types::peel_snapshots;
 use crate::{ConcreteTraitId, semantic};
 
@@ -521,6 +523,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 NotFoundItemType::Trait => "Trait not found.".into(),
                 NotFoundItemType::Impl => "Impl not found.".into(),
             },
+            SemanticDiagnosticKind::AmbiguousPath(module_items) => {
+                format!(
+                    "Ambiguous path. Multiple matching items: {}",
+                    module_items
+                        .iter()
+                        .map(|item| format!("`{}`", item.full_path(db.upcast())))
+                        .join(", ")
+                )
+            }
+            SemanticDiagnosticKind::UseStarEmptyPath => {
+                "`*` in `use` items is not allowed for empty path.".into()
+            }
+            SemanticDiagnosticKind::GlobalUsesNotSupportedInEdition(edition) => {
+                format!("Global `use` item is not supported in `{edition:?}` edition.")
+            }
             SemanticDiagnosticKind::TraitInTraitMustBeExplicit => {
                 "In a trait, paths of the same trait must be fully explicit. Either use `Self` if \
                  this is the intention, or explicitly specify all the generic arguments."
@@ -546,8 +563,24 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
             }
-            SemanticDiagnosticKind::ItemNotVisible(item_id) => {
-                format!("Item `{}` is not visible in this context.", item_id.full_path(db.upcast()))
+            SemanticDiagnosticKind::ItemNotVisible(item_id, containing_modules) => {
+                format!(
+                    "Item `{}` is not visible in this context{}.",
+                    item_id.full_path(db.upcast()),
+                    if containing_modules.is_empty() {
+                        "".to_string()
+                    } else if let [module_id] = &containing_modules[..] {
+                        format!(" through module `{}`", module_id.full_path(db.upcast()))
+                    } else {
+                        format!(
+                            " through any of the modules: {}",
+                            containing_modules
+                                .iter()
+                                .map(|module_id| format!("`{}`", module_id.full_path(db.upcast())))
+                                .join(", ")
+                        )
+                    }
+                )
             }
             SemanticDiagnosticKind::UnusedImport(use_id) => {
                 format!("Unused import: `{}`", use_id.full_path(db.upcast()))
@@ -632,6 +665,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::NameDefinedMultipleTimes(name) => {
                 format!("The name `{name}` is defined multiple times.")
+            }
+            SemanticDiagnosticKind::NonPrivateUseStar => {
+                "`pub` not supported for global `use`.".into()
             }
             SemanticDiagnosticKind::NamedArgumentsAreNotSupported => {
                 "Named arguments are not supported in this context.".into()
@@ -860,8 +896,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     )
                 }
             }
-            SemanticDiagnosticKind::TypeEqualTraitReImplementation => {
-                "Type equals trait should not be re-implemented.".into()
+            SemanticDiagnosticKind::CallExpressionRequiresFunction { ty, inference_errors } => {
+                if inference_errors.is_empty() {
+                    format!("Call expression requires a function, found `{}`.", ty.format(db))
+                } else {
+                    format!(
+                        "Call expression requires a function, found `{}`.\n{}",
+                        ty.format(db),
+                        inference_errors.format(db)
+                    )
+                }
+            }
+            SemanticDiagnosticKind::CompilerTraitReImplementation { trait_id } => {
+                format!("Trait `{}` should not be re-implemented.", trait_id.full_path(db.upcast()))
             }
             SemanticDiagnosticKind::ClosureInGlobalScope => {
                 "Closures are not allowed in this context.".into()
@@ -1121,13 +1168,16 @@ pub enum SemanticDiagnosticKind {
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound(NotFoundItemType),
+    AmbiguousPath(Vec<ModuleItemId>),
+    UseStarEmptyPath,
+    GlobalUsesNotSupportedInEdition(Edition),
     TraitInTraitMustBeExplicit,
     ImplInImplMustBeExplicit,
     TraitItemForbiddenInTheTrait,
     TraitItemForbiddenInItsImpl,
     ImplItemForbiddenInTheImpl,
     SuperUsedInRootModule,
-    ItemNotVisible(ModuleItemId),
+    ItemNotVisible(ModuleItemId, Vec<ModuleId>),
     UnusedImport(UseId),
     RedundantModifier {
         current_modifier: SmolStr,
@@ -1162,6 +1212,7 @@ pub enum SemanticDiagnosticKind {
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
     NameDefinedMultipleTimes(SmolStr),
+    NonPrivateUseStar,
     NamedArgumentsAreNotSupported,
     ArgPassedToNegativeImpl,
     UnnamedArgumentFollowsNamed,
@@ -1189,7 +1240,12 @@ pub enum SemanticDiagnosticKind {
         trait_name: SmolStr,
         inference_errors: TraitInferenceErrors,
     },
+    CallExpressionRequiresFunction {
+        ty: semantic::TypeId,
+        inference_errors: TraitInferenceErrors,
+    },
     MultipleImplementationOfIndexOperator(semantic::TypeId),
+
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
     InlineAttrForExternFunctionNotAllowed,
@@ -1231,7 +1287,9 @@ pub enum SemanticDiagnosticKind {
     DerefCycle {
         deref_chain: String,
     },
-    TypeEqualTraitReImplementation,
+    CompilerTraitReImplementation {
+        trait_id: TraitId,
+    },
     ClosureInGlobalScope,
     MaybeMissingColonColon,
     CallingShadowedFunction {
@@ -1300,6 +1358,25 @@ impl From<&ResolvedConcreteItem> for ElementKind {
             ResolvedConcreteItem::Variant(_) => ElementKind::Variant,
             ResolvedConcreteItem::Trait(_) => ElementKind::Trait,
             ResolvedConcreteItem::Impl(_) => ElementKind::Impl,
+        }
+    }
+}
+impl From<&ResolvedGenericItem> for ElementKind {
+    fn from(val: &ResolvedGenericItem) -> Self {
+        match val {
+            ResolvedGenericItem::GenericConstant(_) => ElementKind::Constant,
+            ResolvedGenericItem::Module(_) => ElementKind::Module,
+            ResolvedGenericItem::GenericFunction(_) => ElementKind::Function,
+            ResolvedGenericItem::TraitFunction(_) => ElementKind::TraitFunction,
+            ResolvedGenericItem::GenericType(_) | ResolvedGenericItem::GenericTypeAlias(_) => {
+                ElementKind::Type
+            }
+            ResolvedGenericItem::Variant(_) => ElementKind::Variant,
+            ResolvedGenericItem::Trait(_) => ElementKind::Trait,
+            ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
+                ElementKind::Impl
+            }
+            ResolvedGenericItem::Variable(_) => ElementKind::Variable,
         }
     }
 }

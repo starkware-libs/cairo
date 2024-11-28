@@ -227,6 +227,13 @@ impl CandidateSolver {
         let mut inference_data: InferenceData = InferenceData::new(InferenceId::Canonical);
         let mut inference = inference_data.inference(db);
         let (canonical_trait, canonical_embedding) = canonical_trait.embed(&mut inference);
+
+        // If the closure params are not var free, we cannot infer the negative impl.
+        // We use the canonical trait concretize the closure params.
+        if let UninferredImpl::GeneratedImpl(imp) = candidate {
+            inference.conform_traits(imp.lookup_intern(db).concrete_trait, canonical_trait.id)?;
+        }
+
         // Add the defining module of the candidate to the lookup.
         let mut lookup_context = lookup_context.clone();
         lookup_context.insert_lookup_scope(db, &candidate);
