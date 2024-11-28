@@ -2,7 +2,7 @@
   "name": "cairo1",
   "displayName": "Cairo 1.0",
   "description": "Cairo language support for Visual Studio Code.",
-  "version": "2.8.5",
+  "version": "2.9.0",
   "publisher": "StarkWare",
   "categories": [
     "Programming Languages",
