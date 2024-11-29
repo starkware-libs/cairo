@@ -1,8 +1,8 @@
-//! Provides a trait for types with a concept of zero that can be compared to zero.
+//! Basic functionality for types with a notion of "zero" that can be compared to it.
 //!
 //! Useful for numeric types or any type with an additive identity element.
 
-/// Trait for types that can be compared to zero.
+/// A trait for types that can be compared to "zero".
 pub trait Zero<T> {
     /// Returns the additive identity element of `self`, 0.
     ///
