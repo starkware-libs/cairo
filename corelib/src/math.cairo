@@ -62,7 +62,7 @@ pub fn egcd<
     (g, t, s + q * t, !sign)
 }
 
-//TODO(yuval): use signed integers once supported.
+// TODO(yuval): use signed integers once supported.
 /// Computes the modular multiplicative inverse of `a` modulo `n`.
 ///
 /// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `n-1` inclusive, or
