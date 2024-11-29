@@ -15,8 +15,8 @@
 //! assert!(arr == cloned_arr);
 //! ```
 //!
-//! To easily implement the `Clone` trait, you can also use
-//! `#[derive(Clone)]`:
+//! You can use the `#[derive(Clone)]` attribute to automatically generate the
+//! implementation for your type:
 //!
 //! ```
 //! #[derive(Clone, Drop)]
@@ -45,28 +45,29 @@
 ///
 /// ## Derivable
 ///
-/// This trait can be used with `#[derive]` if all fields are `Clone`. The `derive`
-/// implementation of `Clone` calls `clone` method on each field.
+/// This trait can be used with `#[derive]` if all fields are `Clone`. The `derive`d
+/// implementation of `Clone` calls `clone` on each field.
 pub trait Clone<T> {
-    /// Takes a snapshot of a value and returns a clone of that value.
+    /// Returns a copy of the value.
     ///
     /// # Examples
     ///
     /// ```
     /// let arr = array![1, 2, 3];
-    /// let cloned_arr = arr.clone();
-    /// assert!(arr == cloned_arr);
+    /// assert!(arr == arr.clone());
     /// ```
     #[must_use]
     fn clone(self: @T) -> T;
 }
 
+// Implementation of `Clone` for types that are `Copy`.
 impl TCopyClone<T, +Copy<T>> of Clone<T> {
     fn clone(self: @T) -> T {
         *self
     }
 }
 
+// Implementation of `Clone` for tuples.
 impl TupleClone<
     T,
     impl TSF: crate::metaprogramming::TupleSnapForward<T>,
@@ -84,18 +85,22 @@ trait CloneHelper<T, Cloned> {
     fn clone(value: T) -> Cloned;
 }
 
+// An implementation of `CloneHelper` for a snapshot of any type with `Clone`
+// implementation.
 impl CloneHelperByClone<T, +Clone<T>> of CloneHelper<@T, T> {
     fn clone(value: @T) -> T {
         value.clone()
     }
 }
 
+// Base implementation of `CloneHelper` for tuples.
 impl CloneHelperBaseTuple of CloneHelper<(), ()> {
     fn clone(value: ()) -> () {
         value
     }
 }
 
+// Base implementation of `CloneHelper` for fixed-sized arrays.
 impl FixedSizedArrayCloneHelper<T> of CloneHelper<[@T; 0], [T; 0]> {
     fn clone(value: [@T; 0]) -> [T; 0] {
         let [] = value;
