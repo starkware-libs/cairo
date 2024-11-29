@@ -1,6 +1,6 @@
-//! Provides a trait for retrieving the bit size of any type.
+//! Bit size of any type.
 
-/// Trait used to retrieve the size in bits of a type.
+/// A trait used to retrieve the size in bits of a type.
 pub trait BitSize<T> {
     /// Returns the size in bits of `T` as `usize`.
     ///
