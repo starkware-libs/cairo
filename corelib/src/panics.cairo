@@ -39,7 +39,7 @@ pub enum PanicResult<T> {
 /// Triggers an immediate panic with the provided data and terminates execution.
 ///
 /// # Examples
-/// 
+///
 /// ```
 /// use core::panics::panic;
 ///
@@ -53,7 +53,7 @@ pub extern fn panic(data: Array<felt252>) -> crate::never;
 /// serializing the provided `ByteArray` into the panic data.
 ///
 /// # Examples
-/// 
+///
 /// ```
 /// use core::panics::panic_with_byte_array;
 ///
