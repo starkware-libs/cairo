@@ -1,32 +1,30 @@
-//! Provides a trait for defining minimum and maximum values of numeric types.
-//!
-//! The `Bounded` trait allows specifying the allowable min and max values for a numeric type.
-//! It supports both signed and unsigned integer types.
+//! Defines minimum and maximum values for numeric types.
 
 /// A trait defining minimum and maximum bounds for numeric types.
-/// Only supports types that can have a constant value.
+///
+/// This trait only supports types that can have constant values.
 pub trait Bounded<T> {
-    /// The minimum allowable value.
+    /// Returns the minimum value for type `T`.
     ///
     /// # Examples
     ///
     /// ```
     /// use core::num::traits::Bounded;
     ///
-    /// let lower_bound = Bounded::<u8>::MIN;
-    /// assert!(lower_bound == 0);
+    /// let min = Bounded::<u8>::MIN;
+    /// assert!(min == 0);
     /// ```
     const MIN: T;
 
-    /// The maximum allowable value.
+    /// Returns the maximum value for type `T`.
     ///
     /// # Examples
     ///
     /// ```
     /// use core::num::traits::Bounded;
     ///
-    /// let upper_bound = Bounded::<u8>::MAX;
-    /// assert!(upper_bound == 255);
+    /// let max = Bounded::<u8>::MAX;
+    /// assert!(max == 255);
     /// ```
     const MAX: T;
 }
