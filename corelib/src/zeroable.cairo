@@ -11,20 +11,20 @@
 ///
 /// This trait is useful for numeric types or any type that has an additive identity element.
 pub(crate) trait Zeroable<T> {
-    /// Returns the additive identity element of Self, 0.
+    /// Returns the additive identity element of `self`, 0.
     ///
-    /// This method should return a value that, when added to any other value of type T,
+    /// This method should return a value that, when added to any other value of type `T`,
     /// does not change that value.
     ///
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(Zeroable::<i32>::zero(), 0);
+    /// assert!(Zeroable::<i32>::zero() == 0);
     /// ```
     #[must_use]
     fn zero() -> T;
 
-    /// Returns whether self is equal to 0, the additive identity element.
+    /// Returns whether `self` is equal to 0, the additive identity element.
     ///
     /// # Examples
     ///
@@ -35,7 +35,7 @@ pub(crate) trait Zeroable<T> {
     #[must_use]
     fn is_zero(self: T) -> bool;
 
-    /// Returns whether self is not equal to 0, the additive identity element.
+    /// Returns whether `self` is not equal to 0, the additive identity element.
     ///
     /// This method is the logical inverse of `is_zero()`.
     ///
@@ -93,7 +93,7 @@ impl NonZeroNeg<T, +Neg<T>, +TryInto<T, NonZero<T>>> of Neg<NonZero<T>> {
 pub(crate) enum IsZeroResult<T> {
     /// Indicates that the value is zero.
     Zero,
-    /// Indicates that the value is non-zero, wrapping it in a NonZero<T>.
+    /// Indicates that the value is non-zero, wrapping it in a `NonZero<T>`.
     NonZero: NonZero<T>,
 }
 
