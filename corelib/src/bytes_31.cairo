@@ -1,8 +1,18 @@
-//! Utilities for working with a 31-byte fixed-size byte type.
+//! Definitions and utilities for the `bytes31` type.
 //!
-//! The `bytes31` type represents a compact 31-byte data structure, implemented as a custom external
-//! type.
-//! It allows for constant-time byte access via [`Bytes31Trait::at()`] method.
+//! The `bytes31` type is a compact, indexable 31-byte type.
+//!
+//! # Examples
+//!
+//! Creating a `bytes31` from a `felt252`:
+//! ```
+//! let value: bytes31 = 0xaabb.try_into().unwrap();
+//! ```
+//!
+//! Accessing a byte by index:
+//! ```
+//! assert!(value[0] == 0xbb);
+//! ```
 
 #[allow(unused_imports)]
 use crate::integer::{u128_safe_divmod, u128_to_felt252};
@@ -15,6 +25,7 @@ const BYTES_IN_U128: usize = 16;
 pub(crate) const POW_2_128: felt252 = 0x100000000000000000000000000000000;
 pub(crate) const POW_2_8: u128 = 0x100;
 
+/// Represents a 31-byte fixed-size byte type.
 #[derive(Copy, Drop)]
 pub extern type bytes31;
 
@@ -25,8 +36,10 @@ extern fn bytes31_to_felt252(value: bytes31) -> felt252 nopanic;
 /// A trait for accessing a specific byte of a `bytes31` type.
 #[generate_trait]
 pub impl Bytes31Impl of Bytes31Trait {
-    /// Returns the byte at the given index (LSB's index is 0), assuming that
-    /// `index < BYTES_IN_BYTES31`. If the assumption is not met, the behavior is undefined.
+    /// Returns the byte at the given index (LSB's index is 0).
+    ///
+    /// Assumes that `index < BYTES_IN_BYTES31`. If the assumption is not met, the behavior is
+    /// undefined.
     ///
     /// # Examples
     ///
