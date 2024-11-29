@@ -1,22 +1,8 @@
 //! Utilities for working with a 31-byte fixed-size byte type.
 //!
-//! The `bytes31` type represents a compact 31-byte data structure, implemented as a custom external type
-//! with efficient bitwise and conversion operations.
-//!
-//! This type allows for:
-//! - Constant-time byte access via `at()` method
-//! - Conversions from unsigned integers up to `u128` to bytes31
-//! - Converts to/from felt252 and u256
-//! - 248-bit total bit size
-//! - Safe range checking for conversions
-//!
-//! # Examples
-//!
-//! ```
-//! let b1: bytes31 = 42u8.into();    // Convert from u8
-//! let b2: felt252 = b1.into();      // Convert to felt252
-//! let byte_at_index = b1.at(0);     // Access individual bytes
-//! ```
+//! The `bytes31` type represents a compact 31-byte data structure, implemented as a custom external
+//! type.
+//! It allows for constant-time byte access via [`Bytes31Trait::at()`] method.
 
 #[allow(unused_imports)]
 use crate::integer::{u128_safe_divmod, u128_to_felt252};
@@ -39,13 +25,14 @@ extern fn bytes31_to_felt252(value: bytes31) -> felt252 nopanic;
 /// A trait for accessing a specific byte of a `bytes31` type.
 #[generate_trait]
 pub impl Bytes31Impl of Bytes31Trait {
-    /// Gets the byte at the given index (LSB's index is 0), assuming that
+    /// Returns the byte at the given index (LSB's index is 0), assuming that
     /// `index < BYTES_IN_BYTES31`. If the assumption is not met, the behavior is undefined.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
-    /// 
+    /// let bytes: bytes31 = 1_u8.into();
+    /// assert!(bytes.at(0) == 1);
     /// ```
     fn at(self: @bytes31, index: usize) -> u8 {
         let u256 { low, high } = (*self).into();
@@ -122,13 +109,15 @@ pub(crate) impl U128IntoBytes31 of Into<u128, bytes31> {
     }
 }
 
-/// Splits a bytes31 into two bytes31s at the given index (LSB's index is 0).
-/// The bytes31s are represented using felt252s to improve performance.
+/// Splits a `bytes31` into two `bytes31`s at the given index (LSB's index is 0).
+/// The input `bytes31` and the output `bytes31`s are represented using `felt252`s to improve
+/// performance.
+///
 /// Note: this function assumes that:
-/// 1. `word` is validly convertible to a bytes31 which has no more than `len` bytes of data.
-/// 2. index <= len.
-/// 3. len <= BYTES_IN_BYTES31.
-/// If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
+/// 1. `word` is validly convertible to a `bytes31`` which has no more than `len` bytes of data.
+/// 2. `index <= len`.
+/// 3. `len <= BYTES_IN_BYTES31`.
+/// If these assumptions are not met, it can corrupt the `byte31`s. Thus, this should be a
 /// private function. We could add masking/assertions but it would be more expansive.
 pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252, felt252) {
     if index == 0 {
@@ -170,7 +159,7 @@ pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252
 }
 
 
-/// Returns 1 << (8 * `n_bytes`) as felt252, assuming that `n_bytes < BYTES_IN_BYTES31`.
+/// Returns `1 << (8 * n_bytes)` as `felt252`, assuming that `n_bytes < BYTES_IN_BYTES31`.
 ///
 /// Note: if `n_bytes >= BYTES_IN_BYTES31`, the behavior is undefined. If one wants to
 /// assert that in the callsite, it's sufficient to assert that `n_bytes != BYTES_IN_BYTES31`
@@ -183,7 +172,7 @@ pub(crate) fn one_shift_left_bytes_felt252(n_bytes: usize) -> felt252 {
     }
 }
 
-/// Returns 1 << (8 * `n_bytes`) as u128, where `n_bytes` must be < BYTES_IN_U128.
+/// Returns `1 << (8 * n_bytes)` as `u128`, where `n_bytes` must be < `BYTES_IN_U128`.
 ///
 /// Panics if `n_bytes >= BYTES_IN_U128`.
 pub(crate) fn one_shift_left_bytes_u128(n_bytes: usize) -> u128 {
