@@ -6,7 +6,7 @@
 //!
 //! Note: The functions in this module can only be used with the `cairo_test` testing framework.
 //! If you are using Starknet Foundry, refer to its
-//! [documentation](https://foundry-rs.github.io/starknet-foundry/appendix/cheatcodes.html)
+//! [documentation](https://foundry-rs.github.io/starknet-foundry/appendix/cheatcodes.html).
 
 use starknet::ContractAddress;
 #[allow(unused_imports)]
@@ -22,10 +22,12 @@ use core::traits::Into;
 /// `CairoHintProcessor` in the runner.
 ///
 /// # Arguments
-/// * `selector` - The cheatcode identifier
-/// * `input` - Input parameters for the cheatcode
+///
+/// `selector` - The cheatcode identifier.
+/// `input` - Input parameters for the cheatcode.
 ///
 /// # Returns
+///
 /// * A span containing the cheatcode's output
 pub extern fn cheatcode<const selector: felt252>(
     input: Span<felt252>,
