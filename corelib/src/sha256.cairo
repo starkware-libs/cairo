@@ -4,6 +4,7 @@
 //! The input data can be an array of 32-bit words, or a `ByteArray`.
 //!
 //! # Examples
+//!
 //! ```
 //! use core::sha256::compute_sha256_byte_array;
 //!
@@ -32,14 +33,17 @@ const SHA256_INITIAL_STATE: [u32; 8] = [
 /// Computes the SHA-256 hash of an array of 32-bit words.
 ///
 /// # Arguments
+///
 /// * `input` - An array of `u32` values to hash
 /// * `last_input_word` - The final word when input is not word-aligned
 /// * `last_input_num_bytes` - Number of bytes in the last input word (must be less than 4)
 ///
 /// # Returns
+///
 /// * The SHA-256 hash of the `input array` + `last_input_word` as big endian
 ///
-/// # Example
+/// # Examples
+///
 /// ```
 /// use core::sha256::compute_sha256_u32_array;
 ///
@@ -88,6 +92,7 @@ pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
         word_arr.append(word);
         index = index + 4;
     };
+
     let last = match rem {
         0 => 0,
         1 => arr.at(len - 1).unwrap().into(),
@@ -96,6 +101,7 @@ pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
             + arr.at(len - 2).unwrap().into() * 0x100
             + arr.at(len - 3).unwrap().into() * 0x10000,
     };
+
     compute_sha256_u32_array(word_arr, last, rem.into())
 }
 
