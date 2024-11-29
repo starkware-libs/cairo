@@ -9,7 +9,8 @@
 //!
 //! let data = "Hello";
 //! let hash = compute_sha256_byte_array(@data);
-//! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180, 0x7d17648, 0x26381969]);
+//! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
+//! 0x7d17648, 0x26381969]);
 //! ```
 use crate::starknet::SyscallResultTrait;
 
@@ -43,7 +44,8 @@ const SHA256_INITIAL_STATE: [u32; 8] = [
 /// use core::sha256::compute_sha256_u32_array;
 ///
 /// let hash = compute_sha256_u32_array(array![0x68656c6c], 0x6f, 1);
-/// assert!(hash == [0x2cf24dba, 0x5fb0a30e, 0x26e83b2a, 0xc5b9e29e, 0x1b161e5c, 0x1fa7425e, 0x73043362, 0x938b9824]);
+/// assert!(hash == [0x2cf24dba, 0x5fb0a30e, 0x26e83b2a, 0xc5b9e29e, 0x1b161e5c, 0x1fa7425e,
+/// 0x73043362, 0x938b9824]);
 /// ```
 pub fn compute_sha256_u32_array(
     mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u32,
@@ -69,7 +71,8 @@ pub fn compute_sha256_u32_array(
 ///
 //! let data = "Hello";
 //! let hash = compute_sha256_byte_array(@data);
-//! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180, 0x7d17648, 0x26381969]);
+//! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
+//! 0x7d17648, 0x26381969]);
 /// ```
 pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
     let mut word_arr = array![];
