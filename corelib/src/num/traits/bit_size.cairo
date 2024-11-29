@@ -1,4 +1,4 @@
-//! //! Utilities for determining the bit size of types.
+//! Utilities for determining the bit size of types.
 
 /// A trait used to retrieve the size of a type in bits.
 pub trait BitSize<T> {
