@@ -1,10 +1,10 @@
 //! Testing utilities for Starknet contracts.
 //!
 //! This module provides functions for testing Starknet contracts. The functions
-//! allow manipulation of blockchain state and environment variables during tests, as well as
+//! allow manipulation of blockchain state and storage variables during tests, as well as
 //! inspection of emitted events and messages.
 //!
-//! Note: The functions in this module can only be used with the `cairo_test` testing framework.
+//! Note: The functions in this module can only be used with the `cairo-test` testing framework.
 //! If you are using Starknet Foundry, refer to its
 //! [documentation](https://foundry-rs.github.io/starknet-foundry/appendix/cheatcodes.html).
 
