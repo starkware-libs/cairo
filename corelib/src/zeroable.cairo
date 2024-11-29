@@ -7,7 +7,6 @@
 //!
 //! [`Zero`]: core::num::traits::zero::Zero
 
-
 /// A trait for types that have a concept of zero and can be compared to zero.
 ///
 /// This trait is useful for numeric types or any type that has an additive identity element.
