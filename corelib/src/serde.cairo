@@ -16,71 +16,71 @@
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
 
-/// A trait that allows for serializing and deserializing values of any type.
-///
-/// The `Serde<T>` trait defines two core operations:
-/// - `serialize`: Converts a value into a sequence of `felt252`s
-/// - `deserialize`: Reconstructs a value from a sequence of `felt252`s
-///
-/// # Examples
-///
-/// ## Simple Types (u8, u16, u32, u64, u128)
-///
-/// Simple types are serialized into a single `felt252`:
-///
-/// ```
-/// let value: u8 = 42;
-/// let mut output: Array<felt252> = array![];
-/// value.serialize(ref output);
-/// assert!(output == array![42]); // Single value
-/// ```
-///
-/// ## Compound Types (u256)
-///
-/// Compound types may be serialized into multiple `felt252` values:
-///
-/// ```
-/// let value: u256 = u256 { low: 1, high: 2 };
-/// let mut output: Array<felt252> = array![];
-/// value.serialize(ref output);
-/// assert!(output == array![1, 2]); // Two `felt252`s: low and high
-/// ```
-///
-/// # Implementing `Serde`
-///
-/// ## Using the `Derive` Macro
-///
-/// In most cases, you can use the `#[derive(Serde)]` attribute to automatically generate the
-/// implementation for your type:
-///
-/// ```
-/// #[derive(Serde)]
-/// struct Point {
-///     x: u32,
-///     y: u32
-/// }
-/// ```
-///
-/// ## Manual Implementation
-///
-/// Should you need to customize the serialization behavior for a type in a way that derive does not
-/// support, you can implement the `Serde` yourself:
-///
-/// ```
-/// impl PointSerde of Serde<Point> {
-///     fn serialize(self: @Point, ref output: Array<felt252>) {
-///         output.append((*self.x).into());
-///         output.append((*self.y).into());
-///     }
-///
-///     fn deserialize(ref serialized: Span<felt252>) -> Option<Point> {
-///         let x = (*serialized.pop_front()?).try_into()?;
-///         let y = (*serialized.pop_front()?).try_into()?;
-///
-///         Option::Some(Point { x, y })
-///     }
-/// }
-/// ```
+//! A trait that allows for serializing and deserializing values of any type.
+//!
+//! The `Serde<T>` trait defines two core operations:
+//! - `serialize`: Converts a value into a sequence of `felt252`s
+//! - `deserialize`: Reconstructs a value from a sequence of `felt252`s
+//!
+//! # Examples
+//!
+//! ## Simple Types (u8, u16, u32, u64, u128)
+//!
+//! Simple types are serialized into a single `felt252`:
+//!
+//! ```
+//! let value: u8 = 42;
+//! let mut output: Array<felt252> = array![];
+//! value.serialize(ref output);
+//! assert!(output == array![42]); // Single value
+//! ```
+//!
+//! ## Compound Types (u256)
+//!
+//! Compound types may be serialized into multiple `felt252` values:
+//!
+//! ```
+//! let value: u256 = u256 { low: 1, high: 2 };
+//! let mut output: Array<felt252> = array![];
+//! value.serialize(ref output);
+//! assert!(output == array![1, 2]); // Two `felt252`s: low and high
+//! ```
+//!
+//! # Implementing `Serde`
+//!
+//! ## Using the `Derive` Macro
+//!
+//! In most cases, you can use the `#[derive(Serde)]` attribute to automatically generate the
+//! implementation for your type:
+//!
+//! ```
+//! #[derive(Serde)]
+//! struct Point {
+//!     x: u32,
+//!     y: u32
+//! }
+//! ```
+//!
+//! ## Manual Implementation
+//!
+//! Should you need to customize the serialization behavior for a type in a way that derive does not
+//! support, you can implement the `Serde` yourself:
+//!
+//! ```
+//! impl PointSerde of Serde<Point> {
+//!     fn serialize(self: @Point, ref output: Array<felt252>) {
+//!         output.append((*self.x).into());
+//!         output.append((*self.y).into());
+//!     }
+//!
+//!     fn deserialize(ref serialized: Span<felt252>) -> Option<Point> {
+//!         let x = (*serialized.pop_front()?).try_into()?;
+//!         let y = (*serialized.pop_front()?).try_into()?;
+//!
+//!         Option::Some(Point { x, y })
+//!     }
+//! }
+//! ```
 pub trait Serde<T> {
     /// Serializes a value into a sequence of `felt252`s.
     ///
