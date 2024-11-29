@@ -12,7 +12,6 @@ pub trait BitSize<T> {
     /// let bits = BitSize::<u8>::bits();
     /// assert(bits == 8);
     /// ```
-    /// ```
     #[must_use]
     fn bits() -> usize;
 }
