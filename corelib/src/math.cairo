@@ -25,7 +25,8 @@ use crate::RangeCheck;
 /// * A tuple (g, s, t, sub_direction) where g is the GCD and `(s, -t)` or `(-s, t)` are the Bezout
 /// coefficients (according to `sub_direction`).
 ///
-/// # Example
+/// # Examples
+/// 
 /// ```
 /// use core::math::egcd;
 ///
@@ -68,7 +69,8 @@ pub fn egcd<
 /// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `n-1` inclusive, or
 /// Option::None if `gcd(a,n) > 1` (inverse doesn't exist).
 ///
-/// # Example
+/// # Examples
+/// 
 /// ```
 /// use core::math::inv_mod;
 ///
@@ -136,7 +138,8 @@ extern fn u256_guarantee_inv_mod_n(
 ///
 /// All `a`s will be considered not invertible for `n == 1`.
 ///
-/// # Example
+/// # Examples
+/// 
 /// ```
 /// use core::math::u256_inv_mod;
 ///
