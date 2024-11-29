@@ -1,21 +1,6 @@
-//! Set of mathematical utilities for working with large integers.
+//! Mathematical operations and utilities.
 //!
-//! ## Extended GCD
-//!
-//! The `egcd` function computes the extended GCD of two numbers `a` and `b`, returning the GCD `g`
-//! and the Bezout coefficients `s` and `t` such that `g = s*a - t*b` or `g = t*b - s*a`, depending
-//! on the `sub_direction` flag.
-//!
-//! ## Modular Inverse
-//!
-//! The `inv_mod` function computes the modular inverse of a number `a` modulo a given modulus `n`,
-//! if it exists. The inverse is guaranteed to be between 1 and `n-1` (inclusive).
-//!
-//! ## Modular Division and Multiplication
-//!
-//! The `u256_div_mod_n` function performs modular division, computing `a / b (mod n)`, if `b` is
-//! invertible modulo `n`.
-//! The `u256_mul_mod_n` function performs modular multiplication, computing `a * b (mod n)`.
+//! Provides extended GCD, modular inverse, and modular arithmetic operations.
 
 #[allow(unused_imports)]
 use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
@@ -29,23 +14,22 @@ use crate::RangeCheck;
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
 // supported.
-/// Extended GCD: finds (g, s, t, sub_direction) such that:
-/// `g = gcd(a, b) = s * a - t * b` if `sub_direction` is true, or
-/// `g = gcd(a, b) = t * b - s * a` if `sub_direction` is false.
-/// `(s, -t)` or `(-s, t)` are the Bezout coefficients (according to `sub_direction`).
+/// Computes the extended GCD and Bezout coefficients for two numbers.
 ///
-/// Uses the Extended Euclidean algorithm.
+/// Uses the Extended Euclidean algorithm to find (g, s, t, sub_direction) where `g = gcd(a, b)`.
+/// The relationship between inputs and outputs is:
+/// * If `sub_direction` is true:  `g = s * a - t * b`
+/// * If `sub_direction` is false: `g = t * b - s * a`
 ///
-/// # Examples
+/// # Returns
+/// * A tuple (g, s, t, sub_direction) where g is the GCD and s,t are Bezout coefficients
 ///
+/// # Example
 /// ```
 /// use core::math::egcd;
 ///
-/// let x : NonZero<u32> = 10;
-/// let y : NonZero<u32> = 15;
-///
-/// let (result, _, _, _) = egcd(x, y);
-/// assert!(result == 5);
+/// let (g, s, t, dir) = egcd::<u32>(12, 8);
+/// assert!(g == 4);
 /// ```
 pub fn egcd<
     T,
@@ -77,22 +61,21 @@ pub fn egcd<
     (g, t, s + q * t, !sign)
 }
 
-// TODO(yuval): use signed integers once supported.
-/// Computes `s` the inverse of `a` modulo `n` such that `as`≡ 1 modulo `n`, or None if `gcd(a, n)
-/// > 1`. `s` is guaranteed to be between `1` and `n - 1` (inclusive).
+//TODO(yuval): use signed integers once supported.
+/// Computes the modular multiplicative inverse of `a` modulo `n`.
 ///
-/// Returns `s` or `n - s` depending on the `sub_direction` when computing `egcd(a, n)`.
+/// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `n-1` inclusive.
 ///
-/// # Examples
+/// # Returns
+/// * `Option::Some(s)` where `s` is the modular inverse
+/// * `Option::None` if `gcd(a,n) > 1` (inverse doesn't exist)
 ///
+/// # Example
 /// ```
 /// use core::math::inv_mod;
 ///
-/// let a : NonZero<u32> = 17;
-/// let n : NonZero<u32> = 29;
-///
-/// let result = inv_mod(a, n);
-/// assert!(result.uwrap() == 12);
+/// let inv = inv_mod::<u32>(3, 7);
+/// assert!(inv == Option::Some(5));
 /// ```
 pub fn inv_mod<
     T,
@@ -155,16 +138,12 @@ extern fn u256_guarantee_inv_mod_n(
 ///
 /// All `a`s will be considered not invertible for `n == 1`.
 ///
-/// # Examples
-///
+/// # Example
 /// ```
 /// use core::math::u256_inv_mod;
 ///
-/// let a : u256 = 17;
-/// let n : NonZero<u256> = 29;
-///
-/// let result = u256_inv_mod(a, n);
-/// assert!(result.uwrap() == 12);
+/// let inv = u256_inv_mod(3, 17);
+/// assert!(inv == Option::Some(6));
 /// ```
 #[inline]
 pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
@@ -181,12 +160,8 @@ pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
 /// ```
 /// use core::math::u256_inv_mod;
 ///
-/// let a: u256 = 17;
-/// let b:  u256 = 7;
-/// let n: NonZero<u256> = 29;
-///
-/// let result = u256_div_mod_n(a, b, n);
-/// assert!(result.unwrap() == 19);
+/// let result = u256_div_mod_n(17, 7, 29);
+/// assert!(result == Option::Some(19));
 /// ```
 pub fn u256_div_mod_n(a: u256, b: u256, n: NonZero<u256>) -> Option<u256> {
     Option::Some(u256_mul_mod_n(a, u256_inv_mod(b, n)?.into(), n))
@@ -199,11 +174,7 @@ pub fn u256_div_mod_n(a: u256, b: u256, n: NonZero<u256>) -> Option<u256> {
 /// ```
 /// use core::math::u256_mul_mod_n;
 ///
-/// let a: u256 = 17;
-/// let b:  u256 = 23;
-/// let n: NonZero<u256> = 29;
-///
-/// let result = u256_mul_mod_n(a, b, n);
+/// let result = u256_mul_mod_n(17, 23, 29);
 /// assert!(result == 14);
 /// ```
 pub fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
