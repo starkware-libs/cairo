@@ -22,7 +22,8 @@ use crate::RangeCheck;
 /// * If `sub_direction` is false: `g = t * b - s * a`
 ///
 /// # Returns
-/// * A tuple (g, s, t, sub_direction) where g is the GCD and s,t are Bezout coefficients
+/// * A tuple (g, s, t, sub_direction) where g is the GCD and `(s, -t)` or `(-s, t)` are the Bezout
+/// coefficients (according to `sub_direction`).
 ///
 /// # Example
 /// ```
@@ -64,11 +65,8 @@ pub fn egcd<
 //TODO(yuval): use signed integers once supported.
 /// Computes the modular multiplicative inverse of `a` modulo `n`.
 ///
-/// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `n-1` inclusive.
-///
-/// # Returns
-/// * `Option::Some(s)` where `s` is the modular inverse
-/// * `Option::None` if `gcd(a,n) > 1` (inverse doesn't exist)
+/// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `n-1` inclusive, or
+/// Option::None if `gcd(a,n) > 1` (inverse doesn't exist).
 ///
 /// # Example
 /// ```
