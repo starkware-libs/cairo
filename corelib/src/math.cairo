@@ -1,5 +1,4 @@
-//! Math module that provides a set of mathematical utilities and functions for working with large
-//! integers.
+//! Set of mathematical utilities for working with large integers.
 //!
 //! ## Extended GCD
 //!
@@ -17,12 +16,6 @@
 //! The `u256_div_mod_n` function performs modular division, computing `a / b (mod n)`, if `b` is
 //! invertible modulo `n`.
 //! The `u256_mul_mod_n` function performs modular multiplication, computing `a * b (mod n)`.
-//!
-//! ## Oneable Trait
-//!
-//! The `Oneable` trait defines the behavior for types that have a multiplicative identity element
-//! (1). It provides methods for getting the identity element, checking if a value is equal to 1,
-//! and checking if a value is not equal to 1.
 
 #[allow(unused_imports)]
 use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
@@ -40,6 +33,7 @@ use crate::RangeCheck;
 /// `g = gcd(a, b) = s * a - t * b` if `sub_direction` is true, or
 /// `g = gcd(a, b) = t * b - s * a` if `sub_direction` is false.
 /// `(s, -t)` or `(-s, t)` are the Bezout coefficients (according to `sub_direction`).
+///
 /// Uses the Extended Euclidean algorithm.
 ///
 /// # Examples
@@ -86,6 +80,7 @@ pub fn egcd<
 // TODO(yuval): use signed integers once supported.
 /// Computes `s` the inverse of `a` modulo `n` such that `as`≡ 1 modulo `n`, or None if `gcd(a, n)
 /// > 1`. `s` is guaranteed to be between `1` and `n - 1` (inclusive).
+///
 /// Returns `s` or `n - s` depending on the `sub_direction` when computing `egcd(a, n)`.
 ///
 /// # Examples
@@ -135,6 +130,7 @@ pub fn inv_mod<
 }
 
 /// Returns `1 / b (mod n)`, or None if `b` is not invertible modulo `n`.
+///
 /// All `b`s will be considered not invertible for `n == 1`.
 /// Additionally returns several `U128MulGuarantee`s that are required for validating the
 /// calculation.
@@ -156,6 +152,7 @@ extern fn u256_guarantee_inv_mod_n(
 > implicits(RangeCheck) nopanic;
 
 /// Returns the inverse of `a` modulo `n`, or None if `a` is not invertible modulo `n`.
+///
 /// All `a`s will be considered not invertible for `n == 1`.
 ///
 /// # Examples
@@ -214,8 +211,6 @@ pub fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
     r
 }
 
-// === Oneable ===
-
 /// A trait for types that have a multiplicative identity element.
 trait Oneable<T> {
     /// Returns the multiplicative identity element of Self, 1.
@@ -251,7 +246,6 @@ pub(crate) mod one_based {
     }
 }
 
-// Oneable impls
 impl U8Oneable = one_based::OneableImpl<u8>;
 impl U16Oneable = one_based::OneableImpl<u16>;
 impl U32Oneable = one_based::OneableImpl<u32>;
