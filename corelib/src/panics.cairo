@@ -1,65 +1,67 @@
-//! Core panic mechanism for handling unrecoverable errors.
+//! Core panic mechanism.
 //!
-//! This module implements a panic system that can carry error data and
-//! supports both raw `felt252` arrays and structured byte array messages.
+//! This module provides the core panic functionality used for error handling in Cairo.
+//! It defines the basic types and functions used to trigger and manage panics, which
+//! are Cairo's mechanism for handling unrecoverable errors.
 //!
-//! The panic system uses a special magic value `BYTE_ARRAY_MAGIC` to distinguish
-//! between raw panic data and structured byte array messages. When using
-//! `panic_with_byte_array`, the error message is automatically serialized with this
-//! magic value prepended.
+//! Panics can be triggered in several ways:
 //!
-//! # Examples
-//!
-//! One can use the `panic` function to halt execution, using an array of `felt252` for the error
-//! message:
-//!
+//! Using the `panic` function:
 //! ```
-//! panic(array![]);
+//! use core::panics::panic;
+//!
+//! panic(array!['An error occurred']);
 //! ```
 //!
-//! ... but using `ByteArray` error message is generally more suitable:
-//!
+//! Or using the `panic!` macro:
 //! ```
-//! use core::panics::panic_with_byte_array;
-//!
-//! panic_with_byte_array(@"");
+//! panic!("Panic message");
 //! ```
 //!
-//! Using the `panic!` macro that takes a `ByteArray` is even more straightforward:
-//!
-//! ```
-//! panic!("");
-//! ```
+//! This macro internally converts the message into a `ByteArray` and uses `panic_with_byte_array`.
+
+/// Represents a panic condition in Cairo.
+///
+/// A `Panic` is created when the program encounters an unrecoverable error condition
+/// and needs to terminate execution.
 
 use crate::array::Array;
 
 pub struct Panic {}
 
-/// `PanicResult` enum that allows graceful handling of panics.
+/// Result type for operations that can trigger a panic.
 pub enum PanicResult<T> {
     Ok: T,
     Err: (Panic, Array<felt252>),
 }
 
-/// Panics with the given array of `felt252` as error message.
+/// Triggers an immediate panic with the provided data and terminates execution.
 ///
-/// # Examples
+/// # Arguments
+/// * `data` - An array of `felt252` values containing the panic data
 ///
+/// # Example
 /// ```
-/// panic(array!['panic error message']);
+/// use core::panics::panic;
+///
+/// panic(array!['An error occurred']);
 /// ```
 pub extern fn panic(data: Array<felt252>) -> crate::never;
 
-/// Panics with the given `ByteArray` as error message. `panic_with_byte_array` ultimately calls
-/// `panic` with `BYTE_ARRAY_MAGIC` appended to `array<felt252>` and then the serialized given
-/// `ByteArray`.
+/// Panics with a ByteArray message.
 ///
-/// # Examples
+/// Constructs a panic message by prepending the `BYTE_ARRAY_MAGIC` value and
+/// serializing the provided `ByteArray` into the panic data.
 ///
+/// # Arguments
+/// * `err` - The error message to panic with
+///
+/// # Example
 /// ```
 /// use core::panics::panic_with_byte_array;
 ///
-/// panic_with_byte_array(@"panic error message");
+/// let error_msg = "An error occurred";
+/// panic_with_byte_array(@error_msg);
 /// ```
 #[inline]
 pub fn panic_with_byte_array(err: @ByteArray) -> crate::never {
