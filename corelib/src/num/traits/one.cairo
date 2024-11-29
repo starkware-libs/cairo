@@ -1,13 +1,15 @@
-//! Basic functionality for types with a notion of "one" that can be compared to it.
-//!
-//! Useful for numeric types or any type with a multiplicative identity element.
+//! Traits for types with a multiplicative identity element.
 
-/// A trait for types that can be compared to "one".
+/// Defines a multiplicative identity element for `T`.
+///
+/// # Laws
+///
+/// ```text
+/// a * 1 = a       ∀ a ∈ T
+/// 1 * a = a       ∀ a ∈ T
+/// ```
 pub trait One<T> {
-    /// Returns the multiplicative identity element of `self`, 1.
-    ///
-    /// This method should return a value that, when multiplied by any other value of type `T`,
-    /// does not change that value.
+    /// Returns the multiplicative identity element of `T`, `1`.
     ///
     /// # Examples
     ///
@@ -18,8 +20,7 @@ pub trait One<T> {
     /// ```
     fn one() -> T;
 
-
-    /// Returns whether `self` is equal to 1, the multiplicative identity element.
+    /// Returns true if `self` is equal to the multiplicative identity.
     ///
     /// # Examples
     ///
@@ -27,20 +28,18 @@ pub trait One<T> {
     /// use core::num::traits::One;
     ///
     /// assert!(1.is_one());
-    /// assert!(!5.is_one());
+    /// assert!(!0.is_one());
     /// ```
     fn is_one(self: @T) -> bool;
 
-    /// Returns whether `self` is not equal to 1, the multiplicative identity element.
-    ///
-    /// This method is the logical inverse of `is_one()`.
+    /// Returns false if `self` is equal to the multiplicative identity.
     ///
     /// # Examples
     ///
     /// ```
     /// use core::num::traits::One;
     ///
-    /// assert!(5.is_non_one());
+    /// assert!(0.is_non_one());
     /// assert!(!1.is_non_one());
     /// ```
     fn is_non_one(self: @T) -> bool;
