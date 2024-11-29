@@ -14,7 +14,7 @@ use core::traits::Into;
 use starknet::ContractAddress;
 
 /// A general cheatcode function used to simplify implementation of Starknet testing functions.
-/// External users of the cairo crates can also implement their own cheatcodes
+/// External users of the Cairo crates can also implement their own cheatcodes
 /// by injecting custom `CairoHintProcessor`.
 pub extern fn cheatcode<const selector: felt252>(
     input: Span<felt252>,
@@ -45,6 +45,10 @@ pub fn set_caller_address(address: ContractAddress) {
 }
 
 /// Sets the contract address to the provided value.
+///
+/// # Arguments
+///
+/// `address` - The contract address to set.
 ///
 /// After a call to `set_contract_address`, `starknet::get_execution_info().contract_address` will
 /// return the set value.
