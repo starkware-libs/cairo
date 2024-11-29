@@ -2,7 +2,7 @@
 
 set -ex
 
-NAMES="cairo-compile cairo-format cairo-language-server cairo-run cairo-prove cairo-test sierra-compile starknet-compile starknet-sierra-compile"
+NAMES="cairo-compile cairo-format cairo-language-server cairo-run cairo-execute cairo-test sierra-compile starknet-compile starknet-sierra-compile"
 TARGET=$1
 rustup target add $TARGET
 cargo build --release --target $TARGET

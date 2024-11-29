@@ -6,17 +6,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::compile::CompiledFunction;
 
-/// Structure to hold the runnable represenstation of a program.
+/// Structure to hold the executable represenstation of a program.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Runnable {
+pub struct Executable {
     /// The bytecode of the program.
     pub program: AssembledCairoProgram,
     /// The available entrypoints for the program.
-    pub entrypoints: Vec<RunnableEntryPoint>,
+    pub entrypoints: Vec<ExecutableEntryPoint>,
 }
 
-impl Runnable {
-    /// Create a new runnable program from a compiled function.
+impl Executable {
+    /// Create a new executable program from a compiled function.
     pub fn new(compiled: CompiledFunction) -> Self {
         let non_returning_header = casm! {
             ap += (compiled.wrapper.builtins.len());
@@ -29,12 +29,12 @@ impl Runnable {
                 &compiled.wrapper.footer,
             ),
             entrypoints: vec![
-                RunnableEntryPoint {
+                ExecutableEntryPoint {
                     builtins: compiled.wrapper.builtins.clone(),
                     offset: 0,
                     kind: EntryPointKind::NonReturning,
                 },
-                RunnableEntryPoint {
+                ExecutableEntryPoint {
                     builtins: compiled.wrapper.builtins,
                     offset: non_returning_header.current_code_offset,
                     kind: EntryPointKind::Function,
@@ -44,9 +44,9 @@ impl Runnable {
     }
 }
 
-/// Information about a runnable entrypoint.
+/// Information about a executable entrypoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RunnableEntryPoint {
+pub struct ExecutableEntryPoint {
     /// The used builtins of the function.
     pub builtins: Vec<BuiltinName>,
     /// The offset of the entrypoint in the bytecode.

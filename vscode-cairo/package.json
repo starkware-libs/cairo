@@ -2,7 +2,7 @@
   "name": "cairo1",
   "displayName": "Cairo 1.0",
   "description": "Cairo language support for Visual Studio Code.",
-  "version": "2.8.5",
+  "version": "2.9.1",
   "publisher": "StarkWare",
   "categories": [
     "Programming Languages",
@@ -144,8 +144,8 @@
           },
           "cairo1.enableProcMacros": {
             "type": "boolean",
-            "default": true,
-            "description": "Enable support for procedural macros.",
+            "default": false,
+            "description": "Enable support for procedural macros. This feature is in active development and may not work flawlessly yet!",
             "scope": "window"
           }
         }

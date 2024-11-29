@@ -1,6 +1,6 @@
 pub mod compile;
+pub mod executable;
 pub mod plugin;
-pub mod runnable;
 
 #[cfg(test)]
 mod test;

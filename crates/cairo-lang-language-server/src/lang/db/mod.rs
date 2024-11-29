@@ -15,7 +15,7 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_test_plugin::test_assert_suite;
+use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::Upcast;
 
 pub use self::semantic::*;
@@ -59,9 +59,10 @@ impl AnalysisDatabase {
         let plugin_suite = [
             get_default_plugin_suite(),
             starknet_plugin_suite(),
-            // TODO(#6551): Restore this.
-            // test_plugin_suite()
-            test_assert_suite(),
+            // TODO(#6551): Test plugin should be only enabled for crates that indeed need it.
+            //   Same for other plugins.
+            //   Right now this code will conflict with procmacros.
+            test_plugin_suite(),
         ]
         .into_iter()
         .chain(tricks.extra_plugin_suites.iter().flat_map(|f| f()))

@@ -5,6 +5,7 @@ mod test;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
+use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, ParamSignature,
@@ -370,7 +371,15 @@ impl<'a> FindLocalsContext<'a> {
         let outputs = statement.outputs();
         let branch_info = match statement {
             lowering::Statement::Const(statement_literal) => {
-                self.constants.insert(statement_literal.output);
+                if matches!(
+                    statement_literal.value,
+                    ConstValue::Int(..)
+                        | ConstValue::Struct(..)
+                        | ConstValue::Enum(..)
+                        | ConstValue::NonZero(..)
+                ) {
+                    self.constants.insert(statement_literal.output);
+                }
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::Call(statement_call) => {
