@@ -7,6 +7,7 @@
 //! Panics can be triggered in several ways:
 //!
 //! Using the `panic` function:
+//!
 //! ```
 //! use core::panics::panic;
 //!
@@ -14,19 +15,19 @@
 //! ```
 //!
 //! Or using the `panic!` macro:
+//!
 //! ```
 //! panic!("Panic message");
 //! ```
 //!
 //! This macro internally converts the message into a `ByteArray` and uses `panic_with_byte_array`.
 
+use crate::array::Array;
+
 /// Represents a panic condition in Cairo.
 ///
 /// A `Panic` is created when the program encounters an unrecoverable error condition
 /// and needs to terminate execution.
-
-use crate::array::Array;
-
 pub struct Panic {}
 
 /// Result type for operations that can trigger a panic.
@@ -38,6 +39,7 @@ pub enum PanicResult<T> {
 /// Triggers an immediate panic with the provided data and terminates execution.
 ///
 /// # Examples
+/// 
 /// ```
 /// use core::panics::panic;
 ///
@@ -45,12 +47,13 @@ pub enum PanicResult<T> {
 /// ```
 pub extern fn panic(data: Array<felt252>) -> crate::never;
 
-/// Panics with a ByteArray message.
+/// Panics with a `ByteArray` message.
 ///
 /// Constructs a panic message by prepending the `BYTE_ARRAY_MAGIC` value and
 /// serializing the provided `ByteArray` into the panic data.
 ///
 /// # Examples
+/// 
 /// ```
 /// use core::panics::panic_with_byte_array;
 ///
