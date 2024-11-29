@@ -37,9 +37,6 @@ pub enum PanicResult<T> {
 
 /// Triggers an immediate panic with the provided data and terminates execution.
 ///
-/// # Arguments
-/// * `data` - An array of `felt252` values containing the panic data
-///
 /// # Example
 /// ```
 /// use core::panics::panic;
@@ -52,9 +49,6 @@ pub extern fn panic(data: Array<felt252>) -> crate::never;
 ///
 /// Constructs a panic message by prepending the `BYTE_ARRAY_MAGIC` value and
 /// serializing the provided `ByteArray` into the panic data.
-///
-/// # Arguments
-/// * `err` - The error message to panic with
 ///
 /// # Example
 /// ```
