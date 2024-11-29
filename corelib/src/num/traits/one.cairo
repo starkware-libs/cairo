@@ -1,8 +1,8 @@
-//! Provides a trait for types with a concept of one that can be compared to one.
+//! Basic functionality for types with a notion of "one" that can be compared to it.
 //!
 //! Useful for numeric types or any type with a multiplicative identity element.
 
-/// Trait for types that can be compared to one.
+/// A trait for types that can be compared to "one".
 pub trait One<T> {
     /// Returns the multiplicative identity element of `self`, 1.
     ///
