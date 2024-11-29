@@ -21,12 +21,11 @@ use crate::RangeCheck;
 /// * If `sub_direction` is true:  `g = s * a - t * b`
 /// * If `sub_direction` is false: `g = t * b - s * a`
 ///
-/// # Returns
-/// * A tuple (g, s, t, sub_direction) where g is the GCD and `(s, -t)` or `(-s, t)` are the Bezout
-/// coefficients (according to `sub_direction`).
+/// Returns a tuple (g, s, t, sub_direction) where g is the GCD and `(s, -t)` or `(-s, t)` are the
+/// Bezout coefficients (according to `sub_direction`).
 ///
 /// # Examples
-/// 
+///
 /// ```
 /// use core::math::egcd;
 ///
@@ -67,10 +66,10 @@ pub fn egcd<
 /// Computes the modular multiplicative inverse of `a` modulo `n`.
 ///
 /// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `n-1` inclusive, or
-/// Option::None if `gcd(a,n) > 1` (inverse doesn't exist).
+/// `Option::None` if `gcd(a,n) > 1` (inverse doesn't exist).
 ///
 /// # Examples
-/// 
+///
 /// ```
 /// use core::math::inv_mod;
 ///
@@ -112,7 +111,7 @@ pub fn inv_mod<
     }
 }
 
-/// Returns `1 / b (mod n)`, or None if `b` is not invertible modulo `n`.
+/// Returns `1 / b (mod n)`, or `None` if `b` is not invertible modulo `n`.
 ///
 /// All `b`s will be considered not invertible for `n == 1`.
 /// Additionally returns several `U128MulGuarantee`s that are required for validating the
@@ -134,12 +133,12 @@ extern fn u256_guarantee_inv_mod_n(
     (U128MulGuarantee, U128MulGuarantee),
 > implicits(RangeCheck) nopanic;
 
-/// Returns the inverse of `a` modulo `n`, or None if `a` is not invertible modulo `n`.
+/// Returns the inverse of `a` modulo `n`, or `None` if `a` is not invertible modulo `n`.
 ///
 /// All `a`s will be considered not invertible for `n == 1`.
 ///
 /// # Examples
-/// 
+///
 /// ```
 /// use core::math::u256_inv_mod;
 ///
@@ -154,7 +153,7 @@ pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     }
 }
 
-/// Returns `a / b (mod n)`, or None if `b` is not invertible modulo `n`.
+/// Returns `a / b (mod n)`, or `None` if `b` is not invertible modulo `n`.
 ///
 /// # Examples
 ///
