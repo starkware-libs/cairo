@@ -93,7 +93,7 @@ pub(crate) enum IsZeroResult<T> {
     NonZero: NonZero<T>,
 }
 
-/// Unwraps a NonZero<T> to retrieve the underlying value of type T.
+/// Unwraps a `NonZero<T>` to retrieve the underlying value of type `T `.
 extern fn unwrap_non_zero<T>(a: NonZero<T>) -> T nopanic;
 
 /// Implements the `Into` trait for converting NonZero<T> to T.
