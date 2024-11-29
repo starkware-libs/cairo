@@ -1,13 +1,15 @@
-//! Basic functionality for types with a notion of "zero" that can be compared to it.
-//!
-//! Useful for numeric types or any type with an additive identity element.
+//! Traits for types with an additive identity element.
 
-/// A trait for types that can be compared to "zero".
+/// Defines an additive identity element for `T`.
+///
+/// # Laws
+///
+/// ```text
+/// a + 0 = a       ∀ a ∈ T
+/// 0 + a = a       ∀ a ∈ T
+/// ```
 pub trait Zero<T> {
-    /// Returns the additive identity element of `self`, 0.
-    ///
-    /// This method should return a value that, when added to any other value of type `T`,
-    /// does not change that value.
+    /// Returns the additive identity element of `T`, `0`.
     ///
     /// # Examples
     ///
@@ -18,7 +20,7 @@ pub trait Zero<T> {
     /// ```
     fn zero() -> T;
 
-    /// Returns whether `self` is equal to 0, the additive identity element.
+    /// Returns true if `self` is equal to the additive identity.
     ///
     /// # Examples
     ///
@@ -30,9 +32,7 @@ pub trait Zero<T> {
     /// ```
     fn is_zero(self: @T) -> bool;
 
-    /// Returns whether `self` is not equal to 0, the additive identity element.
-    ///
-    /// This method is the logical inverse of `is_zero()`.
+    /// Returns false if `self` is equal to the additive identity.
     ///
     /// # Examples
     ///
