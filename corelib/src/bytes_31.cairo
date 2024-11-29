@@ -1,8 +1,28 @@
-use crate::traits::{Into, TryInto};
-use crate::option::OptionTrait;
+//! Utilities for working with a 31-byte fixed-size byte type.
+//!
+//! The `bytes31` type represents a compact 31-byte data structure, implemented as a custom external type
+//! with efficient bitwise and conversion operations.
+//!
+//! This type allows for:
+//! - Constant-time byte access via `at()` method
+//! - Conversions from unsigned integers up to `u128` to bytes31
+//! - Converts to/from felt252 and u256
+//! - 248-bit total bit size
+//! - Safe range checking for conversions
+//!
+//! # Examples
+//!
+//! ```
+//! let b1: bytes31 = 42u8.into();    // Convert from u8
+//! let b2: felt252 = b1.into();      // Convert to felt252
+//! let byte_at_index = b1.at(0);     // Access individual bytes
+//! ```
+
 #[allow(unused_imports)]
 use crate::integer::{u128_safe_divmod, u128_to_felt252};
+use crate::option::OptionTrait;
 use crate::RangeCheck;
+use crate::traits::{Into, TryInto};
 
 pub(crate) const BYTES_IN_BYTES31: usize = 31;
 const BYTES_IN_U128: usize = 16;
@@ -16,10 +36,17 @@ pub(crate) extern fn bytes31_const<const value: felt252>() -> bytes31 nopanic;
 extern fn bytes31_try_from_felt252(value: felt252) -> Option<bytes31> implicits(RangeCheck) nopanic;
 extern fn bytes31_to_felt252(value: bytes31) -> felt252 nopanic;
 
+/// A trait for accessing a specific byte of a `bytes31` type.
 #[generate_trait]
 pub impl Bytes31Impl of Bytes31Trait {
     /// Gets the byte at the given index (LSB's index is 0), assuming that
     /// `index < BYTES_IN_BYTES31`. If the assumption is not met, the behavior is undefined.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// 
+    /// ```
     fn at(self: @bytes31, index: usize) -> u8 {
         let u256 { low, high } = (*self).into();
         let res_u128 = if index < BYTES_IN_U128 {
@@ -70,21 +97,25 @@ pub(crate) impl U8IntoBytes31 of Into<u8, bytes31> {
         crate::integer::upcast(self)
     }
 }
+
 impl U16IntoBytes31 of Into<u16, bytes31> {
     fn into(self: u16) -> bytes31 {
         crate::integer::upcast(self)
     }
 }
+
 impl U32IntoBytes31 of Into<u32, bytes31> {
     fn into(self: u32) -> bytes31 {
         crate::integer::upcast(self)
     }
 }
+
 impl U64IntoBytes31 of Into<u64, bytes31> {
     fn into(self: u64) -> bytes31 {
         crate::integer::upcast(self)
     }
 }
+
 pub(crate) impl U128IntoBytes31 of Into<u128, bytes31> {
     fn into(self: u128) -> bytes31 {
         crate::integer::upcast(self)
