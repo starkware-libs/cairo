@@ -1,21 +1,32 @@
-//! Cheatcode functions to simplify testing of Starknet contracts.
+//! Testing utilities for Starknet contracts.
 //!
-//! Allows overriding execution context properties like block number, caller address, contract
-//! address.
-//! Also provides functions to pop logged events and l2-l1 messages for thorough contract testing.
+//! This module provides functions for testing Starknet contracts. The functions
+//! allow manipulation of blockchain state and environment variables during tests, as well as
+//! inspection of emitted events and messages.
 //!
-//! Primarily intended for use in test environments.
+//! Note: The functions in this module can only be used with the `cairo_test` testing framework.
+//! If you are using Starknet Foundry, refer to its
+//! [documentation](https://foundry-rs.github.io/starknet-foundry/appendix/cheatcodes.html)
 
+use starknet::ContractAddress;
 #[allow(unused_imports)]
 use core::array::ArrayTrait;
 #[allow(unused_imports)]
 use core::array::SpanTrait;
 use core::traits::Into;
-use starknet::ContractAddress;
 
 /// A general cheatcode function used to simplify implementation of Starknet testing functions.
-/// External users of the Cairo crates can also implement their own cheatcodes
-/// by injecting custom `CairoHintProcessor`.
+///
+/// This is the base function used by testing utilities to interact with the test
+/// environment. External users can implement custom cheatcodes by injecting a custom
+/// `CairoHintProcessor` in the runner.
+///
+/// # Arguments
+/// * `selector` - The cheatcode identifier
+/// * `input` - Input parameters for the cheatcode
+///
+/// # Returns
+/// * A span containing the cheatcode's output
 pub extern fn cheatcode<const selector: felt252>(
     input: Span<felt252>,
 ) -> Span<felt252> implicits() nopanic;
