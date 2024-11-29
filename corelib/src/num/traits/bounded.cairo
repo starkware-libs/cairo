@@ -1,9 +1,10 @@
-//! Provides a trait for defining minimum and maximum values of numeric types.
+//! Minimum and maximum values definitions of numeric types.
 //!
-//! The `Bounded` trait allows specifying the allowable min and max values for a numeric type.
+//! The `Bounded<T>` trait allows specifying the allowable min and max values for a numeric type.
 //! It supports both signed and unsigned integer types.
 
 /// A trait defining minimum and maximum bounds for numeric types.
+/// 
 /// Only supports types that can have a constant value.
 pub trait Bounded<T> {
     /// The minimum allowable value.
