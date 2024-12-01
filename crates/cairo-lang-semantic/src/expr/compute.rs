@@ -1096,7 +1096,17 @@ pub fn compute_root_expr(
     if let Err((err_set, actual_ty, expected_ty)) =
         inference.conform_ty_for_diag(res_ty, return_type)
     {
-        let diag_added = ctx.diagnostics.report(syntax, WrongReturnType { expected_ty, actual_ty });
+        let diag_added = ctx.diagnostics.report(
+            ctx.signature
+                .map(|s| match s.stable_ptr.lookup(ctx.db.upcast()).ret_ty(ctx.db.upcast()) {
+                    OptionReturnTypeClause::Empty(_) => syntax.stable_ptr().untyped(),
+                    OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
+                        return_type_clause.ty(ctx.db.upcast()).stable_ptr().untyped()
+                    }
+                })
+                .unwrap_or_else(|| syntax.stable_ptr().untyped()),
+            WrongReturnType { expected_ty, actual_ty },
+        );
         inference.consume_reported_error(err_set, diag_added);
     }
 
