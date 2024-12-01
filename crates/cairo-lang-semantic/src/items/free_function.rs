@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
+use cairo_lang_syntax::node::ast::OptionReturnTypeClause;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -221,7 +222,6 @@ pub fn priv_free_function_body_data(
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?.to_maybe()?;
     // Compute declaration semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;
-
     // Generic params.
     let parent_resolver_data = db.free_function_declaration_resolver_data(free_function_id)?;
     let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(
@@ -247,7 +247,21 @@ pub fn priv_free_function_body_data(
     );
     let function_body = free_function_syntax.body(db.upcast());
     let return_type = declaration.signature.return_type;
-    let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
+    let body_expr = compute_root_expr(
+        &mut ctx,
+        &function_body,
+        return_type,
+        match free_function_syntax
+            .declaration(db.upcast())
+            .signature(db.upcast())
+            .ret_ty(db.upcast())
+        {
+            OptionReturnTypeClause::Empty(_) => None,
+            OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
+                Some(return_type_clause.ty(db.upcast()).stable_ptr())
+            }
+        },
+    )?;
     let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =

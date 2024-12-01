@@ -10,6 +10,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
+use cairo_lang_syntax::node::ast::OptionReturnTypeClause;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -1396,7 +1397,17 @@ pub fn priv_trait_function_body_data(
         ast::MaybeTraitFunctionBody::None(_) => return Ok(None),
     };
     let return_type = trait_function_declaration_data.signature.return_type;
-    let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
+    let body_expr = compute_root_expr(
+        &mut ctx,
+        &function_body,
+        return_type,
+        match function_syntax.declaration(db.upcast()).signature(db.upcast()).ret_ty(db.upcast()) {
+            OptionReturnTypeClause::Empty(_) => None,
+            OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
+                Some(return_type_clause.ty(db.upcast()).stable_ptr())
+            }
+        },
+    )?;
     let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =

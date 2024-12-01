@@ -3328,7 +3328,17 @@ pub fn priv_impl_function_body_data(
     );
     let function_body = function_syntax.body(db.upcast());
     let return_type = declaration.function_declaration_data.signature.return_type;
-    let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
+    let body_expr = compute_root_expr(
+        &mut ctx,
+        &function_body,
+        return_type,
+        match function_syntax.declaration(db.upcast()).signature(db.upcast()).ret_ty(db.upcast()) {
+            OptionReturnTypeClause::Empty(_) => None,
+            OptionReturnTypeClause::ReturnTypeClause(return_type_clause) => {
+                Some(return_type_clause.ty(db.upcast()).stable_ptr())
+            }
+        },
+    )?;
     let ComputationContext { arenas: Arenas { exprs, patterns, statements }, resolver, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
