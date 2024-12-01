@@ -595,6 +595,19 @@ impl U384TryIntoU256 of TryInto<u384, u256> {
     }
 }
 
+impl U384Serde of Serde<u384> {
+    fn serialize(self: @u384, ref output: Array<felt252>) {
+        let (l01, l23) = conversions::into_two_felt252(*self);
+        output.append(l01);
+        output.append(l23);
+    }
+
+    fn deserialize(ref serialized: Span<felt252>) -> Option<u384> {
+        let [l01, l23] = (*serialized.multi_pop_front::<2>()?).unbox();
+        return conversions::try_from_two_felt252((l01, l23));
+    }
+}
+
 impl U384Zero of crate::num::traits::Zero<u384> {
     fn zero() -> u384 {
         u384 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }
