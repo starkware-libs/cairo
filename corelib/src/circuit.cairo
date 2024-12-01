@@ -431,7 +431,7 @@ mod conversions {
     use crate::internal::{
         bounded_int, bounded_int::{BoundedInt, AddHelper, MulHelper, DivRemHelper},
     };
-    use crate::integer::upcast;
+    use crate::integer::{upcast, downcast};
 
     use super::{u384, u96};
 
@@ -507,6 +507,22 @@ mod conversions {
         u384 { limb0, limb1, limb2: upcast(limb2), limb3: 0 }
     }
 
+    pub fn try_from_two_felt252(value: (felt252, felt252)) -> Option<u384> {
+        let (l0, l1) = value;
+        let limbs_01: u256 = l0.into();
+        let limbs_23: u256 = l1.into();
+
+        let (limb1_low32, limb0) = bounded_int::div_rem(limbs_01.low, NZ_POW96_TYPED);
+        let limb1_high64: BoundedInt<0, { POW64 - 1 }> = downcast(limbs_01.high)?;
+        let limb1 = bounded_int::add(bounded_int::mul(limb1_high64, POW32_TYPED), limb1_low32);
+
+        let (limb3_low32, limb2) = bounded_int::div_rem(limbs_23.low, NZ_POW96_TYPED);
+        let limb3_high64: BoundedInt<0, { POW64 - 1 }> = downcast(limbs_23.high)?;
+        let limb3 = bounded_int::add(bounded_int::mul(limb3_high64, POW32_TYPED), limb3_low32);
+
+        Option::Some(u384 { limb0, limb1, limb2, limb3 })
+    }
+
     pub fn try_into_u128(value: u384) -> Option<u128> {
         if value.limb2 != 0 || value.limb3 != 0 {
             return Option::None;
@@ -538,6 +554,13 @@ mod conversions {
                     bounded_int::add(bounded_int::mul(limb1_low, POW96_TYPED), value.limb0),
                 ),
             },
+        )
+    }
+
+    pub fn into_two_felt252(value: u384) -> (felt252, felt252) {
+        (
+            value.limb0.into() + value.limb1.into() * POW96,
+            value.limb2.into() + value.limb3.into() * POW96
         )
     }
 }
