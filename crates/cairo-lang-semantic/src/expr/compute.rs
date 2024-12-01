@@ -1041,6 +1041,7 @@ pub fn compute_root_expr(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBlock,
     return_type: TypeId,
+    return_ptr: Option<impl Into<SyntaxStablePtrId>>,
 ) -> Maybe<ExprId> {
     // Conform TypeEqual constraints for Associated type bounds.
     let inference = &mut ctx.resolver.data.inference_data.inference(ctx.db);
@@ -1096,7 +1097,12 @@ pub fn compute_root_expr(
     if let Err((err_set, actual_ty, expected_ty)) =
         inference.conform_ty_for_diag(res_ty, return_type)
     {
-        let diag_added = ctx.diagnostics.report(syntax, WrongReturnType { expected_ty, actual_ty });
+        let diag_added = match return_ptr {
+            None => ctx.diagnostics.report(syntax, WrongReturnType { expected_ty, actual_ty }),
+            Some(stable_ptr) => {
+                ctx.diagnostics.report(stable_ptr, WrongReturnType { expected_ty, actual_ty })
+            }
+        };
         inference.consume_reported_error(err_set, diag_added);
     }
 
