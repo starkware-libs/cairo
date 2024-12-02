@@ -1,7 +1,7 @@
 //! The `ClassHash` type represents a Starknet contract class hash, with a value range of
 //! `[0, 2**251)`.
 //!
-//! This module implements some basic traits for the `ContractAddress` type, such as [`Serde`],
+//! This module implements some basic traits for the `ClassHash` type, such as [`Serde`],
 //! [`Zero`], [`PartialEq`], and [`Debug`].
 //!
 //! `class_hash_const` function allows to construct a `ClassHash` value from a constant `felt252`
