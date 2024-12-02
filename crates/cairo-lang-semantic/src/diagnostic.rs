@@ -1343,6 +1343,7 @@ impl SemanticDiagnosticKind {
                 error_code!(E0002)
             }
             Self::MissingMember(_) => error_code!(E0003),
+            Self::MissingItemsInImpl(_) => error_code!(E0004),
             _ => return None,
         })
     }
