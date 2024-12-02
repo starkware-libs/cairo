@@ -1,16 +1,18 @@
 //! Square root operation for unsigned numeric types.
 
 /// A trait for computing the square root of a number.
+///
+/// # Examples
+///
+/// ```
+/// use core::num::traits::ops::sqrt::Sqrt;
+///
+/// assert!(9_u8.sqrt() == 3);
+/// ```
 pub trait Sqrt<T> {
     /// The type of the result of the square root operation.
     type Target;
     /// Computes the square root of a number.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert!(9_u8.sqrt() == 3);
-    /// ```
     fn sqrt(self: T) -> Self::Target;
 }
 
