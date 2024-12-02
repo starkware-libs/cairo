@@ -12,9 +12,9 @@ pub trait OverflowingAdd<T> {
     /// # Examples
     ///
     /// ```
-    /// let (result, is_overflow) = 1_u8.overflowing_add(2_u8);
-    /// assert!(result == 3);
-    /// assert!(!is_overflow);
+    /// let (result, is_overflow) = 1_u8.overflowing_add(255_u8);
+    /// assert!(result == 0);
+    /// assert!(is_overflow);
     /// ```
     fn overflowing_add(self: T, v: T) -> (T, bool);
 }
