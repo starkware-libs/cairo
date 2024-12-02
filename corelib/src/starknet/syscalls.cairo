@@ -1,9 +1,13 @@
-//! Utilities for interacting with the Starknet operating system.
+//! Utilities for interacting with the Starknet OS.
 //!
-//! This module provides a set of functions that execute system calls.
-//! These functions allow contracts to interact with the Starknet operating system and perform
-//! various operations, such as calling other contracts, deploying new contracts, and managing
-//! storage.
+//! Writing smart contracts requires various associated operations, such as calling another contract
+//! or accessing the contract’s storage, that standalone programs do not require. Cairo supports
+//! these operations by using system calls.
+//!
+//! System calls enable a contract to require services from the Starknet OS. You can use system
+//! calls in a function to get information that depends on the broader state of Starknet, such as
+//! the current timestamp of the address of the caller, but also to modify the state of Starknet by,
+//! for example, storing values in a contract's storage or deploying new contracts.
 
 use core::gas::GasBuiltin;
 use starknet::{
@@ -27,12 +31,15 @@ pub extern fn call_contract_syscall(
 /// # Arguments
 ///
 /// * `class_hash` - The class hash of the contract to be deployed.
-/// * `contract_address_salt` - The salt, an arbitrary value provided by the sender, used in the
+/// * `contract_address_salt` - The salt, an arbitrary value provided by the deployer, used in the
 ///  computation of the contract's address.
 /// * `calldata` - Call arguments for the constructor.
 /// * `deploy_from_zero` - Deploy the contract from the zero address.
 ///
-/// Returns the address of the deployed contract and the serialized return value of the constructor.
+/// # Returns
+///
+/// * The address of the deployed contract.
+/// * The serialized return value of the constructor.
 pub extern fn deploy_syscall(
     class_hash: ClassHash,
     contract_address_salt: felt252,
@@ -50,7 +57,7 @@ pub extern fn emit_event_syscall(
     keys: Span<felt252>, data: Span<felt252>,
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
 
-/// Gets the block hash of the block with the given number.
+/// Returns the hash of the block with the given number.
 ///
 /// # Arguments
 ///
@@ -59,7 +66,8 @@ pub extern fn get_block_hash_syscall(
     block_number: u64,
 ) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
 
-/// Gets information about the current execution.
+/// Gets information about the currently executing block and the transactions in the block. For a
+/// complete description of this information, see [`Execution information`].
 ///
 /// Returns a box containing the current execution information.
 pub extern fn get_execution_info_syscall() -> SyscallResult<
