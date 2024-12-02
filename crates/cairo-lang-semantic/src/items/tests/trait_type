@@ -2276,7 +2276,7 @@ trait MyTrait {
 impl MyImpl of MyTrait {}
 
 //! > expected_diagnostics
-error: Not all trait items are implemented. Missing: 'ty'.
+error[E0004]: Not all trait items are implemented. Missing: 'ty'.
  --> lib.cairo:4:6
 impl MyImpl of MyTrait {}
      ^****^
