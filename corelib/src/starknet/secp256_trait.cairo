@@ -24,9 +24,9 @@ pub struct Signature {
     pub r: u256,
     /// `s` component of the signature.
     pub s: u256,
-    /// The parity of the y coordinate of the ec point whose x coordinate is `r`.
-    /// `y_parity` == true means that the y coordinate is odd.
-    /// Some places use non boolean v instead of y_parity.
+    /// The parity of the y coordinate of the elliptic curve point whose x coordinate is `r`.
+    /// `y_parity == true` means that the y coordinate is odd.
+    /// Some places use non boolean `v` instead of `y_parity`.
     /// In that case, `signature_from_vrs` should be used.
     pub y_parity: bool,
 }
@@ -50,7 +50,7 @@ pub fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
     Signature { r, s, y_parity: v % 2 == 0 }
 }
 
-/// Trait for interacting with Secp256{k/r}1 curves.
+/// A trait for interacting with Secp256{k/r}1 curves.
 /// Provides methods for getting the curve size and generator point, as well as
 /// creating new curve points and getting points from x-coordinates.
 pub trait Secp256Trait<Secp256Point> {
@@ -60,20 +60,20 @@ pub trait Secp256Trait<Secp256Point> {
     /// Returns the generator point for the given curve.
     fn get_generator_point() -> Secp256Point;
 
-    /// Returns the curve point given x and y coordinates.
+    /// Returns the curve point given `x` and `y` coordinates.
     fn secp256_ec_new_syscall(x: u256, y: u256) -> SyscallResult<Option<Secp256Point>>;
 
-    /// Returns the curve point given x coordinate and `y_parity`.
+    /// Returns the curve point given `x` coordinate and `y_parity`.
     fn secp256_ec_get_point_from_x_syscall(
         x: u256, y_parity: bool,
     ) -> SyscallResult<Option<Secp256Point>>;
 }
 
-/// Trait for operating on Secp256k1 curve points.
+/// A trait for operating on Secp256{k/r}1 curve points.
 /// Includes methods for getting point coordinates, adding points, and multiplying
 /// points by scalars.
 pub trait Secp256PointTrait<Secp256Point> {
-    /// Returns x and y coordinates given a curve point.
+    /// Returns `x` and `y` coordinates given a curve point.
     fn get_coordinates(self: Secp256Point) -> SyscallResult<(u256, u256)>;
 
     /// Adds two points on the curve and returns the resulting curve point.
