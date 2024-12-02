@@ -1,7 +1,6 @@
 //! Wide multiplication operation.
 //!
-//! This operation is useful for ensuring that the result does not overflow and retains full
-//! precision.
+//! This operation is useful for ensuring that the result does not overflow.
 
 /// A trait for types that can be multiplied together to produce a wider type.
 pub trait WideMul<Lhs, Rhs> {
