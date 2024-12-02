@@ -1,7 +1,7 @@
 = Felt252 type
 
-
-Field elements have the property of intentionally "wrapping around" when their value exceeds the specified range, using modular arithmetic.
+Field elements have the property of intentionally "wrapping around" when their value exceeds the
+specified range, using modular arithmetic.
 
 == Code Example
 The following example demonstrates how the maximum value of `felt252` behaves when adding `1`.
@@ -17,7 +17,8 @@ fn main() {
 ----
 
 == Simplifying the Code
-Since `felt252` is the default data type, there's no need to explicitly specify it in simple cases. Here’s the simplified version:
+Since `felt252` is the default data type, there's no need to explicitly specify it in simple cases.
+Here’s the simplified version:
 
 [source, rust]
 ----
@@ -30,4 +31,5 @@ fn main() {
 ----
 
 == Conclusion
-The `felt252` data type uses modular arithmetic to ensure that all values remain within the allowed range. This makes it ideal for applications requiring reliable computation in finite fields.
+The `felt252` data type uses modular arithmetic to ensure that all values remain within the allowed
+range. This makes it ideal for applications requiring reliable computation in finite fields.
