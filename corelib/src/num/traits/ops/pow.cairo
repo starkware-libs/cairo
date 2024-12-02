@@ -1,8 +1,22 @@
+//! Power calculation trait and implementations.
+//!
+//! This module provides a generic trait and implementation for calculating
+//! exponentiation across multiple numeric types with logarithmic time complexity.
+
 /// A trait for calculating a base to the power of an exponent.
 pub trait Pow<Base, Exp> {
+    /// The type of the result of the power calculation.
     type Output;
 
     /// Returns `self` to the power `exp`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::num::traits::ops::pow::Pow;
+    ///
+    /// assert!(10_u8.pow(2) == 100);
+    /// ```
     fn pow(self: Base, exp: Exp) -> Self::Output;
 }
 
