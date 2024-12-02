@@ -34,7 +34,6 @@ members = [
     "crates/cairo-lang-executable",
     "crates/cairo-lang-filesystem",
     "crates/cairo-lang-formatter",
-    "crates/cairo-lang-language-server",
     "crates/cairo-lang-lowering",
     "crates/cairo-lang-parser",
     "crates/cairo-lang-plugins",
@@ -60,7 +59,6 @@ members = [
     "crates/bin/cairo-compile",
     "crates/bin/cairo-execute",
     "crates/bin/cairo-format",
-    "crates/bin/cairo-language-server",
     "crates/bin/cairo-run",
     "crates/bin/cairo-test",
     "crates/bin/generate-syntax",
@@ -89,7 +87,7 @@ ark-secp256r1 = "0.4.0"
 ark-std = "0.4.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
-cairo-vm = { version = "1.0.1", features = ["mod_builtin"]}
+cairo-vm = { version = "1.0.1", features = ["mod_builtin"] }
 clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
 const-fnv1a-hash = "1.1.0"
