@@ -14,7 +14,7 @@
 /// # Examples
 ///
 /// ```
-/// use core::num::traits::ops::Pow;
+/// use core::num::traits::Pow;
 ///
 /// assert!(2_i8.pow(4_usize) == 16_i8);
 /// assert!(6_u8.pow(3_usize) == 216_u8);
