@@ -5,7 +5,7 @@
 /// # Examples
 ///
 /// ```
-/// use core::num::traits::ops::sqrt::Sqrt;
+/// use core::num::traits::Sqrt;
 ///
 /// assert!(9_u8.sqrt() == 3);
 /// ```
