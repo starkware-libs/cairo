@@ -1,21 +1,46 @@
-/// Performs addition that saturates at the numeric bounds instead of overflowing.
+//! Saturating arithmetic operations for numeric types.
+//!
+//! This module provides traits and implementations for arithmetic operations
+//! that saturate at the numeric type's boundaries instead of overflowing.
+
+/// A trait for performing addition that saturates at the numeric bounds instead of overflowing.
 pub trait SaturatingAdd<T> {
     /// Saturating addition. Computes `self + other`, saturating at the relevant high or low
     /// boundary of the type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(255_u8.saturating_add(1_u8) == 255);
+    /// ```
     fn saturating_add(self: T, other: T) -> T;
 }
 
-/// Performs subtraction that saturates at the numeric bounds instead of overflowing.
+/// A trait for performing subtraction that saturates at the numeric bounds instead of overflowing.
 pub trait SaturatingSub<T> {
     /// Saturating subtraction. Computes `self - other`, saturating at the relevant high or low
     /// boundary of the type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(1_u8.saturating_sub(2_u8) == 0);
+    /// ```
     fn saturating_sub(self: T, other: T) -> T;
 }
 
-/// Performs multiplication that saturates at the numeric bounds instead of overflowing.
+/// A trait for performing multiplication that saturates at the numeric bounds instead of
+/// overflowing.
 pub trait SaturatingMul<T> {
     /// Saturating multiplication. Computes `self * other`, saturating at the relevant high or low
     /// boundary of the type.
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(100_u8.saturating_mul(3_u8) == 255);
+    /// ```
     fn saturating_mul(self: T, other: T) -> T;
 }
 
