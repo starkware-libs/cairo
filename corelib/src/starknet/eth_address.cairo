@@ -10,7 +10,7 @@ use core::option::{Option, OptionTrait};
 use core::serde::Serde;
 use core::traits::{Into, TryInto};
 
-/// An Ethereum address of 160 bits.
+/// A 160 bits Ethereum address.
 #[derive(Copy, Drop, Hash, PartialEq)]
 pub struct EthAddress {
     /// The address represented as a `felt252`.
