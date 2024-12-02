@@ -8,6 +8,8 @@
 /// # Examples
 ///
 /// ```
+/// use core::num::traits::SaturatingAdd;
+///
 /// assert!(255_u8.saturating_add(1_u8) == 255);
 /// ```
 pub trait SaturatingAdd<T> {
@@ -21,6 +23,8 @@ pub trait SaturatingAdd<T> {
 /// # Examples
 ///
 /// ```
+/// use core::num::traits::SaturatingSub;
+///
 /// assert!(1_u8.saturating_sub(2_u8) == 0);
 /// ```
 pub trait SaturatingSub<T> {
@@ -34,6 +38,8 @@ pub trait SaturatingSub<T> {
 /// # Examples
 ///
 /// ```
+/// use core::num::traits::SaturatingMul;
+///
 /// assert!(100_u8.saturating_mul(3_u8) == 255);
 /// ```
 pub trait SaturatingMul<T> {
