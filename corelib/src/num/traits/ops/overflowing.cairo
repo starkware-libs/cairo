@@ -3,7 +3,7 @@
 //! This module provides traits for performing arithmetic operations that explicitly
 //! track potential numeric overflow conditions.
 
-/// A trait for performing addition with a flag for overflow.
+/// Performs addition with a flag for overflow.
 pub trait OverflowingAdd<T> {
     /// Returns a tuple of the sum along with a boolean indicating whether an arithmetic overflow
     /// would occur.
@@ -19,7 +19,7 @@ pub trait OverflowingAdd<T> {
     fn overflowing_add(self: T, v: T) -> (T, bool);
 }
 
-/// A trait for performing subtraction with a flag for underflow.
+/// Performs subtraction with a flag for overflow.
 pub trait OverflowingSub<T> {
     /// Returns a tuple of the difference along with a boolean indicating whether an arithmetic
     /// underflow would occur.
@@ -35,7 +35,7 @@ pub trait OverflowingSub<T> {
     fn overflowing_sub(self: T, v: T) -> (T, bool);
 }
 
-/// A trait for performing multiplication with a flag for overflow.
+/// Performs multiplication with a flag for overflow.
 pub trait OverflowingMul<T> {
     /// Returns a tuple of the product along with a boolean indicating whether an arithmetic
     /// overflow would occur.
