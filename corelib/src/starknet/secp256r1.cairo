@@ -1,9 +1,8 @@
 //! Functions and constructs related to elliptic curve operations on the secp256r1 curve.
 //!
 //! This module provides functionality for performing operations on the NIST P-256 (also known as
-//! secp256r1)
-//! elliptic curve. It implements the traits defined in the `secp256_trait` module to ensure
-//! consistent behavior across different secp256 curve implementations.
+//! secp256r1) elliptic curve. It implements the traits defined in the `secp256_trait` module to
+//! ensure consistent behavior across different secp256 curve implementations.
 //!
 //! Curve information:
 //! * Base field: q =
@@ -21,7 +20,7 @@ use starknet::{
     EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait,
 };
 
-/// Represents a point on the Secp256r1 elliptic curve.
+/// Represents a point on the secp256r1 elliptic curve.
 #[derive(Copy, Drop)]
 pub extern type Secp256r1Point;
 
@@ -65,7 +64,7 @@ pub(crate) impl Secp256r1PointImpl of Secp256PointTrait<Secp256r1Point> {
     }
 }
 
-/// Creates a new point on the Secp256r1 curve from its `x` and `y` coordinates.
+/// Creates a new point on the secp256r1 curve from its `x` and `y` coordinates.
 ///
 /// # Returns
 ///
@@ -75,7 +74,7 @@ extern fn secp256r1_new_syscall(
     x: u256, y: u256,
 ) -> SyscallResult<Option<Secp256r1Point>> implicits(GasBuiltin, System) nopanic;
 
-/// Adds two points `p0` and `p1` on the Secp256r1 curve.
+/// Adds two points `p0` and `p1` on the secp256r1 curve.
 extern fn secp256r1_add_syscall(
     p0: Secp256r1Point, p1: Secp256r1Point,
 ) -> SyscallResult<Secp256r1Point> implicits(GasBuiltin, System) nopanic;
@@ -85,10 +84,10 @@ extern fn secp256r1_mul_syscall(
     p: Secp256r1Point, scalar: u256,
 ) -> SyscallResult<Secp256r1Point> implicits(GasBuiltin, System) nopanic;
 
-/// Recovers a point on the curve given its x-coordinate and y-parity.
+/// Recovers a point on the curve given its x-coordinate and `y-parity`.
 ///
 /// Since the curve equation y² = x³ + ax + b has two solutions for y given x,
-/// the y_parity parameter is used to determine which y value to use.
+/// the `y_parity` parameter is used to determine which y value to use.
 ///
 /// # Arguments
 ///
@@ -103,7 +102,7 @@ extern fn secp256r1_get_point_from_x_syscall(
     x: u256, y_parity: bool,
 ) -> SyscallResult<Option<Secp256r1Point>> implicits(GasBuiltin, System) nopanic;
 
-/// Returns the coordinates of a point on the Secp256r1 curve.
+/// Returns the coordinates of a point on the secp256r1 curve.
 extern fn secp256r1_get_xy_syscall(
     p: Secp256r1Point,
 ) -> SyscallResult<(u256, u256)> implicits(GasBuiltin, System) nopanic;
