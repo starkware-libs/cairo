@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{LookupIntern, Upcast};
+use salsa::Durability;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use smol_str::{SmolStr, ToSmolStr};
@@ -313,10 +314,14 @@ fn crate_config(db: &dyn FilesGroup, crt: CrateId) -> Option<CrateConfiguration>
 
 fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<str>> {
     match file.lookup_intern(db) {
-        FileLongId::OnDisk(path) => match fs::read_to_string(path) {
-            Ok(content) => Some(content.into()),
-            Err(_) => None,
-        },
+        FileLongId::OnDisk(path) => {
+            db.salsa_runtime().report_synthetic_read(Durability::LOW);
+
+            match fs::read_to_string(path) {
+                Ok(content) => Some(content.into()),
+                Err(_) => None,
+            }
+        }
         FileLongId::Virtual(virt) => Some(virt.content),
         FileLongId::External(external_id) => Some(db.ext_as_virtual(external_id).content),
     }
