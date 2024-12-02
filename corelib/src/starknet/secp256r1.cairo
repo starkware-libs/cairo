@@ -1,4 +1,4 @@
-//! Secp256r1 Elliptic Curve Implementation.
+//! Secp256r1 elliptic curve implementation.
 //!
 //! This module contains functions and constructs related to elliptic curve operations on the
 //! Secp256r1 curve.
@@ -58,30 +58,30 @@ pub(crate) impl Secp256r1PointImpl of Secp256PointTrait<Secp256r1Point> {
     }
 }
 
-/// Creates a secp256r1 ec point from the given x and y coordinates.
-/// Returns None if the given coordinates do not correspond to a point on the curve.
+/// Creates a Secp256r1 elliptic curve point from the given `x` and `y` coordinates.
+/// Returns `None` if the given coordinates do not correspond to a point on the curve.
 extern fn secp256r1_new_syscall(
     x: u256, y: u256,
 ) -> SyscallResult<Option<Secp256r1Point>> implicits(GasBuiltin, System) nopanic;
 
-/// Computes the addition of secp256r1 ec points `p0 + p1`.
+/// Computes the addition of Secp256r1 elliptic curve points `p0 + p1`.
 extern fn secp256r1_add_syscall(
     p0: Secp256r1Point, p1: Secp256r1Point,
 ) -> SyscallResult<Secp256r1Point> implicits(GasBuiltin, System) nopanic;
 
-/// Computes the product of a secp256r1 ec point `p` by the given scalar `scalar`.
+/// Computes the product of a Secp256r1 elliptic curve point `p` by the given `scalar`.
 extern fn secp256r1_mul_syscall(
     p: Secp256r1Point, scalar: u256,
 ) -> SyscallResult<Secp256r1Point> implicits(GasBuiltin, System) nopanic;
 
-/// Computes the point on the secp256r1 curve that matches the given `x` coordinate, if such exists.
-/// Out of the two possible y's, chooses according to `y_parity`.
-/// `y_parity` == true means that the y coordinate is odd.
+/// Computes the point on the Secp256r1 curve that matches the given `x` coordinate, if such exists.
+/// Out of the two possible `y`s, chooses according to `y_parity`.
+/// `y_parity == true` means that the `y` coordinate is odd.
 extern fn secp256r1_get_point_from_x_syscall(
     x: u256, y_parity: bool,
 ) -> SyscallResult<Option<Secp256r1Point>> implicits(GasBuiltin, System) nopanic;
 
-/// Returns the coordinates of a point on the secp256r1 curve.
+/// Returns the coordinates of a point on the Secp256r1 curve.
 extern fn secp256r1_get_xy_syscall(
     p: Secp256r1Point,
 ) -> SyscallResult<(u256, u256)> implicits(GasBuiltin, System) nopanic;
