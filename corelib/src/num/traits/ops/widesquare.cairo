@@ -1,3 +1,7 @@
+//! Wide square operation.
+//!
+//! This operation is useful for ensuring that the result does not overflow.
+
 use crate::num::traits::WideMul;
 
 /// A trait for a type that can be squared to produce a wider type.
@@ -5,6 +9,12 @@ pub trait WideSquare<T> {
     /// The type of the result of the square.
     type Target;
     /// Calculates the square, producing a wider type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(20_u8.wide_square() == 400_u16);
+    /// ```
     fn wide_square(self: T) -> Self::Target;
 }
 
