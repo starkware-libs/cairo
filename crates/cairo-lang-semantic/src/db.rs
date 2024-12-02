@@ -1493,6 +1493,10 @@ pub trait SemanticGroup:
     #[salsa::invoke(types::priv_type_is_var_free)]
     fn priv_type_is_var_free(&self, ty: types::TypeId) -> bool;
 
+    /// Private query for a shorter unique name for types.
+    #[salsa::invoke(types::priv_type_short_name)]
+    fn priv_type_short_name(&self, ty: types::TypeId) -> String;
+
     // Expression.
     // ===========
     /// Assumes function and expression are present.
