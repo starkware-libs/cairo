@@ -10,12 +10,12 @@
 //! ```
 //! use core::num::traits::WideSquare;
 //!
-//! // Squaring a u8 value to get a u16 result
+//! // Squaring a `u8` value to get a `u16` result
 //! let a: u8 = 200;
 //! let result: u16 = a.wide_square();
 //! assert!(result == 40000);
 //!
-//! // Squaring a u128 value to get a u256 result
+//! // Squaring a `u128` value to get a `u256` result
 //! let x: u128 = 0xffffffffffffffffffffffffffffffff; // max u128
 //! let wide_result: u256 = x.wide_square(); // No overflow occurs
 //! assert!(wide_result == 0xfffffffffffffffffffffffffffffffe00000000000000000000000000000001);
