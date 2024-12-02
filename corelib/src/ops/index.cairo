@@ -4,9 +4,8 @@
 //! providing flexible mechanisms for accessing elements in collections.
 //!
 //! The [`IndexView`] and [`Index`] traits are for implementing the `[]` operator. Only one should
-//! be implemented
-/// for each type. Both are not consuming of `self`, the first gets a snapshot of the object and
-/// the second gets a reference.
+//! be implemented for each type. Both are not consuming of `self`, the first gets a snapshot of the
+//! object and the second gets a reference.
 
 #[feature("deprecated-index-traits")]
 use crate::traits::IndexView as DeprecatedIndexView;
@@ -15,6 +14,8 @@ use crate::traits::Index as DeprecatedIndex;
 
 
 /// A trait for a view of an item contained in type `C` with an index of type `I`.
+/// Allows for accessing elements with the `[]` operator.
+/// Should not be implemented for a type if `Index` is already implemented.
 pub trait IndexView<C, I> {
     /// The type of the item.
     type Target;
@@ -38,6 +39,8 @@ impl DeprecatedIndexViewImpl<
 }
 
 /// A trait for accessing an item contained in type `C` with an index of type `I`.
+/// Allows for accessing elements with the `[]` operator.
+/// Should not be implemented for a type if `IndexView` is already implemented.
 pub trait Index<C, I> {
     /// The type of the item.
     type Target;
