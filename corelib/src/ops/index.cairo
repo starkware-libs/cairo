@@ -6,7 +6,7 @@
 //! The [`IndexView`] and [`Index`] traits are for implementing the `[]` operator. Only one should
 //! be implemented
 /// for each type. Both are not consuming of `self`, the first gets a snapshot of the object and
-/// the second gets a refence.
+/// the second gets a reference.
 
 #[feature("deprecated-index-traits")]
 use crate::traits::IndexView as DeprecatedIndexView;
