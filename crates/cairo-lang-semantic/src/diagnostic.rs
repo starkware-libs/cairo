@@ -1344,6 +1344,7 @@ impl SemanticDiagnosticKind {
             }
             Self::MissingMember(_) => error_code!(E0003),
             Self::MissingItemsInImpl(_) => error_code!(E0004),
+            Self::ModuleFileNotFound(_) => error_code!(E0005),
             _ => return None,
         })
     }
