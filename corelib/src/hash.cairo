@@ -1,4 +1,4 @@
-//! Hash module that provides traits and implementations for hashing various data types.
+//! Utilities for hashing various data types.
 //!
 //! This module provides some traits and associated implementations:
 //! - `HashStateTrait`: A trait that defines the behavior of hash state accumulators, which can be
@@ -16,10 +16,30 @@ use crate::traits::Into;
 pub trait HashStateTrait<S> {
     /// Updates the current hash state `self` with the given `felt252` value and returns a new hash
     /// state.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::pedersen::PedersenTrait;
+    /// use core::hash::HashStateTrait;
+    ///
+    /// let mut state = PedersenTrait::new(0);
+    /// state = state.update(1);
+    /// ```
     #[must_use]
     fn update(self: S, value: felt252) -> S;
 
     /// Takes the current state `self` and returns the hash result.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::pedersen::PedersenTrait;
+    /// use core::hash::HashStateTrait;
+    ///
+    /// let mut state = PedersenTrait::new(0);
+    /// let hash = state.finalize();
+    /// ```
     #[must_use]
     fn finalize(self: S) -> felt252;
 }
@@ -27,6 +47,16 @@ pub trait HashStateTrait<S> {
 /// A trait for values that can be hashed.
 pub trait Hash<T, S, +HashStateTrait<S>> {
     /// Updates the hash state with the given value and returns a new hash state.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::pedersen::PedersenTrait;
+    /// use core::hash::Hash;
+    ///
+    /// let mut state = PedersenTrait::new(0);
+    /// let new_state = Hash::update_state(state, 1);
+    /// ```
     #[must_use]
     fn update_state(state: S, value: T) -> S;
 }
@@ -39,10 +69,20 @@ impl HashFelt252<S, +HashStateTrait<S>> of Hash<felt252, S> {
     }
 }
 
-/// Trait for hashing values using a `felt252` as hash state, used for backwards compatibility.
+/// A trait for hashing values using a `felt252` as hash state, used for backwards compatibility.
 /// NOTE: Implement `Hash` instead of this trait if possible.
 pub trait LegacyHash<T> {
     /// Takes a `felt252` state and a value of type `T` and returns the hash result.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::pedersen::PedersenTrait;
+    /// use core::hash::LegacyHash;
+    ///
+    /// let state = 0;
+    /// let hash = LegacyHash::hash(state, 1);
+    /// ```
     #[must_use]
     fn hash(state: felt252, value: T) -> felt252;
 }
@@ -58,6 +98,16 @@ impl LegacyHashForHash<T, +Hash<T, crate::pedersen::HashState>> of LegacyHash<T>
 /// Extension trait for hash state accumulators.
 pub trait HashStateExTrait<S, T> {
     /// Updates the hash state with the given value and returns the hash result.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::pedersen::PedersenTrait;
+    /// use core::hash::HashStateExTrait;
+    ///
+    /// let mut state = PedersenTrait::new(0);
+    /// state = state.update_with(0);
+    /// ```
     #[must_use]
     fn update_with(self: S, value: T) -> S;
 }
