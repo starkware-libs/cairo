@@ -1,44 +1,84 @@
 //! Arithmetic operations with overflow and underflow wrapping.
 //!
-//! This module provides traits for performing arithmetic operations that wrap the result in case
-//! of overflow or underflow.
+//! This module provides traits for performing arithmetic operations that wrap around at the
+//! boundary of the type in case of overflow or underflow. This is particularly useful when you want
+//! to:
+//! - Perform arithmetic operations without panicking on overflow/underflow
+//! - Implement modular arithmetic
+//! - Handle cases where overflow is expected and desired
+//!
+//! # Examples
+//!
+//! ```
+//! use core::num::traits::ops::wrapping::{WrappingAdd, WrappingSub, WrappingMul};
+//!
+//! // Addition wrapping
+//! let a: u8 = 255;
+//! assert!(a.wrapping_add(1) == 0);
+//!
+//! // Subtraction wrapping
+//! let b: u8 = 0;
+//! assert!(b.wrapping_sub(1) == 255);
+//!
+//! // Multiplication wrapping
+//! let c: u8 = 200;
+//! assert!(c.wrapping_mul(2) == 144); // (200 * 2) % 256 = 144
+//! ```
 
-/// A trait for performing addition that wraps around on overflow.
+/// Performs addition that wraps around on overflow.
+///
+/// # Examples
+///
+/// ```
+/// use core::num::traits::wrapping::ops::WrappingAdd;
+///
+/// let result = 255_u8.wrapping_add(1);
+/// assert!(result == 0);
+///
+/// let result = 100_u8.wrapping_add(200);
+/// assert!(result == 44); // (100 + 200) % 256 = 44
+/// ```
 pub trait WrappingAdd<T> {
     /// Wrapping (modular) addition. Computes `self + other`, wrapping around at the boundary of the
     /// type.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert!(255_u8.wrapping_add(1) == 0);
-    /// ```
     fn wrapping_add(self: T, v: T) -> T;
 }
 
-/// A trait for performing subtraction that wraps around on overflow.
+/// Performs subtraction that wraps around on overflow.
+///
+/// # Examples
+///
+/// ```
+/// use core::num::traits::wrapping::ops::WrappingSub;
+///
+/// let result = 0_u8.wrapping_sub(1);
+/// assert!(result == 255);
+///
+/// let result = 100_u8.wrapping_sub(150);
+/// assert!(result == 206);
+/// ```
 pub trait WrappingSub<T> {
     /// Wrapping (modular) subtraction. Computes `self - other`, wrapping around at the boundary of
     /// the type.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert!(0_u8.wrapping_sub(1) == 255);
-    /// ```
     fn wrapping_sub(self: T, v: T) -> T;
 }
 
-/// A trait for performing multiplication that wraps around on overflow.
+/// Performs multiplication that wraps around on overflow.
+///
+/// # Examples
+///
+/// ```
+/// use core::num::traits::wrapping::ops::WrappingMul;
+///
+/// let result = 10_u8.wrapping_mul(30);
+/// assert!(result == 44); // (10 * 30) % 256 = 44
+///
+/// let result = 200_u8.wrapping_mul(2);
+/// assert!(result == 144); // (200 * 2) % 256 = 144
+/// ```
 pub trait WrappingMul<T> {
     /// Wrapping (modular) multiplication. Computes `self * other`, wrapping around at the boundary
     /// of the type.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// assert!(10_u8.wrapping_mul(30) == 44);
-    /// ```
     fn wrapping_mul(self: T, v: T) -> T;
 }
 
