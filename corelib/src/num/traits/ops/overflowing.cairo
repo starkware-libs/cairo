@@ -1,4 +1,4 @@
-//! Arithmetic operations with overflow and underflow detection.
+//! Arithmetic operations with overflow detection.
 //!
 //! This module provides traits for performing arithmetic operations that explicitly
 //! track potential numeric overflow conditions.
@@ -8,7 +8,7 @@
 /// # Examples
 ///
 /// ```
-/// use core::num::traits::OwerflowingAdd;
+/// use core::num::traits::OverflowingAdd;
 ///
 /// let (result, is_overflow) = 1_u8.overflowing_add(255_u8);
 /// assert!(result == 0);
@@ -21,12 +21,12 @@ pub trait OverflowingAdd<T> {
     fn overflowing_add(self: T, v: T) -> (T, bool);
 }
 
-/// Performs subtraction with a flag for underflow.
+/// Performs subtraction with a flag for overflow.
 ///
 /// # Examples
 ///
 /// ```
-/// use core::num::traits::OwerflowingSub;
+/// use core::num::traits::OverflowingSub;
 ///
 /// let (result, is_underflow) = 1_u8.overflowing_sub(2_u8);
 /// assert!(result == 255);
@@ -34,8 +34,8 @@ pub trait OverflowingAdd<T> {
 /// ```
 pub trait OverflowingSub<T> {
     /// Returns a tuple of the difference along with a boolean indicating whether an arithmetic
-    /// underflow would occur.
-    /// If an underflow would have occurred then the wrapped value is returned.
+    /// overflow would occur.
+    /// If an overflow would have occurred then the wrapped value is returned.
     fn overflowing_sub(self: T, v: T) -> (T, bool);
 }
 
@@ -44,7 +44,7 @@ pub trait OverflowingSub<T> {
 /// # Examples
 ///
 /// ```
-/// use core::num::traits::OwerflowingMul;
+/// use core::num::traits::OverflowingMul;
 ///
 /// let (result, is_overflow) = 1_u8.overflowing_mul(2_u8);
 /// assert!(result == 2);
