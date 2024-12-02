@@ -1,9 +1,8 @@
 //! Utilities for Ethereum signatures on Starknet.
 //!
 //! This module provides functions that allow for:
-//!
-//! * Verification that a given Ethereum signature is valid.
-//! * Converting a public key point to the corresponding Ethereum address.
+//! - Verification that a given Ethereum signature is valid.
+//! - Converting a public key point to the corresponding Ethereum address.
 
 use core::keccak::keccak_u256s_be_inputs;
 use core::option::OptionTrait;
