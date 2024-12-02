@@ -137,22 +137,23 @@ fn test_fill_inputs_loop() {
 
 #[test]
 fn test_u384_serde() {
-    let limb0 = 0xb000000cd000000ef0000000;
-    let limb1 = 0x50000006700000089000000a;
-    let limb2 = 0x100000023000000450000000;
-    let limb3 = 0x80000009a000000bc0000000;
-    let mut serialized = array![];
-    let a = u384 { limb0, limb1, limb2, limb3 };
-    a.serialize(ref serialized);
-    assert!(serialized.len() == 2);
-    assert!(*serialized[0] == 0x50000006700000089000000ab000000cd000000ef0000000);
-    assert!(*serialized[1] == 0x80000009a000000bc0000000100000023000000450000000);
+    let value = u384 {
+        limb0: 0xb000000cd000000ef0000000,
+        limb1: 0x50000006700000089000000a,
+        limb2: 0x100000023000000450000000,
+        limb3: 0x80000009a000000bc0000000,
+    };
+    let serialized = array![
+        0x50000006700000089000000ab000000cd000000ef0000000,
+        0x80000009a000000bc0000000100000023000000450000000,
+    ];
+    let mut buffer = array![];
+    value.serialize(ref buffer);
+    assert!(buffer == serialized);
 
     let mut serialized = serialized.span();
 
-    let deserialized_a = Serde::<u384>::deserialize(ref serialized).unwrap();
-
-    assert!(deserialized_a == a);
+    assert!(Serde::<u384>::deserialize(ref serialized) == Option::Some(value));
 }
 
 #[test]
