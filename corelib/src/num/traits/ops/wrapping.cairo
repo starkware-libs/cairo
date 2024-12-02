@@ -10,7 +10,7 @@
 //! # Examples
 //!
 //! ```
-//! use core::num::traits::ops::wrapping::{WrappingAdd, WrappingSub, WrappingMul};
+//! use core::num::traits::{WrappingAdd, WrappingSub, WrappingMul};
 //!
 //! // Addition wrapping
 //! let a: u8 = 255;
@@ -30,7 +30,7 @@
 /// # Examples
 ///
 /// ```
-/// use core::num::traits::wrapping::ops::WrappingAdd;
+/// use core::num::traits::WrappingAdd;
 ///
 /// let result = 255_u8.wrapping_add(1);
 /// assert!(result == 0);
@@ -49,7 +49,7 @@ pub trait WrappingAdd<T> {
 /// # Examples
 ///
 /// ```
-/// use core::num::traits::wrapping::ops::WrappingSub;
+/// use core::num::traits::WrappingSub;
 ///
 /// let result = 0_u8.wrapping_sub(1);
 /// assert!(result == 255);
@@ -68,7 +68,7 @@ pub trait WrappingSub<T> {
 /// # Examples
 ///
 /// ```
-/// use core::num::traits::wrapping::ops::WrappingMul;
+/// use core::num::traits::WrappingMul;
 ///
 /// let result = 10_u8.wrapping_mul(30);
 /// assert!(result == 44); // (10 * 30) % 256 = 44
