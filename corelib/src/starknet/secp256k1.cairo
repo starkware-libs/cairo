@@ -22,7 +22,7 @@ use starknet::{
     SyscallResult, SyscallResultTrait,
 };
 
-/// A point on the Secp256k1 curve.
+/// A point on the secp256k1 curve.
 #[derive(Copy, Drop)]
 pub extern type Secp256k1Point;
 
@@ -66,7 +66,7 @@ pub(crate) impl Secp256k1PointImpl of Secp256PointTrait<Secp256k1Point> {
     }
 }
 
-/// Creates a new point on the Secp256k1 curve from its `x` and `y` coordinates.
+/// Creates a new point on the secp256k1 curve from its `x` and `y` coordinates.
 ///
 /// # Returns
 ///
@@ -76,12 +76,12 @@ extern fn secp256k1_new_syscall(
     x: u256, y: u256,
 ) -> SyscallResult<Option<Secp256k1Point>> implicits(GasBuiltin, System) nopanic;
 
-/// Adds two points `p0` and `p1` on the Secp256k1 curve.
+/// Adds two points `p0` and `p1` on the secp256k1 curve.
 extern fn secp256k1_add_syscall(
     p0: Secp256k1Point, p1: Secp256k1Point,
 ) -> SyscallResult<Secp256k1Point> implicits(GasBuiltin, System) nopanic;
 
-/// Multiplies a point `p` on the Secp256k1 curve by the given `scalar`.
+/// Multiplies a point `p` on the secp256k1 curve by the given `scalar`.
 extern fn secp256k1_mul_syscall(
     p: Secp256k1Point, scalar: u256,
 ) -> SyscallResult<Secp256k1Point> implicits(GasBuiltin, System) nopanic;
