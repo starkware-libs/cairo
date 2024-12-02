@@ -1,4 +1,4 @@
-//! Traits for performing multiplication that results in a wider type.
+//! Trait for performing multiplication that results in a wider type.
 //!
 //! This module provides the [`WideMul`] trait which enables multiplication operations
 //! that return a result type with double the bit width of the input types.
@@ -10,13 +10,13 @@
 //! ```
 //! use core::num::traits::WideMul;
 //!
-//! // Multiplying two u8 values to get a u16 result
+//! // Multiplying two `u8` values to get a `u16` result
 //! let a: u8 = 200;
 //! let b: u8 = 100;
 //! let result: u16 = a.wide_mul(b);
 //! assert!(result == 20000);
 //!
-//! // Multiplying two u128 values to get a u256 result
+//! // Multiplying two `u128` values to get a `u256` result
 //! let x: u128 = 0xffffffffffffffffffffffffffffffff; // max u128
 //! let y: u128 = 2;
 //! let wide_result = x.wide_mul(y); // No overflow occurs
