@@ -3,7 +3,7 @@
 //! This module provides efficient exponentiation operations for numeric types using
 //! the square-and-multiply algorithm, which achieves logarithmic time complexity O(log n).
 
-/// Raises a value to the power of exp.
+/// Raises a value to the power of `exp`.
 ///
 /// Note that `0⁰` (`pow(0, 0)`) returns `1`. Mathematically this is undefined.
 ///
