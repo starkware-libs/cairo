@@ -25,12 +25,9 @@ use starknet::{
 #[derive(Copy, Drop)]
 pub extern type Secp256r1Point;
 
-/// The order of the Secp256r1 curve (number of points on the curve).
-const CURVE_SIZE: u256 = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551;
-
 pub(crate) impl Secp256r1Impl of Secp256Trait<Secp256r1Point> {
     fn get_curve_size() -> u256 {
-        CURVE_SIZE
+        0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
     }
 
     fn get_generator_point() -> Secp256r1Point {
