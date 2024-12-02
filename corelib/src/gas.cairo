@@ -1,4 +1,4 @@
-//! Gas module that provides functionality for handling gas in Cairo code.
+//! Utilities for handling gas in Cairo code.
 //!
 //! This module includes various features:
 //! - `withdraw_gas`: A function that withdraws gas from the `GasBuiltin` to handle the success case
@@ -11,7 +11,7 @@
 
 use crate::RangeCheck;
 
-/// Type representing the table of the costs of the different builtin usages.
+/// A type representing the table of the costs of the different builtin usages.
 #[derive(Copy, Drop)]
 pub extern type BuiltinCosts;
 
