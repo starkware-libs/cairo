@@ -1,4 +1,4 @@
-//! Lib module is the main entrypoint for the Cairo core library.
+//! Main entrypoint for the Cairo core library.
 
 pub mod traits;
 #[feature("deprecated-index-traits")]
@@ -14,7 +14,7 @@ use serde::Serde;
 /// `usize` is an alias for `u32` type.
 pub type usize = u32;
 
-/// `bool` enum representing either `true` or `false`.
+/// `bool` enum representing either `false` or `true`.
 #[derive(Copy, Drop, Default)]
 pub enum bool {
     #[default]
@@ -117,7 +117,7 @@ pub mod circuit;
 pub extern type RangeCheck;
 pub extern type SegmentArena;
 
-/// Felt252 module.
+/// `felt252` module.
 mod felt_252;
 #[allow(unused_imports)]
 use felt_252::{Felt252One, Felt252Zero};
@@ -131,6 +131,7 @@ impl Felt252Serde of Serde<felt252> {
     fn serialize(self: @felt252, ref output: Array<felt252>) {
         output.append(*self);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<felt252> {
         let mut snapshot = serialized.snapshot;
         match crate::array::array_snapshot_pop_front(ref snapshot) {
@@ -195,6 +196,16 @@ impl Felt252Neg of Neg<felt252> {
     }
 }
 
+/// Performs a division on `felt252` values.
+///
+/// # Examples
+///
+/// ```
+/// use core::felt252_div;
+///
+/// assert!(felt252_div(4, 2) == 2);
+/// ```
+///
 pub extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
 
 impl Felt252PartialEq of PartialEq<felt252> {
@@ -398,7 +409,7 @@ pub mod zeroable;
 #[allow(unused_imports)]
 use zeroable::{Zeroable, NonZero};
 
-/// `bytes_31` module.
+/// `bytes31` module.
 pub mod bytes_31;
 #[allow(unused_imports)]
 use bytes_31::{
