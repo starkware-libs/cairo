@@ -1,3 +1,10 @@
+//! Elliptic Curve Digital Signature Algorithm (ECDSA) for the STARK curve.
+//!
+//! This module provides implementations for ECDSA signature verification and public key recovery
+//! specifically tailored for the STARK curve. The implementation includes two primary functions:
+//! - `check_ecdsa_signature`: Verifies the validity of an ECDSA signature.
+//! - `recover_public_key`: Recovers the public key from a given signature.
+
 use crate::{ec, ec::{EcPoint, EcPointTrait, EcStateTrait}};
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
@@ -8,7 +15,7 @@ use crate::traits::{Into, TryInto};
 use crate::zeroable::IsZeroResult;
 
 /// Checks if (`signature_r`, `signature_s`) is a valid ECDSA signature for the given `public_key`
-/// on the given `message`.
+/// on the given `message_hash`.
 ///
 /// Note: the verification algorithm implemented by this function slightly deviates from the
 /// standard ECDSA.
@@ -16,14 +23,13 @@ use crate::zeroable::IsZeroResult;
 /// it means that the signature algorithm used should be modified accordingly.
 /// Namely, it should check that `r, s < stark_curve::ORDER`.
 ///
-/// Arguments:
-/// * `message_hash` - the signed message.
-/// * `public_key` - the public key corresponding to the key with which the message was signed.
-/// * `signature_r` - the `r` component of the ECDSA signature.
-/// * `signature_s` - the `s` component of the ECDSA signature.
+/// # Arguments
+/// * `message_hash`: the signed message.
+/// * `public_key`: the public key corresponding to the key with which the message was signed.
+/// * `signature_r`: the `r` component of the ECDSA signature.
+/// * `signature_s`: the `s` component of the ECDSA signature.
 ///
-/// Returns:
-///   `true` if the signature is valid and `false` otherwise.
+/// Returns `true` if the signature is valid and `false` otherwise.
 // TODO(lior): Make this function nopanic once possible.
 pub fn check_ecdsa_signature(
     message_hash: felt252, public_key: felt252, signature_r: felt252, signature_s: felt252,
