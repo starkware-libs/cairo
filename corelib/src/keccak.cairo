@@ -1,10 +1,12 @@
-//! Keccak module that provides an implementation of the Keccak-256 cryptographic hash function.
+//! Implementation of the Keccak-256 cryptographic hash function.
 //!
-//! Three functions are made available for computing Keccak-256 hash:
-//! - `keccak_u256s_le_inputs`: Computes the Keccak256 of multiple `u256` little-endian values.
-//! - `keccak_u256s_be_inputs`: Computes the Keccak256 of multiple `u256` big-endian values.
-//! - `cairo_keccak`: Computes the Keccak256 of `input` + `last_input_num_bytes` LSB bytes of
+//! Four functions are made available for computing Keccak-256 hash:
+//! - `keccak_u256s_le_inputs`: Computes the Keccak-256 hash of multiple `u256` little-endian
+//! values.
+//! - `keccak_u256s_be_inputs`: Computes the Keccak-256 hash of multiple `u256` big-endian values.
+//! - `cairo_keccak`: Computes the Keccak-256 hash of `input` + `last_input_num_bytes` LSB bytes of
 //! `last_input_word`.
+//! - `compute_keccak_byte_array`: Computes the Keccak-256 hash of a `ByteArray` input.
 //!
 //! # Examples
 //!
@@ -16,7 +18,10 @@
 //! let hash = keccak_u256s_be_inputs(input);
 //!
 //! let mut input: Array<u64> = array![1, 2, 3];
-/// let hash = cairo_keccak(ref input, 0, 0);
+//! let hash = cairo_keccak(ref input, 0, 0);
+//!
+//! let mut input: ByteArray = "input";
+//! let hash = compute_keccak_byte_array(@input);
 //! ```
 
 use crate::array::{Span, ArrayTrait, SpanTrait};
@@ -50,7 +55,7 @@ fn keccak_add_u256_le(ref keccak_input: Array::<u64>, v: u256) {
     keccak_input.append(high);
 }
 
-/// Computes the Keccak256 of multiple `u256` values.
+/// Computes the Keccak-256 hash of multiple `u256` values.
 /// The input values are interpreted as little-endian.
 /// The 32-byte result is represented as a little-endian `u256`.
 ///
@@ -61,6 +66,7 @@ fn keccak_add_u256_le(ref keccak_input: Array::<u64>, v: u256) {
 ///
 /// let input: Span<u256> = array![0, 1, 2].span();
 /// let hash = keccak_u256s_le_inputs(input);
+/// assert!(hash == 108564409375760768785839210880094122205681344913968620748694289447820501098662);
 /// ```
 pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
@@ -85,7 +91,7 @@ fn keccak_add_u256_be(ref keccak_input: Array::<u64>, v: u256) {
     keccak_input.append(high);
 }
 
-/// Computes the Keccak256 of multiple `u256` values.
+/// Computes the Keccak-256 hash of multiple `u256` values.
 /// The input values are interpreted as big-endian.
 /// The 32-byte result is represented as a little-endian `u256`.
 ///
@@ -96,6 +102,7 @@ fn keccak_add_u256_be(ref keccak_input: Array::<u64>, v: u256) {
 ///
 /// let input: Span<u256> = array![0, 1, 2].span();
 /// let hash = keccak_u256s_be_inputs(input);
+/// assert!(hash == 570847462879755027369133508877705016900393103153136337402584556374429500134);
 /// ```
 pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
@@ -111,7 +118,7 @@ pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
     starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
 }
 
-/// Computes the Keccak256 of `input` + `last_input_num_bytes` LSB bytes of `last_input_word`.
+/// Computes the Keccak-256 hash of `input` + `last_input_num_bytes` LSB bytes of `last_input_word`.
 /// To use this function, split the input into words of 64 bits (little endian).
 /// For example, to compute keccak('Hello world!'), use:
 ///   inputs = [8031924123371070792, 560229490]
@@ -119,7 +126,7 @@ pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
 ///   8031924123371070792 == int.from_bytes(b'Hello wo', 'little')
 ///   560229490 == int.from_bytes(b'rld!', 'little')
 ///
-/// Returns the hash as a little endian u256.
+/// Returns the hash as a little endian `u256`.
 ///
 /// # Examples
 ///
@@ -128,6 +135,7 @@ pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
 ///
 /// let mut input: Array<u64> = array![1, 2, 3];
 /// let hash = cairo_keccak(ref input, 0, 0);
+/// assert!(hash == 6252579295546323668400833151898997979548922124224871075182053169822751592236);
 /// ```
 pub fn cairo_keccak(
     ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize,
@@ -136,7 +144,7 @@ pub fn cairo_keccak(
     starknet::syscalls::keccak_syscall(input.span()).unwrap_syscall()
 }
 
-/// The padding in Keccak256 is "1 0* 1".
+/// The padding in Keccak-256 is "1 0* 1".
 /// `last_input_num_bytes` (0-7) is the number of bytes in the last u64 input - `last_input_word`.
 fn add_padding(ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize) {
     let words_divisor = KECCAK_FULL_RATE_IN_U64S.try_into().unwrap();
@@ -197,8 +205,16 @@ fn finalize_padding(ref input: Array<u64>, num_padding_words: u32) {
     finalize_padding(ref input, num_padding_words - 1);
 }
 
-/// Computes the Keccak256 hash of the input `ByteArray` and returns the hash as a little endian
+/// Computes the Keccak-256 hash of the input `ByteArray` and returns the hash as a little endian
 /// `u256`.
+///
+/// # Examples
+///
+/// ```
+/// let mut input: ByteArray = "input";
+/// let hash = compute_keccak_byte_array(@input);
+/// assert!(hash == 5011455638164454593316177716808989569815817790756088890569531890924147099028);
+/// ```
 pub fn compute_keccak_byte_array(arr: @ByteArray) -> u256 {
     let mut input = array![];
     let mut i = 0;
