@@ -507,20 +507,12 @@ mod conversions {
         u384 { limb0, limb1, limb2: upcast(limb2), limb3: 0 }
     }
 
-    pub fn try_from_two_felt252(value: (felt252, felt252)) -> Option<u384> {
-        let (l0, l1) = value;
-        let limbs_01: u256 = l0.into();
-        let limbs_23: u256 = l1.into();
-
-        let (limb1_low32, limb0) = bounded_int::div_rem(limbs_01.low, NZ_POW96_TYPED);
-        let limb1_high64: BoundedInt<0, { POW64 - 1 }> = downcast(limbs_01.high)?;
+    pub fn felt252_try_into_two_u96(value: felt252) -> Option<(u96, u96)> {
+        let v: u256 = value.into();
+        let (limb1_low32, limb0) = bounded_int::div_rem(v.low, NZ_POW96_TYPED);
+        let limb1_high64: BoundedInt<0, { POW64 - 1 }> = downcast(v.high)?;
         let limb1 = bounded_int::add(bounded_int::mul(limb1_high64, POW32_TYPED), limb1_low32);
-
-        let (limb3_low32, limb2) = bounded_int::div_rem(limbs_23.low, NZ_POW96_TYPED);
-        let limb3_high64: BoundedInt<0, { POW64 - 1 }> = downcast(limbs_23.high)?;
-        let limb3 = bounded_int::add(bounded_int::mul(limb3_high64, POW32_TYPED), limb3_low32);
-
-        Option::Some(u384 { limb0, limb1, limb2, limb3 })
+        Option::Some((limb0, limb1))
     }
 
     pub fn try_into_u128(value: u384) -> Option<u128> {
@@ -557,11 +549,8 @@ mod conversions {
         )
     }
 
-    pub fn into_two_felt252(value: u384) -> (felt252, felt252) {
-        (
-            value.limb0.into() + value.limb1.into() * POW96,
-            value.limb2.into() + value.limb3.into() * POW96
-        )
+    pub fn two_u96_into_felt252(limb0: u96, limb1: u96) -> felt252 {
+        limb0.into() + limb1.into() * POW96
     }
 }
 
@@ -597,14 +586,16 @@ impl U384TryIntoU256 of TryInto<u384, u256> {
 
 impl U384Serde of Serde<u384> {
     fn serialize(self: @u384, ref output: Array<felt252>) {
-        let (l01, l23) = conversions::into_two_felt252(*self);
-        output.append(l01);
-        output.append(l23);
+        output.append(conversions::two_u96_into_felt252(*self.limb0, *self.limb1));
+        output.append(conversions::two_u96_into_felt252(*self.limb2, *self.limb3));
     }
 
     fn deserialize(ref serialized: Span<felt252>) -> Option<u384> {
         let [l01, l23] = (*serialized.multi_pop_front::<2>()?).unbox();
-        return conversions::try_from_two_felt252((l01, l23));
+        let (limb0, limb1) = conversions::felt252_try_into_two_u96(l01)?;
+        let (limb2, limb3) = conversions::felt252_try_into_two_u96(l23)?;
+
+        return Option::Some(u384 { limb0, limb1, limb2, limb3 });
     }
 }
 
