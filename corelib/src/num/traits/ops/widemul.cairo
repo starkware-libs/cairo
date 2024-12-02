@@ -1,8 +1,19 @@
+//! Wide multiplication operation.
+//!
+//! This operation is useful for ensuring that the result does not overflow and retains full
+//! precision.
+
 /// A trait for types that can be multiplied together to produce a wider type.
 pub trait WideMul<Lhs, Rhs> {
     /// The type of the result of the multiplication.
     type Target;
-    /// Multiply two values together, producing a wider type.
+    /// Multiplies two values together, producing a wider type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(200_u8.wide_mul(2) == 400_u16);
+    /// ```
     fn wide_mul(self: Lhs, other: Rhs) -> Self::Target;
 }
 
