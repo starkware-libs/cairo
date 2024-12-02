@@ -47,6 +47,8 @@ pub impl PedersenImpl of PedersenTrait {
     /// # Examples
     ///
     /// ```
+    /// use core::pedersen::PedersenTrait;
+    ///
     /// let mut state = PedersenTrait::new(0);
     /// assert!(state.state == 0);
     /// ```
@@ -65,6 +67,9 @@ impl HashStateImpl of crate::hash::HashStateTrait<HashState> {
     /// # Examples
     ///
     /// ```
+    /// use core::hash::HashStateTrait;
+    /// use core::pedersen::PedersenTrait;
+    ///
     /// let mut state = PedersenTrait::new(0);
     /// state = state.update(1);
     /// ```
@@ -80,6 +85,9 @@ impl HashStateImpl of crate::hash::HashStateTrait<HashState> {
     /// # Examples
     ///
     /// ```
+    /// use core::hash::HashStateTrait;
+    /// use core::pedersen::PedersenTrait;
+    ///
     /// let mut state = PedersenTrait::new(0);
     /// state = state.update(1);
     /// let hash = state.finalize();
