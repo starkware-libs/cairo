@@ -1,8 +1,0 @@
-//! > cairo_code
-trait mod {}
-
-//! > syntax
-trait                source.cairo keyword.declaration.trait.cairo storage.type.cairo
-mod                  source.cairo keyword.other.cairo storage.type.cairo
-{                    source.cairo punctuation.brackets.curly.cairo
-}                    source.cairo punctuation.brackets.curly.cairo

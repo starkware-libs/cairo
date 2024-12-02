@@ -98,12 +98,6 @@ Compile the ContractClass of a CompiledClass:
 cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm
 ```
 
-### Development
-
-#### Install the language server
-
-Follow the instructions in [vscode-cairo](./vscode-cairo/README.md).
-
 ## Roadmap
 
 The next milestone is to reach feature parity with the old Cairo version.
