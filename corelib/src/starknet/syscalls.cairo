@@ -1,6 +1,6 @@
-//! Syscall functions for interacting with the Starknet operating system.
+//! Utilities for interacting with the Starknet operating system.
 //!
-//! This module provides a set of functions that represent system calls.
+//! This module provides a set of functions that execute system calls.
 //! These functions allow contracts to interact with the Starknet operating system and perform
 //! various operations, such as calling other contracts, deploying new contracts, and managing
 //! storage.
@@ -15,9 +15,9 @@ use starknet::{
 ///
 /// # Arguments
 ///
-/// `address` - The address of the called contract.
-/// `entry_point_selector` - A selector for a function within that contract.
-/// `calldata` - Call arguments.
+/// * `address` - The address of the called contract.
+/// * `entry_point_selector` - A selector for a function within that contract.
+/// * `calldata` - Call arguments.
 pub extern fn call_contract_syscall(
     address: ContractAddress, entry_point_selector: felt252, calldata: Span<felt252>,
 ) -> SyscallResult<Span<felt252>> implicits(GasBuiltin, System) nopanic;
@@ -26,11 +26,11 @@ pub extern fn call_contract_syscall(
 ///
 /// # Arguments
 ///
-/// `class_hash` - The class hash of the contract to be deployed.
-/// `contract_address_salt` - The salt, an arbitrary value provided by the sender, used in the
-///     computation of the contract's address.
-/// `calldata` - Call arguments for the constructor.
-/// `deploy_from_zero` - Deploy the contract from the zero address.
+/// * `class_hash` - The class hash of the contract to be deployed.
+/// * `contract_address_salt` - The salt, an arbitrary value provided by the sender, used in the
+///  computation of the contract's address.
+/// * `calldata` - Call arguments for the constructor.
+/// * `deploy_from_zero` - Deploy the contract from the zero address.
 ///
 /// Returns the address of the deployed contract and the serialized return value of the constructor.
 pub extern fn deploy_syscall(
@@ -44,8 +44,8 @@ pub extern fn deploy_syscall(
 ///
 /// # Arguments
 ///
-/// `keys` - The keys of the event.
-/// `data` - The data of the event.
+/// * `keys` - The keys of the event.
+/// * `data` - The data of the event.
 pub extern fn emit_event_syscall(
     keys: Span<felt252>, data: Span<felt252>,
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
@@ -54,17 +54,21 @@ pub extern fn emit_event_syscall(
 ///
 /// # Arguments
 ///
-/// `block_number` - The number of the queried block.
+/// * `block_number` - The number of the queried block.
 pub extern fn get_block_hash_syscall(
     block_number: u64,
 ) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
 
 /// Gets information about the current execution.
+///
+/// Returns a box containing the current execution information.
 pub extern fn get_execution_info_syscall() -> SyscallResult<
     Box<starknet::info::ExecutionInfo>,
 > implicits(GasBuiltin, System) nopanic;
 
 /// Gets information about the current execution, version 2.
+///
+/// Returns a box containing the current V2 execution information.
 pub extern fn get_execution_info_v2_syscall() -> SyscallResult<
     Box<starknet::info::v2::ExecutionInfo>,
 > implicits(GasBuiltin, System) nopanic;
@@ -73,9 +77,9 @@ pub extern fn get_execution_info_v2_syscall() -> SyscallResult<
 ///
 /// # Arguments
 ///
-/// `class_hash` - The hash of the class you want to use.
-/// `function_selector` - A selector for a function within that class.
-/// `calldata` - Call arguments.
+/// * `class_hash` - The hash of the class to be used.
+/// * `function_selector` - A selector for a function within that class.
+/// * `calldata` - Call arguments.
 pub extern fn library_call_syscall(
     class_hash: ClassHash, function_selector: felt252, calldata: Span<felt252>,
 ) -> SyscallResult<Span<felt252>> implicits(GasBuiltin, System) nopanic;
@@ -85,8 +89,8 @@ pub extern fn library_call_syscall(
 ///
 /// # Arguments
 ///
-/// `to_address` - The recipient's L1 address.
-/// `payload` - The content of the message.
+/// * `to_address` - The recipient's L1 address.
+/// * `payload` - The content of the message.
 pub extern fn send_message_to_l1_syscall(
     to_address: felt252, payload: Span<felt252>,
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
@@ -95,10 +99,10 @@ pub extern fn send_message_to_l1_syscall(
 ///
 /// # Arguments
 ///
-/// `address_domain` - The domain of the address. Only `address_domain` 0 is currently supported,
-///     in the future it will enable access to address spaces with different data availability
-///     guarantees.
-/// `address` - The address of the storage key to read.
+/// * `address_domain` - The domain of the address. Only `address_domain` 0 is currently supported,
+/// in the future it will enable access to address spaces with different data availability
+/// guarantees.
+/// * `address` - The address of the storage key to read.
 pub extern fn storage_read_syscall(
     address_domain: u32, address: StorageAddress,
 ) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
@@ -107,11 +111,11 @@ pub extern fn storage_read_syscall(
 ///
 /// # Arguments
 ///
-/// `address_domain` - The domain of the address. Only `address_domain` 0 is currently supported,
-///     in the future it will enable access to address spaces with different data availability
-///     guarantees.
-/// `address` - The address of the storage key to write.
-/// `value` - The value to write to the key.
+/// * `address_domain` - The domain of the address. Only `address_domain` 0 is currently supported,
+/// in the future it will enable access to address spaces with different data availability
+/// guarantees.
+/// * `address` - The address of the storage key to write.
+/// * `value` - The value to write to the key.
 pub extern fn storage_write_syscall(
     address_domain: u32, address: StorageAddress, value: felt252,
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
@@ -120,7 +124,7 @@ pub extern fn storage_write_syscall(
 ///
 /// # Arguments
 ///
-/// `class_hash` - The class hash that should replace the current one.
+/// * `class_hash` - The class hash that should replace the current one.
 pub extern fn replace_class_syscall(
     class_hash: ClassHash,
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
@@ -129,7 +133,7 @@ pub extern fn replace_class_syscall(
 ///
 /// # Arguments
 ///
-/// `contract_address` - The address of the deployed contract.
+/// * `contract_address` - The address of the deployed contract.
 ///
 /// Returns the class hash of the contract's originating code.
 pub extern fn get_class_hash_at_syscall(
@@ -140,7 +144,7 @@ pub extern fn get_class_hash_at_syscall(
 ///
 /// # Arguments
 ///
-/// `input` - The input provided to the keccak function.
+/// * `input` - The input provided to the keccak function.
 ///
 /// The system call does not add any padding and the input needs to be a multiple of 1088 bits
 /// (== 17 u64 word).
@@ -148,12 +152,12 @@ pub extern fn keccak_syscall(
     input: Span<u64>,
 ) -> SyscallResult<u256> implicits(GasBuiltin, System) nopanic;
 
-/// Computes the next sha256 state of the input with the given state.
+/// Computes the next SHA-256 state of the input with the given state.
 ///
 /// # Arguments
 ///
-/// `state` - The current sha256 state.
-/// `input` - The input provided to compute the next sha256 state.
+/// * `state` - The current SHA-256 state.
+/// * `input` - The input provided to compute the next SHA-256 state.
 ///
 /// The system call does not add any padding and the input needs to be a multiple of 512 bits
 /// (== 16 u32 word).
