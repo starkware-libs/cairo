@@ -21,7 +21,7 @@ pub trait OverflowingAdd<T> {
     fn overflowing_add(self: T, v: T) -> (T, bool);
 }
 
-/// Performs subtraction with a flag for overflow.
+/// Performs subtraction with a flag for underflow.
 ///
 /// # Examples
 ///
