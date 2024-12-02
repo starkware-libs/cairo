@@ -1,3 +1,8 @@
+//! Function call traits for flexible function invocation.
+//!
+//! This module defines traits for different styles of function calling, providing a flexible
+//! mechanism for invoking functions with varying ownership and mutability semantics.
+
 /// The version of the call operator that takes a by-value receiver.
 ///
 /// Instances of `FnOnce` can be called, but might not be callable multiple
@@ -6,7 +11,6 @@
 ///
 /// `FnOnce` is implemented automatically by closures that might consume captured
 /// variables.
-/// ```
 pub trait FnOnce<T, Args> {
     /// The returned type after the call operator is used.
     type Output;
