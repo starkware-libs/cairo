@@ -194,12 +194,9 @@ error: Plugin diagnostic: The first parameter of an entry point must be `self`.
            ^^^^^^^
 
 warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
- --> lib.cairo:1:1-11:1
-  #[starknet::contract]
- _^
-| ...
-| }
-|_^
+ --> lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1307,12 +1304,9 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
           ^^^
 
 warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
- --> lib.cairo:1:1-7:1
-  #[starknet::contract]
- _^
-| ...
-| }
-|_^
+ --> lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
 
 error: Type not found.
  --> lib.cairo:5:5-6:47
