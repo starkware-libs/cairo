@@ -1,7 +1,7 @@
-//! The `EthAddress` structure contains a 160 bits address represented as a `felt252`.
+//! Ethereum address type for working with Ethereum primitives.
 //!
-//! This module implements some basic traits for the `EthAddress` type, such as [`Serde`],
-//! [`Zero`], and [`Debug`]. It also provides an implementation for [`StorePacking`] trait.
+//! This module provides the [`EthAddress`] type, which is used when interacting with Ethereum
+//! primitives, such as signatures and L1 <-> L2 messages.
 
 use core::debug::PrintTrait;
 #[allow(unused_imports)]
@@ -10,10 +10,9 @@ use core::option::{Option, OptionTrait};
 use core::serde::Serde;
 use core::traits::{Into, TryInto};
 
-/// A 160 bits Ethereum address.
+/// An Ethereum address, 20 bytes in length.
 #[derive(Copy, Drop, Hash, PartialEq)]
 pub struct EthAddress {
-    /// The address represented as a `felt252`.
     address: felt252,
 }
 
@@ -45,6 +44,7 @@ pub(crate) impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
     }
 }
 
+/// Creates an `EthAddress` from the 20 least significant bytes of a `u256`.
 pub(crate) impl U256IntoEthAddress of Into<u256, EthAddress> {
     fn into(self: u256) -> EthAddress {
         // The Ethereum address is the 20 least significant bytes (=160=128+32 bits) of the value.
