@@ -281,3 +281,28 @@ error: Unexpected return type. Expected: "core::integer::u8", found: "core::inte
  --> lib.cairo:6:17
     fn bar() -> u8 {
                 ^^
+
+//! > ==========================================================================
+
+//! > Closure wrong return type
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> () {
+    || -> u8 {
+        1_u16
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
+ --> lib.cairo:2:11
+    || -> u8 {
+          ^^
