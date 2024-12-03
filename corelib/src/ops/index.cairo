@@ -104,7 +104,7 @@ impl DeprecatedIndexViewImpl<
 /// # Examples
 ///
 /// The following example implements `Index` on a `Stack` type. This `Stack` is implemented based on
-/// a [`Felt252Dict`], where dictionary accesses are modifying the dicitonary itself. As such, we
+/// a [`Felt252Dict`], where dictionary accesses are modifying the dictionary itself. As such, we
 /// must implement the `Index` trait instead of the `IndexView` trait.
 ///
 /// [`Felt252Dict`]: core::dict::Felt252Dict
