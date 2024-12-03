@@ -375,9 +375,9 @@ foo
 
 //! > semantic_diagnostics
 error: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
- --> lib.cairo:1:43
+ --> lib.cairo:1:38
 fn foo(mut data: Span::<felt252>) -> u128 {
-                                          ^
+                                     ^**^
 
 //! > lowering_diagnostics
 
