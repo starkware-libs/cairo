@@ -87,6 +87,10 @@ impl GenericArgumentId {
             GenericArgumentId::NegImpl => true,
         }
     }
+    /// Short name of the generic argument.
+    pub fn short_name(&self, db: &dyn SemanticGroup) -> String {
+        if let GenericArgumentId::Type(ty) = self { ty.short_name(db) } else { self.format(db) }
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
     fn fmt(
