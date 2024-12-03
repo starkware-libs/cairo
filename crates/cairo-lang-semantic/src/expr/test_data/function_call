@@ -181,3 +181,103 @@ error: Trait has no implementation in context: core::traits::Add::<test::MyStruc
  --> lib.cairo:13:5
     d + 0;
     ^***^
+
+//! > ==========================================================================
+
+//! > Return type should be empty
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> () {
+    4_u8
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "()", found: "core::integer::u8".
+ --> lib.cairo:1:13
+fn foo() -> () {
+            ^^
+
+//! > ==========================================================================
+
+//! > Return type should not be empty
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> u8 {}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u8", found: "()".
+ --> lib.cairo:1:13
+fn foo() -> u8 {}
+            ^^
+
+//! > ==========================================================================
+
+//! > Trait return wrong return type
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> () {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn bar() -> u8 {
+        1_u16
+    }
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
+ --> lib.cairo:2:17
+    fn bar() -> u8 {
+                ^^
+
+//! > ==========================================================================
+
+//! > Impl return wrong return type
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> () {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn bar() -> u8;
+}
+
+impl MyImpl of MyTrait {
+    fn bar() -> u8 {
+        1_u16
+    }
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
+ --> lib.cairo:6:17
+    fn bar() -> u8 {
+                ^^

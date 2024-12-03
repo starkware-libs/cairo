@@ -330,9 +330,9 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
- --> lib.cairo:11:21
+ --> lib.cairo:11:17
     fn foo() -> u16 {
-                    ^
+                ^*^
 
 //! > ==========================================================================
 

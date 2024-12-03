@@ -234,9 +234,9 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::bool", found: "()".
- --> lib.cairo:1:18
+ --> lib.cairo:1:13
 fn foo() -> bool {
-                 ^
+            ^**^
 
 //! > ==========================================================================
 
