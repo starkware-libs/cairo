@@ -78,9 +78,15 @@ fn add_abi_diagnostics(
     };
     for err in abi_builder.errors() {
         if !matches!(err, ABIError::SemanticError) {
+            let contract_stable_ptr =
+                if let Ok(Some(attr)) = contract.module_id().find_attr(db, CONTRACT_ATTR) {
+                    attr.stable_ptr.untyped()
+                } else {
+                    contract.submodule_id.stable_ptr(db.upcast()).untyped()
+                };
+
             diagnostics.push(PluginDiagnostic::warning(
-                err.location(db)
-                    .unwrap_or_else(|| contract.submodule_id.stable_ptr(db.upcast()).untyped()),
+                err.location(db).unwrap_or(contract_stable_ptr),
                 format!("Failed to generate ABI: {err}"),
             ));
         }
