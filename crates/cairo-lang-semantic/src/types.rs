@@ -13,6 +13,7 @@ use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, define_short_id, try_ex
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::Zero;
+use sha3::{Digest, Keccak256};
 use smol_str::SmolStr;
 
 use crate::corelib::{
@@ -109,6 +110,11 @@ impl TypeId {
     /// sized array containing it.
     pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
         self.lookup_intern(db).is_phantom(db)
+    }
+
+    /// Short name of the type argument.
+    pub fn short_name(&self, db: &dyn SemanticGroup) -> String {
+        db.priv_type_short_name(*self)
     }
 }
 impl TypeLongId {
@@ -265,7 +271,6 @@ impl ConcreteTypeId {
         }
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
-        // TODO(spapini): Format generics.
         let generic_type_format = self.generic_type(db).format(db.upcast());
         let mut generic_args = self.generic_args(db).into_iter();
         if let Some(first) = generic_args.next() {
@@ -275,13 +280,13 @@ impl ConcreteTypeId {
             f.push_str("::<");
             f.push_str(&first.format(db));
             for arg in generic_args {
-                // If the formatted type is becoming too long, stop adding more arguments.
-                if f.len() > CHARS_BOUND {
-                    f.push_str(", ...");
-                    break;
-                }
                 f.push_str(", ");
-                f.push_str(&arg.format(db));
+                if f.len() > CHARS_BOUND {
+                    // If the formatted type is becoming too long, add short version of arguments.
+                    f.push_str(&arg.short_name(db));
+                } else {
+                    f.push_str(&arg.format(db));
+                }
             }
             f.push('>');
             f
@@ -896,6 +901,46 @@ pub fn priv_type_is_var_free(db: &dyn SemanticGroup, ty: TypeId) -> bool {
             closure.param_tys.iter().all(|param| param.is_var_free(db))
                 && closure.ret_ty.is_var_free(db)
         }
+    }
+}
+
+pub fn priv_type_short_name(db: &dyn SemanticGroup, ty: TypeId) -> String {
+    match ty.lookup_intern(db) {
+        TypeLongId::Concrete(concrete_type_id) => {
+            let mut result = concrete_type_id.generic_type(db).format(db.upcast());
+            let mut generic_args = concrete_type_id.generic_args(db).into_iter().peekable();
+            if generic_args.peek().is_some() {
+                result.push_str("::<h0x");
+                let mut hasher = Keccak256::new();
+                for arg in generic_args {
+                    hasher.update(arg.short_name(db).as_bytes());
+                }
+                for c in hasher.finalize() {
+                    result.push_str(&format!("{c:x}"));
+                }
+                result.push('>');
+            }
+            result
+        }
+        TypeLongId::Tuple(types) => {
+            let mut result = String::from("(h0x");
+            let mut hasher = Keccak256::new();
+            for ty in types {
+                hasher.update(ty.short_name(db).as_bytes());
+            }
+            for c in hasher.finalize() {
+                result.push_str(&format!("{c:x}"));
+            }
+            result.push(')');
+            result
+        }
+        TypeLongId::Snapshot(ty) => {
+            format!("@{}", ty.short_name(db))
+        }
+        TypeLongId::FixedSizeArray { type_id, size } => {
+            format!("[{}; {:?}", type_id.short_name(db), size.debug(db.elongate()))
+        }
+        other => other.format(db),
     }
 }
 

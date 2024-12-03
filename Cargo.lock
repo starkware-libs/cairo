@@ -930,6 +930,7 @@ dependencies = [
  "num-traits 0.2.19",
  "pretty_assertions",
  "rust-analyzer-salsa",
+ "sha3",
  "smol_str",
  "test-log",
  "toml",
