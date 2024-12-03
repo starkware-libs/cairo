@@ -10,6 +10,8 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -41,10 +43,8 @@ pub fn compile_path(
     contract_path: Option<&str>,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
-    let mut db = RootDatabase::builder()
-        .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
-        .build()?;
+    let mut db = RootDatabase::builder().detect_corelib().build()?;
+    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 

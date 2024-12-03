@@ -1,5 +1,6 @@
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
-use cairo_lang_semantic::plugin::PluginSuite;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_syntax::node::ast::ModuleItem;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -41,9 +42,10 @@ fn can_collect_executables() {
         #[some]
         fn test() -> felt252 { x() }
     "#};
-    let mut suite = PluginSuite::default();
+    let mut suite = get_default_plugin_suite();
     suite.add_plugin::<MockExecutablePlugin>();
-    let mut db = RootDatabase::builder().detect_corelib().with_plugin_suite(suite).build().unwrap();
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+    db.set_plugins_from_suite(suite);
     let crate_id = setup_test_crate(&db, content);
     let config = CompilerConfig { replace_ids: true, ..CompilerConfig::default() };
     let artefact = compile_prepared_db_program_artifact(&mut db, vec![crate_id], config).unwrap();

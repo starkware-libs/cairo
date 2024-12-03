@@ -15,6 +15,8 @@ use cairo_lang_runner::profiling::{
 use cairo_lang_runner::{
     ProfilingInfoCollectionConfig, RunResultValue, SierraCasmRunner, StarknetExecutionResources,
 };
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, StatementIdx};
@@ -234,12 +236,15 @@ impl TestCompiler {
             }
             b.detect_corelib();
             b.with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]));
-            b.with_plugin_suite(test_plugin_suite());
-            if config.starknet {
-                b.with_plugin_suite(starknet_plugin_suite());
-            }
             b.build()?
         };
+
+        let mut plugin_suite = get_default_plugin_suite() + test_plugin_suite();
+        if config.starknet {
+            plugin_suite += starknet_plugin_suite();
+        }
+
+        db.set_plugins_from_suite(plugin_suite);
 
         let main_crate_ids = setup_project(db, Path::new(&path))?;
 

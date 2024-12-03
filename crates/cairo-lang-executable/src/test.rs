@@ -3,6 +3,8 @@ use std::sync::{LazyLock, Mutex};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_plugins::test_utils::expand_module_text;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
@@ -14,14 +16,9 @@ use crate::plugin::executable_plugin_suite;
 /// Salsa database configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
 pub static SHARED_DB: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
-    Mutex::new(
-        RootDatabase::builder()
-            .skip_auto_withdraw_gas()
-            .detect_corelib()
-            .with_plugin_suite(executable_plugin_suite())
-            .build()
-            .unwrap(),
-    )
+    let mut db = RootDatabase::builder().skip_auto_withdraw_gas().detect_corelib().build().unwrap();
+    db.set_plugins_from_suite(get_default_plugin_suite() + executable_plugin_suite());
+    Mutex::new(db)
 });
 
 #[derive(Default)]

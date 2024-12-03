@@ -5,6 +5,8 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::optimizations::config::OptimizationConfig;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
@@ -24,6 +26,7 @@ use itertools::Itertools;
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
 static SHARED_DB_WITH_GAS_NO_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+    db.set_plugins_from_suite(get_default_plugin_suite());
     db.set_optimization_config(Arc::new(
         OptimizationConfig::default().with_skip_const_folding(true),
     ));
@@ -31,6 +34,7 @@ static SHARED_DB_WITH_GAS_NO_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new
 });
 static SHARED_DB_NO_GAS_NO_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
+    db.set_plugins_from_suite(get_default_plugin_suite());
     db.set_optimization_config(Arc::new(
         OptimizationConfig::default().with_skip_const_folding(true),
     ));
@@ -38,6 +42,7 @@ static SHARED_DB_NO_GAS_NO_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|
 });
 static SHARED_DB_WITH_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
+    db.set_plugins_from_suite(get_default_plugin_suite());
     db.set_optimization_config(Arc::new(OptimizationConfig::default()));
     Mutex::new(db)
 });

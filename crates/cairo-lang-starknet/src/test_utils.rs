@@ -8,6 +8,8 @@ use cairo_lang_compiler::project::ProjectConfig;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_lowering::utils::InliningStrategy;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_starknet_classes::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use cairo_lang_test_utils::test_lock;
@@ -26,13 +28,9 @@ pub fn get_example_file_path(file_name: &str) -> PathBuf {
 /// Salsa database configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
 pub static SHARED_DB: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
-    Mutex::new(
-        RootDatabase::builder()
-            .detect_corelib()
-            .with_plugin_suite(starknet_plugin_suite())
-            .build()
-            .unwrap(),
-    )
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
+    Mutex::new(db)
 });
 
 const CONTRACTS_CRATE_DIR: &str = "cairo_level_tests";
@@ -41,16 +39,14 @@ const CONTRACTS_CRATE_DIR: &str = "cairo_level_tests";
 /// tests should be able to use the cached queries that rely on the corelib's or the contracts
 /// crates code, which vastly reduces the tests runtime.
 pub static SHARED_DB_WITH_CONTRACTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
-    Mutex::new(
-        RootDatabase::builder()
-            .detect_corelib()
-            .with_project_config(
-                ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap(),
-            )
-            .with_plugin_suite(starknet_plugin_suite())
-            .build()
-            .unwrap(),
-    )
+    let mut db = RootDatabase::builder()
+        .detect_corelib()
+        .with_project_config(ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap())
+        .build()
+        .unwrap();
+
+    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
+    Mutex::new(db)
 });
 
 /// Returns the compiled test contract from the contracts crate, with replaced ids.

@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
@@ -41,11 +43,9 @@ pub fn test_profiling(
         profiling_info_collection_config.collect_scoped_sierra_statement_weights = true;
     }
 
-    let db = RootDatabase::builder()
-        .with_plugin_suite(starknet_plugin_suite())
-        .detect_corelib()
-        .build()
-        .unwrap();
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
+
     let (_path, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
     let test_module = setup_test_module(&db, &cairo_code).unwrap();
     DiagnosticsReporter::stderr()

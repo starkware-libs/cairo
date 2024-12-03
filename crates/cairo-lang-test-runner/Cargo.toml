@@ -11,6 +11,7 @@ anyhow.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.9.1" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.9.1" }
 cairo-lang-runner = { path = "../cairo-lang-runner", version = "~2.9.1" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.9.1" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.9.1" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "~2.9.1" }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "~2.9.1" }

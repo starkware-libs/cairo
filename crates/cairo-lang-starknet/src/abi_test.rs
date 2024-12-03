@@ -1,5 +1,7 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -15,11 +17,9 @@ pub fn test_abi_failure(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut RootDatabase::builder()
-        .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
-        .build()
-        .unwrap();
+    let db = &mut RootDatabase::builder().detect_corelib().build().unwrap();
+    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
+
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
     let (module, diagnostics) = setup_test_module(db, &cairo_code).split();
 
@@ -60,11 +60,9 @@ pub fn test_storage_path_check(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut RootDatabase::builder()
-        .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
-        .build()
-        .unwrap();
+    let db = &mut RootDatabase::builder().detect_corelib().build().unwrap();
+    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
+
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
     let (_, diagnostics) = setup_test_module(db, &cairo_code).split();
 

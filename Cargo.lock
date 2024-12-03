@@ -1094,6 +1094,7 @@ dependencies = [
  "cairo-lang-compiler",
  "cairo-lang-filesystem",
  "cairo-lang-runner",
+ "cairo-lang-semantic",
  "cairo-lang-sierra",
  "cairo-lang-sierra-generator",
  "cairo-lang-sierra-to-casm",
