@@ -2,10 +2,3 @@
 # Don't correct the shorthand for ByteArray.
 ba = "ba"
 compilability = "compilability"
-# jod_thread crate in LS
-jod = "jod"
-
-[files]
-extend-exclude = [
-    "crates/cairo-lang-language-server/tests/test_data/**/*.txt",
-]
