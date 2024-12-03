@@ -1,31 +1,86 @@
-//! Indexing traits for accessing collection elements.
+//! Indexing traits for indexing operations on collections.
 //!
-//! This module defines traits for implementing the indexing `[]` operator,
-//! providing flexible mechanisms for accessing elements in collections.
+//! This module provides traits for implementing the indexing operator `[]`, offering two distinct
+//! approaches to access elements in collections:
 //!
-//! The [`IndexView`] and [`Index`] traits are for implementing the `[]` operator. Only one should
-//! be implemented for each type. Both are not consuming of `self`, the first gets a snapshot of the
-//! object and the second gets a reference.
+//! * [`IndexView`] - For snapshot-based access
+//! * [`Index`] - For reference-based access
+//!
+//! # When to use which trait
+//!
+//! - Use [`IndexView`] when the collection can be accessed in a read-only context and is not
+//! mutated
+//!   by a read access. This is the most common case in Cairo.
+//! - Use [`Index`] when the input type needs to be passed as `ref`. This is mainly useful for types
+//!   depending on a [`Felt252Dict`], where dictionary accesses are modifying the data structure
+//!   itself.
+//!
+//! Only one of these traits should be implemented for any given type, not both.
+//!
+//! [`Felt252Dict`]: core::dict::Felt252Dict
 
 #[feature("deprecated-index-traits")]
 use crate::traits::IndexView as DeprecatedIndexView;
 #[feature("deprecated-index-traits")]
 use crate::traits::Index as DeprecatedIndex;
 
-
-/// A trait for a view of an item contained in type `C` with an index of type `I`.
-/// Allows for accessing elements with the `[]` operator.
-/// Should not be implemented for a type if `Index` is already implemented.
+/// A trait for indexing operations (`container[index]`) where the input type is not modified.
+///
+/// `container[index]` is syntactic sugar for `container.index(index)`.
+///
+/// # Examples
+///
+/// The following example implements `IndexView` on a `NucleotideCount` container, which can be
+/// indexed without modifying the input, enabling individual counts to be retrieved with index
+/// syntax.
+///
+/// ```
+/// use core::ops::IndexView;
+///
+/// #[derive(Copy, Drop)]
+/// enum Nucleotide {
+///      A,
+///      C,
+///      G,
+///      T,
+///  }
+///
+/// #[derive(Copy, Drop)]
+/// struct NucleotideCount {
+///      a: usize,
+///      c: usize,
+///      g: usize,
+///      t: usize,
+///  }
+///
+/// impl NucleotideIndex of IndexView<NucleotideCount, Nucleotide> {
+///      type Target = usize;
+///
+///      fn index(self: @NucleotideCount, index: Nucleotide) -> Self::Target {
+///          match index {
+///              Nucleotide::A => *self.a,
+///              Nucleotide::C => *self.c,
+///              Nucleotide::G => *self.g,
+///              Nucleotide::T => *self.t,
+///          }
+///      }
+///  }
+///
+/// let nucleotide_count = NucleotideCount {a: 14, c: 9, g: 10, t: 12};
+/// assert!(nucleotide_count[Nucleotide::A] == 14);
+/// assert!(nucleotide_count[Nucleotide::C] == 9);
+/// assert!(nucleotide_count[Nucleotide::G] == 10);
+/// assert!(nucleotide_count[Nucleotide::T] == 12);
+/// ```
 pub trait IndexView<C, I> {
-    /// The type of the item.
+    /// The returned type after indexing.
     type Target;
-    /// Returns the item at the given index.
+
+    /// Performs the indexing (`container[index]`) operation.
     ///
-    /// # Examples
+    /// # Panics
     ///
-    /// ```
-    /// let arr = array![1, 2, 3];
-    /// assert!(arr[0] == @1);
+    /// May panic if the index is out of bounds.
     fn index(self: @C, index: I) -> Self::Target;
 }
 
@@ -38,13 +93,63 @@ impl DeprecatedIndexViewImpl<
     }
 }
 
-/// A trait for accessing an item contained in type `C` with an index of type `I`.
-/// Allows for accessing elements with the `[]` operator.
-/// Should not be implemented for a type if `IndexView` is already implemented.
+/// A trait for indexing operations (`container[index]`) where the input type is mutated.
+///
+/// This trait should be implemented when you want to implement indexing operations on a type that's
+/// mutated by a read access. This is useful for any type depending on a [`Felt252Dict`], where
+/// dictionary accesses are modifying the data structure itself.
+///
+/// `container[index]` is syntactic sugar for `container.index(index)`.
+///
+/// # Examples
+///
+/// The following example implements `Index` on a `Stack` type. This `Stack` is implemented based on
+/// a [`Felt252Dict`], where dictionary accesses are modifying the dicitonary itself. As such, we
+/// must implement the `Index` trait instead of the `IndexView` trait.
+///
+/// [`Felt252Dict`]: core::dict::Felt252Dict
+///
+/// ```
+/// use core::ops::Index;
+///
+/// #[derive(Destruct, Default)]
+/// struct Stack {
+///     items: Felt252Dict<u128>,
+///     len: usize
+/// }
+///
+/// #[generate_trait]
+/// impl StackImpl of StackTrait {
+///     fn push(ref self: Stack, item: u128) {
+///         self.items.insert(self.len.into(), item);
+///         self.len += 1;
+///     }
+/// }
+///
+/// impl StackIndex of Index<Stack, usize> {
+///      type Target = u128;
+///
+///      fn index(ref self: Stack, index: usize) -> Self::Target {
+///          if index >= self.len {
+///              panic!("Index out of bounds");
+///          }
+///          self.items.get(index.into())
+///      }
+///  }
+///
+/// let mut stack: Stack = Default::default();
+/// stack.push(1);
+/// assert!(stack[0] == 1);
+/// ```
 pub trait Index<C, I> {
-    /// The type of the item.
+    /// The returned type after indexing.
     type Target;
-    /// Returns the item at the given index.
+
+    /// Performs the indexing (`container[index]`) operation.
+    ///
+    /// # Panics
+    ///
+    /// May panic if the index is out of bounds.
     fn index(ref self: C, index: I) -> Self::Target;
 }
 
@@ -57,4 +162,3 @@ impl DeprecatedIndexImpl<
         Deprecated::index(ref self, index)
     }
 }
-
