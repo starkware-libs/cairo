@@ -9,8 +9,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::Usages;
 use crate::Expr;
-use crate::db::SemanticGroup;
+use crate::db::{PluginSuiteInput, SemanticGroup};
 use crate::expr::fmt::ExprFormatter;
+use crate::inline_macros::get_default_plugin_suite;
 use crate::test_utils::{SemanticDatabaseForTesting, TestFunction};
 
 cairo_lang_test_utils::test_file_test!(
@@ -27,15 +28,20 @@ fn test_function_usage(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut SemanticDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = TestFunction::builder(
+
+    let test_function_builder = TestFunction::builder(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
         None,
-    )
-    .build_and_check_for_diagnostics(db)
-    .split();
+    );
+
+    let crate_id = unsafe { test_function_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    let (test_function, semantic_diagnostics) =
+        test_function_builder.build_and_check_for_diagnostics(db).split();
 
     let file_id = db.module_file(test_function.function_id.module_file_id(db)).unwrap();
 

@@ -1,6 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::TestFunction;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -34,18 +36,21 @@ fn check_variable_lifetime(
 ) -> TestRunnerResult {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
-    let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
+    let db = &mut SierraGenDatabaseForTesting::without_add_withdraw_gas();
 
-    // Parse code and create semantic model.
-    let test_function = TestFunction::builder(
+    let test_function_builder = TestFunction::builder(
         db,
         inputs["function_code"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
         None,
-    )
-    .build_and_check_for_diagnostics(db)
-    .unwrap();
+    );
+
+    let crate_id = unsafe { test_function_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    // Parse code and create semantic model.
+    let test_function = test_function_builder.build_and_check_for_diagnostics(db).unwrap();
 
     db.module_lowering_diagnostics(test_function.module_id)
         .unwrap()

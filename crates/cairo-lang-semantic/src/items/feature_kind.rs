@@ -1,6 +1,7 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR,
 };
@@ -177,6 +178,7 @@ pub struct FeatureConfigRestore {
 /// Returns the allowed features of an object which supports attributes.
 pub fn extract_item_feature_config(
     db: &dyn SemanticGroup,
+    crate_id: CrateId,
     syntax: &impl QueryAttrs,
     diagnostics: &mut SemanticDiagnostics,
 ) -> FeatureConfig {
@@ -212,7 +214,7 @@ pub fn extract_item_feature_config(
                 config.allow_unused_imports = true;
                 true
             }
-            other => db.declared_allows().contains(other),
+            other => db.declared_allows(crate_id).contains(other),
         },
     );
     config
@@ -253,7 +255,9 @@ pub fn extract_feature_config(
 ) -> FeatureConfig {
     let defs_db = db.upcast();
     let mut current_module_id = element_id.parent_module(defs_db);
-    let mut config_stack = vec![extract_item_feature_config(db, syntax, diagnostics)];
+    let crate_id = current_module_id.owning_crate(defs_db);
+
+    let mut config_stack = vec![extract_item_feature_config(db, crate_id, syntax, diagnostics)];
     let mut config = loop {
         match current_module_id {
             ModuleId::CrateRoot(crate_id) => {
@@ -270,7 +274,7 @@ pub fn extract_feature_config(
                 let module = &db.module_submodules(current_module_id).unwrap()[&id];
                 // TODO(orizi): Add parent module diagnostics.
                 let ignored = &mut SemanticDiagnostics::default();
-                config_stack.push(extract_item_feature_config(db, module, ignored));
+                config_stack.push(extract_item_feature_config(db, crate_id, module, ignored));
             }
         }
     };

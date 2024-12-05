@@ -25,12 +25,10 @@ fn build_db(params: &E2eTestParams) -> RootDatabase {
     if !params.skip_optimization_passes {
         let mut db =
             RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
-        db.set_plugins_from_suite(get_default_plugin_suite());
         db.set_optimization_config(Arc::new(OptimizationConfig::default()));
         db
     } else if params.add_withdraw_gas {
         let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-        db.set_plugins_from_suite(get_default_plugin_suite());
         db.set_optimization_config(Arc::new(
             OptimizationConfig::default().with_skip_const_folding(true),
         ));
@@ -38,7 +36,6 @@ fn build_db(params: &E2eTestParams) -> RootDatabase {
     } else {
         let mut db =
             RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
-        db.set_plugins_from_suite(get_default_plugin_suite());
         db.set_optimization_config(Arc::new(
             OptimizationConfig::default().with_skip_const_folding(true),
         ));
@@ -218,18 +215,19 @@ fn run_e2e_test(
     inputs: &OrderedHashMap<String, String>,
     params: E2eTestParams,
 ) -> TestRunnerResult {
-    let db = build_db(&params);
+    let mut db = build_db(&params);
 
-    // Parse code and create semantic model.
-    let test_module = TestModule::builder(&db, inputs["cairo"].as_str(), None)
-        .build_and_check_for_diagnostics(&db)
-        .unwrap();
+    let test_module_builder = TestModule::builder(&db, inputs["cairo"].as_str(), None);
+    let crate_id = unsafe { test_module_builder.get_crate_id() };
 
-    DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]).ensure(&db).unwrap();
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    test_module_builder.build_and_check_for_diagnostics(&db).unwrap();
+    DiagnosticsReporter::stderr().with_crates(&[crate_id]).ensure(&db).unwrap();
 
     // Compile to Sierra.
     let SierraProgramWithDebug { program: sierra_program, .. } =
-        Arc::unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).expect(
+        Arc::unwrap_or_clone(db.get_sierra_program(vec![crate_id]).expect(
             "`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics",
         ));
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);

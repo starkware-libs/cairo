@@ -185,13 +185,15 @@ pub fn priv_struct_definition_data(
     );
     diagnostics.extend(generic_params_data.diagnostics);
 
+    let crate_id = resolver.owning_crate_id;
+
     // Members.
     let mut members = OrderedHashMap::default();
     for member in struct_ast.members(syntax_db).elements(syntax_db) {
         let feature_restore = resolver
             .data
             .feature_config
-            .override_with(extract_item_feature_config(db, &member, &mut diagnostics));
+            .override_with(extract_item_feature_config(db, crate_id, &member, &mut diagnostics));
         let id = MemberLongId(module_file_id, member.stable_ptr()).intern(db);
         let ty = resolve_type(
             db,
@@ -234,10 +236,13 @@ pub fn struct_definition_diagnostics(
     let Ok(data) = db.priv_struct_definition_data(struct_id) else {
         return Default::default();
     };
+
+    let owning_crate_id = data.resolver_data.module_file_id.0.owning_crate(db.upcast());
+
     // If the struct is a phantom type, no need to check if its members are fully valid types, as
     // they won't be used.
     if db
-        .declared_phantom_type_attributes()
+        .declared_phantom_type_attributes(owning_crate_id)
         .iter()
         .any(|attr| struct_id.has_attr(db, attr).unwrap_or_default())
     {

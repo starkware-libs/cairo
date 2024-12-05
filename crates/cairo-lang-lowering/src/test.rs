@@ -6,7 +6,8 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup};
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::{TestExpr, TestFunction, TestModule};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -65,15 +66,21 @@ fn test_function_lowering(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = TestFunction::builder(
+
+    let test_function_builder = TestFunction::builder(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
         None,
-    )
-    .build_and_check_for_diagnostics(db)
-    .split();
+    );
+
+    let crate_id = unsafe { test_function_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    let (test_function, semantic_diagnostics) =
+        test_function_builder.build_and_check_for_diagnostics(db).split();
+
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
@@ -112,10 +119,12 @@ fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
 fn test_location_and_diagnostics() {
     let db = &mut LoweringDatabaseForTesting::default();
 
-    let test_expr = TestExpr::builder(db, "a = a * 3", "", "let mut a = 5;", None)
-        .build_and_check_for_diagnostics(db)
-        .unwrap();
+    let test_expr_builder = TestExpr::builder(db, "a = a * 3", "", "let mut a = 5;", None);
 
+    let crate_id = unsafe { test_expr_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    let test_expr = test_expr_builder.build_and_check_for_diagnostics(db).unwrap();
     let function_body = db.function_body(test_expr.function_id).unwrap();
 
     let expr_location = StableLocation::new(
@@ -195,7 +204,7 @@ fn test_sizes() {
         ("core::cmp::min::<u8>::Coupon", 0),
     ];
 
-    let test_module = TestModule::builder(
+    let test_module_builder = TestModule::builder(
         db,
         &type_to_size
             .iter()
@@ -203,9 +212,13 @@ fn test_sizes() {
             .map(|(i, (ty_str, _))| format!("type T{i} = {ty_str};\n"))
             .join(""),
         None,
-    )
-    .build_and_check_for_diagnostics(db)
-    .unwrap();
+    );
+
+    let crate_id = unsafe { test_module_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    let test_module = test_module_builder.build_and_check_for_diagnostics(db).unwrap();
+
     let db: &LoweringDatabaseForTesting = db;
     let type_aliases = db.module_type_aliases(test_module.module_id).unwrap();
     assert_eq!(type_aliases.len(), type_to_size.len());

@@ -8,15 +8,16 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
-use crate::db::SemanticGroup;
+use crate::db::{PluginSuiteInput, SemanticGroup};
 use crate::expr::fmt::ExprFormatter;
+use crate::plugin::PluginSuite;
 use crate::test_utils::{SemanticDatabaseForTesting, TestModule};
 
 #[test]
 fn test_resolve_path() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
-    let test_module = TestModule::builder(
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_module_builder = TestModule::builder(
         db,
         indoc! {"
             use core::Box;
@@ -29,9 +30,12 @@ fn test_resolve_path() {
             }
         "},
         None,
-    )
-    .build_and_check_for_diagnostics(db)
-    .unwrap();
+    );
+
+    let crate_id = unsafe { test_module_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
+    let test_module = test_module_builder.build_and_check_for_diagnostics(db).unwrap();
     let module_id = test_module.module_id;
 
     let function_id = FunctionWithBodyId::Free(extract_matches!(
@@ -57,10 +61,11 @@ fn set_file_content(db: &mut SemanticDatabaseForTesting, path: &str, content: &s
 
 #[test]
 fn test_resolve_path_super() {
-    let mut db_val = SemanticDatabaseForTesting::new_empty();
-    let db = &mut db_val;
+    let db = &mut SemanticDatabaseForTesting::new_empty();
 
     let crate_id = CrateId::plain(db, "test");
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
     let root = Directory::Real("src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
@@ -100,9 +105,9 @@ fn test_resolve_path_super() {
 
 #[test]
 fn test_resolve_path_trait_impl() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
-    let test_module = TestModule::builder(
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_module_builder = TestModule::builder(
         db,
         indoc! {"
             trait MyTrait {
@@ -120,9 +125,12 @@ fn test_resolve_path_trait_impl() {
             }
         "},
         None,
-    )
-    .build_and_check_for_diagnostics(db)
-    .unwrap();
+    );
+
+    let crate_id = unsafe { test_module_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
+    let test_module = test_module_builder.build_and_check_for_diagnostics(db).unwrap();
     let module_id = test_module.module_id;
 
     let function_id = FunctionWithBodyId::Free(extract_matches!(
