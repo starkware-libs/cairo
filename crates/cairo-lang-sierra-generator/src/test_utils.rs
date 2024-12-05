@@ -8,10 +8,10 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{FlagId, VirtualFile};
+use cairo_lang_filesystem::ids::{CrateId, FlagId, VirtualFile};
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup};
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
@@ -60,10 +60,8 @@ impl SierraGenDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SierraGenDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
-        let suite = get_default_plugin_suite();
-        res.set_macro_plugins(suite.plugins);
-        res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
-        res.set_analyzer_plugins(suite.analyzer_plugins);
+
+        res.set_crate_plugins_from_suite(CrateId::core(&res), get_default_plugin_suite());
 
         res.set_optimization_config(Arc::new(
             OptimizationConfig::default().with_minimal_movable_functions(),
@@ -133,6 +131,11 @@ impl Upcast<dyn ParserGroup> for SierraGenDatabaseForTesting {
         self
     }
 }
+impl Upcast<dyn SierraGenGroup> for SierraGenDatabaseForTesting {
+    fn upcast(&self) -> &(dyn SierraGenGroup + 'static) {
+        self
+    }
+}
 
 /// Compiles `content` to sierra and replaces the sierra ids to make it readable.
 pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::Program {
@@ -145,32 +148,39 @@ pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::P
     replace_sierra_ids_in_program(&db, &program)
 }
 
-/// Adds `content` to a salsa db and returns the crate id that points to it.
+/// Creates a crate with `content` and interns it into a Salsa db.
+/// Returns the [`cairo_lang_filesystem::ids::CrateId`] that points to the created crate.
+/// Loads default plugins for the created crate.
 pub fn setup_db_and_get_crate_id(
     content: &str,
 ) -> (SierraGenDatabaseForTesting, cairo_lang_filesystem::ids::CrateId) {
-    let db_val = SierraGenDatabaseForTesting::default();
-    let db = &db_val;
-    let crate_id = setup_test_crate(db, content, None);
+    let mut db = SierraGenDatabaseForTesting::default();
+
+    let crate_id = setup_test_crate(&db, content, None);
     let module_id = ModuleId::CrateRoot(crate_id);
+
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
     db.module_semantic_diagnostics(module_id)
         .unwrap()
-        .expect_with_db(db, "Unexpected semantic diagnostics");
+        .expect_with_db(&db, "Unexpected semantic diagnostics");
     db.module_lowering_diagnostics(module_id)
         .unwrap()
-        .expect_with_db(db, "Unexpected lowering diagnostics.");
-    (db_val, crate_id)
+        .expect_with_db(&db, "Unexpected lowering diagnostics.");
+    (db, crate_id)
 }
 
-pub fn get_dummy_function(db: &dyn SierraGenGroup) -> FreeFunctionId {
-    let crate_id = setup_test_crate(db.upcast(), "fn test(){}", None);
+/// Creates a crate with empty function "test". Loads default plugins for the crate created.
+pub fn get_dummy_function(db: &mut SierraGenDatabaseForTesting) -> FreeFunctionId {
+    let crate_id = setup_test_crate(db, "fn test(){}", None);
     let module_id = ModuleId::CrateRoot(crate_id);
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
     db.module_free_functions_ids(module_id).unwrap()[0]
 }
 
 /// Generates a dummy statement with the given name, inputs and outputs.
 pub fn dummy_simple_statement(
-    db: &dyn SierraGenGroup,
+    db: &mut SierraGenDatabaseForTesting,
     name: &str,
     inputs: &[&str],
     outputs: &[&str],
@@ -198,7 +208,7 @@ pub fn as_var_id_vec(ids: &[&str]) -> Vec<cairo_lang_sierra::ids::VarId> {
 /// Generates a dummy statement with two branches. One branch is Fallthrough and the other is to the
 /// given label.
 pub fn dummy_simple_branch(
-    db: &dyn SierraGenGroup,
+    db: &mut SierraGenDatabaseForTesting,
     name: &str,
     args: &[&str],
     target: usize,
@@ -225,23 +235,29 @@ pub fn dummy_return_statement(args: &[&str]) -> pre_sierra::StatementWithLocatio
     return_statement(as_var_id_vec(args)).into_statement_without_location()
 }
 
-/// Generates a dummy label.
-pub fn dummy_label(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::StatementWithLocation {
+/// Generates a dummy label. Creates a virtual crate with a dummy function which becomes a parent of
+/// the created `pre_sierra::Statement`.
+pub fn dummy_label(
+    db: &mut SierraGenDatabaseForTesting,
+    id: usize,
+) -> pre_sierra::StatementWithLocation {
     pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
         .into_statement_without_location()
 }
 
-/// Generates a dummy jump to label statement.
+/// Generates a dummy jump to label statement. Creates a virtual crate with a dummy function which
+/// becomes a parent of the created `pre_sierra::Statement`.
 pub fn dummy_jump_statement(
-    db: &dyn SierraGenGroup,
+    db: &mut SierraGenDatabaseForTesting,
     id: usize,
 ) -> pre_sierra::StatementWithLocation {
     jump_statement(dummy_concrete_lib_func_id(db, "jump"), label_id_from_usize(db, id))
         .into_statement_without_location()
 }
 
-/// Returns the [pre_sierra::LabelId] for the given `id`.
-pub fn label_id_from_usize(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::LabelId {
+/// Returns the [pre_sierra::LabelId] for the given `id`. Creates a virtual crate and sets the
+/// result [`LabelLongId`]'s parent to a dummy function inside that crate.
+pub fn label_id_from_usize(db: &mut SierraGenDatabaseForTesting, id: usize) -> pre_sierra::LabelId {
     let free_function_id = get_dummy_function(db);
     let semantic_function = semantic::items::functions::ConcreteFunctionWithBody {
         generic_function: semantic::items::functions::GenericFunctionWithBodyId::Free(

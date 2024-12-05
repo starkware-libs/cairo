@@ -4,22 +4,26 @@ use cairo_lang_utils::extract_matches;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
-use crate::db::SemanticGroup;
+use crate::db::{PluginSuiteInput, SemanticGroup};
+use crate::plugin::PluginSuite;
 use crate::test_utils::{SemanticDatabaseForTesting, TestModule};
 
 #[test]
 fn test_extern_function() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
-    let test_module = TestModule::builder(
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_module_builder = TestModule::builder(
         db,
         indoc::indoc! {"
             extern fn foo<A, B>() nopanic;
         "},
         None,
-    )
-    .build_and_check_for_diagnostics(db)
-    .unwrap();
+    );
+
+    let crate_id = unsafe { test_module_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
+    let test_module = test_module_builder.build_and_check_for_diagnostics(db).unwrap();
     let module_id = test_module.module_id;
 
     let extern_function_id = extract_matches!(

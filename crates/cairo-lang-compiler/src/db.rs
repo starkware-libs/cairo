@@ -13,7 +13,8 @@ use cairo_lang_filesystem::ids::{CrateId, FlagId, VirtualFile};
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_project::ProjectConfig;
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
@@ -49,6 +50,7 @@ impl RootDatabase {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_lowering_group(&mut res, inlining_strategy);
+        res.set_crate_plugins_from_suite(CrateId::core(&res), get_default_plugin_suite());
         res
     }
 

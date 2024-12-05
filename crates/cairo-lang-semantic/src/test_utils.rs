@@ -15,7 +15,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, Upcast, extract_matches};
 
-use crate::db::{SemanticDatabase, SemanticGroup};
+use crate::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup};
 use crate::inline_macros::get_default_plugin_suite;
 use crate::items::functions::GenericFunctionId;
 use crate::{ConcreteFunctionWithBodyId, SemanticDiagnostic, semantic};
@@ -43,12 +43,12 @@ impl SemanticDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SemanticDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
-        let suite = get_default_plugin_suite();
-        res.set_macro_plugins(suite.plugins);
-        res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
-        res.set_analyzer_plugins(suite.analyzer_plugins);
+
+        res.set_crate_plugins_from_suite(CrateId::core(&res), get_default_plugin_suite());
+
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
+
         res
     }
     /// Snapshots the db for read only.
@@ -415,18 +415,20 @@ pub fn test_expr_diagnostics(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &SemanticDatabaseForTesting::default();
+    let db = &mut SemanticDatabaseForTesting::default();
 
-    let diagnostics = TestExpr::builder(
+    let test_expr_builder = TestExpr::builder(
         db,
         inputs["expr_code"].as_str(),
         inputs["module_code"].as_str(),
         inputs["function_body"].as_str(),
         inputs.get("crate_settings").map(|x| x.as_str()),
-    )
-    .build_and_check_for_diagnostics(db)
-    .get_diagnostics();
+    );
 
+    let crate_id = unsafe { test_expr_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    let diagnostics = test_expr_builder.build_and_check_for_diagnostics(db).get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
     TestRunnerResult {
@@ -439,18 +441,20 @@ pub fn test_function_diagnostics(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &SemanticDatabaseForTesting::default();
+    let db = &mut SemanticDatabaseForTesting::default();
 
-    let diagnostics = TestFunction::builder(
+    let test_function_builder = TestFunction::builder(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
         inputs.get("crate_settings").map(|x| x.as_str()),
-    )
-    .build_and_check_for_diagnostics(db)
-    .get_diagnostics();
+    );
 
+    let crate_id = unsafe { test_function_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    let diagnostics = test_function_builder.build_and_check_for_diagnostics(db).get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
     TestRunnerResult {

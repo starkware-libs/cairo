@@ -2,6 +2,8 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::TestModule;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -21,11 +23,14 @@ fn contains_cycles_test(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &SierraGenDatabaseForTesting::default();
+    let db = &mut SierraGenDatabaseForTesting::default();
     // Parse code and create semantic model.
-    let test_module = TestModule::builder(db, inputs["module_code"].as_str(), None)
-        .build_and_check_for_diagnostics(db)
-        .unwrap();
+    let test_module_builder = TestModule::builder(db, inputs["module_code"].as_str(), None);
+
+    let crate_id = unsafe { test_module_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    let test_module = test_module_builder.build_and_check_for_diagnostics(db).unwrap();
 
     db.module_lowering_diagnostics(test_module.module_id)
         .unwrap()

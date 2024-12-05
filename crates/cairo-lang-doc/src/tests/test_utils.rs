@@ -33,7 +33,7 @@ impl Default for TestDatabase {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(vec![]);
+        res.set_crate_macro_plugins(CrateId::core(&res), vec![]);
         res
     }
 }

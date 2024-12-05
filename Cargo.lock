@@ -791,6 +791,7 @@ dependencies = [
  "ark-secp256r1",
  "cairo-lang-casm",
  "cairo-lang-compiler",
+ "cairo-lang-defs",
  "cairo-lang-lowering",
  "cairo-lang-runnable-utils",
  "cairo-lang-semantic",

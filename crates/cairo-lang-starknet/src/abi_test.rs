@@ -18,11 +18,15 @@ pub fn test_abi_failure(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut RootDatabase::builder().detect_corelib().build().unwrap();
-    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-    let (module, diagnostics) =
-        TestModule::builder(db, &cairo_code, None).build_and_check_for_diagnostics(db).split();
+
+    let test_module_builder = TestModule::builder(db, &cairo_code, None);
+
+    let crate_id = unsafe { test_module_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite() + starknet_plugin_suite());
+
+    let (module, diagnostics) = test_module_builder.build_and_check_for_diagnostics(db).split();
 
     let submodules = db.module_submodules_ids(module.module_id).unwrap();
     let contract_submodule = submodules
@@ -62,12 +66,14 @@ pub fn test_storage_path_check(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut RootDatabase::builder().detect_corelib().build().unwrap();
-    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-    let (_, diagnostics) =
-        TestModule::builder(db, &cairo_code, None).build_and_check_for_diagnostics(db).split();
+    let test_module_builder = TestModule::builder(db, &cairo_code, None);
 
+    let crate_id = unsafe { test_module_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite() + starknet_plugin_suite());
+
+    let (_, diagnostics) = test_module_builder.build_and_check_for_diagnostics(db).split();
     let test_error = verify_diagnostics_expectation(args, &diagnostics);
 
     TestRunnerResult {

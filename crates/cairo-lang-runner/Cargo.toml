@@ -33,8 +33,13 @@ thiserror.workspace = true
 
 [dev-dependencies]
 cairo-lang-compiler = { path = "../cairo-lang-compiler" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
+cairo-lang-defs = { path = "../cairo-lang-defs" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", features = [
+    "testing",
+] }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = [
+    "testing",
+] }
 env_logger.workspace = true
 indoc.workspace = true
 test-case.workspace = true

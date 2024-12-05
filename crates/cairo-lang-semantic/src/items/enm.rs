@@ -188,7 +188,9 @@ pub fn priv_enum_definition_data(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
 ) -> Maybe<EnumDefinitionData> {
-    let module_file_id = enum_id.module_file_id(db.upcast());
+    let defs_db = db.upcast();
+    let module_file_id = enum_id.module_file_id(defs_db);
+    let crate_id = module_file_id.0.owning_crate(defs_db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -213,7 +215,7 @@ pub fn priv_enum_definition_data(
         let feature_restore = resolver
             .data
             .feature_config
-            .override_with(extract_item_feature_config(db, &variant, &mut diagnostics));
+            .override_with(extract_item_feature_config(db, crate_id, &variant, &mut diagnostics));
         let id = VariantLongId(module_file_id, variant.stable_ptr()).intern(db);
         let ty = match variant.type_clause(syntax_db) {
             ast::OptionTypeClause::Empty(_) => unit_ty(db),
@@ -254,10 +256,13 @@ pub fn enum_definition_diagnostics(
     let Ok(data) = db.priv_enum_definition_data(enum_id) else {
         return Default::default();
     };
+
+    let owning_crate_id = data.resolver_data.module_file_id.0.owning_crate(db.upcast());
+
     // If the enum is a phantom type, no need to check if its variants are fully valid types, as
     // they won't be used.
     if db
-        .declared_phantom_type_attributes()
+        .declared_phantom_type_attributes(owning_crate_id)
         .iter()
         .any(|attr| enum_id.has_attr(db, attr).unwrap_or_default())
     {

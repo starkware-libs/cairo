@@ -1558,16 +1558,13 @@ pub trait SemanticGroup:
     // Analyzer plugins.
     // ========
     #[salsa::input]
-    fn analyzer_plugins(&self) -> Vec<Arc<dyn AnalyzerPlugin>>;
-
-    #[salsa::input]
     fn crate_analyzer_plugins(&self, crate_id: CrateId) -> Vec<AnalyzerPluginId>;
     #[salsa::interned]
     fn intern_analyzer_plugin(&self, plugin: AnalyzerPluginLongId) -> AnalyzerPluginId;
 
     /// Returns the set of `allow` that were declared as by a plugin.
     /// An allow that is not in this set will be handled as an unknown allow.
-    fn declared_allows(&self) -> Arc<OrderedHashSet<String>>;
+    fn declared_allows(&self, crate_id: CrateId) -> Arc<OrderedHashSet<String>>;
 
     // Helpers for language server.
     // ============================
@@ -1702,8 +1699,8 @@ fn module_semantic_diagnostics(
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
     add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
-    for analyzer_plugin in db.analyzer_plugins().iter() {
-        for diag in analyzer_plugin.diagnostics(db, module_id) {
+    for plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db.upcast())).iter() {
+        for diag in db.lookup_intern_analyzer_plugin(*plugin_id).diagnostics(db, module_id) {
             diagnostics.add(SemanticDiagnostic::new(
                 StableLocation::new(diag.stable_ptr),
                 SemanticDiagnosticKind::PluginDiagnostic(diag),
@@ -1714,9 +1711,11 @@ fn module_semantic_diagnostics(
     Ok(diagnostics.build())
 }
 
-fn declared_allows(db: &dyn SemanticGroup) -> Arc<OrderedHashSet<String>> {
+fn declared_allows(db: &dyn SemanticGroup, crate_id: CrateId) -> Arc<OrderedHashSet<String>> {
     Arc::new(OrderedHashSet::from_iter(
-        db.analyzer_plugins().into_iter().flat_map(|plugin| plugin.declared_allows()),
+        db.crate_analyzer_plugins(crate_id)
+            .into_iter()
+            .flat_map(|plugin| db.lookup_intern_analyzer_plugin(plugin).declared_allows()),
     ))
 }
 
@@ -1860,26 +1859,9 @@ pub fn get_resolver_data_options(
 }
 
 /// An extension trait for [`SemanticGroup`] to manage plugin setters.
-// TODO: Remove notes in the last PR of the stack.
 pub trait PluginSuiteInput: SemanticGroup {
-    /// Sets macro, inline macro and analyzer plugins used by the database to those specified
-    /// in the [`PluginSuite`] by invoking appropriate setters from the [`DefsGroup`].
-    /// ---
-    /// NOTE: This is a **temporary** function for easier transition from global plugins
-    /// to crate-local ones. I substitute it with `set_crate_macro_plugins_from_suite`
-    /// in the next PRs in the stack.
-    fn set_plugins_from_suite(&mut self, suite: PluginSuite) {
-        let PluginSuite { plugins, inline_macro_plugins, analyzer_plugins } = suite;
-
-        self.set_macro_plugins(plugins);
-        self.set_inline_macro_plugins(Arc::new(inline_macro_plugins));
-        self.set_analyzer_plugins(analyzer_plugins);
-    }
-
     /// Sets macro, inline macro and analyzer plugins present in the [`PluginSuite`] for a crate
     /// pointed to by the [`CrateId`].
-    /// ---
-    /// NOTE: A replacement for `set_macro_plugin_from_suite` defined above.
     fn set_crate_plugins_from_suite(&mut self, crate_id: CrateId, suite: PluginSuite) {
         let PluginSuite { plugins, inline_macro_plugins, analyzer_plugins } = suite;
 

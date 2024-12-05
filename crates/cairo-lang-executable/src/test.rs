@@ -22,14 +22,21 @@ impl TestFileRunner for ExpandExecutableTestRunner {
     ) -> TestRunnerResult {
         let mut db =
             RootDatabase::builder().skip_auto_withdraw_gas().detect_corelib().build().unwrap();
-        db.set_plugins_from_suite(get_default_plugin_suite() + executable_plugin_suite());
 
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-        let (test_module, semantic_diagnostics) = TestModule::builder(&db, &cairo_code, None)
-            .build_and_check_for_diagnostics(&db)
-            .split();
+        let test_module_builder = TestModule::builder(&db, &cairo_code, None);
+
+        db.set_crate_plugins_from_suite(
+            unsafe { test_module_builder.get_crate_id() },
+            get_default_plugin_suite() + executable_plugin_suite(),
+        );
+
+        let (test_module, semantic_diagnostics) =
+            test_module_builder.build_and_check_for_diagnostics(&db).split();
+
         let result = expand_module_text(&db, test_module.module_id, &mut vec![]);
         let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
+
         TestRunnerResult {
             outputs: OrderedHashMap::from([
                 ("generated_cairo_code".into(), result),
@@ -61,20 +68,28 @@ impl TestFileRunner for CompileExecutableTestRunner {
     ) -> TestRunnerResult {
         let mut db =
             RootDatabase::builder().skip_auto_withdraw_gas().detect_corelib().build().unwrap();
-        db.set_plugins_from_suite(get_default_plugin_suite() + executable_plugin_suite());
 
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-        let (test_module, semantic_diagnostics) = TestModule::builder(&db, &cairo_code, None)
-            .build_and_check_for_diagnostics(&db)
-            .split();
+        let test_module_builder = TestModule::builder(&db, &cairo_code, None);
+        let crate_id = unsafe { test_module_builder.get_crate_id() };
+
+        db.set_crate_plugins_from_suite(
+            crate_id,
+            get_default_plugin_suite() + executable_plugin_suite(),
+        );
+
+        let (_, semantic_diagnostics) =
+            test_module_builder.build_and_check_for_diagnostics(&db).split();
+
         let result = compile::compile_executable_in_prepared_db(
             &db,
             None,
-            vec![test_module.crate_id],
+            vec![crate_id],
             DiagnosticsReporter::stderr(),
         )
         .unwrap();
         let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
+
         TestRunnerResult {
             outputs: OrderedHashMap::from([
                 ("generated_casm_code".into(), result.to_string()),
