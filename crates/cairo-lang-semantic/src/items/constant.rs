@@ -34,6 +34,7 @@ use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
+use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{
     ConcreteTypeId, ConcreteVariant, Expr, ExprBlock, ExprConstant, ExprFunctionCall,
@@ -319,6 +320,11 @@ pub fn constant_semantic_data_helper(
     ctx.resolver.inference().finalize(ctx.diagnostics, constant_ast.stable_ptr().untyped());
     ctx.apply_inference_rewriter_to_exprs();
 
+    let const_value = ctx
+        .resolver
+        .inference()
+        .rewrite(const_value)
+        .unwrap_or_else(|_| ConstValue::Missing(skip_diagnostic()).intern(db));
     let resolver_data = Arc::new(ctx.resolver.data);
     let constant = Constant { value: value.id, exprs: Arc::new(ctx.arenas.exprs) };
     Ok(ConstantData {
