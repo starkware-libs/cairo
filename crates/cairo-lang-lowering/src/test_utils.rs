@@ -1,5 +1,3 @@
-use std::sync::{LazyLock, Mutex};
-
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, ExternalFiles, FilesDatabase, FilesGroup, init_dev_corelib, init_files_group,
@@ -26,17 +24,20 @@ use crate::utils::InliningStrategy;
 pub struct LoweringDatabaseForTesting {
     storage: salsa::Storage<LoweringDatabaseForTesting>,
 }
+
 impl salsa::Database for LoweringDatabaseForTesting {}
 impl ExternalFiles for LoweringDatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
         try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
+
 impl salsa::ParallelDatabase for LoweringDatabaseForTesting {
     fn snapshot(&self) -> salsa::Snapshot<LoweringDatabaseForTesting> {
         salsa::Snapshot::new(LoweringDatabaseForTesting { storage: self.storage.snapshot() })
     }
 }
+
 impl LoweringDatabaseForTesting {
     pub fn new() -> Self {
         let mut res = LoweringDatabaseForTesting { storage: Default::default() };
@@ -58,13 +59,12 @@ impl LoweringDatabaseForTesting {
     }
 }
 
-pub static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> =
-    LazyLock::new(|| Mutex::new(LoweringDatabaseForTesting::new()));
 impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
-        SHARED_DB.lock().unwrap().snapshot()
+        LoweringDatabaseForTesting::new()
     }
 }
+
 impl AsFilesGroupMut for LoweringDatabaseForTesting {
     fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
