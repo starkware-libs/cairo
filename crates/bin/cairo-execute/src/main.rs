@@ -135,8 +135,8 @@ fn main() -> anyhow::Result<()> {
         let entrypoint = executable
             .entrypoints
             .iter()
-            .find(|e| matches!(e.kind, EntryPointKind::NonReturning))
-            .with_context(|| "No function entrypoint found.")?;
+            .find(|e| matches!(e.kind, EntryPointKind::Standalone))
+            .with_context(|| "No `Standalone` entrypoint found.")?;
         Program::new_for_proof(
             entrypoint.builtins.clone(),
             data,
@@ -152,8 +152,8 @@ fn main() -> anyhow::Result<()> {
         let entrypoint = executable
             .entrypoints
             .iter()
-            .find(|e| matches!(e.kind, EntryPointKind::Function))
-            .with_context(|| "No function entrypoint found.")?;
+            .find(|e| matches!(e.kind, EntryPointKind::Bootloader))
+            .with_context(|| "No `Bootloader` entrypoint found.")?;
         Program::new(
             entrypoint.builtins.clone(),
             data,
