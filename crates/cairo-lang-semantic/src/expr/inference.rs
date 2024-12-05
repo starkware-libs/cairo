@@ -1329,8 +1329,10 @@ impl SemanticRewriter<ImplLongId, NoError> for Inference<'_> {
     fn internal_rewrite(&mut self, value: &mut ImplLongId) -> Result<RewriteResult, NoError> {
         match value {
             ImplLongId::ImplVar(var) => {
+                let long_id = var.lookup_intern(self.db);
+                assert_eq!(self.inference_id, long_id.inference_id);
                 // Relax the candidates.
-                let impl_var_id = var.lookup_intern(self.db).id;
+                let impl_var_id = long_id.id;
                 if let Some(impl_id) = self.impl_assignment(impl_var_id) {
                     let mut long_impl_id = impl_id.lookup_intern(self.db);
                     if let RewriteResult::Modified = self.internal_rewrite(&mut long_impl_id)? {
