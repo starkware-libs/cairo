@@ -5,7 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
-use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_semantic::test_utils::TestFunction;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
@@ -43,12 +43,14 @@ impl TestFileRunner for GetRedepositTestRunner {
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
         let db = &self.db;
-        let (test_function, semantic_diagnostics) = setup_test_function(
+        let (test_function, semantic_diagnostics) = TestFunction::builder(
             db,
             inputs["function"].as_str(),
             inputs["function_name"].as_str(),
             inputs["module_code"].as_str(),
+            None,
         )
+        .build_and_check_for_diagnostics(db)
         .split();
         let function_id =
             ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);

@@ -7,13 +7,15 @@ use test_log::test;
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
 use crate::items::function_with_body::SemanticExprLookup;
-use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
+use crate::test_utils::{SemanticDatabaseForTesting, TestModule};
 
 #[test]
 fn test_expr_lookup() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let test_module = setup_test_module(db, indoc::indoc! {"
+    let test_module = TestModule::builder(
+        db,
+        indoc::indoc! {"
             // `inline` is used just to have an allowed attribute.
             #[inline]
             fn foo<A, B>(_a: felt252) -> felt252 {
@@ -23,7 +25,10 @@ fn test_expr_lookup() {
                     _ => {6}
                 }
             }
-        "})
+        "},
+        None,
+    )
+    .build_and_check_for_diagnostics(db)
     .unwrap();
     let module_id = test_module.module_id;
 

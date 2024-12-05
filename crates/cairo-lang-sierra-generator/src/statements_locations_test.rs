@@ -1,7 +1,7 @@
 use cairo_lang_diagnostics::get_location_marks;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_semantic::test_utils::TestFunction;
 use cairo_lang_test_utils::get_direct_or_file_content;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -20,12 +20,14 @@ pub fn test_sierra_locations(
     let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
     let (_path, module_code) = get_direct_or_file_content(&inputs["module_code"]);
     // Parse code and create semantic model.
-    let (test_function, semantic_diagnostics) = setup_test_function(
+    let (test_function, semantic_diagnostics) = TestFunction::builder(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         &module_code,
+        None,
     )
+    .build_and_check_for_diagnostics(db)
     .split();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id);

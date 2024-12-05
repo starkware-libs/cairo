@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
+use cairo_lang_semantic::test_utils::{TestExpr, TestFunction, TestModule};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
@@ -15,7 +15,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{LookupIntern, Upcast, extract_matches};
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
-use semantic::test_utils::setup_test_module_ex;
 
 use crate::FlatLowered;
 use crate::db::LoweringGroup;
@@ -66,12 +65,14 @@ fn test_function_lowering(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = setup_test_function(
+    let (test_function, semantic_diagnostics) = TestFunction::builder(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
+        None,
     )
+    .build_and_check_for_diagnostics(db)
     .split();
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
@@ -111,7 +112,9 @@ fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
 fn test_location_and_diagnostics() {
     let db = &mut LoweringDatabaseForTesting::default();
 
-    let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;", None).unwrap();
+    let test_expr = TestExpr::builder(db, "a = a * 3", "", "let mut a = 5;", None)
+        .build_and_check_for_diagnostics(db)
+        .unwrap();
 
     let function_body = db.function_body(test_expr.function_id).unwrap();
 
@@ -192,7 +195,7 @@ fn test_sizes() {
         ("core::cmp::min::<u8>::Coupon", 0),
     ];
 
-    let test_module = setup_test_module_ex(
+    let test_module = TestModule::builder(
         db,
         &type_to_size
             .iter()
@@ -201,6 +204,7 @@ fn test_sizes() {
             .join(""),
         None,
     )
+    .build_and_check_for_diagnostics(db)
     .unwrap();
     let db: &LoweringDatabaseForTesting = db;
     let type_aliases = db.module_type_aliases(test_module.module_id).unwrap();

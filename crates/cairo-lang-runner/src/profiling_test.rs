@@ -4,7 +4,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_semantic::db::PluginSuiteInput;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
-use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_semantic::test_utils::TestModule;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
@@ -47,7 +47,8 @@ pub fn test_profiling(
     db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
     let (_path, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-    let test_module = setup_test_module(&db, &cairo_code).unwrap();
+    let test_module =
+        TestModule::builder(&db, &cairo_code, None).build_and_check_for_diagnostics(&db).unwrap();
     DiagnosticsReporter::stderr()
         .with_crates(&[test_module.crate_id])
         .allow_warnings()

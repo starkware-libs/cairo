@@ -149,7 +149,7 @@ pub fn setup_db_and_get_crate_id(
 ) -> (SierraGenDatabaseForTesting, cairo_lang_filesystem::ids::CrateId) {
     let db_val = SierraGenDatabaseForTesting::default();
     let db = &db_val;
-    let crate_id = setup_test_crate(db, content);
+    let crate_id = setup_test_crate(db, content, None);
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_semantic_diagnostics(module_id)
         .unwrap()
@@ -161,7 +161,7 @@ pub fn setup_db_and_get_crate_id(
 }
 
 pub fn get_dummy_function(db: &dyn SierraGenGroup) -> FreeFunctionId {
-    let crate_id = setup_test_crate(db.upcast(), "fn test(){}");
+    let crate_id = setup_test_crate(db.upcast(), "fn test(){}", None);
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_free_functions_ids(module_id).unwrap()[0]
 }

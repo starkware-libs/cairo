@@ -10,13 +10,15 @@ use test_log::test;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
-use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
+use crate::test_utils::{SemanticDatabaseForTesting, TestModule};
 
 #[test]
 fn test_resolve_path() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let test_module = setup_test_module(db, indoc! {"
+    let test_module = TestModule::builder(
+        db,
+        indoc! {"
             use core::Box;
             extern type S<T>;
             extern fn bar<T>(value: S::<felt252>) -> S::<()> nopanic;
@@ -25,7 +27,10 @@ fn test_resolve_path() {
                 bar::<(felt252,Q)>(value);
                 let _c = b;
             }
-        "})
+        "},
+        None,
+    )
+    .build_and_check_for_diagnostics(db)
     .unwrap();
     let module_id = test_module.module_id;
 
@@ -97,7 +102,9 @@ fn test_resolve_path_super() {
 fn test_resolve_path_trait_impl() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let test_module = setup_test_module(db, indoc! {"
+    let test_module = TestModule::builder(
+        db,
+        indoc! {"
             trait MyTrait {
                 fn foo() -> felt252;
             }
@@ -111,7 +118,10 @@ fn test_resolve_path_trait_impl() {
             fn main() -> felt252 {
                 MyTrait::foo() + 1
             }
-        "})
+        "},
+        None,
+    )
+    .build_and_check_for_diagnostics(db)
     .unwrap();
     let module_id = test_module.module_id;
 

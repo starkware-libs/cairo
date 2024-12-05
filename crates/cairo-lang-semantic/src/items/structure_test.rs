@@ -6,13 +6,15 @@ use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;
-use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
+use crate::test_utils::{SemanticDatabaseForTesting, TestModule};
 
 #[test]
 fn test_struct() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let (test_module, diagnostics) = setup_test_module(db, indoc::indoc! {"
+    let (test_module, diagnostics) = TestModule::builder(
+        db,
+        indoc::indoc! {"
             #[inline(MyImpl1, MyImpl2)]
             struct A {
                 a: felt252,
@@ -25,7 +27,10 @@ fn test_struct() {
             fn foo(a: A) {
                 5;
             }
-        "})
+        "},
+        None,
+    )
+    .build_and_check_for_diagnostics(db)
     .split();
     assert_eq!(diagnostics, indoc! {r#"
         error: Redefinition of member "a" on struct "test::A".
