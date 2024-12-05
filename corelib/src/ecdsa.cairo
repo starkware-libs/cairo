@@ -8,7 +8,8 @@
 //! * α = 1
 //! * β = 0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89
 //! * p = 0x0800000000000011000000000000000000000000000000000000000000000001 = 2^251 + 17 * 2^192 +
-//! 1 Generator point:
+//! 1
+//! Generator point:
 //! * x = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca
 //! * y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f
 
@@ -40,6 +41,7 @@ use crate::zeroable::IsZeroResult;
 /// Returns `true` if the signature is valid, `false` otherwise.
 ///
 /// # Examples
+///
 /// ```
 /// use core::ecdsa::check_ecdsa_signature;
 ///
@@ -134,7 +136,7 @@ pub fn check_ecdsa_signature(
         }
     }
 
-    return false;
+    false
 }
 
 /// Recovers the public key from an ECDSA signature and message hash.
@@ -154,6 +156,7 @@ pub fn check_ecdsa_signature(
 /// the signature is valid, `None` otherwise.
 ///
 /// # Examples
+///
 /// ```
 /// use core::ecdsa::recover_public_key;
 ///
@@ -161,7 +164,7 @@ pub fn check_ecdsa_signature(
 /// let signature_r = 0xbe96d72eb4f94078192c2e84d5230cde2a70f4b45c8797e2c907acff5060bb;
 /// let signature_s = 0x677ae6bba6daf00d2631fab14c8acf24be6579f9d9e98f67aa7f2770e57a1f5;
 /// assert!(
-///     ecdsa::recover_public_key(:message_hash, :signature_r, :signature_s, y_parity: false)
+///     recover_public_key(:message_hash, :signature_r, :signature_s, y_parity: false)
 ///         .unwrap() == 0x7b7454acbe7845da996377f85eb0892044d75ae95d04d3325a391951f35d2ec,
 /// )
 /// ```
@@ -199,5 +202,6 @@ pub fn recover_public_key(
     let z_div_r: felt252 = math::u256_mul_mod_n(message_hash.into(), r_inv, ord_nz).try_into()?;
     let s_div_rR: EcPoint = signature_r_point.mul(s_div_r);
     let z_div_rG: EcPoint = gen_point.mul(z_div_r);
+
     Option::Some((s_div_rR - z_div_rG).try_into()?.x())
 }
