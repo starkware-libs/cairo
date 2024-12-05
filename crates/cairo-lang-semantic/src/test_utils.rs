@@ -114,14 +114,67 @@ impl<T> WithStringDiagnostics<T> {
     }
 }
 
-/// Helper struct for the return value of [setup_test_module].
+/// A module with [`ModuleId`] being a root of a crate with [`CrateId`].
 pub struct TestModule {
     pub crate_id: CrateId,
     pub module_id: ModuleId,
 }
 
+impl TestModule {
+    /// Setups the build of the [`TestModule`]. Creates a one-module crate with `content` and
+    /// `crate_settings`.
+    pub fn builder(
+        db: &dyn SemanticGroup,
+        content: &str,
+        crate_settings: Option<&str>,
+    ) -> TestModuleBuilder {
+        TestModuleBuilder { crate_id: setup_test_crate(db, content, crate_settings) }
+    }
+}
+
+/// A builder of [`TestModule`] performing additional syntactic and semantic verification
+/// on the created module.
+pub struct TestModuleBuilder {
+    crate_id: CrateId,
+}
+
+impl TestModuleBuilder {
+    /// Checks the [`CrateId`] **before** verifying the code in the test module in terms of syntax
+    /// and semantics.
+    /// Use only when lookup of the test crate's ID is required before verifying its contents.
+    pub unsafe fn get_crate_id(&self) -> CrateId {
+        self.crate_id
+    }
+
+    /// Checks the [`ModuleId`] **before** verifying the code in the test module in terms of syntax
+    /// and semantics.
+    /// Use only when lookup of the test module's ID is required before verifying its contents.
+    pub unsafe fn get_module_id(&self) -> ModuleId {
+        ModuleId::CrateRoot(self.crate_id)
+    }
+
+    /// Constructs the final [`TestModule`] and verifies it by computing syntactic and semantic
+    /// diagnostics.
+    pub fn build_and_check_for_diagnostics(
+        self,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> WithStringDiagnostics<TestModule> {
+        let module_id = ModuleId::CrateRoot(self.crate_id);
+        let file_id = db.module_main_file(module_id).unwrap();
+
+        let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(db.upcast());
+        let semantic_diagnostics =
+            get_recursive_module_semantic_diagnostics(db, module_id).format(db);
+
+        WithStringDiagnostics {
+            value: TestModule { crate_id: module_id.owning_crate(db.upcast()), module_id },
+            diagnostics: format!("{syntax_diagnostics}{semantic_diagnostics}"),
+        }
+    }
+}
+
 /// Sets up a crate with given content, and returns its crate id.
-pub fn setup_test_crate_ex(
+pub fn setup_test_crate(
     db: &dyn SemanticGroup,
     content: &str,
     crate_settings: Option<&str>,
@@ -160,39 +213,8 @@ pub fn setup_test_crate_ex(
     .intern(db)
 }
 
-/// See [setup_test_crate_ex].
-pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
-    setup_test_crate_ex(db, content, None)
-}
-
-/// Sets up a module with given content, and returns its module id.
-pub fn setup_test_module_ex(
-    db: &(dyn SemanticGroup + 'static),
-    content: &str,
-    crate_settings: Option<&str>,
-) -> WithStringDiagnostics<TestModule> {
-    let crate_id = setup_test_crate_ex(db, content, crate_settings);
-    let module_id = ModuleId::CrateRoot(crate_id);
-    let file_id = db.module_main_file(module_id).unwrap();
-
-    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(Upcast::upcast(db));
-    let semantic_diagnostics = get_recursive_module_semantic_diagnostics(db, module_id).format(db);
-
-    WithStringDiagnostics {
-        value: TestModule { crate_id, module_id },
-        diagnostics: format!("{syntax_diagnostics}{semantic_diagnostics}"),
-    }
-}
-
-/// See [setup_test_module_ex].
-pub fn setup_test_module(
-    db: &(dyn SemanticGroup + 'static),
-    content: &str,
-) -> WithStringDiagnostics<TestModule> {
-    setup_test_module_ex(db, content, None)
-}
-
-/// Helper struct for the return value of [setup_test_function].
+/// A single function with [`FunctionId`] and body with [`semantic::ExprId`],
+/// defined inside a module with [`ModuleId`].
 pub struct TestFunction {
     pub module_id: ModuleId,
     pub function_id: FunctionWithBodyId,
@@ -201,56 +223,88 @@ pub struct TestFunction {
     pub body: semantic::ExprId,
 }
 
-/// Returns the semantic model of a given function.
-/// function_name - name of the function.
-/// module_code - extra setup code in the module context.
-pub fn setup_test_function_ex(
-    db: &(dyn SemanticGroup + 'static),
-    function_code: &str,
-    function_name: &str,
-    module_code: &str,
-    crate_settings: Option<&str>,
-) -> WithStringDiagnostics<TestFunction> {
-    let content = if module_code.is_empty() {
-        function_code.to_string()
-    } else {
-        format!("{module_code}\n{function_code}")
-    };
-    let (test_module, diagnostics) = setup_test_module_ex(db, &content, crate_settings).split();
-    let generic_function_id = db
-        .module_item_by_name(test_module.module_id, function_name.into())
-        .expect("Failed to load module")
-        .and_then(GenericFunctionId::option_from)
-        .unwrap_or_else(|| panic!("Function '{function_name}' was not found."));
-    let free_function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
-    let function_id = FunctionWithBodyId::Free(free_function_id);
-    WithStringDiagnostics {
-        value: TestFunction {
-            module_id: test_module.module_id,
-            function_id,
-            concrete_function_id: ConcreteFunctionWithBodyId::from_no_generics_free(
-                db,
-                free_function_id,
-            )
-            .unwrap(),
-            signature: db.function_with_body_signature(function_id).unwrap(),
-            body: db.function_body_expr(function_id).unwrap(),
-        },
-        diagnostics,
+impl TestFunction {
+    /// Setups the build of the [`TestFunction`]. Creates a one-module crate with `crate_settings`,
+    /// containing a function with `function_name` and `function_code` body.
+    pub fn builder<'name>(
+        db: &dyn SemanticGroup,
+        function_code: &str,
+        function_name: &'name str,
+        module_code: &str,
+        crate_settings: Option<&str>,
+    ) -> TestFunctionBuilder<'name> {
+        let content = if module_code.is_empty() {
+            function_code.to_string()
+        } else {
+            format!("{module_code}\n{function_code}")
+        };
+
+        let module_builder = TestModule::builder(db, &content, crate_settings);
+        TestFunctionBuilder { function_name, module_builder }
     }
 }
 
-/// See [setup_test_function_ex].
-pub fn setup_test_function(
-    db: &(dyn SemanticGroup + 'static),
-    function_code: &str,
-    function_name: &str,
-    module_code: &str,
-) -> WithStringDiagnostics<TestFunction> {
-    setup_test_function_ex(db, function_code, function_name, module_code, None)
+/// A builder of [`TestFunction`] performing additional syntactic and semantic verification
+/// on the created function.
+pub struct TestFunctionBuilder<'name> {
+    function_name: &'name str,
+    module_builder: TestModuleBuilder,
 }
 
-/// Helper struct for the return value of [setup_test_expr] and [setup_test_block].
+impl<'name> TestFunctionBuilder<'name> {
+    /// Checks the [`CrateId`] **before** verifying the function code in terms of syntax
+    /// and semantics.
+    /// Use only when lookup of the test crate's ID is required before verifying its contents.
+    pub unsafe fn get_crate_id(&self) -> CrateId {
+        self.module_builder.get_crate_id()
+    }
+
+    /// Checks the [`ModuleId`] **before** verifying the function code in terms of syntax
+    /// and semantics.
+    /// Use only when lookup of the test module's ID is required before verifying its contents.
+    pub unsafe fn get_module_id(&self) -> ModuleId {
+        self.module_builder.get_module_id()
+    }
+
+    /// Constructs the final [`TestFunction`] and verifies it by computing syntactic and semantic
+    /// diagnostics.
+    pub fn build_and_check_for_diagnostics(
+        self,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> WithStringDiagnostics<TestFunction> {
+        let Self { function_name, module_builder } = self;
+
+        let (test_module, diagnostics) = module_builder.build_and_check_for_diagnostics(db).split();
+        let module_id = test_module.module_id;
+
+        let generic_function_id = db
+            .module_item_by_name(module_id, function_name.into())
+            .expect("Failed to load module")
+            .and_then(GenericFunctionId::option_from)
+            .unwrap_or_else(|| panic!("Function '{function_name}' was not found."));
+
+        let free_function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
+        let function_id = FunctionWithBodyId::Free(free_function_id);
+
+        WithStringDiagnostics {
+            value: TestFunction {
+                module_id,
+                function_id,
+                concrete_function_id: ConcreteFunctionWithBodyId::from_no_generics_free(
+                    db,
+                    free_function_id,
+                )
+                .unwrap(),
+                signature: db.function_with_body_signature(function_id).unwrap(),
+                body: db.function_body_expr(function_id).unwrap(),
+            },
+            diagnostics,
+        }
+    }
+}
+
+/// A single expression placed in the context of a function with [`FunctionWithBodyId`] defined
+/// inside a module with [`ModuleId`].
 pub struct TestExpr {
     pub module_id: ModuleId,
     pub function_id: FunctionWithBodyId,
@@ -259,58 +313,100 @@ pub struct TestExpr {
     pub expr_id: semantic::ExprId,
 }
 
-/// Returns the semantic model of a given expression.
-/// module_code - extra setup code in the module context.
-/// function_body - extra setup code in the function context.
-pub fn setup_test_expr(
-    db: &(dyn SemanticGroup + 'static),
-    expr_code: &str,
-    module_code: &str,
-    function_body: &str,
-    crate_settings: Option<&str>,
-) -> WithStringDiagnostics<TestExpr> {
-    let function_code = format!("fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
-    let (test_function, diagnostics) =
-        setup_test_function_ex(db, &function_code, "test_func", module_code, crate_settings)
-            .split();
-    let semantic::ExprBlock { statements, .. } = extract_matches!(
-        db.expr_semantic(test_function.function_id, test_function.body),
-        semantic::Expr::Block
-    );
-    let statement_expr = extract_matches!(
-        db.statement_semantic(test_function.function_id, *statements.last().unwrap()),
-        semantic::Statement::Expr
-    );
-    let semantic::ExprBlock { statements, tail, .. } = extract_matches!(
-        db.expr_semantic(test_function.function_id, statement_expr.expr),
-        semantic::Expr::Block
-    );
-    assert!(
-        statements.is_empty(),
-        "expr_code is not a valid expression. Consider using setup_test_block()."
-    );
-    WithStringDiagnostics {
-        value: TestExpr {
-            module_id: test_function.module_id,
-            function_id: test_function.function_id,
-            signature: test_function.signature,
-            body: test_function.body,
-            expr_id: tail.unwrap(),
-        },
-        diagnostics,
+impl TestExpr {
+    /// Setups the build of the [`TestExpr`]. Creates a one-module crate with `module_code` code and
+    /// `crate_settings`, containing a function with `function_body` body ending with
+    /// `expr_code` being a single expression.
+    pub fn builder(
+        db: &dyn SemanticGroup,
+        expr_code: &str,
+        module_code: &str,
+        function_body: &str,
+        crate_settings: Option<&str>,
+    ) -> TestExprBuilder<'static> {
+        let function_code = format!("fn test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
+        let function_builder =
+            TestFunction::builder(db, &function_code, "test_func", module_code, crate_settings);
+
+        TestExprBuilder { function_builder }
+    }
+
+    pub fn build_block(
+        db: &dyn SemanticGroup,
+        expr_code: &str,
+        module_code: &str,
+        function_body: &str,
+        crate_settings: Option<&str>,
+    ) -> TestExprBuilder<'static> {
+        let expr_code = &format!("{{ \n{expr_code}\n }}");
+        Self::builder(db, expr_code, module_code, function_body, crate_settings)
     }
 }
 
-/// Returns the semantic model of a given block expression.
-/// module_code - extra setup code in the module context.
-/// function_body - extra setup code in the function context.
-pub fn setup_test_block(
-    db: &(dyn SemanticGroup + 'static),
-    expr_code: &str,
-    module_code: &str,
-    function_body: &str,
-) -> WithStringDiagnostics<TestExpr> {
-    setup_test_expr(db, &format!("{{ \n{expr_code}\n }}"), module_code, function_body, None)
+/// A builder of [`TestExpr`] performing additional syntactic and semantic verification
+/// on the created module.
+pub struct TestExprBuilder<'source> {
+    function_builder: TestFunctionBuilder<'source>,
+}
+
+impl<'source> TestExprBuilder<'source> {
+    /// Checks the [`CrateId`] **before** verifying the function code in terms of syntax
+    /// and semantics.
+    /// Use only when lookup of the test crate's ID is required before verifying its contents.
+    pub unsafe fn get_crate_id(&self) -> CrateId {
+        self.function_builder.get_crate_id()
+    }
+
+    /// Checks the [`ModuleId`] **before** verifying the function code in terms of syntax
+    /// and semantics.
+    /// Use only when lookup of the test module's ID is required before verifying its contents.
+    pub unsafe fn get_module_id(&self) -> ModuleId {
+        self.function_builder.get_module_id()
+    }
+
+    /// Constructs the final [`TestExpr`] and verifies it by computing syntactic and semantic
+    /// diagnostics.
+    pub fn build_and_check_for_diagnostics(
+        self,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> WithStringDiagnostics<TestExpr> {
+        let Self { function_builder } = self;
+
+        let (test_function, diagnostics) =
+            function_builder.build_and_check_for_diagnostics(db).split();
+
+        let function_id = test_function.function_id;
+        let function_body = test_function.body;
+
+        let semantic::ExprBlock { statements, .. } =
+            extract_matches!(db.expr_semantic(function_id, function_body), semantic::Expr::Block);
+
+        let statement_expr = extract_matches!(
+            db.statement_semantic(function_id, *statements.last().unwrap()),
+            semantic::Statement::Expr
+        );
+
+        let semantic::ExprBlock { statements, tail, .. } = extract_matches!(
+            db.expr_semantic(function_id, statement_expr.expr),
+            semantic::Expr::Block
+        );
+
+        assert!(
+            statements.is_empty(),
+            "expr_code is not a valid expression. Consider using setup_test_block()."
+        );
+
+        WithStringDiagnostics {
+            value: TestExpr {
+                module_id: test_function.module_id,
+                function_id,
+                signature: test_function.signature,
+                body: function_body,
+                expr_id: tail.unwrap(),
+            },
+            diagnostics,
+        }
+    }
 }
 
 pub fn test_expr_diagnostics(
@@ -319,14 +415,16 @@ pub fn test_expr_diagnostics(
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
 
-    let diagnostics = setup_test_expr(
+    let diagnostics = TestExpr::builder(
         db,
         inputs["expr_code"].as_str(),
         inputs["module_code"].as_str(),
         inputs["function_body"].as_str(),
         inputs.get("crate_settings").map(|x| x.as_str()),
     )
+    .build_and_check_for_diagnostics(db)
     .get_diagnostics();
+
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
     TestRunnerResult {
@@ -341,14 +439,16 @@ pub fn test_function_diagnostics(
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
 
-    let diagnostics = setup_test_function_ex(
+    let diagnostics = TestFunction::builder(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
         inputs.get("crate_settings").map(|x| x.as_str()),
     )
+    .build_and_check_for_diagnostics(db)
     .get_diagnostics();
+
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
     TestRunnerResult {

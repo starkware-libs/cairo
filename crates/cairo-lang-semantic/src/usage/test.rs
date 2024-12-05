@@ -11,7 +11,7 @@ use super::Usages;
 use crate::Expr;
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
-use crate::test_utils::{SemanticDatabaseForTesting, setup_test_function};
+use crate::test_utils::{SemanticDatabaseForTesting, TestFunction};
 
 cairo_lang_test_utils::test_file_test!(
     usage,
@@ -27,12 +27,14 @@ fn test_function_usage(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut SemanticDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = setup_test_function(
+    let (test_function, semantic_diagnostics) = TestFunction::builder(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
+        None,
     )
+    .build_and_check_for_diagnostics(db)
     .split();
 
     let file_id = db.module_file(test_function.function_id.module_file_id(db)).unwrap();

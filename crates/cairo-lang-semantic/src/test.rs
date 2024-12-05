@@ -3,15 +3,20 @@ use cairo_lang_defs::ids::ModuleItemId;
 use indoc::indoc;
 
 use crate::db::SemanticGroup;
-use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
+use crate::test_utils::{SemanticDatabaseForTesting, TestModule};
 
 #[test]
 fn test_resolve() {
     let db_val = SemanticDatabaseForTesting::default();
-    let (test_module, _diagnostics) = setup_test_module(&db_val, indoc! {"
+    let (test_module, _diagnostics) = TestModule::builder(
+        &db_val,
+        indoc! {"
             fn foo() -> felt252 { 5 }
             extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;
-        "})
+        "},
+        None,
+    )
+    .build_and_check_for_diagnostics(&db_val)
     .split();
 
     let module_id = test_module.module_id;

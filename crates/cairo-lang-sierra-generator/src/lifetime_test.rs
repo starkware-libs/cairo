@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_semantic::test_utils::TestFunction;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
@@ -37,12 +37,14 @@ fn check_variable_lifetime(
     let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
 
     // Parse code and create semantic model.
-    let test_function = setup_test_function(
+    let test_function = TestFunction::builder(
         db,
         inputs["function_code"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
+        None,
     )
+    .build_and_check_for_diagnostics(db)
     .unwrap();
 
     db.module_lowering_diagnostics(test_function.module_id)

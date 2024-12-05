@@ -9,7 +9,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_plugins::test_utils::expand_module_text;
-use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_semantic::test_utils::TestModule;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -29,7 +29,9 @@ impl TestFileRunner for ExpandContractTestRunner {
     ) -> TestRunnerResult {
         let db = SHARED_DB.lock().unwrap().snapshot();
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-        let (test_module, _semantic_diagnostics) = setup_test_module(&db, &cairo_code).split();
+        let (test_module, _semantic_diagnostics) = TestModule::builder(&db, &cairo_code, None)
+            .build_and_check_for_diagnostics(&db)
+            .split();
 
         let mut module_ids = vec![test_module.module_id];
         if let Ok(submodules_ids) = db.module_submodules_ids(test_module.module_id) {

@@ -5,13 +5,15 @@ use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;
-use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
+use crate::test_utils::{SemanticDatabaseForTesting, TestModule};
 
 #[test]
 fn test_impl() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let (test_module, diagnostics) = setup_test_module(db, indoc::indoc! {"
+    let (test_module, diagnostics) = TestModule::builder(
+        db,
+        indoc::indoc! {"
             trait IContract {
                 fn foo(a: felt252);
             }
@@ -20,7 +22,10 @@ fn test_impl() {
                 fn foo(a: felt252) {
                 }
             }
-        "})
+        "},
+        None,
+    )
+    .build_and_check_for_diagnostics(db)
     .split();
 
     assert!(diagnostics.is_empty());
