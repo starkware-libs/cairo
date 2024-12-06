@@ -100,6 +100,23 @@ pub trait DefsGroup:
     #[salsa::input]
     fn inline_macro_plugins(&self) -> Arc<OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>>;
 
+    #[salsa::input]
+    fn crate_macro_plugins(&self, crate_id: CrateId) -> Vec<MacroPluginId>;
+    #[salsa::interned]
+    fn intern_macro_plugin(&self, plugin: MacroPluginLongId) -> MacroPluginId;
+
+    #[salsa::input]
+    fn crate_inline_macro_plugins(
+        &self,
+        crate_id: CrateId,
+    ) -> OrderedHashMap<String, InlineMacroExprPluginId>;
+
+    #[salsa::interned]
+    fn intern_inline_macro_plugin(
+        &self,
+        plugin: InlineMacroExprPluginLongId,
+    ) -> InlineMacroExprPluginId;
+
     /// Returns the set of attributes allowed anywhere.
     /// An attribute on any item that is not in this set will be handled as an unknown attribute.
     fn allowed_attributes(&self) -> Arc<OrderedHashSet<String>>;
