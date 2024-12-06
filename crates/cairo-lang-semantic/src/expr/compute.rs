@@ -8,14 +8,14 @@ use std::sync::Arc;
 
 use ast::PathSegment;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::{get_all_path_leaves, validate_attributes_flat};
+use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves, validate_attributes_flat};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, LookupItemId,
     MemberId, ModuleItemId, NamedLanguageElementId, StatementConstLongId, StatementItemId,
     StatementUseLongId, TraitFunctionId, TraitId, VarId,
 };
-use cairo_lang_defs::plugin::MacroPluginMetadata;
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
 use cairo_lang_diagnostics::{Maybe, ToOption, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -432,9 +432,17 @@ fn compute_expr_inline_macro_semantic(
     syntax: &ast::ExprInlineMacro,
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
+    let defs_db: &dyn DefsGroup = ctx.db.upcast();
 
     let macro_name = syntax.path(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db);
-    let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() else {
+
+    let crate_id = ctx.resolver.owning_crate_id;
+
+    let Some(macro_plugin) = defs_db
+        .crate_inline_macro_plugins(crate_id)
+        .get(&macro_name)
+        .map(|&id| defs_db.lookup_intern_inline_macro_plugin(id))
+    else {
         return Err(ctx.diagnostics.report(syntax, InlineMacroNotFound(macro_name.into())));
     };
 
@@ -457,7 +465,7 @@ fn compute_expr_inline_macro_semantic(
 
     let result = macro_plugin.generate_code(syntax_db, syntax, &MacroPluginMetadata {
         cfg_set: &ctx.cfg_set,
-        declared_derives: &ctx.db.declared_derives(),
+        declared_derives: &ctx.db.declared_derives(crate_id),
         allowed_features: &ctx.resolver.data.feature_config.allowed_features,
         edition: ctx.resolver.settings.edition,
     });
@@ -3396,11 +3404,9 @@ pub fn compute_statement_semantic(
     // As for now, statement attributes does not have any semantic affect, so we only validate they
     // are allowed.
     validate_statement_attributes(ctx, &syntax);
-    let feature_restore = ctx
-        .resolver
-        .data
-        .feature_config
-        .override_with(extract_item_feature_config(db, &syntax, ctx.diagnostics));
+    let feature_restore = ctx.resolver.data.feature_config.override_with(
+        extract_item_feature_config(db, ctx.resolver.owning_crate_id, &syntax, ctx.diagnostics),
+    );
     let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let rhs_syntax = &let_syntax.rhs(syntax_db);

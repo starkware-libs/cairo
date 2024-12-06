@@ -13,7 +13,6 @@ use crate::starknet_plugin_suite;
 #[test]
 fn test_contract_resolving() {
     let db = &mut RootDatabase::builder().detect_corelib().build().unwrap();
-    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
     let crate_id = setup_test_crate(
         db,
@@ -37,6 +36,8 @@ fn test_contract_resolving() {
         "},
         None,
     );
+
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite() + starknet_plugin_suite());
 
     let contracts = find_contracts(db, &[crate_id]);
     assert_eq!(contracts.len(), 1);

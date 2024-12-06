@@ -31,6 +31,7 @@ fn documentation_test_runner(
 ) -> TestRunnerResult {
     let mut db_val = TestDatabase::new().unwrap();
     let crate_id = setup_test_module(&mut db_val, inputs["cairo_code"].as_str());
+    db_val.set_crate_macro_plugins(crate_id, vec![]);
     let submodule_code = inputs.get("cairo_submodule_code");
 
     if let Some(submodule_code) = submodule_code {

@@ -16,8 +16,8 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::TestModule;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, Upcast};
 
 use crate::starknet_plugin_suite;
 use crate::test_utils::CONTRACTS_CRATE_DIR;
@@ -33,12 +33,18 @@ impl TestFileRunner for ExpandContractTestRunner {
         args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
         let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-        db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-        let (test_module, _semantic_diagnostics) = TestModule::builder(&db, &cairo_code, None)
-            .build_and_check_for_diagnostics(&db)
-            .split();
+        let test_module_builder = TestModule::builder(&db, &cairo_code, None);
+        let crate_id = unsafe { test_module_builder.get_crate_id() };
+
+        db.set_crate_plugins_from_suite(
+            crate_id,
+            get_default_plugin_suite() + starknet_plugin_suite(),
+        );
+
+        let (test_module, _semantic_diagnostics) =
+            test_module_builder.build_and_check_for_diagnostics(&db).split();
 
         let mut module_ids = vec![test_module.module_id];
         if let Ok(submodules_ids) = db.module_submodules_ids(test_module.module_id) {
@@ -61,15 +67,15 @@ impl TestFileRunner for ExpandContractTestRunner {
             let start = TextOffset::default();
             let end = start.add_width(TextWidth::from_str(&content));
             let content_location = DiagnosticLocation { file_id, span: TextSpan { start, end } };
-            let original_location = content_location.user_location(db.upcast());
+            let original_location = content_location.user_location(&db);
             let origin = (content_location != original_location)
-                .then(|| format!("{:?}\n", original_location.debug(db.upcast())))
+                .then(|| format!("{:?}\n", original_location.debug(&db)))
                 .unwrap_or_default();
             let file_name = file_id.file_name(&db);
             file_contents.push(format!("{origin}{file_name}:\n\n{content}"));
         }
 
-        let diagnostics = get_diagnostics_as_string(&db, &[test_module.crate_id]);
+        let diagnostics = get_diagnostics_as_string(&db, &[crate_id]);
         let error = verify_diagnostics_expectation(args, &diagnostics);
 
         TestRunnerResult {
@@ -136,10 +142,19 @@ impl TestFileRunner for ExpandContractFromCrateTestRunner {
             .build()
             .unwrap();
 
-        db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
         let contract_file_id =
             FileLongId::OnDisk(PathBuf::from(inputs["contract_file_name"].clone())).intern(&db);
+
+        for crate_id in db.crates() {
+            db.set_crate_plugins_from_suite(
+                crate_id,
+                get_default_plugin_suite() + starknet_plugin_suite(),
+            );
+        }
+
+        // Cannot call this method until plugins are not set for the test crate.
         let contract_module_ids = db.file_modules(contract_file_id).unwrap();
+
         let mut diagnostic_items = vec![];
         let result = contract_module_ids
             .iter()

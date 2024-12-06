@@ -75,9 +75,12 @@ pub fn compile_cairo_project_at_path(
         .with_inlining_strategy(compiler_config.inlining_strategy)
         .detect_corelib()
         .build()?;
-    db.set_plugins_from_suite(get_default_plugin_suite());
 
     let main_crate_ids = setup_project(&mut db, path)?;
+
+    for crate_id in main_crate_ids.iter() {
+        db.set_crate_plugins_from_suite(*crate_id, get_default_plugin_suite());
+    }
 
     compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }
@@ -96,9 +99,12 @@ pub fn compile(
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
     let mut db = RootDatabase::builder().with_project_config(project_config.clone()).build()?;
-    db.set_plugins_from_suite(get_default_plugin_suite());
 
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
+
+    for crate_id in main_crate_ids.iter() {
+        db.set_crate_plugins_from_suite(*crate_id, get_default_plugin_suite());
+    }
 
     compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }

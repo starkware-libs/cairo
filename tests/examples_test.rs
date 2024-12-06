@@ -32,13 +32,18 @@ type ExampleDirData = (Mutex<RootDatabase>, Vec<CrateId>);
 #[once]
 fn example_dir_data() -> ExampleDirData {
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-    db.set_plugins_from_suite(get_default_plugin_suite());
 
     let dir = env!("CARGO_MANIFEST_DIR");
     // Pop the "/tests" suffix.
     let mut path = PathBuf::from(dir).parent().unwrap().to_owned();
     path.push("examples");
+
     let crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
+
+    for crate_id in crate_ids.iter() {
+        db.set_crate_plugins_from_suite(*crate_id, get_default_plugin_suite());
+    }
+
     DiagnosticsReporter::stderr().with_crates(&crate_ids).ensure(&db).unwrap();
     (db.into(), crate_ids)
 }

@@ -8,36 +8,37 @@ use crate::resolve_labels::LabelReplacer;
 use crate::test_utils::{SierraGenDatabaseForTesting, label_id_from_usize};
 use crate::utils::{jump_statement, simple_statement};
 
+fn label(db: &mut SierraGenDatabaseForTesting, id: usize) -> pre_sierra::StatementWithLocation {
+    pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
+        .into_statement_without_location()
+}
+
+fn jump(db: &mut SierraGenDatabaseForTesting, id: usize) -> pre_sierra::StatementWithLocation {
+    jump_statement(ConcreteLibfuncId::from_string("jump"), label_id_from_usize(db, id))
+        .into_statement_without_location()
+}
+
 #[test]
 fn test_resolve_labels() {
-    let db_val = SierraGenDatabaseForTesting::default();
-    let db = &db_val;
-    let label = |id| {
-        pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
-            .into_statement_without_location()
-    };
-    let jump = |id| {
-        jump_statement(ConcreteLibfuncId::from_string("jump"), label_id_from_usize(db, id))
-            .into_statement_without_location()
-    };
+    let db = &mut SierraGenDatabaseForTesting::default();
 
     let statements: Vec<pre_sierra::StatementWithLocation> = vec![
-        label(7),
-        label(5),
+        label(db, 7),
+        label(db, 5),
         simple_statement(ConcreteLibfuncId::from_string("Instruction0"), &[], &[]),
         simple_statement(ConcreteLibfuncId::from_string("Instruction1"), &[], &[]),
-        jump(8),
-        jump(7),
-        label(0),
-        jump(7),
-        jump(5),
+        jump(db, 8),
+        jump(db, 7),
+        label(db, 0),
+        jump(db, 7),
+        jump(db, 5),
         simple_statement(ConcreteLibfuncId::from_string("Instruction2"), &[], &[]),
-        jump(0),
-        label(8),
-        jump(8),
-        jump(9),
+        jump(db, 0),
+        label(db, 8),
+        jump(db, 8),
+        jump(db, 9),
         // Note: this label does not point to an actual instruction.
-        label(9),
+        label(db, 9),
     ];
     let label_replacer = LabelReplacer::from_statements(&statements);
     let (statements, _statements_location) =

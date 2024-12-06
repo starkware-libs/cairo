@@ -244,9 +244,11 @@ impl TestCompiler {
             plugin_suite += starknet_plugin_suite();
         }
 
-        db.set_plugins_from_suite(plugin_suite);
-
         let main_crate_ids = setup_project(db, Path::new(&path))?;
+
+        for crate_id in main_crate_ids.iter() {
+            db.set_crate_plugins_from_suite(*crate_id, plugin_suite.clone());
+        }
 
         Ok(Self {
             db: db.snapshot(),

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{GenericTypeId, ModuleId, TopLevelLanguageElementId};
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
@@ -13,9 +11,9 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
-use crate::db::SemanticGroup;
+use crate::db::{PluginSuiteInput, SemanticGroup};
 use crate::items::us::SemanticUseEx;
-use crate::plugin::AnalyzerPlugin;
+use crate::plugin::{AnalyzerPlugin, PluginSuite};
 use crate::resolve::ResolvedGenericItem;
 use crate::test_utils::{
     SemanticDatabaseForTesting, get_crate_semantic_diagnostics, setup_test_crate,
@@ -38,8 +36,8 @@ cairo_lang_test_utils::test_file_test!(
 
 #[test]
 fn test_missing_module_file() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
+    let db = &mut SemanticDatabaseForTesting::default();
+
     let crate_id = setup_test_crate(
         db,
         "
@@ -48,6 +46,8 @@ fn test_missing_module_file() {
     }",
         None,
     );
+
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
 
     let submodule_id =
         *db.module_submodules_ids(ModuleId::CrateRoot(crate_id)).unwrap().first().unwrap();
@@ -68,7 +68,7 @@ fn test_missing_module_file() {
 // A dummy plugin that adds an inline module with a semantic error (per function
 // in the original module).
 // Used to test error location inside plugin generated inline modules.
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 struct AddInlineModuleDummyPlugin;
 
 impl MacroPlugin for AddInlineModuleDummyPlugin {
@@ -138,9 +138,8 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
 
 #[test]
 fn test_inline_module_diagnostics() {
-    let mut db_val = SemanticDatabaseForTesting::new_empty();
-    let db = &mut db_val;
-    db.set_macro_plugins(vec![Arc::new(AddInlineModuleDummyPlugin)]);
+    let db = &mut SemanticDatabaseForTesting::new_empty();
+
     let crate_id = setup_test_crate(
         db,
         indoc! {"
@@ -153,6 +152,10 @@ fn test_inline_module_diagnostics() {
        "},
         None,
     );
+
+    let mut suite = PluginSuite::default();
+    suite.add_plugin::<AddInlineModuleDummyPlugin>();
+    db.set_crate_plugins_from_suite(crate_id, suite);
 
     // Verify we get diagnostics both for the original and the generated code.
     assert_eq!(get_crate_semantic_diagnostics(db, crate_id).format(db), indoc! {r#"
@@ -171,8 +174,8 @@ fn test_inline_module_diagnostics() {
 
 #[test]
 fn test_inline_inline_module_diagnostics() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
+    let db = &mut SemanticDatabaseForTesting::default();
+
     let crate_id = setup_test_crate(
         db,
         indoc! {"
@@ -199,6 +202,8 @@ fn test_inline_inline_module_diagnostics() {
         None,
     );
 
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
     assert_eq!(
         get_crate_semantic_diagnostics(db, crate_id).format(db),
         indoc! {r#"error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
@@ -215,7 +220,7 @@ fn test_inline_inline_module_diagnostics() {
     );
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 struct NoU128RenameAnalyzerPlugin;
 impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
     fn diagnostics(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Vec<PluginDiagnostic> {
@@ -246,9 +251,8 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
 
 #[test]
 fn test_analyzer_diagnostics() {
-    let mut db_val = SemanticDatabaseForTesting::new_empty();
-    let db = &mut db_val;
-    db.set_analyzer_plugins(vec![Arc::new(NoU128RenameAnalyzerPlugin)]);
+    let db = &mut SemanticDatabaseForTesting::new_empty();
+
     let crate_id = setup_test_crate(
         db,
         indoc! {"
@@ -268,6 +272,10 @@ fn test_analyzer_diagnostics() {
        "},
         None,
     );
+
+    let mut suite = PluginSuite::default();
+    suite.add_analyzer_plugin::<NoU128RenameAnalyzerPlugin>();
+    db.set_crate_plugins_from_suite(crate_id, suite);
 
     assert_eq!(get_crate_semantic_diagnostics(db, crate_id).format(db), indoc! {r#"
         error: Plugin diagnostic: Use items for u128 disallowed.

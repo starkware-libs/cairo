@@ -2,13 +2,15 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, NamedLanguageElementId, VarId};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Upcast, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 
-use crate::db::SemanticGroup;
+use crate::db::{PluginSuiteInput, SemanticGroup};
 use crate::expr::fmt::ExprFormatter;
+use crate::inline_macros::get_default_plugin_suite;
+use crate::plugin::PluginSuite;
 use crate::semantic;
 use crate::test_utils::{
     SemanticDatabaseForTesting, TestExpr, TestFunction, test_function_diagnostics,
@@ -95,21 +97,25 @@ fn test_expand_expr(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &SemanticDatabaseForTesting::default();
-    let (test_expr, diagnostics) = TestExpr::builder(
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_expr_builder = TestExpr::builder(
         db,
         inputs["expr_code"].as_str(),
         inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("function_body").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("crate_settings").map(|x| x.as_str()),
-    )
-    .build_and_check_for_diagnostics(db)
-    .split();
+    );
+
+    let crate_id = unsafe { test_expr_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    let (test_expr, diagnostics) = test_expr_builder.build_and_check_for_diagnostics(db).split();
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
-    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db.upcast());
+    let expanded_code = expr.stable_ptr().0.lookup(db).get_text(db);
     let expanded_code = expanded_code.replace("\n        ", "\n");
     TestRunnerResult {
         outputs: OrderedHashMap::from([
@@ -125,17 +131,22 @@ fn test_expr_semantics(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &SemanticDatabaseForTesting::default();
-    let (test_expr, diagnostics) = TestExpr::builder(
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_expr_builder = TestExpr::builder(
         db,
         inputs["expr_code"].as_str(),
         inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("function_body").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("crate_settings").map(|x| x.as_str()),
-    )
-    .build_and_check_for_diagnostics(db)
-    .split();
+    );
+
+    let crate_id = unsafe { test_expr_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    let (test_expr, diagnostics) = test_expr_builder.build_and_check_for_diagnostics(db).split();
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
+
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     let error = verify_diagnostics_expectation(args, &diagnostics);
@@ -150,11 +161,14 @@ fn test_expr_semantics(
 
 #[test]
 fn test_function_with_param() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function = TestFunction::builder(&db_val, "fn foo(a: felt252) {}", "foo", "", None)
-        .build_and_check_for_diagnostics(&db_val)
-        .unwrap();
-    let _db = &db_val;
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_function_builder = TestFunction::builder(db, "fn foo(a: felt252) {}", "foo", "", None);
+
+    let crate_id = unsafe { test_function_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
+    let test_function = test_function_builder.build_and_check_for_diagnostics(db).unwrap();
     let signature = test_function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
@@ -165,17 +179,15 @@ fn test_function_with_param() {
 
 #[test]
 fn test_tuple_type() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function = TestFunction::builder(
-        &db_val,
-        "fn foo(mut a: (felt252, (), (felt252,))) {}",
-        "foo",
-        "",
-        None,
-    )
-    .build_and_check_for_diagnostics(&db_val)
-    .unwrap();
-    let db = &db_val;
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_function_builder =
+        TestFunction::builder(db, "fn foo(mut a: (felt252, (), (felt252,))) {}", "foo", "", None);
+
+    let crate_id = unsafe { test_function_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
+    let test_function = test_function_builder.build_and_check_for_diagnostics(db).unwrap();
     let signature = test_function.signature;
 
     assert_eq!(signature.params.len(), 1);
@@ -189,12 +201,15 @@ fn test_tuple_type() {
 
 #[test]
 fn test_function_with_return_type() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function =
-        TestFunction::builder(&db_val, "fn foo() -> felt252 { 5 }", "foo", "", None)
-            .build_and_check_for_diagnostics(&db_val)
-            .unwrap();
-    let _db = &db_val;
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_function_builder =
+        TestFunction::builder(db, "fn foo() -> felt252 { 5 }", "foo", "", None);
+
+    let crate_id = unsafe { test_function_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
+    let test_function = test_function_builder.build_and_check_for_diagnostics(db).unwrap();
     let signature = test_function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
@@ -203,9 +218,10 @@ fn test_function_with_return_type() {
 
 #[test]
 fn test_expr_var() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function = TestFunction::builder(
-        &db_val,
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_function_builder = TestFunction::builder(
+        db,
         indoc! {"
             fn foo(a: felt252) -> felt252 {
                 a
@@ -214,10 +230,12 @@ fn test_expr_var() {
         "foo",
         "",
         None,
-    )
-    .build_and_check_for_diagnostics(&db_val)
-    .unwrap();
-    let db = &db_val;
+    );
+
+    let crate_id = unsafe { test_function_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
+    let test_function = test_function_builder.build_and_check_for_diagnostics(db).unwrap();
 
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
         db.expr_semantic(test_function.function_id, test_function.body),
@@ -235,12 +253,16 @@ fn test_expr_var() {
 
 #[test]
 fn test_expr_call_failures() {
-    let db_val = SemanticDatabaseForTesting::default();
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_expr_builder = TestExpr::builder(db, "foo()", "", "", None);
+
+    let crate_id = unsafe { test_expr_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
     // TODO(spapini): Add types.
-    let (test_expr, diagnostics) = TestExpr::builder(&db_val, "foo()", "", "", None)
-        .build_and_check_for_diagnostics(&db_val)
-        .split();
-    let db = &db_val;
+    let (test_expr, diagnostics) = test_expr_builder.build_and_check_for_diagnostics(db).split();
+
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     // Check expr.
@@ -263,9 +285,10 @@ fn test_expr_call_failures() {
 
 #[test]
 fn test_function_body() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let test_function = TestFunction::builder(
-        &db_val,
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_function_builder = TestFunction::builder(
+        db,
         indoc! {"
             fn foo(a: felt252) {
                 a;
@@ -274,10 +297,13 @@ fn test_function_body() {
         "foo",
         "",
         None,
-    )
-    .build_and_check_for_diagnostics(&db_val)
-    .unwrap();
-    let db = &db_val;
+    );
+
+    let crate_id = unsafe { test_function_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, PluginSuite::default());
+
+    let test_function = test_function_builder.build_and_check_for_diagnostics(db).unwrap();
+
     let item_id = db.module_item_by_name(test_function.module_id, "foo".into()).unwrap().unwrap();
 
     let function_id =

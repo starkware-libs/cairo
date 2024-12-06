@@ -1,8 +1,8 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, NamedLanguageElementId,
-    StructId, TraitTypeId,
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, ModuleFileId,
+    NamedLanguageElementId, StructId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -105,6 +105,10 @@ impl TypeId {
         db.priv_type_is_var_free(*self)
     }
 
+    pub fn module_file_id(self, db: &dyn SemanticGroup) -> Option<ModuleFileId> {
+        db.lookup_intern_type(self).module_file_id(db)
+    }
+
     /// Returns whether the type is phantom.
     /// Type is considered phantom if it has the `#[phantom]` attribute, or is a tuple or fixed
     /// sized array containing it.
@@ -141,12 +145,50 @@ impl TypeLongId {
         })
     }
 
+    /// Gets a [`ModuleFileId`] if the type represented by [`TypeLongId`]
+    /// is associated with some.
+    pub fn module_file_id(&self, db: &dyn SemanticGroup) -> Option<ModuleFileId> {
+        let defs_db = db.upcast();
+
+        match self {
+            TypeLongId::Concrete(id) => match id {
+                ConcreteTypeId::Struct(id) => {
+                    Some(db.lookup_intern_concrete_struct(*id).struct_id.module_file_id(defs_db))
+                }
+                ConcreteTypeId::Enum(id) => {
+                    Some(db.lookup_intern_concrete_enum(*id).enum_id.module_file_id(defs_db))
+                }
+                ConcreteTypeId::Extern(id) => Some(
+                    db.lookup_intern_concrete_extern_type(*id)
+                        .extern_type_id
+                        .module_file_id(defs_db),
+                ),
+            },
+            TypeLongId::Snapshot(type_id) => type_id.module_file_id(db),
+            TypeLongId::GenericParameter(id) => Some(id.module_file_id(defs_db)),
+            TypeLongId::FixedSizeArray { type_id, .. } => type_id.module_file_id(db),
+            TypeLongId::TraitType(id) => Some(id.module_file_id(defs_db)),
+            TypeLongId::ImplType(id) => Some(db.lookup_intern_concrete_trait(id.impl_id.concrete_trait(db).ok()?).trait_id.module_file_id(defs_db)),
+            TypeLongId::Tuple(_)  // Types of the tuple can originate from different modules.
+            | TypeLongId::Var(_)
+            | TypeLongId::Coupon(_)
+            | TypeLongId::Closure(_)
+            | TypeLongId::Missing(_) => None,
+        }
+    }
+
     /// Returns whether the type is phantom.
     /// Type is considered phantom if it has the `#[phantom]` attribute, (or an other attribute
     /// declared by a plugin as defining a phantom type), or is a tuple or fixed sized array
     /// containing it.
     pub fn is_phantom(&self, db: &dyn SemanticGroup) -> bool {
-        let phantom_type_attributes = db.declared_phantom_type_attributes();
+        let Some(module_file_id) = self.module_file_id(db) else {
+            return false;
+        };
+
+        let owning_crate_id = module_file_id.0.owning_crate(db.upcast());
+
+        let phantom_type_attributes = db.declared_phantom_type_attributes(owning_crate_id);
         match self {
             TypeLongId::Concrete(id) => match id {
                 ConcreteTypeId::Struct(id) => phantom_type_attributes

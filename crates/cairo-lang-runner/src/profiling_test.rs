@@ -44,20 +44,19 @@ pub fn test_profiling(
     }
 
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
     let (_path, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-    let test_module =
-        TestModule::builder(&db, &cairo_code, None).build_and_check_for_diagnostics(&db).unwrap();
-    DiagnosticsReporter::stderr()
-        .with_crates(&[test_module.crate_id])
-        .allow_warnings()
-        .ensure(&db)
-        .unwrap();
+    let test_module_builder = TestModule::builder(&db, &cairo_code, None);
+
+    let crate_id = unsafe { test_module_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite() + starknet_plugin_suite());
+
+    test_module_builder.build_and_check_for_diagnostics(&db).unwrap();
+    DiagnosticsReporter::stderr().with_crates(&[crate_id]).allow_warnings().ensure(&db).unwrap();
 
     // Compile to Sierra.
     let SierraProgramWithDebug { program: sierra_program, debug_info } =
-        Arc::unwrap_or_clone(db.get_sierra_program(vec![test_module.crate_id]).expect(
+        Arc::unwrap_or_clone(db.get_sierra_program(vec![crate_id]).expect(
             "`get_sierra_program` failed. run with RUST_LOG=warn (or less) to see diagnostics",
         ));
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);

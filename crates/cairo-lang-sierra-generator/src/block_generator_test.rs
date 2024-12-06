@@ -6,6 +6,8 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::TestFunction;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::UpcastMut;
@@ -46,16 +48,20 @@ fn block_generator_test(
     let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
     db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
 
-    // Parse code and create semantic model.
-    let (test_function, semantic_diagnostics) = TestFunction::builder(
+    let test_function_builder = TestFunction::builder(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
         None,
-    )
-    .build_and_check_for_diagnostics(db)
-    .split();
+    );
+
+    let crate_id = unsafe { test_function_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    // Parse code and create semantic model.
+    let (test_function, semantic_diagnostics) =
+        test_function_builder.build_and_check_for_diagnostics(db).split();
 
     // Lower code.
     let function_id =

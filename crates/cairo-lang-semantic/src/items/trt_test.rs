@@ -4,14 +4,15 @@ use cairo_lang_utils::extract_matches;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
-use crate::db::SemanticGroup;
+use crate::db::{PluginSuiteInput, SemanticGroup};
+use crate::inline_macros::get_default_plugin_suite;
 use crate::test_utils::{SemanticDatabaseForTesting, TestModule};
 
 #[test]
 fn test_trait() {
-    let db_val = SemanticDatabaseForTesting::default();
-    let db = &db_val;
-    let test_module = TestModule::builder(
+    let db = &mut SemanticDatabaseForTesting::default();
+
+    let test_module_builder = TestModule::builder(
         db,
         indoc::indoc! {"
             // `inline` is used just to have an allowed attribute.
@@ -21,9 +22,12 @@ fn test_trait() {
             }
         "},
         None,
-    )
-    .build_and_check_for_diagnostics(db)
-    .unwrap();
+    );
+
+    let crate_id = unsafe { test_module_builder.get_crate_id() };
+    db.set_crate_plugins_from_suite(crate_id, get_default_plugin_suite());
+
+    let test_module = test_module_builder.build_and_check_for_diagnostics(db).unwrap();
 
     let trait_id = extract_matches!(
         db.module_item_by_name(test_module.module_id, "MyContract".into()).unwrap().unwrap(),

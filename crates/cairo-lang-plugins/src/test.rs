@@ -2,7 +2,7 @@ use std::default::Default;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
-use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_defs::ids::{MacroPluginLongId, ModuleId};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
@@ -64,7 +64,6 @@ impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(get_base_plugins());
         res
     }
 }
@@ -112,9 +111,6 @@ pub fn test_expand_plugin_inner(
     extra_plugins: &[Arc<dyn MacroPlugin>],
 ) -> TestRunnerResult {
     let db = &mut DatabaseForTesting::default();
-    let mut plugins = db.macro_plugins();
-    plugins.extend_from_slice(extra_plugins);
-    db.set_macro_plugins(plugins);
 
     let cfg_set: Option<CfgSet> =
         inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());
@@ -127,6 +123,16 @@ pub fn test_expand_plugin_inner(
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("test_src".into());
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
+
+    let mut plugins = get_base_plugins();
+    plugins.extend_from_slice(extra_plugins);
+
+    let plugins = plugins
+        .into_iter()
+        .map(|plugin| db.intern_macro_plugin(MacroPluginLongId(plugin)))
+        .collect();
+
+    db.set_crate_macro_plugins(crate_id, plugins);
 
     // Main module file.
     let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db);

@@ -1,5 +1,5 @@
 use std::fmt::Write as _;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{
@@ -19,16 +19,31 @@ use indoc::indoc;
 
 use crate::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use crate::ids::{
-    FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    SubmoduleLongId,
+    FileIndex, GenericParamLongId, MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId,
+    NamedLanguageElementId, SubmoduleLongId,
 };
 use crate::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 
+static TEST_PLUGINS: LazyLock<[Arc<dyn MacroPlugin>; 3]> =
+    LazyLock::new(|| [Arc::new(FooToBarPlugin), Arc::new(RemoveOrigPlugin), Arc::new(DummyPlugin)]);
+
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
+}
+impl DatabaseForTesting {
+    fn set_test_macro_plugins_for_crate(&mut self, crate_id: CrateId) {
+        self.set_crate_macro_plugins(
+            crate_id,
+            TEST_PLUGINS
+                .iter()
+                .cloned()
+                .map(|plugin| self.intern_macro_plugin(MacroPluginLongId(plugin)))
+                .collect(),
+        );
+    }
 }
 impl salsa::Database for DatabaseForTesting {}
 impl ExternalFiles for DatabaseForTesting {
@@ -40,11 +55,7 @@ impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(vec![
-            Arc::new(FooToBarPlugin),
-            Arc::new(RemoveOrigPlugin),
-            Arc::new(DummyPlugin),
-        ]);
+        res.set_test_macro_plugins_for_crate(CrateId::core(&res));
         res
     }
 }
@@ -83,6 +94,8 @@ fn test_generic_item_id(
 ) -> TestRunnerResult {
     let mut db_val = DatabaseForTesting::default();
     let module_id = setup_test_module(&mut db_val, inputs["module_code"].as_str());
+
+    db_val.set_test_macro_plugins_for_crate(module_id.owning_crate(&db_val));
 
     let module_file_id = ModuleFileId(module_id, FileIndex(0));
     let db = &db_val;
@@ -145,6 +158,7 @@ fn test_module_file() {
     let module_id = setup_test_module(&mut db_val, indoc! {"
             mod mysubmodule;
         "});
+    db_val.set_test_macro_plugins_for_crate(module_id.owning_crate(&db_val));
     let db = &db_val;
     let item_id =
         extract_matches!(db.module_items(module_id).ok().unwrap()[0], ModuleItemId::Submodule);
@@ -173,6 +187,7 @@ fn test_submodules() {
 
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
+    db.set_test_macro_plugins_for_crate(crate_id);
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
@@ -255,6 +270,7 @@ fn test_plugin() {
 
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
+    db.set_test_macro_plugins_for_crate(crate_id);
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
@@ -279,6 +295,7 @@ fn test_plugin_remove_original() {
 
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
+    db.set_test_macro_plugins_for_crate(crate_id);
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
@@ -368,6 +385,7 @@ fn test_foo_to_bar() {
     let db = &mut db_val;
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
+    db.set_test_macro_plugins_for_crate(crate_id);
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
@@ -394,6 +412,7 @@ fn test_first_plugin_removes() {
     let db = &mut db_val;
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
+    db.set_test_macro_plugins_for_crate(crate_id);
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
@@ -418,6 +437,7 @@ fn test_first_plugin_generates() {
     let db = &mut db_val;
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
+    db.set_test_macro_plugins_for_crate(crate_id);
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
@@ -442,6 +462,7 @@ fn test_plugin_chain() {
     let db = &mut db_val;
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
+    db.set_test_macro_plugins_for_crate(crate_id);
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
@@ -468,6 +489,7 @@ fn test_unknown_item_macro() {
     let db = &mut db_val;
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
+    db.set_test_macro_plugins_for_crate(crate_id);
     db.set_crate_config(crate_id, Some(CrateConfiguration::default_for_root(root)));
 
     // Main module file.
@@ -477,7 +499,7 @@ fn test_unknown_item_macro() {
     let module_id = ModuleId::CrateRoot(crate_id);
     assert_eq!(
         format!("{:?}", db.module_plugin_diagnostics(module_id).unwrap()),
-        "[(ModuleFileId(CrateRoot(CrateId(0)), FileIndex(0)), PluginDiagnostic { stable_ptr: \
+        "[(ModuleFileId(CrateRoot(CrateId(1)), FileIndex(0)), PluginDiagnostic { stable_ptr: \
          SyntaxStablePtrId(3), message: \"Unknown inline item macro: 'unknown_item_macro'.\", \
          severity: Error })]"
     )
