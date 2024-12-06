@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use indoc::indoc;
 use num_bigint::BigInt;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct ConstevalIntMacro;
 impl NamedPlugin for ConstevalIntMacro {
     const NAME: &'static str = "consteval_int";

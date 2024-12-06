@@ -54,7 +54,7 @@ use super::{
 ///     }
 /// }
 /// ```
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct StorageInterfacesPlugin;
 

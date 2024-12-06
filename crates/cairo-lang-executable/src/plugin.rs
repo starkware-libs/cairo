@@ -37,7 +37,7 @@ const IMPLICIT_PRECEDENCE: &[&str] = &[
     "core::circuit::MulMod",
 ];
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 struct ExecutablePlugin;
 
@@ -137,7 +137,7 @@ impl MacroPlugin for ExecutablePlugin {
 }
 
 /// Plugin to add diagnostics on bad `#[executable_raw]` annotations.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Eq, Hash)]
 struct RawExecutableAnalyzer;
 
 impl AnalyzerPlugin for RawExecutableAnalyzer {

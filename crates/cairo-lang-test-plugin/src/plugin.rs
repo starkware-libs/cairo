@@ -7,7 +7,7 @@ use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, TEST_ATTR};
 use crate::test_config::try_extract_test_config;
 
 /// Plugin to create diagnostics for tests attributes.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct TestPlugin;
 

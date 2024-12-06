@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::helpers::WrappedArgListHelper;
 use indoc::{formatdoc, indoc};
 
 /// Macro for formatting.
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Eq, Hash)]
 pub struct FormatMacro;
 impl NamedPlugin for FormatMacro {
     const NAME: &'static str = "format";

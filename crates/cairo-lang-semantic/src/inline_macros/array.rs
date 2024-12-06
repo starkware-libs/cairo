@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::indoc;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct ArrayMacro;
 impl NamedPlugin for ArrayMacro {
     const NAME: &'static str = "array";

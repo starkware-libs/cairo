@@ -26,7 +26,7 @@ use self::derive::{derive_needed, handle_derive};
 use self::embeddable::handle_embeddable;
 use self::starknet_module::{handle_module, handle_module_by_storage};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct StarkNetPlugin;
 

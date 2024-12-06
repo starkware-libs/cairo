@@ -190,7 +190,7 @@ trait CompareAssertionPlugin: NamedPlugin {
 macro_rules! define_compare_assert_macro {
     ($(#[$attr:meta])* $ident:ident, $name:tt, $operator:tt) => {
         $(#[$attr])*
-        #[derive(Default, Debug)]
+        #[derive(Default, Debug, PartialEq, Eq, Hash)]
         pub struct $ident;
         impl NamedPlugin for $ident {
             const NAME: &'static str = $name;

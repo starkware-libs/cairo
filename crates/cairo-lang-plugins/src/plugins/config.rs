@@ -17,7 +17,7 @@ use cairo_lang_utils::try_extract_matches;
 ///
 /// Mostly useful for marking test modules to prevent usage of their functionality out of tests,
 /// and reduce compilation time when the tests data isn't required.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct ConfigPlugin;
 

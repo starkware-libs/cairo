@@ -19,7 +19,11 @@ cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "~2.9.1" }
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.9.1" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.9.1" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.9.1" }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "~2.9.1", optional = true, features = ["testing"] }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "~2.9.1", optional = true, features = [
+    "testing",
+] }
+dyn-eq.workspace = true
+dyn-hash.workspace = true
 id-arena.workspace = true
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }
@@ -32,7 +36,9 @@ toml = { workspace = true, optional = true }
 
 [dev-dependencies]
 cairo-lang-plugins = { path = "../cairo-lang-plugins" }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = [
+    "testing",
+] }
 env_logger.workspace = true
 log.workspace = true
 pretty_assertions.workspace = true

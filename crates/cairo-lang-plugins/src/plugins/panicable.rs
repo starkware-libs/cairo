@@ -12,7 +12,7 @@ use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct PanicablePlugin;
 

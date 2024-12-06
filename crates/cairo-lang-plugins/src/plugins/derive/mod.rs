@@ -23,7 +23,7 @@ mod panic_destruct;
 mod partial_eq;
 mod serde;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct DerivePlugin;
 
