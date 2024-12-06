@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::get_location_marks;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_semantic::test_utils::TestFunction;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, extract_matches};
@@ -31,12 +31,14 @@ fn test_generated_function(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = setup_test_function(
+    let (test_function, semantic_diagnostics) = TestFunction::builder(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
+        None,
     )
+    .build_and_check_for_diagnostics(db)
     .split();
 
     let mut writer = String::new();

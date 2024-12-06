@@ -11,7 +11,7 @@ use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
 use crate::semantic;
 use crate::test_utils::{
-    SemanticDatabaseForTesting, setup_test_expr, setup_test_function, test_function_diagnostics,
+    SemanticDatabaseForTesting, TestExpr, TestFunction, test_function_diagnostics,
 };
 
 cairo_lang_test_utils::test_file_test!(
@@ -96,13 +96,14 @@ fn test_expand_expr(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
-    let (test_expr, diagnostics) = setup_test_expr(
+    let (test_expr, diagnostics) = TestExpr::builder(
         db,
         inputs["expr_code"].as_str(),
         inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("function_body").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("crate_settings").map(|x| x.as_str()),
     )
+    .build_and_check_for_diagnostics(db)
     .split();
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
@@ -125,13 +126,14 @@ fn test_expr_semantics(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
-    let (test_expr, diagnostics) = setup_test_expr(
+    let (test_expr, diagnostics) = TestExpr::builder(
         db,
         inputs["expr_code"].as_str(),
         inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("function_body").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("crate_settings").map(|x| x.as_str()),
     )
+    .build_and_check_for_diagnostics(db)
     .split();
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
@@ -149,7 +151,9 @@ fn test_expr_semantics(
 #[test]
 fn test_function_with_param() {
     let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_test_function(&db_val, "fn foo(a: felt252) {}", "foo", "").unwrap();
+    let test_function = TestFunction::builder(&db_val, "fn foo(a: felt252) {}", "foo", "", None)
+        .build_and_check_for_diagnostics(&db_val)
+        .unwrap();
     let _db = &db_val;
     let signature = test_function.signature;
 
@@ -162,9 +166,15 @@ fn test_function_with_param() {
 #[test]
 fn test_tuple_type() {
     let db_val = SemanticDatabaseForTesting::default();
-    let test_function =
-        setup_test_function(&db_val, "fn foo(mut a: (felt252, (), (felt252,))) {}", "foo", "")
-            .unwrap();
+    let test_function = TestFunction::builder(
+        &db_val,
+        "fn foo(mut a: (felt252, (), (felt252,))) {}",
+        "foo",
+        "",
+        None,
+    )
+    .build_and_check_for_diagnostics(&db_val)
+    .unwrap();
     let db = &db_val;
     let signature = test_function.signature;
 
@@ -181,7 +191,9 @@ fn test_tuple_type() {
 fn test_function_with_return_type() {
     let db_val = SemanticDatabaseForTesting::default();
     let test_function =
-        setup_test_function(&db_val, "fn foo() -> felt252 { 5 }", "foo", "").unwrap();
+        TestFunction::builder(&db_val, "fn foo() -> felt252 { 5 }", "foo", "", None)
+            .build_and_check_for_diagnostics(&db_val)
+            .unwrap();
     let _db = &db_val;
     let signature = test_function.signature;
 
@@ -192,7 +204,7 @@ fn test_function_with_return_type() {
 #[test]
 fn test_expr_var() {
     let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_test_function(
+    let test_function = TestFunction::builder(
         &db_val,
         indoc! {"
             fn foo(a: felt252) -> felt252 {
@@ -201,7 +213,9 @@ fn test_expr_var() {
         "},
         "foo",
         "",
+        None,
     )
+    .build_and_check_for_diagnostics(&db_val)
     .unwrap();
     let db = &db_val;
 
@@ -223,7 +237,9 @@ fn test_expr_var() {
 fn test_expr_call_failures() {
     let db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let (test_expr, diagnostics) = setup_test_expr(&db_val, "foo()", "", "", None).split();
+    let (test_expr, diagnostics) = TestExpr::builder(&db_val, "foo()", "", "", None)
+        .build_and_check_for_diagnostics(&db_val)
+        .split();
     let db = &db_val;
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
@@ -248,7 +264,7 @@ fn test_expr_call_failures() {
 #[test]
 fn test_function_body() {
     let db_val = SemanticDatabaseForTesting::default();
-    let test_function = setup_test_function(
+    let test_function = TestFunction::builder(
         &db_val,
         indoc! {"
             fn foo(a: felt252) {
@@ -257,7 +273,9 @@ fn test_function_body() {
         "},
         "foo",
         "",
+        None,
     )
+    .build_and_check_for_diagnostics(&db_val)
     .unwrap();
     let db = &db_val;
     let item_id = db.module_item_by_name(test_function.module_id, "foo".into()).unwrap().unwrap();

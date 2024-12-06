@@ -5,15 +5,20 @@ use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;
-use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
+use crate::test_utils::{SemanticDatabaseForTesting, TestModule};
 
 #[test]
 fn test_extern_type() {
     let db_val = SemanticDatabaseForTesting::default();
     let db = &db_val;
-    let test_module = setup_test_module(db, indoc::indoc! {"
+    let test_module = TestModule::builder(
+        db,
+        indoc::indoc! {"
             extern type S<A, B>;
-        "})
+        "},
+        None,
+    )
+    .build_and_check_for_diagnostics(db)
     .unwrap();
     let module_id = test_module.module_id;
 

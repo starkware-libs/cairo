@@ -46,7 +46,7 @@ fn can_collect_executables() {
     suite.add_plugin::<MockExecutablePlugin>();
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
     db.set_plugins_from_suite(suite);
-    let crate_id = setup_test_crate(&db, content);
+    let crate_id = setup_test_crate(&db, content, None);
     let config = CompilerConfig { replace_ids: true, ..CompilerConfig::default() };
     let artefact = compile_prepared_db_program_artifact(&mut db, vec![crate_id], config).unwrap();
     let executables = artefact.debug_info.unwrap().executables;

@@ -3,7 +3,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_semantic::db::PluginSuiteInput;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
-use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_semantic::test_utils::TestModule;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -21,7 +21,8 @@ pub fn test_abi_failure(
     db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-    let (module, diagnostics) = setup_test_module(db, &cairo_code).split();
+    let (module, diagnostics) =
+        TestModule::builder(db, &cairo_code, None).build_and_check_for_diagnostics(db).split();
 
     let submodules = db.module_submodules_ids(module.module_id).unwrap();
     let contract_submodule = submodules
@@ -64,7 +65,8 @@ pub fn test_storage_path_check(
     db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-    let (_, diagnostics) = setup_test_module(db, &cairo_code).split();
+    let (_, diagnostics) =
+        TestModule::builder(db, &cairo_code, None).build_and_check_for_diagnostics(db).split();
 
     let test_error = verify_diagnostics_expectation(args, &diagnostics);
 

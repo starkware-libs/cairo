@@ -5,7 +5,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_plugins::test_utils::expand_module_text;
 use cairo_lang_semantic::db::PluginSuiteInput;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
-use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_semantic::test_utils::TestModule;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -32,7 +32,9 @@ impl TestFileRunner for ExpandExecutableTestRunner {
     ) -> TestRunnerResult {
         let db = SHARED_DB.lock().unwrap().snapshot();
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-        let (test_module, semantic_diagnostics) = setup_test_module(&db, &cairo_code).split();
+        let (test_module, semantic_diagnostics) = TestModule::builder(&db, &cairo_code, None)
+            .build_and_check_for_diagnostics(&db)
+            .split();
         let result = expand_module_text(&db, test_module.module_id, &mut vec![]);
         let error = verify_diagnostics_expectation(args, &semantic_diagnostics);
         TestRunnerResult {
@@ -66,7 +68,9 @@ impl TestFileRunner for CompileExecutableTestRunner {
     ) -> TestRunnerResult {
         let db = SHARED_DB.lock().unwrap().snapshot();
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
-        let (test_module, semantic_diagnostics) = setup_test_module(&db, &cairo_code).split();
+        let (test_module, semantic_diagnostics) = TestModule::builder(&db, &cairo_code, None)
+            .build_and_check_for_diagnostics(&db)
+            .split();
         let result = compile::compile_executable_in_prepared_db(
             &db,
             None,

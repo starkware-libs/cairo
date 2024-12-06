@@ -15,7 +15,9 @@ fn test_contract_resolving() {
     let db = &mut RootDatabase::builder().detect_corelib().build().unwrap();
     db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
-    let crate_id = setup_test_crate(db, indoc! {"
+    let crate_id = setup_test_crate(
+        db,
+        indoc! {"
             mod not_a_contract {}
 
             #[starknet::contract]
@@ -32,7 +34,9 @@ fn test_contract_resolving() {
                 #[external(v0)]
                 fn ep2(ref self: ContractState) {}
             }
-        "});
+        "},
+        None,
+    );
 
     let contracts = find_contracts(db, &[crate_id]);
     assert_eq!(contracts.len(), 1);

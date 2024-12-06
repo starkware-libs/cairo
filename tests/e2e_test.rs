@@ -7,7 +7,7 @@ use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::optimizations::config::OptimizationConfig;
 use cairo_lang_semantic::db::PluginSuiteInput;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
-use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_semantic::test_utils::TestModule;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Function, Program};
@@ -227,7 +227,9 @@ fn run_e2e_test(
         &SHARED_DB_NO_GAS_NO_OPTS
     });
     // Parse code and create semantic model.
-    let test_module = setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
+    let test_module = TestModule::builder(locked_db.deref_mut(), inputs["cairo"].as_str(), None)
+        .build_and_check_for_diagnostics(&*locked_db)
+        .unwrap();
     let db = locked_db.snapshot();
     DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]).ensure(&db).unwrap();
 

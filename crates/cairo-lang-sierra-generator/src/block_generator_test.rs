@@ -6,7 +6,7 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_semantic::test_utils::TestFunction;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::UpcastMut;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -47,12 +47,14 @@ fn block_generator_test(
     db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
 
     // Parse code and create semantic model.
-    let (test_function, semantic_diagnostics) = setup_test_function(
+    let (test_function, semantic_diagnostics) = TestFunction::builder(
         db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
+        None,
     )
+    .build_and_check_for_diagnostics(db)
     .split();
 
     // Lower code.
