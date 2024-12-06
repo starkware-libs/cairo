@@ -1,5 +1,4 @@
-use std::ops::DerefMut;
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
@@ -17,35 +16,35 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::compiler;
 use cairo_lang_sierra_to_casm::metadata::{MetadataComputationConfig, calc_metadata};
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
-use cairo_lang_test_utils::test_lock;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
-/// Salsa databases configured to find the corelib, when reused by different tests should be able to
-/// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
-static SHARED_DB_WITH_GAS_NO_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
-    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-    db.set_plugins_from_suite(get_default_plugin_suite());
-    db.set_optimization_config(Arc::new(
-        OptimizationConfig::default().with_skip_const_folding(true),
-    ));
-    Mutex::new(db)
-});
-static SHARED_DB_NO_GAS_NO_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
-    let mut db = RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
-    db.set_plugins_from_suite(get_default_plugin_suite());
-    db.set_optimization_config(Arc::new(
-        OptimizationConfig::default().with_skip_const_folding(true),
-    ));
-    Mutex::new(db)
-});
-static SHARED_DB_WITH_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
-    let mut db = RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
-    db.set_plugins_from_suite(get_default_plugin_suite());
-    db.set_optimization_config(Arc::new(OptimizationConfig::default()));
-    Mutex::new(db)
-});
+/// Builds a [`RootDatabase`] according to the [`E2eTestParams`] provided.
+fn build_db(params: &E2eTestParams) -> RootDatabase {
+    if !params.skip_optimization_passes {
+        let mut db =
+            RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
+        db.set_plugins_from_suite(get_default_plugin_suite());
+        db.set_optimization_config(Arc::new(OptimizationConfig::default()));
+        db
+    } else if params.add_withdraw_gas {
+        let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+        db.set_plugins_from_suite(get_default_plugin_suite());
+        db.set_optimization_config(Arc::new(
+            OptimizationConfig::default().with_skip_const_folding(true),
+        ));
+        db
+    } else {
+        let mut db =
+            RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
+        db.set_plugins_from_suite(get_default_plugin_suite());
+        db.set_optimization_config(Arc::new(
+            OptimizationConfig::default().with_skip_const_folding(true),
+        ));
+        db
+    }
+}
 
 cairo_lang_test_utils::test_file_test_with_runner!(
     general_e2e,
@@ -219,18 +218,13 @@ fn run_e2e_test(
     inputs: &OrderedHashMap<String, String>,
     params: E2eTestParams,
 ) -> TestRunnerResult {
-    let mut locked_db = test_lock(if !params.skip_optimization_passes {
-        &SHARED_DB_WITH_OPTS
-    } else if params.add_withdraw_gas {
-        &SHARED_DB_WITH_GAS_NO_OPTS
-    } else {
-        &SHARED_DB_NO_GAS_NO_OPTS
-    });
+    let db = build_db(&params);
+
     // Parse code and create semantic model.
-    let test_module = TestModule::builder(locked_db.deref_mut(), inputs["cairo"].as_str(), None)
-        .build_and_check_for_diagnostics(&*locked_db)
+    let test_module = TestModule::builder(&db, inputs["cairo"].as_str(), None)
+        .build_and_check_for_diagnostics(&db)
         .unwrap();
-    let db = locked_db.snapshot();
+
     DiagnosticsReporter::stderr().with_crates(&[test_module.crate_id]).ensure(&db).unwrap();
 
     // Compile to Sierra.

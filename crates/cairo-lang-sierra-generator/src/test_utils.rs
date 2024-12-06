@@ -1,4 +1,4 @@
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use cairo_lang_defs::ids::ModuleId;
@@ -41,26 +41,21 @@ use crate::utils::{jump_statement, return_statement, simple_statement};
 pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
 }
+
 impl salsa::Database for SierraGenDatabaseForTesting {}
+
 impl ExternalFiles for SierraGenDatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
         try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
+
 impl salsa::ParallelDatabase for SierraGenDatabaseForTesting {
     fn snapshot(&self) -> salsa::Snapshot<SierraGenDatabaseForTesting> {
         salsa::Snapshot::new(SierraGenDatabaseForTesting { storage: self.storage.snapshot() })
     }
 }
-pub static SHARED_DB: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
-    LazyLock::new(|| Mutex::new(SierraGenDatabaseForTesting::new_empty()));
-pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
-    LazyLock::new(|| {
-        let mut db = SierraGenDatabaseForTesting::new_empty();
-        let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
-        db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
-        Mutex::new(db)
-    });
+
 impl SierraGenDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SierraGenDatabaseForTesting { storage: Default::default() };
@@ -78,19 +73,26 @@ impl SierraGenDatabaseForTesting {
         init_dev_corelib(&mut res, corelib_path);
         res
     }
+
     pub fn without_add_withdraw_gas() -> Self {
-        SHARED_DB_WITHOUT_AD_WITHDRAW_GAS.lock().unwrap().snapshot()
+        let mut db = SierraGenDatabaseForTesting::new_empty();
+        let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
+        db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+        db
     }
+
     /// Snapshots the db for read only.
     pub fn snapshot(&self) -> SierraGenDatabaseForTesting {
         SierraGenDatabaseForTesting { storage: self.storage.snapshot() }
     }
 }
+
 impl Default for SierraGenDatabaseForTesting {
     fn default() -> Self {
-        SHARED_DB.lock().unwrap().snapshot()
+        SierraGenDatabaseForTesting::new_empty()
     }
 }
+
 impl AsFilesGroupMut for SierraGenDatabaseForTesting {
     fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self

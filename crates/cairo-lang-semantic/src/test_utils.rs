@@ -1,5 +1,3 @@
-use std::sync::{LazyLock, Mutex};
-
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
@@ -26,17 +24,21 @@ use crate::{ConcreteFunctionWithBodyId, SemanticDiagnostic, semantic};
 pub struct SemanticDatabaseForTesting {
     storage: salsa::Storage<SemanticDatabaseForTesting>,
 }
+
 impl salsa::Database for SemanticDatabaseForTesting {}
+
 impl ExternalFiles for SemanticDatabaseForTesting {
     fn try_ext_as_virtual(&self, external_id: salsa::InternId) -> Option<VirtualFile> {
         try_ext_as_virtual_impl(self.upcast(), external_id)
     }
 }
+
 impl salsa::ParallelDatabase for SemanticDatabaseForTesting {
     fn snapshot(&self) -> salsa::Snapshot<SemanticDatabaseForTesting> {
         salsa::Snapshot::new(SemanticDatabaseForTesting { storage: self.storage.snapshot() })
     }
 }
+
 impl SemanticDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SemanticDatabaseForTesting { storage: Default::default() };
@@ -54,13 +56,13 @@ impl SemanticDatabaseForTesting {
         SemanticDatabaseForTesting { storage: self.storage.snapshot() }
     }
 }
-pub static SHARED_DB: LazyLock<Mutex<SemanticDatabaseForTesting>> =
-    LazyLock::new(|| Mutex::new(SemanticDatabaseForTesting::new_empty()));
+
 impl Default for SemanticDatabaseForTesting {
     fn default() -> Self {
-        SHARED_DB.lock().unwrap().snapshot()
+        SemanticDatabaseForTesting::new_empty()
     }
 }
+
 impl AsFilesGroupMut for SemanticDatabaseForTesting {
     fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self

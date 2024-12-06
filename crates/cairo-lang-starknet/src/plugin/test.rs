@@ -1,6 +1,8 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
+use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
+use cairo_lang_compiler::project::ProjectConfig;
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
@@ -9,13 +11,16 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_plugins::test_utils::expand_module_text;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::TestModule;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast};
 
-use crate::test_utils::{SHARED_DB, SHARED_DB_WITH_CONTRACTS};
+use crate::starknet_plugin_suite;
+use crate::test_utils::CONTRACTS_CRATE_DIR;
 
 #[derive(Default)]
 struct ExpandContractTestRunner {}
@@ -27,7 +32,9 @@ impl TestFileRunner for ExpandContractTestRunner {
         inputs: &OrderedHashMap<String, String>,
         args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        let db = SHARED_DB.lock().unwrap().snapshot();
+        let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+        db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
+
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
         let (test_module, _semantic_diagnostics) = TestModule::builder(&db, &cairo_code, None)
             .build_and_check_for_diagnostics(&db)
@@ -121,7 +128,15 @@ impl TestFileRunner for ExpandContractFromCrateTestRunner {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        let db = SHARED_DB_WITH_CONTRACTS.lock().unwrap().snapshot();
+        let mut db = RootDatabase::builder()
+            .detect_corelib()
+            .with_project_config(
+                ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap(),
+            )
+            .build()
+            .unwrap();
+
+        db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
         let contract_file_id =
             FileLongId::OnDisk(PathBuf::from(inputs["contract_file_name"].clone())).intern(&db);
         let contract_module_ids = db.file_modules(contract_file_id).unwrap();

@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_compiler::db::RootDatabase;
@@ -12,7 +11,6 @@ use cairo_lang_semantic::db::PluginSuiteInput;
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_starknet_classes::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
-use cairo_lang_test_utils::test_lock;
 use itertools::Itertools;
 
 use crate::compile::compile_contract_in_prepared_db;
@@ -25,20 +23,10 @@ pub fn get_example_file_path(file_name: &str) -> PathBuf {
     path
 }
 
-/// Salsa database configured to find the corelib, when reused by different tests should be able to
-/// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
-pub static SHARED_DB: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
-    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
-    Mutex::new(db)
-});
+pub const CONTRACTS_CRATE_DIR: &str = "cairo_level_tests";
 
-const CONTRACTS_CRATE_DIR: &str = "cairo_level_tests";
-
-/// Salsa database configured to find the corelib, and the contracts crate. When reused by different
-/// tests should be able to use the cached queries that rely on the corelib's or the contracts
-/// crates code, which vastly reduces the tests runtime.
-pub static SHARED_DB_WITH_CONTRACTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
+/// Returns the compiled test contract from the contracts crate, with replaced ids.
+pub fn get_test_contract(example_file_name: &str) -> ContractClass {
     let mut db = RootDatabase::builder()
         .detect_corelib()
         .with_project_config(ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap())
@@ -46,14 +34,7 @@ pub static SHARED_DB_WITH_CONTRACTS: LazyLock<Mutex<RootDatabase>> = LazyLock::n
         .unwrap();
 
     db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
-    Mutex::new(db)
-});
 
-/// Returns the compiled test contract from the contracts crate, with replaced ids.
-pub fn get_test_contract(example_file_name: &str) -> ContractClass {
-    let locked_db = test_lock(&SHARED_DB_WITH_CONTRACTS);
-    let db = locked_db.snapshot();
-    drop(locked_db);
     let crate_configs = db.crate_configs();
     let contracts_crate = crate_configs
         .iter()
