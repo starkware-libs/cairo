@@ -38,7 +38,7 @@ pub fn cancel_ops(lowered: &mut FlatLowered) {
     let CancelOpsContext { mut var_remapper, stmts_to_remove, .. } = analysis.analyzer;
 
     // Remove no-longer needed statements.
-    // Note that dedup() is used since a statement might be marked for removal more then once.
+    // Note that dedup() is used since a statement might be marked for removal more than once.
     for (block_id, stmt_id) in stmts_to_remove
         .into_iter()
         .sorted_by_key(|(block_id, stmt_id)| (block_id.0, *stmt_id))
