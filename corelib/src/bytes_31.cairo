@@ -16,6 +16,7 @@
 
 #[allow(unused_imports)]
 use crate::integer::{u128_safe_divmod, u128_to_felt252};
+#[allow(unused_imports)]
 use crate::option::OptionTrait;
 use crate::RangeCheck;
 use crate::traits::{Into, TryInto};
@@ -48,13 +49,7 @@ pub impl Bytes31Impl of Bytes31Trait {
     /// assert!(bytes.at(0) == 1);
     /// ```
     fn at(self: @bytes31, index: usize) -> u8 {
-        let u256 { low, high } = (*self).into();
-        let res_u128 = if index < BYTES_IN_U128 {
-            (low / one_shift_left_bytes_u128(index)) % POW_2_8
-        } else {
-            (high / one_shift_left_bytes_u128(index - BYTES_IN_U128)) % POW_2_8
-        };
-        res_u128.try_into().unwrap()
+        u8_at_u256((*self).into(), index)
     }
 }
 
@@ -147,28 +142,23 @@ pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252
     }
 
     if len <= BYTES_IN_U128 {
-        let (quotient, remainder) = u128_safe_divmod(
-            low, one_shift_left_bytes_u128(index).try_into().unwrap(),
-        );
-        return (remainder.into(), quotient.into());
+        let result = split_u128(low, index);
+        return (result.low.into(), result.high.into());
     }
 
     // len > BYTES_IN_U128
     if index < BYTES_IN_U128 {
-        let (low_quotient, low_remainder) = u128_safe_divmod(
-            low, one_shift_left_bytes_u128(index).try_into().unwrap(),
-        );
+        let low_result = split_u128(low, index);
         let right = high.into() * one_shift_left_bytes_u128(BYTES_IN_U128 - index).into()
-            + low_quotient.into();
-        return (low_remainder.into(), right);
+            + low_result.high.into();
+        return (low_result.low.into(), right);
     }
 
     // len > BYTES_IN_U128 && index > BYTES_IN_U128
-    let (high_quotient, high_remainder) = u128_safe_divmod(
-        high, one_shift_left_bytes_u128(index - BYTES_IN_U128).try_into().unwrap(),
-    );
-    let left = high_remainder.into() * POW_2_128 + low.into();
-    return (left, high_quotient.into());
+
+    let high_result = split_u128(high, index - BYTES_IN_U128);
+    let left = high_result.low.into() * POW_2_128 + low.into();
+    return (left, high_result.high.into());
 }
 
 
@@ -189,6 +179,28 @@ pub(crate) fn one_shift_left_bytes_felt252(n_bytes: usize) -> felt252 {
 ///
 /// Panics if `n_bytes >= BYTES_IN_U128`.
 pub(crate) fn one_shift_left_bytes_u128(n_bytes: usize) -> u128 {
+    one_shift_left_bytes_u128_nz(n_bytes).into()
+}
+
+/// Splits a u128 into two words as a `u256` - the `low` is the first `n_bytes` the `high` is the rest.
+pub(crate) fn split_u128(value: u128, n_bytes: usize) -> u256 {
+    let (high, low) = DivRem::div_rem(value, one_shift_left_bytes_u128_nz(n_bytes));
+    u256 { low, high }
+}
+
+/// Returns the `u8` at `index` if you look at `value` as an array of 32 `u8`s.
+pub(crate) fn u8_at_u256(value: u256, index: usize) -> u8 {
+    get_lsb(
+        if index < BYTES_IN_U128 {
+            split_u128(value.low, index).high
+        } else {
+            split_u128(value.high, index - BYTES_IN_U128).high
+        },
+    )
+}
+
+/// Same as `one_shift_left_bytes_u128` but returns `NonZero` value.
+fn one_shift_left_bytes_u128_nz(n_bytes: usize) -> NonZero<u128> {
     match n_bytes {
         0 => 0x1,
         1 => 0x100,
@@ -217,3 +229,20 @@ impl Bytes31PartialEq of PartialEq<bytes31> {
         lhs_as_felt252 == rhs_as_felt252
     }
 }
+
+mod helpers {
+    use core::internal::bounded_int::{DivRemHelper, BoundedInt, div_rem};
+
+    impl DivRemU128By256 of DivRemHelper<u128, BoundedInt<256, 256>> {
+        type DivT = BoundedInt<0, 0xffffffffffffffffffffffffffffff>;
+        type RemT = BoundedInt<0, 0xff>;
+    }
+
+    /// Returns the least significant byte of the given u128.
+    pub fn get_lsb(value: u128) -> u8 {
+        let (_, res) = div_rem::<_, BoundedInt<256, 256>>(value, 256);
+        core::integer::upcast(res)
+    }
+}
+
+pub(crate) use helpers::get_lsb;
