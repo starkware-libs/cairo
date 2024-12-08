@@ -66,8 +66,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     }
+|_____^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -220,8 +223,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     }
+|_____^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -394,8 +400,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: core::integer::u32, v1: test::B, v2: test::A
 blk0 (root):
@@ -540,8 +549,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     }
+|_____^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -709,8 +721,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+|         break;
+|     }
+|_____^
 
 Parameters:
 blk0 (root):
@@ -810,8 +825,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: core::integer::u8
 blk0 (root):
@@ -974,8 +992,12 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+|         s.foo();
+|         break;
+|     };
+|_____^
 
 Parameters: v0: @test::S
 blk0 (root):
@@ -1059,8 +1081,12 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+|         TT::f1oo(@t.s);
+|         break;
+|     };
+|_____^
 
 Parameters: v0: @test::S
 blk0 (root):
@@ -1155,8 +1181,11 @@ End:
 
 
 Generated loop lowering for source location:
-        loop {
-        ^****^
+          loop {
+ _________^
+| ...
+|         };
+|_________^
 
 Parameters: v0: core::integer::u32
 blk0 (root):
@@ -1177,8 +1206,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: core::integer::u32, v1: @test::B
 blk0 (root):
@@ -1272,8 +1304,11 @@ End:
 
 
 Generated loop lowering for source location:
-        loop {
-        ^****^
+          loop {
+ _________^
+| ...
+|         };
+|_________^
 
 Parameters: v0: @core::integer::u32
 blk0 (root):
@@ -1294,8 +1329,11 @@ End:
 
 
 Generated loop lowering for source location:
-    loop {
-    ^****^
+      loop {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: test::B
 blk0 (root):
@@ -1399,8 +1437,11 @@ End:
 
 
 Generated loop lowering for source location:
-    while i != 5 {
-    ^************^
+      while i != 5 {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: core::felt252, v1: test::A
 blk0 (root):

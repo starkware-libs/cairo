@@ -31,12 +31,12 @@ fn test_struct() {
         error: Redefinition of member "a" on struct "test::A".
          --> lib.cairo:6:5
             a: (),
-            ^***^
+            ^^^^^
 
         error: Redefinition of member "a" on struct "test::A".
          --> lib.cairo:7:5
             a: ()
-            ^***^
+            ^^^^^
 
         "#});
     let module_id = test_module.module_id;

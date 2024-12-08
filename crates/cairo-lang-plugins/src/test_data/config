@@ -427,16 +427,16 @@ fn f_invalid_or() -> felt252 {
 error: `not` operator expects exactly one argument.
  --> test_src/lib.cairo:1:7
 #[cfg(not(a, b))]
-      ^*******^
+      ^^^^^^^^^
 
 
 error: `and` operator expects at least two arguments.
  --> test_src/lib.cairo:6:7
 #[cfg(and())]
-      ^***^
+      ^^^^^
 
 
 error: `or` operator expects at least two arguments.
  --> test_src/lib.cairo:11:7
 #[cfg(or())]
-      ^**^
+      ^^^^

@@ -233,4 +233,4 @@ type Alias = bad_type;
 error: Type not found.
  --> lib.cairo:1:14
 type Alias = bad_type;
-             ^******^
+             ^^^^^^^^
