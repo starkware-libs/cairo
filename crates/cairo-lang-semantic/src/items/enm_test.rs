@@ -30,12 +30,12 @@ fn test_enum() {
         error: Redefinition of variant "a" on enum "test::A".
          --> lib.cairo:5:5
             a: (),
-            ^***^
+            ^^^^^
 
         error: Redefinition of variant "a" on enum "test::A".
          --> lib.cairo:6:5
             a: ()
-            ^***^
+            ^^^^^
 
         "#});
     let module_id = test_module.module_id;

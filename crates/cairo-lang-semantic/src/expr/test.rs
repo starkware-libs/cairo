@@ -232,7 +232,7 @@ fn test_expr_call_failures() {
             error: Function not found.
              --> lib.cairo:2:1
             foo()
-            ^*^
+            ^^^
 
         "});
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");

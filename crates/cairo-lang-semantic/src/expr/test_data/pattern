@@ -68,7 +68,7 @@ struct MyStruct {
 error[E0003]: Missing member "b".
  --> lib.cairo:6:9
     let MyStruct { a: _ } = s;
-        ^***************^
+        ^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -166,7 +166,7 @@ error: Redefinition of member "a" on struct "test::MyStruct".
 error[E0003]: Missing member "b".
  --> lib.cairo:6:9
     let MyStruct { a: _, c: _, a: _ } = s;
-        ^***************************^
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -189,7 +189,7 @@ foo
 error: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2.
  --> lib.cairo:2:9
     let [_a, _b] = s;
-        ^******^
+        ^^^^^^^^
 
 //! > ==========================================================================
 
@@ -212,7 +212,7 @@ foo
 error: Unexpected type for fixed size array pattern. "(core::felt252, core::felt252, core::felt252)" is not a fixed size array.
  --> lib.cairo:2:9
     let [_a, _b, _c] = s;
-        ^**********^
+        ^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -235,4 +235,4 @@ foo
 error: Unexpected type for tuple pattern. "[core::felt252; 3]" is not a tuple.
  --> lib.cairo:2:9
     let (_a, _b, _c) = s;
-        ^**********^
+        ^^^^^^^^^^^^

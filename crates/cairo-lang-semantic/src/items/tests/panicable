@@ -42,4 +42,4 @@ fn bar_nopanic() nopanic {}
 error: Function is declared as nopanic but calls a function that may panic.
  --> lib.cairo:4:5
     bar_panic();
-    ^*********^
+    ^^^^^^^^^^^
