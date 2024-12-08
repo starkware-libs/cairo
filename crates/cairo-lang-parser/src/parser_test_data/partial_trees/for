@@ -60,8 +60,8 @@ ExprFor
 //! > expected_diagnostics
 error: Skipped tokens. Expected: 'in'.
  --> dummy_file.cairo:3:15
-    for index at array {
-              ^^
+  |     for index at array {
+  |               ^^
 
 //! > expected_tree
 └── Top level kind: ExprFor

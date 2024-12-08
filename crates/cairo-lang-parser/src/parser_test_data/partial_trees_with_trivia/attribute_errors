@@ -15,13 +15,13 @@ Attribute
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:1:7
-#[aaa]
-      ^
+  | #[aaa]
+  |       ^
 
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:2:1
-3
-^
+  | 3
+  | ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -59,13 +59,13 @@ TerminalLBrace
 //! > expected_diagnostics
 error: Missing tokens. Expected a trait item after attributes.
  --> dummy_file.cairo:2:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 error: Skipped tokens. Expected: Const/Function/Impl/Type or an attribute.
  --> dummy_file.cairo:3:5
-    3
-    ^
+  |     3
+  |     ^
 
 //! > expected_tree
 └── Top level kind: TraitBody
@@ -106,13 +106,13 @@ TerminalLBrace
 //! > expected_diagnostics
 error: Missing tokens. Expected an impl item after attributes.
  --> dummy_file.cairo:2:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 error: Skipped tokens. Expected: Const/Function/Impl/Type or an attribute.
  --> dummy_file.cairo:3:5
-    3
-    ^
+  |     3
+  |     ^
 
 //! > expected_tree
 └── Top level kind: ImplBody
@@ -152,13 +152,13 @@ TerminalHash
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:2:7
-#[bbb]
-      ^
+  | #[bbb]
+  |       ^
 
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:3:1
-2
-^
+  | 2
+  | ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -219,13 +219,13 @@ TerminalRBrack
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:1:7
-#[aaa]
-      ^
+  | #[aaa]
+  |       ^
 
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:2:1
-[bbb]
-^***^
+  | [bbb]
+  | ^***^
 
 //! > expected_tree
 └── Top level kind: FunctionWithBody
@@ -296,8 +296,8 @@ TerminalHash
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:4:11
-    #[bbb]
-          ^
+  |     #[bbb]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ModuleBody
@@ -363,8 +363,8 @@ TerminalLBrace
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:3:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ModuleBody
@@ -422,8 +422,8 @@ TerminalLBrace
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:2:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ModuleBody
@@ -472,8 +472,8 @@ TerminalLBrace
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:3:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ModuleBody
@@ -533,13 +533,13 @@ TerminalLBrace
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:2:5
-    $
-    ^
+  |     $
+  |     ^
 
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:3:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ModuleBody
@@ -592,13 +592,13 @@ TerminalLBrace
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:2:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:3:5
-    $
-    ^
+  |     $
+  |     ^
 
 //! > expected_tree
 └── Top level kind: ModuleBody
@@ -646,18 +646,18 @@ TerminalLBrace
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:2:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:3:5
-    $
-    ^
+  |     $
+  |     ^
 
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:4:11
-    #[bbb]
-          ^
+  |     #[bbb]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ModuleBody
@@ -735,8 +735,8 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Missing tokens. Expected a statement after attributes.
  --> dummy_file.cairo:2:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ExprBlock
@@ -791,8 +791,8 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Missing tokens. Expected a statement after attributes.
  --> dummy_file.cairo:4:11
-    #[bbb]
-          ^
+  |     #[bbb]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ExprBlock
@@ -871,8 +871,8 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Missing tokens. Expected a statement after attributes.
  --> dummy_file.cairo:3:11
-    #[bbb]
-          ^
+  |     #[bbb]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ExprBlock
@@ -937,13 +937,13 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Missing tokens. Expected a statement after attributes.
  --> dummy_file.cairo:2:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 error: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:3:5
-    $
-    ^
+  |     $
+  |     ^
 
 //! > expected_tree
 └── Top level kind: ExprBlock
@@ -999,13 +999,13 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:5
-    $
-    ^
+  |     $
+  |     ^
 
 error: Missing tokens. Expected a statement after attributes.
  --> dummy_file.cairo:3:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ExprBlock
@@ -1066,18 +1066,18 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Missing tokens. Expected a statement after attributes.
  --> dummy_file.cairo:2:11
-    #[aaa]
-          ^
+  |     #[aaa]
+  |           ^
 
 error: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:3:5
-    $
-    ^
+  |     $
+  |     ^
 
 error: Missing tokens. Expected a statement after attributes.
  --> dummy_file.cairo:4:11
-    #[bbb]
-          ^
+  |     #[bbb]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ExprBlock
@@ -1155,8 +1155,8 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Missing tokens. Expected a statement after attributes.
  --> dummy_file.cairo:3:11
-    #[bbb]
-          ^
+  |     #[bbb]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ExprBlock
@@ -1216,8 +1216,8 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Missing tokens. Expected a statement after attributes.
  --> dummy_file.cairo:2:11
-    #[bbb]
-          ^
+  |     #[bbb]
+  |           ^
 
 //! > expected_tree
 └── Top level kind: ExprBlock
@@ -1274,9 +1274,11 @@ TerminalSemicolon
 
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:2:7
-#[bbb]
-      ^
+ --> dummy_file.cairo:2:7-3:6
+  |       V
+  | #[bbb]
+  | macro
+  | ****^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -1334,8 +1336,8 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after visibility.
  --> dummy_file.cairo:1:4
-pub // trailing.
-   ^
+  | pub // trailing.
+  |    ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -1379,8 +1381,8 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:4
-pub macro
-   ^****^
+  | pub macro
+  |    ^****^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -1424,13 +1426,13 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> dummy_file.cairo:1:8
-#[attr]
-       ^
+  | #[attr]
+  |        ^
 
 error: Missing tokens. Expected an item after visibility.
  --> dummy_file.cairo:2:4
-pub
-   ^
+  | pub
+  |    ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -1488,9 +1490,11 @@ TerminalSemicolon
 
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:1:8
-#[attr]
-       ^
+ --> dummy_file.cairo:1:8-2:10
+  |        V
+  | #[attr]
+  | pub macro
+  | ********^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)

@@ -28,23 +28,23 @@ enum A {
 //! > expected_diagnostics
 error: Identifier not found.
  --> lib.cairo:9:21
-        (7, 1) => { x },
-                    ^
+  |         (7, 1) => { x },
+  |                     ^
 
 error: Wrong number of tuple elements in pattern. Expected: 2. Got: 3.
  --> lib.cairo:10:9
-        (A::b(x), 1, _) => { x },
-        ^*************^
+  |         (A::b(x), 1, _) => { x },
+  |         ^*************^
 
 error: Identifier not found.
  --> lib.cairo:10:30
-        (A::b(x), 1, _) => { x },
-                             ^
+  |         (A::b(x), 1, _) => { x },
+  |                              ^
 
 error: Mismatched types. The type `test::A` cannot be created from a numeric literal.
  --> lib.cairo:9:10
-        (7, 1) => { x },
-         ^
+  |         (7, 1) => { x },
+  |          ^
 
 //! > ==========================================================================
 
@@ -73,18 +73,18 @@ enum A {
 //! > expected_diagnostics
 error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
  --> lib.cairo:7:9
-        A::a(_) => 0,
-        ^*****^
+  |         A::a(_) => 0,
+  |         ^*****^
 
 error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
  --> lib.cairo:8:9
-        A::b(_) => 1,
-        ^*****^
+  |         A::b(_) => 1,
+  |         ^*****^
 
 error: Trait has no implementation in context: core::traits::Add::<core::bool>.
  --> lib.cairo:6:11
-    match a + 1 {
-          ^***^
+  |     match a + 1 {
+  |           ^***^
 
 //! > ==========================================================================
 
@@ -113,8 +113,8 @@ enum A {
 //! > expected_diagnostics
 error: Match arms have incompatible types: "core::felt252" and "core::bool"
  --> lib.cairo:8:14
-        _ => b,
-             ^
+  |         _ => b,
+  |              ^
 
 //! > ==========================================================================
 
@@ -143,13 +143,13 @@ enum A {
 //! > expected_diagnostics
 error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
  --> lib.cairo:7:9
-        true => 2,
-        ^**^
+  |         true => 2,
+  |         ^**^
 
 error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
  --> lib.cairo:8:9
-        false => 3,
-        ^***^
+  |         false => 3,
+  |         ^***^
 
 //! > ==========================================================================
 
@@ -173,9 +173,12 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:23
-fn foo(x: Option<()>) {
-                      ^
+ --> lib.cairo:1:23-6:2
+  |                       V
+  | fn foo(x: Option<()>) {
+  | ...
+  | }
+  | ^
 
 //! > ==========================================================================
 
@@ -212,13 +215,13 @@ enum MyEnum {
 //! > expected_diagnostics
 error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
  --> lib.cairo:15:39
-        MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
-                                      ^
+  |         MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
+  |                                       ^
 
 error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
  --> lib.cairo:16:52
-        MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
-                                                   ^***^
+  |         MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
+  |                                                    ^***^
 
 //! > ==========================================================================
 
@@ -249,5 +252,5 @@ fn bar(a: MyEnum<u32>) {}
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>", found: "test::MyEnum::<core::felt252>".
  --> lib.cairo:11:9
-    bar(a);
-        ^
+  |     bar(a);
+  |         ^

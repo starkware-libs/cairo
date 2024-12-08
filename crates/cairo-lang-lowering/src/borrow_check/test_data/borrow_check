@@ -95,22 +95,25 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > lowering_diagnostics
 error: Variable was previously moved.
  --> lib.cairo:13:5
-    y
-    ^
+  |     y
+  |     ^
 note: variable was previously used here:
   --> lib.cairo:11:20
-        use_a_drop(y);
-                   ^
+  |         use_a_drop(y);
+  |                    ^
 note: Trait has no implementation in context: core::traits::Copy::<test::ADrop>.
 
 error: Variable not dropped.
  --> lib.cairo:8:8
-fn foo(x: ACopy, y: ADrop) -> ADrop {
-       ^
+  | fn foo(x: ACopy, y: ADrop) -> ADrop {
+  |        ^
 note: the variable needs to be dropped due to the divergence here:
-  --> lib.cairo:9:5
-    if true {
-    ^*******^
+  --> lib.cairo:9:5-12:14
+  |     V********
+  |     if true {
+  | ...
+  |     } else {}
+  |     ********^
 note: Trait has no implementation in context: core::traits::Drop::<test::ACopy>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::ACopy>.
 
@@ -280,12 +283,12 @@ struct A {}
 //! > lowering_diagnostics
 error: Variable not dropped.
  --> lib.cairo:2:12
-fn foo(ref a: A) {
-           ^
+  | fn foo(ref a: A) {
+  |            ^
 note: the variable needs to be dropped due to the potential panic here:
   --> lib.cairo:3:5
-    1 + 1;
-    ^***^
+  |     1 + 1;
+  |     ^***^
 note: Trait has no implementation in context: core::traits::Drop::<test::A>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::A>.
 note: Trait has no implementation in context: core::traits::PanicDestruct::<test::A>.
@@ -333,12 +336,12 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > lowering_diagnostics
 error: Variable was previously moved.
  --> lib.cairo:12:12
-    return y;
-           ^
+  |     return y;
+  |            ^
 note: variable was previously used here:
   --> lib.cairo:7:20
-        use_a_drop(y);
-                   ^
+  |         use_a_drop(y);
+  |                    ^
 note: Trait has no implementation in context: core::traits::Copy::<test::ADrop>.
 
 //! > lowering
@@ -395,12 +398,12 @@ foo
 //! > lowering_diagnostics
 error: Variable was previously moved.
  --> lib.cairo:6:11
-    panic(arr);
-          ^*^
+  |     panic(arr);
+  |           ^*^
 note: variable was previously used here:
   --> lib.cairo:4:5
-    b.append('bla');
-    ^
+  |     b.append('bla');
+  |     ^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
 
 //! > lowering
@@ -445,12 +448,12 @@ extern fn do_match_extern(x: NonCopy) -> Option<NonCopy> nopanic;
 //! > lowering_diagnostics
 error: Variable was previously moved.
  --> lib.cairo:8:21
-    do_match_extern(x)
-                    ^
+  |     do_match_extern(x)
+  |                     ^
 note: variable was previously used here:
   --> lib.cairo:7:18
-    use_non_copy(x);
-                 ^
+  |     use_non_copy(x);
+  |                  ^
 note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
 
 //! > lowering
@@ -514,12 +517,12 @@ struct MyStruct {
 //! > lowering_diagnostics
 error: Variable was previously moved.
  --> lib.cairo:12:12
-    return x;
-           ^
+  |     return x;
+  |            ^
 note: variable was previously used here:
   --> lib.cairo:11:18
-    use_non_copy(x.b);
-                 ^*^
+  |     use_non_copy(x.b);
+  |                  ^*^
 note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
 
 //! > lowering
@@ -563,22 +566,22 @@ struct MyStruct {
 //! > lowering_diagnostics
 error: Variable was previously moved.
  --> lib.cairo:8:30
-fn foo(ref s1: MyStruct, ref s2: MyStruct) {
-                             ^^
+  | fn foo(ref s1: MyStruct, ref s2: MyStruct) {
+  |                              ^^
 note: variable was previously used here:
   --> lib.cairo:10:16
-    invalidate(s2.a);
-               ^**^
+  |     invalidate(s2.a);
+  |                ^**^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
 
 error: Variable was previously moved.
  --> lib.cairo:8:12
-fn foo(ref s1: MyStruct, ref s2: MyStruct) {
-           ^^
+  | fn foo(ref s1: MyStruct, ref s2: MyStruct) {
+  |            ^^
 note: variable was previously used here:
   --> lib.cairo:9:16
-    invalidate(s1.a);
-               ^**^
+  |     invalidate(s1.a);
+  |                ^**^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
 
 //! > lowering
@@ -627,12 +630,12 @@ struct MyStruct {
 //! > lowering_diagnostics
 error: Variable was previously moved.
  --> lib.cairo:8:12
-fn foo(ref self: MyStruct) {
-           ^**^
+  | fn foo(ref self: MyStruct) {
+  |            ^**^
 note: variable was previously used here:
   --> lib.cairo:11:20
-        invalidate(self.a);
-                   ^****^
+  |         invalidate(self.a);
+  |                    ^****^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
 
 //! > lowering
@@ -765,12 +768,12 @@ struct MyStruct {
 //! > lowering_diagnostics
 error: Variable not dropped.
  --> lib.cairo:9:12
-fn foo(mut x: MyStruct) -> MyStruct {
-           ^
+  | fn foo(mut x: MyStruct) -> MyStruct {
+  |            ^
 note: the variable needs to be dropped due to the potential panic here:
   --> lib.cairo:11:5
-    x.a += 1;
-    ^******^
+  |     x.a += 1;
+  |     ^******^
 note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>.
 note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonCopy>.
@@ -881,12 +884,12 @@ struct MyStruct {
 //! > lowering_diagnostics
 error: Variable not dropped.
  --> lib.cairo:7:12
-fn foo(mut x: MyStruct) -> MyStruct {
-           ^
+  | fn foo(mut x: MyStruct) -> MyStruct {
+  |            ^
 note: the variable needs to be dropped due to the potential panic here:
   --> lib.cairo:10:9
-        x.a += 1;
-        ^******^
+  |         x.a += 1;
+  |         ^******^
 note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>.
 note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonCopy>.
@@ -938,12 +941,12 @@ struct MyStruct {
 //! > lowering_diagnostics
 error: Variable was previously moved.
  --> lib.cairo:12:5
-    y
-    ^
+  |     y
+  |     ^
 note: variable was previously used here:
   --> lib.cairo:11:13
-    consume(x.b);
-            ^*^
+  |     consume(x.b);
+  |             ^*^
 note: Trait has no implementation in context: core::traits::Copy::<test::MyStruct>.
 
 //! > lowering

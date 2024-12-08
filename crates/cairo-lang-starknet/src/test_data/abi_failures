@@ -119,19 +119,25 @@ Duplicate entry point: 'foo'. This is not currently supported.
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
- --> lib.cairo:56:5
+ --> lib.cairo:56:5-57:58
+    V***************
     #[abi(embed_v0)]
-    ^**************^
+    impl EmbeddedI1I2 = super::comp::I1I2<ContractState>;
+    ****************************************************^
 
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
- --> lib.cairo:58:5
+ --> lib.cairo:58:5-59:56
+    V***************
     #[abi(embed_v0)]
-    ^**************^
+    impl EmbeddedI2I = super::comp::I2I<ContractState>;
+    **************************************************^
 
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
- --> lib.cairo:61:5
+ --> lib.cairo:61:5-62:36
+    V**************
     #[external(v0)]
-    ^*************^
+    fn foo(self: @ContractState) {}
+    ******************************^
 
 //! > ==========================================================================
 
@@ -161,9 +167,12 @@ An embedded impl must be an impl of a trait marked with #[starknet::interface].
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: An embedded impl must be an impl of a trait marked with #[starknet::interface].
- --> lib.cairo:10:5
+ --> lib.cairo:10:5-13:6
+    V***************
     #[abi(embed_v0)]
-    ^**************^
+...
+    }
+    ^
 
 //! > ==========================================================================
 
@@ -196,9 +205,12 @@ An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet:
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet::interface].
     Consider using #[abi(embed_v0)] instead, or use a non-interface trait.
- --> lib.cairo:11:5
+ --> lib.cairo:11:5-14:6
+    V***************
     #[abi(per_item)]
-    ^**************^
+...
+    }
+    ^
 
 //! > ==========================================================================
 
@@ -240,6 +252,9 @@ mod contract {
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: `__validate_deploy__` entry point must match the constructor.
- --> lib.cairo:13:9
+ --> lib.cairo:13:9-20:13
+        V**************
         #[external(v0)]
-        ^*************^
+...
+        ) {}
+        ***^

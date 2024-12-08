@@ -139,48 +139,48 @@ ExprPath
 //! > expected_diagnostics
 error: Literal is not a valid number.
  --> dummy_file.cairo:3:23
-    let illegal_bin = 0b2;
-                      ^^
+  |     let illegal_bin = 0b2;
+  |                       ^^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:3:25
-    let illegal_bin = 0b2;
-                        ^
+  |     let illegal_bin = 0b2;
+  |                         ^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:4:26
-    let illegal_bin = 0b12;
-                         ^
+  |     let illegal_bin = 0b12;
+  |                          ^
 
 error: Literal is not a valid number.
  --> dummy_file.cairo:6:23
-    let illegal_oct = 0o8;
-                      ^^
+  |     let illegal_oct = 0o8;
+  |                       ^^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:6:25
-    let illegal_oct = 0o8;
-                        ^
+  |     let illegal_oct = 0o8;
+  |                         ^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:7:26
-    let illegal_oct = 0o78;
-                         ^
+  |     let illegal_oct = 0o78;
+  |                          ^
 
 error: Literal is not a valid number.
  --> dummy_file.cairo:9:23
-    let illegal_hex = 0xg;
-                      ^^
+  |     let illegal_hex = 0xg;
+  |                       ^^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:9:25
-    let illegal_hex = 0xg;
-                        ^
+  |     let illegal_hex = 0xg;
+  |                         ^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:10:26
-    let illegal_hex = 0xfg;
-                         ^
+  |     let illegal_hex = 0xfg;
+  |                          ^
 
 //! > expected_tree
 └── Top level kind: StatementList
@@ -302,8 +302,8 @@ ExprPath
 //! > expected_diagnostics
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:2:16
-    let a = 'a'u16;
-               ^
+  |     let a = 'a'u16;
+  |                ^
 
 //! > expected_tree
 └── Top level kind: StatementLet

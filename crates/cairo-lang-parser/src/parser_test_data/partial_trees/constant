@@ -56,8 +56,8 @@ ItemConstant
 //! > expected_diagnostics
 error: Unexpected token, expected ':' followed by a type.
  --> dummy_file.cairo:1:8
-const X = 0x1234;
-       ^
+  | const X = 0x1234;
+  |        ^
 
 //! > expected_tree
 └── Top level kind: ItemConstant
@@ -204,8 +204,8 @@ ItemConstant
 //! > expected_diagnostics
 error: Unexpected token, expected ':' followed by a type.
  --> dummy_file.cairo:2:12
-    const X = 3;
-           ^
+  |     const X = 3;
+  |            ^
 
 //! > expected_tree
 └── Top level kind: ItemConstant

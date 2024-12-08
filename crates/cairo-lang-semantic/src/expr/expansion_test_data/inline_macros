@@ -12,8 +12,8 @@ consteval_int!(4 + 5)
 //! > diagnostics
 warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
  --> lib.cairo:2:1
-consteval_int!(4 + 5)
-^*******************^
+  | consteval_int!(4 + 5)
+  | ^*******************^
 
 //! > ==========================================================================
 
@@ -31,8 +31,8 @@ consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
 //! > diagnostics
 warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
  --> lib.cairo:2:1
-consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
-^**************************************^
+  | consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
+  | ^**************************************^
 
 //! > ==========================================================================
 
@@ -50,8 +50,8 @@ consteval_int!(255 + 1 - 1)
 //! > diagnostics
 warning: Plugin diagnostic: Usage of deprecated macro `consteval_int` with no `#[feature("deprecated-consteval-int-macro")]` attribute. Note: Use simple calculations instead, as these are supported in const context.
  --> lib.cairo:2:1
-consteval_int!(255 + 1 - 1)
-^*************************^
+  | consteval_int!(255 + 1 - 1)
+  | ^*************************^
 
 //! > ==========================================================================
 
@@ -93,8 +93,8 @@ array![]
 //! > diagnostics
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:1
-array![]
-^******^
+  | array![]
+  | ^******^
 
 //! > ==========================================================================
 
@@ -178,8 +178,8 @@ write!(__formatter_for_panic_macro__, "bad_format(})")
 //! > diagnostics
 error: Plugin diagnostic: Closing `}` without a matching `{`.
  --> lib.cairo:2:8
-panic!("bad_format(})")
-       ^*************^
+  | panic!("bad_format(})")
+  |        ^*************^
 
 //! > ==========================================================================
 
@@ -197,5 +197,5 @@ array![format!]
 //! > diagnostics
 error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:2:15
-array![format!]
-              ^
+  | array![format!]
+  |               ^

@@ -9,8 +9,8 @@ mod _;
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:5
-mod _;
-    ^
+  | mod _;
+  |     ^
 
 //! > ==========================================================================
 
@@ -25,8 +25,8 @@ struct _ {}
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:8
-struct _ {}
-       ^
+  | struct _ {}
+  |        ^
 
 //! > ==========================================================================
 
@@ -41,8 +41,8 @@ enum _ {}
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:6
-enum _ {}
-     ^
+  | enum _ {}
+  |      ^
 
 //! > ==========================================================================
 
@@ -57,8 +57,8 @@ extern fn _() nopanic;
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:11
-extern fn _() nopanic;
-          ^
+  | extern fn _() nopanic;
+  |           ^
 
 //! > ==========================================================================
 
@@ -73,8 +73,8 @@ extern type _;
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:13
-extern type _;
-            ^
+  | extern type _;
+  |             ^
 
 //! > ==========================================================================
 
@@ -90,8 +90,8 @@ fn foo() {}
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:3
-#[_]
-  ^
+  | #[_]
+  |   ^
 
 //! > ==========================================================================
 
@@ -106,8 +106,8 @@ fn _() {}
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:4
-fn _() {}
-   ^
+  | fn _() {}
+  |    ^
 
 //! > ==========================================================================
 
@@ -122,8 +122,8 @@ trait _ {}
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:7
-trait _ {}
-      ^
+  | trait _ {}
+  |       ^
 
 //! > ==========================================================================
 
@@ -140,8 +140,8 @@ trait trt {
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:2:8
-    fn _();
-       ^
+  |     fn _();
+  |        ^
 
 //! > ==========================================================================
 
@@ -156,8 +156,8 @@ impl _ of MyTrait {}
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:6
-impl _ of MyTrait {}
-     ^
+  | impl _ of MyTrait {}
+  |      ^
 
 //! > ==========================================================================
 
@@ -174,8 +174,8 @@ fn foo() {
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:2:9
-    A { _ }
-        ^
+  |     A { _ }
+  |         ^
 
 //! > ==========================================================================
 
@@ -192,8 +192,8 @@ fn foo() {
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:2:13
-    let ref _ = 3;
-            ^
+  |     let ref _ = 3;
+  |             ^
 
 //! > ==========================================================================
 
@@ -210,8 +210,8 @@ fn foo() {
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:2:20
-    let MyStruct { _ } = 3;
-                   ^
+  |     let MyStruct { _ } = 3;
+  |                    ^
 
 //! > ==========================================================================
 
@@ -226,8 +226,8 @@ fn f(ref _: felt252) {}
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:10
-fn f(ref _: felt252) {}
-         ^
+  | fn f(ref _: felt252) {}
+  |          ^
 
 //! > ==========================================================================
 
@@ -242,8 +242,8 @@ fn f(_: felt252) {}
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:6
-fn f(_: felt252) {}
-     ^
+  | fn f(_: felt252) {}
+  |      ^
 
 //! > ==========================================================================
 
@@ -260,8 +260,8 @@ struct A {
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:2:5
-    _: felt252
-    ^
+  |     _: felt252
+  |     ^
 
 //! > ==========================================================================
 
@@ -276,8 +276,8 @@ use _::foo;
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:5
-use _::foo;
-    ^
+  | use _::foo;
+  |     ^
 
 //! > ==========================================================================
 
@@ -292,8 +292,8 @@ struct A<_> {}
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:10
-struct A<_> {}
-         ^
+  | struct A<_> {}
+  |          ^
 
 //! > ==========================================================================
 
@@ -308,5 +308,5 @@ fn foo() implicits(_) {}
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:20
-fn foo() implicits(_) {}
-                   ^
+  | fn foo() implicits(_) {}
+  |                    ^

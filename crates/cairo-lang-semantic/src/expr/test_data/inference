@@ -65,8 +65,8 @@ impl MyImpl<+MyTrait> of MyTrait {
 //! > expected_diagnostics
 error: Inference cycle detected
  --> lib.cairo:9:14
-    MyTrait::foo();
-             ^*^
+  |     MyTrait::foo();
+  |              ^*^
 
 //! > ==========================================================================
 
@@ -88,8 +88,8 @@ foo
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:27
-    let mut _arr = array::array_new();
-                          ^*******^
+  |     let mut _arr = array::array_new();
+  |                           ^*******^
 
 //! > ==========================================================================
 
@@ -111,8 +111,8 @@ foo
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "core::array::Array::<core::felt252>".
  --> lib.cairo:2:29
-    let mut _arr: felt252 = array::array_new::<felt252>();
-                            ^***************************^
+  |     let mut _arr: felt252 = array::array_new::<felt252>();
+  |                             ^***************************^
 
 //! > ==========================================================================
 
@@ -153,8 +153,8 @@ foo
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::never", found: "core::felt252".
  --> lib.cairo:1:13
-fn foo() -> never {
-            ^***^
+  | fn foo() -> never {
+  |             ^***^
 
 //! > ==========================================================================
 
@@ -224,8 +224,8 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 //! > expected_diagnostics
 error: Trait has no implementation in context: test::MyTrait::<core::bool>.
  --> lib.cairo:17:14
-    MyTrait::foo(true);
-             ^*^
+  |     MyTrait::foo(true);
+  |              ^*^
 
 //! > ==========================================================================
 
@@ -263,8 +263,8 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 //! > expected_diagnostics
 error: Trait `test::MyTrait::<core::felt252>` has multiple implementations, in: `test::MyImpl1`, `test::MyImpl2`
  --> lib.cairo:17:14
-    MyTrait::foo(5);
-             ^*^
+  |     MyTrait::foo(5);
+  |              ^*^
 
 //! > ==========================================================================
 
@@ -301,8 +301,8 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?1.
  --> lib.cairo:17:18
-    MyTrait::foo(Option::None);
-                 ^****^
+  |     MyTrait::foo(Option::None);
+  |                  ^****^
 
 //! > ==========================================================================
 
@@ -426,8 +426,8 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 //! > expected_diagnostics
 error: Trait has no implementation in context: test::MyTrait::<core::bool>.
  --> lib.cairo:19:5
-    bar(true);
-    ^*^
+  |     bar(true);
+  |     ^*^
 
 //! > ==========================================================================
 
@@ -613,8 +613,8 @@ foo
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:14
-    let _x = "hello";
-             ^*****^
+  |     let _x = "hello";
+  |              ^*****^
 
 //! > ==========================================================================
 
@@ -638,8 +638,8 @@ impl MyImpl of NonExistingTrait {}
 //! > expected_diagnostics
 error: Trait not found.
  --> lib.cairo:1:16
-impl MyImpl of NonExistingTrait {}
-               ^**************^
+  | impl MyImpl of NonExistingTrait {}
+  |                ^**************^
 
 //! > ==========================================================================
 
@@ -662,8 +662,8 @@ foo
 //! > expected_diagnostics
 error: Function not found.
  --> lib.cairo:3:17
-    data_hash = unknown_return_unknown();
-                ^********************^
+  |     data_hash = unknown_return_unknown();
+  |                 ^********************^
 
 //! > ==========================================================================
 
@@ -702,8 +702,8 @@ fn baz<T, +Drop<T>, +MyTrait<T>>(a: T) -> T {
 //! > expected_diagnostics
 error: Trait `test::MyTrait::<T>` has multiple implementations, in: `+MyTrait<T>`, `test::MyIpls::<T, +Drop<T>>`
  --> lib.cairo:12:5
-    baz(a)
-    ^*^
+  |     baz(a)
+  |     ^*^
 
 //! > ==========================================================================
 
@@ -730,8 +730,8 @@ error: Unexpected argument type. Expected: "@?2", found: "core::integer::u32".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:5:24
-    takes_snapshots(x, y);
-                       ^
+  |     takes_snapshots(x, y);
+  |                        ^
 
 //! > ==========================================================================
 
@@ -753,5 +753,5 @@ foo
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:1:13
-fn foo() -> Option {
-            ^****^
+  | fn foo() -> Option {
+  |             ^****^

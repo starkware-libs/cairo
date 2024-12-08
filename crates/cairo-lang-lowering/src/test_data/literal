@@ -23,43 +23,43 @@ foo
 //! > lowering_diagnostics
 error: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:2:14
-    let _a = 0x100_u8;
-             ^******^
+  |     let _a = 0x100_u8;
+  |              ^******^
 
 error: The value does not fit within the range of type core::integer::u16.
  --> lib.cairo:3:14
-    let _a = 0x10000_u16;
-             ^*********^
+  |     let _a = 0x10000_u16;
+  |              ^*********^
 
 error: The value does not fit within the range of type core::integer::u32.
  --> lib.cairo:4:14
-    let _a = 0x100000000_u32;
-             ^*************^
+  |     let _a = 0x100000000_u32;
+  |              ^*************^
 
 error: The value does not fit within the range of type core::integer::u64.
  --> lib.cairo:5:14
-    let _b = 0x10000000000000000_u64;
-             ^*********************^
+  |     let _b = 0x10000000000000000_u64;
+  |              ^*********************^
 
 error: The value does not fit within the range of type core::integer::u128.
  --> lib.cairo:6:14
-    let _c = 0x100000000000000000000000000000000_u128;
-             ^**************************************^
+  |     let _c = 0x100000000000000000000000000000000_u128;
+  |              ^**************************************^
 
 error: The value does not fit within the range of type core::felt252.
  --> lib.cairo:7:14
-    let _d = 0x800000000000011000000000000000000000000000000000000000000000001;
-             ^***************************************************************^
+  |     let _d = 0x800000000000011000000000000000000000000000000000000000000000001;
+  |              ^***************************************************************^
 
 error: The value does not fit within the range of type core::zeroable::NonZero::<core::felt252>.
  --> lib.cairo:8:32
-    let _e: NonZero<felt252> = 0;
-                               ^
+  |     let _e: NonZero<felt252> = 0;
+  |                                ^
 
 error: The value does not fit within the range of type core::internal::bounded_int::BoundedInt::<3, 15>.
  --> lib.cairo:9:62
-    let _f: core::internal::bounded_int::BoundedInt<3, 15> = 2;
-                                                             ^
+  |     let _f: core::internal::bounded_int::BoundedInt<3, 15> = 2;
+  |                                                              ^
 
 //! > lowering_flat
 Parameters:
@@ -95,33 +95,33 @@ foo
 //! > lowering_diagnostics
 error: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:2:14
-    let _a = 'aa'_u8;
-             ^*****^
+  |     let _a = 'aa'_u8;
+  |              ^*****^
 
 error: The value does not fit within the range of type core::integer::u16.
  --> lib.cairo:3:14
-    let _a = 'aba'_u16;
-             ^*******^
+  |     let _a = 'aba'_u16;
+  |              ^*******^
 
 error: The value does not fit within the range of type core::integer::u32.
  --> lib.cairo:4:14
-    let _b = 'abcda'_u32;
-             ^*********^
+  |     let _b = 'abcda'_u32;
+  |              ^*********^
 
 error: The value does not fit within the range of type core::integer::u64.
  --> lib.cairo:5:14
-    let _b = 'abcdabcda'_u64;
-             ^*************^
+  |     let _b = 'abcdabcda'_u64;
+  |              ^*************^
 
 error: The value does not fit within the range of type core::integer::u128.
  --> lib.cairo:6:14
-    let _c = 'abcdabcdabcdabcda'_u128;
-             ^**********************^
+  |     let _c = 'abcdabcdabcdabcda'_u128;
+  |              ^**********************^
 
 error: The value does not fit within the range of type core::felt252.
  --> lib.cairo:7:14
-    let _d = 'abcdabcdabcdabcdabcdabcdabcdabcd';
-             ^********************************^
+  |     let _d = 'abcdabcdabcdabcdabcdabcdabcdabcd';
+  |              ^********************************^
 
 //! > lowering_flat
 Parameters:

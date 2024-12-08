@@ -40,8 +40,8 @@ End:
 
 
 Generated core::traits::Destruct::destruct lowering for source location:
-    || {
-    ^^
+  |     || {
+  |     ^^
 
 Parameters: v0: {closure@lib.cairo:2:5: 2:7}
 blk0 (root):
@@ -63,8 +63,8 @@ End:
 
 
 Generated core::ops::function::FnOnce::call lowering for source location:
-    || {
-    ^^
+  |     || {
+  |     ^^
 
 Parameters: v0: {closure@lib.cairo:2:5: 2:7}, v1: ()
 blk0 (root):
@@ -161,8 +161,8 @@ End:
 
 
 Generated core::traits::PanicDestruct::panic_destruct lowering for source location:
-    || {
-    ^^
+  |     || {
+  |     ^^
 
 Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: core::panics::Panic
 blk0 (root):
@@ -184,8 +184,8 @@ End:
 
 
 Generated core::ops::function::FnOnce::call lowering for source location:
-    || {
-    ^^
+  |     || {
+  |     ^^
 
 Parameters: v0: {closure@lib.cairo:11:5: 11:7}, v1: ()
 blk0 (root):
@@ -257,8 +257,8 @@ End:
 
 
 Generated core::traits::Destruct::destruct lowering for source location:
-    let c =  || a;
-             ^^
+  |     let c =  || a;
+  |              ^^
 
 Parameters: v0: {closure@lib.cairo:6:14: 6:16}
 blk0 (root):
@@ -278,8 +278,8 @@ End:
 
 
 Generated core::ops::function::Fn::call lowering for source location:
-    let c =  || a;
-             ^^
+  |     let c =  || a;
+  |              ^^
 
 Parameters: v0: @{closure@lib.cairo:6:14: 6:16}, v2: ()
 blk0 (root):

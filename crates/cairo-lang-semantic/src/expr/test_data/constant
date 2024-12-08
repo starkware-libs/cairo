@@ -59,38 +59,38 @@ const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:17
-const MY_CONST: MissingType = {
-                ^*********^
+  | const MY_CONST: MissingType = {
+  |                 ^*********^
 
 error: Return statement is not supported outside of functions.
  --> lib.cairo:2:5
-    return foo();
-    ^***********^
+  |     return foo();
+  |     ^***********^
 
 error: The '?' operator is not supported outside of functions.
  --> lib.cairo:3:5
-    Option::<felt252>::Some(0)?
-    ^*************************^
+  |     Option::<felt252>::Some(0)?
+  |     ^*************************^
 
 error: A numeric literal of type core::bool cannot be created.
  --> lib.cairo:6:42
-const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                         ^
+  | const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
+  |                                          ^
 
 error: A numeric literal of type core::bool cannot be created.
  --> lib.cairo:6:46
-const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                             ^
+  | const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
+  |                                              ^
 
 error: Trait has no implementation in context: core::traits::Add::<core::bool>.
  --> lib.cairo:6:42
-const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                         ^***^
+  | const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
+  |                                          ^***^
 
 error: This expression is not supported as constant.
  --> lib.cairo:14:47
-const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
-                                              ^***^
+  | const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
+  |                                               ^***^
 
 //! > ==========================================================================
 
@@ -111,13 +111,13 @@ const DEFAULT_VAR: bool = 1;
 //! > expected_diagnostics
 error: A numeric literal of type core::bool cannot be created.
  --> lib.cairo:1:27
-const DEFAULT_VAR: bool = 1;
-                          ^
+  | const DEFAULT_VAR: bool = 1;
+  |                           ^
 
 error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:1:27
-const DEFAULT_VAR: bool = 1;
-                          ^
+  | const DEFAULT_VAR: bool = 1;
+  |                           ^
 
 //! > ==========================================================================
 
@@ -138,13 +138,13 @@ const B: u8 = -1;
 //! > expected_diagnostics
 error: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:1:15
-const B: u8 = -1;
-              ^^
+  | const B: u8 = -1;
+  |               ^^
 
 error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>.
  --> lib.cairo:1:15
-const B: u8 = -1;
-              ^^
+  | const B: u8 = -1;
+  |               ^^
 
 //! > ==========================================================================
 
@@ -167,18 +167,18 @@ const C: i8 = B;
 //! > expected_diagnostics
 error: Cycle detected while resolving 'const' items.
  --> lib.cairo:1:1
-const A: i8 = A;
-^**************^
+  | const A: i8 = A;
+  | ^**************^
 
 error: Cycle detected while resolving 'const' items.
  --> lib.cairo:2:1
-const B: i8 = C;
-^**************^
+  | const B: i8 = C;
+  | ^**************^
 
 error: Cycle detected while resolving 'const' items.
  --> lib.cairo:3:1
-const C: i8 = B;
-^**************^
+  | const C: i8 = B;
+  | ^**************^
 
 //! > ==========================================================================
 
@@ -275,43 +275,43 @@ error: The value does not fit within the range of type core::zeroable::NonZero::
 //! > expected_diagnostics
 error: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:1:26
-const UNSIGNED_VAR: u8 = 256;
-                         ^*^
+  | const UNSIGNED_VAR: u8 = 256;
+  |                          ^*^
 
 error: The value does not fit within the range of type core::integer::i8.
  --> lib.cairo:2:24
-const SIGNED_VAR: i8 = 128;
-                       ^*^
+  | const SIGNED_VAR: i8 = 128;
+  |                        ^*^
 
 error: The value does not fit within the range of type core::integer::i8.
  --> lib.cairo:5:36
-const OUT_OF_RANGE_NEGATIVE1: i8 = -0x81;
-                                   ^***^
+  | const OUT_OF_RANGE_NEGATIVE1: i8 = -0x81;
+  |                                    ^***^
 
 error: The value does not fit within the range of type core::integer::i16.
  --> lib.cairo:6:37
-const OUT_OF_RANGE_NEGATIVE2: i16 = -0x8001;
-                                    ^*****^
+  | const OUT_OF_RANGE_NEGATIVE2: i16 = -0x8001;
+  |                                     ^*****^
 
 error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
  --> lib.cairo:7:36
-const ZERO_NON_ZERO: NonZero<u8> = 0;
-                                   ^
+  | const ZERO_NON_ZERO: NonZero<u8> = 0;
+  |                                    ^
 
 error: The value does not fit within the range of type core::integer::i8.
  --> lib.cairo:9:39
-const CALCULATION_WITH_OVERFLOW: i8 = 120 + 10;
-                                      ^******^
+  | const CALCULATION_WITH_OVERFLOW: i8 = 120 + 10;
+  |                                       ^******^
 
 error: Division by zero.
  --> lib.cairo:10:39
-const CALCULATION_WITH_DIVISION: u8 = 120 / 0;
-                                      ^*****^
+  | const CALCULATION_WITH_DIVISION: u8 = 120 / 0;
+  |                                       ^*****^
 
 error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
  --> lib.cairo:31:38
-    }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true,
-                                     ^
+  |     }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true,
+  |                                      ^
 
 //! > ==========================================================================
 
@@ -336,18 +336,18 @@ foo
 //! > expected_diagnostics
 warning: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:15
-        const X: u8 = 2;
-              ^
+  |         const X: u8 = 2;
+  |               ^
 
 error: Identifier not found.
  --> lib.cairo:5:13
-    let y = X;
-            ^
+  |     let y = X;
+  |             ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:5:9
-    let y = X;
-        ^
+  |     let y = X;
+  |         ^
 
 //! > ==========================================================================
 
@@ -382,60 +382,60 @@ foo
 //! > expected_diagnostics
 error: Multiple definitions of constant "A".
  --> lib.cairo:3:11
-    const A: u8 = 2;
-          ^
+  |     const A: u8 = 2;
+  |           ^
 
 error: Multiple definitions of identifier 'B' as constant and variable.
  --> lib.cairo:5:9
-    let B = 4;
-        ^
+  |     let B = 4;
+  |         ^
 
 error: Multiple definitions of identifier 'C' as constant and variable.
  --> lib.cairo:7:11
-    const C: u8 = 6;
-          ^
+  |     const C: u8 = 6;
+  |           ^
 
 error: Multiple definitions of constant "D".
  --> lib.cairo:10:15
-        const D: u8 = 8;
-              ^
+  |         const D: u8 = 8;
+  |               ^
 
 error: Multiple definitions of identifier 'E' as constant and variable.
  --> lib.cairo:12:13
-        let E = 10;
-            ^
+  |         let E = 10;
+  |             ^
 
 error: Multiple definitions of identifier 'F' as constant and variable.
  --> lib.cairo:14:15
-        const F: u8 = 12;
-              ^
+  |         const F: u8 = 12;
+  |               ^
 
 warning: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:10:15
-        const D: u8 = 8;
-              ^
+  |         const D: u8 = 8;
+  |               ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:12:13
-        let E = 10;
-            ^
+  |         let E = 10;
+  |             ^
 
 warning: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:14:15
-        const F: u8 = 12;
-              ^
+  |         const F: u8 = 12;
+  |               ^
 
 warning: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:11
-    const A: u8 = 2;
-          ^
+  |     const A: u8 = 2;
+  |           ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:5:9
-    let B = 4;
-        ^
+  |     let B = 4;
+  |         ^
 
 warning: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:7:11
-    const C: u8 = 6;
-          ^
+  |     const C: u8 = 6;
+  |           ^

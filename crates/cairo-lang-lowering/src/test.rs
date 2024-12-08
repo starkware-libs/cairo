@@ -134,14 +134,17 @@ fn test_location_and_diagnostics() {
         .lookup_intern(db);
 
     assert_eq!(format!("{:?}", location.debug(db)), indoc::indoc! {"
-lib.cairo:1:1
-fn test_func() { let mut a = 5; {
-^*******************************^
+lib.cairo:1:1-3:5
+  | V********************************
+  | fn test_func() { let mut a = 5; {
+  | ...
+  | }; }
+  | ***^
 note: this error originates in auto-generated withdraw_gas logic.
 note: Adding destructor for:
   --> lib.cairo:2:1
-a = a * 3
-^*******^"});
+  | a = a * 3
+  | ^*******^"});
 
     let mut builder = DiagnosticsBuilder::default();
 
@@ -152,14 +155,17 @@ a = a * 3
 
     assert_eq!(builder.build().format(db), indoc::indoc! {"
 error: Cannot inline a function that might call itself.
- --> lib.cairo:1:1
-fn test_func() { let mut a = 5; {
-^*******************************^
+ --> lib.cairo:1:1-3:5
+  | V********************************
+  | fn test_func() { let mut a = 5; {
+  | ...
+  | }; }
+  | ***^
 note: this error originates in auto-generated withdraw_gas logic.
 note: Adding destructor for:
   --> lib.cairo:2:1
-a = a * 3
-^*******^
+  | a = a * 3
+  | ^*******^
 
 "});
 }

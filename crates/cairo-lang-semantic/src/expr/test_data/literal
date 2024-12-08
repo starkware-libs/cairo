@@ -16,5 +16,5 @@ foo
 //! > expected_diagnostics
 error: Mismatched types. The type `core::pedersen::Pedersen` cannot be created from a numeric literal.
  --> lib.cairo:2:14
-    let _a = 'a'_Pedersen;
-             ^**********^
+  |     let _a = 'a'_Pedersen;
+  |              ^**********^

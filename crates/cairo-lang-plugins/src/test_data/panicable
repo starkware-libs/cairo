@@ -143,23 +143,23 @@ extern fn bar() -> Result::<felt252, Err> nopanic;
 //! > expected_diagnostics
 error: Failed to extract panic data attribute
  --> test_src/lib.cairo:1:1
-#[panic_with(123, foo_bad_err_code)]
-^**********************************^
+  | #[panic_with(123, foo_bad_err_code)]
+  | ^**********************************^
 
 
 error: Failed to extract panic data attribute
  --> test_src/lib.cairo:4:1
-#[panic_with(missing_args)]
-^*************************^
+  | #[panic_with(missing_args)]
+  | ^*************************^
 
 
 error: Currently only wrapping functions returning an Option<T> or Result<T, E>
  --> test_src/lib.cairo:8:39
-extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
-                                      ^********^
+  | extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
+  |                                       ^********^
 
 
 error: `#[panic_with]` cannot be applied multiple times to the same item.
  --> test_src/lib.cairo:11:1
-#[panic_with('3', bar_changed)]
-^*****************************^
+  | #[panic_with('3', bar_changed)]
+  | ^*****************************^

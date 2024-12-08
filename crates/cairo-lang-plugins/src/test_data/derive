@@ -466,41 +466,41 @@ impl TooManyDefaultValuesDefault of core::traits::Default::<TooManyDefaultValues
 //! > expected_diagnostics
 error: Expected args.
  --> test_src/lib.cairo:1:9
-#[derive()]
-        ^^
+  | #[derive()]
+  |         ^^
 
 
 error: Expected path.
  --> test_src/lib.cairo:4:10
-#[derive(1)]
-         ^
+  | #[derive(1)]
+  |          ^
 
 
 error: Unknown derive `Unsupported` - a plugin might be missing.
  --> test_src/lib.cairo:7:10
-#[derive(Unsupported)]
-         ^*********^
+  | #[derive(Unsupported)]
+  |          ^*********^
 
 
 error: Unknown derive `long::path` - a plugin might be missing.
  --> test_src/lib.cairo:10:10
-#[derive(long::path)]
-         ^********^
+  | #[derive(long::path)]
+  |          ^********^
 
 
 error: Unsupported trait for derive for extern types.
  --> test_src/lib.cairo:13:10
-#[derive(Clone)]
-         ^***^
+  | #[derive(Clone)]
+  |          ^***^
 
 
 error: derive `Default` for enum only supported with a default variant.
  --> test_src/lib.cairo:16:10
-#[derive(Default)]
-         ^*****^
+  | #[derive(Default)]
+  |          ^*****^
 
 
 error: Multiple variants annotated with `#[default]`
  --> test_src/lib.cairo:26:5
-    #[default]
-    ^********^
+  |     #[default]
+  |     ^********^

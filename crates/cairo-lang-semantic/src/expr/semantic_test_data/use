@@ -29,8 +29,8 @@ Block(
 //! > expected_diagnostics
 warning: Unused use.
  --> lib.cairo:5:10
-{ use X::Y; }
-         ^
+  | { use X::Y; }
+  |          ^
 
 //! > ==========================================================================
 
@@ -65,8 +65,8 @@ Block(
 //! > expected_diagnostics
 warning: Unused use.
  --> lib.cairo:6:32
-fn test_func() { use X::{X, Y, Z};
-                               ^
+  | fn test_func() { use X::{X, Y, Z};
+  |                                ^
 
 //! > ==========================================================================
 
@@ -100,8 +100,8 @@ Block(
 //! > expected_diagnostics
 error: Multiple definitions of constant "A".
  --> lib.cairo:5:7
-const A: u8 = 4;
-      ^
+  | const A: u8 = 4;
+  |       ^
 
 //! > ==========================================================================
 
@@ -540,13 +540,13 @@ Block(
 //! > expected_diagnostics
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:9:9
-    let y: RR::<u8> = new_r();
-        ^
+  |     let y: RR::<u8> = new_r();
+  |         ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:11:9
-    let x: R::<u16> = new_r();
-        ^
+  |     let x: R::<u16> = new_r();
+  |         ^
 
 //! > ==========================================================================
 
@@ -614,8 +614,8 @@ Block(
 //! > expected_diagnostics
 error: Enum "test::X::R" has no variant "C"
  --> lib.cairo:14:8
-    R::C;
-       ^
+  |     R::C;
+  |        ^
 
 //! > ==========================================================================
 
@@ -684,8 +684,8 @@ Block(
 //! > expected_diagnostics
 error: Expected variable or constant, found type.
  --> lib.cairo:12:14
-    let _y = R;
-             ^
+  |     let _y = R;
+  |              ^
 
 //! > ==========================================================================
 
@@ -1044,8 +1044,8 @@ Block(
 //! > expected_diagnostics
 warning: Unused import: `test::a::b`
  --> lib.cairo:3:18
-    use a::a::a::a as b;
-                 ^****^
+  |     use a::a::a::a as b;
+  |                  ^****^
 
 //! > ==========================================================================
 

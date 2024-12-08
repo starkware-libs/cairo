@@ -25,25 +25,25 @@ impl MyImpl of MyTrait {
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:2:22
-    fn foo(x: u8, y: T, z: u8) -> u8;
-                     ^
+  |     fn foo(x: u8, y: T, z: u8) -> u8;
+  |                      ^
 
 error: Type not found.
  --> lib.cairo:3:17
-    fn bar() -> T;
-                ^
+  |     fn bar() -> T;
+  |                 ^
 
 error: Type not found.
  --> lib.cairo:7:15
-    fn foo(x: T, y: u8, z: u16) -> T {}
-              ^
+  |     fn foo(x: T, y: u8, z: u16) -> T {}
+  |               ^
 
 error: Type not found.
  --> lib.cairo:7:36
-    fn foo(x: T, y: u8, z: u16) -> T {}
-                                   ^
+  |     fn foo(x: T, y: u8, z: u16) -> T {}
+  |                                    ^
 
 error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u8`, actual: `core::integer::u16`.
  --> lib.cairo:7:28
-    fn foo(x: T, y: u8, z: u16) -> T {}
-                           ^*^
+  |     fn foo(x: T, y: u8, z: u16) -> T {}
+  |                            ^*^

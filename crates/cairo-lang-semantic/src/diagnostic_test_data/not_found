@@ -17,13 +17,13 @@ fn foo() -> UnknownType {
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:13
-fn foo() -> UnknownType {
-            ^*********^
+  | fn foo() -> UnknownType {
+  |             ^*********^
 
 error: Function not found.
  --> lib.cairo:2:5
-    bar();
-    ^*^
+  |     bar();
+  |     ^*^
 
 //! > ==========================================================================
 
@@ -43,8 +43,8 @@ mod module_does_not_exist;
 //! > expected_diagnostics
 error[E0005]: Module file not found. Expected path: module_does_not_exist.cairo
  --> lib.cairo:1:1
-mod module_does_not_exist;
-^************************^
+  | mod module_does_not_exist;
+  | ^************************^
 
 //! > ==========================================================================
 
@@ -65,5 +65,5 @@ fn foo() {}
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:23
-#[implicit_precedence(MissingBuiltin1, MissingBuiltin2)]
-                      ^*************^
+  | #[implicit_precedence(MissingBuiltin1, MissingBuiltin2)]
+  |                       ^*************^

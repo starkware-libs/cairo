@@ -58,23 +58,23 @@ fn f4() -> felt252 {
 //! > expected_diagnostics
 error: Expected arguments. Supported args: hidden
  --> test_src/lib.cairo:1:1
-#[doc]
-^****^
+  | #[doc]
+  | ^****^
 
 
 error: This argument is not supported. Supported args: hidden
  --> test_src/lib.cairo:6:7
-#[doc(hidden: true)]
-      ^**********^
+  | #[doc(hidden: true)]
+  |       ^**********^
 
 
 error: This argument is not supported. Supported args: hidden
  --> test_src/lib.cairo:11:7
-#[doc(:hidden)]
-      ^*****^
+  | #[doc(:hidden)]
+  |       ^*****^
 
 
 error: Wrong type of argument. Currently only #[doc(hidden)] is supported.
  --> test_src/lib.cairo:16:7
-#[doc(hidden_true)]
-      ^*********^
+  | #[doc(hidden_true)]
+  |       ^*********^

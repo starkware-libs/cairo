@@ -11,8 +11,8 @@ fn foo() {
 //! > expected_diagnostics
 error: Invalid string escaping.
  --> dummy_file.cairo:2:13
-    let a = '\p';
-            ^**^
+  |     let a = '\p';
+  |             ^**^
 
 //! > ==========================================================================
 
@@ -29,8 +29,8 @@ fn foo() {
 //! > expected_diagnostics
 error: Short string literals can only include ASCII characters.
  --> dummy_file.cairo:2:13
-    let a = '\u{1024}';
-            ^********^
+  |     let a = '\u{1024}';
+  |             ^********^
 
 //! > ==========================================================================
 
@@ -47,5 +47,5 @@ fn foo() {
 //! > expected_diagnostics
 error: String literals can only include ASCII characters.
  --> dummy_file.cairo:2:13
-    let a = "\u{1024}";
-            ^********^
+  |     let a = "\u{1024}";
+  |             ^********^
