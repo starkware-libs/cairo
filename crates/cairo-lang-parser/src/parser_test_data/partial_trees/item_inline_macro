@@ -173,7 +173,7 @@ error: Expected a '!' after the identifier 'inline_macro' to start an inline mac
 Did you mean to write `inline_macro!(...)'?
  --> dummy_file.cairo:1:1
 inline_macro(1,2);
-^**********^
+^^^^^^^^^^^^
 
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
@@ -215,7 +215,7 @@ error: Expected a '!' after the identifier 'inline_macro' to start an inline mac
 Did you mean to write `inline_macro!{...}'?
  --> dummy_file.cairo:1:1
 inline_macro{1,2};
-^**********^
+^^^^^^^^^^^^
 
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
@@ -257,7 +257,7 @@ error: Expected a '!' after the identifier 'inline_macro' to start an inline mac
 Did you mean to write `inline_macro![...]'?
  --> dummy_file.cairo:1:1
 inline_macro[1,2];
-^**********^
+^^^^^^^^^^^^
 
 //! > expected_tree
 └── Top level kind: ItemInlineMacro
@@ -298,7 +298,7 @@ fn foo() {}
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
 identifier
-^********^
+^^^^^^^^^^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -478,7 +478,7 @@ error: Expected a '!' after the identifier 'identifier' to start an inline macro
 Did you mean to write `identifier!(...)'?
  --> dummy_file.cairo:1:1
 identifier(x)
-^********^
+^^^^^^^^^^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:1:14

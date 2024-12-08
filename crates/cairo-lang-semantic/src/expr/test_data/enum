@@ -33,12 +33,12 @@ foo
 error: Wrong number of arguments. Expected 1, found: 0
  --> lib.cairo:13:17
     let _a: A = A::a();
-                ^****^
+                ^^^^^^
 
 error: Wrong number of arguments. Expected 1, found: 2
  --> lib.cairo:14:17
     let _a: A = A::b(1, 2);
-                ^********^
+                ^^^^^^^^^^
 
 error: Invalid path.
  --> lib.cairo:15:23

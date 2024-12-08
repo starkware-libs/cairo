@@ -85,7 +85,7 @@ fn foo() {
 error: Trait has no implementation in context: core::ops::arith::AddAssign::<core::felt252, core::bool>.
  --> lib.cairo:3:5
     x += true;
-    ^*******^
+    ^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -109,4 +109,4 @@ fn foo() {
 error: Trait has no implementation in context: core::ops::arith::DivAssign::<core::bool, core::bool>.
  --> lib.cairo:3:5
     x /= false;
-    ^********^
+    ^^^^^^^^^^

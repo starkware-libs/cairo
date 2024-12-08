@@ -58,9 +58,11 @@ fn test_diagnostics() {
 
     assert_eq!(diagnostics.build().format(&db_val), indoc! { "
             error: Simple diagnostic.
-             --> dummy_file.sierra:1:1
-            abcd
-            ^**^
+             --> dummy_file.sierra:1:1-2:1
+              abcd
+             _^
+            | efg.
+            |_^
 
         " });
 }
