@@ -1,5 +1,5 @@
 #![deny(missing_docs)]
-//! This crate defines unfiorm and primitive form of the TokenStream.
+//! This crate defines uniform and primitive form of the TokenStream.
 //! We want this to be as stable as possible and limit the changes here to bare minimum.
 
 /// Primitive representation of a token's span.
