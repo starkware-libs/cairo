@@ -86,22 +86,22 @@ impl AnotherTraitImpl of AnotherTrait {
 error[E0002]: Method `is_foo` not found on type `core::option::Option::<?0>`. Did you import the correct trait and impl?
  --> lib.cairo:37:7
     x.is_foo();
-      ^****^
+      ^^^^^^
 
 error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: test::MyTrait::is_bar and test::AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:40:7
     y.is_bar();
-      ^****^
+      ^^^^^^
 
 error: Invalid member expression.
  --> lib.cairo:41:7
     y.SomeOtherPrefix::is_bar();
-      ^***********************^
+      ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic parameter.
  --> lib.cairo:38:7
     x.is_bla();
-      ^****^
+      ^^^^^^
 
 //! > ==========================================================================
 
@@ -165,7 +165,7 @@ mod callable {
 error: Trait not found.
  --> lib.cairo:1:12
 fn bar<T, +unknown, +callable::CallableTrait<T>>(x: T) {
-           ^*****^
+           ^^^^^^^
 
 //! > ==========================================================================
 
@@ -320,7 +320,7 @@ error[E0002]: Method `bar` could not be called on type `core::integer::u16`.
 Candidate `test::MyTrait::bar` inference failed with: Trait has no implementation in context: test::MyTrait::<core::integer::u16>.
  --> lib.cairo:5:11
     3_u16.bar();
-          ^*^
+          ^^^
 
 //! > ==========================================================================
 
@@ -347,7 +347,7 @@ error[E0002]: Method `bar` could not be called on type `core::integer::u16`.
 Candidate `test::MyTrait::bar` inference failed with: Trait has no implementation in context: test::MyTrait::<core::integer::u16>.
  --> lib.cairo:5:21
     (3_u16 + 3_u16).bar();
-                    ^*^
+                    ^^^
 
 //! > ==========================================================================
 
@@ -377,9 +377,9 @@ impl MyImpl of MyTrait<felt252> {
 error: Wrong number of arguments. Expected 3, found: 2
  --> lib.cairo:8:7
     0.bar(1);
-      ^****^
+      ^^^^^^
 
 error: Wrong number of arguments. Expected 3, found: 4
  --> lib.cairo:9:7
     0.bar(1, 2, 3);
-      ^**********^
+      ^^^^^^^^^^^^

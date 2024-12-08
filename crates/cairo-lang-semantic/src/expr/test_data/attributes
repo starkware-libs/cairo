@@ -25,9 +25,9 @@ enum MyEnum {
 error: Can not create instances of phantom types.
  --> lib.cairo:9:5
     MyStruct {};
-    ^*********^
+    ^^^^^^^^^^^
 
 error: Can not create instances of phantom types.
  --> lib.cairo:10:5
     MyEnum::a(3);
-    ^**********^
+    ^^^^^^^^^^^^

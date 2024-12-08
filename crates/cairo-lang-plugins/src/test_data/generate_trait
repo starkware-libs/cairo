@@ -145,13 +145,13 @@ impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {}
 error: Generated trait must have a single element path.
  --> test_src/lib.cairo:2:29
 impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {}
-                            ^**********************^
+                            ^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 error: Generated trait must have generic args matching the impl's generic params.
  --> test_src/lib.cairo:5:36
 impl ImplNotMatchingGenerics<T> of TraitNotMatchingGenerics<S> {}
-                                   ^*************************^
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > expanded_cairo_code
 #[generate_trait]
@@ -242,4 +242,4 @@ trait MyTrait {
 error: Only functions, types, and constants are supported in #[generate_trait].
  --> test_src/lib.cairo:3:5
     impl AnImpl = SomeImpl;
-    ^*********************^
+    ^^^^^^^^^^^^^^^^^^^^^^^

@@ -17,22 +17,22 @@ foo
 error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:13
     let mut ref mut ref ref _a = 3;
-            ^*^
+            ^^^
 
 error: `mut` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:17
     let mut ref mut ref ref _a = 3;
-                ^*^
+                ^^^
 
 error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:21
     let mut ref mut ref ref _a = 3;
-                    ^*^
+                    ^^^
 
 error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:25
     let mut ref mut ref ref _a = 3;
-                        ^*^
+                        ^^^
 
 //! > ==========================================================================
 
@@ -55,7 +55,7 @@ foo
 error: `mut` modifier was specified after another modifier (`ref`). Only a single modifier is allowed.
  --> lib.cairo:2:13
     let ref mut _a = 3;
-            ^*^
+            ^^^
 
 error: `ref` is only allowed for function parameters, not for local variables.
  --> lib.cairo:2:17
@@ -107,12 +107,12 @@ foo
 error: Identifier not found.
  --> lib.cairo:2:14
     let _x = not_found;
-             ^*******^
+             ^^^^^^^^^
 
 error: Expected variable or constant, found function.
  --> lib.cairo:3:14
     let _x = foo;
-             ^*^
+             ^^^
 
 //! > ==========================================================================
 
@@ -135,4 +135,4 @@ foo
 error: Unexpected argument type. Expected: "()", found: "core::felt252".
  --> lib.cairo:2:18
     let _a: () = 3_felt252;
-                 ^*******^
+                 ^^^^^^^^^
