@@ -26,9 +26,11 @@ use cairo_lang_sierra_to_casm::metadata::{
 };
 use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
 use cairo_lang_utils::casts::IntoOrPanic;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_vm::types::builtin_name::BuiltinName;
+use itertools::{chain, zip_eq};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -269,7 +271,7 @@ pub fn create_entry_code_from_params(
 ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), BuildError> {
     let mut ctx = CasmBuilder::default();
     let mut builtin_offset = 3;
-    let mut builtin_vars = UnorderedHashMap::<_, _>::default();
+    let mut builtin_vars = OrderedHashMap::<_, _>::default();
     let mut builtin_ty_to_vm_name = UnorderedHashMap::<_, _>::default();
     let mut builtins = vec![];
     for (builtin_name, builtin_ty) in [
@@ -307,12 +309,25 @@ pub fn create_entry_code_from_params(
 
     let mut local_exprs = vec![];
     if has_post_calculation_loop {
-        for (ty, size) in return_types {
-            if ty != &SegmentArenaType::ID {
-                for _ in 0..*size {
-                    casm_build_extend!(ctx, localvar local;);
-                    local_exprs.push(ctx.get_value(local, false));
+        let mut allocate_cell = || {
+            casm_build_extend!(ctx, localvar local;);
+            local_exprs.push(ctx.get_value(local, false));
+        };
+        // In `outputting_function` case, no need to copy the result to the end, as it is the output
+        // ptr.
+        if !config.outputting_function {
+            for (ty, size) in return_types {
+                // Builtins are handled later.
+                if !builtin_ty_to_vm_name.contains_key(ty) {
+                    for _ in 0..*size {
+                        allocate_cell();
+                    }
                 }
+            }
+        }
+        for name in builtin_vars.keys() {
+            if name != &BuiltinName::segment_arena {
+                allocate_cell();
             }
         }
         if !local_exprs.is_empty() {
@@ -450,7 +465,10 @@ pub fn create_entry_code_from_params(
     assert_eq!(unprocessed_return_size, 0);
     if has_post_calculation_loop {
         // Storing local data on FP - as we have a loop now:
-        for (cell, local_expr) in return_data.iter().cloned().zip(&local_exprs) {
+        for (cell, local_expr) in zip_eq(
+            chain!(&return_data, builtin_vars.iter().filter_map(non_segment_arena_var)).cloned(),
+            &local_exprs,
+        ) {
             let local_cell = ctx.add_var(local_expr.clone());
             casm_build_extend!(ctx, assert local_cell = cell;);
         }
@@ -491,11 +509,17 @@ pub fn create_entry_code_from_params(
         };
     }
     if has_post_calculation_loop {
-        for (_, local_expr) in return_data.iter().zip(&local_exprs) {
-            let local_cell = ctx.add_var(local_expr.clone());
-            casm_build_extend! {ctx,
-                tempvar _cell = local_cell;
-            };
+        let mut locals = local_exprs.into_iter();
+        // Copying the result back to AP, for consistency of the result location.
+        // Note that in `outputting_function` mode it is empty.
+        for _ in 0..return_data.len() {
+            let local_cell = ctx.add_var(locals.next().unwrap().clone());
+            casm_build_extend!(ctx, tempvar _cell = local_cell;);
+        }
+        for (var, local_expr) in
+            zip_eq(builtin_vars.iter_mut().filter_map(non_segment_arena_var), locals)
+        {
+            *var = ctx.add_var(local_expr);
         }
     }
     if config.outputting_function {
@@ -518,6 +542,11 @@ pub fn create_entry_code_from_params(
     casm_build_extend! (ctx, ret;);
     ctx.future_label("FUNCTION".into(), code_offset);
     Ok((ctx.build([]).instructions, builtins))
+}
+
+/// Helper to filter out the segment arena from a builtin vars map.
+fn non_segment_arena_var<T>((name, var): (&BuiltinName, T)) -> Option<T> {
+    if *name == BuiltinName::segment_arena { None } else { Some(var) }
 }
 
 /// Creates a list of instructions that will be appended to the program's bytecode.
