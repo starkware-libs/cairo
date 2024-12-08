@@ -43,4 +43,4 @@ use internal::bar;
 error: Identifier not found.
  --> lib.cairo:4:5
 use NonExisting;
-    ^*********^
+    ^^^^^^^^^^^

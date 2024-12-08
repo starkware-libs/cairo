@@ -84,7 +84,7 @@ fn test_location_marks() {
 
     assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
             Second liné.
-                   ^**^
+                   ^^^^
         "});
 
     // Multiline span.
@@ -98,7 +98,7 @@ fn test_location_marks() {
 
     assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
             Second liné.
-                   ^***^
+                   ^^^^^
         "});
 
     // Span that ends past the end of the file.
@@ -112,7 +112,7 @@ fn test_location_marks() {
 
     assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
             Third liné.
-                   ^**^
+                   ^^^^
         "});
 
     // Empty span past the end of the file.

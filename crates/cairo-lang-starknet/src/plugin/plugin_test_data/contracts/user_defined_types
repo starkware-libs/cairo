@@ -95,7 +95,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 #[event]
@@ -227,7 +227,7 @@ pub mod __constructor {
 
 lib.cairo:13:5
     #[derive(Drop, Hash, starknet::Store)]
-    ^************************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl WrappedFelt252Drop of core::traits::Drop::<WrappedFelt252>;
@@ -246,7 +246,7 @@ impl WrappedFelt252Hash<
 
 lib.cairo:13:26
     #[derive(Drop, Hash, starknet::Store)]
-                         ^*************^
+                         ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
@@ -325,7 +325,7 @@ impl WrappedFelt252SubPointersMutImpl of starknet::storage::SubPointersMut<Wrapp
 
 lib.cairo:17:5
     #[derive(Drop, Hash, Serde, starknet::Store)]
-    ^*******************************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl ZeroSizeDrop of core::traits::Drop::<ZeroSize>;
@@ -354,7 +354,7 @@ impl ZeroSizeSerde of core::serde::Serde::<ZeroSize> {
 
 lib.cairo:17:33
     #[derive(Drop, Hash, Serde, starknet::Store)]
-                                ^*************^
+                                ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreZeroSize of starknet::Store::<ZeroSize> {
@@ -393,7 +393,7 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
 
 lib.cairo:20:5
     #[derive(Drop, Serde, starknet::Store)]
-    ^*************************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl SimpleEnumDrop of core::traits::Drop::<SimpleEnum>;
@@ -419,7 +419,7 @@ impl SimpleEnumSerde of core::serde::Serde::<SimpleEnum> {
 
 lib.cairo:20:27
     #[derive(Drop, Serde, starknet::Store)]
-                          ^*************^
+                          ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
@@ -503,7 +503,7 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
 
 lib.cairo:26:5
     #[derive(Drop, Serde, starknet::Store)]
-    ^*************************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EnumWithDefaultDrop of core::traits::Drop::<EnumWithDefault>;
@@ -531,7 +531,7 @@ impl EnumWithDefaultSerde of core::serde::Serde::<EnumWithDefault> {
 
 lib.cairo:26:27
     #[derive(Drop, Serde, starknet::Store)]
-                          ^*************^
+                          ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
@@ -637,7 +637,7 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
 
 lib.cairo:34:5
     #[derive(Drop, Serde, starknet::Store)]
-    ^*************************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl BadEnumWithDefaultDrop of core::traits::Drop::<BadEnumWithDefault>;
@@ -665,7 +665,7 @@ impl BadEnumWithDefaultSerde of core::serde::Serde::<BadEnumWithDefault> {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -673,7 +673,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -695,7 +695,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:6:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -704,7 +704,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:6:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -713,7 +713,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:13:26
     #[derive(Drop, Hash, starknet::Store)]
-                         ^*************^
+                         ^^^^^^^^^^^^^^^
 impls:
 
 impl WrappedFelt252SubPointersDrop of core::traits::Drop::<WrappedFelt252SubPointers>;
@@ -722,7 +722,7 @@ impl WrappedFelt252SubPointersCopy of core::traits::Copy::<WrappedFelt252SubPoin
 
 lib.cairo:13:26
     #[derive(Drop, Hash, starknet::Store)]
-                         ^*************^
+                         ^^^^^^^^^^^^^^^
 impls:
 
 impl WrappedFelt252SubPointersMutDrop of core::traits::Drop::<WrappedFelt252SubPointersMut>;
@@ -730,21 +730,28 @@ impl WrappedFelt252SubPointersMutCopy of core::traits::Copy::<WrappedFelt252SubP
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
- --> lib.cairo:39:9
-        #[default]
-        ^********^
+ --> lib.cairo:39:9-40:15
+          #[default]
+ _________^
+|         C: u32,
+|_______________^
 
 warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
- --> lib.cairo:20:5
-    #[derive(Drop, Serde, starknet::Store)]
-    ^*************************************^
+ --> lib.cairo:20:5-24:6
+      #[derive(Drop, Serde, starknet::Store)]
+ _____^
+|     enum SimpleEnum {
+|         A: u8,
+|         B: u16,
+|     }
+|_____^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:10:18
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
-                 ^*******^
+                 ^^^^^^^^^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:11:28
         zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
-                           ^*******^
+                           ^^^^^^^^^

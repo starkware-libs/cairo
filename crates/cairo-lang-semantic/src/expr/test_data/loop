@@ -50,9 +50,18 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:23
-fn foo(x: Option<()>) {
-                      ^
+ --> lib.cairo:1:23-9:2
+  fn foo(x: Option<()>) {
+ _______________________^
+|     loop {
+|         if true {
+|             break true;
+|         } else {
+|             break 0;
+|         }
+|     }
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -75,7 +84,7 @@ foo
 error: `continue` only allowed inside a `loop`.
  --> lib.cairo:2:5
     continue;
-    ^*******^
+    ^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -98,7 +107,7 @@ foo
 error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break 5;
-    ^******^
+    ^^^^^^^^
 
 //! > ==========================================================================
 
@@ -123,7 +132,7 @@ foo
 error: `return` not allowed inside a `loop`.
  --> lib.cairo:3:9
         return true;
-        ^**********^
+        ^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -211,7 +220,7 @@ foo
 error: `return` not allowed inside a `loop`.
  --> lib.cairo:3:9
         return;
-        ^*****^
+        ^^^^^^^
 
 //! > ==========================================================================
 
@@ -236,7 +245,7 @@ foo
 error: Unexpected return type. Expected: "core::bool", found: "()".
  --> lib.cairo:1:13
 fn foo() -> bool {
-            ^**^
+            ^^^^
 
 //! > ==========================================================================
 
@@ -280,7 +289,7 @@ foo
 error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break;
-    ^****^
+    ^^^^^^
 
 //! > ==========================================================================
 
@@ -309,7 +318,7 @@ use option::Option;
 error: `?` not allowed inside a `loop`.
  --> lib.cairo:5:9
         res?;
-        ^**^
+        ^^^^
 
 //! > ==========================================================================
 

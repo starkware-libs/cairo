@@ -56,12 +56,12 @@ error: Named arguments are not supported in this context.
 error: Wrong number of arguments. Expected 5, found: 4
  --> lib.cairo:14:5
     bar(0, 1, 2, 3);
-    ^*************^
+    ^^^^^^^^^^^^^^^
 
 error: Wrong number of arguments. Expected 5, found: 6
  --> lib.cairo:16:5
     bar(0, 1, 2, 3, 4, 5);
-    ^*******************^
+    ^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -164,23 +164,23 @@ impl OtherStructImpl of MyTrait<OtherStruct> {
 error: Function not found.
  --> lib.cairo:12:5
     bar(0);
-    ^*^
+    ^^^
 
 error[E0002]: Method `bar` not found on type `test::MyStruct`. Did you import the correct trait and impl?
  --> lib.cairo:15:7
     d.bar();
-      ^*^
+      ^^^
 
 error[E0002]: Method `baz` could not be called on type `test::MyStruct`.
 Candidate `test::MyTrait::baz` inference failed with: Trait has no implementation in context: test::MyTrait::<test::MyStruct>.
  --> lib.cairo:16:7
     d.baz();
-      ^*^
+      ^^^
 
 error: Trait has no implementation in context: core::traits::Add::<test::MyStruct>.
  --> lib.cairo:13:5
     d + 0;
-    ^***^
+    ^^^^^
 
 //! > ==========================================================================
 
