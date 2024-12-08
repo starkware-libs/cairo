@@ -76,7 +76,7 @@ mod counter_contract {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 Interface1DispatcherTrait:
 
 trait Interface1DispatcherTrait<T> {
@@ -172,7 +172,7 @@ impl Interface1SafeDispatcherImpl of Interface1SafeDispatcherTrait<Interface1Saf
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 Interface2DispatcherTrait:
 
 trait Interface2DispatcherTrait<T> {
@@ -268,7 +268,7 @@ impl Interface2SafeDispatcherImpl of Interface2SafeDispatcherTrait<Interface2Saf
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1DispatcherCopy of core::traits::Copy::<Interface1Dispatcher>;
@@ -287,7 +287,7 @@ impl Interface1DispatcherSerde of core::serde::Serde::<Interface1Dispatcher> {
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterface1Dispatcher of starknet::Store::<Interface1Dispatcher> {
@@ -366,7 +366,7 @@ impl Interface1DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1LibraryDispatcherCopy of core::traits::Copy::<Interface1LibraryDispatcher>;
@@ -385,7 +385,7 @@ impl Interface1LibraryDispatcherSerde of core::serde::Serde::<Interface1LibraryD
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterface1LibraryDispatcher of starknet::Store::<Interface1LibraryDispatcher> {
@@ -464,7 +464,7 @@ impl Interface1LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoin
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1SafeLibraryDispatcherCopy of core::traits::Copy::<Interface1SafeLibraryDispatcher>;
@@ -483,7 +483,7 @@ impl Interface1SafeLibraryDispatcherSerde of core::serde::Serde::<Interface1Safe
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterface1SafeLibraryDispatcher of starknet::Store::<Interface1SafeLibraryDispatcher> {
@@ -562,7 +562,7 @@ impl Interface1SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::Sub
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1SafeDispatcherCopy of core::traits::Copy::<Interface1SafeDispatcher>;
@@ -581,7 +581,7 @@ impl Interface1SafeDispatcherSerde of core::serde::Serde::<Interface1SafeDispatc
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterface1SafeDispatcher of starknet::Store::<Interface1SafeDispatcher> {
@@ -660,7 +660,7 @@ impl Interface1SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointer
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2DispatcherCopy of core::traits::Copy::<Interface2Dispatcher>;
@@ -679,7 +679,7 @@ impl Interface2DispatcherSerde of core::serde::Serde::<Interface2Dispatcher> {
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterface2Dispatcher of starknet::Store::<Interface2Dispatcher> {
@@ -758,7 +758,7 @@ impl Interface2DispatcherSubPointersMutImpl of starknet::storage::SubPointersMut
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2LibraryDispatcherCopy of core::traits::Copy::<Interface2LibraryDispatcher>;
@@ -777,7 +777,7 @@ impl Interface2LibraryDispatcherSerde of core::serde::Serde::<Interface2LibraryD
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterface2LibraryDispatcher of starknet::Store::<Interface2LibraryDispatcher> {
@@ -856,7 +856,7 @@ impl Interface2LibraryDispatcherSubPointersMutImpl of starknet::storage::SubPoin
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2SafeLibraryDispatcherCopy of core::traits::Copy::<Interface2SafeLibraryDispatcher>;
@@ -875,7 +875,7 @@ impl Interface2SafeLibraryDispatcherSerde of core::serde::Serde::<Interface2Safe
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterface2SafeLibraryDispatcher of starknet::Store::<Interface2SafeLibraryDispatcher> {
@@ -954,7 +954,7 @@ impl Interface2SafeLibraryDispatcherSubPointersMutImpl of starknet::storage::Sub
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2SafeDispatcherCopy of core::traits::Copy::<Interface2SafeDispatcher>;
@@ -973,7 +973,7 @@ impl Interface2SafeDispatcherSerde of core::serde::Serde::<Interface2SafeDispatc
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl StoreInterface2SafeDispatcher of starknet::Store::<Interface2SafeDispatcher> {
@@ -1052,7 +1052,7 @@ impl Interface2SafeDispatcherSubPointersMutImpl of starknet::storage::SubPointer
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1DispatcherSubPointersDrop of core::traits::Drop::<Interface1DispatcherSubPointers>;
@@ -1061,7 +1061,7 @@ impl Interface1DispatcherSubPointersCopy of core::traits::Copy::<Interface1Dispa
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1DispatcherSubPointersMutDrop of core::traits::Drop::<Interface1DispatcherSubPointersMut>;
@@ -1070,7 +1070,7 @@ impl Interface1DispatcherSubPointersMutCopy of core::traits::Copy::<Interface1Di
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1LibraryDispatcherSubPointersDrop of core::traits::Drop::<Interface1LibraryDispatcherSubPointers>;
@@ -1079,7 +1079,7 @@ impl Interface1LibraryDispatcherSubPointersCopy of core::traits::Copy::<Interfac
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1LibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Interface1LibraryDispatcherSubPointersMut>;
@@ -1088,7 +1088,7 @@ impl Interface1LibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Inter
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<Interface1SafeLibraryDispatcherSubPointers>;
@@ -1097,7 +1097,7 @@ impl Interface1SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Inte
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1SafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Interface1SafeLibraryDispatcherSubPointersMut>;
@@ -1106,7 +1106,7 @@ impl Interface1SafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<I
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1SafeDispatcherSubPointersDrop of core::traits::Drop::<Interface1SafeDispatcherSubPointers>;
@@ -1115,7 +1115,7 @@ impl Interface1SafeDispatcherSubPointersCopy of core::traits::Copy::<Interface1S
 
 lib.cairo:1:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface1SafeDispatcherSubPointersMutDrop of core::traits::Drop::<Interface1SafeDispatcherSubPointersMut>;
@@ -1124,7 +1124,7 @@ impl Interface1SafeDispatcherSubPointersMutCopy of core::traits::Copy::<Interfac
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2DispatcherSubPointersDrop of core::traits::Drop::<Interface2DispatcherSubPointers>;
@@ -1133,7 +1133,7 @@ impl Interface2DispatcherSubPointersCopy of core::traits::Copy::<Interface2Dispa
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2DispatcherSubPointersMutDrop of core::traits::Drop::<Interface2DispatcherSubPointersMut>;
@@ -1142,7 +1142,7 @@ impl Interface2DispatcherSubPointersMutCopy of core::traits::Copy::<Interface2Di
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2LibraryDispatcherSubPointersDrop of core::traits::Drop::<Interface2LibraryDispatcherSubPointers>;
@@ -1151,7 +1151,7 @@ impl Interface2LibraryDispatcherSubPointersCopy of core::traits::Copy::<Interfac
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2LibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Interface2LibraryDispatcherSubPointersMut>;
@@ -1160,7 +1160,7 @@ impl Interface2LibraryDispatcherSubPointersMutCopy of core::traits::Copy::<Inter
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2SafeLibraryDispatcherSubPointersDrop of core::traits::Drop::<Interface2SafeLibraryDispatcherSubPointers>;
@@ -1169,7 +1169,7 @@ impl Interface2SafeLibraryDispatcherSubPointersCopy of core::traits::Copy::<Inte
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2SafeLibraryDispatcherSubPointersMutDrop of core::traits::Drop::<Interface2SafeLibraryDispatcherSubPointersMut>;
@@ -1178,7 +1178,7 @@ impl Interface2SafeLibraryDispatcherSubPointersMutCopy of core::traits::Copy::<I
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2SafeDispatcherSubPointersDrop of core::traits::Drop::<Interface2SafeDispatcherSubPointers>;
@@ -1187,7 +1187,7 @@ impl Interface2SafeDispatcherSubPointersCopy of core::traits::Copy::<Interface2S
 
 lib.cairo:6:1
 #[starknet::interface]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl Interface2SafeDispatcherSubPointersMutDrop of core::traits::Drop::<Interface2SafeDispatcherSubPointersMut>;
@@ -1196,7 +1196,7 @@ impl Interface2SafeDispatcherSubPointersMutCopy of core::traits::Copy::<Interfac
 
 lib.cairo:11:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 component:
 
 #[event]
@@ -1310,7 +1310,7 @@ impl TContractStateDrop: Drop<TContractState>
 
 lib.cairo:11:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1318,7 +1318,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:11:1
 #[starknet::component]
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1340,7 +1340,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 lib.cairo:13:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1349,7 +1349,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:13:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1358,7 +1358,7 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 lib.cairo:16:5
     #[embeddable_as(I1I1)]
-    ^********************^
+    ^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForI1I1<
@@ -1402,7 +1402,7 @@ pub mod __constructor_I1I1 {
 
 lib.cairo:23:5
     #[embeddable_as(I1I2)]
-    ^********************^
+    ^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForI1I2<
@@ -1446,7 +1446,7 @@ pub mod __constructor_I1I2 {
 
 lib.cairo:30:5
     #[embeddable_as(I2I)]
-    ^*******************^
+    ^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 pub trait UnsafeNewContractStateTraitForI2I<
@@ -1490,7 +1490,7 @@ pub mod __constructor_I2I {
 
 lib.cairo:38:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -1661,7 +1661,7 @@ impl HasComponentImpl_comp of super::comp::HasComponent<ContractState> {
 
 lib.cairo:49:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -1669,7 +1669,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:49:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1708,7 +1708,7 @@ impl EventCompEventIntoEvent of Into<super::comp::Event, Event> {
 
 lib.cairo:42:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -1717,7 +1717,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:42:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
@@ -1725,16 +1725,22 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
- --> lib.cairo:56:5
-    #[abi(embed_v0)]
-    ^**************^
+ --> lib.cairo:56:5-57:58
+      #[abi(embed_v0)]
+ _____^
+|     impl EmbeddedI1I2 = super::comp::I1I2<ContractState>;
+|_________________________________________________________^
 
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
- --> lib.cairo:58:5
-    #[abi(embed_v0)]
-    ^**************^
+ --> lib.cairo:58:5-59:56
+      #[abi(embed_v0)]
+ _____^
+|     impl EmbeddedI2I = super::comp::I2I<ContractState>;
+|_______________________________________________________^
 
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
- --> lib.cairo:61:5
-    #[external(v0)]
-    ^*************^
+ --> lib.cairo:61:5-62:36
+      #[external(v0)]
+ _____^
+|     fn foo(self: @ContractState) {}
+|___________________________________^
