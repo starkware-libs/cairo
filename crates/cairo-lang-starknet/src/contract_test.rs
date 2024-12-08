@@ -1,4 +1,6 @@
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::test_utils::{get_crate_semantic_diagnostics, setup_test_crate};
 use indoc::indoc;
 use itertools::Itertools;
@@ -10,11 +12,9 @@ use crate::starknet_plugin_suite;
 
 #[test]
 fn test_contract_resolving() {
-    let db = &mut RootDatabase::builder()
-        .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
-        .build()
-        .unwrap();
+    let db = &mut RootDatabase::builder().detect_corelib().build().unwrap();
+    db.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
+
     let crate_id = setup_test_crate(db, indoc! {"
             mod not_a_contract {}
 

@@ -21,6 +21,8 @@ use cairo_lang_lowering::ids::{
 use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
 use cairo_lang_semantic::ConcreteImplLongId;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
     ImplGenericFunctionWithBodyId,
@@ -35,12 +37,8 @@ use itertools::Itertools;
 /// Tests that `PhasesFormatter` is consistent with the lowering phases.
 #[test]
 fn test_lowering_consistency() {
-    let db_val = RootDatabase::builder()
-        .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
-        .build()
-        .unwrap();
-
+    let mut db_val = RootDatabase::builder().detect_corelib().build().unwrap();
+    db_val.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
     let db: &dyn LoweringGroup = &db_val;
 
     let function_id = get_func_id_by_name(
@@ -223,10 +221,8 @@ fn main() -> anyhow::Result<()> {
     // Check if args.path is a file or a directory.
     check_compiler_path(args.single_file, &args.path)?;
 
-    let mut db_val = RootDatabase::builder()
-        .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
-        .build()?;
+    let mut db_val = RootDatabase::builder().detect_corelib().build()?;
+    db_val.set_plugins_from_suite(get_default_plugin_suite() + starknet_plugin_suite());
 
     let main_crate_ids = setup_project(&mut db_val, Path::new(&args.path))?;
     let db = &db_val;

@@ -10,6 +10,8 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_runnable_utils::builder::{
     CasmProgramWrapperInfo, EntryCodeConfig, RunnableBuilder,
 };
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
@@ -55,11 +57,8 @@ pub fn compile_executable(
     executable_path: Option<&str>,
     diagnostics_reporter: DiagnosticsReporter<'_>,
 ) -> Result<CompiledFunction> {
-    let mut db = RootDatabase::builder()
-        .skip_auto_withdraw_gas()
-        .detect_corelib()
-        .with_plugin_suite(executable_plugin_suite())
-        .build()?;
+    let mut db = RootDatabase::builder().skip_auto_withdraw_gas().detect_corelib().build()?;
+    db.set_plugins_from_suite(get_default_plugin_suite() + executable_plugin_suite());
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 

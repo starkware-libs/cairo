@@ -11,6 +11,8 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagId};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_runner::{Arg, RunResultValue, SierraCasmRunner, token_gas_cost};
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
@@ -30,6 +32,8 @@ type ExampleDirData = (Mutex<RootDatabase>, Vec<CrateId>);
 #[once]
 fn example_dir_data() -> ExampleDirData {
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+    db.set_plugins_from_suite(get_default_plugin_suite());
+
     let dir = env!("CARGO_MANIFEST_DIR");
     // Pop the "/tests" suffix.
     let mut path = PathBuf::from(dir).parent().unwrap().to_owned();

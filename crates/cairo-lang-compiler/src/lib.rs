@@ -10,6 +10,8 @@ use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::utils::InliningStrategy;
+use cairo_lang_semantic::db::PluginSuiteInput;
+use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -73,7 +75,10 @@ pub fn compile_cairo_project_at_path(
         .with_inlining_strategy(compiler_config.inlining_strategy)
         .detect_corelib()
         .build()?;
+    db.set_plugins_from_suite(get_default_plugin_suite());
+
     let main_crate_ids = setup_project(&mut db, path)?;
+
     compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)
 }
 
@@ -91,6 +96,8 @@ pub fn compile(
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
     let mut db = RootDatabase::builder().with_project_config(project_config.clone()).build()?;
+    db.set_plugins_from_suite(get_default_plugin_suite());
+
     let main_crate_ids = get_main_crate_ids_from_project(&mut db, &project_config);
 
     compile_prepared_db_program(&mut db, main_crate_ids, compiler_config)

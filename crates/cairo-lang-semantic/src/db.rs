@@ -37,7 +37,7 @@ use crate::items::trt::{
 };
 use crate::items::us::{ImportedModules, SemanticUseEx};
 use crate::items::visibility::Visibility;
-use crate::plugin::AnalyzerPlugin;
+use crate::plugin::{AnalyzerPlugin, PluginSuite};
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::{ImplTypeId, TypeSizeInformation};
@@ -1852,3 +1852,23 @@ pub fn get_resolver_data_options(
     .flatten()
     .collect()
 }
+
+/// An extension trait for [`SemanticGroup`] to manage plugin setters.
+// TODO: Remove notes in the last PR of the stack.
+pub trait PluginSuiteInput: SemanticGroup {
+    /// Sets macro, inline macro and analyzer plugins used by the database to those specified
+    /// in the [`PluginSuite`] by invoking appropriate setters from the [`DefsGroup`].
+    /// ---
+    /// NOTE: This is a **temporary** function for easier transition from global plugins
+    /// to crate-local ones. I substitute it with `set_crate_macro_plugins_from_suite`
+    /// in the next PRs in the stack.
+    fn set_plugins_from_suite(&mut self, suite: PluginSuite) {
+        let PluginSuite { plugins, inline_macro_plugins, analyzer_plugins } = suite;
+
+        self.set_macro_plugins(plugins);
+        self.set_inline_macro_plugins(Arc::new(inline_macro_plugins));
+        self.set_analyzer_plugins(analyzer_plugins);
+    }
+}
+
+impl<T: SemanticGroup> PluginSuiteInput for T {}

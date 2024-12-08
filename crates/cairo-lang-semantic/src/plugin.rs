@@ -1,3 +1,4 @@
+use std::ops::{Add, AddAssign};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::ModuleId;
@@ -65,10 +66,31 @@ impl PluginSuite {
         self.add_analyzer_plugin_ex(Arc::new(T::default()))
     }
     /// Adds another plugin suite into this suite.
-    pub fn add(&mut self, suite: PluginSuite) -> &mut Self {
+    pub fn extend(&mut self, suite: PluginSuite) -> &mut Self {
         self.plugins.extend(suite.plugins);
         self.inline_macro_plugins.extend(suite.inline_macro_plugins);
         self.analyzer_plugins.extend(suite.analyzer_plugins);
         self
+    }
+}
+
+impl Add for PluginSuite {
+    type Output = Self;
+
+    /// Adds another plugin suite into this suite.
+    fn add(self, suite: PluginSuite) -> Self::Output {
+        let Self { mut plugins, mut inline_macro_plugins, mut analyzer_plugins } = self;
+
+        plugins.extend(suite.plugins);
+        inline_macro_plugins.extend(suite.inline_macro_plugins);
+        analyzer_plugins.extend(suite.analyzer_plugins);
+
+        Self { plugins, inline_macro_plugins, analyzer_plugins }
+    }
+}
+
+impl AddAssign for PluginSuite {
+    fn add_assign(&mut self, suite: Self) {
+        self.extend(suite);
     }
 }

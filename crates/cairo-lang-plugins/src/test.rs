@@ -147,7 +147,7 @@ pub fn test_expand_plugin_inner(
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 struct DoubleIndirectionPlugin;
 impl MacroPlugin for DoubleIndirectionPlugin {
     fn generate_code(

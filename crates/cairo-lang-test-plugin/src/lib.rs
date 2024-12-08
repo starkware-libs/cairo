@@ -286,6 +286,6 @@ pub fn test_assert_suite() -> PluginSuite {
 /// The suite of plugins for compilation for testing.
 pub fn test_plugin_suite() -> PluginSuite {
     let mut suite = PluginSuite::default();
-    suite.add_plugin::<TestPlugin>().add(test_assert_suite());
+    suite.add_plugin::<TestPlugin>().extend(test_assert_suite());
     suite
 }
