@@ -10,9 +10,11 @@ fn f() {
 
 //! > expected_diagnostics
 error: Unterminated short string literal.
- --> dummy_file.cairo:2:27
-   let unterminated_str = 'abc;
-                          ^***^
+ --> dummy_file.cairo:2:27-3:1
+     let unterminated_str = 'abc;
+ ___________________________^
+| }
+|_^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:3:2
@@ -38,9 +40,11 @@ fn f() {
 
 //! > expected_diagnostics
 error: Unterminated string literal.
- --> dummy_file.cairo:2:27
-   let unterminated_str = "abc;
-                          ^***^
+ --> dummy_file.cairo:2:27-3:1
+     let unterminated_str = "abc;
+ ___________________________^
+| }
+|_^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:3:2

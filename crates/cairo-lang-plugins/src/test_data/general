@@ -15,8 +15,10 @@ struct B {}
 
 //! > expected_diagnostics
 error: Double indirection diagnostic
- --> test_src/lib.cairo:1:1
-#[first]
-^******^
+ --> test_src/lib.cairo:1:1-2:2
+  #[first]
+ _^
+| struct X {}
+|__^
 note: first note
 note: second note
