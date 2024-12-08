@@ -350,7 +350,7 @@ pub fn create_entry_code_from_params(
             unallocated_count += ty_size;
         } else if !config.outputting_function {
             if *ty_size > 0 {
-                casm_build_extend! { ctx,
+                casm_build_extend! {ctx,
                     tempvar first;
                     const param_index = param_index;
                     hint ExternalHint::WriteRunParam { index: param_index } into { dst: first };
@@ -361,6 +361,12 @@ pub fn create_entry_code_from_params(
             }
             param_index += 1;
             unallocated_count += ty_size;
+        } else if generic_ty == &GasBuiltinType::ID {
+            // Setting gas to be far from u128 boundaries.
+            casm_build_extend! {ctx,
+                const max_gas = i128::MAX;
+                tempvar gas = max_gas;
+            };
         }
     }
     if config.outputting_function {
@@ -388,6 +394,10 @@ pub fn create_entry_code_from_params(
                 ctx.add_var(CellExpression::Deref(deref!([ap - unprocessed_return_size])));
             unprocessed_return_size -= 1;
         } else if config.outputting_function {
+            if ret_ty == &GasBuiltinType::ID {
+                unprocessed_return_size -= 1;
+                continue;
+            }
             let output_ptr_var = builtin_vars[&BuiltinName::output];
             // The output builtin values.
             let new_output_ptr = if *size == 3 {
