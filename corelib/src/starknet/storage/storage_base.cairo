@@ -70,7 +70,7 @@ pub trait StorageTraitMut<T> {
     /// The type of the struct containing the mutable StorageBase or FlattenedStorage of all the
     /// members of a the type `T`.
     type BaseType;
-    /// Creates a struct containing a mutable version of the the StorageBase or FlattenedStorage of
+    /// Creates a struct containing a mutable version of the StorageBase or FlattenedStorage of
     /// all the members of a contract state. Should be called from the `deref` method of the
     /// contract state.
     fn storage_mut(self: FlattenedStorage<Mutable<T>>) -> Self::BaseType;
