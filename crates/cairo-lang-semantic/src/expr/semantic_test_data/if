@@ -149,7 +149,11 @@ If(
 error: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:2:1
 if a {
-^****^
+^*****
+...
+     lib.cairo:6:2
+}
+^
 
 //! > ==========================================================================
 
@@ -254,4 +258,8 @@ If(
 error: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:2:1
 if a {
-^****^
+^*****
+...
+     lib.cairo:6:2
+}
+^

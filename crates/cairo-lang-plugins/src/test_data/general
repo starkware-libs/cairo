@@ -17,6 +17,9 @@ struct B {}
 error: Double indirection diagnostic
  --> test_src/lib.cairo:1:1
 #[first]
-^******^
+^*******
+     test_src/lib.cairo:2:3
+struct X {}
+**********^
 note: first note
 note: second note

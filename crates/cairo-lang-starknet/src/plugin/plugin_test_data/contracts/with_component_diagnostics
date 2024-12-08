@@ -1532,7 +1532,11 @@ error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:24:5
     component!(
-    ^*********^
+    ^**********
+...
+     lib.cairo:26:7
+    );
+    *^
 
 error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
  --> lib.cairo:28:5
@@ -1977,12 +1981,18 @@ error: Plugin diagnostic: Only #[substorage(v0)] is supported.
 error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
  --> lib.cairo:14:9
         #[substorage(v0)]
-        ^***************^
+        ^****************
+     lib.cairo:15:38
+        non_path_type: (usize, usize),
+        *****************************^
 
 error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
  --> lib.cairo:16:9
         #[substorage(v0)]
-        ^***************^
+        ^****************
+     lib.cairo:17:29
+        non_component: usize,
+        ********************^
 
 //! > ==========================================================================
 

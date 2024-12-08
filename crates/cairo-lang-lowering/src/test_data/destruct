@@ -364,12 +364,18 @@ impl ADestruct of Destruct<A> {
 error: Call cycle of `nopanic` functions is not allowed.
  --> lib.cairo:3:5
     #[inline(always)]
-    ^***************^
+    ^****************
+     lib.cairo:4:36
+    fn destruct(self: A) nopanic {}
+    ******************************^
 
 error: Cannot inline a function that might call itself.
  --> lib.cairo:3:5
     #[inline(always)]
-    ^***************^
+    ^****************
+     lib.cairo:4:36
+    fn destruct(self: A) nopanic {}
+    ******************************^
 
 //! > lowering_flat
 Parameters:

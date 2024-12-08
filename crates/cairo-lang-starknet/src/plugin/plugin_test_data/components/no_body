@@ -17,9 +17,15 @@ mod test_component;
 error: Plugin diagnostic: Components without body are not supported.
  --> lib.cairo:1:1
 #[starknet::component]
-^********************^
+^*********************
+     lib.cairo:2:20
+mod test_component;
+******************^
 
 error[E0005]: Module file not found. Expected path: test_component.cairo
  --> lib.cairo:1:1
 #[starknet::component]
-^********************^
+^*********************
+     lib.cairo:2:20
+mod test_component;
+******************^

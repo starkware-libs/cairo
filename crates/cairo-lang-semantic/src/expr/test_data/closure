@@ -94,7 +94,11 @@ foo
 error: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:20: 2:22}".
  --> lib.cairo:2:20
     let _x: i32 =  || {
-                   ^**^
+                   ^***
+...
+     lib.cairo:5:6
+    };
+    *^
 
 //! > ==========================================================================
 
@@ -119,12 +123,20 @@ const _x: i32 =  || {
 error: Closures are not allowed in this context.
  --> lib.cairo:1:18
 const _x: i32 =  || {
-                 ^**^
+                 ^***
+...
+     lib.cairo:4:2
+};
+*^
 
 error: Type mismatch: `{closure@lib.cairo:1:18: 1:20}` and `core::integer::i32`.
  --> lib.cairo:1:1
 const _x: i32 =  || {
-^*******************^
+^********************
+...
+     lib.cairo:4:3
+};
+*^
 
 //! > ==========================================================================
 
@@ -150,12 +162,20 @@ fn bar<const N: u32>() {}
 error: Closures are not allowed in this context.
  --> lib.cairo:3:14
     bar::<{  || -> u32 {
-             ^*********^
+             ^**********
+...
+     lib.cairo:5:6
+    } }>();
+    ******^
 
 error: Type mismatch: `{closure@lib.cairo:3:14: 3:16}` and `core::integer::u32`.
  --> lib.cairo:3:11
     bar::<{  || -> u32 {
-          ^************^
+          ^*************
+...
+     lib.cairo:5:8
+    } }>();
+    ******^
 
 //! > ==========================================================================
 

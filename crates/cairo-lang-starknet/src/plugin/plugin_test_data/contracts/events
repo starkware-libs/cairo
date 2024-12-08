@@ -92,7 +92,11 @@ impl ASerde of core::serde::Serde::<A> {
 
 lib.cairo:1:1
 #[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
-^*****************************************************************^
+^******************************************************************
+...
+     lib.cairo:6:2
+}
+^
 starknet_derive:
 
 impl AIsEvent of starknet::Event<A> {
