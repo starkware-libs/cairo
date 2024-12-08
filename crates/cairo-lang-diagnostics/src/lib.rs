@@ -7,7 +7,7 @@ pub use diagnostics::{
     ToMaybe, ToOption, format_diagnostics, skip_diagnostic,
 };
 pub use error_code::{ErrorCode, OptionErrorCodeExt};
-pub use location_marks::get_location_marks;
+pub use location_marks::get_locations_marks;
 
 mod diagnostics;
 mod error_code;

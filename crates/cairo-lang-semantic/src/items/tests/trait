@@ -65,67 +65,70 @@ error: 'of' is a reserved identifier.
 error: Skipped tokens. Expected: Const/Function/Impl/Type or an attribute.
  --> lib.cairo:16:24
     impl DummyImpl2 of MyTrait::<T>;
-                       ^***********^
+                       ^^^^^^^^^^^^^
 
 error: Type not found.
  --> lib.cairo:3:35
     fn param_test(ref a: u128) -> bad_type nopanic;
-                                  ^******^
+                                  ^^^^^^^^
 
 error[E0004]: Not all trait items are implemented. Missing: 'param_test', 'no_ret_ty'.
  --> lib.cairo:7:6
 impl MyImpl of MyTrait::<A>;
-     ^****^
+     ^^^^^^
 
 error: `mod` is not allowed inside impl.
  --> lib.cairo:9:5
     mod a;
-    ^*^
+    ^^^
 
 error: `use` is not allowed inside impl.
  --> lib.cairo:10:5
     use b;
-    ^*^
+    ^^^
 
 error: `extern` is not allowed inside impl.
  --> lib.cairo:11:5
     extern fn extern_func() nopanic;
-    ^****^
+    ^^^^^^
 
 error: `extern` is not allowed inside impl.
  --> lib.cairo:12:5
     extern type DummyType;
-    ^****^
+    ^^^^^^
 
 error: `trait` is not allowed inside impl.
  --> lib.cairo:14:5
     trait DummyTrait;
-    ^***^
+    ^^^^^
 
 error: `struct` is not allowed inside impl.
  --> lib.cairo:18:5
     struct DummyStruct {}
-    ^****^
+    ^^^^^^
 
 error: `enum` is not allowed inside impl.
  --> lib.cairo:20:5
     enum DummyEnum {}
-    ^**^
+    ^^^^
 
 error: Impl item function `MyImpl2::my_bar` is not a member of trait `MyTrait`.
- --> lib.cairo:22:5
-    fn my_bar() {
-    ^***********^
+ --> lib.cairo:22:5-24:6
+      fn my_bar() {
+ _____^
+| 
+|     }
+|_____^
 
 error: The number of parameters in the impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: 1, actual: 3.
  --> lib.cairo:26:19
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
-                  ^********************************^
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `core::integer::u128`, actual: `core::felt252`.
  --> lib.cairo:26:22
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
-                     ^*****^
+                     ^^^^^^^
 
 error: Parameter of impl function MyImpl2::param_test is incompatible with MyTrait::param_test. It should be a reference.
  --> lib.cairo:26:19
@@ -135,17 +138,17 @@ error: Parameter of impl function MyImpl2::param_test is incompatible with MyTra
 error: The signature of function `param_test` is incompatible with trait `MyTrait`. The trait function is declared as nopanic.
  --> lib.cairo:26:18
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
-                 ^******************************************^
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Unexpected return type. Expected: "core::integer::u128", found: "()".
  --> lib.cairo:26:58
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
-                                                         ^**^
+                                                         ^^^^
 
 error: Parameter of impl function MyImpl2::no_ret_ty is incompatible with MyTrait::no_ret_ty. It should not be a reference.
  --> lib.cairo:30:18
     fn no_ret_ty(ref a: u128) {
-                 ^*^
+                 ^^^
 
 error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `MyTrait::no_ret_ty`. Expected: `core::felt252`, actual: `()`.
  --> lib.cairo:30:31
@@ -155,12 +158,12 @@ error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `M
 error: Impl item impl `MyImpl2::DummyImpl1` is not a member of trait `MyTrait`.
  --> lib.cairo:15:5
     impl DummyImpl1 = MyImpl;
-    ^***********************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Impl item impl `MyImpl2::DummyImpl2` is not a member of trait `MyTrait`.
  --> lib.cairo:16:5
     impl DummyImpl2 of MyTrait::<T>;
-    ^*************^
+    ^^^^^^^^^^^^^^^
 
 error: Impl not found.
  --> lib.cairo:16:21
@@ -170,7 +173,7 @@ error: Impl not found.
 error: Not a trait.
  --> lib.cairo:35:13
 impl abc of abc;
-            ^*^
+            ^^^
 
 //! > ==========================================================================
 
@@ -195,12 +198,12 @@ impl MyImpl4 of foo;
 error: Trait not found.
  --> lib.cairo:3:17
 impl MyImpl3 of NonExistingTrait;
-                ^**************^
+                ^^^^^^^^^^^^^^^^
 
 error: Not a trait.
  --> lib.cairo:4:17
 impl MyImpl4 of foo;
-                ^*^
+                ^^^
 
 //! > ==========================================================================
 
@@ -249,32 +252,32 @@ impl T2Drop of Drop<(felt252, NonCopy)>;
 error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
  --> lib.cairo:19:1
 impl CCopy of Copy<C>;
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 
 error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
  --> lib.cairo:20:1
 impl CDrop of Drop<C>;
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 
 error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
  --> lib.cairo:21:1
 impl DCopy of Copy<D>;
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 
 error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
  --> lib.cairo:22:1
 impl DDrop of Drop<D>;
-^********************^
+^^^^^^^^^^^^^^^^^^^^^^
 
 error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
  --> lib.cairo:27:1
 impl T2Copy of Copy<(felt252, NonCopy)>;
-^**************************************^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
  --> lib.cairo:28:1
 impl T2Drop of Drop<(felt252, NonCopy)>;
-^**************************************^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -298,7 +301,7 @@ trait MyTrait<T> {
 error: Parameter of trait function `MyTrait::f` can't be defined as mutable.
  --> lib.cairo:2:10
     fn f(mut a: felt252);
-         ^*^
+         ^^^
 
 //! > ==========================================================================
 
@@ -370,7 +373,7 @@ trait MyTrait {
 error: Trait has no implementation in context: test::MyTrait.
  --> lib.cairo:5:14
     MyTrait::foo()
-             ^*^
+             ^^^
 
 //! > ==========================================================================
 
@@ -402,7 +405,7 @@ impl MyImpl2 of MyTrait {
 error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl1`, `test::MyImpl2`
  --> lib.cairo:11:14
     MyTrait::foo()
-             ^*^
+             ^^^
 
 //! > ==========================================================================
 
@@ -428,7 +431,7 @@ impl MyImpl of MyTrait;
 error[E0004]: Not all trait items are implemented. Missing: 'foo1', 'foo2'.
  --> lib.cairo:5:6
 impl MyImpl of MyTrait;
-     ^****^
+     ^^^^^^
 
 //! > ==========================================================================
 
@@ -459,18 +462,18 @@ impl MyImpl of MyTrait;
 error[E0004]: Not all trait items are implemented. Missing: 'foo1', 'foo2', 'X', 'C'.
  --> lib.cairo:9:6
 impl MyImpl of MyTrait;
-     ^****^
+     ^^^^^^
 
 error: Cannot infer implicit impl `Z.`
 Could not find implementation of trait `test::OtherTrait`
  --> lib.cairo:9:1
 impl MyImpl of MyTrait;
-^*********************^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Trait has no implementation in context: test::OtherTrait.
  --> lib.cairo:9:1
 impl MyImpl of MyTrait;
-^*********************^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -512,18 +515,24 @@ impl MyImpl of MyTrait {
 error[E0004]: Not all trait items are implemented. Missing: 'foo1', 'foo3', 'Y', 'D'.
  --> lib.cairo:16:6
 impl MyImpl of MyTrait {
-     ^****^
+     ^^^^^^
 
 error: Cannot infer implicit impl `F.`
 Could not find implementation of trait `test::OtherTrait`
- --> lib.cairo:16:1
-impl MyImpl of MyTrait {
-^**********************^
+ --> lib.cairo:16:1-21:2
+  impl MyImpl of MyTrait {
+ _^
+| ...
+| }
+|_^
 
 error: Trait has no implementation in context: test::OtherTrait.
- --> lib.cairo:16:1
-impl MyImpl of MyTrait {
-^**********************^
+ --> lib.cairo:16:1-21:2
+  impl MyImpl of MyTrait {
+ _^
+| ...
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -551,22 +560,22 @@ impl MyImpl of MyTrait {
 error: Impl item function `MyImpl::bar` is not a member of trait `MyTrait`.
  --> lib.cairo:6:5
     fn bar() {}
-    ^*********^
+    ^^^^^^^^^^^
 
 error: Impl item type `MyImpl::X` is not a member of trait `MyTrait`.
  --> lib.cairo:3:5
     type X = u32;
-    ^***********^
+    ^^^^^^^^^^^^^
 
 error: Impl item const `MyImpl::C` is not a member of trait `MyTrait`.
  --> lib.cairo:4:5
     const C: u32 = 3;
-    ^***************^
+    ^^^^^^^^^^^^^^^^^
 
 error: Impl item impl `MyImpl::E` is not a member of trait `MyTrait`.
  --> lib.cairo:5:5
     impl E = Self;
-    ^************^
+    ^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -596,7 +605,7 @@ impl Felt252Identity of Identity<felt252> {
 error: Parameter type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `core::felt252`, actual: `core::integer::u128`.
  --> lib.cairo:6:15
     fn foo(a: u128) {}
-              ^**^
+              ^^^^
 
 //! > ==========================================================================
 
@@ -628,7 +637,7 @@ impl Felt252Identity of Identity<felt252> {
 error: Return type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `core::felt252`, actual: `core::integer::u128`.
  --> lib.cairo:6:17
     fn foo() -> u128 {
-                ^**^
+                ^^^^
 
 //! > ==========================================================================
 
@@ -680,7 +689,7 @@ impl Felt252Identity of Identity<felt252> {
 error: Parameter type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `T`, actual: `core::felt252`.
  --> lib.cairo:6:18
     fn foo<T>(a: felt252) {}
-                 ^*****^
+                 ^^^^^^^
 
 //! > ==========================================================================
 
@@ -804,7 +813,7 @@ error: The name `X` is defined multiple times.
 error: Expected an impl of `test::MyTrait::<core::integer::i32>`. Got an impl of `test::MyTrait::<core::integer::u32>`.
  --> lib.cairo:6:5
     impl X = MyImpl<u32>;
-    ^*******************^
+    ^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -834,17 +843,17 @@ impl MyImpl of MyTrait<felt252> {
 error: The name `foo` is defined multiple times.
  --> lib.cairo:3:8
     fn foo<S>(a: T, b: S);
-       ^*^
+       ^^^
 
 error: The name `foo` is defined multiple times.
  --> lib.cairo:8:8
     fn foo<S>(a: felt252, b: S) {}
-       ^*^
+       ^^^
 
 error: The number of parameters in the impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: 2, actual: 3.
  --> lib.cairo:7:15
     fn foo<S>(a: felt252, b: S, c: felt252) {}
-              ^**************************^
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -875,17 +884,17 @@ impl imp4 of inner_imp {}
 error: Not a trait.
  --> lib.cairo:3:14
 impl imp2 of imp1 {}
-             ^**^
+             ^^^^
 
 error: Not a trait.
  --> lib.cairo:4:14
 impl imp3 of imp3 {}
-             ^**^
+             ^^^^
 
 error: Not a trait.
  --> lib.cairo:10:14
 impl imp4 of inner_imp {}
-             ^*******^
+             ^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -998,7 +1007,7 @@ impl MyImpl of MyTrait {
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:6:18
     fn foo1() -> u32 {
-                 ^*^
+                 ^^^
 
 //! > ==========================================================================
 
@@ -1031,7 +1040,7 @@ mod inner {
 error: `Self` can only be the first segment of a path.
  --> lib.cairo:8:27
             super::inner::Self::foo2(); // This is not ok.
-                          ^**^
+                          ^^^^
 
 //! > ==========================================================================
 
@@ -1060,17 +1069,17 @@ impl MyImpl of MyTrait {
 error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
  --> lib.cairo:5:15
     fn foo(x: u32, y: u32) -> u32 {
-              ^*^
+              ^^^
 
 error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
  --> lib.cairo:5:23
     fn foo(x: u32, y: u32) -> u32 {
-                      ^*^
+                      ^^^
 
 error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u16`, actual: `core::integer::u32`.
  --> lib.cairo:5:31
     fn foo(x: u32, y: u32) -> u32 {
-                              ^*^
+                              ^^^
 
 //! > ==========================================================================
 
@@ -1102,14 +1111,20 @@ impl FooIntoIterator of core::iter::IntoIterator<Foo> {
 //! > expected_diagnostics
 error: Cannot infer implicit impl `Iterator.`
 Could not find implementation of trait `core::iter::traits::iterator::Iterator::<test::FooIter>`
- --> lib.cairo:5:1
-#[feature("collections-into-iter")]
-^*********************************^
+ --> lib.cairo:5:1-12:2
+  #[feature("collections-into-iter")]
+ _^
+| ...
+| }
+|_^
 
 error: Trait has no implementation in context: core::iter::traits::iterator::Iterator::<test::FooIter>.
- --> lib.cairo:5:1
-#[feature("collections-into-iter")]
-^*********************************^
+ --> lib.cairo:5:1-12:2
+  #[feature("collections-into-iter")]
+ _^
+| ...
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -1145,15 +1160,21 @@ impl BDeref of core::ops::Deref<B> {
 //! > expected_diagnostics
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::A>
- --> lib.cairo:11:1
-impl BDeref of core::ops::Deref<B> {
-^**********************************^
+ --> lib.cairo:11:1-16:2
+  impl BDeref of core::ops::Deref<B> {
+ _^
+| ...
+| }
+|_^
 
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
- --> lib.cairo:4:1
-impl ADeref of core::ops::Deref<A> {
-^**********************************^
+ --> lib.cairo:4:1-9:2
+  impl ADeref of core::ops::Deref<A> {
+ _^
+| ...
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -1197,21 +1218,30 @@ impl CDeref of core::ops::Deref<C> {
 //! > expected_diagnostics
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A>
- --> lib.cairo:12:1
-impl BDeref of core::ops::Deref<B> {
-^**********************************^
+ --> lib.cairo:12:1-17:2
+  impl BDeref of core::ops::Deref<B> {
+ _^
+| ...
+| }
+|_^
 
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
- --> lib.cairo:19:1
-impl CDeref of core::ops::Deref<C> {
-^**********************************^
+ --> lib.cairo:19:1-24:2
+  impl CDeref of core::ops::Deref<C> {
+ _^
+| ...
+| }
+|_^
 
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C>
- --> lib.cairo:5:1
-impl ADeref of core::ops::Deref<A> {
-^**********************************^
+ --> lib.cairo:5:1-10:2
+  impl ADeref of core::ops::Deref<A> {
+ _^
+| ...
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -1265,7 +1295,7 @@ pub trait Tr<+Tr> {}
 error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
  --> lib.cairo:1:14
 pub trait Tr<+Tr> {}
-             ^*^
+             ^^^
 
 //! > ==========================================================================
 
@@ -1291,9 +1321,9 @@ impl Ifelt = I0<Ifelt>;
 error: Trait not found.
  --> lib.cairo:2:13
 impl I0<T, +Ifelt252> of Tr {}
-            ^******^
+            ^^^^^^^^
 
 error: Cycle detected while resolving 'impls alias' items.
  --> lib.cairo:3:6
 impl Ifelt = I0<Ifelt>;
-     ^***^
+     ^^^^^

@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
-use cairo_lang_diagnostics::get_location_marks;
+use cairo_lang_diagnostics::get_locations_marks;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -85,9 +85,10 @@ fn test_generated_function(
                 &mut writer,
                 "Generated {} lowering for source location:\n{}\n",
                 func_description,
-                get_location_marks(
+                get_locations_marks(
                     db,
-                    &generated_id.stable_location(db).unwrap().diagnostic_location(db)
+                    &generated_id.stable_location(db).unwrap().diagnostic_location(db),
+                    true
                 )
             )
             .unwrap();
