@@ -1,3 +1,5 @@
+use std::iter::zip;
+
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
@@ -26,9 +28,11 @@ use cairo_lang_sierra_to_casm::metadata::{
 };
 use cairo_lang_sierra_type_size::{TypeSizeMap, get_type_size_map};
 use cairo_lang_utils::casts::IntoOrPanic;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_vm::types::builtin_name::BuiltinName;
+use itertools::chain;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -269,7 +273,7 @@ pub fn create_entry_code_from_params(
 ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), BuildError> {
     let mut ctx = CasmBuilder::default();
     let mut builtin_offset = 3;
-    let mut builtin_vars = UnorderedHashMap::<_, _>::default();
+    let mut builtin_vars = OrderedHashMap::<_, _>::default();
     let mut builtin_ty_to_vm_name = UnorderedHashMap::<_, _>::default();
     let mut builtins = vec![];
     for (builtin_name, builtin_ty) in [
@@ -450,7 +454,9 @@ pub fn create_entry_code_from_params(
     assert_eq!(unprocessed_return_size, 0);
     if has_post_calculation_loop {
         // Storing local data on FP - as we have a loop now:
-        for (cell, local_expr) in return_data.iter().cloned().zip(&local_exprs) {
+        for (cell, local_expr) in
+            zip(chain!(&return_data, builtin_vars.values()).cloned(), &local_exprs)
+        {
             let local_cell = ctx.add_var(local_expr.clone());
             casm_build_extend!(ctx, assert local_cell = cell;);
         }
@@ -491,11 +497,13 @@ pub fn create_entry_code_from_params(
         };
     }
     if has_post_calculation_loop {
-        for (_, local_expr) in return_data.iter().zip(&local_exprs) {
-            let local_cell = ctx.add_var(local_expr.clone());
-            casm_build_extend! {ctx,
-                tempvar _cell = local_cell;
-            };
+        let mut locals = local_exprs.into_iter();
+        for _ in 0..return_data.len() {
+            let local_cell = ctx.add_var(locals.next().unwrap().clone());
+            casm_build_extend!(ctx, tempvar _cell = local_cell;);
+        }
+        for ((_, var), local_expr) in zip(builtin_vars.iter_mut(), locals) {
+            *var = ctx.add_var(local_expr);
         }
     }
     if config.outputting_function {
