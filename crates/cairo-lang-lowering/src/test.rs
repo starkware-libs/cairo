@@ -136,7 +136,8 @@ fn test_location_and_diagnostics() {
     assert_eq!(format!("{:?}", location.debug(db)), indoc::indoc! {"
 lib.cairo:1:1
 fn test_func() { let mut a = 5; {
-^*******************************^
+^********************************
+...
 note: this error originates in auto-generated withdraw_gas logic.
 note: Adding destructor for:
   --> lib.cairo:2:1
@@ -154,7 +155,8 @@ a = a * 3
 error: Cannot inline a function that might call itself.
  --> lib.cairo:1:1
 fn test_func() { let mut a = 5; {
-^*******************************^
+^********************************
+...
 note: this error originates in auto-generated withdraw_gas logic.
 note: Adding destructor for:
   --> lib.cairo:2:1

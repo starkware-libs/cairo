@@ -61,4 +61,5 @@ compile_error!("ignore");
 error: "show"
  --> test_src/lib.cairo:1:1
 #[cfg(noignore)]
-^**************^
+^***************
+...

@@ -732,12 +732,14 @@ impl WrappedFelt252SubPointersMutCopy of core::traits::Copy::<WrappedFelt252SubP
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
  --> lib.cairo:39:9
         #[default]
-        ^********^
+        ^*********
+...
 
 warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
  --> lib.cairo:20:5
     #[derive(Drop, Serde, starknet::Store)]
-    ^*************************************^
+    ^**************************************
+...
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:10:18

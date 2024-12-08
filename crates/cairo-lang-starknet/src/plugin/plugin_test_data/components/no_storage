@@ -17,4 +17,5 @@ mod test_component {}
 error: Plugin diagnostic: Components must define a 'Storage' struct.
  --> lib.cairo:1:1
 #[starknet::component]
-^********************^
+^*********************
+...

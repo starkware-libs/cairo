@@ -1838,7 +1838,8 @@ impl StoreQueryableEnum of starknet::Store::<QueryableEnum> {
 
 lib.cairo:52:1
 #[starknet::sub_pointers(QueryableEnumVariants)]
-^**********************************************^
+^***********************************************
+...
 storage_node:
 
 #[derive(Drop, Copy)]
@@ -2399,7 +2400,8 @@ impl LinkedListStorageNodeMutCopy of core::traits::Copy::<LinkedListStorageNodeM
 
 lib.cairo:52:1
 #[starknet::sub_pointers(QueryableEnumVariants)]
-^**********************************************^
+^***********************************************
+...
 impls:
 
 impl QueryableEnumVariantsDrop of core::traits::Drop::<QueryableEnumVariants>;
@@ -2408,7 +2410,8 @@ impl QueryableEnumVariantsCopy of core::traits::Copy::<QueryableEnumVariants>;
 
 lib.cairo:52:1
 #[starknet::sub_pointers(QueryableEnumVariants)]
-^**********************************************^
+^***********************************************
+...
 impls:
 
 impl QueryableEnumVariantsMutDrop of core::traits::Drop::<QueryableEnumVariantsMut>;
@@ -3077,7 +3080,8 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
  --> lib.cairo:52:1
 #[starknet::sub_pointers(QueryableEnumVariants)]
-^**********************************************^
+^***********************************************
+...
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:75:28

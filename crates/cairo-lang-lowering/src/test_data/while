@@ -299,7 +299,8 @@ foo
 error: Numeric values are not supported in while-let conditions.
  --> lib.cairo:3:5
     while let x = y {
-    ^***************^
+    ^****************
+...
 
 //! > lowering_flat
 Parameters:

@@ -116,12 +116,27 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
         let user_location = self.user_location(db);
         let file_path = user_location.file_id.full_path(db);
-        let marks = get_location_marks(db, &user_location);
-        let pos = match user_location.span.start.position_in_file(db, user_location.file_id) {
-            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
-            None => "?".into(),
-        };
-        write!(f, "{file_path}:{pos}\n{marks}")
+        let mut marks = get_location_marks(db, &user_location);
+        let mut multiple_lines = "";
+        let starting_pos =
+            match user_location.span.start.position_in_file(db, user_location.file_id) {
+                Some(starting_text_pos) => {
+                    if let Some(ending_text_pos) =
+                        user_location.span.end.position_in_file(db, user_location.file_id)
+                    {
+                        if starting_text_pos.line != ending_text_pos.line {
+                            multiple_lines = "\n...";
+                            if marks.len() > 1 {
+                                marks.pop();
+                                marks.push('*');
+                            }
+                        }
+                    }
+                    format!("{}:{}", starting_text_pos.line + 1, starting_text_pos.col + 1)
+                }
+                None => "?".into(),
+            };
+        write!(f, "{file_path}:{starting_pos}\n{marks}{multiple_lines}")
     }
 }
 

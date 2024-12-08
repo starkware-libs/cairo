@@ -590,7 +590,8 @@ foo
 error: Numeric values are not supported in if-let conditions.
  --> lib.cairo:3:5
     if let x = y {
-    ^************^
+    ^*************
+...
 
 //! > lowering_flat
 Parameters:
@@ -697,7 +698,8 @@ enum MyEnum {
 error: Unreachable else clause.
  --> lib.cairo:10:12
     } else {
-           ^
+           *
+...
 
 //! > lowering_flat
 Parameters: v0: test::MyEnum

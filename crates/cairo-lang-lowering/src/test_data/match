@@ -24,7 +24,8 @@ foo
 error: Unsupported match - numbers must be sequential starting from 0.
  --> lib.cairo:2:13
     let b = match a {
-            ^*******^
+            ^********
+...
 
 //! > lowering_flat
 Parameters: v0: core::felt252
@@ -227,7 +228,8 @@ foo
 error: Unsupported match - numbers must be sequential starting from 0.
  --> lib.cairo:3:5
     match x {
-    ^*******^
+    ^********
+...
 
 //! > lowering_flat
 Parameters:
@@ -259,7 +261,8 @@ foo
 error: Match is non exhaustive - match over a numerical value must have a wildcard card pattern (`_`).
  --> lib.cairo:3:5
     match x {
-    ^*******^
+    ^********
+...
 
 //! > lowering_flat
 Parameters:
@@ -816,12 +819,14 @@ enum A {
 error: Missing match arm: `Three` not covered.
  --> lib.cairo:8:5
     match a {
-    ^*******^
+    ^********
+...
 
 error: Missing match arm: `Four` not covered.
  --> lib.cairo:8:5
     match a {
-    ^*******^
+    ^********
+...
 
 //! > lowering_flat
 Parameters: v0: test::A

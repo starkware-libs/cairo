@@ -1090,7 +1090,8 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 error: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
  --> lib.cairo:9:21
     impl MyInnerImpl<
-                    ^
+                    *
+...
 
 //! > ==========================================================================
 

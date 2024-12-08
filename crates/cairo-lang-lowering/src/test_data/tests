@@ -48,7 +48,8 @@ foo
 warning: Unreachable code
  --> lib.cairo:3:5
     5;
-    ^^
+    ^*
+...
 
 //! > lowering_flat
 Parameters: v0: core::felt252

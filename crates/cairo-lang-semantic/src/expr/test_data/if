@@ -27,7 +27,8 @@ error: Condition has type "core::felt252", expected bool.
 error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:10
 fn foo() {
-         ^
+         *
+...
 
 //! > ==========================================================================
 

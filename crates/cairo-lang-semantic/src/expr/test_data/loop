@@ -52,7 +52,8 @@ foo
 error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:23
 fn foo(x: Option<()>) {
-                      ^
+                      *
+...
 
 //! > ==========================================================================
 

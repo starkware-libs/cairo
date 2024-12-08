@@ -60,7 +60,8 @@ fn test_diagnostics() {
             error: Simple diagnostic.
              --> dummy_file.sierra:1:1
             abcd
-            ^**^
+            ^***
+            ...
 
         " });
 }

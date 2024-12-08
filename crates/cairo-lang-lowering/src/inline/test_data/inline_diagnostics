@@ -21,7 +21,8 @@ foo
 error: Cannot inline a function that might call itself.
  --> lib.cairo:1:1
 #[inline(always)]
-^***************^
+^****************
+...
 
 //! > before
 Parameters: v0: core::felt252, v1: core::felt252

@@ -1276,7 +1276,8 @@ TerminalSemicolon
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:2:7
 #[bbb]
-      ^
+      *
+...
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -1490,7 +1491,8 @@ TerminalSemicolon
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:8
 #[attr]
-       ^
+       *
+...
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
