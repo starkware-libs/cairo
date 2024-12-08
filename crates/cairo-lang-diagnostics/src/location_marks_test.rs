@@ -7,7 +7,7 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
 
-use super::get_location_marks;
+use super::get_single_line_location_marks;
 use crate::DiagnosticLocation;
 
 #[test]
@@ -40,7 +40,7 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_single_line_location_marks(&db, &location) + "\n", indoc! {"
             Second liné.
                         ^
         "});
@@ -54,7 +54,7 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_single_line_location_marks(&db, &location) + "\n", indoc! {"
             Third liné.
                ^
         "});
@@ -68,7 +68,7 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_single_line_location_marks(&db, &location) + "\n", indoc! {"
             Third liné.
                ^^
         "});
@@ -82,9 +82,9 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_single_line_location_marks(&db, &location) + "\n", indoc! {"
             Second liné.
-                   ^**^
+                   ^^^^
         "});
 
     // Multiline span.
@@ -96,9 +96,9 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_single_line_location_marks(&db, &location) + "\n", indoc! {"
             Second liné.
-                   ^***^
+                   ^^^^^
         "});
 
     // Span that ends past the end of the file.
@@ -110,9 +110,9 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_single_line_location_marks(&db, &location) + "\n", indoc! {"
             Third liné.
-                   ^**^
+                   ^^^^
         "});
 
     // Empty span past the end of the file.
@@ -121,7 +121,7 @@ fn test_location_marks() {
         span: TextSpan { start: summary.last_offset, end: summary.last_offset },
     };
 
-    assert_eq!(get_location_marks(&db, &location) + "\n", indoc! {"
+    assert_eq!(get_single_line_location_marks(&db, &location) + "\n", indoc! {"
             Third liné.
                        ^
         "});

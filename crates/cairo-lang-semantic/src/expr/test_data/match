@@ -34,7 +34,7 @@ error: Identifier not found.
 error: Wrong number of tuple elements in pattern. Expected: 2. Got: 3.
  --> lib.cairo:10:9
         (A::b(x), 1, _) => { x },
-        ^*************^
+        ^^^^^^^^^^^^^^^
 
 error: Identifier not found.
  --> lib.cairo:10:30
@@ -74,17 +74,17 @@ enum A {
 error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
  --> lib.cairo:7:9
         A::a(_) => 0,
-        ^*****^
+        ^^^^^^^
 
 error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
  --> lib.cairo:8:9
         A::b(_) => 1,
-        ^*****^
+        ^^^^^^^
 
 error: Trait has no implementation in context: core::traits::Add::<core::bool>.
  --> lib.cairo:6:11
     match a + 1 {
-          ^***^
+          ^^^^^
 
 //! > ==========================================================================
 
@@ -144,12 +144,12 @@ enum A {
 error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
  --> lib.cairo:7:9
         true => 2,
-        ^**^
+        ^^^^
 
 error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
  --> lib.cairo:8:9
         false => 3,
-        ^***^
+        ^^^^^
 
 //! > ==========================================================================
 
@@ -173,9 +173,12 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:23
-fn foo(x: Option<()>) {
-                      ^
+ --> lib.cairo:1:23-6:2
+  fn foo(x: Option<()>) {
+ _______________________^
+| ...
+| }
+|_^
 
 //! > ==========================================================================
 
@@ -218,7 +221,7 @@ error: variable is bound inconsistently across alternatives separated by `|` bou
 error: variable is bound inconsistently across alternatives separated by `|` bound in different ways
  --> lib.cairo:16:52
         MyEnum::C((x, _, t)) | MyEnum::D(P { x, z: mut t, .. }) => x + t,
-                                                   ^***^
+                                                   ^^^^^
 
 //! > ==========================================================================
 

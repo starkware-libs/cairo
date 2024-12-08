@@ -15,7 +15,7 @@ foo
 error: Redefinition of parameter name "a" in function "test::foo".
  --> lib.cairo:1:17
 fn foo(a: bool, a: felt252) {}
-                ^********^
+                ^^^^^^^^^^
 
 //! > ==========================================================================
 

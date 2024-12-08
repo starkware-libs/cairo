@@ -12,7 +12,7 @@ fn foo() {
 error: Invalid string escaping.
  --> dummy_file.cairo:2:13
     let a = '\p';
-            ^**^
+            ^^^^
 
 //! > ==========================================================================
 
@@ -30,7 +30,7 @@ fn foo() {
 error: Short string literals can only include ASCII characters.
  --> dummy_file.cairo:2:13
     let a = '\u{1024}';
-            ^********^
+            ^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -48,4 +48,4 @@ fn foo() {
 error: String literals can only include ASCII characters.
  --> dummy_file.cairo:2:13
     let a = "\u{1024}";
-            ^********^
+            ^^^^^^^^^^
