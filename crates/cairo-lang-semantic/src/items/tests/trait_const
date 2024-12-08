@@ -738,9 +738,12 @@ impl MyImpl of MyTrait {}
      ^****^
 
 error: Trait has no implementation in context: test::MyTrait.
- --> lib.cairo:5:17
+ --> lib.cairo:5:17-7:2
+                V
 fn foo() -> i32 {
-                ^
+...
+}
+^
 
 //! > ==========================================================================
 

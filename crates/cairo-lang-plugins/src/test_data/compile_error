@@ -59,6 +59,8 @@ compile_error!("ignore");
 
 //! > expected_diagnostics
 error: "show"
- --> test_src/lib.cairo:1:1
+ --> test_src/lib.cairo:1:1-2:24
+V***************
 #[cfg(noignore)]
-^**************^
+compile_error!("show");
+**********************^

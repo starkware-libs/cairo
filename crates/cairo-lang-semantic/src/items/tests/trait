@@ -113,9 +113,12 @@ error: `enum` is not allowed inside impl.
     ^**^
 
 error: Impl item function `MyImpl2::my_bar` is not a member of trait `MyTrait`.
- --> lib.cairo:22:5
+ --> lib.cairo:22:5-24:6
+    V************
     fn my_bar() {
-    ^***********^
+...
+    }
+    ^
 
 error: The number of parameters in the impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: 1, actual: 3.
  --> lib.cairo:26:19
@@ -516,14 +519,20 @@ impl MyImpl of MyTrait {
 
 error: Cannot infer implicit impl `F.`
 Could not find implementation of trait `test::OtherTrait`
- --> lib.cairo:16:1
+ --> lib.cairo:16:1-21:2
+V***********************
 impl MyImpl of MyTrait {
-^**********************^
+...
+}
+^
 
 error: Trait has no implementation in context: test::OtherTrait.
- --> lib.cairo:16:1
+ --> lib.cairo:16:1-21:2
+V***********************
 impl MyImpl of MyTrait {
-^**********************^
+...
+}
+^
 
 //! > ==========================================================================
 
@@ -1102,14 +1111,20 @@ impl FooIntoIterator of core::iter::IntoIterator<Foo> {
 //! > expected_diagnostics
 error: Cannot infer implicit impl `Iterator.`
 Could not find implementation of trait `core::iter::traits::iterator::Iterator::<test::FooIter>`
- --> lib.cairo:5:1
+ --> lib.cairo:5:1-12:2
+V**********************************
 #[feature("collections-into-iter")]
-^*********************************^
+...
+}
+^
 
 error: Trait has no implementation in context: core::iter::traits::iterator::Iterator::<test::FooIter>.
- --> lib.cairo:5:1
+ --> lib.cairo:5:1-12:2
+V**********************************
 #[feature("collections-into-iter")]
-^*********************************^
+...
+}
+^
 
 //! > ==========================================================================
 
@@ -1145,15 +1160,21 @@ impl BDeref of core::ops::Deref<B> {
 //! > expected_diagnostics
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::A>
- --> lib.cairo:11:1
+ --> lib.cairo:11:1-16:2
+V***********************************
 impl BDeref of core::ops::Deref<B> {
-^**********************************^
+...
+}
+^
 
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
- --> lib.cairo:4:1
+ --> lib.cairo:4:1-9:2
+V***********************************
 impl ADeref of core::ops::Deref<A> {
-^**********************************^
+...
+}
+^
 
 //! > ==========================================================================
 
@@ -1197,21 +1218,30 @@ impl CDeref of core::ops::Deref<C> {
 //! > expected_diagnostics
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A>
- --> lib.cairo:12:1
+ --> lib.cairo:12:1-17:2
+V***********************************
 impl BDeref of core::ops::Deref<B> {
-^**********************************^
+...
+}
+^
 
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
- --> lib.cairo:19:1
+ --> lib.cairo:19:1-24:2
+V***********************************
 impl CDeref of core::ops::Deref<C> {
-^**********************************^
+...
+}
+^
 
 error: Deref impls cycle detected:
 core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C>
- --> lib.cairo:5:1
+ --> lib.cairo:5:1-10:2
+V***********************************
 impl ADeref of core::ops::Deref<A> {
-^**********************************^
+...
+}
+^
 
 //! > ==========================================================================
 

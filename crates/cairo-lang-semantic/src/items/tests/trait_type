@@ -1540,9 +1540,12 @@ error: Match arms have incompatible types: "core::integer::u16" and "core::integ
                             ^***^
 
 error: If blocks have incompatible types: "core::integer::u16" and "core::integer::u32"
- --> lib.cairo:38:5
+ --> lib.cairo:38:5-42:6
+    V********
     if cond {
-    ^*******^
+...
+    };
+    *^
 
 error: Unexpected return type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
  --> lib.cairo:44:54
@@ -1699,9 +1702,12 @@ error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Op
      ^****************************************************^
 
 error: Unexpected return type. Expected: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
- --> lib.cairo:38:6
+ --> lib.cairo:38:6-41:2
+     V*
 ) -> @(
-     ^^
+...
+) {
+**^
 
 //! > ==========================================================================
 
@@ -2282,9 +2288,12 @@ impl MyImpl of MyTrait {}
      ^****^
 
 error: Trait has no implementation in context: test::MyTrait.
- --> lib.cairo:5:10
+ --> lib.cairo:5:10-7:2
+         V
 fn foo() {
-         ^
+...
+}
+^
 
 //! > ==========================================================================
 
@@ -2372,9 +2381,12 @@ trait MyTrait {
 
 //! > expected_diagnostics
 error: Type mismatch: `core::felt252` and `core::integer::u32`.
- --> lib.cairo:10:18
+ --> lib.cairo:10:18-12:2
+                 V
 ) -> MyTrait::ty {
-                 ^
+...
+}
+^
 
 //! > ==========================================================================
 
@@ -2719,9 +2731,12 @@ trait MyTrait {
 
 //! > expected_diagnostics
 error: Type mismatch: `core::felt252` and `core::integer::u32`.
- --> lib.cairo:6:18
+ --> lib.cairo:6:18-8:2
+                 V
 ) -> MyTrait::ty {
-                 ^
+...
+}
+^
 
 //! > ==========================================================================
 

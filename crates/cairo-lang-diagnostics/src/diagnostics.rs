@@ -11,7 +11,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 use crate::error_code::{ErrorCode, OptionErrorCodeExt};
-use crate::location_marks::get_location_marks;
+use crate::location_marks::{
+    get_end_location_marks, get_location_marks, get_starting_location_marks,
+};
 
 #[cfg(test)]
 #[path = "diagnostics_test.rs"]
@@ -116,12 +118,43 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
         let user_location = self.user_location(db);
         let file_path = user_location.file_id.full_path(db);
-        let marks = get_location_marks(db, &user_location);
-        let pos = match user_location.span.start.position_in_file(db, user_location.file_id) {
-            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+        let mut marks = String::new();
+        let mut multiple_lines = "";
+        let mut ending_pos = String::new();
+        let mut ending_marks = String::new();
+        let starting_pos = match user_location
+            .span
+            .start
+            .position_in_file(db, user_location.file_id)
+        {
+            Some(starting_text_pos) => {
+                if let Some(ending_text_pos) =
+                    user_location.span.end.position_in_file(db, user_location.file_id)
+                {
+                    if starting_text_pos.line != ending_text_pos.line {
+                        marks = get_starting_location_marks(db, &user_location, true);
+                        if starting_text_pos.line + 1 < ending_text_pos.line {
+                            multiple_lines = "\n...";
+                        }
+                        ending_pos =
+                            format!("-{}:{}", ending_text_pos.line + 1, ending_text_pos.col + 1);
+                        ending_marks = "\n".to_string()
+                            + &get_end_location_marks(db, &DiagnosticLocation {
+                                file_id: user_location.file_id,
+                                span: TextSpan {
+                                    start: user_location.span.end,
+                                    end: user_location.span.end,
+                                },
+                            });
+                    } else {
+                        marks = get_location_marks(db, &user_location);
+                    }
+                }
+                format!("{}:{}", starting_text_pos.line + 1, starting_text_pos.col + 1)
+            }
             None => "?".into(),
         };
-        write!(f, "{file_path}:{pos}\n{marks}")
+        write!(f, "{file_path}:{starting_pos}{ending_pos}\n{marks}{multiple_lines}{ending_marks}")
     }
 }
 

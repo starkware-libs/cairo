@@ -147,9 +147,12 @@ If(
 
 //! > expected_diagnostics
 error: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
- --> lib.cairo:2:1
+ --> lib.cairo:2:1-6:2
+V*****
 if a {
-^****^
+...
+}
+^
 
 //! > ==========================================================================
 
@@ -252,6 +255,9 @@ If(
 
 //! > expected_diagnostics
 error: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
- --> lib.cairo:2:1
+ --> lib.cairo:2:1-6:2
+V*****
 if a {
-^****^
+...
+}
+^

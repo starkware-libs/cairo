@@ -1725,16 +1725,22 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
- --> lib.cairo:56:5
+ --> lib.cairo:56:5-57:58
+    V***************
     #[abi(embed_v0)]
-    ^**************^
+    impl EmbeddedI1I2 = super::comp::I1I2<ContractState>;
+    ****************************************************^
 
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
- --> lib.cairo:58:5
+ --> lib.cairo:58:5-59:56
+    V***************
     #[abi(embed_v0)]
-    ^**************^
+    impl EmbeddedI2I = super::comp::I2I<ContractState>;
+    **************************************************^
 
 warning: Plugin diagnostic: Failed to generate ABI: Duplicate entry point: 'foo'. This is not currently supported.
- --> lib.cairo:61:5
+ --> lib.cairo:61:5-62:36
+    V**************
     #[external(v0)]
-    ^*************^
+    fn foo(self: @ContractState) {}
+    ******************************^

@@ -25,6 +25,8 @@ error: Missing token TerminalRBrace.
              ^
 
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:2:14
+ --> dummy_file.cairo:2:14-3:2
+             V*
     A(felt252),
-             ^^
+}
+^
