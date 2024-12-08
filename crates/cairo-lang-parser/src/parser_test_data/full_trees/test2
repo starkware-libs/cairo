@@ -41,7 +41,7 @@ error: Missing tokens. Expected an expression.
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test2.cairo:30:1
 skipped tokens
-^************^
+^^^^^^^^^^^^^^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -430,7 +430,7 @@ error: Missing tokens. Expected an expression.
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test2.cairo:30:1
 skipped tokens
-^************^
+^^^^^^^^^^^^^^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)

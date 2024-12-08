@@ -67,7 +67,7 @@ End:
 
 Generated loop lowering for source location:
     loop {
-    ^****^
+    ^^^^^^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -221,7 +221,7 @@ End:
 
 Generated loop lowering for source location:
     loop {
-    ^****^
+    ^^^^^^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -395,7 +395,7 @@ End:
 
 Generated loop lowering for source location:
     loop {
-    ^****^
+    ^^^^^^
 
 Parameters: v0: core::integer::u32, v1: test::B, v2: test::A
 blk0 (root):
@@ -541,7 +541,7 @@ End:
 
 Generated loop lowering for source location:
     loop {
-    ^****^
+    ^^^^^^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -710,7 +710,7 @@ End:
 
 Generated loop lowering for source location:
     loop {
-    ^****^
+    ^^^^^^
 
 Parameters:
 blk0 (root):
@@ -811,7 +811,7 @@ End:
 
 Generated loop lowering for source location:
     loop {
-    ^****^
+    ^^^^^^
 
 Parameters: v0: core::integer::u8
 blk0 (root):
@@ -975,7 +975,7 @@ End:
 
 Generated loop lowering for source location:
     loop {
-    ^****^
+    ^^^^^^
 
 Parameters: v0: @test::S
 blk0 (root):
@@ -1060,7 +1060,7 @@ End:
 
 Generated loop lowering for source location:
     loop {
-    ^****^
+    ^^^^^^
 
 Parameters: v0: @test::S
 blk0 (root):
@@ -1156,7 +1156,7 @@ End:
 
 Generated loop lowering for source location:
         loop {
-        ^****^
+        ^^^^^^
 
 Parameters: v0: core::integer::u32
 blk0 (root):
@@ -1178,7 +1178,7 @@ End:
 
 Generated loop lowering for source location:
     loop {
-    ^****^
+    ^^^^^^
 
 Parameters: v0: core::integer::u32, v1: @test::B
 blk0 (root):
@@ -1273,7 +1273,7 @@ End:
 
 Generated loop lowering for source location:
         loop {
-        ^****^
+        ^^^^^^
 
 Parameters: v0: @core::integer::u32
 blk0 (root):
@@ -1295,7 +1295,7 @@ End:
 
 Generated loop lowering for source location:
     loop {
-    ^****^
+    ^^^^^^
 
 Parameters: v0: test::B
 blk0 (root):
@@ -1400,7 +1400,7 @@ End:
 
 Generated loop lowering for source location:
     while i != 5 {
-    ^************^
+    ^^^^^^^^^^^^^^
 
 Parameters: v0: core::felt252, v1: test::A
 blk0 (root):

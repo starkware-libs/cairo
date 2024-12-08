@@ -22,9 +22,14 @@ foo
 
 //! > lowering_diagnostics
 error: Unsupported match - numbers must be sequential starting from 0.
- --> lib.cairo:2:13
-    let b = match a {
-            ^*******^
+ --> lib.cairo:2:13-6:6
+      let b = match a {
+ _____________^
+|         5 => { 550 },
+|         6 => { 70 },
+|         _ => { 90 },
+|     };
+|______^
 
 //! > lowering_flat
 Parameters: v0: core::felt252
@@ -225,9 +230,13 @@ foo
 
 //! > lowering_diagnostics
 error: Unsupported match - numbers must be sequential starting from 0.
- --> lib.cairo:3:5
-    match x {
-    ^*******^
+ --> lib.cairo:3:5-6:6
+      match x {
+ _____^
+|         12 => x,
+|         _ => 7,
+|     }
+|_____^
 
 //! > lowering_flat
 Parameters:
@@ -257,9 +266,13 @@ foo
 
 //! > lowering_diagnostics
 error: Match is non exhaustive - match over a numerical value must have a wildcard card pattern (`_`).
- --> lib.cairo:3:5
-    match x {
-    ^*******^
+ --> lib.cairo:3:5-6:6
+      match x {
+ _____^
+|         0 => x,
+|         1 => 7,
+|     }
+|_____^
 
 //! > lowering_flat
 Parameters:
@@ -371,7 +384,7 @@ foo
 error: Type mismatch: `core::felt252` and `core::integer::u8`.
  --> lib.cairo:4:9
         1_felt252 | 2_u8 => 8,
-        ^*******^
+        ^^^^^^^^^
 
 //! > lowering_diagnostics
 
@@ -401,12 +414,12 @@ foo
 error: Missing match arm: `Some` not covered.
  --> lib.cairo:2:5
     match Option::Some(5) {};
-    ^**********************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Missing match arm: `None` not covered.
  --> lib.cairo:2:5
     match Option::Some(5) {};
-    ^**********************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
 Parameters:
@@ -464,12 +477,12 @@ foo
 error: Missing match arm: `Zero` not covered.
  --> lib.cairo:2:11
     match felt252_is_zero(5) {};
-          ^****************^
+          ^^^^^^^^^^^^^^^^^^
 
 error: Missing match arm: `NonZero` not covered.
  --> lib.cairo:2:11
     match felt252_is_zero(5) {};
-          ^****************^
+          ^^^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
 Parameters:
@@ -573,12 +586,12 @@ enum A {
 error: Unreachable pattern arm.
  --> lib.cairo:12:9
         A::Two(_) => 4,
-        ^*******^
+        ^^^^^^^^^
 
 error: Unreachable pattern arm.
  --> lib.cairo:13:9
         A::Three(_) => 5,
-        ^*********^
+        ^^^^^^^^^^^
 
 //! > lowering_flat
 Parameters: v0: test::A
@@ -779,7 +792,7 @@ foo
 error: Inner patterns are not in this context.
  --> lib.cairo:3:22
         Option::Some(Option::Some(x)) => x,
-                     ^*************^
+                     ^^^^^^^^^^^^^^^
 
 //! > lowering_flat
 Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
@@ -814,14 +827,22 @@ enum A {
 
 //! > lowering_diagnostics
 error: Missing match arm: `Three` not covered.
- --> lib.cairo:8:5
-    match a {
-    ^*******^
+ --> lib.cairo:8:5-11:6
+      match a {
+ _____^
+|         A::Two(_) => 2,
+|         A::One(_) => 1,
+|     }
+|_____^
 
 error: Missing match arm: `Four` not covered.
- --> lib.cairo:8:5
-    match a {
-    ^*******^
+ --> lib.cairo:8:5-11:6
+      match a {
+ _____^
+|         A::Two(_) => 2,
+|         A::One(_) => 1,
+|     }
+|_____^
 
 //! > lowering_flat
 Parameters: v0: test::A
@@ -1246,27 +1267,27 @@ enum A {
 error: Missing match arm: `(One, Two)` not covered.
  --> lib.cairo:9:11
     match (a, b) {
-          ^****^
+          ^^^^^^
 
 error: Missing match arm: `(Three, One)` not covered.
  --> lib.cairo:9:11
     match (a, b) {
-          ^****^
+          ^^^^^^
 
 error: Missing match arm: `(Three, Two)` not covered.
  --> lib.cairo:9:11
     match (a, b) {
-          ^****^
+          ^^^^^^
 
 error: Missing match arm: `(Four, One)` not covered.
  --> lib.cairo:9:11
     match (a, b) {
-          ^****^
+          ^^^^^^
 
 error: Missing match arm: `(Four, Two)` not covered.
  --> lib.cairo:9:11
     match (a, b) {
-          ^****^
+          ^^^^^^
 
 //! > lowering_flat
 Parameters: v0: test::A, v1: test::A
@@ -1304,7 +1325,7 @@ enum A {
 error: Unsupported matched value. Currently, match on tuples only supports enums as tuple members.
  --> lib.cairo:9:11
     match (a, (a, b)) {
-          ^*********^
+          ^^^^^^^^^^^
 
 //! > lowering_flat
 Parameters: v0: test::A, v1: test::A
@@ -1483,7 +1504,7 @@ foo
 error: Unsupported matched type. Type: `core::integer::u256`.
  --> lib.cairo:2:11
     match 5_u256 {
-          ^****^
+          ^^^^^^
 
 //! > lowering_flat
 Parameters:

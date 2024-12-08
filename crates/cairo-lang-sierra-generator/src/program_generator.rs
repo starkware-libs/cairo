@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::{Maybe, get_location_marks};
+use cairo_lang_diagnostics::{Maybe, get_single_line_location_marks};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
@@ -205,7 +205,7 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
                 if let Some(loc) =
                     &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
                 {
-                    let loc = get_location_marks(
+                    let loc = get_single_line_location_marks(
                         db.upcast(),
                         &loc.first().unwrap().diagnostic_location(db.upcast()),
                     );

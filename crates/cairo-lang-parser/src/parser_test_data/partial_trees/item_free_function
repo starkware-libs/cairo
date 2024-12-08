@@ -91,7 +91,7 @@ FunctionWithBody
 error: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:1:20
 fn foo() -> Aaaaa  Bbb + Cc  {
-                   ^******^
+                   ^^^^^^^^
 
 //! > expected_tree
 └── Top level kind: FunctionWithBody
@@ -137,7 +137,7 @@ FunctionDeclaration
 error: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:1:20
 fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
-                   ^*******^
+                   ^^^^^^^^^
 
 //! > expected_tree
 └── Top level kind: FunctionWithBody

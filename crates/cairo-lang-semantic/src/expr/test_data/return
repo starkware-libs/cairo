@@ -77,4 +77,4 @@ foo
 error: Unexpected return type. Expected: "core::felt252", found: "()".
  --> lib.cairo:1:13
 fn foo() -> felt252 {}
-            ^*****^
+            ^^^^^^^
