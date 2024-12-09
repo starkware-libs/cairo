@@ -383,29 +383,36 @@ pub fn get_originating_location(
 /// multiple consecutive mappings.
 fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<TextSpan> {
     // Find all mappings that have non-empty intersection with the provided span.
-    let matched = code_mapping
-        .iter()
-        .filter(|mapping| {
+    let intersecting_mappings = || {
+        code_mapping.iter().filter(|mapping| {
             // Omit mappings to the left or to the right of current span.
             !(mapping.span.end < span.start || mapping.span.start > span.end)
         })
-        .collect::<Vec<_>>();
+    };
 
     // If any of the mappings fully contains the span, return the origin span of the mapping.
-    if let Some(containing) = matched.iter().find(|mapping| mapping.span.contains(span)) {
+    if let Some(containing) = intersecting_mappings().find(|mapping| {
+        mapping.span.contains(span) && !matches!(mapping.origin, CodeOrigin::CallSite(_))
+    }) {
         // Found a span that fully contains the current one - translates it.
         return containing.translate(span);
     }
+
+    // Call site can be treated as default origin.
+    let call_site = intersecting_mappings()
+        .find(|mapping| {
+            mapping.span.contains(span) && matches!(mapping.origin, CodeOrigin::CallSite(_))
+        })
+        .and_then(|containing| containing.translate(span));
+
+    let mut matched = intersecting_mappings()
+        .filter(|mapping| matches!(mapping.origin, CodeOrigin::Span(_)))
+        .collect::<Vec<_>>();
 
     // If no mappings intersect with the span, translation is impossible.
     if matched.is_empty() {
         return None;
     }
-
-    let mut matched = matched
-        .iter()
-        .filter(|mapping| matches!(mapping.origin, CodeOrigin::Span(_)))
-        .collect::<Vec<_>>();
 
     // Take the first mapping to the left.
     matched.sort_by_key(|mapping| mapping.span);
@@ -435,18 +442,20 @@ fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Option<Te
     // If the new span does not contain the original span, there is no translation.
     let constructed_span = TextSpan { start: first.span.start, end: last.span.end };
     if !constructed_span.contains(span) {
-        return None;
+        return call_site;
     }
 
     // We use the boundaries of the first and last mappings to calculate new span origin.
     let start = match first.origin {
         CodeOrigin::Start(origin_start) => origin_start.add_width(span.start - first.span.start),
         CodeOrigin::Span(span) => span.start,
+        CodeOrigin::CallSite(span) => span.start,
     };
 
     let end = match last.origin {
         CodeOrigin::Start(_) => start.add_width(span.width()),
         CodeOrigin::Span(span) => span.end,
+        CodeOrigin::CallSite(span) => span.start,
     };
 
     Some(TextSpan { start, end })

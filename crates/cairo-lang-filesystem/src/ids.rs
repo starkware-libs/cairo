@@ -99,6 +99,7 @@ impl CodeMapping {
                     TextSpan { start, end: start.add_width(span.width()) }
                 }
                 CodeOrigin::Span(span) => span,
+                CodeOrigin::CallSite(span) => span,
             })
         } else {
             None
@@ -113,12 +114,16 @@ pub enum CodeOrigin {
     Start(TextOffset),
     /// The origin was generated from this span, but there's no direct mapping.
     Span(TextSpan),
+    /// The origin was generated because of this span, but no code has been copied.
+    /// E.g. a macro defined attribute on a function.
+    CallSite(TextSpan),
 }
 
 impl CodeOrigin {
     pub fn as_span(&self) -> Option<TextSpan> {
         match self {
             CodeOrigin::Start(_) => None,
+            CodeOrigin::CallSite(_) => None,
             CodeOrigin::Span(span) => Some(*span),
         }
     }

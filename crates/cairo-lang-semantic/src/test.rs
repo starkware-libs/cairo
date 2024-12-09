@@ -63,11 +63,15 @@ impl MacroPlugin for MappingsPlugin {
                 let span = node.span(db);
                 let text = node.get_text(db);
                 let whitespace_prefix_len = text.chars().take_while(|c| c.is_whitespace()).count();
+                let whitespace_suffix_len =
+                    text.chars().rev().take_while(|c| c.is_whitespace()).count();
                 let origin_span = TextSpan {
                     start: span
                         .start
                         .add_width(TextWidth::new_for_testing(whitespace_prefix_len as u32)),
-                    end: span.end,
+                    end: span
+                        .end
+                        .sub_width(TextWidth::new_for_testing(whitespace_suffix_len as u32)),
                 };
                 CodeMapping { span, origin: CodeOrigin::Span(origin_span) }
             })
@@ -125,7 +129,7 @@ fn test_mapping_translate_consecutive_spans() {
         error: Cannot assign to an immutable variable.
          --> lib.cairo:3:5
             x = 2;
-            ^****^
+            ^^^^^^
 
     "#});
 }
