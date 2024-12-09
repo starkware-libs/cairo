@@ -9,8 +9,7 @@
 //! # When to use which trait
 //!
 //! - Use [`IndexView`] when the collection can be accessed in a read-only context and is not
-//! mutated
-//!   by a read access. This is the most common case in Cairo.
+//! mutated by a read access. This is the most common case in Cairo.
 //! - Use [`Index`] when the input type needs to be passed as `ref`. This is mainly useful for types
 //!   depending on a [`Felt252Dict`], where dictionary accesses are modifying the data structure
 //!   itself.
