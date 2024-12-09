@@ -69,12 +69,25 @@ pub extern fn get_block_hash_syscall(
 /// Gets information about the currently executing block and the transactions in the block. For a
 /// complete description of this information, see [`Execution information`].
 ///
-/// Returns a box containing the current execution information.
+/// When an account’s `__validate__`, `__validate_deploy__`, or `__validate_declare__` function
+/// calls `get_execution_info`, the return values for `block_timestamp` and `block_number` are
+/// modified as follows:
+/// * `block_timestamp` returns the hour, rounded down to the nearest hour.
+/// * `block_number` returns the block number, rounded down to the nearest multiple of 100.
+///
+/// [`Execution information`]: core::starknet::info::ExecutionInfo
+///
+/// # Returns
+///
+/// A struct that contains information about the currently executing function, transaction, and
+/// block.
 pub extern fn get_execution_info_syscall() -> SyscallResult<
     Box<starknet::info::ExecutionInfo>,
 > implicits(GasBuiltin, System) nopanic;
 
 /// Gets information about the current execution, version 2.
+/// This syscall should not be called directly. Instead, use
+/// `core::starknet::info::get_execution_info`.
 ///
 /// Returns a box containing the current V2 execution information.
 pub extern fn get_execution_info_v2_syscall() -> SyscallResult<
@@ -128,7 +141,7 @@ pub extern fn storage_write_syscall(
     address_domain: u32, address: StorageAddress, value: felt252,
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
 
-/// Replaces the class hash of the current contract.
+/// Replaces the class hash of the current contract, instantaneoulsy modifying its entrypoints.
 ///
 /// # Arguments
 ///
