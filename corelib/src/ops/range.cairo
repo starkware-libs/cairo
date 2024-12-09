@@ -8,6 +8,9 @@ use core::num::traits::One;
 use core::traits::Add;
 
 /// Represents the range [start, end).
+///
+/// The range `start..end` contains all values with `start <= x < end`.
+/// It is empty if `start >= end`.
 #[derive(Clone, Drop, PartialEq)]
 pub struct Range<T> {
     /// The lower bound of the range (inclusive).
