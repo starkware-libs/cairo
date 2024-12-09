@@ -33,7 +33,7 @@ pub impl DestructOption<T, +Destruct<T>, -Drop<Option<T>>> of Destruct<Option<T>
         };
     }
 }
-
+/// A trait for handling `Option<T>` related operations.
 pub trait OptionTrait<T> {
     /// Returns the contained `Some` value, consuming the `self` value.
     ///
