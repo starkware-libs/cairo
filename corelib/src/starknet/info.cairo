@@ -68,36 +68,107 @@ pub struct TxInfo {
 }
 
 /// Returns the execution info for the current execution.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::get_execution_info;
+///
+/// let execution_info = get_execution_info().unbox();
+///
+/// let box_info = execution_info.block_info.unbox();
+/// let tx_info = execution_info.unbox();
+/// ```
 pub fn get_execution_info() -> Box<v2::ExecutionInfo> {
     starknet::syscalls::get_execution_info_v2_syscall().unwrap_syscall()
 }
 
 /// Returns the address of the caller contract.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::get_caller_address;
+///
+/// let caller = get_caller_address();
+/// ```
 pub fn get_caller_address() -> ContractAddress {
     get_execution_info().caller_address
 }
 
 /// Returns the address of the contract being executed.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::get_contract_address;
+///
+/// let contract_address = get_contract_address();
+/// ```
 pub fn get_contract_address() -> ContractAddress {
     get_execution_info().contract_address
 }
 
 /// Returns the block information for the current block.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::get_block_info;
+///
+/// let block_info = get_block_info().unbox();
+///
+/// let block_number = block_info.block_number;
+/// let block_timestamp = block_info.block_timestamp;
+/// let sequencer = block_info.sequencer_address;
+/// ```
 pub fn get_block_info() -> Box<BlockInfo> {
     get_execution_info().block_info
 }
 
 /// Returns the transaction information for the current transaction.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::get_tx_info;
+///
+/// let tx_info = get_tx_info().unbox();
+///
+/// let account_contract_address = tx_info.account_contract_address;
+/// let chain_id = tx_info.chain_id;
+/// let nonce = tx_info.nonce;
+/// let max_fee = tx_info.max_fee;
+/// let tx_hash = tx_info.transaction_hash;
+/// let signature = tx_info.signature;
+/// let version = tx_info.version;
+/// ```
 pub fn get_tx_info() -> Box<v2::TxInfo> {
     get_execution_info().tx_info
 }
 
 /// Returns the timestamp of the current block.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::get_block_timestamp;
+///
+/// let block_timestamp = get_block_timestamp();
+/// ```
 pub fn get_block_timestamp() -> u64 {
     get_block_info().block_timestamp
 }
 
 /// Returns the number of the current block.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::get_block_number;
+///
+/// let block_number = get_block_number();
+/// ```
 pub fn get_block_number() -> u64 {
     get_block_info().block_number
 }
