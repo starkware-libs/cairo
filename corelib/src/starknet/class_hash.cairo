@@ -32,7 +32,7 @@ pub extern type ClassHash;
 /// ```
 /// use core::starknet::class_hash::class_hash_const;
 ///
-/// let hash = class_hash_const::<0x123>();
+/// let class_hash = class_hash_const::<0x123>();
 /// ```
 pub extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
 
