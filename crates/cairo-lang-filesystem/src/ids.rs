@@ -115,6 +115,15 @@ pub enum CodeOrigin {
     Span(TextSpan),
 }
 
+impl CodeOrigin {
+    pub fn as_span(&self) -> Option<TextSpan> {
+        match self {
+            CodeOrigin::Start(_) => None,
+            CodeOrigin::Span(span) => Some(*span),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VirtualFile {
     pub parent: Option<FileId>,
