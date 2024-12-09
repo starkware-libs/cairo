@@ -34,6 +34,7 @@ pub struct UseData {
 
 /// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<UseData> {
+    eprintln!("priv_use_semantic_data: {:?}", use_id);
     let module_file_id = use_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::default();
     let inference_id =
@@ -45,6 +46,7 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     let use_ast = ast::UsePath::Leaf(db.module_use_by_id(use_id)?.to_maybe()?);
     let item = use_ast.get_item(db.upcast());
     resolver.set_feature_config(&use_id, &item, &mut diagnostics);
+    eprintln!("use_ast: {}", use_ast.as_syntax_node().get_text(db.upcast()));
     let segments = get_use_path_segments(db.upcast(), use_ast)?;
     let resolved_item = resolver.resolve_generic_path(
         &mut diagnostics,
@@ -111,6 +113,8 @@ pub fn priv_use_semantic_data_cycle(
     cycle: &salsa::Cycle,
     use_id: &UseId,
 ) -> Maybe<UseData> {
+
+    eprintln!("priv_use_semantic_data_cycle: {:?}", cycle);
     let module_file_id = use_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::default();
     let use_ast = db.module_use_by_id(*use_id)?.to_maybe()?;

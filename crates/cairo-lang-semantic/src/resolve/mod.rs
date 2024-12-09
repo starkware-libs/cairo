@@ -416,12 +416,16 @@ impl<'db> Resolver<'db> {
         inner_item_info: ModuleItemInfo,
         segment: &ast::PathSegment,
     ) -> Maybe<ResolvedConcreteItem> {
+        eprintln!("specialize_generic_inner_item");
         let generic_args_syntax = segment.generic_args(self.db.upcast());
         let segment_stable_ptr = segment.stable_ptr().untyped();
         self.validate_item_usability(diagnostics, module_id, identifier, &inner_item_info);
         self.data.used_items.insert(LookupItemId::ModuleItem(inner_item_info.item_id));
-        let inner_generic_item =
-            ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id)?;
+        let Ok(inner_generic_item) =
+            ResolvedGenericItem::from_module_item(self.db, inner_item_info.item_id) else {
+            return Err(diagnostics.report(segment, UseCycle));
+        };
+        eprintln!("specialize_generic_inner_item: inner_generic_item: {:?}", identifier.as_syntax_node().get_text(self.db.upcast()));
         let specialized_item = self.specialize_generic_module_item(
             diagnostics,
             identifier,
@@ -450,6 +454,8 @@ impl<'db> Resolver<'db> {
 
         let db = self.db;
         let syntax_db = db.upcast();
+
+        eprintln!("resolve_concrete_path_first_segment: segments: {:?}", segments.peek().unwrap().as_syntax_node().get_text(syntax_db));
         Ok(match segments.peek().unwrap() {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 let identifier = generic_segment.ident(syntax_db);
@@ -507,6 +513,8 @@ impl<'db> Resolver<'db> {
                     segments.next().unwrap();
                     return resolved_item;
                 }
+
+                eprintln!("identifier: {:?}", identifier.as_syntax_node().get_text(self.db.upcast()));
 
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
                     self.resolved_items.mark_concrete(db, segments.next().unwrap(), local_item)
@@ -757,7 +765,9 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<ModuleItemInfo> {
         match self.db.module_item_info_by_name(*module_id, ident.clone())? {
             Some(info) => Ok(info),
-            None => match self.resolve_path_using_use_star(*module_id, identifier) {
+            None =>{ 
+                eprintln!("item not found: {}", ident);
+                match self.resolve_path_using_use_star(*module_id, identifier) {
                 UseStarResult::UniquePathFound(item_info) => Ok(item_info),
                 UseStarResult::AmbiguousPath(module_items) => {
                     Err(diagnostics.report(identifier, AmbiguousPath(module_items)))
@@ -769,6 +779,7 @@ impl<'db> Resolver<'db> {
                     Err(diagnostics
                         .report(identifier, ItemNotVisible(module_item_id, containing_modules)))
                 }
+            }
             },
         }
     }
@@ -787,6 +798,10 @@ impl<'db> Resolver<'db> {
 
         let ident = identifier.text(syntax_db);
 
+
+        eprintln!("resolve_path_next_segment_concrete, ident: {:?}", ident);
+        eprintln!("containing_item: {:?}", containing_item);
+
         if identifier.text(syntax_db) == SELF_TYPE_KW {
             return Err(diagnostics.report(identifier, SelfMustBeFirst));
         }
@@ -798,6 +813,8 @@ impl<'db> Resolver<'db> {
                 if ident == SUPER_KW {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
+
+                eprintln!("before resolve_module_inner_item");
                 let inner_item_info = self.resolve_module_inner_item(
                     module_id,
                     ident,
@@ -806,6 +823,8 @@ impl<'db> Resolver<'db> {
                     item_type,
                 )?;
 
+                eprintln!("after resolve_module_inner_item");
+
                 self.specialize_generic_inner_item(
                     diagnostics,
                     *module_id,
@@ -813,6 +832,8 @@ impl<'db> Resolver<'db> {
                     inner_item_info,
                     segment,
                 )
+
+                
             }
             ResolvedConcreteItem::Type(ty) => {
                 if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) =
@@ -1256,6 +1277,8 @@ impl<'db> Resolver<'db> {
         identifier: &ast::TerminalIdentifier,
         statement_env: Option<&mut Environment>,
     ) -> ResolvedBase {
+
+        eprintln!("determine_base: {:?}", identifier.text(self.db.upcast()));
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
         let module_id = self.module_file_id.0;
@@ -1266,7 +1289,10 @@ impl<'db> Resolver<'db> {
         }
 
         // If an item with this name is found inside the current module, use the current module.
+
+        eprintln!("module_items: {:?}", self.db.priv_module_semantic_data(module_id).unwrap().items.keys());
         if let Ok(Some(_)) = self.db.module_item_by_name(module_id, ident.clone()) {
+            eprintln!("matched_base");
             return ResolvedBase::Module(module_id);
         }
 
@@ -1276,7 +1302,11 @@ impl<'db> Resolver<'db> {
         }
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
+
+        eprintln!("ident: {:?}", ident.as_str());
+        eprintln!("dependencies: {:?}", self.settings.dependencies);
         if let Some(dep) = self.settings.dependencies.get(ident.as_str()) {
+            eprintln!("match dep");
             return ResolvedBase::Crate(
                 CrateLongId::Real { name: ident, discriminator: dep.discriminator.clone() }
                     .intern(self.db),

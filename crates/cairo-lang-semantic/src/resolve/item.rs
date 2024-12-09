@@ -43,6 +43,7 @@ impl ResolvedGenericItem {
             ModuleItemId::Constant(id) => ResolvedGenericItem::GenericConstant(id),
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
             ModuleItemId::Use(id) => {
+                eprintln!("Use item");
                 // Note that `use_resolved_item` needs to be called before
                 // `use_semantic_diagnostics` to handle cycles.
                 db.use_resolved_item(id)?

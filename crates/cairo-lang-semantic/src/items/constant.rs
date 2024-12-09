@@ -296,6 +296,16 @@ pub fn constant_semantic_data_helper(
         &constant_ast.type_clause(syntax_db).ty(syntax_db),
     );
 
+    if constant_type.is_missing(db) {
+
+        // assert!(diagnostics.error_count > 0);
+
+        eprintln!("{}", diagnostics.build().format(db.elongate()));
+        eprintln!("constant_ast: {:?}", constant_ast.type_clause(syntax_db).as_syntax_node().get_text(syntax_db));
+        eprintln!("constant_type: {:?}", constant_type.format(db));
+        panic!("constant_type is missing");
+    }
+
     let environment = Environment::empty();
     let mut ctx = ComputationContext::new(
         db,
@@ -387,7 +397,13 @@ pub fn resolve_const_expr_and_evaluate(
     match &value.expr {
         Expr::Constant(ExprConstant { const_value_id, .. }) => const_value_id.lookup_intern(db),
         // Check that the expression is a valid constant.
-        _ => evaluate_constant_expr(db, &ctx.arenas.exprs, value.id, ctx.diagnostics),
+        _ => {
+            let res = evaluate_constant_expr(db, &ctx.arenas.exprs, value.id, ctx.diagnostics);
+                if ctx.diagnostics.error_count > 0 {
+                    eprintln!("{:?}", &ctx.resolver.inference().data.type_assignment);
+                }
+                res
+            },
     }
 }
 

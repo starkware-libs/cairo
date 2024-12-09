@@ -1,0 +1,5 @@
+[crate_roots]
+bounded_int2 = "."
+
+[config.override.bounded_int2]
+edition = "2023_10"

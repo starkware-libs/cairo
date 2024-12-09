@@ -1,0 +1,10 @@
+[crate_roots]
+stwo_cairo_verifier = "src"
+
+[config.override.stwo_cairo_verifier]
+edition = "2024_07"
+
+[config.override.stwo_cairo_verifier.dependencies.bounded_int2]
+
+[config.override.bounded_int2]
+edition = "2023_10"
