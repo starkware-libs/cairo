@@ -1,3 +1,15 @@
+//! Error handling with the `Result<T, E>` type.
+//!
+//! Functions might return `Result` whenever errors are expected and recoverable.
+//! Pattern matching on `Result` is clear and straightforward for simple cases, but `Result` comes
+//! with some convenience methods that make working with it more succinct.
+//!
+//! When writing code that calls many functions that return the `Result` type, the error handling
+//! can be tedious. The question mark operator `?`, hides some of the boilerplate of propagating
+//! errors up the call stack.
+//! Ending the expression with `?` will result in the `Ok`s unwrapped value, unless the result is
+//! `Err`, in which case `Err` is returned early from the enclosing function.
+
 #[allow(unused_imports)]
 use crate::array::ArrayTrait;
 #[allow(unused_imports)]
@@ -5,6 +17,9 @@ use crate::serde::Serde;
 #[allow(unused_imports)]
 use crate::array::SpanTrait;
 
+/// The type used for returning and propagating errors. It is an enum with the variants `Ok: T`,
+/// representing success and containing a value, and `Err: E`, representing error and containing an
+/// error value.
 #[must_use]
 #[derive(Copy, Drop, Debug, Serde, PartialEq)]
 pub enum Result<T, E> {
@@ -21,10 +36,12 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
             Result::Err(_) => crate::panic_with_felt252(err),
         }
     }
+
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics.
     fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
         self.expect('Result::unwrap failed.')
     }
+
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, returns `default`.
     fn unwrap_or<+Destruct<T>, +Destruct<E>>(self: Result<T, E>, default: T) -> T {
         match self {
@@ -32,6 +49,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
             Result::Err(_) => default,
         }
     }
+
     /// If `val` is `Result::Ok(x)`, returns `x`.
     /// Otherwise returns `Default::<T>::default()`.
     fn unwrap_or_default<+Destruct<E>, +Default<T>>(self: Result<T, E>) -> T {
@@ -48,10 +66,12 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
             Result::Err(x) => x,
         }
     }
+
     /// If `val` is `Result::Err(x)`, returns `x`. Otherwise, panics.
     fn unwrap_err<+PanicDestruct<T>>(self: Result<T, E>) -> E {
         self.expect_err('Result::unwrap_err failed.')
     }
+
     /// Returns `true` if the `Result` is `Result::Ok`.
     #[inline]
     fn is_ok(self: @Result<T, E>) -> bool {
@@ -60,6 +80,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
             Result::Err(_) => false,
         }
     }
+
     /// Returns `true` if the `Result` is `Result::Err`.
     #[inline]
     fn is_err(self: @Result<T, E>) -> bool {
@@ -68,6 +89,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
             Result::Err(_) => true,
         }
     }
+
     /// Returns `true` if the `Result` is `Result::Ok`, and consumes the value.
     #[inline]
     fn into_is_err<+Destruct<T>, +Destruct<E>>(self: Result<T, E>) -> bool {
@@ -76,6 +98,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
             Result::Err(_) => true,
         }
     }
+
     /// Returns `true` if the `Result` is `Result::Err`, and consumes the value.
     #[inline]
     fn into_is_ok<+Destruct<T>, +Destruct<E>>(self: Result<T, E>) -> bool {
