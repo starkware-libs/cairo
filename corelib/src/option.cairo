@@ -1,8 +1,14 @@
 //! The `Option<T>` type represents an optional value: every `Option<T>` is either `Some` and
 //! contains a value, or `None`, and does not.
 //!
-// Options are commonly paired with pattern matching to query the presence of a value and take
-// action, always accounting for the `None` case.
+//! Options are commonly paired with pattern matching to query the presence of a value and take
+//! action, always accounting for the `None` case.
+//!
+//! When writing code that calls many functions that return the `Option` type, handling
+//! `Some`/`None` can be tedious. The question mark operator `?` hides some of the boilerplate of
+//! propagating values up the call stack.
+//! Ending the expression with `?` will result in the `Some`s unwrapped value, unless the result is
+//! `None`, in which case `None` is returned early from the enclosing function.
 
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
