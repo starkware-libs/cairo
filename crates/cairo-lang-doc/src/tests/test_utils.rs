@@ -8,7 +8,8 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::{Intern, Upcast};
 
@@ -33,7 +34,7 @@ impl Default for TestDatabase {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(vec![]);
+        res.set_default_plugins_from_suite(PluginSuite::default());
         res
     }
 }

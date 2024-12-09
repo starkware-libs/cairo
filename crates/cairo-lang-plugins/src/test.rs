@@ -2,7 +2,7 @@ use std::default::Default;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
-use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_defs::ids::{MacroPluginLongId, ModuleId};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
@@ -64,7 +64,12 @@ impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(get_base_plugins());
+        res.set_default_macro_plugins(
+            get_base_plugins()
+                .into_iter()
+                .map(|plugin| res.intern_macro_plugin(MacroPluginLongId(plugin)))
+                .collect(),
+        );
         res
     }
 }
@@ -112,9 +117,16 @@ pub fn test_expand_plugin_inner(
     extra_plugins: &[Arc<dyn MacroPlugin>],
 ) -> TestRunnerResult {
     let db = &mut DatabaseForTesting::default();
-    let mut plugins = db.macro_plugins();
-    plugins.extend_from_slice(extra_plugins);
-    db.set_macro_plugins(plugins);
+
+    let extra_plugins = extra_plugins
+        .iter()
+        .cloned()
+        .map(|plugin| db.intern_macro_plugin(MacroPluginLongId(plugin)));
+
+    let mut plugins = db.default_macro_plugins();
+    plugins.extend(extra_plugins);
+
+    db.set_default_macro_plugins(plugins.clone());
 
     let cfg_set: Option<CfgSet> =
         inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());
