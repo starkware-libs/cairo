@@ -1,5 +1,17 @@
-//! This module contains functions and constructs related to elliptic curve operations on the Stark
-//! curve.
+//! Functions and constructs related to elliptic curve operations on the STARK curve.
+//!
+//! This module provides implementations for various elliptic curve operations tailored for the
+//! STARK curve.
+//!
+//! Curve information:
+//! * Curve equation: y² ≡ x³ + α·x + β (mod p)
+//! * α = 1
+//! * β = 0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89
+//! * p = 0x0800000000000011000000000000000000000000000000000000000000000001 = 2^251 + 17 * 2^192 +
+//! 1
+//! Generator point:
+//! * x = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca
+//! * y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f
 
 #[allow(unused_imports)]
 use crate::array::ArrayTrait;
@@ -9,9 +21,9 @@ use crate::zeroable::IsZeroResult;
 use crate::RangeCheck;
 
 pub mod stark_curve {
-    /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
+    /// The STARK Curve is defined by the equation y² ≡ x³ + α·x + β (mod p).
     pub const ALPHA: felt252 = 1;
-    /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
+    /// The STARK Curve is defined by the equation y² ≡ x³ + α·x + β (mod p).
     pub const BETA: felt252 = 0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89;
     /// The order (number of points) of the STARK Curve.
     pub const ORDER: felt252 = 0x800000000000010ffffffffffffffffb781126dcae7b2321e66a241adc64d2f;
@@ -22,22 +34,29 @@ pub mod stark_curve {
 }
 
 pub extern type EcOp;
+
 #[derive(Copy, Drop)]
 pub extern type EcPoint;
+
 pub type NonZeroEcPoint = NonZero<EcPoint>;
 
 /// Returns the zero point of the curve ("the point at infinity").
 extern fn ec_point_zero() -> EcPoint nopanic;
+
 /// Constructs a non-zero point from its (x, y) coordinates.
 /// Returns `None` if the point (x, y) is not on the curve.
 extern fn ec_point_try_new_nz(x: felt252, y: felt252) -> Option<NonZeroEcPoint> nopanic;
+
 /// Constructs a non-zero point from its x coordinate.
 /// Returns `None` if no point of form (x, _) is on the curve.
 extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> implicits(RangeCheck) nopanic;
+
 /// Unwraps a non-zero point into its (x, y) coordinates.
 pub extern fn ec_point_unwrap(p: NonZeroEcPoint) -> (felt252, felt252) nopanic;
+
 /// Computes the negation of an elliptic curve point (-p).
 extern fn ec_neg(p: EcPoint) -> EcPoint nopanic;
+
 /// Checks whether the given `EcPoint` is the zero point.
 extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult<EcPoint> nopanic;
 
@@ -52,7 +71,7 @@ impl EcPointTryIntoNonZero of TryInto<EcPoint, NonZeroEcPoint> {
     }
 }
 
-// EC state.
+// Elliptic curve state.
 #[derive(Drop)]
 pub extern type EcState;
 
@@ -72,10 +91,12 @@ extern fn ec_state_init() -> EcState nopanic;
 
 /// Adds a point to the computation.
 extern fn ec_state_add(ref s: EcState, p: NonZeroEcPoint) nopanic;
-/// Adds the product p * scalar to the state.
+
+/// Adds the product `p * scalar` to the state.
 extern fn ec_state_add_mul(
     ref s: EcState, scalar: felt252, p: NonZeroEcPoint,
 ) implicits(EcOp) nopanic;
+
 /// Finalizes the EC computation and returns the result (returns `None` if the result is the
 /// zero point).
 extern fn ec_state_try_finalize_nz(s: EcState) -> Option<NonZeroEcPoint> nopanic;
@@ -87,11 +108,13 @@ pub impl EcStateImpl of EcStateTrait {
     fn init() -> EcState nopanic {
         ec_state_init()
     }
+
     /// Adds a point to the computation.
     #[inline]
     fn add(ref self: EcState, p: NonZeroEcPoint) nopanic {
         ec_state_add(ref self, :p);
     }
+
     /// Subs a point to the computation.
     #[inline]
     fn sub(ref self: EcState, p: NonZeroEcPoint) {
@@ -101,17 +124,20 @@ pub impl EcStateImpl of EcStateTrait {
         let p_neg_nz = p_neg.try_into().unwrap();
         ec_state_add(ref self, p_neg_nz);
     }
-    /// Adds the product p * scalar to the state.
+
+    /// Adds the product `p * scalar` to the state.
     #[inline]
     fn add_mul(ref self: EcState, scalar: felt252, p: NonZeroEcPoint) nopanic {
         ec_state_add_mul(ref self, :scalar, :p);
     }
+
     /// Finalizes the EC computation and returns the result (returns `None` if the result is the
     /// zero point).
     #[inline]
     fn finalize_nz(self: EcState) -> Option<NonZeroEcPoint> nopanic {
         ec_state_try_finalize_nz(self)
     }
+
     /// Finalizes the EC computation and returns the result.
     #[inline]
     fn finalize(self: EcState) -> EcPoint {
@@ -129,35 +155,42 @@ pub impl EcPointImpl of EcPointTrait {
     fn new(x: felt252, y: felt252) -> Option<EcPoint> {
         Option::Some(Self::new_nz(:x, :y)?.into())
     }
+
     /// Creates a new NonZero EC point from its (x, y) coordinates.
     #[inline]
     fn new_nz(x: felt252, y: felt252) -> Option<NonZeroEcPoint> {
         ec_point_try_new_nz(:x, :y)
     }
+
     /// Creates a new EC point from its x coordinate.
     #[inline]
     fn new_from_x(x: felt252) -> Option<EcPoint> {
         Option::Some(Self::new_nz_from_x(:x)?.into())
     }
+
     /// Creates a new NonZero EC point from its x coordinate.
     #[inline]
     fn new_nz_from_x(x: felt252) -> Option<NonZeroEcPoint> {
         ec_point_from_x_nz(:x)
     }
+
     /// Returns the coordinates of the EC point.
     fn coordinates(self: NonZeroEcPoint) -> (felt252, felt252) {
         ec_point_unwrap(self)
     }
+
     /// Returns the x coordinate of the EC point.
     fn x(self: NonZeroEcPoint) -> felt252 {
         let (x, _) = self.coordinates();
         x
     }
+
     /// Returns the y coordinate of the EC point.
     fn y(self: NonZeroEcPoint) -> felt252 {
         let (_, y) = self.coordinates();
         y
     }
+
     /// Computes the product of an EC point `p` by the given scalar `scalar`.
     fn mul(self: EcPoint, scalar: felt252) -> EcPoint {
         match self.try_into() {
@@ -192,6 +225,7 @@ impl EcPointAdd of Add<EcPoint> {
         let mut state = ec_state_init();
         state.add(lhs_nz);
         state.add(rhs_nz);
+
         state.finalize()
     }
 }
