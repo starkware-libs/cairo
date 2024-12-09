@@ -1,5 +1,5 @@
 use anyhow::{Result, anyhow};
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, CrateConfiguration, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
@@ -8,7 +8,10 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{
+    PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group,
+};
+use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::{Intern, Upcast};
 
@@ -33,7 +36,12 @@ impl Default for TestDatabase {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(vec![]);
+        init_defs_group(&mut res);
+        init_semantic_group(&mut res);
+
+        let plugin_suite = res.intern_plugin_suite(PluginSuite::default());
+        res.set_default_plugins_from_suite(plugin_suite);
+
         res
     }
 }
