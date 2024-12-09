@@ -17,7 +17,7 @@ pub fn test_abi_failure(
 ) -> TestRunnerResult {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(starknet_plugin_suite())
         .build()
         .unwrap();
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
@@ -62,7 +62,7 @@ pub fn test_storage_path_check(
 ) -> TestRunnerResult {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
-        .with_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(starknet_plugin_suite())
         .build()
         .unwrap();
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);

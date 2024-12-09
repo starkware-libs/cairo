@@ -18,7 +18,7 @@ pub static SHARED_DB: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
         RootDatabase::builder()
             .skip_auto_withdraw_gas()
             .detect_corelib()
-            .with_plugin_suite(executable_plugin_suite())
+            .with_default_plugin_suite(executable_plugin_suite())
             .build()
             .unwrap(),
     )
