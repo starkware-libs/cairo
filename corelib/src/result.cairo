@@ -27,6 +27,7 @@ pub enum Result<T, E> {
     Err: E,
 }
 
+/// A trait for handling `Result<T, E>` related operations.
 #[generate_trait]
 pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with `err`.
