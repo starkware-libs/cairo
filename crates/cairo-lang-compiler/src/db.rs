@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup, init_defs_group, try_ext_as_virtual_impl};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, CORELIB_VERSION, ExternalFiles, FilesDatabase, FilesGroup, FilesGroupEx,
@@ -13,7 +13,9 @@ use cairo_lang_filesystem::ids::{CrateId, FlagId, VirtualFile};
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup, init_lowering_group};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_project::ProjectConfig;
-use cairo_lang_semantic::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{
+    PluginSuiteInput, SemanticDatabase, SemanticGroup, init_semantic_group,
+};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
@@ -51,6 +53,8 @@ impl RootDatabase {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_lowering_group(&mut res, inlining_strategy);
+        init_defs_group(&mut res);
+        init_semantic_group(&mut res);
 
         let suite = res.intern_plugin_suite(default_plugin_suite);
         res.set_default_plugins_from_suite(suite);
