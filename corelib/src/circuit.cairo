@@ -1,3 +1,34 @@
+//! Utilities for constructing and manipulating cryptographic circuits.
+//!
+//! Circuits are represented by composable elements, where operations such as addition,
+//! subtraction, multiplication, and inversion are supported.
+//!
+//! ## Key Features
+//! - Circuit Operations: Construct new circuit elements using mathematical operations.
+//! - Custom Modulus: Define and work with circuit modulus constraints.
+//! - Multi-limb Arithmetic: Support for efficient multi-limb operations on 384-bit unsigned
+//! integers (`u384`).
+//! - Traits and Extensions: Provide extensibility for circuit definitions and input handling.
+//!
+//! ## Types and Structures
+//! - `u384`: A 384-bit unsigned integer used as the basis for circuit values.
+//! - `CircuitElement<T>`: A wrapper for circuit elements used in defining circuit operations.
+//! - `Circuit<T>`: Represents a circuit constructed from a tuple of outputs.
+//! - `CircuitInput<N>`: Defines circuit inputs.
+//!
+//! ## Operations
+//! - `circuit_add`: Adds two circuit elements.
+//! - `circuit_sub`: Subtracts one circuit element from another.
+//! - `circuit_mul`: Multiplies two circuit elements.
+//! - `circuit_inverse`: Computes the modular inverse of a circuit element.
+//!
+//! ## Advanced Features
+//! - Custom Circuit Definitions: Use the `CircuitDefinition` trait to define new circuits.
+//! - Input and Output Handling: Utilities for managing circuit inputs and outputs, including type
+//! safety guarantees.
+//! - Evaluation and Validation: Evaluate circuits and handle cases of failure with detailed
+//! guarantees.
+
 /// Given two circuit elements, returns a new circuit element representing the circuit that applies
 /// the `addmod` operation to the two input circuits.
 pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>>(
@@ -5,7 +36,6 @@ pub fn circuit_add<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
 ) -> CircuitElement::<AddModGate<Lhs, Rhs>> {
     CircuitElement::<AddModGate<Lhs, Rhs>> {}
 }
-
 
 /// Given two circuit elements, returns a new circuit element representing the circuit that applies
 /// the `submod` operation to the two input circuits.
@@ -45,7 +75,6 @@ pub extern type RangeCheck96;
 pub extern type AddMod;
 pub extern type MulMod;
 
-
 /// A type that can be used as a circuit modulus (a u384 that is not zero or one).
 pub extern type CircuitModulus;
 
@@ -61,7 +90,6 @@ impl U384TryIntoCircuitModulus of TryInto<[u96; 4], CircuitModulus> {
 /// 'T' must be a value that fits inside a u96, for example: u8, u96 or BoundedInt<0, 12>.
 extern fn into_u96_guarantee<T>(val: T) -> U96Guarantee nopanic;
 extern fn u96_guarantee_verify(guarantee: U96Guarantee) implicits(RangeCheck96) nopanic;
-
 
 impl DestructU96Guarantee of Destruct<U96Guarantee> {
     fn destruct(self: U96Guarantee) nopanic {
@@ -82,12 +110,15 @@ pub extern type Circuit<Outputs>;
 /// Defines an input for a circuit.
 #[phantom]
 pub extern type CircuitInput<const N: usize>;
+
 /// Represents the action of adding two fields elements in the circuits builtin.
 #[phantom]
 extern type AddModGate<Lhs, Rhs>;
+
 /// Represents the action of multiplying two fields elements in the circuits builtin.
 #[phantom]
 extern type MulModGate<Lhs, Rhs>;
+
 /// Represents the action of computing the difference between two fields elements in the circuits
 /// builtin.
 #[phantom]
@@ -175,6 +206,7 @@ pub impl CircuitElementCopy<T> of Copy<CircuitElement<T>>;
 
 /// A marker trait for keeping track of which types are circuit elements.
 pub trait CircuitElementTrait<T> {}
+
 impl InputCircuitElement<const N: usize> of CircuitElementTrait<CircuitInput<N>> {}
 impl AddModCircuitElement<
     Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs>,
@@ -194,6 +226,7 @@ trait CircuitDefinition<CES> {
     /// The circuit internal type for a tuple of `CircuitElement`s.
     type CircuitType;
 }
+
 impl CircuitDefinitionImpl<
     T, impl Unwrap: UnwrapCircuitElement<T>, +crate::metaprogramming::IsTuple<T>,
 > of CircuitDefinition<T> {
@@ -205,16 +238,19 @@ impl CircuitDefinitionImpl<
 trait UnwrapCircuitElement<T> {
     type Unwrapped;
 }
+
 /// Implementation for unwrapping a single `CircuitElement`.
 impl UnwrapCircuitElementDirect<T> of UnwrapCircuitElement<CircuitElement<T>> {
     type Unwrapped = T;
 }
+
 /// Implementation for unwrapping a basic tuple of `CircuitElement`s.
 impl UnwrapCircuitElementBase<
     T, impl UnwrapT: UnwrapCircuitElement<T>,
 > of UnwrapCircuitElement<(T,)> {
     type Unwrapped = (UnwrapT::Unwrapped,);
 }
+
 /// Implementation for unwrapping a tuple of `CircuitElement`s.
 impl UnwrapCircuitElementNext<
     T,
@@ -270,6 +306,7 @@ pub impl AddInputResultImpl<C> of AddInputResultTrait<C> {
             AddInputResult::Done(_) => core::panic_with_felt252('All inputs have been filled'),
         }
     }
+
     // Inlining to make sure possibly huge `C` won't be in a user function name.
     #[inline]
     fn done(self: AddInputResult<C>) -> CircuitData<C> {
@@ -284,6 +321,7 @@ pub impl AddInputResultImpl<C> of AddInputResultTrait<C> {
 trait IntoCircuitInputValue<T> {
     fn into_circuit_input_value(self: T) -> [U96Guarantee; 4];
 }
+
 impl U96sIntoCircuitInputValue of IntoCircuitInputValue<[u96; 4]> {
     fn into_circuit_input_value(self: [u96; 4]) -> [U96Guarantee; 4] {
         let [val0, val1, val2, val3] = self;
@@ -315,6 +353,7 @@ pub impl EvalCircuitImpl<C> of EvalCircuitTrait<C> {
     fn eval(self: CircuitData<C>, modulus: CircuitModulus) -> crate::circuit::EvalCircuitResult<C> {
         self.eval_ex(get_circuit_descriptor::<C>(), modulus)
     }
+
     // Inlining to make sure possibly huge `C` won't be in a user function name.
     #[inline]
     fn eval_ex(
@@ -341,7 +380,6 @@ impl CircuitOutputsImpl<
     }
 }
 
-
 /// A type that contain that is used to guarantee that the circuit evaluation has failed.
 ///
 /// The guarantee is verified by `circuit_failure_guarantee_verify`, which is the only way to
@@ -356,6 +394,7 @@ extern type U96LimbsLtGuarantee<const LIMB_COUNT: usize>;
 trait MinusOne<const NUM: usize> {
     const VALUE: usize;
 }
+
 impl MinusOneImpl4 of MinusOne<4> {
     const VALUE: usize = 3;
 }
@@ -371,6 +410,7 @@ impl MinusOneImpl2 of MinusOne<2> {
 trait IntoU96Guarantee<const LIMB_COUNT: usize> {
     fn into_u96_guarantee(self: U96LimbsLtGuarantee<LIMB_COUNT>) -> U96Guarantee nopanic;
 }
+
 impl IntoU96GuaranteeImplByNext<
     const LIMB_COUNT: usize, impl MO: MinusOne<LIMB_COUNT>, +IntoU96Guarantee<MO::VALUE>,
 > of IntoU96Guarantee<LIMB_COUNT> {
@@ -415,7 +455,6 @@ extern fn circuit_failure_guarantee_verify(
     guarantee: CircuitFailureGuarantee, zero: ConstZero, one: ConstOne,
 ) -> U96LimbsLtGuarantee<4> implicits(RangeCheck96, MulMod) nopanic;
 
-
 pub impl DestructFailureGuarantee of Destruct<CircuitFailureGuarantee> {
     fn destruct(self: CircuitFailureGuarantee) nopanic {
         circuit_failure_guarantee_verify(self, 0, 1);
@@ -428,11 +467,10 @@ extern fn get_circuit_output<C, Output>(
 
 /// Helper module to convert into `u384`.
 mod conversions {
+    use crate::integer::{upcast, downcast};
     use crate::internal::{
         bounded_int, bounded_int::{BoundedInt, AddHelper, MulHelper, DivRemHelper},
     };
-    use crate::integer::{upcast, downcast};
-
     use super::{u384, u96};
 
     type ConstValue<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
@@ -621,6 +659,7 @@ impl U384One of crate::num::traits::One<u384> {
     fn is_one(self: @u384) -> bool {
         *self == Self::one()
     }
+
     fn is_non_one(self: @u384) -> bool {
         !self.is_one()
     }
