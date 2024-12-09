@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_defs::ids::{InlineMacroExprPluginId, MacroPluginId, ModuleId};
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin, NamedPlugin, PluginDiagnostic};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SemanticGroup;
+use crate::ids::AnalyzerPluginId;
 
 /// A trait for an analyzer plugin: external plugin that generates additional diagnostics for
 /// modules.
@@ -71,4 +72,13 @@ impl PluginSuite {
         self.analyzer_plugins.extend(suite.analyzer_plugins);
         self
     }
+}
+
+/// A helper representation for the plugin IDs obtained from
+/// [`crate::db::PluginSuiteInput::intern_plugin_suite`].
+#[derive(Clone, Debug)]
+pub struct InternedPluginSuite {
+    pub macro_plugins: Arc<[MacroPluginId]>,
+    pub inline_macro_plugins: Arc<OrderedHashMap<String, InlineMacroExprPluginId>>,
+    pub analyzer_plugins: Arc<[AnalyzerPluginId]>,
 }

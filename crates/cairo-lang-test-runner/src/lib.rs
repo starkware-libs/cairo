@@ -236,9 +236,9 @@ impl TestCompiler {
             }
             b.detect_corelib();
             b.with_cfg(cfg);
-            b.with_plugin_suite(test_plugin_suite());
+            b.with_default_plugin_suite(test_plugin_suite());
             if config.starknet {
-                b.with_plugin_suite(starknet_plugin_suite());
+                b.with_default_plugin_suite(starknet_plugin_suite());
             }
             b.build()?
         };
