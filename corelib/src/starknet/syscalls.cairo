@@ -141,7 +141,7 @@ pub extern fn storage_write_syscall(
     address_domain: u32, address: StorageAddress, value: felt252,
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
 
-/// Replaces the class hash of the current contract, instantaneoulsy modifying its entrypoints.
+/// Replaces the class hash of the current contract, instantly modifying its entrypoints.
 ///
 /// # Arguments
 ///
