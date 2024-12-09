@@ -22,6 +22,20 @@ use starknet::{
 /// # Panics
 ///
 /// Panics it the signature is incorrect.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::eth_address::EthAddress;
+/// use core::starknet::eth_signature::verify_eth_signature;
+/// use core::starknet::secp256_trait::Signature;
+///
+/// let signer: EthAddress = 'ethereum address'.try_into().unwrap();
+/// let signature = Signature { r: 'r component'.into(), s: 's component'.into(), y_parity: true };
+/// let message_hash: u256 = 'message hash'.into();
+///
+/// verify_eth_signature(message_hash, signature, signer);
+/// ```
 pub fn verify_eth_signature(msg_hash: u256, signature: Signature, eth_address: EthAddress) {
     match is_eth_signature_valid(:msg_hash, :signature, :eth_address) {
         Result::Ok(()) => {},
@@ -34,6 +48,20 @@ pub fn verify_eth_signature(msg_hash: u256, signature: Signature, eth_address: E
 /// where N is the size of the curve.
 ///
 /// Returns a `Result` with an error string if the signature is invalid.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::eth_address::EthAddress;
+/// use core::starknet::eth_signature::is_eth_signature_valid;
+/// use core::starknet::secp256_trait::Signature;
+///
+/// let signer: EthAddress = 'ethereum address'.try_into().unwrap();
+/// let signature = Signature { r: 'r component'.into(), s: 's component'.into(), y_parity: true };
+/// let message_hash: u256 = 'message hash'.into();
+///
+/// assert!(is_eth_signature_valid(message_hash, signature, signer) == Result::Ok(()));
+/// ```
 pub fn is_eth_signature_valid(
     msg_hash: u256, signature: Signature, eth_address: EthAddress,
 ) -> Result<(), felt252> {
