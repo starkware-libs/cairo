@@ -21,8 +21,8 @@ foo
 //! > expected_diagnostics
 error: Can only break with a value inside a `loop`.
  --> lib.cairo:5:9
-        break 5;
-        ^******^
+  |         break 5;
+  |         ^******^
 
 //! > ==========================================================================
 
@@ -51,10 +51,10 @@ struct A {
 //! > expected_diagnostics
 error: Not a variant. Use the full name Enum::Variant.
  --> lib.cairo:7:9
-    for A(x) in arr {
-        ^
+  |     for A(x) in arr {
+  |         ^
 
 error: Identifier not found.
  --> lib.cairo:8:9
-        x;
-        ^
+  |         x;
+  |         ^

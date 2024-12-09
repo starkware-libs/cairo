@@ -9,8 +9,8 @@ skipped tokens
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
-skipped tokens
-^************^
+  | skipped tokens
+  | ^************^
 
 //! > ==========================================================================
 
@@ -27,8 +27,8 @@ fn bar() {}
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:2:1
-skipped tokens
-^************^
+  | skipped tokens
+  | ^************^
 
 //! > ==========================================================================
 
@@ -43,8 +43,8 @@ skipped   tokens
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:1
-skipped   tokens
-^**************^
+  | skipped   tokens
+  | ^**************^
 
 //! > ==========================================================================
 
@@ -60,9 +60,12 @@ skipped  \\ Comment
 
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:1:1
-skipped  \\ Comment
-^*****************^
+ --> dummy_file.cairo:1:1-3:9
+  | V******************
+  | skipped  \\ Comment
+  | ...
+  |   tokens
+  |   *****^
 
 //! > ==========================================================================
 
@@ -78,6 +81,9 @@ skipped  \\ Comment
 
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
- --> dummy_file.cairo:1:1
-skipped  \\ Comment
-^*****************^
+ --> dummy_file.cairo:1:1-3:9
+  | V******************
+  | skipped  \\ Comment
+  | ...
+  |   tokens  fn foo() {}
+  |   ******************^

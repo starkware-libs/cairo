@@ -556,8 +556,8 @@ extern fn a() -> MyEnum nopanic;
 //! > lowering_diagnostics
 error: Unsupported value in if-let. Currently, if-let on tuples only supports enums as tuple members.
  --> lib.cairo:9:32
-    if let (MyEnum::A(x), 3) = (a(), 3) {
-                               ^******^
+  |     if let (MyEnum::A(x), 3) = (a(), 3) {
+  |                                ^******^
 
 //! > lowering_flat
 Parameters:
@@ -588,9 +588,12 @@ foo
 
 //! > lowering_diagnostics
 error: Numeric values are not supported in if-let conditions.
- --> lib.cairo:3:5
-    if let x = y {
-    ^************^
+ --> lib.cairo:3:5-5:6
+  |     V*************
+  |     if let x = y {
+  | ...
+  |     }
+  |     ^
 
 //! > lowering_flat
 Parameters:
@@ -695,9 +698,12 @@ enum MyEnum {
 
 //! > lowering_diagnostics
 error: Unreachable else clause.
- --> lib.cairo:10:12
-    } else {
-           ^
+ --> lib.cairo:10:12-12:6
+  |            V
+  |     } else {
+  | ...
+  |     }
+  |     ^
 
 //! > lowering_flat
 Parameters: v0: test::MyEnum
@@ -768,8 +774,8 @@ struct MyStruct {
 //! > lowering_diagnostics
 error: Unsupported type in if-let. Type: `test::MyStruct`.
  --> lib.cairo:7:16
-    if let _ = a {
-               ^
+  |     if let _ = a {
+  |                ^
 
 //! > lowering_flat
 Parameters: v0: test::MyStruct

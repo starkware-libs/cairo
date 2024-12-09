@@ -43,8 +43,8 @@ fn with_err() -> Option::<felt252> {
 //! > expected_diagnostics
 error: `?` can only be used in a function with `Option` or `Result` return type.
  --> lib.cairo:5:5
-    with_err()?;
-    ^*********^
+  |     with_err()?;
+  |     ^*********^
 
 //! > ==========================================================================
 
@@ -97,8 +97,8 @@ fn with_err() -> Result::<felt252, u128> {
 //! > expected_diagnostics
 error: `?` can only be used in a function with `Option` or `Result` return type.
  --> lib.cairo:5:5
-    with_err()?;
-    ^*********^
+  |     with_err()?;
+  |     ^*********^
 
 //! > ==========================================================================
 
@@ -124,13 +124,13 @@ fn with_other_err() -> Result::<felt252, felt252> {
 //! > expected_diagnostics
 error: Return type "core::result::Result::<core::felt252, core::integer::u128>" does not wrap error "core::felt252"
  --> lib.cairo:5:5
-    with_other_err()?;
-    ^***************^
+  |     with_other_err()?;
+  |     ^***************^
 
 error: Unexpected return type. Expected: "core::result::Result::<core::felt252, core::integer::u128>", found: "core::result::Result::<core::felt252, core::felt252>".
  --> lib.cairo:4:13
-fn foo() -> Result::<felt252, u128> {
-            ^*********************^
+  | fn foo() -> Result::<felt252, u128> {
+  |             ^*********************^
 
 //! > ==========================================================================
 
@@ -153,5 +153,5 @@ foo
 //! > expected_diagnostics
 error: Type "core::integer::u32" can not error propagate
  --> lib.cairo:2:5
-    6_u32?;
-    ^****^
+  |     6_u32?;
+  |     ^****^

@@ -275,9 +275,12 @@ mod test_contract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contracts must define a 'Storage' struct.
- --> lib.cairo:1:1
+ --> lib.cairo:1:1-11:2
+V********************
 #[starknet::contract]
-^*******************^
+...
+}
+^
 
 error: Type not found.
  --> lib.cairo:4:39

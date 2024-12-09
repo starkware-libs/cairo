@@ -121,5 +121,5 @@ impl MyImplAlias<T> = other_mod::other_other_mod::MyImpl<Option<T>>;
 //! > expected_diagnostics
 error: Trait has no implementation in context: test::MyTrait::<core::option::Option::<core::box::Box::<core::integer::u32>>>.
  --> lib.cairo:15:14
-    MyTrait::foo(x)
-             ^*^
+  |     MyTrait::foo(x)
+  |              ^*^

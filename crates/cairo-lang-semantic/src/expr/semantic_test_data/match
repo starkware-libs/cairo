@@ -408,8 +408,8 @@ match a {
 //! > expected_diagnostics
 error: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:8:18
-    MyEnum::B => 3_u16,
-                 ^***^
+  |     MyEnum::B => 3_u16,
+  |                  ^***^
 
 //! > expected_semantics
 Match(
@@ -482,8 +482,8 @@ match a {
 //! > expected_diagnostics
 error: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:8:18
-    MyEnum::B => 3 + 3_u16,
-                 ^*******^
+  |     MyEnum::B => 3 + 3_u16,
+  |                  ^*******^
 
 //! > expected_semantics
 Match(
@@ -768,18 +768,18 @@ Match(
 //! > expected_diagnostics
 error: Missing variable in pattern.
  --> lib.cairo:14:5
-    MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
-    ^**********^
+  |     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
+  |     ^**********^
 
 error: Missing variable in pattern.
  --> lib.cairo:14:20
-    MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
-                   ^***************^
+  |     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
+  |                    ^***************^
 
 error: Match arms have incompatible types: "core::felt252" and "core::integer::u8"
  --> lib.cairo:15:60
-    MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
-                                                           ^***^
+  |     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
+  |                                                            ^***^
 
 //! > ==========================================================================
 
@@ -952,8 +952,8 @@ Match(
 //! > expected_diagnostics
 error: Expected type "core::integer::u32", found: "core::integer::u8".
  --> lib.cairo:15:40
-    MyEnum::C((x, _, _)) | MyEnum::D(P{x, y: _, z: _ }) => x,
-                                       ^
+  |     MyEnum::C((x, _, _)) | MyEnum::D(P{x, y: _, z: _ }) => x,
+  |                                        ^
 
 //! > ==========================================================================
 
@@ -1035,5 +1035,5 @@ Match(
 //! > expected_diagnostics
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:7:15
-    MyEnum::A(x) | MyEnum::B((x, _)) => 1,
-              ^
+  |     MyEnum::A(x) | MyEnum::B((x, _)) => 1,
+  |               ^

@@ -14,8 +14,8 @@ fn main<T>() {}
 //! > expected_diagnostics
 error: Plugin diagnostic: Executable functions cannot have generic params.
  --> lib.cairo:2:8
-fn main<T>() {}
-       ^*^
+  | fn main<T>() {}
+  |        ^*^
 
 //! > ==========================================================================
 
@@ -60,8 +60,8 @@ fn __executable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt25
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::serde::Serde::<test::NoSerde>.
  --> lib.cairo:2:9
-fn main(a: NoSerde, b: felt252) -> felt252 {
-        ^********^
+  | fn main(a: NoSerde, b: felt252) -> felt252 {
+  |         ^********^
 
 //! > ==========================================================================
 
@@ -106,8 +106,8 @@ fn __executable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt25
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::serde::Serde::<test::NoSerde>.
  --> lib.cairo:2:33
-fn main(a: felt252, b: felt252) -> NoSerde {
-                                ^********^
+  | fn main(a: felt252, b: felt252) -> NoSerde {
+  |                                 ^********^
 
 //! > ==========================================================================
 
@@ -131,8 +131,8 @@ fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) -> felt252 {
 //! > expected_diagnostics
 error: Plugin diagnostic: Invalid return type for `#[executable_raw]` function, expected `()`.
  --> lib.cairo:2:65
-fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) -> felt252 {
-                                                                ^********^
+  | fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) -> felt252 {
+  |                                                                 ^********^
 
 //! > ==========================================================================
 
@@ -152,8 +152,8 @@ fn main(mut _input: Span<felt252>, ref _output: Array<felt252>, extra: felt252) 
 //! > expected_diagnostics
 error: Plugin diagnostic: Invalid number of params for `#[executable_raw]` function, expected 2.
  --> lib.cairo:2:9
-fn main(mut _input: Span<felt252>, ref _output: Array<felt252>, extra: felt252) {}
-        ^********************************************************************^
+  | fn main(mut _input: Span<felt252>, ref _output: Array<felt252>, extra: felt252) {}
+  |         ^********************************************************************^
 
 //! > ==========================================================================
 
@@ -173,8 +173,8 @@ fn main(mut _input: Span<u8>, ref _output: Array<felt252>) {}
 //! > expected_diagnostics
 error: Plugin diagnostic: Invalid first param type for `#[executable_raw]` function, expected `Span<felt252>`.
  --> lib.cairo:2:13
-fn main(mut _input: Span<u8>, ref _output: Array<felt252>) {}
-            ^****^
+  | fn main(mut _input: Span<u8>, ref _output: Array<felt252>) {}
+  |             ^****^
 
 //! > ==========================================================================
 
@@ -194,8 +194,8 @@ fn main(mut _input: Span<felt252>, ref _output: Array<u8>) {}
 //! > expected_diagnostics
 error: Plugin diagnostic: Invalid second param type for `#[executable_raw]` function, expected `Array<felt252>`.
  --> lib.cairo:2:40
-fn main(mut _input: Span<felt252>, ref _output: Array<u8>) {}
-                                       ^*****^
+  | fn main(mut _input: Span<felt252>, ref _output: Array<u8>) {}
+  |                                        ^*****^
 
 //! > ==========================================================================
 
@@ -215,8 +215,8 @@ fn main(ref _input: Span<felt252>, ref _output: Array<felt252>) {}
 //! > expected_diagnostics
 error: Plugin diagnostic: Invalid first param mutability for `#[executable_raw]` function, got unexpected `ref`.
  --> lib.cairo:2:13
-fn main(ref _input: Span<felt252>, ref _output: Array<felt252>) {}
-            ^****^
+  | fn main(ref _input: Span<felt252>, ref _output: Array<felt252>) {}
+  |             ^****^
 
 //! > ==========================================================================
 
@@ -236,5 +236,5 @@ fn main(mut _input: Span<felt252>, _output: Array<felt252>) {}
 //! > expected_diagnostics
 error: Plugin diagnostic: Invalid second param mutability for `#[executable_raw]` function, expected `ref`.
  --> lib.cairo:2:36
-fn main(mut _input: Span<felt252>, _output: Array<felt252>) {}
-                                   ^*****^
+  | fn main(mut _input: Span<felt252>, _output: Array<felt252>) {}
+  |                                    ^*****^

@@ -257,8 +257,8 @@ extern fn a() -> MyEnum nopanic;
 //! > lowering_diagnostics
 error: Unsupported value in while-let. Currently, while-let on tuples only supports enums as tuple members.
  --> lib.cairo:9:35
-    while let (MyEnum::A(x), 3) = (a(), 3) {
-                                  ^******^
+  |     while let (MyEnum::A(x), 3) = (a(), 3) {
+  |                                   ^******^
 
 //! > lowering_flat
 Parameters:
@@ -297,9 +297,12 @@ foo
 
 //! > lowering_diagnostics
 error: Numeric values are not supported in while-let conditions.
- --> lib.cairo:3:5
-    while let x = y {
-    ^***************^
+ --> lib.cairo:3:5-5:6
+  |     V****************
+  |     while let x = y {
+  | ...
+  |     };
+  |     *^
 
 //! > lowering_flat
 Parameters:
@@ -403,8 +406,8 @@ struct MyStruct {
 //! > lowering_diagnostics
 error: Unsupported type in while-let. Type: `test::MyStruct`.
  --> lib.cairo:7:19
-    while let _ = a {
-                  ^
+  |     while let _ = a {
+  |                   ^
 
 //! > lowering_flat
 Parameters: v0: test::MyStruct

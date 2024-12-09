@@ -17,13 +17,13 @@ test_expr_diagnostics(expect_diagnostics: true)
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> lib.cairo:1:1
-3 + 4 +;
-^******^
+  | 3 + 4 +;
+  | ^******^
 
 error: Function not found.
  --> lib.cairo:3:5
-1 + foo()
-    ^*^
+  | 1 + foo()
+  |     ^*^
 
 //! > ==========================================================================
 
@@ -53,18 +53,18 @@ mod submod {
 //! > expected_diagnostics
 error: Identifier not found.
  --> lib.cairo:10:3
-  bad_module::foo();
-  ^********^
+  |   bad_module::foo();
+  |   ^********^
 
 error: 'super' cannot be used for the crate's root module.
  --> lib.cairo:11:3
-  super::foo();
-  ^***^
+  |   super::foo();
+  |   ^***^
 
 error: Identifier not found.
  --> lib.cairo:12:3
-  test::super::foo();
-  ^**^
+  |   test::super::foo();
+  |   ^**^
 
 //! > ==========================================================================
 
@@ -88,8 +88,8 @@ fn foo(ref ref v: felt252) {
 //! > expected_diagnostics
 error: `ref` modifier was specified after another modifier (`ref`). Only a single modifier is allowed.
  --> lib.cairo:1:12
-fn foo(ref ref v: felt252) {
-           ^*^
+  | fn foo(ref ref v: felt252) {
+  |            ^*^
 
 //! > ==========================================================================
 
@@ -112,8 +112,8 @@ fn foo(ref v: felt252) {
 //! > expected_diagnostics
 error: ref argument must be a variable.
  --> lib.cairo:2:9
-    foo(1);
-        ^
+  |     foo(1);
+  |         ^
 
 //! > ==========================================================================
 
@@ -137,8 +137,8 @@ fn foo(ref v: felt252) {
 //! > expected_diagnostics
 error: ref argument must be a mutable variable.
  --> lib.cairo:3:13
-    foo(ref a);
-            ^
+  |     foo(ref a);
+  |             ^
 
 //! > ==========================================================================
 
@@ -164,18 +164,18 @@ fn foo() {}
 //! > expected_diagnostics
 error: Wrong number of arguments. Expected 1, found: 0
  --> lib.cairo:7:14
-    let _b = 123_NonZero;
-             ^*********^
+  |     let _b = 123_NonZero;
+  |              ^*********^
 
 error: Unknown type.
  --> lib.cairo:8:14
-    let _b = 123_u129;
-             ^******^
+  |     let _b = 123_u129;
+  |              ^******^
 
 error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:14
-    let _b = 123_bool;
-             ^******^
+  |     let _b = 123_bool;
+  |              ^******^
 
 //! > ==========================================================================
 
@@ -200,13 +200,13 @@ use a::B;
 //! > expected_diagnostics
 error: Cycle detected while resolving 'use' items.
  --> lib.cairo:5:8
-use a::B;
-       ^
+  | use a::B;
+  |        ^
 
 error: Cycle detected while resolving 'use' items.
  --> lib.cairo:2:16
-    use super::B;
-               ^
+  |     use super::B;
+  |                ^
 
 //! > ==========================================================================
 
@@ -227,8 +227,8 @@ use bad_module_name;
 //! > expected_diagnostics
 error: Identifier not found.
  --> lib.cairo:1:5
-use bad_module_name;
-    ^*************^
+  | use bad_module_name;
+  |     ^*************^
 
 //! > ==========================================================================
 
@@ -252,13 +252,13 @@ mod mod1 {
 //! > expected_diagnostics
 error: Missing tokens. Expected an item after attributes.
  --> lib.cairo:2:9
-  #[aaa]
-        ^
+  |   #[aaa]
+  |         ^
 
 error: Identifier not found.
  --> lib.cairo:6:12
-  let _x = y;
-           ^
+  |   let _x = y;
+  |            ^
 
 //! > ==========================================================================
 
@@ -282,13 +282,13 @@ test_expr_diagnostics(expect_diagnostics: true)
 //! > expected_diagnostics
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:7
-  let x = 7;
-      ^
+  |   let x = 7;
+  |       ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:5:7
-  let y = 5;
-      ^
+  |   let y = 5;
+  |       ^
 
 //! > ==========================================================================
 
@@ -309,8 +309,8 @@ test_expr_diagnostics(expect_diagnostics: warnings_only)
 //! > expected_diagnostics
 warning: Unhandled `#[must_use]` type `core::option::Option::<core::felt252>`
  --> lib.cairo:3:3
-  Option::<felt252>::None;
-  ^*********************^
+  |   Option::<felt252>::None;
+  |   ^*********************^
 
 //! > ==========================================================================
 
@@ -331,8 +331,8 @@ test_expr_diagnostics(expect_diagnostics: warnings_only)
 //! > expected_diagnostics
 warning: Unhandled `#[must_use]` type `core::result::Result::<core::felt252, core::felt252>`
  --> lib.cairo:3:3
-  Result::<felt252, felt252>::Err(4);
-  ^********************************^
+  |   Result::<felt252, felt252>::Err(4);
+  |   ^********************************^
 
 //! > ==========================================================================
 
@@ -357,8 +357,8 @@ fn must_use_function() -> felt252 {
 //! > expected_diagnostics
 warning: Unhandled `#[must_use]` function.
  --> lib.cairo:7:3
-  must_use_function();
-  ^*****************^
+  |   must_use_function();
+  |   ^*****************^
 
 //! > ==========================================================================
 
@@ -417,8 +417,8 @@ impl imp of trt {
 //! > expected_diagnostics
 warning: Unhandled `#[must_use]` function.
  --> lib.cairo:12:3
-  trt::must_use_function();
-  ^**********************^
+  |   trt::must_use_function();
+  |   ^**********************^
 
 //! > ==========================================================================
 
@@ -449,8 +449,8 @@ impl imp of trt<felt252> {
 //! > expected_diagnostics
 warning: Unhandled `#[must_use]` function.
  --> lib.cairo:13:3
-  x.must_use_function();
-  ^*******************^
+  |   x.must_use_function();
+  |   ^*******************^
 
 //! > ==========================================================================
 
@@ -507,13 +507,13 @@ fn unstable_function_with_note() -> felt252 {
 //! > expected_diagnostics
 warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute.
  --> lib.cairo:12:15
-  let _fail = unstable_function();
-              ^***************^
+  |   let _fail = unstable_function();
+  |               ^***************^
 
 warning: Usage of unstable feature `"testing"` with no `#[feature("testing")]` attribute. Note: "Some reason"
  --> lib.cairo:15:15
-  let _fail = unstable_function_with_note();
-              ^*************************^
+  |   let _fail = unstable_function_with_note();
+  |               ^*************************^
 
 //! > ==========================================================================
 
@@ -586,33 +586,33 @@ impl ATraitImpl<+UnstableTrait> of ATrait;
 //! > expected_diagnostics
 warning: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
  --> lib.cairo:14:25
-impl BadUnstableImpl of UnstableTrait;
-                        ^***********^
+  | impl BadUnstableImpl of UnstableTrait;
+  |                         ^***********^
 
 warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
  --> lib.cairo:23:13
-    member: DisallowedType,
-            ^************^
+  |     member: DisallowedType,
+  |             ^************^
 
 warning: Usage of unstable feature `"unstable-member"` with no `#[feature("unstable-member")]` attribute.
  --> lib.cairo:32:14
-    variant: DisallowedType,
-             ^************^
+  |     variant: DisallowedType,
+  |              ^************^
 
 warning: Usage of unstable feature `"unstable-trait"` with no `#[feature("unstable-trait")]` attribute.
  --> lib.cairo:42:21
-impl BadATraitImpl<+UnstableTrait> of ATrait;
-                    ^***********^
+  | impl BadATraitImpl<+UnstableTrait> of ATrait;
+  |                     ^***********^
 
 warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute. Note: "Some reason"
  --> lib.cairo:48:15
-  let _fail = deprecated_function_with_note();
-              ^***************************^
+  |   let _fail = deprecated_function_with_note();
+  |               ^***************************^
 
 warning: Usage of deprecated feature `"deprecated"` with no `#[feature("deprecated")]` attribute.
  --> lib.cairo:51:15
-  let _fail = deprecated_function_no_note();
-              ^*************************^
+  |   let _fail = deprecated_function_no_note();
+  |               ^*************************^
 
 //! > ==========================================================================
 
@@ -676,28 +676,28 @@ enum AllowedEnumMember {
 //! > expected_diagnostics
 error: Usage of internal feature `"internal-trait"` with no `#[feature("internal-trait")]` attribute.
  --> lib.cairo:14:25
-impl BadInternalImpl of InternalTrait;
-                        ^***********^
+  | impl BadInternalImpl of InternalTrait;
+  |                         ^***********^
 
 error: Usage of internal feature `"internal-member"` with no `#[feature("internal-member")]` attribute.
  --> lib.cairo:23:13
-    member: DisallowedType,
-            ^************^
+  |     member: DisallowedType,
+  |             ^************^
 
 error: Usage of internal feature `"internal-member"` with no `#[feature("internal-member")]` attribute.
  --> lib.cairo:32:14
-    variant: DisallowedType,
-             ^************^
+  |     variant: DisallowedType,
+  |              ^************^
 
 error: Usage of internal feature `"internal"` with no `#[feature("internal")]` attribute. Note: "Some reason"
  --> lib.cairo:41:15
-  let _fail = internal_function_with_note();
-              ^*************************^
+  |   let _fail = internal_function_with_note();
+  |               ^*************************^
 
 error: Usage of internal feature `"internal"` with no `#[feature("internal")]` attribute.
  --> lib.cairo:44:15
-  let _fail = internal_function_no_note();
-              ^***********************^
+  |   let _fail = internal_function_no_note();
+  |               ^***********************^
 
 //! > ==========================================================================
 
@@ -755,63 +755,69 @@ fn multiple_mixed_feature_markers2() {}
 //! > expected_diagnostics
 error: Skipped tokens. Expected: argument.
  --> lib.cairo:25:34
-#[deprecated(feature: "testing", , note: "extra1", note: "extra2")]
-                                 ^
+  | #[deprecated(feature: "testing", , note: "extra1", note: "extra2")]
+  |                                  ^
 
 error: Missing `feature` arg for feature marker attribute.
  --> lib.cairo:1:1
-#[unstable]
-^*********^
+  | #[unstable]
+  | ^*********^
 
 error: Unsupported argument for feature marker attribute.
  --> lib.cairo:4:32
-#[unstable(feature: "testing", extra)]
-                               ^***^
+  | #[unstable(feature: "testing", extra)]
+  |                                ^***^
 
 error: Duplicated argument for feature marker attribute.
  --> lib.cairo:10:32
-#[unstable(feature: "testing", feature: "other")]
-                               ^*****^
+  | #[unstable(feature: "testing", feature: "other")]
+  |                                ^*****^
 
 error: Missing `feature` arg for feature marker attribute.
  --> lib.cairo:13:1
-#[deprecated]
-^***********^
+  | #[deprecated]
+  | ^***********^
 
 error: Unsupported argument for feature marker attribute.
  --> lib.cairo:16:34
-#[deprecated(feature: "testing", extra)]
-                                 ^***^
+  | #[deprecated(feature: "testing", extra)]
+  |                                  ^***^
 
 error: Unsupported argument for feature marker attribute.
  --> lib.cairo:19:34
-#[deprecated(feature: "testing", extra: "extra")]
-                                 ^***^
+  | #[deprecated(feature: "testing", extra: "extra")]
+  |                                  ^***^
 
 error: Duplicated argument for feature marker attribute.
  --> lib.cairo:22:34
-#[deprecated(feature: "testing", feature: "other")]
-                                 ^*****^
+  | #[deprecated(feature: "testing", feature: "other")]
+  |                                  ^*****^
 
 error: Duplicated argument for feature marker attribute.
  --> lib.cairo:25:52
-#[deprecated(feature: "testing", , note: "extra1", note: "extra2")]
-                                                   ^**^
+  | #[deprecated(feature: "testing", , note: "extra1", note: "extra2")]
+  |                                                    ^**^
 
 error: Multiple feature marker attributes.
- --> lib.cairo:28:1
-#[unstable(feature: "testing1")]
-^******************************^
+ --> lib.cairo:28:1-29:33
+  | V*******************************
+  | #[unstable(feature: "testing1")]
+  | #[unstable(feature: "testing2")]
+  | *******************************^
 
 error: Multiple feature marker attributes.
- --> lib.cairo:32:1
-#[deprecated(feature: "testing1")]
-^********************************^
+ --> lib.cairo:32:1-33:33
+  | V*********************************
+  | #[deprecated(feature: "testing1")]
+  | #[unstable(feature: "testing2")]
+  | *******************************^
 
 error: Multiple feature marker attributes.
- --> lib.cairo:37:1
-#[deprecated(feature: "testing1")]
-^********************************^
+ --> lib.cairo:37:1-38:33
+  | V*********************************
+  | #[deprecated(feature: "testing1")]
+  | #[internal(feature: "testing2")]
+  | *******************************^
 
 //! > ==========================================================================
 
@@ -832,8 +838,8 @@ test_expr_diagnostics(expect_diagnostics: true)
 //! > expected_diagnostics
 error: Cannot have array of type "()" that is zero sized.
  --> lib.cairo:3:15
-  let _fail = array![()];
-              ^********^
+  |   let _fail = array![()];
+  |               ^********^
 
 //! > ==========================================================================
 
@@ -855,18 +861,18 @@ fn bar<T>(_a: T) {}
 //! > expected_diagnostics
 error: Consecutive comparison operators are not allowed: '<' followed by '>'
  --> lib.cairo:4:19
-  let _fail = bar<felt252>(1);
-                  ^
+  |   let _fail = bar<felt252>(1);
+  |                   ^
 
 error: Expected variable or constant, found function.
  --> lib.cairo:4:15
-  let _fail = bar<felt252>(1);
-              ^*^
+  |   let _fail = bar<felt252>(1);
+  |               ^*^
 
 error: Are you missing a `::`?.
  --> lib.cairo:4:18
-  let _fail = bar<felt252>(1);
-                 ^
+  |   let _fail = bar<felt252>(1);
+  |                  ^
 
 //! > ==========================================================================
 
@@ -894,8 +900,8 @@ pub mod a {
 //! > expected_diagnostics
 error: Expected module, found constant.
  --> lib.cairo:3:16
-    use super::NOT_MODULE::*;
-               ^********^
+  |     use super::NOT_MODULE::*;
+  |                ^********^
 
 //! > ==========================================================================
 
@@ -929,8 +935,8 @@ AMBIGUOUS
 //! > expected_diagnostics
 error: Ambiguous path. Multiple matching items: `test::a::AMBIGUOUS`, `test::b::AMBIGUOUS`
  --> lib.cairo:12:1
-AMBIGUOUS
-^*******^
+  | AMBIGUOUS
+  | ^*******^
 
 //! > ==========================================================================
 
@@ -955,8 +961,8 @@ use undefined_item::*;
 //! > expected_diagnostics
 error: Identifier not found.
  --> lib.cairo:1:5
-use undefined_item::*;
-    ^************^
+  | use undefined_item::*;
+  |     ^************^
 
 //! > ==========================================================================
 
@@ -984,8 +990,8 @@ mod a {
 //! > expected_diagnostics
 error: Cycle detected while resolving 'use' items.
  --> lib.cairo:3:21
-    use a::a::a::a::*;
-                    ^
+  |     use a::a::a::a::*;
+  |                     ^
 
 //! > ==========================================================================
 
@@ -1010,8 +1016,8 @@ use *;
 //! > expected_diagnostics
 error: `*` in `use` items is not allowed for empty path.
  --> lib.cairo:1:5
-use *;
-    ^
+  | use *;
+  |     ^
 
 //! > ==========================================================================
 
@@ -1040,8 +1046,8 @@ INACCESSIBLE
 //! > expected_diagnostics
 error: Item `test::a::INACCESSIBLE` is not visible in this context through module `test::a`.
  --> lib.cairo:7:1
-INACCESSIBLE
-^**********^
+  | INACCESSIBLE
+  | ^**********^
 
 //! > ==========================================================================
 
@@ -1072,8 +1078,8 @@ inaccessible::C
 //! > expected_diagnostics
 error: Item `test::a::inaccessible` is not visible in this context through module `test::a`.
  --> lib.cairo:9:1
-inaccessible::C
-^**********^
+  | inaccessible::C
+  | ^**********^
 
 //! > ==========================================================================
 
@@ -1110,13 +1116,13 @@ C
 //! > expected_diagnostics
 error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
  --> lib.cairo:15:1
-C
-^
+  | C
+  | ^
 
 error: Item `test::a::b` is not visible in this context.
  --> lib.cairo:9:30
-        use super::super::a::b::*;
-                             ^
+  |         use super::super::a::b::*;
+  |                              ^
 
 //! > ==========================================================================
 
@@ -1153,8 +1159,8 @@ C
 //! > expected_diagnostics
 error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
  --> lib.cairo:15:1
-C
-^
+  | C
+  | ^
 
 //! > ==========================================================================
 
@@ -1197,8 +1203,8 @@ C
 //! > expected_diagnostics
 error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
  --> lib.cairo:21:1
-C
-^
+  | C
+  | ^
 
 //! > ==========================================================================
 
@@ -1241,8 +1247,8 @@ C
 //! > expected_diagnostics
 error: Item `test::a::b` is not visible in this context.
  --> lib.cairo:9:34
-        pub use super::super::a::b::*;
-                                 ^
+  |         pub use super::super::a::b::*;
+  |                                  ^
 
 //! > ==========================================================================
 
@@ -1271,5 +1277,5 @@ use a::*;
 //! > expected_diagnostics
 error: Global `use` item is not supported in `V2023_01` edition.
  --> lib.cairo:5:8
-use a::*;
-       ^
+  | use a::*;
+  |        ^

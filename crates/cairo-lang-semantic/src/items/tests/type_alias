@@ -154,8 +154,8 @@ type A<T> = (felt252, T);
 //! > expected_diagnostics
 error: Unknown type.
  --> lib.cairo:2:15
-fn foo(a: A::<5>) -> felt252 {
-              ^
+  | fn foo(a: A::<5>) -> felt252 {
+  |               ^
 
 //! > ==========================================================================
 
@@ -179,13 +179,13 @@ type B = A;
 //! > expected_diagnostics
 error: Cycle detected while resolving type-alias/impl-type items.
  --> lib.cairo:1:6
-type A = B;
-     ^
+  | type A = B;
+  |      ^
 
 error: Cycle detected while resolving type-alias/impl-type items.
  --> lib.cairo:2:6
-type B = A;
-     ^
+  | type B = A;
+  |      ^
 
 //! > ==========================================================================
 
@@ -208,8 +208,8 @@ type A = A;
 //! > expected_diagnostics
 error: Cycle detected while resolving type-alias/impl-type items.
  --> lib.cairo:1:6
-type A = A;
-     ^
+  | type A = A;
+  |      ^
 
 //! > ==========================================================================
 
@@ -232,5 +232,5 @@ type Alias = bad_type;
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:14
-type Alias = bad_type;
-             ^******^
+  | type Alias = bad_type;
+  |              ^******^
