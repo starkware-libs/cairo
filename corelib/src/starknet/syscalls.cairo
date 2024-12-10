@@ -10,10 +10,10 @@
 //! for example, storing values in a contract's storage or deploying new contracts.
 
 use core::gas::GasBuiltin;
-use starknet::{
-    SyscallResult, storage_access::StorageAddress, class_hash::ClassHash,
-    contract_address::ContractAddress,
-};
+use starknet::SyscallResult;
+use starknet::class_hash::ClassHash;
+use starknet::contract_address::ContractAddress;
+use starknet::storage_access::StorageAddress;
 
 /// Calls a given contract.
 ///

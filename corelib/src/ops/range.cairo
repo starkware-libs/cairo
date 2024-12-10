@@ -72,8 +72,8 @@ impl RangeIntoIterator<
 // Sierra optimization.
 
 mod internal {
-    use core::iter::Iterator;
     use core::internal::OptionRev;
+    use core::iter::Iterator;
 
     #[derive(Copy, Drop)]
     pub extern type IntRange<T>;

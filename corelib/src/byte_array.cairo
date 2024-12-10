@@ -43,19 +43,19 @@
 //! ```
 
 use crate::array::{ArrayTrait, SpanTrait};
+use crate::clone::Clone;
+use crate::cmp::min;
+use crate::option::OptionTrait;
+use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
     one_shift_left_bytes_felt252, one_shift_left_bytes_u128, split_u128, u8_at_u256,
 };
-use crate::clone::Clone;
-use crate::cmp::min;
 #[allow(unused_imports)]
-use crate::integer::{u128_safe_divmod, U32TryIntoNonZero};
-use crate::option::OptionTrait;
+use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[allow(unused_imports)]
 use crate::serde::Serde;
-use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::zeroable::NonZeroIntoImpl;
 

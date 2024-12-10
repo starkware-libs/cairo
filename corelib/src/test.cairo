@@ -34,8 +34,8 @@ mod language_features {
     mod closure_test;
     mod const_folding_test;
     mod const_test;
-    mod glob_use_test;
     mod for_test;
+    mod glob_use_test;
     mod panics_test;
     mod trait_test;
     mod while_test;

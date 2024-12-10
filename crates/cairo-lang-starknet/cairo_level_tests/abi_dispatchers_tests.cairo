@@ -1,5 +1,4 @@
 use starknet::account::Call;
-
 use super::utils::serialized;
 
 #[starknet::interface]
@@ -7,8 +6,9 @@ trait IAnotherContract<T> {}
 
 #[starknet::contract(account)]
 mod test_contract {
-    use starknet::{account::Call, ContractAddress, ClassHash};
+    use starknet::account::Call;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::{ClassHash, ContractAddress};
     use super::{IAnotherContractDispatcher, IAnotherContractLibraryDispatcher};
 
 

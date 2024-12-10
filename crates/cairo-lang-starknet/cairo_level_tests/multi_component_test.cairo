@@ -1,8 +1,8 @@
-use super::utils::serialized;
-use crate::components::mintable::{MintTraitDispatcherTrait, MintTraitDispatcher};
+use crate::components::mintable::{MintTraitDispatcher, MintTraitDispatcherTrait};
 use crate::contracts::multi_component::{
-    contract_with_4_components, GetSupplyDispatcher, GetSupplyDispatcherTrait,
+    GetSupplyDispatcher, GetSupplyDispatcherTrait, contract_with_4_components,
 };
+use super::utils::serialized;
 
 #[test]
 fn test_flow() {

@@ -8,12 +8,10 @@
 //! If you are using Starknet Foundry, refer to its
 //! [documentation](https://foundry-rs.github.io/starknet-foundry/appendix/cheatcodes.html).
 
-use starknet::ContractAddress;
 #[allow(unused_imports)]
-use core::array::ArrayTrait;
-#[allow(unused_imports)]
-use core::array::SpanTrait;
+use core::array::{ArrayTrait, SpanTrait};
 use core::traits::Into;
+use starknet::ContractAddress;
 
 /// A general cheatcode function used to simplify implementation of Starknet testing functions.
 ///

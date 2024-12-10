@@ -1,4 +1,4 @@
-use super::{Mutable, StoragePath, StorageAsPath, StoragePathTrait};
+use super::{Mutable, StorageAsPath, StoragePath, StoragePathTrait};
 
 /// A struct for holding an address to initialize a storage path with. The members (not direct
 /// members, but accessible using deref) of a contract state are either `StorageBase` or

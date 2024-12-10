@@ -5,7 +5,7 @@
 
 use core::debug::PrintTrait;
 #[allow(unused_imports)]
-use core::integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
+use core::integer::{U128TryIntoNonZero, U256TryIntoFelt252, u128_safe_divmod};
 use core::option::{Option, OptionTrait};
 use core::serde::Serde;
 use core::traits::{Into, TryInto};
