@@ -474,6 +474,7 @@ dependencies = [
  "cairo-lang-compiler",
  "cairo-lang-executable",
  "cairo-lang-runner",
+ "cairo-lang-utils",
  "cairo-vm",
  "clap",
  "num-bigint",
