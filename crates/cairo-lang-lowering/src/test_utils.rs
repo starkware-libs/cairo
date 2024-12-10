@@ -7,7 +7,7 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::VirtualFile;
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
@@ -41,11 +41,7 @@ impl LoweringDatabaseForTesting {
     pub fn new() -> Self {
         let mut res = LoweringDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
-        let suite = get_default_plugin_suite();
-        res.set_macro_plugins(suite.plugins);
-        res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
-        res.set_analyzer_plugins(suite.analyzer_plugins);
-
+        res.set_default_plugins_from_suite(get_default_plugin_suite());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         init_lowering_group(&mut res, InliningStrategy::Default);

@@ -17,7 +17,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, Upcast, extract_matches};
 
-use crate::db::{SemanticDatabase, SemanticGroup};
+use crate::db::{PluginSuiteInput, SemanticDatabase, SemanticGroup};
 use crate::inline_macros::get_default_plugin_suite;
 use crate::items::functions::GenericFunctionId;
 use crate::{ConcreteFunctionWithBodyId, SemanticDiagnostic, semantic};
@@ -41,10 +41,7 @@ impl SemanticDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SemanticDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
-        let suite = get_default_plugin_suite();
-        res.set_macro_plugins(suite.plugins);
-        res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
-        res.set_analyzer_plugins(suite.analyzer_plugins);
+        res.set_default_plugins_from_suite(get_default_plugin_suite());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res
