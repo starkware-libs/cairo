@@ -155,7 +155,7 @@ test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn foo() {
-    use X::{A, *, B};
+    use X::{*, A, B};
 }
 
 //! > top_level_kind
@@ -177,13 +177,13 @@ ItemUse
     │   └── use_path (kind: UsePathMulti)
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── use_paths (kind: UsePathList)
-    │       │   ├── item #0 (kind: UsePathLeaf)
+    │       │   ├── item #0 (kind: UsePathStar)
+    │       │   │   └── star (kind: TokenMul): '*'
+    │       │   ├── separator #0 (kind: TokenComma): ','
+    │       │   ├── item #1 (kind: UsePathLeaf)
     │       │   │   ├── ident (kind: PathSegmentSimple)
     │       │   │   │   └── ident (kind: TokenIdentifier): 'A'
     │       │   │   └── alias_clause (kind: OptionAliasClauseEmpty) []
-    │       │   ├── separator #0 (kind: TokenComma): ','
-    │       │   ├── item #1 (kind: UsePathStar)
-    │       │   │   └── star (kind: TokenMul): '*'
     │       │   ├── separator #1 (kind: TokenComma): ','
     │       │   └── item #2 (kind: UsePathLeaf)
     │       │       ├── ident (kind: PathSegmentSimple)

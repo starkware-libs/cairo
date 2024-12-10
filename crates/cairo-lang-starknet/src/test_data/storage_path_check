@@ -151,7 +151,7 @@ struct IgnoredMemberStruct {
 
 #[starknet::component]
 mod component {
-    use super::{Struct0, IgnoredMemberStruct};
+    use super::{IgnoredMemberStruct, Struct0};
     #[storage]
     pub struct Storage {
         #[flat]
