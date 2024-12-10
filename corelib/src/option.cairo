@@ -1,14 +1,124 @@
-//! The `Option<T>` type represents an optional value: every `Option<T>` is either `Some` and
-//! contains a value, or `None`, and does not.
+//! Optional values.
+//!
+//! The [`Option`] type represents an optional value: every [`Option`] is either [`Some`] and
+//! contains a value, or [`None`], and does not. [`Option`] types are very common in Cairo code, as
+//! they have a number of uses:
+//!
+//! * Initial values
+//! * Return values for functions that are not defined
+//!   over their entire input range (partial functions)
+//! * Return value for otherwise reporting simple errors, where [`None`] is
+//!   returned on error
+//! * Optional struct fields
+//! * Optional function arguments
 //!
 //! Options are commonly paired with pattern matching to query the presence of a value and take
 //! action, always accounting for the `None` case.
 //!
-//! When writing code that calls many functions that return the `Option` type, handling
-//! `Some`/`None` can be tedious. The question mark operator `?` hides some of the boilerplate of
-//! propagating values up the call stack.
-//! Ending the expression with `?` will result in the `Some`s unwrapped value, unless the result is
-//! `None`, in which case `None` is returned early from the enclosing function.
+//! ```
+//! fn divide(numerator: u64, denominator: u64) -> Option<u64> {
+//!     if denominator == 0 {
+//!         Option::None
+//!     } else {
+//!         Option::Some(numerator / denominator)
+//!     }
+//! }
+//!
+//! // The return value of the function is an option
+//! let result = divide(2, 3);
+//!
+//! // Pattern match to retrieve the value
+//! match result {
+//!     // The division was valid
+//!     Option::Some(x) => println!("Result: {x}"),
+//!     // The division was invalid
+//!     Option::None    => println!("Cannot divide by 0"),
+//! }
+//! ```
+//! # The question mark operator, `?`
+//!
+//! Similar to the [`Result`] type, when writing code that calls many functions that return the
+//! [`Option`] type, handling `Some`/`None` can be tedious. The question mark
+//! operator, `?`, hides some of the boilerplate of propagating values
+//! up the call stack.
+//!
+//! It replaces this:
+//!
+//! ```
+//! fn add_last_numbers(mut array: Array<u32>) -> Option<u32> {
+//!     let a = array.pop_front();
+//!     let b = array.pop_front();
+//!
+//!     match (a, b) {
+//!         (Option::Some(x), Option::Some(y)) => Option::Some(x + y),
+//!         _ => Option::None,
+//!     }
+//! }
+//!
+//! ```
+//!
+//! With this:
+//!
+//! ```
+//! fn add_last_numbers(mut array: Array<u32>) -> Option<u32> {
+//!     Option::Some(array.pop_front()? + array.pop_front()?)
+//!  }
+//! ```
+//!
+//! *It's much nicer!*
+//!
+//! Ending the expression with `?` will result in the [`Some`]'s unwrapped value, unless the
+//! result is [`None`], in which case [`None`] is returned early from the enclosing function.
+//! `?` can be used in functions that return [`Option`] because of the
+//! early return of [`None`] that it provides.
+//!
+//! [`Some`]: Option::Some
+//! [`None`]: Option::None
+//!
+//! # Method overview
+//!
+//! In addition to working with pattern matching, [`Option`] provides a wide
+//! variety of different methods.
+//!
+//! ## Querying the variant
+//!
+//! The [`is_some`] and [`is_none`] methods return [`true`] if the [`Option`]
+//! is [`Some`] or [`None`], respectively.
+//!
+//! [`is_none`]: OptionTrait::is_none
+//! [`is_some`]: OptionTrait::is_some
+//!
+//! ## Extracting the contained value
+//!
+//! These methods extract the contained value in an [`Option<T>`] when it
+//! is the [`Some`] variant. If the [`Option`] is [`None`]:
+//!
+//! * [`expect`] panics with a provided custom message
+//! * [`unwrap`] panics with a generic message
+//! * [`unwrap_or`] returns the provided default value
+//! * [`unwrap_or_default`] returns the default value of the type `T`
+//!   (which must implement the [`Default`] trait)
+//! * [`unwrap_or_else`] returns the result of evaluating the provided
+//!   function
+//!
+//! [`expect`]: OptionTrait::expect
+//! [`unwrap`]: OptionTrait::unwrap
+//! [`unwrap_or`]: OptionTrait::unwrap_or
+//! [`unwrap_or_default`]: OptionTrait::unwrap_or_default
+//! [`unwrap_or_else`]: OptionTrait::unwrap_or_else
+//!
+//! ## Transforming contained values
+//!
+//! These methods transform [`Option`] to [`Result`]:
+//!
+//! * [`ok_or`] transforms [`Some(v)`] to [`Ok(v)`], and [`None`] to
+//!   [`Err(err)`] using the provided default `err` value
+//!
+//! [`Err(err)`]: Result::Err
+//! [`Ok(v)`]: Result::Ok
+//! [`Some(v)`]: Option::Some
+//! [`ok_or`]: OptionTrait::ok_or
+
 
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
