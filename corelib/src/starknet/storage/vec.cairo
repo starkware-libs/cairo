@@ -1,8 +1,13 @@
-use super::{
-    StorageAsPath, StorageAsPointer, StoragePath, StoragePointer0Offset, Mutable, StoragePathTrait,
-    StoragePathUpdateTrait, StoragePointerReadAccess, StoragePointerWriteAccess,
-};
 use core::Option;
+use super::Mutable;
+use super::StorageAsPath;
+use super::StorageAsPointer;
+use super::StoragePath;
+use super::StoragePathTrait;
+use super::StoragePathUpdateTrait;
+use super::StoragePointer0Offset;
+use super::StoragePointerReadAccess;
+use super::StoragePointerWriteAccess;
 
 /// A type to represent a vec in storage. The length of the storage is stored in the storage
 /// base, while the elements are stored in hash(storage_base, index).

@@ -5,9 +5,9 @@
 
 #[allow(unused_imports)]
 use crate::array::ArrayTrait;
-use crate::traits::Into;
 #[allow(unused_imports)]
 use crate::option::Option;
+use crate::traits::Into;
 
 pub(crate) extern fn print(message: Array<felt252>) nopanic;
 

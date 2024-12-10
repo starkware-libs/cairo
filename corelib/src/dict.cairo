@@ -48,7 +48,7 @@
 //! ```
 
 #[feature("deprecated-index-traits")]
-use crate::traits::{Index, Default, Felt252DictValue};
+use crate::traits::{Default, Felt252DictValue, Index};
 
 /// A dictionary that maps `felt252` keys to a value of any type.
 pub extern type Felt252Dict<T>;
@@ -62,8 +62,8 @@ pub extern type SquashedFelt252Dict<T>;
 pub extern type Felt252DictEntry<T>;
 
 impl SquashedFelt252DictDrop<T, +Drop<T>> of Drop<SquashedFelt252Dict<T>>;
-
-use crate::{RangeCheck, SegmentArena};
+use crate::RangeCheck;
+use crate::SegmentArena;
 use crate::gas::GasBuiltin;
 
 pub(crate) extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;

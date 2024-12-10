@@ -65,13 +65,15 @@ enum QueryableEnum {
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
-        StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref, Vec, VecTrait,
-        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward,
+        Map, MutableVecTrait, StorageAsPath, StorageAsPointer, StoragePathEntry, SubPointers,
+        SubPointersDeref, SubPointersForward, SubPointersMutForward, Vec, VecTrait,
     };
-    use super::{
-        BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList, QueryableEnum,
-        QueryableEnumVariants,
-    };
+    use super::BalancePair;
+    use super::LinkedList;
+    use super::QueryableEnum;
+    use super::QueryableEnumVariants;
+    use super::SlicedBalancePair;
+    use super::SlicedBalanceTrio;
 
     #[storage]
     struct Storage {
@@ -210,13 +212,15 @@ enum QueryableEnum {
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
-        StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref, Vec, VecTrait,
-        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward,
+        Map, MutableVecTrait, StorageAsPath, StorageAsPointer, StoragePathEntry, SubPointers,
+        SubPointersDeref, SubPointersForward, SubPointersMutForward, Vec, VecTrait,
     };
-    use super::{
-        BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList, QueryableEnum,
-        QueryableEnumVariants,
-    };
+    use super::BalancePair;
+    use super::LinkedList;
+    use super::QueryableEnum;
+    use super::QueryableEnumVariants;
+    use super::SlicedBalancePair;
+    use super::SlicedBalanceTrio;
 
     #[storage]
     struct Storage {
@@ -2633,7 +2637,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x1a68a3a571fad80df57476d9fabeb1f73c276067243a61aceb1727204a0bfb0;
+pub const TEST_CLASS_HASH: felt252 = 0x384354420ec9ef8898b8f14416708fec97e69bb488205689fecb2dd7e8b49d9;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -3065,7 +3069,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-lib.cairo:70:5
+lib.cairo:72:5
     #[storage]
     ^^^^^^^^^^
 impls:
@@ -3074,7 +3078,7 @@ impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:70:5
+lib.cairo:72:5
     #[storage]
     ^^^^^^^^^^
 impls:
@@ -3092,6 +3096,6 @@ warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default
 |_^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:75:28
+ --> lib.cairo:77:28
         legacy_map_balace: LegacyMap<usize, usize>,
                            ^^^^^^^^^

@@ -1,10 +1,8 @@
-use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
-use super::utils::{deserialized, serialized};
-
 #[feature("deprecated-bounded-int-trait")]
 use core::integer::BoundedInt;
 use core::num::traits::Zero;
-use starknet::storage::Vec;
+use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress, storage::Vec};
+use super::utils::{deserialized, serialized};
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
@@ -98,13 +96,16 @@ enum QueryableEnum {
 #[starknet::contract]
 mod test_contract {
     use core::starknet::storage::{SubPointersForward, SubPointersMutForward};
-    use super::{
-        AbcEtc, ByteArrays, NonZeros, Vecs, QueryableEnum, QueryableEnumVariants,
-        QueryableEnumVariantsMut,
-    };
     use starknet::storage::{
-        VecTrait, MutableVecTrait, StoragePointerWriteAccess, StoragePointerReadAccess,
+        MutableVecTrait, StoragePointerReadAccess, StoragePointerWriteAccess, VecTrait,
     };
+    use super::AbcEtc;
+    use super::ByteArrays;
+    use super::NonZeros;
+    use super::QueryableEnum;
+    use super::QueryableEnumVariants;
+    use super::QueryableEnumVariantsMut;
+    use super::Vecs;
 
     #[storage]
     struct Storage {

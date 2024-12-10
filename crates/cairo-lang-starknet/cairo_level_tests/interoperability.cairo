@@ -1,5 +1,5 @@
-use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use starknet::SyscallResultTrait;
+use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 
 #[starknet::interface]
 trait IContract<T> {
@@ -34,7 +34,6 @@ mod contract_a {
         }
     }
 }
-
 use contract_a::MyTrait;
 #[test]
 fn test_internal_func() {

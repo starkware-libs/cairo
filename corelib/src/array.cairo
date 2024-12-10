@@ -61,19 +61,18 @@
 //!
 //! [`append`]: ArrayTrait::append
 
-#[feature("deprecated-index-traits")]
-use crate::traits::IndexView;
-
+use crate::RangeCheck;
 use crate::box::BoxTrait;
 #[allow(unused_imports)]
 use crate::gas::withdraw_gas;
+use crate::iter::Iterator;
+use crate::metaprogramming::TypeEqual;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
 use crate::serde::Serde;
-use crate::metaprogramming::TypeEqual;
-use crate::iter::Iterator;
-use crate::RangeCheck;
-
+#[feature("deprecated-index-traits")]
+use crate::traits::IndexView;
+use Option::{None, Some};
 /// A collection of elements of the same type continuous in memory.
 #[derive(Drop)]
 pub extern type Array<T>;
@@ -146,12 +145,13 @@ pub impl ArrayImpl<T> of ArrayTrait<T> {
     /// assert!(arr == array![1, 2, 3]);
     /// ```
     fn append_span<+Clone<T>, +Drop<T>>(ref self: Array<T>, mut span: Span<T>) {
+        // let x = Some(5);
         match span.pop_front() {
-            Option::Some(current) => {
+            Some(current) => {
                 self.append(current.clone());
                 self.append_span(span);
             },
-            Option::None => {},
+            None(()) => {},
         };
     }
 

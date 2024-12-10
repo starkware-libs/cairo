@@ -1,3 +1,7 @@
+use a::b;
+use a::b::c::d;
+use a::b::e::f::{g, h};
+
 #[cfg(test)]
 #[path = "unordered_hash_map_test.rs"]
 mod test;
