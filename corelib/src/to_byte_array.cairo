@@ -38,10 +38,8 @@
 //! assert!(bin == "11111111");
 //! ```
 
-use crate::byte_array::ByteArrayTrait;
-use crate::option::OptionTrait;
 use crate::traits::{Into, TryInto};
-use crate::zeroable::Zeroable;
+use crate::{byte_array::ByteArrayTrait, option::OptionTrait, zeroable::Zeroable};
 
 /// A trait for appending the ASCII representation of a number to an existing `ByteArray`.
 pub trait AppendFormattedToByteArray<T> {

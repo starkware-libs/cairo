@@ -1,13 +1,9 @@
-use crate::option::OptionTrait;
-use crate::result::ResultTrait;
-use crate::traits::{BitAnd, BitNot, BitOr, BitXor, Into, TryInto, Default, Felt252DictValue};
+#[allow(unused_imports)]
+use crate::array::{ArrayTrait, SpanTrait};
+use crate::traits::{BitAnd, BitNot, BitOr, BitXor, Default, Felt252DictValue, Into, TryInto};
 #[allow(unused_imports)]
 use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
-#[allow(unused_imports)]
-use crate::array::ArrayTrait;
-#[allow(unused_imports)]
-use crate::array::SpanTrait;
-use crate::RangeCheck;
+use crate::{RangeCheck, option::OptionTrait, result::ResultTrait};
 
 // TODO(spapini): Add method for const creation from Integer.
 pub trait NumericLiteral<T>;
@@ -2159,7 +2155,7 @@ mod signed_div_rem {
     use crate::internal::bounded_int::{
         BoundedInt, ConstrainHelper, DivRemHelper, NegateHelper, constrain, div_rem, is_zero,
     };
-    use super::{upcast, downcast};
+    use super::{downcast, upcast};
 
     impl DivRemImpl<
         T,

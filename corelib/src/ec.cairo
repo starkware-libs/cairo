@@ -5,8 +5,7 @@
 use crate::array::ArrayTrait;
 #[allow(unused_imports)]
 use crate::traits::{Into, TryInto};
-use crate::zeroable::IsZeroResult;
-use crate::RangeCheck;
+use crate::{RangeCheck, zeroable::IsZeroResult};
 
 pub mod stark_curve {
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.

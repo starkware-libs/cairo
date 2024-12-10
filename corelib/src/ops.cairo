@@ -2,11 +2,11 @@ pub mod index;
 pub use index::{Index, IndexView};
 
 mod arith;
-pub use arith::{AddAssign, SubAssign, MulAssign, DivAssign, RemAssign};
+pub use arith::{AddAssign, DivAssign, MulAssign, RemAssign, SubAssign};
 mod deref;
-pub use deref::{Deref, SnapshotDeref};
 #[feature("deref_mut")]
 pub use deref::DerefMut;
+pub use deref::{Deref, SnapshotDeref};
 mod range;
 pub use range::Range;
 // `RangeOp` is used internally by the compiler.
@@ -14,5 +14,4 @@ pub use range::Range;
 use range::RangeOp;
 
 mod function;
-pub use function::FnOnce;
-pub use function::Fn;
+pub use function::{Fn, FnOnce};

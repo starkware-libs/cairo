@@ -805,7 +805,7 @@ mod inner {
         }
     }
 }
-use inner::{MyType, MyGenericType};
+use inner::{MyGenericType, MyType};
 fn main(other: MyGenericType<MyType>) {
     let _: MyGenericType<MyType> = MyGenericType { x: 3_u16.my_into(), ..2_u32.my_into() };
 }

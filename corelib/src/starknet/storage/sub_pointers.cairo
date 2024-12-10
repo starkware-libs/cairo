@@ -1,4 +1,4 @@
-use super::{StoragePointer, Mutable, StorageAsPointer, StoragePointer0Offset};
+use super::{Mutable, StorageAsPointer, StoragePointer, StoragePointer0Offset};
 
 /// Similar to storage node, but for structs which are stored sequentially in the storage. In
 /// contrast to storage node, the fields of the struct are just offsetted from the base address of

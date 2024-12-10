@@ -1,7 +1,5 @@
-use crate::array::{Span, ArrayTrait, SpanTrait};
-use crate::traits::TryInto;
-use crate::option::OptionTrait;
-use crate::starknet::SyscallResultTrait;
+use crate::array::{ArrayTrait, Span, SpanTrait};
+use crate::{option::OptionTrait, starknet::SyscallResultTrait, traits::TryInto};
 
 const KECCAK_FULL_RATE_IN_BYTES: usize = 136;
 const KECCAK_FULL_RATE_IN_U64S: usize = 17;
