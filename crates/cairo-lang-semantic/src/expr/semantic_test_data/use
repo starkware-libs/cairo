@@ -1023,8 +1023,8 @@ edition = "2024_07"
 
 //! > module_code
 mod a {
-    use super::*;
     use a::a::a::a as b;
+    use super::*;
 }
 
 //! > function_body
@@ -1043,7 +1043,7 @@ Block(
 
 //! > expected_diagnostics
 warning: Unused import: `test::a::b`
- --> lib.cairo:3:18
+ --> lib.cairo:2:18
     use a::a::a::a as b;
                  ^****^
 

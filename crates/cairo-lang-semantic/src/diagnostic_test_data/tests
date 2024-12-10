@@ -970,8 +970,8 @@ edition = "2024_07"
 
 //! > module_code
 mod a {
-    use super::*;
     use a::a::a::a::*;
+    use super::*;
 }
 
 //! > function_body
@@ -983,7 +983,7 @@ mod a {
 
 //! > expected_diagnostics
 error: Cycle detected while resolving 'use' items.
- --> lib.cairo:3:21
+ --> lib.cairo:2:21
     use a::a::a::a::*;
                     ^
 
