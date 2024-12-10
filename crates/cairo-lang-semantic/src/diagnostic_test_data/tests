@@ -192,14 +192,13 @@ test_expr_diagnostics(expect_diagnostics: true)
 mod a {
     use super::B;
 }
-
 use a::B;
 
 //! > function_body
 
 //! > expected_diagnostics
 error: Cycle detected while resolving 'use' items.
- --> lib.cairo:5:8
+ --> lib.cairo:4:8
 use a::B;
        ^
 
@@ -921,7 +920,6 @@ pub mod a {
 pub mod b {
     pub const AMBIGUOUS: u8 = 4;
 }
-
 use a::*;
 use b::*;
 
@@ -934,7 +932,7 @@ AMBIGUOUS
 
 //! > expected_diagnostics
 error: Ambiguous path. Multiple matching items: `test::a::AMBIGUOUS`, `test::b::AMBIGUOUS`
- --> lib.cairo:12:1
+ --> lib.cairo:11:1
 AMBIGUOUS
 ^^^^^^^^^
 
@@ -976,8 +974,8 @@ edition = "2024_07"
 
 //! > module_code
 mod a {
-    use super::*;
     use a::a::a::a::*;
+    use super::*;
 }
 
 //! > function_body
@@ -989,7 +987,7 @@ mod a {
 
 //! > expected_diagnostics
 error: Cycle detected while resolving 'use' items.
- --> lib.cairo:3:21
+ --> lib.cairo:2:21
     use a::a::a::a::*;
                     ^
 
@@ -1033,7 +1031,6 @@ edition = "2024_07"
 mod a {
     const INACCESSIBLE: u8 = 1;
 }
-
 use a::*;
 
 //! > function_body
@@ -1045,7 +1042,7 @@ INACCESSIBLE
 
 //! > expected_diagnostics
 error: Item `test::a::INACCESSIBLE` is not visible in this context through module `test::a`.
- --> lib.cairo:7:1
+ --> lib.cairo:6:1
 INACCESSIBLE
 ^^^^^^^^^^^^
 
@@ -1065,7 +1062,6 @@ mod a {
         pub const C: u8 = 1;
     }
 }
-
 use a::*;
 
 //! > function_body
@@ -1077,7 +1073,7 @@ inaccessible::C
 
 //! > expected_diagnostics
 error: Item `test::a::inaccessible` is not visible in this context through module `test::a`.
- --> lib.cairo:9:1
+ --> lib.cairo:8:1
 inaccessible::C
 ^^^^^^^^^^^^
 
@@ -1103,7 +1099,6 @@ mod c {
         use super::super::a::b::*;
     }
 }
-
 use c::d::*;
 
 //! > function_body
@@ -1115,7 +1110,7 @@ C
 
 //! > expected_diagnostics
 error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
- --> lib.cairo:15:1
+ --> lib.cairo:14:1
 C
 ^
 
@@ -1146,7 +1141,6 @@ mod c {
         pub use super::super::a::b::*;
     }
 }
-
 use c::d::*;
 
 //! > function_body
@@ -1158,7 +1152,7 @@ C
 
 //! > expected_diagnostics
 error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
- --> lib.cairo:15:1
+ --> lib.cairo:14:1
 C
 ^
 
@@ -1190,7 +1184,6 @@ mod e {
         pub use super::super::c::d::*;
     }
 }
-
 use e::f::*;
 
 //! > function_body
@@ -1202,7 +1195,7 @@ C
 
 //! > expected_diagnostics
 error: Item `test::a::b::C` is not visible in this context through module `test::a::b`.
- --> lib.cairo:21:1
+ --> lib.cairo:20:1
 C
 ^
 
@@ -1234,7 +1227,6 @@ mod e {
         pub use super::super::c::d::*;
     }
 }
-
 use e::f::*;
 
 //! > function_body
@@ -1264,7 +1256,6 @@ edition = "2023_01"
 mod a {
     pub const C: u8 = 1;
 }
-
 use a::*;
 
 //! > function_body
@@ -1276,6 +1267,6 @@ use a::*;
 
 //! > expected_diagnostics
 error: Global `use` item is not supported in `V2023_01` edition.
- --> lib.cairo:5:8
+ --> lib.cairo:4:8
 use a::*;
        ^

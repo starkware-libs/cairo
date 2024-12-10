@@ -195,8 +195,8 @@ impl DeserializeTupleNext<
 }
 
 pub mod into_felt252_based {
-    use crate::traits::{Into, TryInto};
     use crate::array::ArrayTrait;
+    use crate::traits::{Into, TryInto};
 
     /// A generic `Serde` implementation for types that can be converted into `felt252` using the
     /// `Into` trait and from `felt252` using the `TryInto` trait.

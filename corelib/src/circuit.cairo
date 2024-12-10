@@ -424,12 +424,11 @@ extern fn get_circuit_output<C, Output>(
 
 /// Helper module to convert into `u384`.
 mod conversions {
-    use crate::internal::{
-        bounded_int, bounded_int::{BoundedInt, AddHelper, MulHelper, DivRemHelper},
-    };
-    use crate::integer::{upcast, downcast};
-
-    use super::{u384, u96};
+    use crate::integer::{downcast, upcast};
+    use crate::internal::bounded_int;
+    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper};
+    use super::u384;
+    use super::u96;
 
     type ConstValue<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
     const POW128: felt252 = 0x100000000000000000000000000000000;

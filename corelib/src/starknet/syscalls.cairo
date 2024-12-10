@@ -11,8 +11,8 @@
 
 use core::gas::GasBuiltin;
 use starknet::{
-    SyscallResult, storage_access::StorageAddress, class_hash::ClassHash,
-    contract_address::ContractAddress,
+    SyscallResult, class_hash::ClassHash, contract_address::ContractAddress,
+    storage_access::StorageAddress,
 };
 
 /// Calls a given contract.

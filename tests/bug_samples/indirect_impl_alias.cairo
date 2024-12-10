@@ -16,7 +16,6 @@ mod impls {
     }
     pub impl ImplAlias2 = Impl2<felt252>;
 }
-
 use impls::ImplAlias1;
 impl Impl2 = impls::ImplAlias2;
 

@@ -51,7 +51,7 @@ use crate::bytes_31::{
 use crate::clone::Clone;
 use crate::cmp::min;
 #[allow(unused_imports)]
-use crate::integer::{u128_safe_divmod, U32TryIntoNonZero};
+use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 use crate::option::OptionTrait;
 #[allow(unused_imports)]
 use crate::serde::Serde;

@@ -5,10 +5,11 @@ trait GetSupply<TContractState> {
 
 #[starknet::contract]
 mod mintable_erc20_ownable {
+    use crate::components::{
+        erc20::erc20 as erc20_comp, mintable::mintable as mintable_comp,
+        ownable::ownable as ownable_comp,
+    };
     use starknet::ContractAddress;
-    use crate::components::erc20::erc20 as erc20_comp;
-    use crate::components::ownable::ownable as ownable_comp;
-    use crate::components::mintable::mintable as mintable_comp;
     #[storage]
     struct Storage {
         #[substorage(v0)]
