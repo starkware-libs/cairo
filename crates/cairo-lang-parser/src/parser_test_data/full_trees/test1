@@ -15,28 +15,28 @@ false
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test1.cairo:6:1
-;
-^
+  | ;
+  | ^
 
 error: Skipped tokens. Expected: parameter.
  --> src/parser_test_data/cairo_test_files/test1.cairo:7:8
-fn foo(,var1: int,, mut ref var2: felt252,) -> int {
-       ^
+  | fn foo(,var1: int,, mut ref var2: felt252,) -> int {
+  |        ^
 
 error: Skipped tokens. Expected: parameter.
  --> src/parser_test_data/cairo_test_files/test1.cairo:7:19
-fn foo(,var1: int,, mut ref var2: felt252,) -> int {
-                  ^
+  | fn foo(,var1: int,, mut ref var2: felt252,) -> int {
+  |                   ^
 
 error: Missing token TerminalRBrace.
  --> src/parser_test_data/cairo_test_files/test1.cairo:30:14
-    return x;
-             ^
+  |     return x;
+  |              ^
 
 error: Missing tokens. Expected an item after attributes.
  --> src/parser_test_data/cairo_test_files/test1.cairo:62:26
-#[attribute_without_item]
-                         ^
+  | #[attribute_without_item]
+  |                          ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)
@@ -852,28 +852,28 @@ false
 //! > expected_diagnostics
 error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test1.cairo:6:1
-;
-^
+  | ;
+  | ^
 
 error: Skipped tokens. Expected: parameter.
  --> src/parser_test_data/cairo_test_files/test1.cairo:7:8
-fn foo(,var1: int,, mut ref var2: felt252,) -> int {
-       ^
+  | fn foo(,var1: int,, mut ref var2: felt252,) -> int {
+  |        ^
 
 error: Skipped tokens. Expected: parameter.
  --> src/parser_test_data/cairo_test_files/test1.cairo:7:19
-fn foo(,var1: int,, mut ref var2: felt252,) -> int {
-                  ^
+  | fn foo(,var1: int,, mut ref var2: felt252,) -> int {
+  |                   ^
 
 error: Missing token TerminalRBrace.
  --> src/parser_test_data/cairo_test_files/test1.cairo:30:14
-    return x;
-             ^
+  |     return x;
+  |              ^
 
 error: Missing tokens. Expected an item after attributes.
  --> src/parser_test_data/cairo_test_files/test1.cairo:62:26
-#[attribute_without_item]
-                         ^
+  | #[attribute_without_item]
+  |                          ^
 
 //! > expected_tree
 └── root (kind: SyntaxFile)

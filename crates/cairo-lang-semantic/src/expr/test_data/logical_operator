@@ -16,18 +16,18 @@ foo
 //! > expected_diagnostics
 error: Expected type "core::bool", found: "core::integer::u128".
  --> lib.cairo:2:5
-    a && b || c
-    ^
+  |     a && b || c
+  |     ^
 
 error: Expected type "core::bool", found: "core::integer::u128".
  --> lib.cairo:2:10
-    a && b || c
-         ^
+  |     a && b || c
+  |          ^
 
 error: Expected type "core::bool", found: "core::integer::u128".
  --> lib.cairo:2:15
-    a && b || c
-              ^
+  |     a && b || c
+  |               ^
 
 //! > ==========================================================================
 
@@ -52,10 +52,10 @@ fn bar<S, T>(a: S, b: bool, c: T) -> bool {
 //! > expected_diagnostics
 error: Expected type "core::bool", found: "S".
  --> lib.cairo:2:5
-    a && Default::default() || c
-    ^
+  |     a && Default::default() || c
+  |     ^
 
 error: Expected type "core::bool", found: "T".
  --> lib.cairo:2:32
-    a && Default::default() || c
-                               ^
+  |     a && Default::default() || c
+  |                                ^

@@ -22,8 +22,8 @@ foo
 //! > expected_diagnostics
 error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:19
-            break 0;
-                  ^
+  |             break 0;
+  |                   ^
 
 //! > ==========================================================================
 
@@ -50,9 +50,12 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "()", found: "core::bool".
- --> lib.cairo:1:23
-fn foo(x: Option<()>) {
-                      ^
+ --> lib.cairo:1:23-9:2
+  |                       V
+  | fn foo(x: Option<()>) {
+  | ...
+  | }
+  | ^
 
 //! > ==========================================================================
 
@@ -74,8 +77,8 @@ foo
 //! > expected_diagnostics
 error: `continue` only allowed inside a `loop`.
  --> lib.cairo:2:5
-    continue;
-    ^*******^
+  |     continue;
+  |     ^*******^
 
 //! > ==========================================================================
 
@@ -97,8 +100,8 @@ foo
 //! > expected_diagnostics
 error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
-    break 5;
-    ^******^
+  |     break 5;
+  |     ^******^
 
 //! > ==========================================================================
 
@@ -122,8 +125,8 @@ foo
 //! > expected_diagnostics
 error: `return` not allowed inside a `loop`.
  --> lib.cairo:3:9
-        return true;
-        ^**********^
+  |         return true;
+  |         ^**********^
 
 //! > ==========================================================================
 
@@ -166,8 +169,8 @@ foo
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::bool", found: "()".
  --> lib.cairo:2:11
-    return;
-          ^
+  |     return;
+  |           ^
 
 //! > ==========================================================================
 
@@ -210,8 +213,8 @@ foo
 //! > expected_diagnostics
 error: `return` not allowed inside a `loop`.
  --> lib.cairo:3:9
-        return;
-        ^*****^
+  |         return;
+  |         ^*****^
 
 //! > ==========================================================================
 
@@ -235,8 +238,8 @@ foo
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::bool", found: "()".
  --> lib.cairo:1:13
-fn foo() -> bool {
-            ^**^
+  | fn foo() -> bool {
+  |             ^**^
 
 //! > ==========================================================================
 
@@ -279,8 +282,8 @@ foo
 //! > expected_diagnostics
 error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
-    break;
-    ^****^
+  |     break;
+  |     ^****^
 
 //! > ==========================================================================
 
@@ -308,8 +311,8 @@ use option::Option;
 //! > expected_diagnostics
 error: `?` not allowed inside a `loop`.
  --> lib.cairo:5:9
-        res?;
-        ^**^
+  |         res?;
+  |         ^**^
 
 //! > ==========================================================================
 
@@ -335,8 +338,8 @@ use option::Option;
 //! > expected_diagnostics
 error: Tail expression not allowed in a `loop` block.
  --> lib.cairo:4:9
-        1
-        ^
+  |         1
+  |         ^
 
 //! > ==========================================================================
 

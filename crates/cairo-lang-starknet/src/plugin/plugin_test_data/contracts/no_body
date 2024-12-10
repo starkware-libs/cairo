@@ -15,11 +15,15 @@ mod test_contract;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contracts without body are not supported.
- --> lib.cairo:1:1
+ --> lib.cairo:1:1-2:19
+V********************
 #[starknet::contract]
-^*******************^
+mod test_contract;
+*****************^
 
 error[E0005]: Module file not found. Expected path: test_contract.cairo
- --> lib.cairo:1:1
+ --> lib.cairo:1:1-2:19
+V********************
 #[starknet::contract]
-^*******************^
+mod test_contract;
+*****************^

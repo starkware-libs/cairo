@@ -56,8 +56,8 @@ fn test_missing_module_file() {
         indoc! {"
             error[E0005]: Module file not found. Expected path: abc.cairo
              --> lib.cairo:3:9
-                    mod abc;
-                    ^******^
+                      | mod abc;
+                      | ^******^
 
             "
         },
@@ -153,13 +153,13 @@ fn test_inline_module_diagnostics() {
     assert_eq!(get_crate_semantic_diagnostics(db, crate_id).format(db), indoc! {r#"
             error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:4:16
-                    return 5_felt252;
-                           ^*******^
+              |         return 5_felt252;
+              |                ^*******^
 
             error: Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
              --> lib.cairo:4:16
-                    return 5_felt252;
-                           ^*******^
+              |         return 5_felt252;
+              |                ^*******^
 
             "#},);
 }
@@ -194,13 +194,13 @@ fn test_inline_inline_module_diagnostics() {
         get_crate_semantic_diagnostics(db, crate_id).format(db),
         indoc! {r#"error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:3:16
-                    return 1_felt252;
-                           ^*******^
+              |         return 1_felt252;
+              |                ^*******^
 
             error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:9:20
-                        return 2_felt252;
-                               ^*******^
+              |             return 2_felt252;
+              |                    ^*******^
 
     "#},
     );
@@ -259,28 +259,28 @@ fn test_analyzer_diagnostics() {
     assert_eq!(get_crate_semantic_diagnostics(db, crate_id).format(db), indoc! {r#"
         error: Plugin diagnostic: Use items for u128 disallowed.
          --> lib.cairo:7:20
-        use core::integer::u128 as long_u128_rename;
-                           ^**********************^
+          | use core::integer::u128 as long_u128_rename;
+          |                    ^**********************^
 
         error: Plugin diagnostic: Use items for u128 disallowed.
          --> lib.cairo:8:5
-        use u128 as short_u128_rename;
-            ^***********************^
+          | use u128 as short_u128_rename;
+          |     ^***********************^
 
         error: Plugin diagnostic: Use items for u128 disallowed.
          --> lib.cairo:9:12
-        use inner::long_u128_rename as additional_u128_rename;
-                   ^****************************************^
+          | use inner::long_u128_rename as additional_u128_rename;
+          |            ^****************************************^
 
         error: Plugin diagnostic: Use items for u128 disallowed.
          --> lib.cairo:2:24
-            use core::integer::u128 as long_u128_rename;
-                               ^**********************^
+          |     use core::integer::u128 as long_u128_rename;
+          |                        ^**********************^
 
         error: Plugin diagnostic: Use items for u128 disallowed.
          --> lib.cairo:3:9
-            use u128 as short_u128_rename;
-                ^***********************^
+          |     use u128 as short_u128_rename;
+          |         ^***********************^
 
     "#},);
 }

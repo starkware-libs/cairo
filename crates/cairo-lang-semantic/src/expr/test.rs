@@ -231,8 +231,8 @@ fn test_expr_call_failures() {
     assert_eq!(diagnostics, indoc! { "
             error: Function not found.
              --> lib.cairo:2:1
-            foo()
-            ^*^
+              | foo()
+              | ^*^
 
         "});
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");

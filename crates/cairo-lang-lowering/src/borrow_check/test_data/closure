@@ -24,13 +24,13 @@ foo
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:6:17
-        let _ = b.append(d);
-                ^
+  |         let _ = b.append(d);
+  |                 ^
 
 error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:9:17
-        let _ = c.insert(d, d);
-                ^
+  |         let _ = c.insert(d, d);
+  |                 ^
 
 //! > lowering_diagnostics
 
@@ -101,8 +101,8 @@ foo
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:3:17
-        let _ = a.append(b);
-                ^
+  |         let _ = a.append(b);
+  |                 ^
 
 //! > lowering_diagnostics
 
@@ -170,8 +170,8 @@ extern fn use_f<T>(f: T) nopanic;
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:4:17
-        let _ = a.append(b);
-                ^
+  |         let _ = a.append(b);
+  |                 ^
 
 //! > lowering_diagnostics
 
@@ -202,8 +202,8 @@ extern fn use_f<T>(f: T) nopanic;
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:4:17
-        let _ = a.len();
-                ^
+  |         let _ = a.len();
+  |                 ^
 
 //! > lowering_diagnostics
 
@@ -233,8 +233,8 @@ extern fn use_f<T>(f: T) nopanic;
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:4:9
-        a = array![];
-        ^
+  |         a = array![];
+  |         ^
 
 //! > lowering_diagnostics
 
@@ -352,8 +352,8 @@ foo
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:4:9
-        x * (a + 3)
-        ^
+  |         x * (a + 3)
+  |         ^
 
 //! > lowering_diagnostics
 
@@ -388,13 +388,13 @@ foo
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:7:9
-        x * (a + 3)
-        ^
+  |         x * (a + 3)
+  |         ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:11:9
-    let y = c2(2);
-        ^
+  |     let y = c2(2);
+  |         ^
 
 //! > lowering_diagnostics
 

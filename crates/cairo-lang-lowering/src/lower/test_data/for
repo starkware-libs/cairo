@@ -92,8 +92,8 @@ End:
 
 
 Generated loop lowering for source location:
-    for _x in iter {
-    ^**************^
+  |     for _x in iter {
+  |     ^**************^
 
 Parameters: v0: core::array::SpanIter::<core::felt252>, v1: core::felt252, v2: core::felt252
 blk0 (root):

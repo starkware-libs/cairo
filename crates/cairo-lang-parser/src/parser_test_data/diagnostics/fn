@@ -11,10 +11,10 @@ fn missing_id<T> (ref: Ref::<T>) { }
 //! > expected_diagnostics
 error: 'extern' is a reserved identifier.
  --> dummy_file.cairo:1:3
-#[extern]
-  ^****^
+  | #[extern]
+  |   ^****^
 
 error: Missing token TerminalIdentifier.
  --> dummy_file.cairo:3:22
-fn missing_id<T> (ref: Ref::<T>) { }
-                     ^
+  | fn missing_id<T> (ref: Ref::<T>) { }
+  |                      ^

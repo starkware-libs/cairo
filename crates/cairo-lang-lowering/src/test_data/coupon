@@ -117,12 +117,12 @@ fn bar() nopanic {}
 //! > lowering_diagnostics
 error: Variable was previously moved.
  --> lib.cairo:4:5
-    x // Variable was previously moved.
-    ^
+  |     x // Variable was previously moved.
+  |     ^
 note: variable was previously used here:
   --> lib.cairo:3:21
-    bar(__coupon__: x);
-                    ^
+  |     bar(__coupon__: x);
+  |                     ^
 note: Trait has no implementation in context: core::traits::Copy::<test::bar::Coupon>.
 
 //! > lowering_flat

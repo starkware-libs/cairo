@@ -201,18 +201,18 @@ ExprPath
 //! > expected_diagnostics
 error: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:2:40
-    let expensive_closure =  || -> u32 3;
-                                       ^^
+  |     let expensive_closure =  || -> u32 3;
+  |                                        ^^
 
 error: Missing token TerminalLBrace.
  --> dummy_file.cairo:2:42
-    let expensive_closure =  || -> u32 3;
-                                         ^
+  |     let expensive_closure =  || -> u32 3;
+  |                                          ^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:2:42
-    let expensive_closure =  || -> u32 3;
-                                         ^
+  |     let expensive_closure =  || -> u32 3;
+  |                                          ^
 
 //! > expected_tree
 └── Top level kind: ExprClosure
@@ -247,18 +247,18 @@ ExprPath
 //! > expected_diagnostics
 error: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:2:41
-    let expensive_closure =  || nopanic 3;
-                                        ^^
+  |     let expensive_closure =  || nopanic 3;
+  |                                         ^^
 
 error: Missing token TerminalLBrace.
  --> dummy_file.cairo:2:43
-    let expensive_closure =  || nopanic 3;
-                                          ^
+  |     let expensive_closure =  || nopanic 3;
+  |                                           ^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:2:43
-    let expensive_closure =  || nopanic 3;
-                                          ^
+  |     let expensive_closure =  || nopanic 3;
+  |                                           ^
 
 //! > expected_tree
 └── Top level kind: ExprClosure

@@ -36,8 +36,8 @@ fn foo() {
 //! > expected_diagnostics
 error: ref argument must be a variable.
  --> lib.cairo:2:5
-    4 += 4;
-    ^
+  |     4 += 4;
+  |     ^
 
 //! > ==========================================================================
 
@@ -60,8 +60,8 @@ fn foo() {
 //! > expected_diagnostics
 error: ref argument must be a mutable variable.
  --> lib.cairo:3:5
-    x += 4;
-    ^
+  |     x += 4;
+  |     ^
 
 //! > ==========================================================================
 
@@ -84,8 +84,8 @@ fn foo() {
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::ops::arith::AddAssign::<core::felt252, core::bool>.
  --> lib.cairo:3:5
-    x += true;
-    ^*******^
+  |     x += true;
+  |     ^*******^
 
 //! > ==========================================================================
 
@@ -108,5 +108,5 @@ fn foo() {
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::ops::arith::DivAssign::<core::bool, core::bool>.
  --> lib.cairo:3:5
-    x /= false;
-    ^********^
+  |     x /= false;
+  |     ^********^

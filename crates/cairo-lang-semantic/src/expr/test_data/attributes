@@ -24,10 +24,10 @@ enum MyEnum {
 //! > expected_diagnostics
 error: Can not create instances of phantom types.
  --> lib.cairo:9:5
-    MyStruct {};
-    ^*********^
+  |     MyStruct {};
+  |     ^*********^
 
 error: Can not create instances of phantom types.
  --> lib.cairo:10:5
-    MyEnum::a(3);
-    ^**********^
+  |     MyEnum::a(3);
+  |     ^**********^
