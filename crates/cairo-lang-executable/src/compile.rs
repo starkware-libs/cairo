@@ -115,7 +115,7 @@ pub fn compile_executable_in_prepared_db(
 fn originating_function_path(db: &RootDatabase, wrapper: ConcreteFunctionWithBodyId) -> String {
     let wrapper_name = wrapper.name(db);
     let wrapper_full_path = wrapper.base_semantic_function(db).full_path(db.upcast());
-    let Some(wrapped_name) = wrapper_name.strip_suffix(EXECUTABLE_PREFIX) else {
+    let Some(wrapped_name) = wrapper_name.strip_prefix(EXECUTABLE_PREFIX) else {
         return wrapper_full_path;
     };
     let Some(wrapper_path_to_module) = wrapper_full_path.strip_suffix(wrapper_name.as_str()) else {

@@ -8,6 +8,7 @@ use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_executable::compile::compile_executable;
 use cairo_lang_executable::executable::{EntryPointKind, Executable};
 use cairo_lang_runner::{Arg, CairoHintProcessor, build_hints_dict};
+use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
 use cairo_vm::types::layout_name::LayoutName;
 use cairo_vm::types::program::Program;
@@ -55,8 +56,8 @@ struct BuildArgs {
 #[derive(Parser, Debug)]
 struct RunArgs {
     /// Serialized arguments to the executable function.
-    #[arg(long, value_delimiter = ',', conflicts_with = "build_only")]
-    args: Vec<BigInt>,
+    #[clap(flatten)]
+    args: SerializedArgs,
     /// Whether to print the outputs.
     #[arg(long, default_value_t = false, conflicts_with = "build_only")]
     print_outputs: bool,
@@ -83,6 +84,22 @@ struct RunArgs {
     allow_missing_builtins: Option<bool>,
     #[clap(flatten)]
     proof: ProofModeArgs,
+}
+
+#[derive(Parser, Debug)]
+#[command(group = clap::ArgGroup::new("serialized-args").multiple(false).conflicts_with("build_only"))]
+struct SerializedArgs {
+    /// Serialized arguments to the executable function as a list.
+    #[arg(
+        long = "args",
+        group = "serialized-args",
+        value_delimiter = ',',
+        conflicts_with = "build_only"
+    )]
+    as_list: Vec<BigInt>,
+    /// Serialized arguments to the executable function from a file.
+    #[arg(long = "args-file", group = "serialized-args", conflicts_with = "build_only")]
+    as_file: Option<PathBuf>,
 }
 
 #[derive(Parser, Debug)]
@@ -135,8 +152,8 @@ fn main() -> anyhow::Result<()> {
         let entrypoint = executable
             .entrypoints
             .iter()
-            .find(|e| matches!(e.kind, EntryPointKind::NonReturning))
-            .with_context(|| "No function entrypoint found.")?;
+            .find(|e| matches!(e.kind, EntryPointKind::Standalone))
+            .with_context(|| "No `Standalone` entrypoint found.")?;
         Program::new_for_proof(
             entrypoint.builtins.clone(),
             data,
@@ -152,8 +169,8 @@ fn main() -> anyhow::Result<()> {
         let entrypoint = executable
             .entrypoints
             .iter()
-            .find(|e| matches!(e.kind, EntryPointKind::Function))
-            .with_context(|| "No function entrypoint found.")?;
+            .find(|e| matches!(e.kind, EntryPointKind::Bootloader))
+            .with_context(|| "No `Bootloader` entrypoint found.")?;
         Program::new(
             entrypoint.builtins.clone(),
             data,
@@ -166,11 +183,18 @@ fn main() -> anyhow::Result<()> {
         )
     }
     .with_context(|| "Failed setting up program.")?;
+
+    let user_args = if let Some(path) = args.run.args.as_file {
+        let as_vec: Vec<BigUintAsHex> = serde_json::from_reader(std::fs::File::open(&path)?)
+            .with_context(|| "Failed reading args file.")?;
+        as_vec.into_iter().map(|v| Arg::Value(v.value.into())).collect()
+    } else {
+        args.run.args.as_list.iter().map(|v| Arg::Value(v.into())).collect()
+    };
+
     let mut hint_processor = CairoHintProcessor {
         runner: None,
-        user_args: vec![vec![Arg::Array(
-            args.run.args.iter().map(|v| Arg::Value(v.into())).collect(),
-        )]],
+        user_args: vec![vec![Arg::Array(user_args)]],
         string_to_hint,
         starknet_state: Default::default(),
         run_resources: Default::default(),

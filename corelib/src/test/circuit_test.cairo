@@ -136,6 +136,27 @@ fn test_fill_inputs_loop() {
 }
 
 #[test]
+fn test_u384_serde() {
+    let value = u384 {
+        limb0: 0xb000000cd000000ef0000000,
+        limb1: 0x50000006700000089000000a,
+        limb2: 0x100000023000000450000000,
+        limb3: 0x80000009a000000bc0000000,
+    };
+    let serialized = array![
+        0x50000006700000089000000ab000000cd000000ef0000000,
+        0x80000009a000000bc0000000100000023000000450000000,
+    ];
+    let mut buffer = array![];
+    value.serialize(ref buffer);
+    assert!(buffer == serialized);
+
+    let mut serialized = serialized.span();
+
+    assert!(Serde::<u384>::deserialize(ref serialized) == Option::Some(value));
+}
+
+#[test]
 fn test_u384_zero() {
     assert_eq!(Zero::zero(), u384 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 });
     assert!(Zero::is_zero(@u384 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }));

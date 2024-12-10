@@ -31,3 +31,6 @@ use a::{c, d};
 mod w;
 use a::{*, a, b, c};
 use d::{*, e};
+// Testing not merging the top level.
+use x;
+use y;

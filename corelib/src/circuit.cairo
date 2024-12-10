@@ -431,7 +431,7 @@ mod conversions {
     use crate::internal::{
         bounded_int, bounded_int::{BoundedInt, AddHelper, MulHelper, DivRemHelper},
     };
-    use crate::integer::upcast;
+    use crate::integer::{upcast, downcast};
 
     use super::{u384, u96};
 
@@ -507,6 +507,14 @@ mod conversions {
         u384 { limb0, limb1, limb2: upcast(limb2), limb3: 0 }
     }
 
+    pub fn felt252_try_into_two_u96(value: felt252) -> Option<(u96, u96)> {
+        let v: u256 = value.into();
+        let (limb1_low32, limb0) = bounded_int::div_rem(v.low, NZ_POW96_TYPED);
+        let limb1_high64: BoundedInt<0, { POW64 - 1 }> = downcast(v.high)?;
+        let limb1 = bounded_int::add(bounded_int::mul(limb1_high64, POW32_TYPED), limb1_low32);
+        Option::Some((limb0, limb1))
+    }
+
     pub fn try_into_u128(value: u384) -> Option<u128> {
         if value.limb2 != 0 || value.limb3 != 0 {
             return Option::None;
@@ -540,6 +548,10 @@ mod conversions {
             },
         )
     }
+
+    pub fn two_u96_into_felt252(limb0: u96, limb1: u96) -> felt252 {
+        limb0.into() + limb1.into() * POW96
+    }
 }
 
 impl U128IntoU384 of Into<u128, u384> {
@@ -569,6 +581,21 @@ impl U384TryIntoU128 of TryInto<u384, u128> {
 impl U384TryIntoU256 of TryInto<u384, u256> {
     fn try_into(self: u384) -> Option<u256> {
         conversions::try_into_u256(self)
+    }
+}
+
+impl U384Serde of Serde<u384> {
+    fn serialize(self: @u384, ref output: Array<felt252>) {
+        output.append(conversions::two_u96_into_felt252(*self.limb0, *self.limb1));
+        output.append(conversions::two_u96_into_felt252(*self.limb2, *self.limb3));
+    }
+
+    fn deserialize(ref serialized: Span<felt252>) -> Option<u384> {
+        let [l01, l23] = (*serialized.multi_pop_front::<2>()?).unbox();
+        let (limb0, limb1) = conversions::felt252_try_into_two_u96(l01)?;
+        let (limb2, limb3) = conversions::felt252_try_into_two_u96(l23)?;
+
+        return Option::Some(u384 { limb0, limb1, limb2, limb3 });
     }
 }
 

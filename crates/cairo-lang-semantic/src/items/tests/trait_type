@@ -1140,9 +1140,9 @@ error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTr
                ^***********************^
 
 error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
- --> lib.cairo:19:30
+ --> lib.cairo:19:14
 fn bar1() -> MyTrait::MyType {
-                             ^
+             ^*************^
 
 error: Unexpected argument type. Expected: "core::integer::u32", found: "core::integer::u16".
  --> lib.cairo:23:18
@@ -1385,9 +1385,9 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
- --> lib.cairo:8:31
+ --> lib.cairo:8:18
     fn foo1() -> Self::MyType {
-                              ^
+                 ^**********^
 
 //! > ==========================================================================
 
@@ -1520,9 +1520,9 @@ error: Unexpected return type. Expected: "core::integer::u32", found: "core::int
            ^
 
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
- --> lib.cairo:12:54
+ --> lib.cairo:12:37
 fn ret_expr(x: MyTrait::MyType1) -> MyTrait::MyType2 {
-                                                     ^
+                                    ^**************^
 
 error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
  --> lib.cairo:16:21
@@ -1545,9 +1545,9 @@ error: If blocks have incompatible types: "core::integer::u16" and "core::intege
     ^*******^
 
 error: Unexpected return type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
- --> lib.cairo:44:79
+ --> lib.cairo:44:54
 fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-                                                                              ^
+                                                     ^**********************^
 
 //! > ==========================================================================
 
@@ -1669,39 +1669,39 @@ fn complex2(
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::option::Option::<core::integer::u32>", found: "core::option::Option::<core::integer::u16>".
- --> lib.cairo:13:74
+ --> lib.cairo:13:49
 fn generic_args(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
-                                                                         ^
+                                                ^**********************^
 
 error: Unexpected return type. Expected: "(core::integer::u32, core::integer::u16)", found: "(core::integer::u16, core::integer::u32)".
- --> lib.cairo:16:92
+ --> lib.cairo:16:55
 fn tuple(x: MyTrait::MyType1, y: MyTrait::MyType2) -> (MyTrait::MyType2, MyTrait::MyType1) {
-                                                                                           ^
+                                                      ^**********************************^
 
 error: Unexpected return type. Expected: "[core::integer::u32; 3]", found: "[core::integer::u16; 3]".
- --> lib.cairo:19:71
+ --> lib.cairo:19:49
 fn fix_sized_array(x: [MyTrait::MyType1; 3]) -> [MyTrait::MyType2; 3] {
-                                                                      ^
+                                                ^*******************^
 
 error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
- --> lib.cairo:22:58
+ --> lib.cairo:22:39
 fn snapshot(x: @@MyTrait::MyType1) -> @@MyTrait::MyType2 {
-                                                         ^
+                                      ^****************^
 
 error: Unexpected return type. Expected: "@@core::integer::u32", found: "@@core::integer::u16".
- --> lib.cairo:25:58
+ --> lib.cairo:25:39
 fn snapshot2(x: @MyTrait::MyType1) -> @@MyTrait::MyType2 {
-                                                         ^
+                                      ^****************^
 
 error: Unexpected return type. Expected: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
- --> lib.cairo:33:61
+ --> lib.cairo:33:6
 ) -> @(u32, Option<@Result<[Option<u32>; 3], (@u32, u32)>>) {
-                                                            ^
+     ^****************************************************^
 
 error: Unexpected return type. Expected: "@(core::integer::u16, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)", found: "@(core::integer::u32, core::option::Option::<@core::result::Result::<[core::option::Option::<core::integer::u32>; 3], (@core::integer::u32, core::integer::u32)>>)".
- --> lib.cairo:41:3
-) {
-  ^
+ --> lib.cairo:38:6
+) -> @(
+     ^^
 
 //! > ==========================================================================
 
@@ -1799,9 +1799,9 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
- --> lib.cairo:9:37
+ --> lib.cairo:9:33
     fn bar(x: Self::MyType1) -> u32 {
-                                    ^
+                                ^*^
 
 //! > ==========================================================================
 
@@ -2339,9 +2339,9 @@ trait MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::felt252", found: "core::integer::u32".
- --> lib.cairo:9:15
+ --> lib.cairo:9:8
 >() -> I2::ty {
-              ^
+       ^****^
 
 //! > ==========================================================================
 
@@ -2690,9 +2690,9 @@ trait MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u8".
- --> lib.cairo:4:77
+ --> lib.cairo:4:70
 fn bar<impl I1: MyTrait[ty: u32], impl I2: MyTrait[ty: I1::ty]>() -> I2::ty {
-                                                                            ^
+                                                                     ^****^
 
 //! > ==========================================================================
 
@@ -2831,9 +2831,9 @@ trait MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "J1::ty", found: "core::felt252".
- --> lib.cairo:8:39
+ --> lib.cairo:8:32
 fn bar2<impl J1: MyTrait>() -> J1::ty {
-                                      ^
+                               ^****^
 
 //! > ==========================================================================
 
@@ -2890,9 +2890,9 @@ trait MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u32".
- --> lib.cairo:8:47
+ --> lib.cairo:8:40
 fn bar2<impl I1: MyTrait[ty: u8]>() -> I1::ty {
-                                              ^
+                                       ^****^
 
 //! > ==========================================================================
 

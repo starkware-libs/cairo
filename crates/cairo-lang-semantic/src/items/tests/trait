@@ -138,9 +138,9 @@ error: The signature of function `param_test` is incompatible with trait `MyTrai
                  ^******************************************^
 
 error: Unexpected return type. Expected: "core::integer::u128", found: "()".
- --> lib.cairo:26:63
+ --> lib.cairo:26:58
     fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
-                                                              ^
+                                                         ^**^
 
 error: Parameter of impl function MyImpl2::no_ret_ty is incompatible with MyTrait::no_ret_ty. It should not be a reference.
  --> lib.cairo:30:18
@@ -996,9 +996,9 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u32", found: "core::integer::u16".
- --> lib.cairo:6:22
+ --> lib.cairo:6:18
     fn foo1() -> u32 {
-                     ^
+                 ^*^
 
 //! > ==========================================================================
 

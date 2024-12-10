@@ -340,10 +340,18 @@ impl FunctionId {
     pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
         self.lookup_intern(db).semantic_full_path(db)
     }
-    pub fn get_extern(&self, db: &dyn LoweringGroup) -> Option<ExternFunctionId> {
+    /// Returns the function as an `ExternFunctionId` and its generic arguments, if it is an
+    /// `extern` functions.
+    pub fn get_extern(
+        &self,
+        db: &dyn LoweringGroup,
+    ) -> Option<(ExternFunctionId, Vec<GenericArgumentId>)> {
         let semantic = try_extract_matches!(self.lookup_intern(db), FunctionLongId::Semantic)?;
-        let generic = semantic.get_concrete(db.upcast()).generic_function;
-        try_extract_matches!(generic, GenericFunctionId::Extern)
+        let concrete = semantic.get_concrete(db.upcast());
+        Some((
+            try_extract_matches!(concrete.generic_function, GenericFunctionId::Extern)?,
+            concrete.generic_args,
+        ))
     }
 }
 pub trait SemanticFunctionIdEx {

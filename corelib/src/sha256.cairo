@@ -1,24 +1,56 @@
+//! Implementation of the SHA-256 cryptographic hash function.
+//!
+//! This module provides functions to compute SHA-256 hashes of data.
+//! The input data can be an array of 32-bit words, or a `ByteArray`.
+//!
+//! # Examples
+//!
+//! ```
+//! use core::sha256::compute_sha256_byte_array;
+//!
+//! let data = "Hello";
+//! let hash = compute_sha256_byte_array(@data);
+//! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
+//! 0x7d17648, 0x26381969]);
+//! ```
 use crate::starknet::SyscallResultTrait;
 
 /// A handle to the state of a SHA-256 hash.
 #[derive(Copy, Drop)]
 pub(crate) extern type Sha256StateHandle;
 
-/// Initializes a new SHA-256 state handle.
+/// Initializes a new SHA-256 state handle with the given initial state.
 extern fn sha256_state_handle_init(state: Box<[u32; 8]>) -> Sha256StateHandle nopanic;
 
-/// returns the state of a SHA-256 hash.
+/// Returns the final state of a SHA-256 hash computation.
 extern fn sha256_state_handle_digest(state: Sha256StateHandle) -> Box<[u32; 8]> nopanic;
 
+/// Initial hash values for SHA-256 as specified in FIPS 180-4.
 const SHA256_INITIAL_STATE: [u32; 8] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 ];
 
-/// Computes the SHA-256 hash of the input array.
-/// input is an array of 32-bit words.
-/// use last_input_word when the number of bytes in the last input word is less than 4.
-/// last_input_num_bytes is the number of bytes in the last input word (must be less than 4).
-/// return the SHA-256 hash of the `input array` + `last_input_word` as big endian.
+/// Computes the SHA-256 hash of an array of 32-bit words.
+///
+/// # Arguments
+///
+/// * `input` - An array of `u32` values to hash
+/// * `last_input_word` - The final word when input is not word-aligned
+/// * `last_input_num_bytes` - Number of bytes in the last input word (must be less than 4)
+///
+/// # Returns
+///
+/// * The SHA-256 hash of the `input array` + `last_input_word` as big endian
+///
+/// # Examples
+///
+/// ```
+/// use core::sha256::compute_sha256_u32_array;
+///
+/// let hash = compute_sha256_u32_array(array![0x68656c6c], 0x6f, 1);
+/// assert!(hash == [0x2cf24dba, 0x5fb0a30e, 0x26e83b2a, 0xc5b9e29e, 0x1b161e5c, 0x1fa7425e,
+/// 0x73043362, 0x938b9824]);
+/// ```
 pub fn compute_sha256_u32_array(
     mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u32,
 ) -> [u32; 8] {
@@ -34,7 +66,18 @@ pub fn compute_sha256_u32_array(
     sha256_state_handle_digest(state).unbox()
 }
 
-/// Computes the SHA-256 hash of the input ByteArray.
+/// Computes the SHA-256 hash of the input `ByteArray`.
+///
+/// # Examples
+///
+/// ```
+/// use core::sha256::compute_sha256_byte_array;
+///
+//! let data = "Hello";
+//! let hash = compute_sha256_byte_array(@data);
+//! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
+//! 0x7d17648, 0x26381969]);
+/// ```
 pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
     let mut word_arr = array![];
     let len = arr.len();
@@ -49,6 +92,7 @@ pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
         word_arr.append(word);
         index = index + 4;
     };
+
     let last = match rem {
         0 => 0,
         1 => arr.at(len - 1).unwrap().into(),
@@ -57,14 +101,21 @@ pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
             + arr.at(len - 2).unwrap().into() * 0x100
             + arr.at(len - 3).unwrap().into() * 0x10000,
     };
+
     compute_sha256_u32_array(word_arr, last, rem.into())
 }
 
-/// Adds padding to the input array for SHA-256. The padding is defined as follows:
-/// 1. Append a single bit with value 1 to the end of the array.
-/// 2. Append zeros until the length of the array is 448 mod 512.
-/// 3. Append the length of the array in bits as a 64-bit number.
-/// use last_input_word when the number of bytes in the last input word is less than 4.
+/// Adds padding to the input array according to the SHA-256 specification.
+///
+/// The padding follows FIPS 180-4:
+/// 1. Append a single '1' bit to
+/// 2. Append zeros until data length ≡ 448 (mod 512)
+/// 3. Append the original message length as a 64-bit big-endian integer
+///
+/// # Arguments
+/// * `arr` - Array to pad (modified in place)
+/// * `last_input_word` - Final word for non-word-aligned inputs
+/// * `last_input_num_bytes` - Number of valid bytes in last_input_word
 fn add_sha256_padding(ref arr: Array<u32>, last_input_word: u32, last_input_num_bytes: u32) {
     let len = arr.len();
     if last_input_num_bytes == 0 {

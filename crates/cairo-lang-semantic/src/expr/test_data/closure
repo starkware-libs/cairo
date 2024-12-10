@@ -18,9 +18,9 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::i32", found: "core::integer::u32".
- --> lib.cairo:2:15
+ --> lib.cairo:2:11
     || -> i32 {
-              ^
+          ^*^
 
 //! > ==========================================================================
 

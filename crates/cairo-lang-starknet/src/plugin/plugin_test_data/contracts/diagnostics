@@ -1090,9 +1090,9 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:6:59
+ --> lib.cairo:6:40
     fn foo(ref self: ContractState) -> (felt252, felt252) {}
-                                                          ^^
+                                       ^****************^
 
 //! > ==========================================================================
 
@@ -1530,9 +1530,9 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:8:29
+ --> lib.cairo:8:10
     ) -> (felt252, felt252) {}
-                            ^^
+         ^****************^
 
 //! > ==========================================================================
 

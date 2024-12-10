@@ -152,9 +152,9 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::never", found: "core::felt252".
- --> lib.cairo:1:19
+ --> lib.cairo:1:13
 fn foo() -> never {
-                  ^
+            ^***^
 
 //! > ==========================================================================
 
