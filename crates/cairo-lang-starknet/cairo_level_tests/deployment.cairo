@@ -9,7 +9,8 @@ trait IValue<TContractState> {
 #[starknet::contract]
 mod self_caller {
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use super::{IValueDispatcher, IValueDispatcherTrait};
+    use super::IValueDispatcher;
+    use super::IValueDispatcherTrait;
     #[storage]
     struct Storage {
         value: felt252,

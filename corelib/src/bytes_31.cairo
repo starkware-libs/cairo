@@ -14,11 +14,11 @@
 //! assert!(value[0] == 0xbb);
 //! ```
 
+use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::integer::{u128_safe_divmod, u128_to_felt252};
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
-use crate::RangeCheck;
 use crate::traits::{Into, TryInto};
 
 pub(crate) const BYTES_IN_BYTES31: usize = 31;
@@ -232,7 +232,7 @@ impl Bytes31PartialEq of PartialEq<bytes31> {
 }
 
 mod helpers {
-    use core::internal::bounded_int::{DivRemHelper, BoundedInt, div_rem};
+    use core::internal::bounded_int::{BoundedInt, DivRemHelper, div_rem};
 
     impl DivRemU128By256 of DivRemHelper<u128, BoundedInt<256, 256>> {
         type DivT = BoundedInt<0, 0xffffffffffffffffffffffffffffff>;

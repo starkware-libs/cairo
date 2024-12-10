@@ -11,8 +11,8 @@ trait FirstInterface<T> {
 mod toto {
     #[storage]
     struct Storage {}
-
-    use super::{FirstInterfaceDispatcher, FirstInterfaceDispatcherTrait};
+    use super::FirstInterfaceDispatcher;
+    use super::FirstInterfaceDispatcherTrait;
 
     #[external(v0)]
     fn test_mint_and_unbox(self: @ContractState) {

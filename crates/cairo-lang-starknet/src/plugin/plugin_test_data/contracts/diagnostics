@@ -11980,7 +11980,6 @@ trait ContractTrait<TContractState> {
 #[starknet::contract]
 mod contract {
     component!(path: super::test_component, storage: component_member, event: CompEvent);
-
     use super::ContractTrait;
     #[storage]
     struct Storage {
@@ -12007,7 +12006,7 @@ mod contract {
 error[E0002]: Method `write` could not be called on type `core::starknet::storage::storage_base::StorageBase::<core::integer::u32>`.
 Candidate `core::starknet::storage::map::StorageMapWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::map::StorageMapWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::integer::u32>>.
 Candidate `core::starknet::storage::StoragePointerWriteAccess::write` inference failed with: Trait has no implementation in context: core::starknet::storage::StoragePointerWriteAccess::<core::starknet::storage::storage_base::StorageBase::<core::integer::u32>>.
- --> lib.cairo:35:40
+ --> lib.cairo:34:40
             self.component_member.data.write();
                                        ^^^^^
 
@@ -12030,7 +12029,6 @@ trait ContractTrait<TContractState> {
 #[starknet::contract]
 mod contract {
     component!(path: super::test_component, storage: component_member, event: CompEvent);
-
     use super::ContractTrait;
     #[storage]
     struct Storage {
@@ -12836,7 +12834,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x3ce880c1c1fe3435239eab46a6ebc0ff304b8a4b4eb9e2c683d2ddb2746437f;
+pub const TEST_CLASS_HASH: felt252 = 0x29df08f1d7a448905745936c947da165c96a5e2fdbd90ffd2bdabbc7a7e0b1d;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -12905,7 +12903,7 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
 }
 
 
-lib.cairo:26:14
+lib.cairo:25:14
     #[derive(Drop, starknet::Event)]
              ^^^^
 impls:
@@ -12913,7 +12911,7 @@ impls:
 impl EventDrop of core::traits::Drop::<Event>;
 
 
-lib.cairo:26:20
+lib.cairo:25:20
     #[derive(Drop, starknet::Event)]
                    ^^^^^^^^^^^^^^^
 starknet_derive:
@@ -12952,7 +12950,7 @@ impl EventCompEventIntoEvent of Into<super::test_component::Event, Event> {
 
 
 
-lib.cairo:19:5
+lib.cairo:18:5
     #[storage]
     ^^^^^^^^^^
 impls:
@@ -12961,7 +12959,7 @@ impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
 impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 
-lib.cairo:19:5
+lib.cairo:18:5
     #[storage]
     ^^^^^^^^^^
 impls:

@@ -2,14 +2,14 @@
 //!
 //! Provides extended GCD, modular inverse, and modular arithmetic operations.
 
+use crate::RangeCheck;
+use crate::integer::{U128MulGuarantee, u256_wide_mul, u512_safe_div_rem_by_u256};
 #[allow(unused_imports)]
-use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+use crate::option::OptionTrait;
 #[allow(unused_imports)]
 use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
-use crate::option::OptionTrait;
-use crate::integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
-use crate::RangeCheck;
+use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are

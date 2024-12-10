@@ -22,8 +22,8 @@
 use core::box::BoxTrait;
 #[allow(unused_imports)]
 use starknet::{
-    SyscallResultTrait, SyscallResult, syscalls::get_execution_info_syscall,
-    contract_address::ContractAddress,
+    SyscallResult, SyscallResultTrait, contract_address::ContractAddress,
+    syscalls::get_execution_info_syscall,
 };
 
 /// The execution information for the current entry point.

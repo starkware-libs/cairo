@@ -32,8 +32,9 @@ mod Balance {
 #[cfg(test)]
 mod tests {
     use starknet::syscalls::deploy_syscall;
-
-    use super::{Balance, IBalanceDispatcher, IBalanceDispatcherTrait};
+    use super::Balance;
+    use super::IBalanceDispatcher;
+    use super::IBalanceDispatcherTrait;
 
     #[test]
     fn test_flow() {
