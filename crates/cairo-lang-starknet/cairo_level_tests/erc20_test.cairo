@@ -1,7 +1,5 @@
-use crate::contracts::erc20::{erc_20, IERC20LibraryDispatcher, IERC20DispatcherTrait};
-use starknet::testing::set_caller_address;
-
-use starknet::contract_address::contract_address_const;
+use crate::contracts::erc20::{IERC20DispatcherTrait, IERC20LibraryDispatcher, erc_20};
+use starknet::{contract_address::contract_address_const, testing::set_caller_address};
 
 #[test]
 fn test_erc20_transfer() {

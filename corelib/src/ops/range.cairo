@@ -1,6 +1,5 @@
 use core::iter::{IntoIterator, Iterator};
-use core::num::traits::One;
-use core::traits::Add;
+use core::{num::traits::One, traits::Add};
 
 /// Represents the range [start, end).
 #[derive(Clone, Drop)]
@@ -72,8 +71,7 @@ impl RangeIntoIterator<
 // Sierra optimization.
 
 mod internal {
-    use core::iter::Iterator;
-    use core::internal::OptionRev;
+    use core::{internal::OptionRev, iter::Iterator};
 
     #[derive(Copy, Drop)]
     pub extern type IntRange<T>;
