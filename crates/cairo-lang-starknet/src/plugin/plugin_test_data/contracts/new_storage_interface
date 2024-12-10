@@ -65,12 +65,12 @@ enum QueryableEnum {
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
-        StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref, Vec, VecTrait,
-        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward,
+        Map, MutableVecTrait, StorageAsPath, StorageAsPointer, StoragePathEntry, SubPointers,
+        SubPointersDeref, SubPointersForward, SubPointersMutForward, Vec, VecTrait,
     };
     use super::{
-        BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList, QueryableEnum,
-        QueryableEnumVariants,
+        BalancePair, LinkedList, QueryableEnum, QueryableEnumVariants, SlicedBalancePair,
+        SlicedBalanceTrio,
     };
 
     #[storage]
@@ -210,12 +210,12 @@ enum QueryableEnum {
 #[starknet::contract]
 mod hello_starknet {
     use starknet::storage::{
-        StorageAsPointer, StorageAsPath, StoragePathEntry, Map, SubPointersDeref, Vec, VecTrait,
-        MutableVecTrait, SubPointers, SubPointersForward, SubPointersMutForward,
+        Map, MutableVecTrait, StorageAsPath, StorageAsPointer, StoragePathEntry, SubPointers,
+        SubPointersDeref, SubPointersForward, SubPointersMutForward, Vec, VecTrait,
     };
     use super::{
-        BalancePair, SlicedBalancePair, SlicedBalanceTrio, LinkedList, QueryableEnum,
-        QueryableEnumVariants,
+        BalancePair, LinkedList, QueryableEnum, QueryableEnumVariants, SlicedBalancePair,
+        SlicedBalanceTrio,
     };
 
     #[storage]
@@ -2624,7 +2624,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x1a68a3a571fad80df57476d9fabeb1f73c276067243a61aceb1727204a0bfb0;
+pub const TEST_CLASS_HASH: felt252 = 0x26adb8ccfd72d720830db9bdc718b9399f62cee2dbb74a9e8e2d33b70e8e117;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
