@@ -35,6 +35,7 @@
 //!     Option::None    => println!("Cannot divide by 0"),
 //! }
 //! ```
+//!
 //! # The question mark operator, `?`
 //!
 //! Similar to the [`Result`] type, when writing code that calls many functions that return the
@@ -82,7 +83,7 @@
 //!
 //! ## Querying the variant
 //!
-//! The [`is_some`] and [`is_none`] methods return [`true`] if the [`Option`]
+//! The [`is_some`] and [`is_none`] methods return `true` if the [`Option`]
 //! is [`Some`] or [`None`], respectively.
 //!
 //! [`is_none`]: OptionTrait::is_none
@@ -112,13 +113,12 @@
 //! These methods transform [`Option`] to [`Result`]:
 //!
 //! * [`ok_or`] transforms [`Some(v)`] to [`Ok(v)`], and [`None`] to
-//!   [`Err(err)`] using the provided default `err` value
+//!   [`Err(err)`] using the provided default `err` value.
 //!
 //! [`Err(err)`]: Result::Err
 //! [`Ok(v)`]: Result::Ok
 //! [`Some(v)`]: Option::Some
 //! [`ok_or`]: OptionTrait::ok_or
-
 
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
