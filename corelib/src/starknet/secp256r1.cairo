@@ -13,12 +13,11 @@
 //! * b = 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b
 //! * Curve equation: y^2 = x^3 + ax + b
 
-use core::gas::GasBuiltin;
-use core::option::OptionTrait;
+use core::{gas::GasBuiltin, option::OptionTrait};
 #[allow(unused_imports)]
-use starknet::{
-    EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait,
-};
+use starknet::secp256_trait::{Secp256PointTrait, Secp256Trait};
+#[allow(unused_imports)]
+use starknet::{EthAddress, SyscallResult, SyscallResultTrait};
 
 /// Represents a point on the secp256r1 elliptic curve.
 #[derive(Copy, Drop)]

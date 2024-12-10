@@ -63,16 +63,9 @@
 
 #[feature("deprecated-index-traits")]
 use crate::traits::IndexView;
-
-use crate::box::BoxTrait;
+use crate::{RangeCheck, box::BoxTrait, iter::Iterator, metaprogramming::TypeEqual, serde::Serde};
 #[allow(unused_imports)]
-use crate::gas::withdraw_gas;
-#[allow(unused_imports)]
-use crate::option::OptionTrait;
-use crate::serde::Serde;
-use crate::metaprogramming::TypeEqual;
-use crate::iter::Iterator;
-use crate::RangeCheck;
+use crate::{gas::withdraw_gas, option::OptionTrait};
 
 /// A collection of elements of the same type continuous in memory.
 #[derive(Drop)]

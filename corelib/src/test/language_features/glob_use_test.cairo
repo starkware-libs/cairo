@@ -4,7 +4,6 @@ pub mod a {
 }
 
 pub const SHADOWED: felt252 = 'new_shadowed';
-
 use a::*;
 
 #[test]

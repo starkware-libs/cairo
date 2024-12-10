@@ -11,9 +11,8 @@ trait ITree<TContractState> {
 
 #[starknet::contract]
 mod example_failure {
-    use super::Node;
-    use super::ITree;
     use starknet::storage::Map;
+    use super::{ITree, Node};
 
     #[storage]
     struct Storage {

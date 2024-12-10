@@ -1,8 +1,8 @@
 #[starknet::contract]
 mod ownable_balance {
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use crate::components::ownable::ownable as ownable_comp;
     use starknet::ContractAddress;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     #[storage]
     struct Storage {
         #[substorage(v0)]
