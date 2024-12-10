@@ -16,9 +16,10 @@ trait ICounterContract<TContractState> {
 
 #[starknet::contract]
 mod counter_contract {
-    use starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
-    use crate::components::upgradable::upgradable as upgradable_comp;
-    use crate::components::ownable::ownable as ownable_comp;
+    use crate::components::{
+        ownable::ownable as ownable_comp, upgradable::upgradable as upgradable_comp,
+    };
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
     struct Storage {
@@ -1000,9 +1001,10 @@ impl ICounterContractSafeDispatcherSubPointersCopy of core::traits::Copy::<ICoun
 impl ICounterContractSafeDispatcherSubPointersMutDrop of core::traits::Drop::<ICounterContractSafeDispatcherSubPointersMut>;
 impl ICounterContractSafeDispatcherSubPointersMutCopy of core::traits::Copy::<ICounterContractSafeDispatcherSubPointersMut>;
 
-    use starknet::storage::{StoragePointerWriteAccess, StoragePointerReadAccess};
-    use crate::components::upgradable::upgradable as upgradable_comp;
-    use crate::components::ownable::ownable as ownable_comp;
+    use crate::components::{
+        ownable::ownable as ownable_comp, upgradable::upgradable as upgradable_comp,
+    };
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
     struct Storage {

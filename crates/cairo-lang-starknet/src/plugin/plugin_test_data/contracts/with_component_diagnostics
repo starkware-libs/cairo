@@ -3159,7 +3159,6 @@ mod test_contract {
         #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
     }
-
     #[event]
     use super::Event;
 
@@ -3204,7 +3203,6 @@ mod test_contract {
         #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
     }
-
     #[event]
     use super::Event;
 
@@ -3484,7 +3482,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x150d2e1961908098174a1d0101315691e91ab91682760b04003683fab54f03e;
+pub const TEST_CLASS_HASH: felt252 = 0x1c59c1f2e69fc61b0f9162b5cdb7fd6a0828ffb8f03548b02c3c52f2ef1c284;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]

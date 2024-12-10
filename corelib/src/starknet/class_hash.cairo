@@ -16,8 +16,7 @@
 
 #[allow(unused_imports)]
 use core::hash::{Hash, HashStateTrait};
-use core::RangeCheck;
-use core::serde::Serde;
+use core::{RangeCheck, serde::Serde};
 
 /// Represents a Starknet contract class hash.
 /// The value range of this type is `[0, 2**251)`.

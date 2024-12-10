@@ -2,7 +2,7 @@
 mod erc20_mini_contract {
     use crate::components::erc20_mini;
     use starknet::ContractAddress;
-    use starknet::storage::{StorageTraitMut, StorageTrait};
+    use starknet::storage::{StorageTrait, StorageTraitMut};
     #[storage]
     struct Storage {
         #[flat]

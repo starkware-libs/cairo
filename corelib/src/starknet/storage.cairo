@@ -69,25 +69,23 @@
 //! indicates that the storage object is mutable, i.e., it was created from a `ref` contract state,
 //! and thus the object can be written to.
 
-use core::traits::Into;
 #[allow(unused_imports)]
 use core::pedersen::HashState;
-use core::hash::HashStateTrait;
-use starknet::storage_access::StorageBaseAddress;
+use core::{hash::HashStateTrait, traits::Into};
 #[allow(unused_imports)]
 use starknet::SyscallResult;
-use starknet::storage_access::storage_base_address_from_felt252;
+use starknet::storage_access::{StorageBaseAddress, storage_base_address_from_felt252};
 
 mod vec;
-pub use vec::{Vec, VecTrait, MutableVecTrait};
-use vec::{VecIndexView, MutableVecIndexView};
+use vec::{MutableVecIndexView, VecIndexView};
+pub use vec::{MutableVecTrait, Vec, VecTrait};
 
 mod storage_node;
 pub use storage_node::{StorageNode, StorageNodeMut};
 mod sub_pointers;
-pub use sub_pointers::{SubPointers, SubPointersMut, SubPointersForward, SubPointersMutForward};
+pub use sub_pointers::{SubPointers, SubPointersForward, SubPointersMut, SubPointersMutForward};
 mod storage_base;
-pub use storage_base::{StorageBase, FlattenedStorage, StorageTrait, StorageTraitMut};
+pub use storage_base::{FlattenedStorage, StorageBase, StorageTrait, StorageTraitMut};
 mod map;
 pub use map::{Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry};
 

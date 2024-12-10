@@ -17,8 +17,10 @@ struct OutOfScopeEvent {}
 #[starknet::contract]
 mod counter_contract {
     use starknet::ContractAddress;
-    use super::{IOtherContractDispatcher, IOtherContractDispatcherTrait, OutOfScopeEvent};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use super::IOtherContractDispatcher;
+    use super::IOtherContractDispatcherTrait;
+    use super::OutOfScopeEvent;
 
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
 

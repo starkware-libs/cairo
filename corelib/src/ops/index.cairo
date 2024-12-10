@@ -19,9 +19,7 @@
 //! [`Felt252Dict`]: core::dict::Felt252Dict
 
 #[feature("deprecated-index-traits")]
-use crate::traits::IndexView as DeprecatedIndexView;
-#[feature("deprecated-index-traits")]
-use crate::traits::Index as DeprecatedIndex;
+use crate::traits::{Index as DeprecatedIndex, IndexView as DeprecatedIndexView};
 
 /// A trait for indexing operations (`container[index]`) where the input type is not modified.
 ///

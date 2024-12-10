@@ -6,9 +6,9 @@ ExpandContractTestRunner(expect_diagnostics: false)
 //! > cairo_code
 #[starknet::contract]
 mod test_contract {
-    use starknet::class_hash::ClassHash;
-    use starknet::contract_address::ContractAddress;
-    use starknet::storage_access::StorageAddress;
+    use starknet::{
+        class_hash::ClassHash, contract_address::ContractAddress, storage_access::StorageAddress,
+    };
 
     #[storage]
     struct Storage {}
@@ -59,9 +59,9 @@ lib.cairo:
 
 #[starknet::contract]
 mod test_contract {
-    use starknet::class_hash::ClassHash;
-    use starknet::contract_address::ContractAddress;
-    use starknet::storage_access::StorageAddress;
+    use starknet::{
+        class_hash::ClassHash, contract_address::ContractAddress, storage_access::StorageAddress,
+    };
 
     #[storage]
     struct Storage {}
@@ -178,7 +178,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x50afb5642ad6a435e97435ad44ec6060db9755b206a962ddf6d6cbb4a8b99d;
+pub const TEST_CLASS_HASH: felt252 = 0x7d78bbc63d0935bbe4605338d9056b8e40dfba68144cf5e32c7fc07a671eb4;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]

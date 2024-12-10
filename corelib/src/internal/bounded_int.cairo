@@ -1,5 +1,5 @@
-use crate::integer::{downcast, upcast};
 use crate::RangeCheck;
+use crate::integer::{downcast, upcast};
 
 #[derive(Copy, Drop)]
 pub(crate) extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
@@ -269,8 +269,16 @@ impl MulMinusOneNegateHelper<T, impl H: MulHelper<T, MinusOne>> of NegateHelper<
     }
 }
 
-pub use {
-    bounded_int_add as add, bounded_int_sub as sub, bounded_int_mul as mul,
-    bounded_int_div_rem as div_rem, bounded_int_constrain as constrain,
-    bounded_int_is_zero as is_zero, bounded_int_trim as trim,
-};
+pub use bounded_int_add as add;
+
+pub use bounded_int_constrain as constrain;
+
+pub use bounded_int_div_rem as div_rem;
+
+pub use bounded_int_is_zero as is_zero;
+
+pub use bounded_int_mul as mul;
+
+pub use bounded_int_sub as sub;
+
+pub use bounded_int_trim as trim;
