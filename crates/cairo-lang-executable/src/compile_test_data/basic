@@ -400,3 +400,405 @@ ret;
 ret;
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test executable with gas builtin.
+
+//! > test_runner_name
+CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[executable]
+fn require_gas() -> felt252 {
+    match core::gas::withdraw_gas() {
+        Option::Some(()) => 1,
+        Option::None => 2,
+    }
+}
+
+//! > generated_casm_code
+# builtins: output, range_check
+# header #
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 170141183460469231731687303715884105727, ap++;
+%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+[ap + 2] = [fp + -4] + 1, ap++;
+[ap + 2] = [ap + 1], ap++;
+ap += 2;
+call rel 13;
+jmp rel 5 if [ap + -3] != 0, ap++;
+[ap + -1] = [ap + -2];
+jmp rel 4;
+[ap + -1] = [fp + -4] + 1;
+[ap + -4] = [[fp + -4] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -7], ap++;
+ret;
+# sierra based code #
+[fp + -5] = [ap + 0] + [fp + -6], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 17;
+ap += 3;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -6] + 1, ap++;
+ret;
+%{ memory[ap + 0] = 0 <= memory[fp + -7] %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -7] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -8] + 0];
+jmp rel 12;
+[fp + -7] = [ap + 0] + 0, ap++;
+[ap + -1] = [[fp + -8] + 0];
+[ap + 0] = [fp + -8] + 1, ap++;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = 1, ap++;
+jmp rel 7;
+[ap + 0] = [fp + -8] + 1, ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = 2, ap++;
+[ap + -1] = [[fp + -3] + 0];
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3] + 1, ap++;
+ret;
+# footer #
+ret;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test executable with dict.
+
+//! > test_runner_name
+CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[executable]
+fn use_dict() {
+    let _dict: Felt252Dict<u8> = Default::default();
+}
+
+//! > generated_casm_code
+# builtins: output, range_check
+# header #
+ap += 2;
+%{ memory[ap + 0] = segments.add() %}
+%{ memory[ap + 1] = segments.add() %}
+[ap + 2] = 0, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -2] + 1], ap++;
+[ap + -1] = [[ap + -3] + 2];
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -4] + 3, ap++;
+[ap + 0] = 170141183460469231731687303715884105727, ap++;
+%{ raise NotImplementedError("memory[ap + 0].. = params[0])") %}
+[ap + 2] = [fp + -4] + 1, ap++;
+[ap + 2] = [ap + 1], ap++;
+ap += 2;
+call rel 39;
+jmp rel 5 if [ap + -3] != 0, ap++;
+[ap + -1] = [ap + -2];
+jmp rel 4;
+[ap + -1] = [fp + -4] + 1;
+[ap + -4] = [[fp + -4] + 0];
+[fp + 0] = [ap + -7];
+[fp + 1] = [ap + -1];
+[ap + 0] = [[ap + -6] + -2], ap++;
+[ap + 0] = [[ap + -7] + -1], ap++;
+[ap + -2] = [ap + -1];
+jmp rel 4 if [ap + -2] != 0;
+jmp rel 19;
+[ap + 0] = [[ap + -8] + -3], ap++;
+[ap + -3] = [ap + 0] + 1, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 12;
+[ap + 0] = [[ap + -2] + 1], ap++;
+[ap + 0] = [[ap + -3] + 3], ap++;
+%{ memory.add_relocation_rule(src_ptr=memory[ap + -1], dest_ptr=memory[ap + -2] + 1) %}
+[ap + -1] = [ap + -2] + 1;
+[ap + 0] = [ap + -4] + 3, ap++;
+[ap + -4] = [ap + 0] + 1, ap++;
+jmp rel -12;
+[ap + 0] = [fp + 1], ap++;
+[ap + 0] = [fp + 0], ap++;
+ret;
+# sierra based code #
+[fp + -5] = [ap + 0] + [fp + -6], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 16;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + 0] = [fp + -9], ap++;
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -7] + 1, ap++;
+ret;
+%{
+if '__dict_manager' not in globals():
+    from starkware.cairo.common.dict import DictManager
+    __dict_manager = DictManager()
+
+if '__segment_index_to_arena_index' not in globals():
+    # A map from the relocatable value segment index to the index in the
+    # arena.
+    __segment_index_to_arena_index = {}
+
+# memory[fp + -8] is the address of the next SegmentArenaBuiltin.
+# memory[memory[fp + -8] - 2] is the number of allocated segments.
+index = memory[memory[fp + -8] - 2]
+
+segment_start = __dict_manager.new_default_dict(
+    segments, 0, temp_segment=index > 0
+)
+
+# Update '__segment_index_to_arena_index'.
+__segment_index_to_arena_index[segment_start.segment_index] = index
+
+# Update 'SegmentInfo::start'.
+# memory[memory[fp + -8] - 3] is the address of the segment arena infos
+# segment. index * 3 is added to get the address of the new SegmentInfo.
+memory[memory[memory[fp + -8] - 3] + index * 3] = segment_start
+%}
+[ap + 0] = [[fp + -8] + -3], ap++;
+[ap + 0] = [[fp + -8] + -2], ap++;
+[ap + 0] = [[fp + -8] + -1], ap++;
+[ap + -3] = [[fp + -8] + 0];
+[ap + 0] = [ap + -2] + 1, ap++;
+[ap + -1] = [[fp + -8] + 1];
+[ap + -2] = [[fp + -8] + 2];
+[ap + 0] = [ap + -3] * 3, ap++;
+[ap + 0] = [ap + -5] + [ap + -1], ap++;
+[ap + 0] = [fp + -9], ap++;
+[ap + 0] = [fp + -8] + 3, ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = [[ap + -4] + 0], ap++;
+call rel 10;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -3], ap++;
+call rel 4;
+jmp rel 178;
+%{
+memory[fp + 0] = __segment_index_to_arena_index[
+    memory[fp + -3].segment_index
+]
+%}
+[fp + 2] = [[fp + -4] + -3], ap++;
+[fp + 3] = [[fp + -4] + -2], ap++;
+[fp + 4] = [[fp + -4] + -1], ap++;
+[fp + 0] = [[fp + -6] + 0], ap++;
+[fp + 3] = [ap + 1] + 1, ap++;
+[ap + 0] = [ap + 1] + [fp + 0], ap++;
+[ap + 0] = [[fp + -6] + 1], ap++;
+[ap + 0] = [fp + 0] * 3, ap++;
+[ap + 0] = [fp + 2] + [ap + -1], ap++;
+[fp + 4] = [[ap + -1] + 2];
+[fp + -3] = [[ap + -1] + 1];
+[fp + 2] = [[fp + -4] + 0];
+[fp + 3] = [[fp + -4] + 1];
+[ap + 0] = [fp + 4] + 1, ap++;
+[ap + -1] = [[fp + -4] + 2];
+[ap + 0] = [fp + -6] + 2, ap++;
+[ap + 0] = [[ap + -3] + 0], ap++;
+[ap + 0] = [fp + -3], ap++;
+[fp + -3] = [fp + 1] + [ap + -2];
+call rel 15;
+[ap + -2] = [ap + 0] + [ap + -1], ap++;
+[fp + 1] = [ap + 0] + [ap + -1], ap++;
+[ap + -1] = [ap + 0] * 3, ap++;
+[ap + 0] = [ap + -1] * 4050, ap++;
+[ap + 0] = [ap + -7], ap++;
+[ap + 0] = [fp + -5] + [ap + -2], ap++;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [ap + -10], ap++;
+ret;
+[fp + -3] = [fp + 0] + [fp + -4], ap++;
+ap += 3;
+%{ memory[fp + 3] = segments.add() %}
+jmp rel 6 if [fp + 0] != 0;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + 3], ap++;
+[ap + 0] = [fp + 3], ap++;
+ret;
+[fp + 0] = [ap + 0] * 3, ap++;
+%{
+dict_access_size = 3
+address = memory[fp + -4]
+assert memory[fp + 0] % dict_access_size == 0, 'Accesses array size must be divisible by DictAccess.SIZE'
+n_accesses = memory[ap + -1]
+if '__squash_dict_max_size' in globals():
+    assert n_accesses <= __squash_dict_max_size, f'squash_dict() can only be used with n_accesses<={__squash_dict_max_size}. ' f'Got: n_accesses={n_accesses}.'
+# A map from key to the list of indices accessing it.
+access_indices = {}
+for i in range(n_accesses):
+    key = memory[address + dict_access_size * i]
+    access_indices.setdefault(key, []).append(i)
+# Descending list of keys.
+keys = sorted(access_indices.keys(), reverse=True)
+# Are the keys used bigger than range_check bound.
+memory[fp + 2] = 1 if keys[0] >= range_check_builtin.bound else 0
+memory[fp + 1] = key = keys.pop()
+%}
+jmp rel 7 if [fp + 2] != 0, ap++;
+[fp + 1] = [[fp + -5] + 0];
+[ap + -1] = [fp + -5] + 1;
+jmp rel 3;
+[ap + -1] = [fp + -5];
+[ap + 0] = [fp + -4], ap++;
+[fp + -3] = [ap + 0] + 1, ap++;
+[ap + 0] = [fp + 1], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [fp + 3], ap++;
+[ap + 0] = [fp + 2], ap++;
+call rel 4;
+[ap + 0] = [fp + 3], ap++;
+ret;
+%{
+current_access_indices = sorted(access_indices[key])[::-1]
+current_access_index = current_access_indices.pop()
+memory[memory[fp + -9]] = current_access_index
+%}
+[ap + 2] = [[fp + -9] + 0], ap++;
+[ap + 2] = [ap + 1] * 3, ap++;
+[ap + 4] = [fp + -8] + [ap + 1], ap++;
+[ap + 4] = [[ap + 3] + 2], ap++;
+[ap + 4] = [fp + -9] + 1, ap++;
+[fp + -6] = [[ap + 1] + 0], ap++;
+[fp + -6] = [[fp + -4] + 0], ap++;
+[ap + -3] = [[ap + -1] + 1], ap++;
+[ap + -4] = [[fp + -4] + 1], ap++;
+[ap + -5] = 0;
+%{ memory[ap + -4] = 0 if current_access_indices else 1 %}
+jmp rel 15 if [ap + -4] != 0;
+%{
+new_access_index = current_access_indices.pop()
+memory[ap + 0] = new_access_index - current_access_index - 1
+current_access_index = new_access_index
+%}
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [ap + -1] + 1, ap++;
+[ap + 0] = [ap + -1] * 3, ap++;
+[ap + 1] = [ap + -6] + [ap + -1], ap++;
+[ap + -6] = [[ap + 0] + 1], ap++;
+[ap + 0] = [[ap + -1] + 2], ap++;
+[fp + -6] = [[ap + -2] + 0], ap++;
+[ap + -1] = [ap + -8] + 1;
+%{ memory[ap + -4] = 1 if current_access_indices else 0 %}
+jmp rel -11 if [ap + -4] != 0;
+[fp + -7] = [ap + 0] + [ap + -3], ap++;
+[ap + -1] = [[ap + -2] + 0];
+[ap + -2] = [ap + 0] + [fp + -9], ap++;
+[ap + -4] = [[fp + -4] + 2];
+[fp + -5] = [fp + 1] + [ap + -1];
+jmp rel 7 if [fp + 1] != 0;
+[ap + 0] = [ap + -3] + 1, ap++;
+[ap + 0] = [fp + -4] + 3, ap++;
+ret;
+%{ assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
+memory[fp + 0] = key = keys.pop()
+ %}
+jmp rel 14 if [fp + -3] != 0;
+[ap + 0] = [fp + -6] + 1, ap++;
+[fp + 0] = [ap + 0] + [ap + -1], ap++;
+[ap + -1] = [[ap + -5] + 1];
+[ap + 0] = [ap + -5] + 2, ap++;
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = [fp + 0], ap++;
+[ap + 0] = [fp + 1], ap++;
+jmp rel 50;
+[fp + -6] = [ap + 0] + [fp + 0], ap++;
+jmp rel 4 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+%{
+import itertools
+
+from starkware.cairo.common.math_utils import assert_integer
+assert_integer(memory[fp + -6])
+assert_integer(memory[fp + 0])
+a = memory[fp + -6] % PRIME
+b = memory[fp + 0] % PRIME
+assert a <= b, f'a = {a} is not less than or equal to b = {b}.'
+
+# Find an arc less than PRIME / 3, and another less than PRIME / 2.
+lengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]
+lengths_and_indices.sort()
+assert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2
+excluded = lengths_and_indices[2][1]
+
+memory[memory[ap + -4] + 1 + 1], memory[memory[ap + -4] + 1 + 0] = (
+    divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))
+memory[memory[ap + -4] + 1 + 3], memory[memory[ap + -4] + 1 + 2] = (
+    divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))
+%}
+[ap + 0] = [[ap + -4] + 1], ap++;
+[ap + 0] = [[ap + -5] + 2], ap++;
+[ap + 0] = [ap + -1] * 3544607988759775765608368578435044694, ap++;
+[ap + 0] = [ap + -3] + [ap + -1], ap++;
+[ap + 0] = [[ap + -8] + 3], ap++;
+[ap + 0] = [[ap + -9] + 4], ap++;
+[ap + 0] = [ap + -1] * 5316911983139663648412552867652567041, ap++;
+[ap + 0] = [ap + -3] + [ap + -1], ap++;
+[ap + 0] = [ap + -5] + [ap + -1], ap++;
+[ap + 0] = [ap + -6] * [ap + -2], ap++;
+%{ memory[ap + 0] = 1 if excluded != 0 else 0 %}
+jmp rel 12 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -6] * -1, ap++;
+[ap + -4] = [ap + -1] + -1;
+[fp + -6] = [ap + 0] + [fp + 0], ap++;
+[ap + 0] = [fp + 0] + 1, ap++;
+[ap + -5] = [ap + -2] * [ap + -1];
+jmp rel 15;
+%{ memory[ap + 0] = 1 if excluded != 1 else 0 %}
+jmp rel 10 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + 0] * -1, ap++;
+[ap + 0] = [ap + -1] + -1, ap++;
+[ap + -6] = [fp + -6] + [ap + -1];
+[ap + -5] = [fp + -6] * [ap + -1];
+jmp rel 5;
+[ap + -4] = [fp + 0], ap++;
+[fp + 0] = [ap + 0] + [fp + -6], ap++;
+[ap + -5] = [fp + -6] * [ap + -1];
+[ap + 0] = [ap + -18] + 5, ap++;
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = [fp + 0], ap++;
+[ap + 0] = [fp + 1], ap++;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = [fp + -3], ap++;
+call rel -105;
+ret;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+ret;
+# footer #
+ret;
+
+//! > expected_diagnostics

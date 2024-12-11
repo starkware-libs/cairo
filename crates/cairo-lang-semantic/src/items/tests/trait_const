@@ -330,9 +330,9 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
- --> lib.cairo:11:21
+ --> lib.cairo:11:17
     fn foo() -> u16 {
-                    ^
+                ^*^
 
 //! > ==========================================================================
 
@@ -741,3 +741,24 @@ error: Trait has no implementation in context: test::MyTrait.
  --> lib.cairo:5:17
 fn foo() -> i32 {
                 ^
+
+//! > ==========================================================================
+
+//! > using global trait constants in a function
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> u64 {
+    MAX_U64 - 5
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use core::num::traits::Bounded;
+pub const MAX_U64: u64 = Bounded::<u64>::MAX;
+
+//! > expected_diagnostics

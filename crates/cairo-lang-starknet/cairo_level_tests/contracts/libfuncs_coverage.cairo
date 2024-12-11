@@ -119,6 +119,7 @@ enum Felt252TryIntoLibfuncs {
     I32: felt252,
     I64: felt252,
     I128: felt252,
+    Bytes31: felt252,
     ContractAddress: felt252,
     ClassHash: felt252,
     StorageAddress: felt252,
@@ -341,6 +342,7 @@ fn felt252_try_into_libfuncs(libfuncs: Felt252TryIntoLibfuncs) {
         Felt252TryIntoLibfuncs::I32(v) => use_and_panic::<Option<i32>>(v.try_into()),
         Felt252TryIntoLibfuncs::I64(v) => use_and_panic::<Option<i64>>(v.try_into()),
         Felt252TryIntoLibfuncs::I128(v) => use_and_panic::<Option<i128>>(v.try_into()),
+        Felt252TryIntoLibfuncs::Bytes31(v) => use_and_panic::<Option<bytes31>>(v.try_into()),
         Felt252TryIntoLibfuncs::ContractAddress(v) => use_and_panic::<
             Option<starknet::ContractAddress>,
         >(v.try_into()),

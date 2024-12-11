@@ -11,7 +11,6 @@ use semantic::TypeId;
 
 use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
-use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_postpanic_scc;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
@@ -259,10 +258,8 @@ pub trait FunctionImplicitsTrait<'a>: Upcast<dyn LoweringGroup + 'a> {
     ) -> Maybe<Vec<TypeId>> {
         let db: &dyn LoweringGroup = self.upcast();
         let semantic_db: &dyn SemanticGroup = db.upcast();
-        let scc_representative = db.concrete_function_with_body_scc_postpanic_representative(
-            function,
-            DependencyType::Call,
-        );
+        let scc_representative = db
+            .concrete_function_with_body_scc_inlined_representative(function, DependencyType::Call);
         let mut implicits = db.scc_implicits(scc_representative)?;
 
         let precedence = db.function_declaration_implicit_precedence(
@@ -277,17 +274,17 @@ impl<'a, T: Upcast<dyn LoweringGroup + 'a> + ?Sized> FunctionImplicitsTrait<'a> 
 
 /// Query implementation of [LoweringGroup::scc_implicits].
 pub fn scc_implicits(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> Maybe<Vec<TypeId>> {
-    let scc_functions = concrete_function_with_body_postpanic_scc(db, scc.0, DependencyType::Call);
+    let scc_functions = db.concrete_function_with_body_inlined_scc(scc.0, DependencyType::Call);
     let mut all_implicits = HashSet::new();
     for function in scc_functions {
         // Add the function's explicit implicits.
         all_implicits.extend(function.function_id(db)?.signature(db)?.implicits);
         // For each direct callee, add its implicits.
-        let direct_callees = db
-            .concrete_function_with_body_postpanic_direct_callees(function, DependencyType::Call)?;
+        let direct_callees =
+            db.concrete_function_with_body_inlined_direct_callees(function, DependencyType::Call)?;
         for direct_callee in direct_callees {
             if let Some(callee_body) = direct_callee.body(db.upcast())? {
-                let callee_scc = db.concrete_function_with_body_scc_postpanic_representative(
+                let callee_scc = db.concrete_function_with_body_scc_inlined_representative(
                     callee_body,
                     DependencyType::Call,
                 );

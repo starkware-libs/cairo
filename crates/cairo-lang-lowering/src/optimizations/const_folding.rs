@@ -232,7 +232,7 @@ impl ConstFoldingContext<'_> {
         stmt: &mut StatementCall,
         additional_consts: &mut Vec<StatementConst>,
     ) -> Option<StatementConst> {
-        let id = stmt.function.get_extern(self.db)?;
+        let (id, _generic_args) = stmt.function.get_extern(self.db)?;
         if id == self.felt_sub {
             // (a - 0) can be replaced by a.
             let val = self.as_int(stmt.inputs[1].var_id)?;
@@ -331,7 +331,7 @@ impl ConstFoldingContext<'_> {
         &mut self,
         info: &mut MatchExternInfo,
     ) -> Option<(Option<StatementConst>, FlatBlockEnd)> {
-        let id = info.function.get_extern(self.db)?;
+        let (id, generic_args) = info.function.get_extern(self.db)?;
         if self.nz_fns.contains(&id) {
             let val = self.as_const(info.inputs[0].var_id)?;
             let is_zero = match val {
@@ -461,9 +461,7 @@ impl ConstFoldingContext<'_> {
         } else if id == self.bounded_int_constrain {
             let input_var = info.inputs[0].var_id;
             let (value, nz_ty) = self.as_int_ex(input_var)?;
-            let semantic_id =
-                extract_matches!(info.function.lookup_intern(self.db), FunctionLongId::Semantic);
-            let generic_arg = semantic_id.get_concrete(self.db.upcast()).generic_args[1];
+            let generic_arg = generic_args[1];
             let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
                 .lookup_intern(self.db)
                 .into_int()
@@ -474,6 +472,20 @@ impl ConstFoldingContext<'_> {
                 Some(self.propagate_const_and_get_statement(value.clone(), output, nz_ty)),
                 FlatBlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
             ))
+        } else if id == self.array_get {
+            if self.as_int(info.inputs[1].var_id)?.is_zero() {
+                if let [success, failure] = info.arms.as_mut_slice() {
+                    let arr = info.inputs[0].var_id;
+                    let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
+                    let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
+                    info.inputs.truncate(1);
+                    info.function = ModuleHelper { db: self.db, id: self.array_module }
+                        .function_id("array_snapshot_pop_front", generic_args);
+                    success.var_ids.insert(0, unused_arr_output0);
+                    failure.var_ids.insert(0, unused_arr_output1);
+                }
+            }
+            None
         } else {
             None
         }
@@ -584,8 +596,6 @@ pub struct ConstFoldingLibfuncInfo {
     upcast: ExternFunctionId,
     /// The `downcast` libfunc.
     downcast: ExternFunctionId,
-    /// The `storage_base_address_from_felt252` libfunc.
-    storage_base_address_from_felt252: ExternFunctionId,
     /// The set of functions that check if a number is zero.
     nz_fns: OrderedHashSet<ExternFunctionId>,
     /// The set of functions that check if numbers are equal.
@@ -610,8 +620,14 @@ pub struct ConstFoldingLibfuncInfo {
     bounded_int_sub: ExternFunctionId,
     /// The `bounded_int_constrain` libfunc.
     bounded_int_constrain: ExternFunctionId,
+    /// The array module.
+    array_module: ModuleId,
+    /// The `array_get` libfunc.
+    array_get: ExternFunctionId,
     /// The storage access module.
     storage_access_module: ModuleId,
+    /// The `storage_base_address_from_felt252` libfunc.
+    storage_base_address_from_felt252: ExternFunctionId,
     /// Type ranges.
     type_value_ranges: OrderedHashMap<TypeId, TypeInfo>,
 }
@@ -625,6 +641,8 @@ impl ConstFoldingLibfuncInfo {
         let bounded_int_module = core.submodule("internal").submodule("bounded_int");
         let upcast = integer_module.extern_function_id("upcast");
         let downcast = integer_module.extern_function_id("downcast");
+        let array_module = core.submodule("array");
+        let array_get = array_module.extern_function_id("array_get");
         let starknet_module = core.submodule("starknet");
         let storage_access_module = starknet_module.submodule("storage_access");
         let storage_base_address_from_felt252 =
@@ -699,7 +717,6 @@ impl ConstFoldingLibfuncInfo {
             into_box,
             upcast,
             downcast,
-            storage_base_address_from_felt252,
             nz_fns,
             eq_fns,
             uadd_fns,
@@ -712,7 +729,10 @@ impl ConstFoldingLibfuncInfo {
             bounded_int_add,
             bounded_int_sub,
             bounded_int_constrain,
+            array_module: array_module.id,
+            array_get,
             storage_access_module: storage_access_module.id,
+            storage_base_address_from_felt252,
             type_value_ranges,
         }
     }

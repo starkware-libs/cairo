@@ -44,3 +44,6 @@ use a::a;
 use a::{c, b};
 use a::*;
 use d::{e, *};
+// Testing not merging the top level.
+use x;
+use y;

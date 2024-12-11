@@ -164,7 +164,7 @@ test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo(a: @Array::<felt252>) -> Option<Box<@felt252>> {
-    core::array::array_get(a, 0_u32)
+    core::array::array_get(a, 1_u32)
 }
 
 //! > function_name
@@ -180,7 +180,7 @@ foo
 Parameters: v0: core::RangeCheck, v1: @core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
-  (v2: core::integer::u32) <- 0
+  (v2: core::integer::u32) <- 1
 End:
   Match(match core::array::array_get::<core::felt252>(v0, v1, v2) {
     Option::Some(v3, v4) => blk1,
