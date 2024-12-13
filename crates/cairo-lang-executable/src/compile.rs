@@ -58,7 +58,7 @@ pub fn compile_executable(
     let mut db = RootDatabase::builder()
         .skip_auto_withdraw_gas()
         .detect_corelib()
-        .with_plugin_suite(executable_plugin_suite())
+        .with_default_plugin_suite(executable_plugin_suite())
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;

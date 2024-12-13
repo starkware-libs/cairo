@@ -42,7 +42,7 @@ pub fn test_profiling(
     }
 
     let db = RootDatabase::builder()
-        .with_plugin_suite(starknet_plugin_suite())
+        .with_default_plugin_suite(starknet_plugin_suite())
         .detect_corelib()
         .build()
         .unwrap();
