@@ -31,7 +31,7 @@ where
     match s.strip_prefix("0x") {
         Some(num_no_prefix) => BigUint::from_str_radix(num_no_prefix, 16)
             .map_err(|error| serde::de::Error::custom(format!("{error}"))),
-        None => Err(serde::de::Error::custom(format!("{s} does not start with `0x` is missing."))),
+        None => Err(serde::de::Error::custom(format!("{s} does not start with '0x', which is missing."))),
     }
 }
 
