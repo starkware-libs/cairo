@@ -576,6 +576,11 @@ impl TopLevelLanguageElementId for TraitTypeId {
         format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
     }
 }
+impl UnstableSalsaId for TraitTypeId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
+}
 
 // --- Trait constant items ---
 define_named_language_element_id!(

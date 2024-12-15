@@ -2,7 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, ModuleFileId, NamedLanguageElementId,
-    StructId, TraitTypeId,
+    StructId, TraitTypeId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
@@ -479,6 +479,26 @@ impl DebugWithDb<dyn SemanticGroup> for ImplTypeId {
         write!(f, "{}", self.format(db))
     }
 }
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ImplTypeById(ImplTypeId);
+
+impl From<ImplTypeId> for ImplTypeById {
+    fn from(impl_type_id: ImplTypeId) -> Self {
+        Self(impl_type_id)
+    }
+}
+impl Ord for ImplTypeById {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let a = self.0.impl_id.get_internal_id().cmp(other.0.impl_id.get_internal_id());
+        let b = self.0.ty.get_internal_id().cmp(other.0.ty.get_internal_id());
+        a.then(b)
+    }
+}
+impl PartialOrd for ImplTypeById {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path. Used for resolving from non-statement context.
@@ -683,6 +703,8 @@ pub fn get_impl_at_context(
 ) -> Result<ImplId, InferenceError> {
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
+    let constrains = db.generic_params_type_constraints(lookup_context.generic_params.clone());
+    inference.conform_generic_params_type_constraints(&constrains);
     // It's ok to consume the errors without reporting as this is a helper function meant to find an
     // impl and return it, but it's ok if the impl can't be found.
     let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context);
