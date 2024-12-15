@@ -1,4 +1,4 @@
-use core::hash::{BuildHasher, Hash};
+use core::hash::{BuildHasher, Hash, Hasher};
 use core::ops::{Index, IndexMut};
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
@@ -224,6 +224,20 @@ impl<Key: Hash + Eq, Value, BH: BuildHasher + Default, const N: usize> From<[(Ke
 {
     fn from(init_map: [(Key, Value); N]) -> Self {
         Self(IndexMap::from_iter(init_map))
+    }
+}
+
+impl<K, V> Hash for OrderedHashMap<K, V>
+where
+    K: Hash,
+    V: Hash,
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.len().hash(state);
+        self.iter().for_each(|(k, v)| {
+            k.hash(state);
+            v.hash(state);
+        });
     }
 }
 
