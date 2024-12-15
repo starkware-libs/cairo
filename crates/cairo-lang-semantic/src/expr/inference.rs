@@ -541,16 +541,22 @@ impl<'db> Inference<'db> {
 
     /// If an impl type is not fully inferred, we assign it's var to the original type
     pub fn finalize_impl_type_bounds(&mut self) {
-        let mut impl_type_bounds = std::mem::take(&mut self.data.impl_type_bounds);
-        impl_type_bounds.retain(|impl_type, ty| {
-            if !matches!(self.rewrite(ty.lookup_intern(self.db)).no_err(), TypeLongId::Var(_)) {
-                return true;
-            }
+        let impl_type_bounds = std::mem::take(&mut self.data.impl_type_bounds);
+        let impl_type_bounds_finalized = impl_type_bounds
+            .iter()
+            .filter_map(|(impl_type, ty)| {
+                let rewritten_type = self.rewrite(ty.lookup_intern(self.db)).no_err();
+                if !matches!(rewritten_type, TypeLongId::Var(_)) {
+                    return Some((*impl_type, rewritten_type.intern(self.db)));
+                }
+                // conformed the var type to the original impl type to remove it from the pending
+                // list.
+                self.conform_ty(*ty, TypeLongId::ImplType(*impl_type).intern(self.db)).ok();
+                None
+            })
+            .collect();
 
-            self.conform_ty(*ty, TypeLongId::ImplType(*impl_type).intern(self.db)).ok();
-            false
-        });
-        self.data.impl_type_bounds = impl_type_bounds;
+        self.data.impl_type_bounds = impl_type_bounds_finalized;
     }
 
     /// Allocates a new [ConstVar] for an unknown consts that needs to be inferred.
@@ -946,7 +952,12 @@ impl<'db> Inference<'db> {
             concrete_trait_id,
             impl_var_trait_item_mappings,
         );
-        let solution_set = match self.db.canonic_trait_solutions(canonical_trait, lookup_context) {
+
+        let solution_set = match self.db.canonic_trait_solutions(
+            canonical_trait,
+            lookup_context,
+            self.data.impl_type_bounds.clone(),
+        ) {
             Ok(solution_set) => solution_set,
             Err(err) => return Err(self.set_error(err)),
         };

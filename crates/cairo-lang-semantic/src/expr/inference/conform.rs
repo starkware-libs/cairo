@@ -709,4 +709,22 @@ impl Inference<'_> {
             }
         }
     }
+
+    /// Creates a var for each constrained impl_type and conforms the types.
+    pub fn conform_generic_params_type_constraints(&mut self, constraints: &Vec<(TypeId, TypeId)>) {
+        for (ty0, ty1) in constraints {
+            let ty0 = if let TypeLongId::ImplType(impl_type) = ty0.lookup_intern(self.db) {
+                self.impl_type_assignment(impl_type)
+            } else {
+                *ty0
+            };
+            let ty1 = if let TypeLongId::ImplType(impl_type) = ty1.lookup_intern(self.db) {
+                self.impl_type_assignment(impl_type)
+            } else {
+                *ty1
+            };
+            self.conform_ty(ty0, ty1).ok();
+        }
+        self.finalize_impl_type_bounds();
+    }
 }
