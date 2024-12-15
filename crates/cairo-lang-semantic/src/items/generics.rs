@@ -21,6 +21,7 @@ use super::constant::{ConstValue, ConstValueId};
 use super::imp::{ImplHead, ImplId, ImplLongId};
 use super::resolve_trait_path;
 use super::trt::ConcreteTraitTypeId;
+use crate::corelib::{CoreTraitContext, get_core_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
@@ -30,8 +31,8 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::lookup_item::LookupItemEx;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::types::{TypeHead, resolve_type};
-use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId, TypeLongId};
+use crate::types::{ImplTypeId, TypeHead, resolve_type};
+use crate::{ConcreteTraitId, ConcreteTraitLongId, SemanticDiagnostic, TypeId, TypeLongId};
 
 /// Generic argument.
 /// A value assigned to a generic parameter.
@@ -381,6 +382,42 @@ pub fn priv_generic_param_data_cycle(
     _in_cycle: &bool,
 ) -> Maybe<GenericParamData> {
     priv_generic_param_data(db, *generic_param_id, true)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::generic_params_type_constraints].
+pub fn generic_params_type_constraints(
+    db: &dyn SemanticGroup,
+    generic_params: Vec<GenericParamId>,
+) -> Vec<(TypeId, TypeId)> {
+    let mut constraints = vec![];
+    for param in &generic_params {
+        let GenericParam::Impl(imp) = db.generic_param_semantic(*param).unwrap() else {
+            continue;
+        };
+        let Ok(concrete_trait_id) = imp.concrete_trait else {
+            continue;
+        };
+        for (concrete_trait_type_id, ty1) in imp.type_constraints {
+            let trait_ty = concrete_trait_type_id.trait_type(db);
+            let impl_type = TypeLongId::ImplType(ImplTypeId::new(
+                ImplLongId::GenericParameter(*param).intern(db),
+                trait_ty,
+                db,
+            ))
+            .intern(db);
+            constraints.push((impl_type, ty1));
+        }
+        let ConcreteTraitLongId { trait_id, generic_args } = concrete_trait_id.lookup_intern(db);
+        if trait_id != get_core_trait(db, CoreTraitContext::MetaProgramming, "TypeEqual".into()) {
+            continue;
+        }
+        let [GenericArgumentId::Type(ty0), GenericArgumentId::Type(ty1)] = generic_args.as_slice()
+        else {
+            unreachable!("TypeEqual should have 2 arguments");
+        };
+        constraints.push((*ty0, *ty1));
+    }
+    constraints
 }
 
 // --- Helpers ---

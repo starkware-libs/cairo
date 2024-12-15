@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
@@ -711,6 +712,7 @@ pub trait SemanticGroup:
         &self,
         canonical_trait: inference::canonic::CanonicalTrait,
         lookup_context: ImplLookupContext,
+        impl_type_bounds: BTreeMap<ImplTypeId, TypeId>,
     ) -> Result<
         inference::solver::SolutionSet<inference::canonic::CanonicalImpl>,
         inference::InferenceError,
@@ -1461,6 +1463,13 @@ pub trait SemanticGroup:
         generic_param: GenericParamId,
         in_cycle: bool,
     ) -> Maybe<GenericParamData>;
+
+    /// Returns the type constraints intoduced by the generic params.
+    #[salsa::invoke(items::generics::generic_params_type_constraints)]
+    fn generic_params_type_constraints(
+        &self,
+        generic_params: Vec<GenericParamId>,
+    ) -> Vec<(TypeId, TypeId)>;
 
     // Concrete type.
     // ==============
