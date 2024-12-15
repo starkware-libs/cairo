@@ -4,6 +4,7 @@ use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
 use std::mem;
 use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
@@ -15,7 +16,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{
     Intern, LookupIntern, define_short_id, extract_matches, try_extract_matches,
 };
@@ -333,7 +334,7 @@ pub struct InferenceData {
     /// Inference variables that are currently ambiguous. May be solved later.
     ambiguous: Vec<(LocalImplVarId, Ambiguity)>,
     /// Mapping from impl types to type variables.
-    pub impl_type_bounds: OrderedHashMap<ImplTypeId, TypeId>,
+    pub impl_type_bounds: Arc<OrderedHashMap<ImplTypeId, TypeId>>,
 
     // Error handling members.
     /// The current error status.
@@ -359,7 +360,7 @@ impl InferenceData {
             refuted: Vec::new(),
             solved: Vec::new(),
             ambiguous: Vec::new(),
-            impl_type_bounds: OrderedHashMap::default(),
+            impl_type_bounds: Default::default(),
             error_status: Ok(()),
             error: None,
             consumed_error: None,
@@ -423,11 +424,8 @@ impl InferenceData {
             refuted: inference_id_replacer.rewrite(self.refuted.clone()).no_err(),
             solved: inference_id_replacer.rewrite(self.solved.clone()).no_err(),
             ambiguous: inference_id_replacer.rewrite(self.ambiguous.clone()).no_err(),
-            impl_type_bounds: self
-                .impl_type_bounds
-                .iter()
-                .map(|(k, v)| (*k, inference_id_replacer.rewrite(*v).no_err()))
-                .collect(),
+            impl_type_bounds: self.impl_type_bounds.clone(),
+
             error_status: self.error_status,
             error: self.error.clone(),
             consumed_error: self.consumed_error,
@@ -522,35 +520,26 @@ impl<'db> Inference<'db> {
         var
     }
 
-    /// Getter for an impl type assignment.
-    /// Creates a new type var if the impl type is not yet assigned.
-    pub fn impl_type_assignment(&mut self, impl_type: ImplTypeId) -> TypeId {
-        match self.data.impl_type_bounds.entry(impl_type) {
-            Entry::Occupied(entry) => *entry.get(),
-            Entry::Vacant(entry) => {
-                let inference_id = self.data.inference_id;
-                let id = LocalTypeVarId(self.data.type_vars.len());
-                let var = TypeVar { inference_id, id };
-                let ty = TypeLongId::Var(var).intern(self.db);
-                entry.insert(ty);
-                self.type_vars.push(var);
-                ty
-            }
-        }
-    }
-
     /// If an impl type is not fully inferred, we assign it's var to the original type
-    pub fn finalize_impl_type_bounds(&mut self) {
-        let mut impl_type_bounds = std::mem::take(&mut self.data.impl_type_bounds);
-        impl_type_bounds.retain(|impl_type, ty| {
-            if !matches!(self.rewrite(ty.lookup_intern(self.db)).no_err(), TypeLongId::Var(_)) {
-                return true;
-            }
+    pub fn finalize_impl_type_bounds(
+        &mut self,
+        impl_type_bounds: OrderedHashMap<ImplTypeId, TypeId>,
+    ) {
+        let impl_type_bounds_finalized = impl_type_bounds
+            .iter()
+            .filter_map(|(impl_type, ty)| {
+                let rewritten_type = self.rewrite(ty.lookup_intern(self.db)).no_err();
+                if !matches!(rewritten_type, TypeLongId::Var(_)) {
+                    return Some((*impl_type, rewritten_type.intern(self.db)));
+                }
+                // conformed the var type to the original impl type to remove it from the pending
+                // list.
+                self.conform_ty(*ty, TypeLongId::ImplType(*impl_type).intern(self.db)).ok();
+                None
+            })
+            .collect();
 
-            self.conform_ty(*ty, TypeLongId::ImplType(*impl_type).intern(self.db)).ok();
-            false
-        });
-        self.data.impl_type_bounds = impl_type_bounds;
+        self.data.impl_type_bounds = Arc::new(impl_type_bounds_finalized);
     }
 
     /// Allocates a new [ConstVar] for an unknown consts that needs to be inferred.
@@ -946,7 +935,14 @@ impl<'db> Inference<'db> {
             concrete_trait_id,
             impl_var_trait_item_mappings,
         );
-        let solution_set = match self.db.canonic_trait_solutions(canonical_trait, lookup_context) {
+
+        // impl_type_bounds order is deterimend by the generic params of the function and therefore
+        // is consistent.
+        let solution_set = match self.db.canonic_trait_solutions(
+            canonical_trait,
+            lookup_context,
+            (*self.data.impl_type_bounds).clone(),
+        ) {
             Ok(solution_set) => solution_set,
             Err(err) => return Err(self.set_error(err)),
         };

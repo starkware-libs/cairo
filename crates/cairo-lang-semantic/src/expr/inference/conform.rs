@@ -2,14 +2,14 @@ use std::hash::Hash;
 
 use cairo_lang_defs::ids::{TraitConstantId, TraitTypeId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
 
 use super::canonic::{NoError, ResultNoErrEx};
 use super::{
     ErrorSet, ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceResult,
-    InferenceVar,
+    InferenceVar, LocalTypeVarId, TypeVar,
 };
 use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
@@ -706,6 +706,46 @@ impl Inference<'_> {
             TypeLongId::Closure(closure) => {
                 closure.param_tys.into_iter().any(|ty| self.internal_ty_contains_var(ty, var))
                     || self.internal_ty_contains_var(closure.ret_ty, var)
+            }
+        }
+    }
+
+    /// Creates a var for each constrained impl_type and conforms the types.
+    pub fn conform_generic_params_type_constraints(&mut self, constraints: &Vec<(TypeId, TypeId)>) {
+        let mut impl_type_bounds = Default::default();
+        for (ty0, ty1) in constraints {
+            let ty0 = if let TypeLongId::ImplType(impl_type) = ty0.lookup_intern(self.db) {
+                self.impl_type_assignment(impl_type, &mut impl_type_bounds)
+            } else {
+                *ty0
+            };
+            let ty1 = if let TypeLongId::ImplType(impl_type) = ty1.lookup_intern(self.db) {
+                self.impl_type_assignment(impl_type, &mut impl_type_bounds)
+            } else {
+                *ty1
+            };
+            self.conform_ty(ty0, ty1).ok();
+        }
+        self.finalize_impl_type_bounds(impl_type_bounds);
+    }
+
+    /// an helper function for getting for an impl type assignment.
+    /// Creates a new type var if the impl type is not yet assigned.
+    fn impl_type_assignment(
+        &mut self,
+        impl_type: ImplTypeId,
+        impl_type_bounds: &mut OrderedHashMap<ImplTypeId, TypeId>,
+    ) -> TypeId {
+        match impl_type_bounds.entry(impl_type) {
+            Entry::Occupied(entry) => *entry.get(),
+            Entry::Vacant(entry) => {
+                let inference_id = self.data.inference_id;
+                let id = LocalTypeVarId(self.data.type_vars.len());
+                let var = TypeVar { inference_id, id };
+                let ty = TypeLongId::Var(var).intern(self.db);
+                entry.insert(ty);
+                self.type_vars.push(var);
+                ty
             }
         }
     }
