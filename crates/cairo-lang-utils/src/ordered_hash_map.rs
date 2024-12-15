@@ -1,4 +1,4 @@
-use core::hash::{BuildHasher, Hash};
+use core::hash::{BuildHasher, Hash, Hasher};
 use core::ops::{Index, IndexMut};
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
