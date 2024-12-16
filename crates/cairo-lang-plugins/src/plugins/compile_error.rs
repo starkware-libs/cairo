@@ -27,7 +27,7 @@ impl MacroPlugin for CompileErrorPlugin {
                 let ast::Expr::String(err_message) = compilation_error_arg else {
                     return PluginResult::diagnostic_only(PluginDiagnostic::error(
                         &compilation_error_arg,
-                        "`compiler_error!` argument must be an unnamed string argument."
+                        "`compile_error!` argument must be an unnamed string argument."
                             .to_string(),
                     ));
                 };
