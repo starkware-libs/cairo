@@ -27,7 +27,7 @@ pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Unique identifier of a crate.
 ///
-/// This directly translates to [`DependencySettings.discriminator`] expect the discriminator
+/// This directly translates to [`DependencySettings.discriminator`] except the discriminator
 /// **must** be `None` for the core crate.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct CrateIdentifier(SmolStr);
