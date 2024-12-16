@@ -12,15 +12,13 @@
 //!   0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
 //! * Curve equation: y^2 = x^3 + 7
 
-use core::gas::GasBuiltin;
-use core::option::OptionTrait;
+use core::{gas::GasBuiltin, option::OptionTrait};
 #[allow(unused_imports)]
-use starknet::{
-    secp256_trait::{
-        Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature,
-    },
-    SyscallResult, SyscallResultTrait,
+use starknet::secp256_trait::{
+    Secp256PointTrait, Secp256Trait, Signature, is_signature_entry_valid, recover_public_key,
 };
+#[allow(unused_imports)]
+use starknet::{SyscallResult, SyscallResultTrait};
 
 /// A point on the secp256k1 curve.
 #[derive(Copy, Drop)]

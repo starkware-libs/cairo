@@ -1,13 +1,13 @@
 pub mod traits;
+use serde::Serde;
 #[feature("deprecated-index-traits")]
 #[feature("deprecated-op-assign-traits")]
 #[allow(unused_imports)]
 use traits::{
-    Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
-    PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not, Neg, Into,
-    TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct,
+    Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Default, Destruct, Div, DivEq, DivRem, Drop,
+    Felt252DictValue, Index, IndexView, Into, Mul, MulEq, Neg, Not, PanicDestruct, PartialEq,
+    PartialOrd, Rem, RemEq, Sub, SubEq, TryInto, TupleSize0Copy, TupleSize0Drop,
 };
-use serde::Serde;
 
 pub type usize = u32;
 
@@ -250,7 +250,7 @@ use array::{Span, SpanTrait};
 pub mod dict;
 #[allow(unused_imports)]
 use dict::{
-    Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait,
+    Felt252Dict, Felt252DictTrait, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash,
 };
 
 /// Result.
@@ -280,16 +280,22 @@ pub mod ecdsa;
 pub mod integer;
 #[allow(unused_imports)]
 use integer::{
-    i8, I8IntoFelt252, i16, I16IntoFelt252, i32, I32IntoFelt252, i64, I64IntoFelt252, i128,
-    I128IntoFelt252, NumericLiteral, u128, u128_is_zero, u8, u16, u32, u64, u256, Felt252TryIntoU8,
-    U8IntoFelt252, Felt252TryIntoU16, U16IntoFelt252, Felt252TryIntoU32, U32IntoFelt252,
-    Felt252TryIntoU64, U64IntoFelt252, Felt252TryIntoU128, U128IntoFelt252, Felt252IntoU256,
-    Bitwise,
+    Bitwise, Felt252IntoU256, Felt252TryIntoU128, Felt252TryIntoU16, Felt252TryIntoU32,
+    Felt252TryIntoU64, Felt252TryIntoU8, I128IntoFelt252, I16IntoFelt252, I32IntoFelt252,
+    I64IntoFelt252, I8IntoFelt252, NumericLiteral, U128IntoFelt252, U16IntoFelt252, U32IntoFelt252,
+    U64IntoFelt252, U8IntoFelt252, i128, i16, i32, i64, i8, u128, u128_is_zero, u16, u256, u32, u64,
+    u8,
 };
 #[feature("corelib-internal-use")]
 #[deprecated(feature: "corelib-internal-use", note: "Use `core::num::traits::Sqrt` instead")]
 #[allow(unused_imports)]
 use integer::{u128_sqrt, u256_sqrt};
+
+/// Module for comparison operations.
+pub mod cmp;
+
+/// Module for handling gas operations.
+pub mod gas;
 
 /// Math.
 #[feature("corelib-internal-use")]
@@ -300,12 +306,6 @@ pub mod num;
 
 /// Module containing the operations that can be performed on the different types.
 pub mod ops;
-
-/// Module for comparison operations.
-pub mod cmp;
-
-/// Module for handling gas operations.
-pub mod gas;
 #[allow(unused_imports)]
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
@@ -313,7 +313,7 @@ use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 /// Panics.
 pub mod panics;
 #[allow(unused_imports)]
-use panics::{panic, Panic, PanicResult};
+use panics::{Panic, PanicResult, panic};
 
 pub enum never {}
 
@@ -329,18 +329,18 @@ pub fn assert(cond: bool, err_code: felt252) {
     }
 }
 
-/// Serialization and Deserialization.
-pub mod serde;
-
 /// Hash functions.
 pub mod hash;
 
 pub mod keccak;
 
-pub mod sha256;
-
 /// Pedersen
 pub mod pedersen;
+
+/// Serialization and Deserialization.
+pub mod serde;
+
+pub mod sha256;
 #[allow(unused_imports)]
 use pedersen::Pedersen;
 
@@ -366,14 +366,14 @@ pub mod internal;
 /// Zeroable.
 pub mod zeroable;
 #[allow(unused_imports)]
-use zeroable::{Zeroable, NonZero};
+use zeroable::{NonZero, Zeroable};
 
 /// bytes31.
 pub mod bytes_31;
 #[allow(unused_imports)]
 use bytes_31::{
-    bytes31, bytes31_const, Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait,
-    Felt252TryIntoBytes31,
+    Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait, Felt252TryIntoBytes31, bytes31,
+    bytes31_const,
 };
 
 /// BytesArray.
@@ -386,14 +386,8 @@ pub mod string;
 #[allow(unused_imports)]
 use string::StringLiteral;
 
-/// to_byte_array.
-pub mod to_byte_array;
-
-#[cfg(test)]
-mod test;
-
-/// Module for testing only.
-pub mod testing;
+/// Iterators.
+pub mod iter;
 
 /// Metaprogramming.
 pub mod metaprogramming;
@@ -402,5 +396,11 @@ pub mod metaprogramming;
 #[allow(unused_imports)]
 mod prelude;
 
-/// Iterators.
-pub mod iter;
+#[cfg(test)]
+mod test;
+
+/// Module for testing only.
+pub mod testing;
+
+/// to_byte_array.
+pub mod to_byte_array;

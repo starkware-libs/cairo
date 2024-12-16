@@ -1,9 +1,7 @@
 #[allow(unused_imports)]
-use crate::array::ArrayTrait;
+use crate::array::{ArrayTrait, SpanTrait};
 #[allow(unused_imports)]
 use crate::serde::Serde;
-#[allow(unused_imports)]
-use crate::array::SpanTrait;
 
 #[must_use]
 #[derive(Copy, Drop, Debug, Serde, PartialEq)]

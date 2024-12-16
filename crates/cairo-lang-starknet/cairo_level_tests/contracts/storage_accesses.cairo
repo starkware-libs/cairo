@@ -1,5 +1,4 @@
-use starknet::ContractAddress;
-use starknet::storage::Map;
+use starknet::{ContractAddress, storage::Map};
 
 #[starknet::interface]
 trait IERC20<TContractState> {
@@ -34,13 +33,12 @@ struct TransactionInfo {
 #[starknet::contract]
 mod storage_accesses {
     use core::num::traits::Zero;
-    use starknet::get_caller_address;
-    use starknet::ContractAddress;
-    use super::{UserInfo, TransactionInfo};
     use starknet::storage::{
-        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess,
+        StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
     };
+    use starknet::{ContractAddress, get_caller_address};
+    use super::{TransactionInfo, UserInfo};
 
     #[storage]
     struct Storage {

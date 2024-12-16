@@ -163,10 +163,10 @@ impl Default for FormatterConfig {
         Self {
             tab_size: TAB_SIZE,
             max_line_length: MAX_LINE_LENGTH,
-            sort_module_level_items: false,
+            sort_module_level_items: true,
             tuple_breaking_behavior: CollectionsBreakingBehavior::LineByLine,
             fixed_array_breaking_behavior: CollectionsBreakingBehavior::SingleBreakPoint,
-            merge_use_items: false,
+            merge_use_items: true,
             allow_duplicate_uses: false,
         }
     }

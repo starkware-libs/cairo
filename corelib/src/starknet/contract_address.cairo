@@ -1,9 +1,8 @@
 #[allow(unused_imports)]
-use core::zeroable::Zeroable;
-use core::serde::Serde;
-#[allow(unused_imports)]
 use core::hash::{Hash, HashStateTrait};
-use core::RangeCheck;
+#[allow(unused_imports)]
+use core::zeroable::Zeroable;
+use core::{RangeCheck, serde::Serde};
 
 /// Represents a Starknet contract address.
 /// The value range of this type is `[0, 2**251)`.

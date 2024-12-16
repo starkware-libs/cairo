@@ -1,6 +1,5 @@
-use crate::test::test_utils::assert_eq;
-use crate::hash::{HashStateTrait, HashStateExTrait};
-use crate::poseidon::PoseidonTrait;
+use crate::hash::{HashStateExTrait, HashStateTrait};
+use crate::{poseidon::PoseidonTrait, test::test_utils::assert_eq};
 
 #[test]
 fn test_pedersen_hash() {

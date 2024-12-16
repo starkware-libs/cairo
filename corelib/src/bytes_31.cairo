@@ -14,11 +14,11 @@
 //! assert!(value[0] == 0xbb);
 //! ```
 
+use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::integer::{u128_safe_divmod, u128_to_felt252};
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
-use crate::RangeCheck;
 use crate::traits::{Into, TryInto};
 
 pub(crate) const BYTES_IN_BYTES31: usize = 31;
@@ -34,7 +34,7 @@ pub(crate) extern fn bytes31_const<const value: felt252>() -> bytes31 nopanic;
 extern fn bytes31_try_from_felt252(value: felt252) -> Option<bytes31> implicits(RangeCheck) nopanic;
 extern fn bytes31_to_felt252(value: bytes31) -> felt252 nopanic;
 
-/// A trait for accessing a specific byte of a `bytes31` type.
+/// A trait for accessing a specific byte of ampl CollectionsBreakingBeha `bytes31` type.
 #[generate_trait]
 pub impl Bytes31Impl of Bytes31Trait {
     /// Returns the byte at the given index (LSB's index is 0).
@@ -232,7 +232,7 @@ impl Bytes31PartialEq of PartialEq<bytes31> {
 }
 
 mod helpers {
-    use core::internal::bounded_int::{DivRemHelper, BoundedInt, div_rem};
+    use core::internal::bounded_int::{BoundedInt, DivRemHelper, div_rem};
 
     impl DivRemU128By256 of DivRemHelper<u128, BoundedInt<256, 256>> {
         type DivT = BoundedInt<0, 0xffffffffffffffffffffffffffffff>;

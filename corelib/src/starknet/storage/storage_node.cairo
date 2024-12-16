@@ -1,4 +1,4 @@
-use super::{StoragePath, Mutable};
+use super::{Mutable, StoragePath};
 
 
 /// A trait that given a storage path of a struct, generates the storage node of this struct.

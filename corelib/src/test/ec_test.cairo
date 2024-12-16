@@ -1,8 +1,5 @@
 use crate::ec::{EcPoint, EcPointTrait, EcStateTrait};
-use crate::ecdsa;
-use crate::option::OptionTrait;
-use crate::test::test_utils::assert_eq;
-use crate::traits::TryInto;
+use crate::{ecdsa, option::OptionTrait, test::test_utils::assert_eq, traits::TryInto};
 
 #[test]
 #[should_panic]

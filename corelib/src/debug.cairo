@@ -3,11 +3,9 @@
 //! available in the [`fmt`] module. The items in this module are not public, and are not
 //! recommended to use.
 
-#[allow(unused_imports)]
-use crate::array::ArrayTrait;
 use crate::traits::Into;
 #[allow(unused_imports)]
-use crate::option::Option;
+use crate::{array::ArrayTrait, option::Option};
 
 pub(crate) extern fn print(message: Array<felt252>) nopanic;
 

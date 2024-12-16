@@ -1,8 +1,8 @@
 #[starknet::contract]
 mod circuit_contract {
     use core::circuit::{
-        CircuitElement, CircuitInput, circuit_add, circuit_inverse, CircuitModulus,
-        AddInputResultTrait, CircuitInputs, EvalCircuitTrait,
+        AddInputResultTrait, CircuitElement, CircuitInput, CircuitInputs, CircuitModulus,
+        EvalCircuitTrait, circuit_add, circuit_inverse,
     };
 
     #[storage]

@@ -1,6 +1,5 @@
-use crate::dict::{Felt252DictEntryTrait, Felt252Dict};
-use crate::test::test_utils::assert_eq;
-use crate::nullable;
+use crate::dict::{Felt252Dict, Felt252DictEntryTrait};
+use crate::{nullable, test::test_utils::assert_eq};
 
 #[test]
 fn test_dict_new() -> Felt252Dict<felt252> {

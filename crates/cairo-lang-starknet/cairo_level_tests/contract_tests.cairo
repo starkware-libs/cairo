@@ -1,5 +1,4 @@
 use core::num::traits::Zero;
-
 use super::utils::serialized;
 
 #[starknet::interface]
@@ -9,8 +8,8 @@ trait ITestContract<T> {}
 mod test_contract {
     use starknet::StorageAddress;
     use starknet::storage::{
-        Map, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess,
+        Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
     };
 
     #[storage]

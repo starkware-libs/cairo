@@ -1,13 +1,10 @@
-use core::option::OptionTrait;
+use core::{keccak::keccak_u256s_be_inputs, option::OptionTrait};
 #[allow(unused_imports)]
-use starknet::{
-    EthAddress,
-    secp256_trait::{
-        Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature,
-    },
-    secp256k1::Secp256k1Point, SyscallResult, SyscallResultTrait,
+use starknet::secp256_trait::{
+    Secp256PointTrait, Secp256Trait, Signature, is_signature_entry_valid, recover_public_key,
 };
-use core::keccak::keccak_u256s_be_inputs;
+#[allow(unused_imports)]
+use starknet::{EthAddress, SyscallResult, SyscallResultTrait, secp256k1::Secp256k1Point};
 
 /// Asserts that an Ethereum signature is valid w.r.t. a given Eth address
 /// Also verifies that r and s components of the signature are in the range (0, N),

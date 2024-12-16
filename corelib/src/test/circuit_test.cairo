@@ -1,11 +1,9 @@
 use crate::circuit::{
-    RangeCheck96, AddMod, MulMod, u96, CircuitElement, CircuitInput, circuit_add, circuit_sub,
-    circuit_mul, circuit_inverse, EvalCircuitTrait, u384, CircuitOutputsTrait, CircuitModulus,
-    AddInputResultTrait, CircuitInputs,
+    AddInputResultTrait, AddMod, CircuitElement, CircuitInput, CircuitInputs, CircuitModulus,
+    CircuitOutputsTrait, EvalCircuitTrait, MulMod, RangeCheck96, circuit_add, circuit_inverse,
+    circuit_mul, circuit_sub, u384, u96,
 };
-
-use crate::num::traits::Zero;
-use crate::traits::TryInto;
+use crate::{num::traits::Zero, traits::TryInto};
 
 #[test]
 fn test_u96() {

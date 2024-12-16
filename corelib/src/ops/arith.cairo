@@ -27,9 +27,8 @@ pub trait RemAssign<Lhs, Rhs> {
     /// Performs the `%=` operation.
     fn rem_assign(ref self: Lhs, rhs: Rhs);
 }
-
 #[feature("deprecated-op-assign-traits")]
-use crate::traits::{AddEq, SubEq, MulEq, DivEq, RemEq};
+use crate::traits::{AddEq, DivEq, MulEq, RemEq, SubEq};
 
 impl DeprecatedAddAssign<T, impl Deprecated: AddEq<T>> of AddAssign<T, T> {
     fn add_assign(ref self: T, rhs: T) {
