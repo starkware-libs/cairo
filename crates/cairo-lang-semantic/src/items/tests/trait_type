@@ -1022,22 +1022,22 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0.
+error: Trait has no implementation in context: test::AnotherTrait0.
  --> lib.cairo:17:31
     fn bar1(x: AnotherTrait0::AnotherType);
                               ^^^^^^^^^^^
 
-error: Type annotations needed. Failed to infer ?0.
+error: Trait has no implementation in context: test::AnotherTrait0.
  --> lib.cairo:18:33
     fn bar2() -> AnotherTrait0::AnotherType;
                                 ^^^^^^^^^^^
 
-error: Type annotations needed. Failed to infer ?0.
+error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
  --> lib.cairo:19:31
     fn bar3(x: AnotherTrait2::AnotherType);
                               ^^^^^^^^^^^
 
-error: Type annotations needed. Failed to infer ?0.
+error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
  --> lib.cairo:20:33
     fn bar4() -> AnotherTrait2::AnotherType;
                                 ^^^^^^^^^^^
@@ -1192,22 +1192,22 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0.
+error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:9:32
     fn foo1() -> AnotherTrait::AnotherType {
                                ^^^^^^^^^^^
 
-error: Type annotations needed. Failed to infer ?0.
+error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:12:30
     fn foo2(x: AnotherTrait::AnotherType) {}
                              ^^^^^^^^^^^
 
-error: Type annotations needed. Failed to infer ?0.
+error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:14:28
 fn bar1() -> AnotherTrait::AnotherType {
                            ^^^^^^^^^^^
 
-error: Type annotations needed. Failed to infer ?0.
+error: Trait has no implementation in context: test::AnotherTrait.
  --> lib.cairo:17:26
 fn bar2(x: AnotherTrait::AnotherType) {}
                          ^^^^^^^^^^^
@@ -1259,22 +1259,22 @@ fn bar3() {
 }
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0.
+error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
  --> lib.cairo:15:32
     fn foo1() -> AnotherTrait::AnotherType {
                                ^^^^^^^^^^^
 
-error: Type annotations needed. Failed to infer ?0.
+error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
  --> lib.cairo:18:30
     fn foo2(x: AnotherTrait::AnotherType) {}
                              ^^^^^^^^^^^
 
-error: Type annotations needed. Failed to infer ?0.
+error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
  --> lib.cairo:20:28
 fn bar1() -> AnotherTrait::AnotherType {
                            ^^^^^^^^^^^
 
-error: Type annotations needed. Failed to infer ?0.
+error: Trait `test::AnotherTrait` has multiple implementations, in: `test::AnotherImpl1`, `test::AnotherImpl2`
  --> lib.cairo:23:26
 fn bar2(x: AnotherTrait::AnotherType) {}
                          ^^^^^^^^^^^
@@ -2204,6 +2204,11 @@ error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:7:7
     x.t
       ^
+
+error: Trait has no implementation in context: test::Trt.
+ --> lib.cairo:6:18
+    let x = Trt::foo();
+                 ^^^
 
 //! > ==========================================================================
 
