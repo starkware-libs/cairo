@@ -100,6 +100,11 @@ error: Identifier not found.
         return y == 9;
                ^
 
+error: Cannot infer trait core::traits::PartialEq::<?1>. First generic argument must be known.
+ --> lib.cairo:7:16
+        return y == 9;
+               ^^^^^^
+
 //! > ==========================================================================
 
 //! > if_let logical operators.

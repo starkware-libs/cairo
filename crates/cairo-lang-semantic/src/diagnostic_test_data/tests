@@ -25,6 +25,11 @@ error: Function not found.
 1 + foo()
     ^^^
 
+error: Cannot infer trait core::traits::Add::<?0>. First generic argument must be known.
+ --> lib.cairo:3:1
+1 + foo()
+^^^^^^^^^
+
 //! > ==========================================================================
 
 //! > Test function lookup
@@ -873,6 +878,11 @@ error: Are you missing a `::`?.
  --> lib.cairo:4:18
   let _fail = bar<felt252>(1);
                  ^
+
+error: Cannot infer trait core::traits::PartialOrd::<?0>. First generic argument must be known.
+ --> lib.cairo:4:15
+  let _fail = bar<felt252>(1);
+              ^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 

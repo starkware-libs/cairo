@@ -91,7 +91,7 @@ array![]
 }
 
 //! > diagnostics
-error: Type annotations needed. Failed to infer ?0.
+error: Cannot infer trait core::array::ArrayTrait::<?0>. First generic argument must be known.
  --> lib.cairo:2:1
 array![]
 ^^^^^^^^

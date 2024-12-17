@@ -322,6 +322,11 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
+error: Cannot infer trait core::fmt::Display::<?7>. First generic argument must be known.
+ --> lib.cairo:24:5
+    write!(f, "{}", non_existing).unwrap();
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 //! > ==========================================================================
 
 //! > Test bad writeln! macros
@@ -513,6 +518,11 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
+error: Cannot infer trait core::fmt::Display::<?2>. First generic argument must be known.
+ --> lib.cairo:21:5
+    writeln!(f, "{non_existing}").unwrap();
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 //! > ==========================================================================
 
 //! > Test bad format! macros
@@ -615,6 +625,11 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
         ^^
+
+error: Cannot infer trait core::fmt::Display::<?5>. First generic argument must be known.
+ --> lib.cairo:14:5
+    format!("{non_existing}");
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -719,6 +734,11 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
+error: Cannot infer trait core::fmt::Display::<?5>. First generic argument must be known.
+ --> lib.cairo:14:5
+    print!("{non_existing}");
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+
 //! > ==========================================================================
 
 //! > Test bad println! macros
@@ -822,6 +842,11 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let ba: ByteArray = "hello";
         ^^
 
+error: Cannot infer trait core::fmt::Display::<?5>. First generic argument must be known.
+ --> lib.cairo:14:5
+    println!("{non_existing}");
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 //! > ==========================================================================
 
 //! > Test bad panic! macros
@@ -911,6 +936,11 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
  --> lib.cairo:2:9
     let ba: ByteArray = "hello";
         ^^
+
+error: Cannot infer trait core::fmt::Display::<?11>. First generic argument must be known.
+ --> lib.cairo:14:5
+    panic!("{non_existing}");
+    ^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 

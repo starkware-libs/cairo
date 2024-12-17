@@ -299,10 +299,10 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 }
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?1.
- --> lib.cairo:17:18
+error: Trait `test::MyTrait::<core::option::Option::<?0>>` has multiple implementations, in: `test::MyImpl3`, `test::MyImpl4`
+ --> lib.cairo:17:14
     MyTrait::foo(Option::None);
-                 ^^^^^^
+             ^^^
 
 //! > ==========================================================================
 
@@ -611,7 +611,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0.
+error: Cannot infer trait core::string::StringLiteral::<?0>. First generic argument must be known.
  --> lib.cairo:2:14
     let _x = "hello";
              ^^^^^^^

@@ -1034,6 +1034,11 @@ Candidate `test::MyInto::my_into` inference failed with: Trait has no implementa
     let _ = MyType {} + 3_u16.my_into();
                               ^^^^^^^
 
+error: Cannot infer trait core::traits::Add::<?0>. First generic argument must be known.
+ --> lib.cairo:14:13
+    let _ = MyType {} + 3_u16.my_into();
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 //! > ==========================================================================
 
 //! > Early conform of RHS of an assignment.
@@ -1131,6 +1136,11 @@ Candidate `test::MyInto::my_into` inference failed with: Trait has no implementa
  --> lib.cairo:18:43
     let _: bool = @(MyType {}) != @(3_u16.my_into());
                                           ^^^^^^^
+
+error: Cannot infer trait core::traits::PartialEq::<?2>. First generic argument must be known.
+ --> lib.cairo:17:19
+    let _: bool = MyType {} != 3_u16.my_into();
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 

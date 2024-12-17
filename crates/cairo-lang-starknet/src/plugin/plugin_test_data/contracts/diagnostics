@@ -1315,6 +1315,13 @@ error: Type not found.
 |     fn foo<T>(ref self: ContractState, x: T) {}
 |_______________________________________________^
 
+error: Cannot infer trait core::metaprogramming::TupleSnapForward::<?0>. First generic argument must be known.
+ --> lib.cairo:5:5-6:48
+      #[external(v0)]
+ _____^
+|     fn foo<T>(ref self: ContractState, x: T) {}
+|_______________________________________________^
+
 error: Variable not dropped.
  --> lib.cairo:6:40
     fn foo<T>(ref self: ContractState, x: T) {}
@@ -10066,6 +10073,11 @@ error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro mu
  --> lib.cairo:58:44
             get_dep_component_mut!(ref mut self, Comp1).foo1();
                                            ^^^^
+
+error: Cannot infer trait test::component1::HasComponent::<?11>. First generic argument must be known.
+ --> lib.cairo:58:57
+            get_dep_component_mut!(ref mut self, Comp1).foo1();
+                                                        ^^^^
 
 //! > generated_cairo_code
 lib.cairo:
