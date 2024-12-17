@@ -68,7 +68,7 @@ impl CanonicalTrait {
 pub struct CanonicalImpl(pub ImplId);
 impl CanonicalImpl {
     /// Canonicalizes a concrete impl that is part of an [Inference].
-    /// Uses the same same canonicalization of the trait, to be consistent.
+    /// Uses the same canonicalization of the trait, to be consistent.
     pub fn canonicalize(
         db: &dyn SemanticGroup,
         impl_id: ImplId,
