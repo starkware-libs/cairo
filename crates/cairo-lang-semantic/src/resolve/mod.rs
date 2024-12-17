@@ -1277,10 +1277,20 @@ impl<'db> Resolver<'db> {
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
         if let Some(dep) = self.settings.dependencies.get(ident.as_str()) {
-            return ResolvedBase::Crate(
+            let dep_crate_id =
                 CrateLongId::Real { name: ident, discriminator: dep.discriminator.clone() }
-                    .intern(self.db),
-            );
+                    .intern(self.db);
+            let configs = self.db.crate_configs();
+            if !configs.contains_key(&dep_crate_id) {
+                let get_long_id = |crate_id: CrateId| crate_id.lookup_intern(self.db);
+                panic!(
+                    "Invalid crate dependency: {:?}\nconfigured crates: {:#?}",
+                    get_long_id(dep_crate_id),
+                    configs.keys().cloned().map(get_long_id).collect_vec()
+                );
+            }
+
+            return ResolvedBase::Crate(dep_crate_id);
         }
         // If an item with this name is found in one of the 'use *' imports, use the module that
         match self.resolve_path_using_use_star(module_id, identifier) {
