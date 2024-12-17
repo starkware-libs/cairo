@@ -356,7 +356,7 @@ fn build_u256_inv_mod_n(
         tempvar t_or_k0;
         tempvar t_or_k1;
 
-        // Find the inverse or an a proof there isn't one.
+        // Find the inverse or a proof there isn't one.
         hint U256InvModN {
             b0, b1, n0, n1
         } into {
