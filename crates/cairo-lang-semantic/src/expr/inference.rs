@@ -752,12 +752,6 @@ impl<'db> Inference<'db> {
     /// inferred.
     /// Does not set the error but return it, which is ok as this is a private helper function.
     fn first_undetermined_variable(&mut self) -> Option<(InferenceVar, InferenceError)> {
-        for (id, var) in self.type_vars.iter().enumerate() {
-            if self.type_assignment(LocalTypeVarId(id)).is_none() {
-                let ty = TypeLongId::Var(*var).intern(self.db);
-                return Some((InferenceVar::Type(var.id), InferenceError::TypeNotInferred(ty)));
-            }
-        }
         if let Some(var) = self.refuted.first().copied() {
             let impl_var = self.impl_var(var).clone();
             let concrete_trait_id = impl_var.concrete_trait_id;
@@ -767,12 +761,24 @@ impl<'db> Inference<'db> {
                 InferenceError::NoImplsFound(concrete_trait_id),
             ));
         }
+        let mut fallback_ret = None;
         if let Some((var, ambiguity)) = self.ambiguous.first() {
-            let var = *var;
             // Note: do not rewrite `ambiguity`, since it is expressed in canonical variables.
-            return Some((InferenceVar::Impl(var), InferenceError::Ambiguity(ambiguity.clone())));
+            let ret =
+                Some((InferenceVar::Impl(*var), InferenceError::Ambiguity(ambiguity.clone())));
+            if !matches!(ambiguity, Ambiguity::WillNotInfer(_)) {
+                return ret;
+            } else {
+                fallback_ret = ret;
+            }
         }
-        None
+        for (id, var) in self.type_vars.iter().enumerate() {
+            if self.type_assignment(LocalTypeVarId(id)).is_none() {
+                let ty = TypeLongId::Var(*var).intern(self.db);
+                return Some((InferenceVar::Type(var.id), InferenceError::TypeNotInferred(ty)));
+            }
+        }
+        fallback_ret
     }
 
     /// Assigns a value to a local impl variable id. See assign_impl().
