@@ -20,7 +20,7 @@ use crate::{
 /// Splits all the variables that were created by struct_construct and reintroduces the
 /// struct_construct statement when needed.
 ///
-/// Note that if a member is used after the struct then is means that that struct is copyable.
+/// Note that if a member is used after the struct then it means that that struct is copyable.
 pub fn split_structs(lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
@@ -305,7 +305,7 @@ impl SplitStructsContext<'_> {
 
         // If the variable was defined in the same block or it is non-copyable then we can
         // reconstruct it before the first usage. If not we need to reconstruct it at the
-        // end of the of the original block as it might be used by more then one of the
+        // end of the original block as it might be used by more than one of the
         // children.
         if block_id == split_info.block_id || self.variables[var_id].copyable.is_err() {
             let reconstructed_var_id = if block_id == split_info.block_id {
