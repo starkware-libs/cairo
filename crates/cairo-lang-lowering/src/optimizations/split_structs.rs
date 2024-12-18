@@ -20,7 +20,7 @@ use crate::{
 /// Splits all the variables that were created by struct_construct and reintroduces the
 /// struct_construct statement when needed.
 ///
-/// Note that if a member is used after the struct then it means that that struct is copyable.
+/// Note that if a member is used after the struct then it means that the struct is copyable.
 pub fn split_structs(lowered: &mut FlatLowered) {
     if lowered.blocks.is_empty() {
         return;
