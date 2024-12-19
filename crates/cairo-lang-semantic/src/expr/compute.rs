@@ -2760,6 +2760,7 @@ fn method_call_expr(
                 Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
             },
         )?;
+
     ctx.resolver.data.used_items.insert(candidate_traits[&actual_trait_id]);
 
     ctx.resolver.data.resolved_items.mark_concrete(
