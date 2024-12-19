@@ -213,41 +213,47 @@ pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
 }
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::Zero`.
-pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
+pub fn jump_nz_zero_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
     get_enum_concrete_variant(
         db,
         core_submodule(db, "zeroable"),
         "IsZeroResult",
-        vec![GenericArgumentId::Type(db.core_felt252_ty())],
+        vec![GenericArgumentId::Type(ty)],
         "Zero",
     )
 }
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::NonZero`.
-pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
+pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
     get_enum_concrete_variant(
         db,
         core_submodule(db, "zeroable"),
         "IsZeroResult",
-        vec![GenericArgumentId::Type(db.core_felt252_ty())],
+        vec![GenericArgumentId::Type(ty)],
         "NonZero",
     )
 }
 
 /// Generates a ConcreteVariant instance for `Option::Some`.
-pub fn option_some_variant(
-    db: &dyn SemanticGroup,
-    generic_arg: GenericArgumentId,
-) -> ConcreteVariant {
-    get_enum_concrete_variant(db, core_submodule(db, "option"), "Option", vec![generic_arg], "Some")
+pub fn option_some_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "option"),
+        "Option",
+        vec![GenericArgumentId::Type(ty)],
+        "Some",
+    )
 }
 
 /// Generates a ConcreteVariant instance for `Option::None`.
-pub fn option_none_variant(
-    db: &dyn SemanticGroup,
-    generic_arg: GenericArgumentId,
-) -> ConcreteVariant {
-    get_enum_concrete_variant(db, core_submodule(db, "option"), "Option", vec![generic_arg], "None")
+pub fn option_none_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "option"),
+        "Option",
+        vec![GenericArgumentId::Type(ty)],
+        "None",
+    )
 }
 
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned

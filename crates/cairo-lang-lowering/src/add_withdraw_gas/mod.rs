@@ -61,7 +61,7 @@ fn add_withdraw_gas_to_function(
                     MatchArm {
                         arm_selector: MatchArmSelector::VariantId(option_some_variant(
                             db.upcast(),
-                            GenericArgumentId::Type(unit_ty(db.upcast())),
+                            unit_ty(db.upcast()),
                         )),
                         block_id: old_root_new_id,
                         var_ids: vec![],
@@ -69,7 +69,7 @@ fn add_withdraw_gas_to_function(
                     MatchArm {
                         arm_selector: MatchArmSelector::VariantId(option_none_variant(
                             db.upcast(),
-                            GenericArgumentId::Type(unit_ty(db.upcast())),
+                            unit_ty(db.upcast()),
                         )),
                         block_id: panic_block_id,
                         var_ids: vec![],

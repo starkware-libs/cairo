@@ -14,8 +14,8 @@ use semantic::corelib::unit_ty;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
-    ConcreteTypeId, GenericArgumentId, MatchArmSelector, Pattern, PatternEnumVariant, PatternId,
-    TypeLongId, ValueSelectorArm,
+    ConcreteTypeId, MatchArmSelector, Pattern, PatternEnumVariant, PatternId, TypeLongId,
+    ValueSelectorArm,
 };
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
@@ -1215,6 +1215,7 @@ fn lower_expr_felt252_arm(
             MatchArm {
                 arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_zero_variant(
                     semantic_db,
+                    felt252_ty,
                 )),
                 block_id: main_block_id,
                 var_ids: vec![],
@@ -1222,6 +1223,7 @@ fn lower_expr_felt252_arm(
             MatchArm {
                 arm_selector: MatchArmSelector::VariantId(corelib::jump_nz_nonzero_variant(
                     semantic_db,
+                    felt252_ty,
                 )),
                 block_id: block_else_id,
                 var_ids: vec![else_block_input_var_id],
@@ -1480,7 +1482,7 @@ fn lower_expr_match_felt252(
             MatchArm {
                 arm_selector: MatchArmSelector::VariantId(corelib::option_some_variant(
                     semantic_db,
-                    GenericArgumentId::Type(bounded_int_ty),
+                    bounded_int_ty,
                 )),
                 block_id: in_range_block_id,
                 var_ids: vec![in_range_block_input_var_id],
@@ -1488,7 +1490,7 @@ fn lower_expr_match_felt252(
             MatchArm {
                 arm_selector: MatchArmSelector::VariantId(corelib::option_none_variant(
                     semantic_db,
-                    GenericArgumentId::Type(bounded_int_ty),
+                    bounded_int_ty,
                 )),
                 block_id: otherwise_block_id,
                 var_ids: vec![],
