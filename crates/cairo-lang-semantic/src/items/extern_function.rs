@@ -154,12 +154,11 @@ pub fn priv_extern_function_declaration_data(
     resolver.set_feature_config(&extern_function_id, &extern_function_syntax, &mut diagnostics);
 
     let mut environment = Environment::empty();
-    let signature_syntax = declaration.signature(syntax_db);
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
-        &signature_syntax,
+        &declaration,
         FunctionTitleId::Extern(extern_function_id),
         &mut environment,
     );

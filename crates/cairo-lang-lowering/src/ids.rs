@@ -440,7 +440,14 @@ pub struct Signature {
 }
 impl Signature {
     pub fn from_semantic(db: &dyn LoweringGroup, value: semantic::Signature) -> Self {
-        let semantic::Signature { params, return_type, implicits, panicable, stable_ptr } = value;
+        let semantic::Signature {
+            params,
+            return_type,
+            implicits,
+            panicable,
+            stable_ptr,
+            is_const: _,
+        } = value;
         let ref_params = params
             .iter()
             .filter(|param| param.mutability == Mutability::Reference)
