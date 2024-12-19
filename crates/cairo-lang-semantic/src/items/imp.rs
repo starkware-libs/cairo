@@ -3031,14 +3031,12 @@ pub fn priv_impl_function_declaration_data(
     diagnostics.extend(generic_params_data.diagnostics);
     resolver.set_feature_config(&impl_function_id, function_syntax, &mut diagnostics);
 
-    let signature_syntax = declaration.signature(syntax_db);
-
     let mut environment = Environment::empty();
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
-        &signature_syntax,
+        &declaration,
         FunctionTitleId::Impl(impl_function_id),
         &mut environment,
     );
@@ -3056,7 +3054,7 @@ pub fn priv_impl_function_declaration_data(
         inference,
         ValidateImplFunctionSignatureParams {
             impl_function_id,
-            signature_syntax: &signature_syntax,
+            signature_syntax: &declaration.signature(syntax_db),
             signature: &signature,
             impl_function_syntax: function_syntax,
             impl_func_generics: &generic_params,
