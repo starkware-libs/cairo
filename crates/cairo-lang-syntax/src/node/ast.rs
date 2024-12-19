@@ -11136,6 +11136,167 @@ impl From<&OptionTerminalNoPanicEmpty> for SyntaxStablePtrId {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionTerminalConst {
+    Empty(OptionTerminalConstEmpty),
+    TerminalConst(TerminalConst),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalConstPtr(pub SyntaxStablePtrId);
+impl TypedStablePtr for OptionTerminalConstPtr {
+    type SyntaxNode = OptionTerminalConst;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionTerminalConst {
+        OptionTerminalConst::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionTerminalConstPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionTerminalConstPtr) -> Self {
+        ptr.untyped()
+    }
+}
+impl From<OptionTerminalConstEmptyPtr> for OptionTerminalConstPtr {
+    fn from(value: OptionTerminalConstEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalConstPtr> for OptionTerminalConstPtr {
+    fn from(value: TerminalConstPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionTerminalConstEmptyGreen> for OptionTerminalConstGreen {
+    fn from(value: OptionTerminalConstEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalConstGreen> for OptionTerminalConstGreen {
+    fn from(value: TerminalConstGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalConstGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalConst {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionTerminalConstPtr;
+    type Green = OptionTerminalConstGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalConstEmpty => {
+                OptionTerminalConst::Empty(OptionTerminalConstEmpty::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalConst => {
+                OptionTerminalConst::TerminalConst(TerminalConst::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionTerminalConst"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionTerminalConst::Empty(x) => x.as_syntax_node(),
+            OptionTerminalConst::TerminalConst(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTerminalConstPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl From<&OptionTerminalConst> for SyntaxStablePtrId {
+    fn from(node: &OptionTerminalConst) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+impl OptionTerminalConst {
+    /// Checks if a kind of a variant of [OptionTerminalConst].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::OptionTerminalConstEmpty | SyntaxKind::TerminalConst)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionTerminalConstEmpty {
+    node: SyntaxNode,
+    children: Arc<[SyntaxNode]>,
+}
+impl OptionTerminalConstEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalConstEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
+        OptionTerminalConstEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionTerminalConstEmpty,
+                details: GreenNodeDetails::Node { children, width },
+            })
+            .intern(db),
+        )
+    }
+}
+impl OptionTerminalConstEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalConstEmptyPtr(pub SyntaxStablePtrId);
+impl OptionTerminalConstEmptyPtr {}
+impl TypedStablePtr for OptionTerminalConstEmptyPtr {
+    type SyntaxNode = OptionTerminalConstEmpty;
+    fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    fn lookup(&self, db: &dyn SyntaxGroup) -> OptionTerminalConstEmpty {
+        OptionTerminalConstEmpty::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl From<OptionTerminalConstEmptyPtr> for SyntaxStablePtrId {
+    fn from(ptr: OptionTerminalConstEmptyPtr) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalConstEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalConstEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalConstEmpty);
+    type StablePtr = OptionTerminalConstEmptyPtr;
+    type Green = OptionTerminalConstEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionTerminalConstEmptyGreen(
+            Arc::new(GreenNode {
+                kind: SyntaxKind::OptionTerminalConstEmpty,
+                details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+            })
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionTerminalConstEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionTerminalConstEmpty
+        );
+        let children = db.get_children(node.clone());
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTerminalConstEmptyPtr(self.node.0.stable_ptr)
+    }
+}
+impl From<&OptionTerminalConstEmpty> for SyntaxStablePtrId {
+    fn from(node: &OptionTerminalConstEmpty) -> Self {
+        node.stable_ptr().untyped()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionSignature {
     node: SyntaxNode,
     children: Arc<[SyntaxNode]>,
@@ -13112,18 +13273,21 @@ pub struct FunctionDeclaration {
     children: Arc<[SyntaxNode]>,
 }
 impl FunctionDeclaration {
-    pub const INDEX_FUNCTION_KW: usize = 0;
-    pub const INDEX_NAME: usize = 1;
-    pub const INDEX_GENERIC_PARAMS: usize = 2;
-    pub const INDEX_SIGNATURE: usize = 3;
+    pub const INDEX_OPTIONAL_CONST: usize = 0;
+    pub const INDEX_FUNCTION_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_SIGNATURE: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        optional_const: OptionTerminalConstGreen,
         function_kw: TerminalFunctionGreen,
         name: TerminalIdentifierGreen,
         generic_params: OptionWrappedGenericParamListGreen,
         signature: FunctionSignatureGreen,
     ) -> FunctionDeclarationGreen {
-        let children: Vec<GreenId> = vec![function_kw.0, name.0, generic_params.0, signature.0];
+        let children: Vec<GreenId> =
+            vec![optional_const.0, function_kw.0, name.0, generic_params.0, signature.0];
         let width = children.iter().copied().map(|id| id.lookup_intern(db).width()).sum();
         FunctionDeclarationGreen(
             Arc::new(GreenNode {
@@ -13135,17 +13299,20 @@ impl FunctionDeclaration {
     }
 }
 impl FunctionDeclaration {
+    pub fn optional_const(&self, db: &dyn SyntaxGroup) -> OptionTerminalConst {
+        OptionTerminalConst::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn function_kw(&self, db: &dyn SyntaxGroup) -> TerminalFunction {
-        TerminalFunction::from_syntax_node(db, self.children[0].clone())
+        TerminalFunction::from_syntax_node(db, self.children[1].clone())
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
     }
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.children[2].clone())
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
     }
     pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
-        FunctionSignature::from_syntax_node(db, self.children[3].clone())
+        FunctionSignature::from_syntax_node(db, self.children[4].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -13186,6 +13353,7 @@ impl TypedSyntaxNode for FunctionDeclaration {
                 kind: SyntaxKind::FunctionDeclaration,
                 details: GreenNodeDetails::Node {
                     children: vec![
+                        OptionTerminalConst::missing(db).0,
                         TerminalFunction::missing(db).0,
                         TerminalIdentifier::missing(db).0,
                         OptionWrappedGenericParamList::missing(db).0,

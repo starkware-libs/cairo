@@ -34,6 +34,7 @@ ExprBlock
     │       ├── attributes (kind: AttributeList) []
     │       ├── visibility (kind: VisibilityDefault) []
     │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │       │   ├── function_kw (kind: TerminalFunction)
     │       │   │   ├── leading_trivia (kind: Trivia)
     │       │   │   │   ├── child #0 (kind: TokenSingleLineDocComment): '/// Documentation comment'
@@ -80,6 +81,7 @@ ExprBlock
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: TokenFunction): 'fn'
@@ -93,6 +95,7 @@ ExprBlock
     │       ├── attributes (kind: AttributeList) []
     │       ├── visibility (kind: VisibilityDefault) []
     │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │       │   ├── function_kw (kind: TerminalFunction)
     │       │   │   ├── leading_trivia (kind: Trivia)
     │       │   │   │   ├── child #0 (kind: TokenSingleLineComment): '// Regular comment'
@@ -143,6 +146,7 @@ ExprBlock
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: TokenFunction): 'fn'
@@ -156,6 +160,7 @@ ExprBlock
     │       ├── attributes (kind: AttributeList) []
     │       ├── visibility (kind: VisibilityDefault) []
     │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │       │   ├── function_kw (kind: TerminalFunction)
     │       │   │   ├── leading_trivia (kind: Trivia)
     │       │   │   │   ├── child #0 (kind: TokenSingleLineDocComment): '/// Documentation comment'
