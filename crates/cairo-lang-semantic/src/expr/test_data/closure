@@ -424,10 +424,10 @@ fn bar(a: felt252) -> u32 {
 }
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0.
- --> lib.cairo:5:18
-    let bar = |_a, _b, _c| -> u32 {
-                 ^
+error: Trait has no implementation in context: core::ops::function::Fn::<{closure@lib.cairo:5:15: 5:27}, (core::felt252,)>.
+ --> lib.cairo:8:19
+    let _f: u32 = bar(2);
+                  ^^^^^^
 
 //! > ==========================================================================
 
