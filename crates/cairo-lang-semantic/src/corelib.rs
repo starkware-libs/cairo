@@ -74,7 +74,7 @@ pub fn bounded_int_ty(db: &dyn SemanticGroup, min: BigInt, max: BigInt) -> TypeI
     let internal = core_submodule(db, "internal");
     let bounded_int = get_submodule(db, internal, "bounded_int")
         .expect("Could not find bounded_int submodule in corelib.");
-    let size_ty = core_felt252_ty(db);
+    let size_ty = db.core_felt252_ty();
     let lower_id = ConstValue::Int(min, size_ty).intern(db);
     let upper_id = ConstValue::Int(max, size_ty).intern(db);
     try_get_ty_by_name(db, bounded_int, "BoundedInt".into(), vec![
@@ -110,7 +110,7 @@ pub fn core_box_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
 }
 
 pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
-    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(core_felt252_ty(db))])
+    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(db.core_felt252_ty())])
 }
 
 pub fn try_get_core_ty_by_name(
@@ -218,7 +218,7 @@ pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
         db,
         core_submodule(db, "zeroable"),
         "IsZeroResult",
-        vec![GenericArgumentId::Type(core_felt252_ty(db))],
+        vec![GenericArgumentId::Type(db.core_felt252_ty())],
         "Zero",
     )
 }
@@ -229,7 +229,7 @@ pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
         db,
         core_submodule(db, "zeroable"),
         "IsZeroResult",
-        vec![GenericArgumentId::Type(core_felt252_ty(db))],
+        vec![GenericArgumentId::Type(db.core_felt252_ty())],
         "NonZero",
     )
 }
@@ -849,7 +849,7 @@ pub fn validate_literal(
     }
     let is_out_of_range = if let Some((min, max)) = try_extract_bounded_int_type_ranges(db, ty) {
         value < min || value > max
-    } else if ty == core_felt252_ty(db) {
+    } else if ty == db.core_felt252_ty() {
         value.abs()
             > BigInt::from_str_radix(
                 "800000000000011000000000000000000000000000000000000000000000000",

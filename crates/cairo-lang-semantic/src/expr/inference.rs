@@ -23,7 +23,7 @@ use cairo_lang_utils::{
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
-use crate::corelib::{CoreTraitContext, core_felt252_ty, get_core_trait, numeric_literal_trait};
+use crate::corelib::{CoreTraitContext, get_core_trait, numeric_literal_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
@@ -674,7 +674,7 @@ impl<'db> Inference<'db> {
         }
 
         let numeric_trait_id = numeric_literal_trait(self.db);
-        let felt_ty = core_felt252_ty(self.db);
+        let felt_ty = self.db.core_felt252_ty();
 
         // Conform all uninferred numeric literals to felt252.
         loop {

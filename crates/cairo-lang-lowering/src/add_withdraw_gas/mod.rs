@@ -1,7 +1,7 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::corelib::{
-    core_array_felt252_ty, core_felt252_ty, core_module, core_submodule, get_function_id,
-    get_ty_by_name, option_none_variant, option_some_variant, unit_ty,
+    core_array_felt252_ty, core_module, core_submodule, get_function_id, get_ty_by_name,
+    option_none_variant, option_some_variant, unit_ty,
 };
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{GenericArgumentId, MatchArmSelector, TypeLongId};
@@ -99,8 +99,7 @@ fn create_panic_block(
     )?;
     let new_array_var =
         variables.new_var(VarRequest { ty: core_array_felt252_ty(db.upcast()), location });
-    let out_of_gas_err_var =
-        variables.new_var(VarRequest { ty: core_felt252_ty(db.upcast()), location });
+    let out_of_gas_err_var = variables.new_var(VarRequest { ty: db.core_felt252_ty(), location });
     let panic_instance_var = variables.new_var(VarRequest {
         ty: get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![]),
         location,
@@ -124,7 +123,7 @@ fn create_panic_block(
         statements: vec![
             Statement::Call(StatementCall {
                 function: get_function_id(db.upcast(), array_module, "array_new".into(), vec![
-                    GenericArgumentId::Type(core_felt252_ty(db.upcast())),
+                    GenericArgumentId::Type(db.core_felt252_ty()),
                 ])
                 .lowered(db),
                 inputs: vec![],
@@ -135,13 +134,13 @@ fn create_panic_block(
             Statement::Const(StatementConst {
                 value: ConstValue::Int(
                     BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),
-                    core_felt252_ty(db.upcast()),
+                    db.core_felt252_ty(),
                 ),
                 output: out_of_gas_err_var,
             }),
             Statement::Call(StatementCall {
                 function: get_function_id(db.upcast(), array_module, "array_append".into(), vec![
-                    GenericArgumentId::Type(core_felt252_ty(db.upcast())),
+                    GenericArgumentId::Type(db.core_felt252_ty()),
                 ])
                 .lowered(db),
                 inputs: vec![new_array_var, out_of_gas_err_var]
