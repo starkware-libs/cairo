@@ -8,7 +8,7 @@ use cairo_lang_utils::Upcast;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
-use crate::{CollectionsBreakingBehavior, FormatterConfig, get_formatted_file};
+use crate::{FormatterConfig, get_formatted_file};
 
 #[salsa::database(SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
@@ -146,19 +146,11 @@ fn format_and_compare_file(
     ));
 
     let config = FormatterConfig::default()
-        .sort_module_level_items(use_sorting)
-        .tuple_breaking_behavior(if tuple_line_breaking {
-            CollectionsBreakingBehavior::LineByLine
-        } else {
-            CollectionsBreakingBehavior::SingleBreakPoint
-        })
-        .fixed_array_breaking_behavior(if fixed_array_line_breaking {
-            CollectionsBreakingBehavior::LineByLine
-        } else {
-            CollectionsBreakingBehavior::SingleBreakPoint
-        })
-        .merge_use_items(merge_use_statements)
-        .allow_duplicate_uses(allow_duplicate_uses);
+        .sort_module_level_items(Some(use_sorting))
+        .tuple_breaking_behavior(Some(tuple_line_breaking.into()))
+        .fixed_array_breaking_behavior(Some(fixed_array_line_breaking.into()))
+        .merge_use_items(Some(merge_use_statements))
+        .allow_duplicate_uses(Some(allow_duplicate_uses));
 
     let formatted_file = get_formatted_file(db, &syntax_root, config);
     let expected_file =
