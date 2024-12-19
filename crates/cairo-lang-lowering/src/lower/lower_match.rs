@@ -10,7 +10,7 @@ use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{LookupIntern, try_extract_matches};
 use itertools::{Itertools, zip_eq};
 use num_traits::ToPrimitive;
-use semantic::corelib::{core_felt252_ty, unit_ty};
+use semantic::corelib::unit_ty;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
@@ -1176,10 +1176,10 @@ fn lower_expr_felt252_arm(
         )));
     };
 
+    let felt252_ty = ctx.db.core_felt252_ty();
     let if_input = if literal.value == 0.into() {
         match_input
     } else {
-        let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
         // TODO(TomerStarkware): Use the same type of literal as the input, without the cast to
         // felt252.
         let lowered_arm_val = lower_expr_literal(
@@ -1187,7 +1187,7 @@ fn lower_expr_felt252_arm(
             &semantic::ExprLiteral {
                 stable_ptr: literal.stable_ptr,
                 value: literal.value.clone(),
-                ty: ret_ty,
+                ty: felt252_ty,
             },
             builder,
         )?
@@ -1198,15 +1198,14 @@ fn lower_expr_felt252_arm(
             inputs: vec![match_input, lowered_arm_val],
             coupon_input: None,
             extra_ret_tys: vec![],
-            ret_tys: vec![ret_ty],
+            ret_tys: vec![felt252_ty],
             location,
         }
         .add(ctx, &mut builder.statements);
         call_result.returns.into_iter().next().unwrap()
     };
 
-    let non_zero_type =
-        corelib::core_nonzero_ty(semantic_db, corelib::core_felt252_ty(semantic_db));
+    let non_zero_type = corelib::core_nonzero_ty(semantic_db, felt252_ty);
     let else_block_input_var_id = ctx.new_var(VarRequest { ty: non_zero_type, location });
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
@@ -1412,8 +1411,7 @@ fn lower_expr_match_felt252(
         location,
     });
 
-    let semantic_db = ctx.db.upcast();
-    let felt252_ty = core_felt252_ty(semantic_db);
+    let felt252_ty = ctx.db.core_felt252_ty();
 
     // max +2 is the number of arms in the match.
     if max + 2 < numeric_match_optimization_threshold(ctx, convert_function.is_some()) {
@@ -1446,6 +1444,7 @@ fn lower_expr_match_felt252(
         return builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location);
     }
 
+    let semantic_db = ctx.db.upcast();
     let bounded_int_ty = corelib::bounded_int_ty(semantic_db, 0.into(), max.into());
 
     let ty = ctx.function_body.arenas.exprs[expr.matched_expr].ty();

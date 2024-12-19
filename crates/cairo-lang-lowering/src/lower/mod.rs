@@ -23,8 +23,7 @@ use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
 use refs::ClosureInfo;
 use semantic::corelib::{
-    core_felt252_ty, core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id,
-    never_ty, unit_ty,
+    core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
 };
 use semantic::items::constant::{ConstValue, value_as_const_value};
 use semantic::literals::try_extract_minus_literal;
@@ -1039,7 +1038,7 @@ fn add_pending_word(
     let expr_stable_ptr = expr.stable_ptr.untyped();
 
     let u32_ty = get_core_ty_by_name(ctx.db.upcast(), "u32".into(), vec![]);
-    let felt252_ty = core_felt252_ty(ctx.db.upcast());
+    let felt252_ty = ctx.db.core_felt252_ty();
 
     let pending_word_usage = generators::Const {
         value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes), felt252_ty),
