@@ -377,14 +377,14 @@ impl ConstFoldingContext<'_> {
                         arms: vec![
                             MatchArm {
                                 arm_selector: MatchArmSelector::VariantId(
-                                    corelib::jump_nz_zero_variant(db),
+                                    corelib::jump_nz_zero_variant(db, var.ty),
                                 ),
                                 block_id: info.arms[1].block_id,
                                 var_ids: vec![],
                             },
                             MatchArm {
                                 arm_selector: MatchArmSelector::VariantId(
-                                    corelib::jump_nz_nonzero_variant(db),
+                                    corelib::jump_nz_nonzero_variant(db, var.ty),
                                 ),
                                 block_id: info.arms[0].block_id,
                                 var_ids: vec![unused_nz_var],
