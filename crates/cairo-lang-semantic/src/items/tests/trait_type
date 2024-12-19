@@ -3070,3 +3070,61 @@ error: Expected an impl of `test::MyTrait`. Got an impl of `test::OtherTrait`.
  --> lib.cairo:19:11
     bar::<MyImpl>();
           ^****^
+
+//! > ==========================================================================
+
+//! > Using an impl with generic args which is a constrained trait type
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn bar<impl I1: MyTrait[ty: u32], +OtherTrait<I1::ty>>() {
+    OtherTrait::foo(5_u32);
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
+trait OtherTrait<T> {
+    fn foo(a: T) -> T;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Multiple implementations of a trait by having an impl on both side of a type constraint.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn bar<impl I1: MyTrait[ty: u32], +OtherTrait<I1::ty>, +OtherTrait<u32>>() {
+    OtherTrait::foo(5_u32);
+}
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+    fn foo() -> Self::ty;
+}
+trait OtherTrait<T> {
+    fn foo(a: T) -> T;
+}
+
+//! > expected_diagnostics
+error: Trait `test::OtherTrait::<core::integer::u32>` has multiple implementations, in: `+OtherTrait<I1::ty>`, `+OtherTrait<u32>`
+ --> lib.cairo:9:17
+    OtherTrait::foo(5_u32);
+                ^*^
