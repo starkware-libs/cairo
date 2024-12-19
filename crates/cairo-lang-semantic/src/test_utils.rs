@@ -20,6 +20,7 @@ use cairo_lang_utils::{Intern, LookupIntern, OptionFrom, Upcast, extract_matches
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::inline_macros::get_default_plugin_suite;
 use crate::items::functions::GenericFunctionId;
+use crate::plugin::PluginSuite;
 use crate::{ConcreteFunctionWithBodyId, SemanticDiagnostic, semantic};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -39,9 +40,13 @@ impl salsa::ParallelDatabase for SemanticDatabaseForTesting {
 }
 impl SemanticDatabaseForTesting {
     pub fn new_empty() -> Self {
+        let suite = get_default_plugin_suite();
+        SemanticDatabaseForTesting::with_plugin_suite(suite)
+    }
+
+    pub fn with_plugin_suite(suite: PluginSuite) -> Self {
         let mut res = SemanticDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
-        let suite = get_default_plugin_suite();
         res.set_macro_plugins(suite.plugins);
         res.set_inline_macro_plugins(suite.inline_macro_plugins.into());
         res.set_analyzer_plugins(suite.analyzer_plugins);
@@ -49,6 +54,7 @@ impl SemanticDatabaseForTesting {
         init_dev_corelib(&mut res, corelib_path);
         res
     }
+
     /// Snapshots the db for read only.
     pub fn snapshot(&self) -> SemanticDatabaseForTesting {
         SemanticDatabaseForTesting { storage: self.storage.snapshot() }
