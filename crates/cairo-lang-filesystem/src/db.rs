@@ -155,7 +155,7 @@ pub struct ExperimentalFeaturesConfig {
     pub associated_item_constraints: bool,
     /// Allows using coupon types and coupon calls.
     ///
-    /// Each function has a associated `Coupon` type, which represents paying the cost of the
+    /// Each function has an associated `Coupon` type, which represents paying the cost of the
     /// function before calling it.
     #[serde(default)]
     pub coupons: bool,

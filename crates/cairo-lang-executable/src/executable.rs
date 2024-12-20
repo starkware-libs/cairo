@@ -44,7 +44,7 @@ impl Executable {
     }
 }
 
-/// Information about a executable entrypoint.
+/// Information about an executable entrypoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutableEntryPoint {
     /// The used builtins of the function.
