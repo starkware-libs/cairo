@@ -12,6 +12,42 @@
 //! Generator point:
 //! * x = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca
 //! * y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f
+//!
+//! # Examples
+//!
+//! Creating points and basic operations:
+//! ```
+//! // Create a point from coordinates
+//! let point = EcPointTrait::new(
+//!     x: 336742005567258698661916498343089167447076063081786685068305785816009957563,
+//!     y: 1706004133033694959518200210163451614294041810778629639790706933324248611779,
+//! ).unwrap();
+//!
+//! // Perform scalar multiplication
+//! let result = point.mul(2);
+//!
+//! // Add points
+//! let sum = point + result;
+//!
+//! // Subtract points
+//! let diff = result - point;
+//! ```
+//!
+//! Using EC state for batch operations:
+//! ```
+//! let p = EcPointTrait::new_from_x(1).unwrap();
+//! let p_nz = p.try_into().unwrap();
+//!
+//! // Initialize state
+//! let mut state = EcStateTrait::init();
+//!
+//! // Add points and scalar multiplications
+//! state.add(p_nz);
+//! state.add_mul(1, p_nz);
+//!
+//! // Get the final result
+//! let _result = state.finalize();
+//! ```
 
 #[allow(unused_imports)]
 use crate::array::ArrayTrait;
@@ -35,9 +71,14 @@ pub mod stark_curve {
 
 pub extern type EcOp;
 
+/// A point on the STARK curve.
+///
+/// Points can be created using [`EcPointTrait::new`] or [`EcPointTrait::new_from_x`].
+/// The zero point represents the point at infinity.
 #[derive(Copy, Drop)]
 pub extern type EcPoint;
 
+/// A non-zero point on the STARK curve (cannot be the point at infinity).
 pub type NonZeroEcPoint = NonZero<EcPoint>;
 
 /// Returns the zero point of the curve ("the point at infinity").
@@ -71,7 +112,11 @@ impl EcPointTryIntoNonZero of TryInto<EcPoint, NonZeroEcPoint> {
     }
 }
 
-// Elliptic curve state.
+/// Elliptic curve state.
+///
+/// Use this to perform multiple point operations efficiently.
+/// Initialize with [`EcStateTrait::init`], add points with [`EcStateTrait::add`]
+/// or [`EcStateTrait::add_mul`], and finalize with [`EcStateTrait::finalize`].
 #[derive(Drop)]
 pub extern type EcState;
 
@@ -104,18 +149,32 @@ extern fn ec_state_try_finalize_nz(s: EcState) -> Option<NonZeroEcPoint> nopanic
 #[generate_trait]
 pub impl EcStateImpl of EcStateTrait {
     /// Initializes an EC computation with the zero point.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut state = EcStateTrait::init();
+    /// ```
     #[must_use]
     fn init() -> EcState nopanic {
         ec_state_init()
     }
 
     /// Adds a point to the computation.
+    ///
+    /// # Arguments
+    ///
+    /// * `p` - The non-zero point to add
     #[inline]
     fn add(ref self: EcState, p: NonZeroEcPoint) nopanic {
         ec_state_add(ref self, :p);
     }
 
-    /// Subs a point to the computation.
+    /// Subtracts a point to the computation.
+    ///
+    /// # Arguments
+    ///
+    /// * `p` - The non-zero point to subtract
     #[inline]
     fn sub(ref self: EcState, p: NonZeroEcPoint) {
         // TODO(orizi): Have a `ec_neg` for NonZeroEcPoint as well, or a `ec_state_sub`.
@@ -126,19 +185,33 @@ pub impl EcStateImpl of EcStateTrait {
     }
 
     /// Adds the product `p * scalar` to the state.
+    ///
+    /// # Arguments
+    ///
+    /// * `scalar` - The scalar to multiply the point by
+    /// * `p` - The non-zero point to multiply and add
     #[inline]
     fn add_mul(ref self: EcState, scalar: felt252, p: NonZeroEcPoint) nopanic {
         ec_state_add_mul(ref self, :scalar, :p);
     }
 
-    /// Finalizes the EC computation and returns the result (returns `None` if the result is the
-    /// zero point).
+    /// Finalizes the EC computation and returns the result as a non-zero point.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<NonZeroEcPoint>` - The resulting point, or None if the result is the zero point
+    ///
+    /// # Panics
+    ///
+    /// Panics if the result is the point at infinity.
     #[inline]
     fn finalize_nz(self: EcState) -> Option<NonZeroEcPoint> nopanic {
         ec_state_try_finalize_nz(self)
     }
 
     /// Finalizes the EC computation and returns the result.
+    ///
+    /// Returns the zero point if the computation results in the point at infinity.
     #[inline]
     fn finalize(self: EcState) -> EcPoint {
         match self.finalize_nz() {
@@ -151,6 +224,24 @@ pub impl EcStateImpl of EcStateTrait {
 #[generate_trait]
 pub impl EcPointImpl of EcPointTrait {
     /// Creates a new EC point from its (x, y) coordinates.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The x-coordinate of the point
+    /// * `y` - The y-coordinate of the point
+    ///
+    /// # Returns
+    ///
+    /// Returns `None` if the point (x, y) is not on the curve.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let point = EcPointTrait::new(
+    ///     x: 336742005567258698661916498343089167447076063081786685068305785816009957563,
+    ///     y: 1706004133033694959518200210163451614294041810778629639790706933324248611779,
+    /// ).unwrap();
+    /// ```
     #[inline]
     fn new(x: felt252, y: felt252) -> Option<EcPoint> {
         Option::Some(Self::new_nz(:x, :y)?.into())
@@ -163,6 +254,27 @@ pub impl EcPointImpl of EcPointTrait {
     }
 
     /// Creates a new EC point from its x coordinate.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The x-coordinate of the point
+    ///
+    /// # Returns
+    ///
+    /// Returns `None` if no point with the given x-coordinate exists on the curve.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `x` is 0, as this would be the point at infinity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let valid = EcPointTrait::new_from_x(1);
+    /// assert!(valid.is_some());
+    /// let invalid = EcPointTrait::new_from_x(0);
+    /// assert!(invalid.is_none());
+    /// ```
     #[inline]
     fn new_from_x(x: felt252) -> Option<EcPoint> {
         Option::Some(Self::new_nz_from_x(:x)?.into())
@@ -174,24 +286,74 @@ pub impl EcPointImpl of EcPointTrait {
         ec_point_from_x_nz(:x)
     }
 
+
     /// Returns the coordinates of the EC point.
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the (x, y) coordinates of the point.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the point is the point at infinity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let point_nz = EcPointTrait::new_nz_from_x(1).unwrap();
+    /// let (x, _y) = point_nz.coordinates();
+    /// assert!(x == 1);
+    /// ```
     fn coordinates(self: NonZeroEcPoint) -> (felt252, felt252) {
         ec_point_unwrap(self)
     }
 
     /// Returns the x coordinate of the EC point.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the point is the point at infinity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let point_nz = EcPointTrait::new_nz_from_x(1).unwrap();
+    /// let x = point_nz.x();
+    /// assert!(x == 1);
+    /// ```
     fn x(self: NonZeroEcPoint) -> felt252 {
         let (x, _) = self.coordinates();
         x
     }
 
     /// Returns the y coordinate of the EC point.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the point is the point at infinity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let gen_point =
+    /// EcPointTrait::new_nz_from_x(0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca).unwrap();
+    /// let y = gen_point.y();
+    /// assert!(y == 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f);
+    /// ```
     fn y(self: NonZeroEcPoint) -> felt252 {
         let (_, y) = self.coordinates();
         y
     }
 
-    /// Computes the product of an EC point `p` by the given scalar `scalar`.
+    /// Computes the product of an EC point by the given scalar.
+    ///
+    /// # Arguments
+    ///
+    /// * `scalar` - The scalar to multiply the point by
+    ///
+    /// # Returns
+    ///
+    /// The resulting point after scalar multiplication.
     fn mul(self: EcPoint, scalar: felt252) -> EcPoint {
         match self.try_into() {
             Option::Some(self_nz) => {
