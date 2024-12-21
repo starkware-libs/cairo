@@ -37,7 +37,7 @@ pub trait Event<T> {
 
     /// Deserializes events keys and data back into the original event structure.
     ///
-    /// Returns None if deserialization fails.
+    /// Returns `None` if deserialization fails.
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<T>;
 }
 
