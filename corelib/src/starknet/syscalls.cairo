@@ -62,6 +62,10 @@ pub extern fn emit_event_syscall(
 /// # Arguments
 ///
 /// * `block_number` - The number of the queried block.
+///
+/// # Returns
+///
+/// * The hash of the block with the given number.
 pub extern fn get_block_hash_syscall(
     block_number: u64,
 ) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
@@ -79,7 +83,7 @@ pub extern fn get_block_hash_syscall(
 ///
 /// # Returns
 ///
-/// A struct that contains information about the currently executing function, transaction, and
+/// * A struct that contains information about the currently executing function, transaction, and
 /// block.
 pub extern fn get_execution_info_syscall() -> SyscallResult<
     Box<starknet::info::ExecutionInfo>,
@@ -89,7 +93,9 @@ pub extern fn get_execution_info_syscall() -> SyscallResult<
 /// This syscall should not be called directly. Instead, use
 /// `core::starknet::info::get_execution_info`.
 ///
-/// Returns a box containing the current V2 execution information.
+/// # Returns
+///
+/// * A box containing the current V2 execution information.
 pub extern fn get_execution_info_v2_syscall() -> SyscallResult<
     Box<starknet::info::v2::ExecutionInfo>,
 > implicits(GasBuiltin, System) nopanic;
@@ -162,7 +168,9 @@ pub extern fn replace_class_syscall(
 ///
 /// * `contract_address` - The address of the deployed contract.
 ///
-/// Returns the class hash of the contract's originating code.
+/// # Returns
+///
+/// * The class hash of the contract's originating code.
 pub extern fn get_class_hash_at_syscall(
     contract_address: ContractAddress,
 ) -> SyscallResult<ClassHash> implicits(GasBuiltin, System) nopanic;
@@ -182,7 +190,7 @@ pub extern fn get_class_hash_at_syscall(
 ///
 /// # Returns
 ///
-/// The keccak hash as a little-endian u256
+/// * The keccak hash as a little-endian u256
 pub extern fn keccak_syscall(
     input: Span<u64>,
 ) -> SyscallResult<u256> implicits(GasBuiltin, System) nopanic;
@@ -193,6 +201,10 @@ pub extern fn keccak_syscall(
 ///
 /// * `state` - The current SHA-256 state.
 /// * `input` - The input provided to compute the next SHA-256 state.
+///
+/// # Returns
+///
+/// * The next SHA-256 state of the input with the givens state.
 ///
 /// The system call does not add any padding and the input needs to be a multiple of 512 bits
 /// (== 16 u32 word).
