@@ -22,7 +22,7 @@ use core::serde::Serde;
 #[derive(Copy, Drop)]
 pub extern type ClassHash;
 
-/// Returns a `ClassHash` value given a `felt252` address value.
+/// Returns a `ClassHash` given a `felt252` value.
 ///
 /// # Examples
 ///
