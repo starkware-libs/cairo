@@ -22,7 +22,7 @@ use starknet::{
 /// # Arguments
 ///
 /// * `msg_hash` - The 32-byte hash of the message that was signed
-/// * `signature` - The Ethereum signature containing r, s components and y_parity
+/// * `signature` - The Ethereum signature containing `r`, `s` components and `y_parity`
 /// * `eth_address` - The expected Ethereum address of the signer
 ///
 /// # Panics
@@ -34,6 +34,8 @@ use starknet::{
 /// # Examples
 ///
 /// ```
+/// use core::starknet::eth_address::EthAddress;
+/// use core::starknet::eth_signature::verify_eth_signature;
 /// use core::starknet::secp256_trait::Signature;
 ///
 /// let msg_hash = 0xe888fbb4cf9ae6254f19ba12e6d9af54788f195a6f509ca3e934f78d7a71dd85;
@@ -53,23 +55,26 @@ pub fn verify_eth_signature(msg_hash: u256, signature: Signature, eth_address: E
 }
 
 /// Validates an Ethereum signature against a message hash and Ethereum address.
-/// Similar to `verify_eth_signature` but returns a Result instead of panicking.
+/// Similar to `verify_eth_signature` but returns a `Result` instead of panicking.
 /// Also verifies that `r` and `s` components of the signature are in the range `[1, N)`,
 /// where N is the size of the curve.
 ///
 /// # Arguments
 ///
 /// * `msg_hash` - The 32-byte hash of the message that was signed
-/// * `signature` - The Ethereum signature containing r, s components and y_parity
+/// * `signature` - The Ethereum signature containing `r`, `s` components and `y_parity`
 /// * `eth_address` - The expected Ethereum address of the signer
 ///
 /// # Returns
 ///
-/// Returns `Ok(())` if the signature is valid, or `Err(felt252)` containing an error message if invalid.
+/// Returns `Ok(())` if the signature is valid, or `Err(felt252)` containing an error message if
+/// invalid.
 ///
 /// # Examples
 ///
 /// ```
+/// use core::starknet::eth_address::EthAddress;
+/// use core::starknet::eth_signature::is_eth_signature_valid;
 /// use core::starknet::secp256_trait::Signature;
 ///
 /// let msg_hash = 0xe888fbb4cf9ae6254f19ba12e6d9af54788f195a6f509ca3e934f78d7a71dd85;
@@ -101,7 +106,7 @@ pub fn is_eth_signature_valid(
 
 /// Converts a public key point to its corresponding Ethereum address.
 ///
-/// The Ethereum address is calculated by taking the keccak256 hash of the public key coordinates
+/// The Ethereum address is calculated by taking the Keccak-256 hash of the public key coordinates
 /// and taking the last 20 big-endian bytes.
 ///
 /// # Arguments
@@ -115,6 +120,7 @@ pub fn is_eth_signature_valid(
 /// # Examples
 ///
 /// ```
+/// use core::starknet::eth_signature::public_key_point_to_eth_address;
 /// use core::starknet::secp256k1::Secp256k1Point;
 /// use core::starknet::secp256_trait::Secp256Trait;
 ///
