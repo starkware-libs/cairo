@@ -211,7 +211,7 @@ impl NegFelt2520x7ffffffffffffffffffffffffffffffe =
     neg_felt252::Impl<0x7ffffffffffffffffffffffffffffffe, -0x7ffffffffffffffffffffffffffffffe>;
 impl NegFelt252Minus0x7ffffffffffffffffffffffffffffffe =
     neg_felt252::Impl<-0x7ffffffffffffffffffffffffffffffe, 0x7ffffffffffffffffffffffffffffffe>;
-impl NegFelt2520x0x7fffffffffffffffffffffffffffffff =
+impl NegFelt2520x7fffffffffffffffffffffffffffffff =
     neg_felt252::Impl<0x7fffffffffffffffffffffffffffffff, -0x7fffffffffffffffffffffffffffffff>;
 impl NegFelt252Minus0x7fffffffffffffffffffffffffffffff =
     neg_felt252::Impl<-0x7fffffffffffffffffffffffffffffff, 0x7fffffffffffffffffffffffffffffff>;
