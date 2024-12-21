@@ -2,8 +2,7 @@
 //! `[0, 2**251)`.
 //!
 //!
-//! `class_hash_const` function allows to construct a `ClassHash` value from a constant `felt252`
-//! address.
+//! A variable of type `ClassHash` can be created from a `felt252` value using the `class_hash_const` function, or using the `TryInto` trait.
 //!
 //! # Examples
 //!
