@@ -1,12 +1,22 @@
 //! Information about the Starknet execution environment.
 //!
 //! This module provides access to runtime information about the current transaction,
-//! block, and execution context in a Starknet smart contract. It includes structures
-//! for block details, transaction data, and helper functions to easily retrieve
-//! specific pieces of information like caller address, contract address, and timestamps.
+//! block, and execution context in a Starknet smart contract. It enables contracts
+//! to access execution context data.
 //!
-//! The module also includes a v2 submodule with extended transaction information
-//! supporting additional features like resource bounds and paymaster data.
+//! # Examples
+//!
+//! ```
+//! use core::starknet::{get_block_info, get_caller_address, get_contract_address};
+//!
+//! // Get block information
+//! let block_info = get_block_info().unbox();
+//! let timestamp = block_info.block_timestamp;
+//!
+//! // Get caller and contract addresses
+//! let caller = get_caller_address();
+//! let contract = get_contract_address();
+//! ```
 
 #[allow(unused_imports)]
 use core::box::BoxTrait;
@@ -76,8 +86,10 @@ pub struct TxInfo {
 ///
 /// let execution_info = get_execution_info().unbox();
 ///
-/// let box_info = execution_info.block_info.unbox();
-/// let tx_info = execution_info.unbox();
+/// // Access various execution context information
+/// let caller = execution_info.caller_address;
+/// let contract = execution_info.contract_address;
+/// let selector = execution_info.entry_point_selector;
 /// ```
 pub fn get_execution_info() -> Box<v2::ExecutionInfo> {
     starknet::syscalls::get_execution_info_v2_syscall().unwrap_syscall()
