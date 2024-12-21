@@ -1,18 +1,51 @@
-//! Utilities for hashing various data types.
+//! Generic hashing support.
 //!
-//! This module provides some traits and associated implementations:
-//! - `HashStateTrait`: A trait that defines the behavior of hash state accumulators, which can be
-//! used to update and finalize a hash state.
-//! - `Hash`: A trait that defines how to update a hash state with a given value.
-//! - `LegacyHash`: A trait for hashing values, used for backwards compatibility. It's recommended
-//! to use the `Hash` trait instead.
-//! - `HashStateExTrait`: An extension trait that provides a convenient `update_with` method for
-//! hash state accumulators.
+//! The module provides a hash state abstraction that can be updated with values and finalized to
+//! produce a hash. This allows for flexible and efficient hashing of any type with different hash
+//! functions.
+//!
+//! The simplest way to make a type hashable is to use `#[derive(Hash)]`. Hashing a value is done by
+//! initiating a HashState corresponding to a hash function, updating it with the value, and then
+//! finalizing it to get the hash result.
+//!
+//! # Examples
+//!
+//! Basic usage with Pedersen and Poseidon hash:
+//! ```
+//! use core::pedersen::PedersenTrait;
+//! use core::poseidon::PoseidonTrait;
+//!
+//! #[derive(Copy, Drop, Hash)]
+//! struct Person {
+//!     id: u32,
+//!     phone: u64,
+//! }
+//!
+//!   let person1 = Person { id: 5, phone: 555_666_7777 };
+//!   let person2 = Person { id: 5, phone: 555_666_7777 };
+//!
+//!   assert!(
+//!       PedersenTrait::new(0)
+//!           .update_with(person1)
+//!           .finalize() != PedersenTrait::new(0)
+//!           .update_with(person2)
+//!           .finalize(),
+//!   );
+//!   assert!(
+//!       PoseidonTrait::new()
+//!           .update_with(person1)
+//!           .finalize() != PoseidonTrait::new()
+//!           .update_with(person2)
+//!           .finalize(),
+//!   );
+//! ```
 
 #[allow(unused_imports)]
 use crate::traits::Into;
 
 /// A trait for hash state accumulators.
+///
+/// Provides methods to update a hash state with new values and finalize it into a hash result.
 pub trait HashStateTrait<S> {
     /// Updates the current hash state `self` with the given `felt252` value and returns a new hash
     /// state.
@@ -45,6 +78,9 @@ pub trait HashStateTrait<S> {
 }
 
 /// A trait for values that can be hashed.
+///
+/// This trait should be implemented for any type that can be included in a hash calculation.
+/// The most common way to implement this trait is by using `#[derive(Hash)]`.
 pub trait Hash<T, S, +HashStateTrait<S>> {
     /// Updates the hash state with the given value and returns a new hash state.
     ///
@@ -61,13 +97,6 @@ pub trait Hash<T, S, +HashStateTrait<S>> {
     fn update_state(state: S, value: T) -> S;
 }
 
-/// Implementation for `Hash` for `felt252` values and `S` state.
-impl HashFelt252<S, +HashStateTrait<S>> of Hash<felt252, S> {
-    #[inline]
-    fn update_state(state: S, value: felt252) -> S {
-        state.update(value)
-    }
-}
 
 /// A trait for hashing values using a `felt252` as hash state, used for backwards compatibility.
 /// NOTE: Implement `Hash` instead of this trait if possible.
@@ -80,8 +109,7 @@ pub trait LegacyHash<T> {
     /// use core::pedersen::PedersenTrait;
     /// use core::hash::LegacyHash;
     ///
-    /// let state = 0;
-    /// let hash = LegacyHash::hash(state, 1);
+    /// let hash = LegacyHash::hash(0, 1);
     /// ```
     #[must_use]
     fn hash(state: felt252, value: T) -> felt252;
@@ -96,8 +124,28 @@ impl LegacyHashForHash<T, +Hash<T, crate::pedersen::HashState>> of LegacyHash<T>
 }
 
 /// Extension trait for hash state accumulators.
+///
+/// This trait adds the `update_with` method to hash states, allowing you to directly hash values of
+/// any type T that implements `Hash`, rather than having to manually convert values to felt252
+/// first. This provides a more ergonomic API when working with complex types.
+///
+/// # Examples
+///
+/// ```
+/// use core::pedersen::PedersenTrait;
+/// use core::hash::HashStateExTrait;
+///
+/// #[derive(Hash)]
+/// struct Point { x: u32, y: u32 }
+///
+/// let point = Point { x: 1, y: 2 };
+/// let hash = PedersenTrait::new(0)
+///     .update_with(point)
+///     .update_with(42)
+///     .finalize();
+/// ```
 pub trait HashStateExTrait<S, T> {
-    /// Updates the hash state with the given value and returns the hash result.
+    /// Updates the hash state with the given value and returns the updated state.
     ///
     /// # Examples
     ///
@@ -118,6 +166,13 @@ impl HashStateEx<S, +HashStateTrait<S>, T, +Hash<T, S>> of HashStateExTrait<S, T
     #[inline]
     fn update_with(self: S, value: T) -> S {
         Hash::update_state(self, value)
+    }
+}
+
+impl HashFelt252<S, +HashStateTrait<S>> of Hash<felt252, S> {
+    #[inline]
+    fn update_state(state: S, value: felt252) -> S {
+        state.update(value)
     }
 }
 
