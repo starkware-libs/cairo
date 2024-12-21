@@ -2,13 +2,14 @@
 //!
 //! # Core Components
 //!
-//! - **Storage**: The `storage` module defines abstractions on how to interact with Starknet contract storage.
+//! - **Storage**: The `storage` module defines abstractions on how to interact with Starknet
+//! contract storage.
 //! - **Syscalls**: The `syscalls` module contains the extern declarations for all the system calls
 //! available in Starknet.
 //! - **Contract Addresses**: The `contract_address` and `eth_address` modules provide types and
 //! utilities for working with Starknet contract addresses and Ethereum addresses.
-//! - **Cryptography**: The `secp256k1`, `secp256r1`, `secp256_trait`, and `eth_signature` modules handle various
-//! elliptic curve operations.
+//! - **Cryptography**: The `secp256k1`, `secp256r1`, `secp256_trait`, and `eth_signature` modules
+//! handle various elliptic curve operations.
 //! - **Execution Info**: The `info` module exposes functions for accessing information about the
 //! current contract execution, such as the caller address, contract address, block info, and
 //! transaction info.

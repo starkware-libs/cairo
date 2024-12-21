@@ -1,4 +1,3 @@
-
 //! Contains the storage-related types and traits for Cairo contracts and provides abstractions for
 //! reading and writing to Starknet storage.
 //!
