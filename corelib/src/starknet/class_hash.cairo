@@ -2,7 +2,8 @@
 //! `[0, 2**251)`.
 //!
 //!
-//! A variable of type `ClassHash` can be created from a `felt252` value using the `class_hash_const` function, or using the `TryInto` trait.
+//! A variable of type `ClassHash` can be created from a `felt252` value using the
+//! `class_hash_const` function, or using the `TryInto` trait.
 //!
 //! # Examples
 //!
