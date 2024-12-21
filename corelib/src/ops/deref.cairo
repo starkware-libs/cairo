@@ -1,6 +1,6 @@
 //! Dereferencing traits for transparent access to wrapped values.
 //!
-//! This module provides traits that enable accessing the contents of wrapped types
+//! This module provides traits that enable accessing the content of wrapped types
 //! as if they were the inner type directly. This is particularly useful for:
 //!
 //! - Smart pointers and wrapper types (e.g., `Box<T>`)
@@ -57,14 +57,6 @@ pub trait Deref<T> {
     /// The type of the dereferenced value.
     type Target;
     /// Returns the dereferenced value.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let boxed = BoxTrait::new(42);
-    /// let deref_value = boxed.deref();
-    /// assert!(deref_value == 42);
-    /// ```
     fn deref(self: T) -> Self::Target;
 }
 
