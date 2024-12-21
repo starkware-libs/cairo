@@ -191,3 +191,39 @@ error: Unexpected argument type. Expected: "core::option::Option::<core::felt252
  --> lib.cairo:2:30
     let _: Option<felt252> = Option::Some(3_u16);
                              ^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Type mismatch diagnostics of delayed snapshot type comparison.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    1_felt252.issue(@2_felt252);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Issue<T> {
+    type Index;
+    type Target;
+    fn issue(self: T, index: Self::Index) -> Self::Target;
+}
+
+impl ImplIssue of Issue<felt252> {
+    type Index = felt252;
+    type Target = felt252;
+    fn issue(self: felt252, index: felt252) -> felt252 {
+        self + index
+    }
+}
+
+//! > expected_diagnostics
+error: Type mismatch: `@core::felt252` and `core::felt252`.
+ --> lib.cairo:15:15
+    1_felt252.issue(@2_felt252);
+              ^^^^^

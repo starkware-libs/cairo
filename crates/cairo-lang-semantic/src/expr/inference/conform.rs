@@ -116,7 +116,6 @@ impl InferenceConform for Inference<'_> {
             }
             _ => {}
         }
-        let n_snapshots = 0;
         let long_ty0 = ty0.lookup_intern(self.db);
 
         match long_ty0 {
@@ -187,11 +186,12 @@ impl InferenceConform for Inference<'_> {
                 let ty = self.conform_ty(type_id, type_id1)?;
                 Ok((TypeLongId::FixedSizeArray { type_id: ty, size }.intern(self.db), n_snapshots))
             }
-            TypeLongId::Snapshot(ty0) => {
-                let TypeLongId::Snapshot(ty1) = long_ty1 else {
+            TypeLongId::Snapshot(desnapped_ty0) => {
+                let TypeLongId::Snapshot(desnapped_ty1) = long_ty1 else {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
-                let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
+                let (ty, n_snapshots) =
+                    self.conform_ty_ex(desnapped_ty0, desnapped_ty1, ty0_is_self)?;
                 Ok((TypeLongId::Snapshot(ty).intern(self.db), n_snapshots))
             }
             TypeLongId::GenericParameter(_) => {
@@ -202,14 +202,14 @@ impl InferenceConform for Inference<'_> {
                 // don't panic in case of a bug.
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
-            TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
+            TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, 0)),
             TypeLongId::ImplType(impl_type) => {
                 if let Some(ty) = self.impl_type_bounds.get(&impl_type.into()) {
                     return self.conform_ty_ex(*ty, ty1, ty0_is_self);
                 }
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
-            TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
+            TypeLongId::Missing(_) => Ok((ty0, 0)),
             TypeLongId::Coupon(function_id0) => {
                 let TypeLongId::Coupon(function_id1) = long_ty1 else {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
@@ -236,7 +236,7 @@ impl InferenceConform for Inference<'_> {
                         .intern(self.db),
                     )
                     .intern(self.db),
-                    n_snapshots,
+                    0,
                 ))
             }
         }
