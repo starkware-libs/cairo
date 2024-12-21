@@ -56,9 +56,14 @@
 //!
 //! These methods extract the contained value in a [`Result<T, E>`]:
 //!
-//! * [`expect`] returns the contained value if [`Ok`], otherwise panics with a provided custom message
-//! * [`unwrap`] returns the contained value if [`Ok`], otherwise panics with a generic message
-//! * [`unwrap_or`] returns the contained value if [`Ok`], otherwise returns the provided default value
+//! * [`expect`] returns the contained value if [`Ok`], otherwise panics with a provided
+//! custom message
+//! * [`unwrap`] returns the contained value if [`Ok`], otherwise panics with a
+//! generic message
+//! * [`unwrap_or`] returns the contained value if [`Ok`], otherwise returns the provided default
+//! value
+//! * [`unwrap_or_default`] returns the contained value if [`Ok`], otherwise returns the default
+//! value for the type
 //!
 //! ## Converting between Result and Option
 //!
