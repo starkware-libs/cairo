@@ -16,6 +16,7 @@
 //! # Examples
 //!
 //! Creating points and basic operations:
+//!
 //! ```
 //! // Create a point from coordinates
 //! let point = EcPointTrait::new(
@@ -34,6 +35,7 @@
 //! ```
 //!
 //! Using EC state for batch operations:
+//!
 //! ```
 //! let p = EcPointTrait::new_from_x(1).unwrap();
 //! let p_nz = p.try_into().unwrap();
@@ -129,6 +131,7 @@ mod internal {
         }
     }
 }
+
 impl EcStateClone = internal::EcStateClone;
 
 /// Initializes an EC computation with the zero point.
