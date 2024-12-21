@@ -1,16 +1,17 @@
 //! Generic hashing support.
 //!
-//! The module provides a hash state abstraction that can be updated with values and finalized to
+//! This module provides a hash state abstraction that can be updated with values and finalized to
 //! produce a hash. This allows for flexible and efficient hashing of any type with different hash
 //! functions.
 //!
 //! The simplest way to make a type hashable is to use `#[derive(Hash)]`. Hashing a value is done by
-//! initiating a HashState corresponding to a hash function, updating it with the value, and then
+//! initiating a `HashState` corresponding to a hash function, updating it with the value, and then
 //! finalizing it to get the hash result.
 //!
 //! # Examples
 //!
 //! Basic usage with Pedersen and Poseidon hash:
+//!
 //! ```
 //! use core::pedersen::PedersenTrait;
 //! use core::poseidon::PoseidonTrait;
@@ -21,8 +22,9 @@
 //!     phone: u64,
 //! }
 //!
-//!   let person1 = Person { id: 5, phone: 555_666_7777 };
-//!   let person2 = Person { id: 5, phone: 555_666_7777 };
+//! fn main() {
+//!   let person1 = Person { id: 1, phone: 555_666_7777 };
+//!   let person2 = Person { id: 2, phone: 555_666_7778 };
 //!
 //!   assert!(
 //!       PedersenTrait::new(0)
@@ -38,6 +40,7 @@
 //!           .update_with(person2)
 //!           .finalize(),
 //!   );
+//! }
 //! ```
 
 #[allow(unused_imports)]
