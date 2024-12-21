@@ -11,7 +11,6 @@
 //!
 //! ```
 //! use core::keccak::*;
-//! use core::byte_array::ByteArray;
 //!
 //! // Hash u256 values
 //! let input = array![1_u256, 2_u256].span();
@@ -20,7 +19,7 @@
 //! assert!(keccak_u256s_be_inputs(input) ==
 //! 0xe0c2a7d2cc99d544061ac0ccbb083ac8976e54eed878fb1854dfe7b6ce7b0be9);
 //!
-//! // Hash a Bytearray
+//! // Hash a `Bytearray`
 //! let text: ByteArray = "Hello, Keccak!";
 //! assert!(compute_keccak_byte_array(@text) ==
 //! 0x85c9aab73219c1e95c5b5966a4ecc8db4418c3500072a830cfb5a2d13d2c2249);
@@ -147,6 +146,10 @@ pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
 ///
 /// The 32-byte Keccak-256 hash as a little-endian `u256`
 ///
+/// # Panics
+///
+/// Panics if `last_input_num_bytes` is greater than 7.
+///
 /// # Examples
 ///
 /// ```
@@ -157,10 +160,6 @@ pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
 /// let hash = cairo_keccak(ref input, 0x21646c72, 4); // 4 bytes of the last word
 /// assert!(hash == 0xabea1f2503529a21734e2077c8b584d7bee3f45550c2d2f12a198ea908e1d0ec);
 /// ```
-///
-/// # Panics
-///
-/// Panics if `last_input_num_bytes` is greater than 7.
 pub fn cairo_keccak(
     ref input: Array<u64>, last_input_word: u64, last_input_num_bytes: usize,
 ) -> u256 {
@@ -252,7 +251,6 @@ fn finalize_padding(ref input: Array<u64>, num_padding_words: u32) {
 ///
 /// ```
 /// use core::keccak::compute_keccak_byte_array;
-/// use core::byte_array::ByteArray;
 ///
 /// let text: ByteArray = "Hello world!";
 /// let hash = compute_keccak_byte_array(@text);
