@@ -143,6 +143,12 @@ pub extern fn storage_write_syscall(
 
 /// Replaces the class hash of the current contract, instantly modifying its entrypoints.
 ///
+/// The new class becomes effective only after the current function call completes.
+/// The remaining code in the current function will continue executing from the old class.
+/// The new class will be used:
+/// * In subsequent transactions
+/// * If the contract is called via `call_contract` syscall later in the same transaction
+///
 /// # Arguments
 ///
 /// * `class_hash` - The class hash that should replace the current one.
@@ -163,12 +169,20 @@ pub extern fn get_class_hash_at_syscall(
 
 /// Computes the keccak of the input.
 ///
+/// * The input must be a multiple of 1088 bits (== 17 u64 words)
+/// * The input must be pre-padded following the Keccak padding rule (pad10*1):
+///   1. Add a '1' bit
+///   2. Add zero or more '0' bits
+///   3. Add a final '1' bit
+///   The total length after padding must be a multiple of 1088 bits
+///
 /// # Arguments
 ///
-/// * `input` - The input provided to the keccak function.
+/// * `input` - Array of 64-bit words (little endian) to be hashed.
 ///
-/// The system call does not add any padding and the input needs to be a multiple of 1088 bits
-/// (== 17 u64 word).
+/// # Returns
+///
+/// The keccak hash as a little-endian u256
 pub extern fn keccak_syscall(
     input: Span<u64>,
 ) -> SyscallResult<u256> implicits(GasBuiltin, System) nopanic;
