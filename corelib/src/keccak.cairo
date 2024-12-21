@@ -1,20 +1,10 @@
 //! Keccak-256 cryptographic hash function implementation.
 //!
-//! This module provides functionality to compute Keccak-256 hashes from different input formats.
-//! The Keccak-256 hash function is part of the SHA-3 family and is widely used in Ethereum and
-//! other blockchain applications.
-//!
-//! # Features
-//!
-//! - Compute hashes from `u256` values in both little-endian and big-endian formats
-//! - Compute hashes from raw byte arrays
-//! - Support for partial word inputs with custom padding
-//!
 //! # Main Functions
 //!
 //! - [`keccak_u256s_le_inputs`] - Hash multiple `u256` values in little-endian format
 //! - [`keccak_u256s_be_inputs`] - Hash multiple `u256` values in big-endian format
-//! - [`cairo_keccak`] - Hash arbitrary byte sequences with custom padding
+//! - [`cairo_keccak`] - Hash u64 words with a final partial word. Closest to the syscall input.
 //! - [`compute_keccak_byte_array`] - Hash a `ByteArray` directly
 //!
 //! # Examples
@@ -25,12 +15,15 @@
 //!
 //! // Hash u256 values
 //! let input = array![1_u256, 2_u256].span();
-//! assert!(keccak_u256s_le_inputs(input) == 0x234a9e12e9b063b60f7e3289ee9b86a731de8e7e41bd4987f10982d6a753444d);
-//! assert!(keccak_u256s_be_inputs(input) == 0xe0c2a7d2cc99d544061ac0ccbb083ac8976e54eed878fb1854dfe7b6ce7b0be9);
+//! assert!(keccak_u256s_le_inputs(input) ==
+//! 0x234a9e12e9b063b60f7e3289ee9b86a731de8e7e41bd4987f10982d6a753444d);
+//! assert!(keccak_u256s_be_inputs(input) ==
+//! 0xe0c2a7d2cc99d544061ac0ccbb083ac8976e54eed878fb1854dfe7b6ce7b0be9);
 //!
 //! // Hash a Bytearray
 //! let text: ByteArray = "Hello, Keccak!";
-//! assert!(compute_keccak_byte_array(@text) == 0x85c9aab73219c1e95c5b5966a4ecc8db4418c3500072a830cfb5a2d13d2c2249);
+//! assert!(compute_keccak_byte_array(@text) ==
+//! 0x85c9aab73219c1e95c5b5966a4ecc8db4418c3500072a830cfb5a2d13d2c2249);
 //! ```
 
 use crate::array::{Span, ArrayTrait, SpanTrait};
@@ -80,7 +73,8 @@ fn keccak_add_u256_le(ref keccak_input: Array::<u64>, v: u256) {
 /// use core::keccak::keccak_u256s_le_inputs;
 ///
 /// let input: Span<u256> = array![0, 1, 2].span();
-/// assert!(keccak_u256s_le_inputs(input) == 0xf005473605efc7d8ff67d9f23fe2e4a4f23454c12b49b38822ed362e0a92a0a6);
+/// assert!(keccak_u256s_le_inputs(input) ==
+/// 0xf005473605efc7d8ff67d9f23fe2e4a4f23454c12b49b38822ed362e0a92a0a6);
 /// ```
 pub fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
@@ -121,7 +115,8 @@ fn keccak_add_u256_be(ref keccak_input: Array::<u64>, v: u256) {
 /// use core::keccak::keccak_u256s_be_inputs;
 ///
 /// let input = array![0x1234_u256, 0x5678_u256].span();
-/// let hash = assert!(keccak_u256s_be_inputs(input) == 0xfa31cb2326ed629f79d2da5beb78e2bd8ac7a1b8b86cae09eeb6a89a908b12a);
+/// let hash = assert!(keccak_u256s_be_inputs(input) ==
+/// 0xfa31cb2326ed629f79d2da5beb78e2bd8ac7a1b8b86cae09eeb6a89a908b12a);
 /// ```
 pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
