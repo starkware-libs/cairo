@@ -115,7 +115,7 @@ pub trait LegacyHash<T> {
     fn hash(state: felt252, value: T) -> felt252;
 }
 
-/// Implementation for `LegacyHash` for types that implement `Hash` for backwards compatibility.
+/// Implementation of `LegacyHash` for types that implement `Hash` for backwards compatibility.
 impl LegacyHashForHash<T, +Hash<T, crate::pedersen::HashState>> of LegacyHash<T> {
     #[inline]
     fn hash(state: felt252, value: T) -> felt252 {
@@ -128,22 +128,6 @@ impl LegacyHashForHash<T, +Hash<T, crate::pedersen::HashState>> of LegacyHash<T>
 /// This trait adds the `update_with` method to hash states, allowing you to directly hash values of
 /// any type T that implements `Hash`, rather than having to manually convert values to felt252
 /// first. This provides a more ergonomic API when working with complex types.
-///
-/// # Examples
-///
-/// ```
-/// use core::pedersen::PedersenTrait;
-/// use core::hash::HashStateExTrait;
-///
-/// #[derive(Hash)]
-/// struct Point { x: u32, y: u32 }
-///
-/// let point = Point { x: 1, y: 2 };
-/// let hash = PedersenTrait::new(0)
-///     .update_with(point)
-///     .update_with(42)
-///     .finalize();
-/// ```
 pub trait HashStateExTrait<S, T> {
     /// Updates the hash state with the given value and returns the updated state.
     ///
@@ -153,8 +137,14 @@ pub trait HashStateExTrait<S, T> {
     /// use core::pedersen::PedersenTrait;
     /// use core::hash::HashStateExTrait;
     ///
-    /// let mut state = PedersenTrait::new(0);
-    /// state = state.update_with(0);
+    /// #[derive(Copy, Drop, Hash)]
+    /// struct Point { x: u32, y: u32 }
+    ///
+    /// let point = Point { x: 1, y: 2 };
+    /// let hash = PedersenTrait::new(0)
+    ///     .update_with(point)
+    ///     .update_with(42)
+    ///     .finalize();
     /// ```
     #[must_use]
     fn update_with(self: S, value: T) -> S;
