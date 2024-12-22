@@ -83,8 +83,10 @@ impl UseTree {
 
         let mut nested_paths = vec![];
         for (segment, subtree) in self.children {
-            let (subtree_merged_use_items, is_single_leaf) =
-                subtree.create_merged_use_items(allow_duplicate_uses, false);
+            let (subtree_merged_use_items, is_single_leaf) = subtree.create_merged_use_items(
+                allow_duplicate_uses,
+                matches!(segment.as_str(), "crate" | "super"),
+            );
 
             let formatted_subtree_paths =
                 subtree_merged_use_items.into_iter().map(|child| format!("{segment}::{child}"));

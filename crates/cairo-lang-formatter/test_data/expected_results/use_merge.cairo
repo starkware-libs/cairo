@@ -30,7 +30,14 @@ use a::{c, d};
 // Testing wildcard.
 mod w;
 use a::{*, a, b, c};
+// Testing not merging crate and super.
+use crate::a;
+use crate::b;
+use crate::c::{d, e};
 use d::{*, e};
+use super::a;
+use super::b;
+use super::c::{d, e};
 // Testing not merging the top level.
 use x;
 use y;
