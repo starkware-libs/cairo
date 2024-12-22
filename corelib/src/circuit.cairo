@@ -384,6 +384,8 @@ impl MulModCircuitElement<
 ///
 /// This trait is used to define the structure of a circuit, including its inputs,
 /// gates, and outputs. It provides the foundation for circuit evaluation.
+/// The `CES` type parameter represents a tuple of `CircuitElement`s that together
+/// define the circuit's structure.
 pub trait CircuitDefinition<CES> {
     /// The internal circuit type representing a tuple of `CircuitElement`s
     type CircuitType;
@@ -429,15 +431,24 @@ impl UnwrapCircuitElementNext<
 /// A trait for setting up instances of a circuit defined using `CircuitElement`s.
 ///
 /// This trait provides functionality to initialize and manage circuit inputs.
-/// It is used in conjunction with `AddInputResultTrait` to build circuit instances.
+/// The `CES` type parameter represents a tuple of circuit elements (e.g., `(output,)`)
+/// that define the circuit's structure. It is used in conjunction with
+/// `AddInputResultTrait` to build circuit instances.
 ///
 /// # Examples
 ///
 /// ```
-/// let circuit = (output,).new_inputs()
-///     .next([1, 0, 0, 0])
-///     .next([2, 0, 0, 0])
-///     .done();
+/// let a = CircuitElement::<CircuitInput<0>> {};
+/// let b = CircuitElement::<CircuitInput<1>> {};
+/// let modulus = TryInto::<_, CircuitModulus>::try_into([2, 0, 0, 0]).unwrap();
+/// let circuit = (a,b).new_inputs() // returns AddInputResult::More, inputs are not yet filled
+///     .next([10, 0, 0, 0])
+///     .next([11, 0, 0, 0])
+///     .done()
+///     .eval(modulus)
+///     .unwrap();
+/// assert!(circuit.get_output(a) == 0.into());
+/// assert!(circuit.get_output(b) == 1.into());
 /// ```
 #[generate_trait]
 pub impl CircuitInputsImpl<CES> of CircuitInputs<CES> {
@@ -478,12 +489,17 @@ impl GetCircuitDescriptorImpl<CES> of GetCircuitDescriptor<CES> {
 /// # Example
 ///
 /// ```
-/// let mut inputs = (add,).new_inputs();
-/// // Add input values
-/// inputs = inputs.next([1, 0, 0, 0]);
-/// inputs = inputs.next([2, 0, 0, 0]);
-/// // Finalize inputs
-/// let circuit_data = inputs.done();
+/// let a = CircuitElement::<CircuitInput<0>> {};
+/// let b = CircuitElement::<CircuitInput<1>> {};
+/// let modulus = TryInto::<_, CircuitModulus>::try_into([2, 0, 0, 0]).unwrap();
+/// let circuit = (a,b).new_inputs()
+///     .next([10, 0, 0, 0]) // returns AddInputResult::More, inputs are not yet filled
+///     .next([11, 0, 0, 0]) // returns AddInputResult::Done, inputs are filled
+///     .done() // returns CircuitData<C>, inputs are filled
+///     .eval(modulus)
+///     .unwrap();
+/// assert!(circuit.get_output(a) == 0.into());
+/// assert!(circuit.get_output(b) == 1.into());
 /// ```
 #[generate_trait]
 pub impl AddInputResultImpl<C> of AddInputResultTrait<C> {
@@ -567,9 +583,17 @@ impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
 /// # Example
 ///
 /// ```
-/// let circuit_data = (add,).new_inputs().next([1, 0, 0, 0]).next([2, 0, 0, 0]).done();
-/// let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
-/// let outputs = circuit_data.eval(modulus).unwrap();
+/// let a = CircuitElement::<CircuitInput<0>> {};
+/// let b = CircuitElement::<CircuitInput<1>> {};
+/// let modulus = TryInto::<_, CircuitModulus>::try_into([2, 0, 0, 0]).unwrap();
+/// let circuit = (a,b).new_inputs()
+///     .next([10, 0, 0, 0])
+///     .next([11, 0, 0, 0])
+///     .done()
+///     .eval(modulus) // Performs the circuit evaluation with the given modulus and returns the
+///     Result .unwrap();
+/// assert!(circuit.get_output(a) == 0.into());
+/// assert!(circuit.get_output(b) == 1.into());
 /// ```
 #[generate_trait]
 pub impl EvalCircuitImpl<C> of EvalCircuitTrait<C> {
@@ -615,8 +639,19 @@ pub impl EvalCircuitImpl<C> of EvalCircuitTrait<C> {
 /// # Example
 ///
 /// ```
-/// let add_output = outputs.get_output(add);
-/// assert!(add_output == u384 { limb0: 2, limb1: 0, limb2: 0, limb3: 0 });
+/// let a = CircuitElement::<CircuitInput<0>> {};
+/// let b = CircuitElement::<CircuitInput<1>> {};
+/// let modulus = TryInto::<_, CircuitModulus>::try_into([2, 0, 0, 0]).unwrap();
+/// let circuit = (a,b).new_inputs()
+///     .next([10, 0, 0, 0])
+///     .next([11, 0, 0, 0])
+///     .done()
+///     .eval(modulus)
+///     .unwrap();
+/// let a_mod_2 = circuit.get_output(a); // Returns the output value of `a mod 2`
+/// let b_mod_2 = circuit.get_output(b); // Returns the output value of `b mod 2`
+/// assert!(a_mod_2 == 0.into());
+/// assert!(b_mod_2 == 1.into());
 /// ```
 pub trait CircuitOutputsTrait<Outputs, OutputElement> {
     /// Gets the output value for a specific circuit element.
