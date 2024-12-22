@@ -798,7 +798,9 @@ fn type_size(db: &dyn LoweringGroup, ty: TypeId) -> usize {
                     .to_usize()
                     .unwrap()
         }
-        TypeLongId::Closure(_) => unimplemented!(),
+        TypeLongId::Closure(closure_ty) => {
+            closure_ty.captured_types.iter().map(|ty| db.type_size(*ty)).sum()
+        }
         TypeLongId::Coupon(_) => 0,
         TypeLongId::GenericParameter(_)
         | TypeLongId::Var(_)
