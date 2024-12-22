@@ -42,6 +42,7 @@
 //!     .eval(modulus)
 //!     .unwrap();
 //!
+//! // Result: (3 + 6) * 2 mod 7 = 4
 //! assert!(outputs.get_output(result) == 4.into());
 //! ```
 //!
@@ -49,8 +50,10 @@
 //!
 //! The module uses a type-based approach to construct and evaluate arithmetic circuits:
 //!
-//! 1. Circuit elements are created using `CircuitElement<T>` where T defines their role
-//! 2. Basic operations combine elements into more complex expressions
+//! 1. Circuit elements are created using `CircuitElement<T>` where T defines their role (input or
+//! gate)
+//! 2. Basic operations combine elements into more complex expressions (chaining gates to create a
+//! circuit)
 //! 3. The final circuit is evaluated with specific input values and a modulus
 //!
 //! Operations are performed using a multi-limb representation for large numbers,
