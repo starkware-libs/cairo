@@ -1,3 +1,74 @@
+//! Contains the storage-related types and traits for Cairo contracts and provides abstractions for
+//! reading and writing to Starknet storage.
+//!
+//! The front facing interface for the user is simple and intuitive, for example consider the
+//! following storage struct:
+//!
+//! ```
+//! #[storage]
+//! struct Storage {
+//!     a: felt252,
+//!     b: Map<felt252, felt52>,
+//!     c: Map<felt52, Map<felt52, felt52>>,
+//! }
+//! ```
+//!
+//! The user can access the storage members `a` and `b` using the following code:
+//!
+//! ```
+//! fn use_storage(self: @ContractState) {
+//!     let a_value = self.a.read();
+//!     // For a Map, the user can use the `entry` method to access the value at a specific key:
+//!     let b_value = self.b.entry(42).read();
+//!     // Or simply pass the key to the `read` method:
+//!     let b_value = self.b.read(42);
+//!     // Accessing a nested Map must be done using the `entry` method, either:
+//!     let c_value = self.c.entry(42).entry(43).read()
+//!     // Or:
+//!     let c_value = self.c.entry(42).read(43);
+//! }
+//!  ```
+//!
+//! Under the hood, the storage access is more complex. The life cycle of a storage object is as
+//! follows:
+//! 1. The storage struct of a contract is represented by a `FlattenedStorage` struct, which
+//!    can be derefed into a struct containing a member for each storage member of the contract.
+//!    This member can be either a `StorageBase` or a `FlattenedStorage` instance. Members are
+//!    represented as a `FlattenedStorage` if the storage member is attributed with either
+//!    `#[substorage(v0)]` (for backward compatibility) or `#[flat]`. `FlattenedStorage` is used to
+//!    structure the storage access; however, it does not affect the address of the storage object.
+//! 2. `StorageBase` members of a `FlattenedStorage` struct hold a single `felt252` value, which is
+//!    the Keccak hash of the name of the member. For simple types, this value will be the address
+//!    of the member in the storage.
+//! 3. `StorageBase` members are then converted to `StoragePath` instances, which are essentially
+//!    a wrapper around a `HashState` instance, used to account for more values when computing the
+//!    address of the storage object. `StoragePath` instances can be updated with values coming from
+//!    two sources:
+//!     - Storage nodes, which are structs that represent another struct with all its members
+//!       in the storage, similar to `FlattenedStorage`. However, unlike `FlattenedStorage`, the
+//!       path to the storage node does affect the address of the storage object. See `StorageNode`
+//!       for more details.
+//!     - Storage collections, specifically `Map` and `Vec`, simulate the behavior of collections by
+//!       updating the hash state with the key or index of the collection member.
+//! 4. After finishing the updates, the `StoragePath` instance is finalized, resulting in a
+//!    `StoragePointer0Offset` instance, which is a pointer to the address of the storage object. If
+//!    the pointer is to an object of size greater than 1, the object is stored in a sequential
+//!    manner starting from the address of the pointer. The whole object can be read or written
+//!    using `read` and `write` methods, and specific members can also be accessed in the case of a
+//!    struct. See `SubPointers` for more details.
+//!
+//! The transitioning between the different types of storage objects is also called from the
+//! `Deref` trait, and thus, allowing an access to the members of the storage object in a simple
+//! way.
+//!
+//! The types mentioned above are generic in the stored object type. This is done to provide
+//! specific behavior for each type of stored object, e.g., a `StoragePath` of `Map` type will have
+//! an `entry` method, but it won't have a `read` or `write` method, as `Map` is not storable by
+//! itself, only its values are.
+//! The generic type of the storage object can also be wrapped with a `Mutable` type, which
+//! indicates that the storage object is mutable, i.e., it was created from a `ref` contract state,
+//! and thus the object can be written to.
+
 use core::traits::Into;
 #[allow(unused_imports)]
 use core::pedersen::HashState;
