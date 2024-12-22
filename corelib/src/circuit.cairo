@@ -1,92 +1,73 @@
-//! Utilities for constructing and manipulating arithmetic circuits over finite fields.
+//! Efficient modular arithmetic computations using arithmetic circuits.
 //!
-//! Arithmetic circuits are mathematical models used to represent polynomial computations over a
-//! finite field.
-//! They consist of input signals, arithmetic operations (gates), and output signals. Cairo supports
-//! emulated arithmetic circuits with modulo up to 384 bits.
+//! This module provides a type-safe way to perform modular arithmetic operations using
+//! arithmetic circuits. It is particularly useful for implementing cryptographic algorithms
+//! and other computations that require efficient modular arithmetic with large numbers.
 //!
-//! # Overview
+//! # Core Features
 //!
-//! This module provides:
-//! - Basic arithmetic operations: addition, subtraction, multiplication, and inversion
-//! - Circuit element composition through gates
-//! - Support for circuit evaluation with custom modulus
-//! - Multi-limb arithmetic for 384-bit unsigned integers
+//! - Modular arithmetic operations (add, subtract, multiply, inverse)
+//! - Support for numbers up to 384 bits
+//! - Type-safe circuit construction
+//! - Efficient evaluation of complex expressions
 //!
-//! # Use Cases
+//! # Examples
 //!
-//! Arithmetic circuits are particularly useful for:
-//! - Implementing verification for other proof systems (e.g., zk-SNARKs)
-//! - Implementing cryptographic primitives
-//! - Creating low-level programs with potential reduced overhead
+//! ## Basic Arithmetic
 //!
-//! # Example
-//!
-//! Here's a simple example computing `a * (a + b)` over a finite field:
+//! Here's an example showing basic modular arithmetic operations:
 //!
 //! ```
-//! use core::circuit::{CircuitElement, CircuitInput, circuit_add, circuit_mul};
+//! use core::circuit::{
+//!    CircuitElement, EvalCircuitTrait, CircuitOutputsTrait, CircuitInput, CircuitModulus,
+//!    AddInputResultTrait, CircuitInputs, circuit_add, circuit_mul,
+//! };
 //!
-//! // Define circuit inputs
+//! // Compute (a + b) * c mod p
 //! let a = CircuitElement::<CircuitInput<0>> {};
 //! let b = CircuitElement::<CircuitInput<1>> {};
+//! let c = CircuitElement::<CircuitInput<2>> {};
 //!
-//! // Compose circuit operations
-//! let add = circuit_add(a, b);
-//! let mul = circuit_mul(a, add);
+//! let sum = circuit_add(a, b);
+//! let result = circuit_mul(sum, c);
 //!
-//! // Define outputs and evaluate
-//! let output = (mul,);
+//! // Evaluate with inputs [3, 6, 2] modulo 7
+//! let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
+//! let outputs = (result,)
+//!     .new_inputs()
+//!     .next([3, 0, 0, 0])
+//!     .next([6, 0, 0, 0])
+//!     .next([2, 0, 0, 0])
+//!     .done()
+//!     .eval(modulus)
+//!     .unwrap();
+//!
+//! assert!(outputs.get_output(result) == 4.into());
 //! ```
 //!
-//! # Architecture
+//! # How It Works
 //!
-//! The module uses a type-based approach where:
-//! - `CircuitElement<T>` wraps circuit elements
-//! - Circuit inputs are represented by `CircuitInput<N>`
-//! - Operations are represented by gate types (`AddModGate`, `SubModGate`, etc.)
-//! - Results are evaluated using a specified modulus up to 384 bits
+//! The module uses a type-based approach to construct and evaluate arithmetic circuits:
 //!
-//! # Circuit Operations
+//! 1. Circuit elements are created using `CircuitElement<T>` where T defines their role
+//! 2. Basic operations combine elements into more complex expressions
+//! 3. The final circuit is evaluated with specific input values and a modulus
 //!
-//! The module provides four basic operations for circuit construction:
+//! Operations are performed using a multi-limb representation for large numbers,
+//! with each number represented as four 96-bit limbs allowing for values up to 384 bits.
 //!
-//! - `circuit_add`: Adds two circuit elements modulo p
-//! - `circuit_sub`: Subtracts two circuit elements modulo p
-//! - `circuit_mul`: Multiplies two circuit elements modulo p
-//! - `circuit_inverse`: Computes the modular multiplicative inverse
+//! # Performance Considerations
 //!
-//! Each operation creates a new circuit element representing that operation.
+//! - Circuit evaluation is optimized for large modular arithmetic operations
+//! - The multi-limb representation allows efficient handling of large numbers
+//! - Circuit construction has zero runtime overhead due to type-based approach
 //!
-//! # Evaluation
+//! # Errors
 //!
-//! Circuit evaluation happens in several steps:
-//!
-//! 1. Define circuit inputs using `CircuitInput<N>`
-//! 2. Compose operations using circuit functions
-//! 3. Specify outputs as a tuple of circuit elements
-//! 4. Initialize inputs with `new_inputs()`
-//! 5. Add input values using `next()`
-//! 6. Complete input addition with `done()`
-//! 7. Evaluate using `eval()` with a specified modulus
-//! 8. Retrieve results using `get_output()`
-//!
-//! # Implementation Details
-//!
-//! The module uses several key types:
-//!
-//! - `u384`: A 384-bit unsigned integer represented as four 96-bit limbs
-//! - `CircuitModulus`: A type representing valid circuit moduli (non-zero, non-one values)
-//! - `CircuitElement<T>`: A wrapper for circuit elements with type parameter T
-//! - `CircuitInput<N>`: Represents circuit inputs indexed by N
-//! - `CircuitData<C>`: Holds circuit instance data
-//! - `CircuitOutputs<C>`: Contains circuit evaluation results
-//!
-//! Gates are represented by phantom types:
-//! - `AddModGate<Lhs, Rhs>`: Addition modulo p
-//! - `SubModGate<Lhs, Rhs>`: Subtraction modulo p
-//! - `MulModGate<Lhs, Rhs>`: Multiplication modulo p
-//! - `InverseGate<Input>`: Modular multiplicative inverse
+//! Circuit evaluation can fail in certain cases:
+//! - When computing multiplicative inverses of non-invertible elements
+//! - When the modulus is 0 or 1
+//! In that case the evaluation will return an Error.
 
 /// Creates a new circuit element representing addition modulo p of two input circuits.
 ///
@@ -164,10 +145,6 @@ pub fn circuit_sub<Lhs, Rhs, +CircuitElementTrait<Lhs>, +CircuitElementTrait<Rhs
 /// let a = CircuitElement::<CircuitInput<0>> {};
 /// let inv_a = circuit_inverse(a);
 /// ```
-///
-/// # Panics
-///
-/// The circuit evaluation will fail if the input value is not invertible modulo p
 pub fn circuit_inverse<Input, +CircuitElementTrait<Input>>(
     input: CircuitElement<Input>,
 ) -> CircuitElement::<InverseGate<Input>> {
@@ -271,10 +248,6 @@ pub extern type Circuit<Outputs>;
 ///
 /// Represents an input signal in the circuit, indexed by `N`. Each input must be assigned
 /// a value before circuit evaluation.
-///
-/// # Type Parameters
-///
-/// * `N` - Zero-based index of the input in the circuit
 #[phantom]
 pub extern type CircuitInput<const N: usize>;
 
@@ -411,10 +384,6 @@ impl MulModCircuitElement<
 ///
 /// This trait is used to define the structure of a circuit, including its inputs,
 /// gates, and outputs. It provides the foundation for circuit evaluation.
-///
-/// # Type Parameters
-///
-/// * `CES` - The circuit element structure type
 pub trait CircuitDefinition<CES> {
     /// The internal circuit type representing a tuple of `CircuitElement`s
     type CircuitType;
@@ -598,6 +567,7 @@ impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
 /// # Example
 ///
 /// ```
+/// let circuit_data = (add,).new_inputs().next([1, 0, 0, 0]).next([2, 0, 0, 0]).done();
 /// let modulus = TryInto::<_, CircuitModulus>::try_into([7, 0, 0, 0]).unwrap();
 /// let outputs = circuit_data.eval(modulus).unwrap();
 /// ```
