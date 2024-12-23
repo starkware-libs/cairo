@@ -246,7 +246,7 @@ pub trait OptionTrait<T> {
     /// assert!(Option::Some(4).unwrap_or_else(|| 2 * k) == 4);
     /// assert!(Option::None.unwrap_or_else(|| 2 * k) == 20);
     /// ```
-    fn unwrap_or_else<F, +Drop<F>, impl func: core::ops::Fn<F, ()>[Output: T], +Drop<func::Output>>(
+    fn unwrap_or_else<F, +Drop<F>, impl func: core::ops::FnOnce<F, ()>[Output: T], +Drop<func::Output>>(
         self: Option<T>, f: F,
     ) -> T;
 }
@@ -306,7 +306,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn unwrap_or_else<F, +Drop<F>, impl func: core::ops::Fn<F, ()>[Output: T], +Drop<func::Output>>(
+    fn unwrap_or_else<F, +Drop<F>, impl func: core::ops::FnOnce<F, ()>[Output: T], +Drop<func::Output>>(
         self: Option<T>, f: F,
     ) -> T {
         match self {
