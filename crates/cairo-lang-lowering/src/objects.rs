@@ -10,6 +10,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
@@ -76,8 +77,8 @@ impl Location {
     }
 }
 
-impl DebugWithDb<dyn LoweringGroup> for Location {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn LoweringGroup) -> std::fmt::Result {
+impl DebugWithDb<dyn SemanticGroup> for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn SemanticGroup) -> std::fmt::Result {
         let files_db = db.upcast();
         self.stable_location.diagnostic_location(db.upcast()).fmt(f, files_db)?;
 
@@ -381,7 +382,7 @@ pub struct StatementStructDestructure {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot {
     pub input: VarUsage,
-    outputs: [VariableId; 2],
+    pub outputs: [VariableId; 2],
 }
 impl StatementSnapshot {
     pub fn new(input: VarUsage, output_original: VariableId, output_snapshot: VariableId) -> Self {

@@ -688,6 +688,7 @@ dependencies = [
  "num-traits 0.2.19",
  "pretty_assertions",
  "rust-analyzer-salsa",
+ "serde",
  "smol_str",
  "test-log",
 ]
@@ -1802,6 +1803,8 @@ dependencies = [
  "clap",
  "convert_case",
  "itertools 0.12.1",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

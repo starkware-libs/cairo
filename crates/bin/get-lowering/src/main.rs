@@ -1,6 +1,7 @@
 //! Internal debug utility for printing lowering phases.
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::{fmt, fs};
 
 use anyhow::Context;
@@ -13,7 +14,7 @@ use cairo_lang_lowering::FlatLowered;
 use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
-use cairo_lang_lowering::fmt::LoweredFormatter;
+use cairo_lang_lowering::fmt::{FlatLoweredSerializeable, LoweredFormatter};
 use cairo_lang_lowering::ids::{
     ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,
     GeneratedFunctionKey,
@@ -79,6 +80,8 @@ struct Args {
 
     /// The output file name (default: stdout).
     output: Option<String>,
+    #[arg(long)]
+    serielize: bool,
 }
 
 /// Helper class for formatting the lowering phases of a concrete function.
@@ -89,7 +92,7 @@ struct PhasesDisplay<'a> {
 
 impl fmt::Display for PhasesDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let db = self.db;
+        let db: &dyn LoweringGroup = self.db;
         let function_id = self.function_id;
 
         let mut curr_state =
@@ -272,7 +275,16 @@ fn main() -> anyhow::Result<()> {
             PhasesDisplay { db, function_id }.to_string()
         } else {
             let lowered = db.final_concrete_function_with_body_lowered(function_id).unwrap();
-            LoweredDisplay::new(db, &lowered).to_string()
+
+            if args.serielize {
+                serde_json::to_string_pretty(&FlatLoweredSerializeable::new(
+                    Arc::unwrap_or_clone(lowered),
+                    db,
+                ))
+                .unwrap()
+            } else {
+                LoweredDisplay::new(db, &lowered).to_string()
+            }
         }
     } else {
         get_all_funcs(db, &main_crate_ids)?.keys().join("\n")

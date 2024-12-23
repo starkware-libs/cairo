@@ -24,6 +24,8 @@ num-integer = { workspace = true, default-features = true }
 num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
 smol_str.workspace = true
+serde = { workspace = true, default-features = true }
+
 
 [dev-dependencies]
 cairo-lang-plugins = { path = "../cairo-lang-plugins" }
