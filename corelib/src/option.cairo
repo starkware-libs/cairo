@@ -236,6 +236,21 @@ pub trait OptionTrait<T> {
     /// assert!(option.unwrap_or_default() == Default::default());
     /// ```
     fn unwrap_or_default<+Default<T>>(self: Option<T>) -> T;
+
+    /// Returns the contained [`Some`] value or computes it from a closure.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let k = 10;
+    /// assert!(Option::Some(4).unwrap_or_else(|| 2 * k) == 4);
+    /// assert!(Option::None.unwrap_or_else(|| 2 * k) == 20);
+    /// ```
+    fn unwrap_or_else<
+        F, +Drop<F>, impl func: core::ops::FnOnce<F, ()>[Output: T], +Drop<func::Output>,
+    >(
+        self: Option<T>, f: F,
+    ) -> T;
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
@@ -289,6 +304,18 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         match self {
             Option::Some(x) => x,
             Option::None => Default::default(),
+        }
+    }
+
+    #[inline]
+    fn unwrap_or_else<
+        F, +Drop<F>, impl func: core::ops::FnOnce<F, ()>[Output: T], +Drop<func::Output>,
+    >(
+        self: Option<T>, f: F,
+    ) -> T {
+        match self {
+            Option::Some(x) => x,
+            Option::None => f(),
         }
     }
 }
