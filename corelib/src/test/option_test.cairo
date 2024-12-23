@@ -41,6 +41,16 @@ fn test_option_none_unwrap_or_default() {
 }
 
 #[test]
+fn test_option_some_unwrap_or_else() {
+    assert!(Option::Some(42).unwrap_or_else( || 0) == 42);
+}
+
+#[test]
+fn test_option_none_unwrap_or_else() {
+    assert!(Option::None.unwrap_or_else( || 0) == 0);
+}
+
+#[test]
 fn test_option_some_is_some() {
     assert!(Option::Some(42).is_some());
 }
