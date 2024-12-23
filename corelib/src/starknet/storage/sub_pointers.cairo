@@ -1,7 +1,7 @@
 use super::{StoragePointer, Mutable, StorageAsPointer, StoragePointer0Offset};
 
 /// Similar to storage node, but for structs which are stored sequentially in the storage. In
-/// contrast to storage node, the fields of the struct are just offset from the base address of
+/// contrast to storage node, the fields of the struct are just at an offset from the base address of
 /// the struct.
 pub trait SubPointers<T> {
     /// The type of the storage pointers, generated for the struct T.
@@ -16,7 +16,7 @@ pub impl SubPointersDeref<T, +SubPointers<T>> of core::ops::Deref<StoragePointer
     fn deref(self: StoragePointer<T>) -> Self::Target {
         self.sub_pointers()
     }
-}
+}я
 
 /// A mutable version of `SubPointers`, works the same way, but on `Mutable<T>`.
 pub trait SubPointersMut<T> {
