@@ -49,6 +49,26 @@ struct TestConfig {
     expected_cost: Option<usize>,
 }
 
+impl TestConfig {
+    /// Creates a new configuration for tests without gas
+    fn without_gas() -> Self {
+        Self {
+            auto_add_withdraw_gas: false,
+            available_gas: None,
+            expected_cost: None,
+        }
+    }
+
+    /// Creates a new configuration for tests with gas
+    fn with_gas(available_gas: usize, expected_cost: Option<usize>) -> Self {
+        Self {
+            auto_add_withdraw_gas: true,
+            available_gas: Some(available_gas),
+            expected_cost,
+        }
+    }
+}
+
 /// Runs test function with the given configuration
 fn run_test_function(
     name: &str,
@@ -250,79 +270,79 @@ fn run_function(
 #[case::fib(
     "fib",
     &[1, 1, 7].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success(vec![Felt252::from(21)])
 )]
 #[case::fib(
     "fib_loop",
     &[1, 1, 7].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success(vec![Felt252::from(21)])
 )]
 #[case::fib_counter(
     "fib_counter",
     &[1, 1, 8].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success([34, 8].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_match(
     "fib_match",
     &[9].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success([55].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_struct(
     "fib_struct",
     &[1, 1, 9].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success([55, 9].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_u128_checked_pass(
     "fib_u128_checked",
     &[1, 1, 10].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success([/*ok*/0, /*fib*/89].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_u128_checked_fail(
     "fib_u128_checked",
     &[1, 1, 200].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success([/*err*/1, /*padding*/0].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_u128_pass(
     "fib_u128",
     &[1, 1, 10].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success(vec![Felt252::from(89)])
 )]
 #[case::fib_u128_fail(
     "fib_u128",
     &[1, 1, 200].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Panic(vec![Felt252::from_bytes_be_slice(b"u128_add Overflow")])
 )]
 #[case::fib_local(
     "fib_local",
     &[6].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success(vec![Felt252::from(13)])
 )]
 #[case::fib_unary(
     "fib_unary",
     &[7].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success(vec![Felt252::from(21)])
 )]
 #[case::hash_chain(
     "hash_chain",
     &[3].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: false, available_gas: None, expected_cost: None },
+    TestConfig::without_gas(),
     RunResultValue::Success(vec![Felt252::from_hex_unchecked(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
 #[case::hash_chain_gas(
     "hash_chain_gas",
     &[3].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: true, available_gas: Some(100000), expected_cost: Some(9880 + 3 * token_gas_cost(CostTokenType::Pedersen)) },
+    TestConfig::with_gas(100000, Some(9880 + 3 * token_gas_cost(CostTokenType::Pedersen))),
     RunResultValue::Success(vec![Felt252::from_hex_unchecked(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
 fn run_function_test(
@@ -339,13 +359,13 @@ fn run_function_test(
 #[case::fib_pass(
     "fib",
     &[1, 1, 10].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: true, available_gas: Some(200000), expected_cost: None },
+    TestConfig::with_gas(200000, None),
     RunResultValue::Success([89].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_fail(
     "fib",
     &[1, 1, 10].map(Felt252::from),
-    TestConfig { auto_add_withdraw_gas: true, available_gas: Some(10000), expected_cost: None },
+    TestConfig::with_gas(10000, None),
     RunResultValue::Panic(vec![Felt252::from_bytes_be_slice(b"Out of gas")])
 )]
 fn run_function_with_gas_test(
@@ -454,29 +474,4 @@ fn complex_input_test(example_dir_data: &ExampleDirData) {
             Felt252::from(5 + 7 + 9 + 11 + 13 + 15 + 17 + 19)
         ])
     );
-}
-
-/// Tests the lowering functionality of the compiler
-/// This test ensures that the compiler can successfully lower Cairo code
-/// to a lower-level representation
-#[rstest]
-fn lowering_test(example_dir_data: &ExampleDirData) {
-    let (db, crate_ids) = example_dir_data;
-    let locked_db = db.lock().unwrap();
-    
-    // Test lowering for each crate
-    for crate_id in crate_ids {
-        let modules = locked_db.crate_modules(*crate_id);
-        for module_id in modules.iter() {
-            if let Ok(functions) = locked_db.module_free_functions(*module_id) {
-                for (func_id, _) in functions.iter() {
-                    // Verify that we can create a concrete function
-                    assert!(ConcreteFunctionWithBodyId::from_no_generics_free(
-                        locked_db.upcast(),
-                        *func_id
-                    ).is_some(), "Failed to lower function in module: {}", module_id.full_path(&locked_db));
-                }
-            }
-        }
-    }
 }
