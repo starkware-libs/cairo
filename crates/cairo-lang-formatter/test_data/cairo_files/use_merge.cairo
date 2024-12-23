@@ -47,12 +47,14 @@ use d::{e, *};
 // Testing not merging the top level.
 use x;
 use y;
-// Testing not merging crate and super.
+// Testing the handling of crate and super.
+mod z;
+use a::b;
+use a::c;
+use a::d::e;
+use a::f::g::h;
 use crate::a;
 use crate::b;
-use crate::c::d;
-use crate::c::e;
-use super::a;
-use super::b;
-use super::c::d;
-use super::c::e;
+use b;
+use super::v;
+use crate::bl;
