@@ -19,6 +19,10 @@ use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
 
+/// The maximum depth allowed for nesting `use` paths within a multi-path merge. If the depth
+/// exceeds this limit, the paths will be grouped into a single path.
+const MAX_DEPTH_FOR_MULTI: usize = 10;
+
 /// Represents a tree structure for organizing and merging `use` statements.
 #[derive(Default, Debug)]
 struct UseTree {
@@ -67,9 +71,9 @@ impl UseTree {
     pub fn create_merged_use_items(
         self,
         allow_duplicate_uses: bool,
-        top_level: bool,
+        current_depth: usize,
     ) -> (Vec<String>, bool) {
-        let mut leaf_paths: Vec<_> = self
+        let mut leaf_paths = self
             .leaves
             .into_iter()
             .map(|leaf| {
@@ -79,19 +83,18 @@ impl UseTree {
                     leaf.name
                 }
             })
-            .collect();
+            .collect_vec();
 
         let mut nested_paths = vec![];
         for (segment, subtree) in self.children {
-            let (subtree_merged_use_items, is_single_leaf) = subtree.create_merged_use_items(
-                allow_duplicate_uses,
-                matches!(segment.as_str(), "crate" | "super"),
-            );
+            let next_depth = current_depth + 1;
+            let (subtree_merged_use_items, is_single_leaf) =
+                subtree.create_merged_use_items(allow_duplicate_uses, next_depth);
 
             let formatted_subtree_paths =
                 subtree_merged_use_items.into_iter().map(|child| format!("{segment}::{child}"));
 
-            if is_single_leaf {
+            if is_single_leaf && next_depth >= MAX_DEPTH_FOR_MULTI {
                 leaf_paths.extend(formatted_subtree_paths);
             } else {
                 nested_paths.extend(formatted_subtree_paths);
@@ -107,13 +110,11 @@ impl UseTree {
             0 => {}
             1 if nested_paths.is_empty() => return (leaf_paths, true),
             1 => nested_paths.extend(leaf_paths),
-            _ if top_level => nested_paths.extend(leaf_paths),
             _ => nested_paths.push(format!("{{{}}}", leaf_paths.join(", "))),
         }
 
         (nested_paths, false)
     }
-
     /// Formats `use` items, creates a virtual file, and parses it into a syntax node.
     pub fn generate_syntax_node_from_use(
         self,
@@ -122,7 +123,7 @@ impl UseTree {
         decorations: String,
     ) -> SyntaxNode {
         let mut formatted_use_items = String::new();
-        for statement in self.create_merged_use_items(allow_duplicate_uses, true).0 {
+        for statement in self.create_merged_use_items(allow_duplicate_uses, 0).0 {
             formatted_use_items.push_str(&format!("{decorations}use {statement};\n"));
         }
 
@@ -1312,11 +1313,19 @@ fn compare_use_paths(a: &UsePath, b: &UsePath, db: &dyn SyntaxGroup) -> Ordering
         // Case for Single vs Single: compare their identifiers, then move to the next segment if
         // equal.
         (UsePath::Single(a_single), UsePath::Single(b_single)) => {
-            match a_single.extract_ident(db).cmp(&b_single.extract_ident(db)) {
-                Ordering::Equal => {
-                    compare_use_paths(&a_single.use_path(db), &b_single.use_path(db), db)
-                }
-                other => other,
+            let a_ident = a_single.extract_ident(db);
+            let b_ident = b_single.extract_ident(db);
+
+            match (a_ident.as_str(), b_ident.as_str()) {
+                ("super" | "crate", "super" | "crate") => a_ident.cmp(&b_ident),
+                ("super" | "crate", _) => Ordering::Greater,
+                (_, "super" | "crate") => Ordering::Less,
+                _ => match a_ident.cmp(&b_ident) {
+                    Ordering::Equal => {
+                        compare_use_paths(&a_single.use_path(db), &b_single.use_path(db), db)
+                    }
+                    other => other,
+                },
             }
         }
 
