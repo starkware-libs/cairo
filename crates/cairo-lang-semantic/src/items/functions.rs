@@ -425,6 +425,18 @@ impl GenericFunctionWithBodyId {
             }
         }
     }
+    pub fn function_with_body_id(&self, db: &dyn SemanticGroup) -> FunctionWithBodyId {
+        match self {
+            GenericFunctionWithBodyId::Free(id) => FunctionWithBodyId::Free(*id),
+            GenericFunctionWithBodyId::Impl(id) => match id.function_body {
+                ImplFunctionBodyId::Impl(id) => FunctionWithBodyId::Impl(id),
+                ImplFunctionBodyId::Trait(id) => FunctionWithBodyId::Trait(id),
+            },
+            GenericFunctionWithBodyId::Trait(id) => {
+                FunctionWithBodyId::Trait(id.trait_function(db))
+            }
+        }
+    }
 }
 
 /// A long Id of a concrete function with body.

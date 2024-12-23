@@ -1039,7 +1039,8 @@ define_language_element_id_as_enum! {
 }
 impl GenericTypeId {
     pub fn format(&self, db: &dyn DefsGroup) -> String {
-        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
+        self.full_path(db)
+        // format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
     }
 }
 

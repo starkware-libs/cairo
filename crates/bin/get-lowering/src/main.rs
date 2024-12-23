@@ -1,6 +1,7 @@
 //! Internal debug utility for printing lowering phases.
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::{fmt, fs};
 
 use anyhow::Context;
@@ -13,13 +14,16 @@ use cairo_lang_lowering::FlatLowered;
 use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
-use cairo_lang_lowering::fmt::LoweredFormatter;
+use cairo_lang_lowering::fmt::{
+    FlatLoweredSerializable, LoweredFormatter, SemanticSerielizationContext, SerielizationContext,
+};
 use cairo_lang_lowering::ids::{
     ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,
     GeneratedFunctionKey,
 };
 use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteImplLongId;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
@@ -78,7 +82,10 @@ struct Args {
     expr_id: Option<usize>,
 
     /// The output file name (default: stdout).
+    #[arg(long)]
     output: Option<String>,
+    #[arg(long)]
+    serielize: bool,
 }
 
 /// Helper class for formatting the lowering phases of a concrete function.
@@ -89,7 +96,7 @@ struct PhasesDisplay<'a> {
 
 impl fmt::Display for PhasesDisplay<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let db = self.db;
+        let db: &dyn LoweringGroup = self.db;
         let function_id = self.function_id;
 
         let mut curr_state =
@@ -274,6 +281,37 @@ fn main() -> anyhow::Result<()> {
             let lowered = db.final_concrete_function_with_body_lowered(function_id).unwrap();
             LoweredDisplay::new(db, &lowered).to_string()
         }
+    } else if args.serielize {
+        let funcs = get_all_funcs(db, &main_crate_ids)?
+            .values()
+            .map(|v| {
+                Ok::<_, i32>(ConcreteFunctionWithBodyId::from_semantic(
+                    db,
+                    semantic::ConcreteFunctionWithBodyId::from_generic(
+                        db,
+                        v.function_with_body_id(db),
+                    )
+                    .map_err(|_| 3)?,
+                ))
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        let mut ctx = SerielizationContext::new(db);
+        let mut lowereds = Vec::new();
+        for (count, function_id) in funcs.iter().enumerate() {
+            // println!("{}:  {:?}", count, function_id.name(db));
+            let multi = db
+                .priv_function_with_body_multi_lowering(
+                    function_id.function_with_body_id(db).base_semantic_function(db),
+                )
+                .unwrap();
+
+            lowereds.push(FlatLoweredSerializable::new(multi.main_lowering.clone(), &mut ctx));
+            for (key, generated) in multi.generated_lowerings.clone() {
+                lowereds.push(FlatLoweredSerializable::new(generated, &mut ctx));
+            }
+        }
+        serde_json::to_string_pretty(&lowereds).unwrap()
     } else {
         get_all_funcs(db, &main_crate_ids)?.keys().join("\n")
     };
