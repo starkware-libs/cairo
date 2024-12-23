@@ -16,6 +16,8 @@ num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
 smol_str.workspace = true
 unescaper.workspace = true
+serde = { workspace = true, default-features = true }
+
 
 [dev-dependencies]
 env_logger.workspace = true
