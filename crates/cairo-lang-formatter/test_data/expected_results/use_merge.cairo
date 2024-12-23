@@ -21,7 +21,8 @@ mod e;
 use a::b;
 use a::b::c;
 use a::b::c::d;
-use a::b::c::d::{e, f::g};
+use a::b::c::d::e;
+use a::b::c::d::f::g;
 /// Testing not merging with trivia.
 mod t;
 // This is a comment for a::b.
@@ -30,14 +31,15 @@ use a::{c, d};
 // Testing wildcard.
 mod w;
 use a::{*, a, b, c};
-// Testing not merging crate and super.
-use crate::a;
-use crate::b;
-use crate::c::{d, e};
 use d::{*, e};
-use super::a;
-use super::b;
-use super::c::{d, e};
 // Testing not merging the top level.
 use x;
 use y;
+// Testing the handling of crate and super.
+mod z;
+use a::d::e;
+use a::f::g::h;
+use a::{b, c};
+use b;
+use crate::{a, b, bl};
+use super::v;
