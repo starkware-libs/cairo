@@ -1,4 +1,4 @@
-use crate::dict::{Felt252DictEntryTrait, Felt252Dict};
+use crate::dict::{Felt252Dict, Felt252DictEntryTrait};
 use crate::test::test_utils::assert_eq;
 use crate::nullable;
 

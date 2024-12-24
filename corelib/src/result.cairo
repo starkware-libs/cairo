@@ -113,11 +113,9 @@
 //! [`Err`]: Result::Err
 
 #[allow(unused_imports)]
-use crate::array::ArrayTrait;
+use crate::array::{ArrayTrait, SpanTrait};
 #[allow(unused_imports)]
 use crate::serde::Serde;
-#[allow(unused_imports)]
-use crate::array::SpanTrait;
 
 /// The type used for returning and propagating errors. It is an enum with the variants `Ok: T`,
 /// representing success and containing a value, and `Err: E`, representing error and containing an

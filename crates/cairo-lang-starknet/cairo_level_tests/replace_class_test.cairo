@@ -1,6 +1,6 @@
-use starknet::syscalls::{deploy_syscall, get_class_hash_at_syscall};
-use starknet::class_hash::{class_hash_const, ClassHash};
+use starknet::class_hash::{ClassHash, class_hash_const};
 use starknet::contract_address::contract_address_const;
+use starknet::syscalls::{deploy_syscall, get_class_hash_at_syscall};
 
 #[starknet::interface]
 trait IWithReplace<TContractState> {
@@ -9,9 +9,9 @@ trait IWithReplace<TContractState> {
 
 #[starknet::contract]
 mod contract_a {
-    use starknet::storage::StoragePointerWriteAccess;
-    use starknet::class_hash::ClassHash;
     use starknet::SyscallResultTrait;
+    use starknet::class_hash::ClassHash;
+    use starknet::storage::StoragePointerWriteAccess;
 
     #[storage]
     struct Storage {

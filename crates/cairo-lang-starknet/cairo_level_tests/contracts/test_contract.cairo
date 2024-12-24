@@ -16,12 +16,12 @@ impl OutsideImpl<TContractState, +Drop<TContractState>> of OutsideTrait<TContrac
 
 #[starknet::contract]
 mod test_contract {
-    use super::{
-        IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
-        IAnotherContractDispatcherTrait, MyType,
-    };
     use core::dict::Felt252Dict;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use super::{
+        IAnotherContractDispatcher, IAnotherContractDispatcherTrait,
+        IAnotherContractLibraryDispatcher, MyType,
+    };
 
     #[storage]
     struct Storage {

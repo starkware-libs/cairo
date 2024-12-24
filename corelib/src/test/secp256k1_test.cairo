@@ -1,12 +1,11 @@
-use crate::serde::Serde;
-use starknet::{
-    eth_address::U256IntoEthAddress, EthAddress, secp256k1::Secp256k1Impl, SyscallResultTrait,
-};
-use starknet::secp256_trait::{
-    Signature, recover_public_key, Secp256PointTrait, signature_from_vrs, is_valid_signature,
-};
-use starknet::secp256k1::Secp256k1Point;
+use starknet::eth_address::U256IntoEthAddress;
 use starknet::eth_signature::verify_eth_signature;
+use starknet::secp256_trait::{
+    Secp256PointTrait, Signature, is_valid_signature, recover_public_key, signature_from_vrs,
+};
+use starknet::secp256k1::{Secp256k1Impl, Secp256k1Point};
+use starknet::{EthAddress, SyscallResultTrait};
+use crate::serde::Serde;
 
 #[test]
 fn test_secp256k1_point_serde() {
