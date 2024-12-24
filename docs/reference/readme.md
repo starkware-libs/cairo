@@ -22,7 +22,7 @@ apt-get install asciidoctor
 ```
 
 ### Convert to HTML
-> Tips:`pwd` is `cairo/docs/reference`
+> Tip:`pwd` is `cairo/docs/reference`
 
 - Convert a single file
 ```bash
@@ -51,7 +51,7 @@ apt-get install asciidoctor
 ```
 
 ### Convert to PDF
-> Tips: `pwd` is `cairo/docs/reference`
+> Tip: `pwd` is `cairo/docs/reference`
 
 - Convert a single file
 ```bash

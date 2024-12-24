@@ -69,7 +69,7 @@ struct Args {
     #[arg(short, long)]
     single_file: bool,
 
-    /// whenever to print all lowering stages or only the final lowering.
+    /// whether to print all lowering stages or only the final lowering.
     #[arg(short, long)]
     all: bool,
 
