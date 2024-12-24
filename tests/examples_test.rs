@@ -315,6 +315,12 @@ fn run_function(
     TestConfig::without_gas(),
     RunResultValue::Success(vec![Felt252::from(13)])
 )]
+#[case::fib_loop(
+    "fib_loop",
+    &[1, 1, 7].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(21)])
+)]
 #[case::fib_unary(
     "fib_unary",
     &[7].map(Felt252::from),
@@ -485,7 +491,7 @@ fn complex_input_test(example_dir_data: &ExampleDirData) {
     assert_eq!(
         result.value,
         RunResultValue::Success(vec![
-                        // `r.low`
+            // `r.low`
             Felt252::from(
                 1 + 2 + 3 + 4 + 6 + 8 + 10 + 12 + 14 + 16 + 18
             ),
@@ -493,3 +499,6 @@ fn complex_input_test(example_dir_data: &ExampleDirData) {
             Felt252::from(
                 5 + 7 + 9 + 11 + 13 + 15 + 17 + 19
             )
+        ])
+    );
+}
