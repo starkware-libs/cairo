@@ -249,51 +249,130 @@ fn run_function(
 }
 
 #[rstest]
-#[case::fib("fib", &[1, 1, 7].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success(vec![Felt252::from(21)]))]
-#[case::fib_box("fib_box", &[1, 1, 7].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success(vec![Felt252::from(21)]))]
-#[case::fib_array("fib_array", &[1, 1, 7].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success(vec![Felt252::from(21)]))]
-#[case::fib_counter("fib_counter", &[1, 1, 8].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success([34, 8].map(Felt252::from).into_iter().collect()))]
-#[case::fib_match("fib_match", &[9].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success([55].map(Felt252::from).into_iter().collect()))]
-#[case::fib_struct("fib_struct", &[1, 1, 9].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success([55, 9].map(Felt252::from).into_iter().collect()))]
-#[case::fib_u128_checked_pass("fib_u128_checked", &[1, 1, 10].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success([/*ok*/0, /*fib*/89].map(Felt252::from).into_iter().collect()))]
-#[case::fib_u128_checked_fail("fib_u128_checked", &[1, 1, 200].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success([/*err*/1, /*padding*/0].map(Felt252::from).into_iter().collect()))]
-#[case::fib_u128_pass("fib_u128", &[1, 1, 10].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success(vec![Felt252::from(89)]))]
-#[case::fib_u128_fail("fib_u128", &[1, 1, 200].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Panic(vec![Felt252::from_bytes_be_slice(b"u128_add Overflow")]))]
-#[case::fib_local("fib_local", &[6].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success(vec![Felt252::from(13)]))]
-#[case::fib_unary("fib_unary", &[7].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success(vec![Felt252::from(21)]))]
-#[case::enum_flow("enum_flow", &[1, 1, 7].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success(vec![Felt252::from(21)]))]
-#[case::corelib_usage("corelib_usage", &[1, 1, 7].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success(vec![Felt252::from(21)]))]
-#[case::hash_chain("hash_chain", &[3].map(Felt252::from), TestConfig::without_gas(), 
+#[case::fib(
+    "fib",
+    &[1, 1, 7].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(21)])
+)]
+#[case::fib_box(
+    "fib_box",
+    &[1, 1, 7].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(21)])
+)]
+#[case::fib_array(
+    "fib_array",
+    &[1, 1, 7].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(21)])
+)]
+#[case::fib_counter(
+    "fib_counter",
+    &[1, 1, 8].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success([34, 8].map(Felt252::from).into_iter().collect())
+)]
+#[case::fib_match(
+    "fib_match",
+    &[9].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success([55].map(Felt252::from).into_iter().collect())
+)]
+#[case::fib_struct(
+    "fib_struct",
+    &[1, 1, 9].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success([55, 9].map(Felt252::from).into_iter().collect())
+)]
+#[case::fib_u128_checked_pass(
+    "fib_u128_checked",
+    &[1, 1, 10].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success([/*ok*/0, /*fib*/89].map(Felt252::from).into_iter().collect())
+)]
+#[case::fib_u128_checked_fail(
+    "fib_u128_checked",
+    &[1, 1, 200].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success([/*err*/1, /*padding*/0].map(Felt252::from).into_iter().collect())
+)]
+#[case::fib_u128_pass(
+    "fib_u128",
+    &[1, 1, 10].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(89)])
+)]
+#[case::fib_u128_fail(
+    "fib_u128",
+    &[1, 1, 200].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Panic(vec![Felt252::from_bytes_be_slice(b"u128_add Overflow")])
+)]
+#[case::fib_local(
+    "fib_local",
+    &[6].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(13)])
+)]
+#[case::fib_unary(
+    "fib_unary",
+    &[7].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(21)])
+)]
+#[case::enum_flow(
+    "enum_flow",
+    &[1, 1, 7].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(21)])
+)]
+#[case::corelib_usage(
+    "corelib_usage",
+    &[1, 1, 7].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(21)])
+)]
+#[case::hash_chain(
+    "hash_chain",
+    &[3].map(Felt252::from),
+    TestConfig::without_gas(),
     RunResultValue::Success(vec![Felt252::from_hex_unchecked(
-        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
-#[case::hash_chain_gas("hash_chain_gas", &[3].map(Felt252::from), 
-    TestConfig::with_gas(100000, Some(9880 + 3 * token_gas_cost(CostTokenType::Pedersen))), 
+        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d"
+    )])
+)]
+#[case::hash_chain_gas(
+    "hash_chain_gas",
+    &[3].map(Felt252::from),
+    TestConfig::with_gas(100000, Some(9880 + 3 * token_gas_cost(CostTokenType::Pedersen))),
     RunResultValue::Success(vec![Felt252::from_hex_unchecked(
-        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
-#[case::pedersen_test("pedersen_test", &[1, 1, 7].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success(vec![Felt252::from(21)]))]
-#[case::match_or("match_or", &[1, 1, 7].map(Felt252::from), TestConfig::without_gas(), 
-    RunResultValue::Success(vec![Felt252::from(21)]))]
-#[case::fib_pass("fib", &[1, 1, 10].map(Felt252::from), 
+        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d"
+    )])
+)]
+#[case::pedersen_test(
+    "pedersen_test",
+    &[1, 1, 7].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(21)])
+)]
+#[case::match_or(
+    "match_or",
+    &[1, 1, 7].map(Felt252::from),
+    TestConfig::without_gas(),
+    RunResultValue::Success(vec![Felt252::from(21)])
+)]
+#[case::fib_pass(
+    "fib",
+    &[1, 1, 10].map(Felt252::from),
     TestConfig::with_gas(200000, None),
-    RunResultValue::Success([89].map(Felt252::from).into_iter().collect()))]
-#[case::fib_fail("fib", &[1, 1, 10].map(Felt252::from), 
+    RunResultValue::Success([89].map(Felt252::from).into_iter().collect())
+)]
+#[case::fib_fail(
+    "fib",
+    &[1, 1, 10].map(Felt252::from),
     TestConfig::with_gas(10000, None),
-    RunResultValue::Panic(vec![Felt252::from_bytes_be_slice(b"Out of gas")]))]
+    RunResultValue::Panic(vec![Felt252::from_bytes_be_slice(b"Out of gas")])
+)]
 fn run_function_test(
     #[case] name: &str,
     #[case] params: &[Felt252],
@@ -407,7 +486,3 @@ fn complex_input_test(example_dir_data: &ExampleDirData) {
             // `r.low`
             Felt252::from(1 + 2 + 3 + 4 + 6 + 8 + 10 + 12 + 14 + 16 + 18),
             // `r.high`
-            Felt252::from(5 + 7 + 9 + 11 + 13 + 15 + 17 + 19)
-        ])
-    );
-}
