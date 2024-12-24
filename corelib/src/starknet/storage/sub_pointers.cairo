@@ -16,7 +16,7 @@ pub impl SubPointersDeref<T, +SubPointers<T>> of core::ops::Deref<StoragePointer
     fn deref(self: StoragePointer<T>) -> Self::Target {
         self.sub_pointers()
     }
-}я
+}
 
 /// A mutable version of `SubPointers`, works the same way, but on `Mutable<T>`.
 pub trait SubPointersMut<T> {
