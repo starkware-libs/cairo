@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_runnable_utils::builder::{
@@ -57,6 +58,7 @@ pub fn compile_executable(
 ) -> Result<CompiledFunction> {
     let mut db = RootDatabase::builder()
         .skip_auto_withdraw_gas()
+        .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]))
         .detect_corelib()
         .with_plugin_suite(executable_plugin_suite())
         .build()?;
