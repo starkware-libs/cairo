@@ -1129,40 +1129,44 @@ impl<'db> Resolver<'db> {
         let mut item_info = None;
         let mut module_items_found: OrderedHashSet<ModuleItemId> = OrderedHashSet::default();
         let imported_modules = self.db.priv_module_use_star_modules(module_id);
-        let mut containing_modules = vec![];
-        let mut is_accessible = false;
         for (star_module_id, item_module_id) in &imported_modules.accessible {
             if let Some(inner_item_info) =
                 self.resolve_item_in_imported_module(*item_module_id, identifier)
             {
-                item_info = Some(inner_item_info.clone());
-                is_accessible |=
-                    self.is_item_visible(*item_module_id, &inner_item_info, *star_module_id)
-                        && self.is_item_feature_usable(&inner_item_info);
-                module_items_found.insert(inner_item_info.item_id);
-            }
-        }
-        for star_module_id in &imported_modules.all {
-            if let Some(inner_item_info) =
-                self.resolve_item_in_imported_module(*star_module_id, identifier)
-            {
-                item_info = Some(inner_item_info.clone());
-                module_items_found.insert(inner_item_info.item_id);
-                containing_modules.push(*star_module_id);
+                if self.is_item_visible(*item_module_id, &inner_item_info, *star_module_id)
+                    && self.is_item_feature_usable(&inner_item_info)
+                {
+                    item_info = Some(inner_item_info.clone());
+                    module_items_found.insert(inner_item_info.item_id);
+                }
             }
         }
         if module_items_found.len() > 1 {
             return UseStarResult::AmbiguousPath(module_items_found.iter().cloned().collect());
         }
         match item_info {
-            Some(item_info) => {
-                if is_accessible {
-                    UseStarResult::UniquePathFound(item_info)
+            Some(item_info) => UseStarResult::UniquePathFound(item_info),
+            None => {
+                let mut containing_modules = vec![];
+                for star_module_id in &imported_modules.all {
+                    if let Some(inner_item_info) =
+                        self.resolve_item_in_imported_module(*star_module_id, identifier)
+                    {
+                        item_info = Some(inner_item_info.clone());
+                        module_items_found.insert(inner_item_info.item_id);
+                        containing_modules.push(*star_module_id);
+                    }
+                }
+                if let Some(item_info) = item_info {
+                    if module_items_found.len() > 1 {
+                        UseStarResult::AmbiguousPath(module_items_found.iter().cloned().collect())
+                    } else {
+                        UseStarResult::ItemNotVisible(item_info.item_id, containing_modules)
+                    }
                 } else {
-                    UseStarResult::ItemNotVisible(item_info.item_id, containing_modules)
+                    UseStarResult::PathNotFound
                 }
             }
-            None => UseStarResult::PathNotFound,
         }
     }
 
@@ -1305,6 +1309,10 @@ impl<'db> Resolver<'db> {
             }
             UseStarResult::PathNotFound => {}
             UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
+                let prelude = self.prelude_submodule();
+                if let Ok(Some(_)) = self.db.module_item_by_name(prelude, ident) {
+                    return ResolvedBase::Module(prelude);
+                }
                 return ResolvedBase::ItemNotVisible(module_item_id, containing_modules);
             }
         }
