@@ -1,22 +1,31 @@
 use std::mem::take;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    GenericParamId, ModuleId, NamedLanguageElementId, TopLevelLanguageElementId,
+    GenericParamId, ImplItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    TopLevelLanguageElementId,
 };
+use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::items::constant::{ConstValue, ConstValueId};
-use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
+use cairo_lang_semantic::items::functions::{
+    ConcreteFunctionWithBody, GenericFunctionId, GenericFunctionWithBodyId, ImplFunctionBodyId,
+    ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
+};
 use cairo_lang_semantic::items::imp::{ImplId, ImplLongId};
 use cairo_lang_semantic::resolve::Resolver;
-use cairo_lang_semantic::{MatchArmSelector, TypeId};
+use cairo_lang_semantic::types::{
+    ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
+};
+use cairo_lang_semantic::{MatchArmSelector, TypeId, TypeLongId};
 use cairo_lang_syntax::node::TypedStablePtr;
-use cairo_lang_syntax::node::ast::GenericArg;
+use cairo_lang_syntax::node::ast::{GenericArg, ModuleItem};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use id_arena::Arena;
+use cairo_lang_utils::{Intern, LookupIntern};
+use id_arena::{Arena, Id};
 use itertools::Itertools;
 use num_bigint::BigInt;
 use serde::ser::{SerializeSeq, SerializeStruct, SerializeStructVariant};
@@ -32,9 +41,9 @@ use crate::objects::{
     VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo,
-    StatementDesnap, StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
-    VarRemapping, VarUsage, Variable,
+    FlatBlock, FlatBlockEnd, FlatLowered, Location, MatchArm, MatchEnumInfo, MatchEnumValue,
+    MatchInfo, StatementDesnap, StatementEnumConstruct, StatementSnapshot,
+    StatementStructConstruct, VarRemapping, VarUsage, Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
@@ -362,8 +371,11 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementDesnap {
 }
 
 struct DesSerielizationContext<'db> {
-    resolver: Resolver<'db>,
+    variables: &'db Arena<Variable>,
+    variables_id: &'db Vec<VariableId>,
     db: &'db dyn LoweringGroup,
+
+    default_location: LocationId,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -394,6 +406,23 @@ impl FlatLoweredSerializeable {
                 })
                 .collect(),
             parameters: flat_lowered.parameters.iter().map(|var| var.index()).collect(),
+        }
+    }
+    pub fn embed(self, db: &dyn LoweringGroup) -> FlatLowered {
+        let mut variables = Arena::new();
+        for var in self.variables {
+            variables.alloc(var.embed(db));
+        }
+        let mut blocks = Arena::new();
+        for block in self.blocks {
+            blocks.alloc(block.embed(db));
+        }
+        FlatLowered {
+            diagnostics: Default::default(),
+            signature: self.signature.embed(db),
+            variables,
+            blocks,
+            parameters: self.parameters.into_iter().map(|var_id| variables[var_id]).collect(),
         }
     }
 }
@@ -434,6 +463,15 @@ impl SignatureSerializeable {
             panicable: signature.panicable,
         }
     }
+    fn embed(self, db: &dyn LoweringGroup) -> Signature {
+        Signature {
+            params: self.params.into_iter().map(|var| var.embed(db)).collect(),
+            extra_rets: self.extra_rets.into_iter().map(|var| var.embed(db)).collect(),
+            return_type: self.return_type.embed(db),
+            implicits: self.implicits.into_iter().map(|ty| ty.embed(db)).collect(),
+            panicable: self.panicable,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -469,6 +507,25 @@ impl ExprVarMemberPathSerializeable {
             },
         }
     }
+    fn embed(self, db: &dyn SemanticGroup) -> semantic::ExprVarMemberPath {
+        match self {
+            ExprVarMemberPathSerializeable::Var(var) => {
+                semantic::ExprVarMemberPath::Var(var.embed(db))
+            }
+            ExprVarMemberPathSerializeable::Member {
+                parent,
+                member_id: (struct_id, name),
+                concrete_struct_id,
+                ty,
+            } => semantic::ExprVarMemberPath::Member {
+                parent: Box::new(parent.embed(db)),
+                member_id: defs::MemberId::new(struct_id.embed(db), name),
+                stable_ptr: TypedStablePtr::new(),
+                concrete_struct_id: concrete_struct_id.embed(db),
+                ty: ty.embed(db),
+            },
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -479,6 +536,9 @@ struct ExprVarSerializeable {
 impl ExprVarSerializeable {
     fn new(expr_var: semantic::ExprVar, db: &dyn SemanticGroup) -> Self {
         Self { ty: TypeSerializeable::new(expr_var.ty, db) }
+    }
+    fn embed(self, db: &dyn SemanticGroup) -> semantic::ExprVar {
+        semantic::ExprVar { ty: self.ty.embed(db) }
     }
 }
 
@@ -516,6 +576,15 @@ impl VariableSerializeable {
             ty: TypeSerializeable::new(variable.ty, db.upcast()),
         }
     }
+    fn embed(self, db: &dyn SemanticGroup) -> Variable {
+        Variable {
+            droppable: self.droppable.map(|impl_id| impl_id.embed(db)),
+            copyable: self.copyable.map(|impl_id| impl_id.embed(db)),
+            destruct_impl: self.destruct_impl.map(|impl_id| impl_id.embed(db)),
+            panic_destruct_impl: self.panic_destruct_impl.map(|impl_id| impl_id.embed(db)),
+            ty: self.ty.embed(db),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -534,6 +603,12 @@ impl FlatBlockSerializeable {
                 .map(|stmt| StatementSerializeable::new(stmt, db))
                 .collect(),
             end: FlatBlockEndSerializeable::new(flat_block.end, db),
+        }
+    }
+    fn embed(self, db: &dyn LoweringGroup) -> FlatBlock {
+        FlatBlock {
+            statements: self.statements.into_iter().map(|stmt| stmt.embed(db)).collect(),
+            end: self.end.embed(db),
         }
     }
 }
@@ -569,6 +644,21 @@ impl FlatBlockEndSerializeable {
             }
         }
     }
+    fn embed(self, db: &dyn LoweringGroup) -> FlatBlockEnd {
+        match self {
+            FlatBlockEndSerializeable::Return(returns) => FlatBlockEnd::Return(
+                returns.into_iter().map(|var_id| db.variables[var_id]).collect(),
+            ),
+            FlatBlockEndSerializeable::Panic(data) => FlatBlockEnd::Panic(db.variables[data]),
+            FlatBlockEndSerializeable::Goto(block_id, remapping) => {
+                FlatBlockEnd::Goto(BlockId(block_id), remapping.embed(db))
+            }
+            FlatBlockEndSerializeable::NotSet => FlatBlockEnd::NotSet,
+            FlatBlockEndSerializeable::Match { info } => {
+                FlatBlockEnd::Match { info: info.embed(db) }
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -584,6 +674,11 @@ impl VarRemappingSerializeable {
                 .map(|(dst, src)| (dst.index(), src.var_id.index()))
                 .collect(),
         }
+    }
+    fn embed(self, db: &dyn LoweringGroup) -> VarRemapping {
+        VarRemapping::new(
+            self.remapping.into_iter().map(|(dst, src)| (db.variables[dst], db.variables[src])),
+        )
     }
 }
 
@@ -605,6 +700,13 @@ impl MatchInfoSerializeable {
             MatchInfo::Value(info) => {
                 MatchInfoSerializeable::Value(MatchEnumValueSerializeable::new(info, db))
             }
+        }
+    }
+    fn embed(self, db: &dyn LoweringGroup) -> MatchInfo {
+        match self {
+            MatchInfoSerializeable::Enum(info) => MatchInfo::Enum(info.embed(db)),
+            MatchInfoSerializeable::Extern(info) => MatchInfo::Extern(info.embed(db)),
+            MatchInfoSerializeable::Value(info) => MatchInfo::Value(info.embed(db)),
         }
     }
 }
@@ -633,6 +735,13 @@ impl MatchEnumInfoSerializeable {
                 .collect(),
         }
     }
+    fn embed(self, db: &dyn LoweringGroup) -> MatchEnumInfo {
+        MatchEnumInfo {
+            concrete_enum_id: self.concrete_enum_id.embed(db),
+            input: db.variables[self.input],
+            arms: self.arms.into_iter().map(|arm| arm.embed(db)).collect(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -656,6 +765,13 @@ impl MatchExternInfoSerializeable {
                 .into_iter()
                 .map(|arm| MatchArmSerializeable::new(arm, db))
                 .collect(),
+        }
+    }
+    fn embed(self, db: &dyn LoweringGroup) -> MatchExternInfo {
+        MatchExternInfo {
+            function: self.function.embed(db),
+            inputs: self.inputs.into_iter().map(|var_id| db.variables[var_id]).collect(),
+            arms: self.arms.into_iter().map(|arm| arm.embed(db)).collect(),
         }
     }
 }
@@ -682,6 +798,13 @@ impl MatchEnumValueSerializeable {
                 .collect(),
         }
     }
+    fn embed(self, db: &dyn LoweringGroup) -> MatchEnumValue {
+        MatchEnumValue {
+            num_of_arms: self.num_of_arms,
+            input: db.variables[self.input],
+            arms: self.arms.into_iter().map(|arm| arm.embed(db)).collect(),
+        }
+    }
 }
 /// An arm of a match statement.
 #[derive(Serialize, Deserialize)]
@@ -704,6 +827,13 @@ impl MatchArmSerializeable {
             var_ids: match_arm.var_ids.iter().map(|var| var.index()).collect(),
         }
     }
+    fn embed(self, db: &dyn LoweringGroup) -> MatchArm {
+        MatchArm {
+            arm_selector: self.arm_selector.embed(db),
+            block_id: BlockId(self.block_id),
+            var_ids: self.var_ids.into_iter().map(|var_id| db.variables[var_id]).collect(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -719,6 +849,14 @@ impl MatchArmSelectorSerializeable {
                 ConcreteVariantSerializeable::new(variant_id, db),
             ),
             MatchArmSelector::Value(value) => MatchArmSelectorSerializeable::Value(value.value),
+        }
+    }
+    fn embed(self, db: &dyn SemanticGroup) -> MatchArmSelector {
+        match self {
+            MatchArmSelectorSerializeable::VariantId(variant_id) => {
+                MatchArmSelector::VariantId(variant_id.embed(db))
+            }
+            MatchArmSelectorSerializeable::Value(value) => MatchArmSelector::Value(value),
         }
     }
 }
@@ -768,6 +906,21 @@ impl StatementSerializeable {
             }
         }
     }
+    fn embed(self, db: &dyn LoweringGroup) -> Statement {
+        match self {
+            StatementSerializeable::Const(stmt) => Statement::Const(stmt.embed(db)),
+            StatementSerializeable::Call(stmt) => Statement::Call(stmt.embed(db)),
+            StatementSerializeable::StructConstruct(stmt) => {
+                Statement::StructConstruct(stmt.embed(db))
+            }
+            StatementSerializeable::StructDestructure(stmt) => {
+                Statement::StructDestructure(stmt.embed(db))
+            }
+            StatementSerializeable::EnumConstruct(stmt) => Statement::EnumConstruct(stmt.embed(db)),
+            StatementSerializeable::Snapshot(stmt) => Statement::Snapshot(stmt.embed(db)),
+            StatementSerializeable::Desnap(stmt) => Statement::Desnap(stmt.embed(db)),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -783,6 +936,9 @@ impl StatementConstSerializeable {
             value: ConstValueSerializeable::new(stmt.value, db.upcast()),
             output: stmt.output.index(),
         }
+    }
+    fn embed(self, db: &dyn LoweringGroup) -> StatementConst {
+        StatementConst { value: self.value.embed(db), output: db.variables[self.output] }
     }
 }
 
@@ -821,6 +977,27 @@ impl ConstValueSerializeable {
             _ => todo!(),
         }
     }
+    fn embed(self, db: &dyn SemanticGroup) -> Result<ConstValue, ()> {
+        match self {
+            ConstValueSerializeable::Int(value, ty) => Ok(ConstValue::Int(value, ty.embed(db)?)),
+            ConstValueSerializeable::Struct(values, ty) => Ok(ConstValue::Struct(
+                values.into_iter().map(|v| v.embed(db)).collect::<Result<_, _>>()?,
+                ty.embed(db)?,
+            )),
+            ConstValueSerializeable::Enum(variant, value) => {
+                Ok(ConstValue::Enum(variant.embed(db)?, Box::new(value.embed(db)?)))
+            }
+            ConstValueSerializeable::NonZero(value) => {
+                Ok(ConstValue::NonZero(Box::new(value.embed(db)?)))
+            }
+            ConstValueSerializeable::Boxed(value) => {
+                Ok(ConstValue::Boxed(Box::new(value.embed(db)?)))
+            }
+            ConstValueSerializeable::Generic(generic_param) => {
+                Ok(ConstValue::Generic(generic_param.embed(db)?))
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -850,6 +1027,14 @@ impl StatementCallSerializeable {
             outputs: stmt.outputs.iter().map(|var| var.index()).collect(),
         }
     }
+    fn embed(self, db: &dyn LoweringGroup) -> StatementCall {
+        StatementCall {
+            function: self.function.embed(db),
+            inputs: self.inputs.into_iter().map(|var_id| db.variables[var_id]).collect(),
+            with_coupon: self.with_coupon,
+            outputs: self.outputs.into_iter().map(|var_id| db.variables[var_id]).collect(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -868,6 +1053,12 @@ impl FunctionSerializeable {
             FunctionLongId::Generated(id) => {
                 FunctionSerializeable::Generated(GeneratedFunctionSerializeable::new(id, db))
             }
+        }
+    }
+    fn embed(self, db: &dyn LoweringGroup) -> FunctionId {
+        match self {
+            FunctionSerializeable::Semantic(id) => FunctionId::Semantic(id.embed(db.upcast())),
+            FunctionSerializeable::Generated(id) => FunctionId::Generated(id.embed(db)),
         }
     }
 }
@@ -889,6 +1080,13 @@ impl SemanticFunctionSerializeable {
                 .map(|arg| GenericArgumentSerializeable::new(arg, db))
                 .collect(),
         }
+    }
+    fn embed(self, db: &dyn SemanticGroup) -> semantic::FunctionId {
+        let long_id = semantic::FunctionLongId::new(
+            self.generic_funtion.embed(db),
+            self.generic_args.into_iter().map(|arg| arg.embed(db)).collect(),
+        );
+        db.intern_function(long_id)
     }
 }
 
@@ -919,6 +1117,34 @@ impl GenericFunctionSerializeable {
             }
         }
     }
+    fn embed(self, db: &dyn SemanticGroup) -> Result<GenericFunctionId, ()> {
+        match self {
+            GenericFunctionSerializeable::Free(id) => {
+                let ModuleItemId::FreeFunction(id) = id.embed(db)? else {
+                    return Err(());
+                };
+                Ok(GenericFunctionId::Free(id))
+            }
+            GenericFunctionSerializeable::Extern(id) => {
+                let ModuleItemId::ExternFunction(id) = id.embed(db)? else {
+                    return Err(());
+                };
+                Ok(GenericFunctionId::Extern(id))
+            }
+            GenericFunctionSerializeable::Impl(id, name) => {
+                let impl_id = id.embed(db)?;
+                let Some(ImplItemId::Function(function_id)) =
+                    db.impl_item_by_name(impl_id.impl_def_id(db), name.into()).map_err(|_| ())?
+                else {
+                    return Err(());
+                };
+                Ok(GenericFunctionId::Impl(ImplGenericFunctionId {
+                    impl_id,
+                    function: function_id,
+                }))
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -935,6 +1161,12 @@ impl GeneratedFunctionSerializeable {
             ),
             key: GeneratedFunctionKeySerializeable::new(function.key, db),
         }
+    }
+    fn embed(self, ctx: DesSerielizationContext) -> Result<GeneratedFunction, ()> {
+        Ok(GeneratedFunction {
+            parent: self.parent.embed(ctx.db.upcast())?,
+            key: self.key.embed(ctx),
+        })
     }
 }
 #[derive(Serialize, Deserialize)]
@@ -956,6 +1188,17 @@ impl SemanticConcreteFunctionWithBodySerializeable {
                 .map(|arg| GenericArgumentSerializeable::new(arg, db))
                 .collect(),
         }
+    }
+    fn embed(self, db: &dyn SemanticGroup) -> Result<semantic::ConcreteFunctionWithBodyId, ()> {
+        Ok(ConcreteFunctionWithBody {
+            generic_function: self.generic_function.embed(db)?,
+            generic_args: self
+                .generic_args
+                .into_iter()
+                .map(|arg| arg.embed(db))
+                .collect::<Result<_, _>>()?,
+        }
+        .intern(db))
     }
 }
 
@@ -980,6 +1223,28 @@ impl GenericFunctionWithBodySerializeable {
             }
         }
     }
+    fn embed(self, db: &dyn SemanticGroup) -> Result<GenericFunctionWithBodyId, ()> {
+        match self {
+            GenericFunctionWithBodySerializeable::Free(id) => {
+                let ModuleItemId::FreeFunction(id) = id.embed(db)? else {
+                    return Err(());
+                };
+                Ok(GenericFunctionWithBodyId::Free(id))
+            }
+            GenericFunctionWithBodySerializeable::Impl(id, name) => {
+                let impl_id = id.embed(db)?;
+                let Some(ImplItemId::Function(function_id)) =
+                    db.impl_item_by_name(impl_id.impl_def_id(db), name.into()).map_err(|_| ())?
+                else {
+                    return Err(());
+                };
+                Ok(GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
+                    concrete_impl_id: impl_id,
+                    function_body: ImplFunctionBodyId::Impl(function_id),
+                }))
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -994,6 +1259,19 @@ impl GeneratedFunctionKeySerializeable {
             GeneratedFunctionKey::Loop(id) => GeneratedFunctionKeySerializeable::Loop(id.index()),
             GeneratedFunctionKey::TraitFunc(id, _) => GeneratedFunctionKeySerializeable::TraitFunc(
                 SemanticFunctionSerializeable::new(id, db.upcast()),
+            ),
+        }
+    }
+    fn embed(self, ctx: DesSerielizationContext) -> GeneratedFunctionKey {
+        let expr_arena: Arena<semantic::Expr> = Default::default();
+
+        match self {
+            GeneratedFunctionKeySerializeable::Loop(_id) => {
+                GeneratedFunctionKey::Loop(expr_arena.next_id())
+            }
+            GeneratedFunctionKeySerializeable::TraitFunc(id) => GeneratedFunctionKey::TraitFunc(
+                id.embed(ctx.db.upcast()),
+                ctx.default_location.lookup_intern(ctx.db).stable_location,
             ),
         }
     }
@@ -1012,6 +1290,19 @@ impl StatementStructConstructSerializeable {
             output: stmt.output.index(),
         }
     }
+    fn embed(self, ctx: DesSerielizationContext) -> StatementStructConstruct {
+        StatementStructConstruct {
+            inputs: self
+                .inputs
+                .into_iter()
+                .map(|var_id| VarUsage {
+                    var_id: ctx.variables_id[var_id],
+                    location: ctx.default_location,
+                })
+                .collect(),
+            output: ctx.variables_id[self.output],
+        }
+    }
 }
 #[derive(Serialize, Deserialize)]
 struct StatementStructDestructureSerializeable {
@@ -1025,6 +1316,15 @@ impl StatementStructDestructureSerializeable {
         Self {
             input: stmt.input.var_id.index(),
             outputs: stmt.outputs.iter().map(|var| var.index()).collect(),
+        }
+    }
+    fn embed(self, ctx: DesSerielizationContext) -> StatementStructDestructure {
+        StatementStructDestructure {
+            input: VarUsage {
+                var_id: ctx.variables_id[self.input],
+                location: ctx.default_location,
+            },
+            outputs: self.outputs.into_iter().map(|var_id| ctx.variables_id[var_id]).collect(),
         }
     }
 }
@@ -1045,6 +1345,16 @@ impl StatementEnumConstructSerializeable {
             output: stmt.output.index(),
         }
     }
+    fn embed(self, ctx: DesSerielizationContext) -> Result<StatementEnumConstruct, ()> {
+        Ok(StatementEnumConstruct {
+            variant: self.variant.embed(ctx.db.upcast())?,
+            input: VarUsage {
+                var_id: ctx.variables_id[self.input],
+                location: ctx.default_location,
+            },
+            output: ctx.variables_id[self.output],
+        })
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1055,6 +1365,15 @@ struct StatementSnapshotSerializeable {
 impl StatementSnapshotSerializeable {
     fn new(stmt: StatementSnapshot, _db: &dyn LoweringGroup) -> Self {
         Self { input: stmt.input.var_id.index(), outputs: stmt.outputs.map(|var| var.index()) }
+    }
+    fn embed(self, ctx: DesSerielizationContext) -> StatementSnapshot {
+        StatementSnapshot {
+            input: VarUsage {
+                var_id: ctx.variables_id[self.input],
+                location: ctx.default_location,
+            },
+            outputs: [ctx.variables_id[self.outputs[0]], ctx.variables_id[self.outputs[1]]],
+        }
     }
 }
 
@@ -1067,6 +1386,15 @@ struct StatementDesnapSerializeable {
 impl StatementDesnapSerializeable {
     fn new(stmt: StatementDesnap, _db: &dyn LoweringGroup) -> Self {
         Self { input: stmt.input.var_id.index(), output: stmt.output.index() }
+    }
+    fn embed(self, ctx: DesSerielizationContext) -> StatementDesnap {
+        StatementDesnap {
+            input: VarUsage {
+                var_id: ctx.variables_id[self.input],
+                location: ctx.default_location,
+            },
+            output: ctx.variables_id[self.output],
+        }
     }
 }
 
@@ -1098,6 +1426,23 @@ impl GenericArgumentSerializeable {
             }
             semantic::GenericArgumentId::NegImpl => GenericArgumentSerializeable::NegImpl,
         }
+    }
+    fn embed(
+        self,
+        db: &dyn semantic::db::SemanticGroup,
+    ) -> Result<semantic::GenericArgumentId, ()> {
+        Ok(match self {
+            GenericArgumentSerializeable::Type(ty) => {
+                semantic::GenericArgumentId::Type(ty.embed(db.upcast())?)
+            }
+            GenericArgumentSerializeable::Value(value) => {
+                semantic::GenericArgumentId::Constant(value.embed(db)?.intern(db))
+            }
+            GenericArgumentSerializeable::Impl(imp) => {
+                semantic::GenericArgumentId::Impl(imp.embed(db)?)
+            }
+            GenericArgumentSerializeable::NegImpl => semantic::GenericArgumentId::NegImpl,
+        })
     }
 }
 
@@ -1132,6 +1477,19 @@ impl TypeSerializeable {
             _ => todo!(),
         }
     }
+    fn embed(self, db: &dyn SemanticGroup) -> Result<TypeId, ()> {
+        let long_id = match self {
+            TypeSerializeable::Concrete(concrete) => TypeLongId::Concrete(concrete.embed(db)?),
+            TypeSerializeable::Tuple(vec) => {
+                TypeLongId::Tuple(vec.into_iter().map(|ty| ty.embed(db)).collect::<Result<_, _>>()?)
+            }
+            TypeSerializeable::Snapshot(ty) => TypeLongId::Snapshot(ty.embed(db)?),
+            TypeSerializeable::GenericParameter(generic_param) => {
+                TypeLongId::GenericParameter(generic_param.embed(db)?)
+            }
+        };
+        Ok(long_id.intern(db))
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1160,6 +1518,28 @@ impl ConcreteTypeSerializeable {
             ),
         }
     }
+    fn embed(self, db: &dyn SemanticGroup) -> Result<semantic::ConcreteTypeId, ()> {
+        Ok(match self {
+            ConcreteTypeSerializeable::Struct(concrete_struct) => {
+                semantic::ConcreteTypeId::Struct(concrete_struct.embed(db)?)
+            }
+            ConcreteTypeSerializeable::Enum(concrete_enum) => {
+                semantic::ConcreteTypeId::Enum(concrete_enum.embed(db)?)
+            }
+            ConcreteTypeSerializeable::Extern(path, generic_args) => {
+                let generic_args = generic_args
+                    .into_iter()
+                    .map(|arg| arg.embed(db))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let ModuleItemId::ExternType(extern_type_id) = path.embed(db)? else {
+                    return Err(());
+                };
+                semantic::ConcreteTypeId::Extern(
+                    ConcreteExternTypeLongId { extern_type_id, generic_args }.intern(db),
+                )
+            }
+        })
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1178,6 +1558,17 @@ impl ImplSerializeable {
             ),
             _ => todo!(),
         }
+    }
+    fn embed(self, db: &dyn SemanticGroup) -> Result<ImplId, ()> {
+        Ok(match self {
+            ImplSerializeable::Concrete(concrete_impl) => {
+                ImplLongId::Concrete(concrete_impl.embed(db)?)
+            }
+            ImplSerializeable::GenericParameter(generic_param) => {
+                ImplLongId::GenericParameter(generic_param.embed(db)?)
+            }
+        }
+        .intern(db))
     }
 }
 
@@ -1198,6 +1589,20 @@ impl ConcreteImplSerializeable {
                 .collect(),
         }
     }
+    fn embed(self, db: &dyn SemanticGroup) -> Result<semantic::ConcreteImplId, ()> {
+        let ModuleItemId::Impl(impl_def_id) = self.impl_id.embed(db)? else {
+            return Err(());
+        };
+        let long_id = semantic::ConcreteImplLongId {
+            impl_def_id,
+            generic_args: self
+                .generic_args
+                .into_iter()
+                .map(|arg| arg.embed(db))
+                .collect::<Result<_, _>>()?,
+        };
+        Ok(long_id.intern(db))
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1207,6 +1612,9 @@ struct GenericParamSerializeable {
 impl GenericParamSerializeable {
     fn new(generic_param_id: GenericParamId, db: &dyn SemanticGroup) -> Self {
         Self { name: generic_param_id.name(db.upcast()).unwrap_or_default().to_string() }
+    }
+    fn embed(self, db: &dyn SemanticGroup) -> Result<GenericParamId, ()> {
+        panic!();
     }
 }
 
@@ -1227,6 +1635,13 @@ impl ConcreteVariantSerializeable {
             idx: concrete_variant.idx,
         }
     }
+    fn embed(self, db: &dyn SemanticGroup) -> Result<semantic::ConcreteVariant, ()> {
+        let concrete_enum_id = self.concrete_enum_id.embed(db)?;
+        let ty = self.ty.embed(db)?;
+        let id =
+            *db.enum_variants(concrete_enum_id.enum_id(db)).unwrap().get(self.id.as_str()).unwrap();
+        Ok(semantic::ConcreteVariant { concrete_enum_id, id, ty, idx: self.idx })
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -1246,6 +1661,20 @@ impl ConcreteEnumSerializeable {
                 .map(|arg| GenericArgumentSerializeable::new(arg, db))
                 .collect(),
         }
+    }
+    fn embed(self, db: &dyn semantic::db::SemanticGroup) -> Result<semantic::ConcreteEnumId, ()> {
+        let ModuleItemId::Enum(enum_id) = self.enum_id.embed(db)? else {
+            return Err(());
+        };
+        let long_id = ConcreteEnumLongId {
+            enum_id,
+            generic_args: self
+                .generic_args
+                .into_iter()
+                .map(|arg| arg.embed(db))
+                .collect::<Result<_, _>>()?,
+        };
+        Ok(long_id.intern(db))
     }
 }
 
@@ -1268,6 +1697,20 @@ impl ConcreteStructSerializeable {
                 .map(|arg| GenericArgumentSerializeable::new(arg, db))
                 .collect(),
         }
+    }
+    fn embed(self, db: &dyn semantic::db::SemanticGroup) -> Result<semantic::ConcreteStructId, ()> {
+        let ModuleItemId::Struct(struct_id) = self.struct_id.embed(db)? else {
+            return Err(());
+        };
+        let long_id = ConcreteStructLongId {
+            struct_id,
+            generic_args: self
+                .generic_args
+                .into_iter()
+                .map(|arg| arg.embed(db))
+                .collect::<Result<_, _>>()?,
+        };
+        Ok(long_id.intern(db))
     }
 }
 
@@ -1299,5 +1742,22 @@ impl PathSerializeable {
 
         push_parents(language_element, db, &mut path);
         Self { path }
+    }
+    fn embed(&self, db: &dyn SemanticGroup) -> Result<ModuleItemId, ()> {
+        let crate_module = ModuleId::CrateRoot(db.intern_crate(CrateLongId::Real {
+            name: self.path[0].clone().into(),
+            discriminator: None,
+        }));
+        let mut item =
+            db.module_item_by_name(crate_module, self.path[1].clone().into()).unwrap().unwrap();
+        for module_name in self.path.iter().skip(2) {
+            // todo: fix unwrap
+            let ModuleItemId::Submodule(sub_module) = item else { return Err(()) };
+            item = db
+                .module_item_by_name(ModuleId::Submodule(sub_module), module_name.into())
+                .unwrap()
+                .unwrap();
+        }
+        Ok(item)
     }
 }
