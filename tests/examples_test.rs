@@ -351,15 +351,17 @@ fn run_function(
 )]
 #[case::pedersen_test(
     "pedersen_test",
-    &[1, 1, 7].map(Felt252::from),
+    &[1, 2].map(Felt252::from),
     TestConfig::without_gas(),
-    RunResultValue::Success(vec![Felt252::from(21)])
+    RunResultValue::Success(vec![Felt252::from_hex_unchecked(
+        "0x5bb9440e27889a364bcb678b1f679ecd1347acdedcbf36e83494f857cc58026"
+    )])
 )]
 #[case::match_or(
     "match_or",
-    &[1, 1, 7].map(Felt252::from),
+    &[0, 1].map(Felt252::from),
     TestConfig::without_gas(),
-    RunResultValue::Success(vec![Felt252::from(21)])
+    RunResultValue::Success(vec![Felt252::from(1)])
 )]
 #[case::fib_pass(
     "fib",
