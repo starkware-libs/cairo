@@ -42,36 +42,6 @@
 //! which will cause the compiler to issue a warning when a Result
 //! value is ignored.
 //!
-//! # Method overview
-//!
-//! In addition to working with pattern matching, [`Result`] provides a wide
-//! variety of different methods.
-//!
-//! ## Querying the variant
-//!
-//! The [`is_ok`] and [`is_err`] methods return `true` if the [`Result`]
-//! is [`Ok`] or [`Err`], respectively.
-//!
-//! ## Extracting contained values
-//!
-//! These methods extract the contained value in a [`Result<T, E>`]:
-//!
-//! * [`expect`] returns the contained value if [`Ok`], otherwise panics with a provided
-//! custom message
-//! * [`unwrap`] returns the contained value if [`Ok`], otherwise panics with a
-//! generic message
-//! * [`unwrap_or`] returns the contained value if [`Ok`], otherwise returns the provided default
-//! value
-//! * [`unwrap_or_default`] returns the contained value if [`Ok`], otherwise returns the default
-//! value for the type
-//!
-//! ## Converting between Result and Option
-//!
-//! * [`ok`] transforms [`Result<T, E>`] into [`Option<T>`], mapping
-//!   [`Ok(v)`] to [`Some(v)`] and [`Err(_)`] to [`None`]
-//! * [`err`] transforms [`Result<T, E>`] into [`Option<E>`], mapping
-//!   [`Ok(_)`] to [`None`] and [`Err(e)`] to [`Some(e)`]
-//!
 //! # The question mark operator, `?`
 //!
 //! When writing code that calls many functions that return the [`Result`] type,
@@ -111,6 +81,94 @@
 //!
 //! [`Ok`]: Result::Ok
 //! [`Err`]: Result::Err
+//!
+//! # Method overview
+//!
+//! In addition to working with pattern matching, [`Result`] provides a wide
+//! variety of different methods.
+//!
+//! ## Querying the variant
+//!
+//! The [`is_ok`] and [`is_err`] methods return `true` if the [`Result`]
+//! is [`Ok`] or [`Err`], respectively.
+//!
+//! ## Extracting contained values
+//!
+//! These methods extract the contained value in a [`Result<T, E>`] when it
+//! is the [`Ok`] variant. If the [`Result`] is [`Err`]:
+//!
+//! * [`expect`] panics with a provided felt252 error message
+//! * [`unwrap`] panics with a generic message
+//! * [`unwrap_or`] returns the provided default value
+//! * [`unwrap_or_default`] returns the default value of the type `T` (which must implement the
+//! [`Default`] trait)
+//! * [`unwrap_or_else`] returns the result of evaluating the provided function
+//!
+//! [`expect`]: ResultTrait::expect
+//! [`unwrap`]: ResultTrait::unwrap
+//! [`unwrap_or`]: ResultTrait::unwrap_or
+//! [`unwrap_or_default`]: ResultTrait::unwrap_or_default
+//! [`unwrap_or_else`]: ResultTrait::unwrap_or_else
+//!
+//! These methods extract the contained value in a [`Result<T, E>`] when it
+//! is the [`Err`] variant. If the [`Result`] is [`Ok`]:
+//!
+//! * [`expect_err`] panics with a provided felt252 error message
+//! * [`unwrap_err`] panics with a generic message
+//!
+//! [`expect_err`]: ResultTrait::expect_err
+//! [`unwrap_err`]: ResultTrait::unwrap_err
+//!
+//! ## Transforming contained values
+//!
+//! * [`ok`] transforms [`Result<T, E>`] into [`Option<T>`], mapping
+//!   [`Ok(v)`] to [`Some(v)`] and [`Err(e)`] to [`None`]
+//! * [`err`] transforms [`Result<T, E>`] into [`Option<E>`], mapping
+//!   [`Ok(v)`] to [`None`] and [`Err(e)`] to [`Some(e)`]
+//!
+//! ## Boolean operators
+//!
+//! These methods treat the [`Result`] as a boolean value, where [`Ok`]
+//! acts like [`true`] and [`Err`] acts like [`false`]. There are two
+//! categories of these methods: ones that take a [`Result`] as input, and
+//! ones that take a function as input.
+//!
+//! The [`and`] and [`or`] methods take another [`Result`] as input, and
+//! produce a [`Result`] as output. The [`and`] method can produce a
+//! [`Result<U, E>`] value having a different inner type `U` than
+//! [`Result<T, E>`]. The [`or`] method can produce a [`Result<T, F>`]
+//! value having a different error type `F` than [`Result<T, E>`].
+//!
+//! | method  | self     | input     | output   |
+//! |---------|----------|-----------|----------|
+//! | [`and`] | `Err(e)` | (ignored) | `Err(e)` |
+//! | [`and`] | `Ok(x)`  | `Err(d)`  | `Err(d)` |
+//! | [`and`] | `Ok(x)`  | `Ok(y)`   | `Ok(y)`  |
+//! | [`or`]  | `Err(e)` | `Err(d)`  | `Err(d)` |
+//! | [`or`]  | `Err(e)` | `Ok(y)`   | `Ok(y)`  |
+//! | [`or`]  | `Ok(x)`  | (ignored) | `Ok(x)`  |
+//!
+//! [`and`]: ResultTrait::and
+//! [`or`]: ResultTrait::or
+//!
+//! The [`and_then`] and [`or_else`] methods take a function as input, and
+//! only evaluate the function when they need to produce a new value. The
+//! [`and_then`] method can produce a [`Result<U, E>`] value having a
+//! different inner type `U` than [`Result<T, E>`]. The [`or_else`] method
+//! can produce a [`Result<T, F>`] value having a different error type `F`
+//! than [`Result<T, E>`].
+//!
+//! | method       | self     | function input | function result | output   |
+//! |--------------|----------|----------------|-----------------|----------|
+//! | [`and_then`] | `Err(e)` | (not provided) | (not evaluated) | `Err(e)` |
+//! | [`and_then`] | `Ok(x)`  | `x`            | `Err(d)`        | `Err(d)` |
+//! | [`and_then`] | `Ok(x)`  | `x`            | `Ok(y)`         | `Ok(y)`  |
+//! | [`or_else`]  | `Err(e)` | `e`            | `Err(d)`        | `Err(d)` |
+//! | [`or_else`]  | `Err(e)` | `e`            | `Ok(y)`         | `Ok(y)`  |
+//! | [`or_else`]  | `Ok(x)`  | (not provided) | (not evaluated) | `Ok(x)`  |
+//!
+//! [`and_then`]: ResultTrait::and_then
+//! [`or_else`]: ResultTrait::or_else
 
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
@@ -198,6 +256,155 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
         match self {
             Result::Ok(x) => x,
             Result::Err(_) => Default::default(),
+        }
+    }
+
+    /// Returns the contained [`Ok`] value or computes it from a closure.
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(Result::Ok(2).unwrap_or_else(|e: ByteArray| e.len()) == 2);
+    /// assert!(Result::Err("foo").unwrap_or_else(|e: ByteArray| e.len()) == 3);
+    /// ```
+    #[inline]
+    fn unwrap_or_else<
+        F,
+        +Destruct<E>,
+        +Drop<F>,
+        impl func: core::ops::FnOnce<F, (E,)>[Output: T],
+        +Drop<func::Output>,
+    >(
+        self: Result<T, E>, f: F,
+    ) -> T {
+        match self {
+            Result::Ok(x) => x,
+            Result::Err(e) => f(e),
+        }
+    }
+
+    /// Returns `res` if the result is `Ok`, otherwise returns the `Err` value of `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x: Result<u32, ByteArray> = Result::Ok(2);
+    /// let y: Result<ByteArray, ByteArray> = Result::Err("late error");
+    /// assert!(x.and(y) == Result::Err("late error"));
+    ///
+    /// let x: Result<u32, ByteArray> = Result::Err("early error");
+    /// let y: Result<ByteArray, ByteArray> = Result::Ok("foo");
+    /// assert!(x.and(y) == Result::Err("early error"));
+    ///
+    /// let x: Result<u32, ByteArray> = Result::Err("not a 2");
+    /// let y: Result<ByteArray, ByteArray> = Result::Err("late error");
+    /// assert!(x.and(y) == Result::Err("not a 2"));
+    ///
+    /// let x: Result<u32, ByteArray> = Result::Ok(2);
+    /// let y: Result<ByteArray, ByteArray> = Result::Ok("different result type");
+    /// assert!(x.and(y) == Result::Ok("different result type"));
+    /// ```
+    //TODO: why can't I restrict E and U to implement Destruct rather than Drop?
+    #[inline]
+    fn and<U, +Destruct<T>, +Drop<E>, +Drop<U>>(
+        self: Result<T, E>, res: Result<U, E>,
+    ) -> Result<U, E> {
+        match self {
+            Result::Ok(_) => res,
+            Result::Err(e) => Result::Err(e),
+        }
+    }
+
+    /// Calls `op` if the result is `Ok`, otherwise returns the `Err` value of `self`.
+    ///
+    /// This function can be used for control flow based on `Result` values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::num::traits::CheckedMul;
+    ///
+    /// fn sq_then_string(x: u32) -> Result<ByteArray, ByteArray> {
+    ///     let res = x.checked_mul(x).ok_or("overflowed");
+    ///     res.and_then(|v| Result::Ok(format!("{}", v)))
+    /// }
+    ///
+    /// let x = sq_then_string(4);
+    /// assert!(x == Result::Ok("16"));
+    ///
+    /// let y = sq_then_string(65536);
+    /// assert!(y == Result::Err("overflowed"));
+    ///
+    /// ```
+    #[inline]
+    fn and_then<U, F, +Drop<F>, impl func: core::ops::FnOnce<F, (T,)>[Output: Result<U, E>]>(
+        self: Result<T, E>, op: F,
+    ) -> Result<U, E> {
+        match self {
+            Result::Ok(t) => op(t),
+            Result::Err(e) => Result::Err(e),
+        }
+    }
+
+    /// Returns `res` if the result is `Err`, otherwise returns the `Ok` value of `self`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x: Result<u32, ByteArray> = Result::Ok(2);
+    /// let y: Result<u32, ByteArray> = Result::Err("late error");
+    /// assert!(x.or(y) == Result::Ok(2));
+    ///
+    /// let x: Result<u32, ByteArray> = Result::Err("early error");
+    /// let y: Result<u32, ByteArray> = Result::Ok(2);
+    /// assert!(x.or(y) == Result::Ok(2));
+    ///
+    /// let x: Result<u32, ByteArray> = Result::Err("not a 2");
+    /// let y: Result<u32, ByteArray> = Result::Err("late error");
+    /// assert!(x.or(y) == Result::Err("late error"));
+    ///
+    /// let x: Result<u32, ByteArray> = Result::Ok(2);
+    /// let y: Result<u32, ByteArray> = Result::Ok(100);
+    /// assert!(x.or(y) == Result::Ok(2));
+    /// ```
+    //TODO: why can't I restrict E and U to implement Destruct rather than Drop?
+    #[inline]
+    fn or<F, +Drop<T>, +Drop<F>, +Destruct<E>>(
+        self: Result<T, E>, res: Result<T, F>,
+    ) -> Result<T, F> {
+        match self {
+            Result::Ok(v) => Result::Ok(v),
+            Result::Err(_) => res,
+        }
+    }
+
+    /// Calls `op` if the result is `Err`, otherwise returns the `Ok` value of `self`.
+    ///
+    /// This function can be used for control flow based on result values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x: Result::<u32, ByteArray> = Result::<u32, ByteArray>::Err("bad input")
+    ///     .or_else(|_e| Result::Ok(42));
+    /// assert!(x == Result::Ok(42));
+    ///
+    /// let y: Result::<u32, ByteArray> = Result::<u32, ByteArray>::Err("bad input")
+    ///     .or_else(|_e| Result::Err("not 42"));
+    /// assert!(y == Result::Err("not 42"));
+    ///
+    /// let z: Result::<u32, ByteArray> = Result::<u32, ByteArray>::Ok(100)
+    ///     .or_else(|_e| Result::Ok(42));
+    /// assert!(z == Result::Ok(100));
+    /// ```
+    #[inline]
+    fn or_else<F, O, +Drop<O>, impl func: core::ops::FnOnce<O, (E,)>[Output: Result<T, F>]>(
+        self: Result<T, E>, op: O,
+    ) -> Result<T, F> {
+        match self {
+            Result::Ok(t) => Result::Ok(t),
+            Result::Err(e) => op(e),
         }
     }
 
