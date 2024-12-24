@@ -21,7 +21,7 @@ compile_error!();
 ^^^^^^^^^^^^^^^^^
 
 
-error: `compiler_error!` argument must be an unnamed string argument.
+error: `compile_error!` argument must be an unnamed string argument.
  --> test_src/lib.cairo:3:16
 compile_error!(1);
                ^
