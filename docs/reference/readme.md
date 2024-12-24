@@ -6,7 +6,7 @@ The docs are written in [AsciiDoc](https://asciidoc.org/)(`.adoc`). You can view
 
 ## View on IDE
 
-- Install `AsciiDoc`plugins in `VsCode` or `Intellij IDEA`
+- Install `AsciiDoc`plugins in `VSCode` or `Intellij IDEA`
 
 ## View in HTML
 ### Install `asciidoctor`
