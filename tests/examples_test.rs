@@ -39,6 +39,9 @@ fn example_dir_data() -> ExampleDirData {
     (db.into(), crate_ids)
 }
 
+#[rstest]
+fn lowering_test(example_dir_data: &ExampleDirData) {}
+
 /// Configuration for running test functions
 struct TestConfig {
     /// Whether to automatically add gas withdrawal
@@ -310,9 +313,6 @@ fn run_function_test(
         expected_result
     );
 }
-
-#[rstest]
-fn lowering_test(example_dir_data: &ExampleDirData) {}
 
 #[rstest]
 #[case::size_2(2, 1)]
