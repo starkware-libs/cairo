@@ -119,6 +119,14 @@
 //! [`Ok(v)`]: Result::Ok
 //! [`Some(v)`]: Option::Some
 //! [`ok_or`]: OptionTrait::ok_or
+//!
+//! These methods transform the [`Some`] variant:
+//!
+//! * [`map`] transforms [`Option<T>`] to [`Option<U>`] by applying the
+//!   provided function to the contained value of [`Some`] and leaving
+//!   [`None`] values unchanged
+//!
+//! [`map`]: OptionTrait::map
 
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
@@ -174,18 +182,6 @@ pub trait OptionTrait<T> {
     /// assert!(value == 123);
     /// ```
     fn unwrap(self: Option<T>) -> T;
-
-    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
-    /// `Result::Ok(v)` and `Option::None` to `Result::Err(err)`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let option = Option::Some(123);
-    /// let result = option.ok_or('no value');
-    /// assert!(result.unwrap() == 123);
-    /// ```
-    fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E>;
 
     /// Returns `true` if the `Option` is `Option::Some`, `false` otherwise.
     ///
@@ -251,6 +247,40 @@ pub trait OptionTrait<T> {
     >(
         self: Option<T>, f: F,
     ) -> T;
+
+    /////////////////////////////////////////////////////////////////////////
+    // Transforming contained values
+    /////////////////////////////////////////////////////////////////////////
+
+    /// Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
+    /// or returns `None` (if `None`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let maybe_some_string: Option<ByteArray> = Option::Some("Hello, World!");
+    /// // `Option::map` takes self *by value*, consuming `maybe_some_string`
+    /// let maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());
+    /// assert!(maybe_some_len == Option::Some(13));
+    ///
+    /// let x: Option<ByteArray> = Option::None;
+    /// assert!(x.map(|s: ByteArray| s.len()) == Option::None);
+    /// ```
+    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Option<T>, f: F,
+    ) -> Option<U>;
+
+    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
+    /// `Result::Ok(v)` and `Option::None` to `Result::Err(err)`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let option = Option::Some(123);
+    /// let result = option.ok_or('no value');
+    /// assert!(result.unwrap() == 123);
+    /// ```
+    fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E>;
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
@@ -265,14 +295,6 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     #[inline(always)]
     fn unwrap(self: Option<T>) -> T {
         self.expect('Option::unwrap failed.')
-    }
-
-    #[inline]
-    fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E> {
-        match self {
-            Option::Some(v) => Result::Ok(v),
-            Option::None => Result::Err(err),
-        }
     }
 
     #[inline]
@@ -316,6 +338,24 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         match self {
             Option::Some(x) => x,
             Option::None => f(),
+        }
+    }
+
+    #[inline]
+    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Option<T>, f: F,
+    ) -> Option<U> {
+        match self {
+            Option::Some(x) => Option::Some(f(x)),
+            Option::None => Option::None,
+        }
+    }
+
+    #[inline]
+    fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E> {
+        match self {
+            Option::Some(v) => Result::Ok(v),
+            Option::None => Result::Err(err),
         }
     }
 }
