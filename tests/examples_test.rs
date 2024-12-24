@@ -492,13 +492,8 @@ fn complex_input_test(example_dir_data: &ExampleDirData) {
         result.value,
         RunResultValue::Success(vec![
             // `r.low`
-            Felt252::from(
-                1 + 2 + 3 + 4 + 6 + 8 + 10 + 12 + 14 + 16 + 18
-            ),
+            Felt252::from(1 + 2 + 3 + 4 + 6 + 8 + 10 + 12 + 14 + 16 + 18),
             // `r.high`
-            Felt252::from(
-                5 + 7 + 9 + 11 + 13 + 15 + 17 + 19
-            )
+            Felt252::from(5 + 7 + 9 + 11 + 13 + 15 + 17 + 19),
         ])
     );
-}
