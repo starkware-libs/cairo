@@ -25,7 +25,7 @@ if [ $? -eq 0 ]; then
     echo " - Add 'SIERRA_UPDATE_NO_CHANGE_TAG=<reason>'."
     echo "If there is a change - but it does not affect which code will be compiled:"
     echo " - Add 'SIERRA_UPDATE_PATCH_CHANGE_TAG=<reason>'."
-    echo "If there is a change, but previously compilable code is still compilable:"
+    echo "If there is a change, but the code that was previously compilable remains compilable:"
     echo " - Add 'SIERRA_UPDATE_MINOR_CHANGE_TAG=<reason>'."
     echo "If there is a breaking change, and old code is no longer compilable:"
     echo " - Add 'SIERRA_UPDATE_MAJOR_CHANGE_TAG=<reason>'."
