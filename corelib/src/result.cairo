@@ -42,46 +42,6 @@
 //! which will cause the compiler to issue a warning when a Result
 //! value is ignored.
 //!
-//! # The question mark operator, `?`
-//!
-//! When writing code that calls many functions that return the [`Result`] type,
-//! handling `Ok`/`Err` can be tedious. The question mark operator, `?`,
-//! hides some of the boilerplate of propagating errors up the call stack.
-//!
-//! It replaces this:
-//!
-//! ```
-//! use core::integer::u8_overflowing_add;
-//!
-//! fn add_three_numbers(a: u8, b: u8, c: u8) -> Result<u8, u8> {
-//!     match u8_overflowing_add(a, b) {
-//!         Result::Ok(sum_ab) => {
-//!             match u8_overflowing_add(sum_ab, c) {
-//!                 Result::Ok(total) => Result::Ok(total),
-//!                 Result::Err(e) => Result::Err(e),
-//!             }
-//!         },
-//!         Result::Err(e) => Result::Err(e),
-//!     }
-//! }
-//! ```
-//!
-//! With this:
-//!
-//! ```
-//! use core::integer::u8_overflowing_add;
-//!
-//! fn add_three_numbers_2(a: u8, b: u8, c: u8) -> Result<u8, u8> {
-//!     let total = u8_overflowing_add(u8_overflowing_add(a, b)?, c)?;
-//!     Result::Ok(total)
-//! }
-//! ```
-//!
-//! *It's much nicer!*
-//!
-//! [`Ok`]: Result::Ok
-//! [`Err`]: Result::Err
-//!
 //! # Method overview
 //!
 //! In addition to working with pattern matching, [`Result`] provides a wide
@@ -169,6 +129,47 @@
 //!
 //! [`and_then`]: ResultTrait::and_then
 //! [`or_else`]: ResultTrait::or_else
+//!
+//! # The question mark operator, `?`
+//!
+//! When writing code that calls many functions that return the [`Result`] type,
+//! handling `Ok`/`Err` can be tedious. The question mark operator, `?`,
+//! hides some of the boilerplate of propagating errors up the call stack.
+//!
+//! It replaces this:
+//!
+//! ```
+//! use core::integer::u8_overflowing_add;
+//!
+//! fn add_three_numbers(a: u8, b: u8, c: u8) -> Result<u8, u8> {
+//!     match u8_overflowing_add(a, b) {
+//!         Result::Ok(sum_ab) => {
+//!             match u8_overflowing_add(sum_ab, c) {
+//!                 Result::Ok(total) => Result::Ok(total),
+//!                 Result::Err(e) => Result::Err(e),
+//!             }
+//!         },
+//!         Result::Err(e) => Result::Err(e),
+//!     }
+//! }
+//! ```
+//!
+//! With this:
+//!
+//! ```
+//! use core::integer::u8_overflowing_add;
+//!
+//! fn add_three_numbers_2(a: u8, b: u8, c: u8) -> Result<u8, u8> {
+//!     let total = u8_overflowing_add(u8_overflowing_add(a, b)?, c)?;
+//!     Result::Ok(total)
+//! }
+//! ```
+//!
+//! *It's much nicer!*
+//!
+//! [`Ok`]: Result::Ok
+//! [`Err`]: Result::Err
+//!
 
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
