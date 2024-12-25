@@ -3,3 +3,7 @@ bug_samples = "."
 
 [config.global]
 edition = "2023_10"
+
+[config.global.experimental_features]
+negative_impls = true
+associated_item_constraints = true
