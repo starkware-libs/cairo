@@ -284,7 +284,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
         }
     }
 
-    /// Returns `res` if the result is `Ok`, otherwise returns the `Err` value of `self`.
+    /// Returns `other` if the result is `Ok`, otherwise returns the `Err` value of `self`.
     ///
     /// # Examples
     ///
@@ -305,13 +305,12 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let y: Result<ByteArray, ByteArray> = Result::Ok("different result type");
     /// assert!(x.and(y) == Result::Ok("different result type"));
     /// ```
-    //TODO: why can't I restrict E and U to implement Destruct rather than Drop?
     #[inline]
     fn and<U, +Destruct<T>, +Drop<E>, +Drop<U>>(
-        self: Result<T, E>, res: Result<U, E>,
+        self: Result<T, E>, other: Result<U, E>,
     ) -> Result<U, E> {
         match self {
-            Result::Ok(_) => res,
+            Result::Ok(_) => other,
             Result::Err(e) => Result::Err(e),
         }
     }
@@ -347,7 +346,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
         }
     }
 
-    /// Returns `res` if the result is `Err`, otherwise returns the `Ok` value of `self`.
+    /// Returns `other` if the result is `Err`, otherwise returns the `Ok` value of `self`.
     ///
     /// # Examples
     ///
@@ -368,14 +367,13 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let y: Result<u32, ByteArray> = Result::Ok(100);
     /// assert!(x.or(y) == Result::Ok(2));
     /// ```
-    //TODO: why can't I restrict E and U to implement Destruct rather than Drop?
     #[inline]
     fn or<F, +Drop<T>, +Drop<F>, +Destruct<E>>(
-        self: Result<T, E>, res: Result<T, F>,
+        self: Result<T, E>, other: Result<T, F>,
     ) -> Result<T, F> {
         match self {
             Result::Ok(v) => Result::Ok(v),
-            Result::Err(_) => res,
+            Result::Err(_) => other,
         }
     }
 
