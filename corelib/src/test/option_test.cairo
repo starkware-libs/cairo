@@ -61,6 +61,18 @@ fn test_option_none_is_some() {
 }
 
 #[test]
+fn test_option_some_is_some_and() {
+    assert_eq!(Option::Some(2_u8).is_some_and(|x| x > 1), true);
+    assert_eq!(Option::Some(0_u8).is_some_and(|x| x > 1), false);
+}
+
+#[test]
+fn test_option_none_is_some_and() {
+    let option: Option<u8> = Option::None;
+    assert_eq!(option.is_some_and(|x| x > 1), false);
+}
+
+#[test]
 fn test_option_some_is_none() {
     assert!(!Option::Some(42).is_none());
 }
