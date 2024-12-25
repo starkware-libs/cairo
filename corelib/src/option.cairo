@@ -87,6 +87,7 @@
 //! is [`Some`] or [`None`], respectively.
 //!
 //! [`is_none`]: OptionTrait::is_none
+//! [`is_none_or`]: OptionTrait::is_none_or
 //! [`is_some`]: OptionTrait::is_some
 //!
 //! ## Extracting the contained value
@@ -222,7 +223,7 @@ pub trait OptionTrait<T> {
     /// assert_eq!(option.is_none_or(|x| x > 1), true);
     /// ```
     #[must_use]
-    fn is_none_or<F, +Drop<F>, impl func: core::ops::FnOnce<F, (T,)>[Output: bool]>(
+    fn is_none_or<F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: bool]>(
         self: Option<T>, f: F,
     ) -> bool;
 
@@ -309,7 +310,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn is_none_or<F, +Drop<F>, impl func: core::ops::FnOnce<F, (T,)>[Output: bool]>(
+    fn is_none_or<F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: bool]>(
         self: Option<T>, f: F,
     ) -> bool {
         match self {
