@@ -11,6 +11,23 @@ pub struct Range<T> {
     pub end: T,
 }
 
+#[generate_trait]
+pub impl RangeImpl<T, +Copy<T>, +Drop<T>, +PartialOrd<T>> of RangeTrait<T> {
+    /// Returns `true` if the range contains no items.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(!(3_u8..5_u8).is_empty());
+    /// assert!( (3_u8..3_u8).is_empty());
+    /// assert!( (3_u8..2_u8).is_empty());
+    /// ```
+    #[inline]
+    fn is_empty(self: @Range<T>) -> bool {
+        !(self.start < self.end)
+    }
+}
+
 /// Handles the range operator (`..`).
 #[generate_trait]
 pub impl RangeOpImpl<T> of RangeOp<T> {
