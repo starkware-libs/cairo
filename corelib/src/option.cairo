@@ -202,14 +202,7 @@ pub trait OptionTrait<T> {
     /// let option: Option<felt252> = Option::None;
     /// assert_eq!(option.ok_or_else(|| 0), Result::Err(0));
     /// ```
-    fn ok_or_else<
-        F,
-        +Drop<F>,
-        E,
-        +Destruct<E>,
-        impl func: core::ops::FnOnce<F, ()>[Output: E],
-        +Drop<func::Output>,
-    >(
+    fn ok_or_else<E, F, +Destruct<E>, +core::ops::FnOnce<F, ()>[Output: E], +Drop<F>>(
         self: Option<T>, err: F,
     ) -> Result<T, E>;
 
@@ -302,14 +295,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn ok_or_else<
-        F,
-        +Drop<F>,
-        E,
-        +Destruct<E>,
-        impl func: core::ops::FnOnce<F, ()>[Output: E],
-        +Drop<func::Output>,
-    >(
+    fn ok_or_else<E, F, +Destruct<E>, +core::ops::FnOnce<F, ()>[Output: E], +Drop<F>>(
         self: Option<T>, err: F,
     ) -> Result<T, E> {
         match self {
