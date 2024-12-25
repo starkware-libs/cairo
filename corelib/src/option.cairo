@@ -114,11 +114,14 @@
 //!
 //! * [`ok_or`] transforms [`Some(v)`] to [`Ok(v)`], and [`None`] to
 //!   [`Err(err)`] using the provided default `err` value.
+//! * [`ok_or_else`] transforms [`Some(v)`] to [`Ok(v)`], and [`None`] to
+//!   a value of [`Err`] using the provided function
 //!
 //! [`Err(err)`]: Result::Err
 //! [`Ok(v)`]: Result::Ok
 //! [`Some(v)`]: Option::Some
 //! [`ok_or`]: OptionTrait::ok_or
+//! [`ok_or_else`]: OptionTrait::ok_or_else
 
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
