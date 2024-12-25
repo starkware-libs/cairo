@@ -181,9 +181,10 @@ pub trait OptionTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let option = Option::Some(123);
-    /// let result = option.ok_or('no value');
-    /// assert!(result.unwrap() == 123);
+    /// assert_eq!(Option::Some('foo').ok_or(0), Result::Ok('foo'));
+    ///
+    /// let option: Option<felt252> = Option::None;
+    /// assert_eq!(option.ok_or(0), Result::Err(0));
     /// ```
     fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E>;
 
