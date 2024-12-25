@@ -88,6 +88,7 @@
 //!
 //! [`is_none`]: OptionTrait::is_none
 //! [`is_some`]: OptionTrait::is_some
+//! [`is_some_and`]: OptionTrait::is_some_and
 //!
 //! ## Extracting the contained value
 //!
@@ -211,7 +212,7 @@ pub trait OptionTrait<T> {
     /// assert_eq!(option.is_some_and(|x| x > 1), false);
     /// ```
     #[must_use]
-    fn is_some_and<F, +Drop<F>, impl func: core::ops::FnOnce<F, (T,)>[Output: bool]>(
+    fn is_some_and<F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: bool]>(
         self: Option<T>, f: F,
     ) -> bool;
 
@@ -301,7 +302,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn is_some_and<F, +Drop<F>, impl func: core::ops::FnOnce<F, (T,)>[Output: bool]>(
+    fn is_some_and<F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: bool]>(
         self: Option<T>, f: F,
     ) -> bool {
         match self {
