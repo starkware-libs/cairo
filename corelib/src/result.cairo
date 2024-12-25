@@ -334,7 +334,6 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     ///
     /// let y = sq_then_string(65536);
     /// assert!(y == Result::Err("overflowed"));
-    ///
     /// ```
     #[inline]
     fn and_then<U, F, +Drop<F>, impl func: core::ops::FnOnce<F, (T,)>[Output: Result<U, E>]>(
