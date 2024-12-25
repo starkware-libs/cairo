@@ -81,6 +81,17 @@ fn test_option_none_ok_or() {
     assert_eq!(option.ok_or(0), Result::Err(0));
 }
 
+#[test]
+fn test_option_some_ok_or_else() {
+    assert_eq!(Option::Some('foo').ok_or_else( || 0), Result::Ok('foo'));
+}
+
+#[test]
+fn test_option_none_ok_or_else() {
+    let option: Option<felt252> = Option::None;
+    assert_eq!(option.ok_or_else( || 0), Result::Err(0));
+}
+
 #[derive(Drop)]
 struct NonCopy {}
 

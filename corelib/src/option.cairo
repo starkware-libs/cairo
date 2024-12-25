@@ -188,6 +188,28 @@ pub trait OptionTrait<T> {
     /// ```
     fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E>;
 
+    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
+    /// `Result::Ok(v)` and `Option::None` to `Result::Err(err())`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(Option::Some('foo').ok_or_else(|| 0), Result::Ok('foo'));
+    ///
+    /// let option: Option<felt252> = Option::None;
+    /// assert_eq!(option.ok_or_else(|| 0), Result::Err(0));
+    /// ```
+    fn ok_or_else<
+        F,
+        +Drop<F>,
+        E,
+        +Destruct<E>,
+        impl func: core::ops::FnOnce<F, ()>[Output: E],
+        +Drop<func::Output>,
+    >(
+        self: Option<T>, err: F,
+    ) -> Result<T, E>;
+
     /// Returns `true` if the `Option` is `Option::Some`, `false` otherwise.
     ///
     /// # Examples
@@ -273,6 +295,23 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         match self {
             Option::Some(v) => Result::Ok(v),
             Option::None => Result::Err(err),
+        }
+    }
+
+    #[inline]
+    fn ok_or_else<
+        F,
+        +Drop<F>,
+        E,
+        +Destruct<E>,
+        impl func: core::ops::FnOnce<F, ()>[Output: E],
+        +Drop<func::Output>,
+    >(
+        self: Option<T>, err: F,
+    ) -> Result<T, E> {
+        match self {
+            Option::Some(v) => Result::Ok(v),
+            Option::None => Result::Err(err()),
         }
     }
 
