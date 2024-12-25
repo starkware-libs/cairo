@@ -51,6 +51,7 @@ mod issue5967;
 mod issue6580;
 mod issue6623;
 mod issue6755;
+mod issue6920;
 mod loop_break_in_match;
 mod loop_only_change;
 mod partial_param_local;
