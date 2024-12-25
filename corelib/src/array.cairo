@@ -65,12 +65,12 @@ use crate::box::BoxTrait;
 use crate::iter::Iterator;
 use crate::metaprogramming::TypeEqual;
 use crate::serde::Serde;
+use crate::ops::IndexView;
 use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::gas::withdraw_gas;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
-use crate::ops::IndexView;
 /// A collection of elements of the same type continuous in memory.
 #[derive(Drop)]
 pub extern type Array<T>;
