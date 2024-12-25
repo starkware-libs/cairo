@@ -11,6 +11,22 @@ pub struct Range<T> {
     pub end: T,
 }
 
+impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range<T>> {
+    /// Formats a `Range` type, allowing to print `Range` instances for debugging purposes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// println!("{:?}", 1..5); // Result will be `1..5`
+    /// ```
+    fn fmt(self: @Range<T>, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
+        self.start.fmt(ref f)?;
+        write!(f, "..")?;
+        self.end.fmt(ref f)?;
+        Result::Ok(())
+    }
+}
+
 /// Handles the range operator (`..`).
 #[generate_trait]
 pub impl RangeOpImpl<T> of RangeOp<T> {
