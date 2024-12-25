@@ -47,8 +47,8 @@
 //! dict = entry.finalize(new_value);
 //! ```
 
-#[feature("deprecated-index-traits")]
-use crate::traits::{Default, Felt252DictValue, Index};
+use crate::traits::{Default, Felt252DictValue};
+use crate::ops::Index;
 
 /// A dictionary that maps `felt252` keys to a value of any type.
 pub extern type Felt252Dict<T>;
@@ -245,7 +245,9 @@ impl Felt252DictEntryDestruct<T, +Drop<T>, +Felt252DictValue<T>> of Destruct<Fel
 /// Allows accessing dictionary elements using the index operator `[]`.
 impl Felt252DictIndex<
     T, +Felt252DictTrait<T>, +Copy<T>, +Destruct<Felt252DictEntry<T>>,
-> of Index<Felt252Dict<T>, felt252, T> {
+> of Index<Felt252Dict<T>, felt252> {
+    // The returned target type after indexing.
+    type Target = T;
     /// Takes a `felt252` index and returns the corresponding value.
     ///
     /// # Examples
@@ -260,7 +262,7 @@ impl Felt252DictIndex<
     /// assert!(value == 10);
     /// ```
     #[inline]
-    fn index(ref self: Felt252Dict<T>, index: felt252) -> T {
+    fn index(ref self: Felt252Dict<T>, index: felt252) -> Self::Target {
         self.get(index)
     }
 }

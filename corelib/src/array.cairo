@@ -70,8 +70,7 @@ use crate::RangeCheck;
 use crate::gas::withdraw_gas;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
-#[feature("deprecated-index-traits")]
-use crate::traits::IndexView;
+use crate::ops::IndexView;
 /// A collection of elements of the same type continuous in memory.
 #[derive(Drop)]
 pub extern type Array<T>;
@@ -285,7 +284,9 @@ impl ArrayDefault<T> of Default<Array<T>> {
     }
 }
 
-impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
+impl ArrayIndexView<T> of IndexView<Array<T>, usize> {
+    // The returned target type after indexing.
+    type Target = @T;
     /// Returns a snapshot of the element at the given index.
     ///
     /// # Examples
@@ -295,7 +296,7 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     /// let element: @u8 = arr[0];
     /// assert!(element == @1);
     /// ```
-    fn index(self: @Array<T>, index: usize) -> @T {
+    fn index(self: @Array<T>, index: usize) -> Self::Target {
         array_at(self, index).unbox()
     }
 }
@@ -619,7 +620,9 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     }
 }
 
-pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
+pub impl SpanIndexView<T> of IndexView<Span<T>, usize> {
+    /// The returned target type after indexing.
+    type Target = @T;
     /// Returns a snapshot of the element at the given index.
     ///
     /// # Examples
@@ -630,7 +633,7 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     /// assert!(element == @1);
     /// ```
     #[inline]
-    fn index(self: @Span<T>, index: usize) -> @T {
+    fn index(self: @Span<T>, index: usize) -> Self::Target {
         array_at(*self.snapshot, index).unbox()
     }
 }

@@ -53,9 +53,21 @@ pub impl Bytes31Impl of Bytes31Trait {
     }
 }
 
-#[feature("deprecated-index-traits")]
-pub(crate) impl Bytes31IndexView of crate::traits::IndexView<bytes31, usize, u8> {
-    fn index(self: @bytes31, index: usize) -> u8 {
+pub(crate) impl Bytes31IndexView of crate::ops::IndexView<bytes31, usize> {
+    // The returned target type after indexing.
+    type Target = u8;
+    /// Returns the byte at the given index (LSB's index is 0).
+    ///
+    /// Assumes that `index < BYTES_IN_BYTES31`. If the assumption is not met, the behavior is
+    /// undefined.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let bytes: bytes31 = 1_u8.into();
+    /// assert!(bytes[0] == 1);
+    /// ```
+    fn index(self: @bytes31, index: usize) -> Self::Target {
         self.at(index)
     }
 }

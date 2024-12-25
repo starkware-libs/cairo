@@ -484,9 +484,22 @@ impl ByteArrayAddEq of crate::traits::AddEq<ByteArray> {
     }
 }
 
-#[feature("deprecated-index-traits")]
-pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize, u8> {
-    fn index(self: @ByteArray, index: usize) -> u8 {
+pub(crate) impl ByteArrayIndexView of crate::ops::IndexView<ByteArray, usize> {
+    /// The returned target type after indexing.
+    type Target = u8;
+    /// Takes a `ByteArray` index and returns the corresponding value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let mut ba: ByteArray = "hello";
+    /// assert!(ba[0] == 'h');
+    /// assert!(ba[1] == 'e');
+    /// assert!(ba[2] == 'l');
+    /// assert!(ba[3] == 'l');
+    /// assert!(ba[4] == 'o');
+    /// ```
+    fn index(self: @ByteArray, index: usize) -> Self::Target {
         self.at(index).expect('Index out of bounds')
     }
 }
