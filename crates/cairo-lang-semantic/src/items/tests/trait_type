@@ -3148,3 +3148,34 @@ error: Trait `test::OtherTrait::<core::integer::u32>` has multiple implementatio
  --> lib.cairo:9:17
     OtherTrait::foo(5_u32);
                 ^^^
+
+//! > ==========================================================================
+
+//! > impl function with wrong genric associated item constraint.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+trait Tr {
+    fn foo<+MyTrait[ty: i32]>();
+}
+
+impl I of Tr {
+    fn foo<impl I1: MyTrait[ty: u64]>() {}
+}
+
+//! > expected_diagnostics
+error: Generic parameter trait of impl function `I::foo` is incompatible with `Tr::foo`. Expected: `test::MyTrait`, actual: `test::MyTrait`.
+ --> lib.cairo:9:12
+    fn foo<impl I1: MyTrait[ty: u64]>() {}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
