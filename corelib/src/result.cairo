@@ -201,12 +201,21 @@
 //! [`Ok`]: Result::Ok
 //! [`Err`]: Result::Err
 //!
+//! ## Iterating over `Result`
+//!
+//! A [`Result`] can be iterated over. This can be helpful if you need an
+//! iterator that is conditionally empty. The iterator will either produce
+//! a single value (when the [`Result`] is [`Ok`]), or produce no values
+//! (when the [`Result`] is [`Err`]). For example, [`into_iter`]
+//! contains [`Some(v)`] if the [`Result`] is [`Ok(v)`], and [`None`] if the
+//! [`Result`] is [`Err`].
+//!
+//! [`into_iter`]: IntoIterator::into_iter
 
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
 #[allow(unused_imports)]
 use crate::serde::Serde;
-#[allow(unused_imports)]
 use crate::iter::{IntoIterator, Iterator};
 
 /// The type used for returning and propagating errors. It is an enum with the variants `Ok: T`,
