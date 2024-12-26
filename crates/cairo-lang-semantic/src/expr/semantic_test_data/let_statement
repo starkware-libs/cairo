@@ -101,3 +101,120 @@ Block(
 )
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test creation of variant with let statement.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+enum TestEnum<T> {
+    Var1,
+    Var2: T,
+}
+use TestEnum::{Var1, Var2};
+
+//! > function_body
+let value = Var2(3_u32);
+
+//! > expr_code
+value
+
+//! > expected_semantics
+Var(
+    LocalVarId(test::value),
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test matching on a variant.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+enum TestEnum<T> {
+    Var1,
+    Var2: T,
+}
+use TestEnum::{Var1, Var2};
+
+//! > function_body
+let value = Var2(3_u32);
+
+//! > expr_code
+match value {
+    Var2(3_u32) => Var1,
+    _ => Var2(0_u32),
+}
+
+//! > expected_semantics
+Match(
+    ExprMatch {
+        matched_expr: Var(
+            LocalVarId(test::value),
+        ),
+        arms: [
+            MatchArm {
+                patterns: [
+                    EnumVariant(
+                        PatternEnumVariant {
+                            variant: TestEnum::Var2,
+                            inner_pattern: Some(
+                                Literal(
+                                    PatternLiteral {
+                                        literal: ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u32,
+                                        },
+                                    },
+                                ),
+                            ),
+                            ty: test::TestEnum::<core::integer::u32>,
+                        },
+                    ),
+                ],
+                expression: EnumVariantCtor(
+                    ExprEnumVariantCtor {
+                        variant: TestEnum::Var1,
+                        value_expr: Tuple(
+                            ExprTuple {
+                                items: [],
+                                ty: (),
+                            },
+                        ),
+                        ty: test::TestEnum::<core::integer::u32>,
+                    },
+                ),
+            },
+            MatchArm {
+                patterns: [
+                    Otherwise(
+                        PatternOtherwise {
+                            ty: test::TestEnum::<core::integer::u32>,
+                        },
+                    ),
+                ],
+                expression: EnumVariantCtor(
+                    ExprEnumVariantCtor {
+                        variant: TestEnum::Var2,
+                        value_expr: Literal(
+                            ExprLiteral {
+                                value: 0,
+                                ty: core::integer::u32,
+                            },
+                        ),
+                        ty: test::TestEnum::<core::integer::u32>,
+                    },
+                ),
+            },
+        ],
+        ty: test::TestEnum::<core::integer::u32>,
+    },
+)
+
+//! > expected_diagnostics
