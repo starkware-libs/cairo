@@ -178,6 +178,18 @@
 //!
 //! [`and_then`]: OptionTrait::and_then
 //! [`or_else`]: OptionTrait::or_else
+//! ## Iterating over `Option`
+//!
+//! An [`Option`] can be iterated over. This can be helpful if you need an
+//! iterator that is conditionally empty. The iterator will either produce
+//! a single value (when the [`Option`] is [`Some`]), or produce no values
+//! (when the [`Option`] is [`None`]). For example, [`into_iter`]
+//! contains [`Some(v)`] if the [`Option`] is [`Some(v)`], and [`None`] if the
+//! [`Option`] is [`None`].
+//!
+//! [`into_iter`]: IntoIterator::into_iter
+
+use crate::iter::{IntoIterator, Iterator};
 
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
@@ -657,5 +669,35 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
             Option::Some(x) => Option::Some(f(x)),
             Option::None => Option::None,
         }
+    }
+}
+
+
+/// An iterator over the value in the [`Some`] variant of an [`Option`].
+///
+/// The iterator yields one value if the [`Option`] is a [`Some`], otherwise none.
+///
+/// This struct is created by the [`into_iter`] method on [`Option`] (provided by the
+/// [`IntoIterator`] trait).
+///
+/// [`into_iter`]: IntoIterator::into_iter
+#[derive(Drop)]
+pub struct OptionIter<T> {
+    inner: Option<T>,
+}
+
+impl OptionIterator<T, +Copy<T>> of Iterator<OptionIter<T>> {
+    type Item = T;
+    fn next(ref self: OptionIter<T>) -> Option<T> {
+        self.inner
+    }
+}
+
+impl OptionIntoIterator<T, +Copy<T>, +Destruct<T>> of IntoIterator<Option<T>> {
+    type IntoIter = OptionIter<T>;
+
+    #[inline]
+    fn into_iter(self: Option<T>) -> OptionIter<T> {
+        OptionIter { inner: self }
     }
 }

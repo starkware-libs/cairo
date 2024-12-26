@@ -1,3 +1,5 @@
+use crate::iter::{IntoIterator, Iterator};
+
 #[test]
 fn test_option_some_expect() {
     assert!(Option::Some(42).expect('') == 42);
@@ -217,4 +219,18 @@ fn test_option_some_map() {
 fn test_option_none_map() {
     let x: Option<ByteArray> = Option::None;
     assert!(x.map(|s: ByteArray| s.len()) == Option::None);
+}
+
+#[test]
+fn test_option_some_into_iter() {
+    let x: Option<u32> = Option::Some(5);
+    let mut x_iter = x.into_iter();
+    assert!(x_iter.next() == Option::Some(5));
+}
+
+#[test]
+fn test_option_none_into_iter() {
+    let x: Option<u32> = Option::None;
+    let mut x_iter = x.into_iter();
+    assert!(x_iter.next() == Option::None);
 }
