@@ -636,11 +636,11 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// ```
     /// let k = 21;
     ///
-    /// let x : Result<ByteArray, ByteArray> = Result::Ok("foo");
-    /// assert!(x.map_or_else(|e: ByteArray| k * 2, |v: ByteArray| v.len()) == 3);
+    /// let x: Result<ByteArray, _> = Result::Ok("foo");
+    /// assert!(x.map_or_else(|_e: ByteArray| k * 2, |v: ByteArray| v.len()) == 3);
     ///
-    /// let x : Result<ByteArray, ByteArray> = Result::Err("bar");
-    /// assert!(x.map_or_else(|e: ByteArray| k * 2, |v: ByteArray| v.len()) == 42);
+    /// let x: Result<_, ByteArray> = Result::Err("bar");
+    /// assert!(x.map_or_else(|_e: ByteArray| k * 2, |v: ByteArray| v.len()) == 42);
     /// ```
     #[inline]
     fn map_or_else<
