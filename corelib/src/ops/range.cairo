@@ -11,6 +11,23 @@ pub struct Range<T> {
     pub end: T,
 }
 
+#[generate_trait]
+pub impl RangeImpl<T, +Copy<T>, +Drop<T>, +PartialOrd<T>> of RangeTrait<T> {
+    /// Returns `true` if the range contains no items.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(!(3_u8..5_u8).is_empty());
+    /// assert!( (3_u8..3_u8).is_empty());
+    /// assert!( (3_u8..2_u8).is_empty());
+    /// ```
+    #[inline]
+    fn is_empty(self: @Range<T>) -> bool {
+        !(self.start < self.end)
+    }
+}
+
 impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range<T>> {
     /// Formats a `Range` type, allowing to print `Range` instances for debugging purposes.
     ///
