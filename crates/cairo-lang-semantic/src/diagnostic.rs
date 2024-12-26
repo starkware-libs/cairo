@@ -696,6 +696,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                      `{trait_name}`. The trait function is declared as nopanic."
                 )
             }
+            SemanticDiagnosticKind::PassConstAsNonConst { impl_function_id, trait_id } => {
+                let name = impl_function_id.name(db.upcast());
+                let trait_name = trait_id.name(db.upcast());
+                format!(
+                    "The signature of function `{name}` is incompatible with trait \
+                     `{trait_name}`. The trait function is declared as const."
+                )
+            }
             SemanticDiagnosticKind::PanicableFromNonPanicable => {
                 "Function is declared as nopanic but calls a function that may panic.".into()
             }
@@ -1280,6 +1288,10 @@ pub enum SemanticDiagnosticKind {
     InvalidImplItem(SmolStr),
     MissingItemsInImpl(Vec<SmolStr>),
     PassPanicAsNopanic {
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+    },
+    PassConstAsNonConst {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },

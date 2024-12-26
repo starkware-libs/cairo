@@ -3301,6 +3301,10 @@ fn validate_impl_function_signature(
         diagnostics.report(signature_syntax, PassPanicAsNopanic { impl_function_id, trait_id });
     }
 
+    if concrete_trait_signature.is_const && !signature.is_const {
+        diagnostics.report(signature_syntax, PassConstAsNonConst { impl_function_id, trait_id });
+    }
+
     let expected_ty = inference.rewrite(concrete_trait_signature.return_type).no_err();
     let actual_ty = inference.rewrite(signature.return_type).no_err();
 
