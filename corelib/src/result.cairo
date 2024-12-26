@@ -81,10 +81,41 @@
 //!
 //! ## Transforming contained values
 //!
+//! These methods transform [`Result`] to [`Option`]:
+//!
 //! * [`ok`] transforms [`Result<T, E>`] into [`Option<T>`], mapping
 //!   [`Ok(v)`] to [`Some(v)`] and [`Err(e)`] to [`None`]
 //! * [`err`] transforms [`Result<T, E>`] into [`Option<E>`], mapping
 //!   [`Ok(v)`] to [`None`] and [`Err(e)`] to [`Some(e)`]
+//!
+//! This method transforms the contained value of the [`Ok`] variant:
+//!
+//! * [`map`] transforms [`Result<T, E>`] into [`Result<U, E>`] by applying
+//!   the provided function to the contained value of [`Ok`] and leaving
+//!   [`Err`] values unchanged
+//!
+//! [`map`]: ResultTrait::map
+//!
+//! This method transforms the contained value of the [`Err`] variant:
+//!
+//! * [`map_err`] transforms [`Result<T, E>`] into [`Result<T, F>`] by
+//!   applying the provided function to the contained value of [`Err`] and
+//!   leaving [`Ok`] values unchanged
+//!
+//! [`map_err`]: ResultTrait::map_err
+//!
+//! These methods transform a [`Result<T, E>`] into a value of a possibly
+//! different type `U`:
+//!
+//! * [`map_or`] applies the provided function to the contained value of
+//!   [`Ok`], or returns the provided default value if the [`Result`] is
+//!   [`Err`]
+//! * [`map_or_else`] applies the provided function to the contained value
+//!   of [`Ok`], or applies the provided default fallback function to the
+//!   contained value of [`Err`]
+//!
+//! [`map_or`]: ResultTrait::map_or
+//! [`map_or_else`]: ResultTrait::map_or_else
 //!
 //! ## Boolean operators
 //!
