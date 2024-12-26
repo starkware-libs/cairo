@@ -88,6 +88,7 @@
 //!
 //! [`is_none`]: OptionTrait::is_none
 //! [`is_some`]: OptionTrait::is_some
+//! [`is_some_and`]: OptionTrait::is_some_and
 //!
 //! ## Extracting the contained value
 //!
@@ -206,6 +207,23 @@ pub trait OptionTrait<T> {
     #[must_use]
     fn is_some(self: @Option<T>) -> bool;
 
+    /// Returns `true` if the `Option` is `Option::Some` and the value inside of it matches a
+    /// predicate.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(Option::Some(2_u8).is_some_and(|x| x > 1), true);
+    /// assert_eq!(Option::Some(0_u8).is_some_and(|x| x > 1), false);
+    ///
+    /// let option: Option<u8> = Option::None;
+    /// assert_eq!(option.is_some_and(|x| x > 1), false);
+    /// ```
+    #[must_use]
+    fn is_some_and<F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: bool]>(
+        self: Option<T>, f: F,
+    ) -> bool;
+
     /// Returns `true` if the `Option` is `Option::None`, `false` otherwise.
     ///
     /// # Examples
@@ -310,6 +328,16 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         match self {
             Option::Some(_) => true,
             Option::None => false,
+        }
+    }
+
+    #[inline]
+    fn is_some_and<F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: bool]>(
+        self: Option<T>, f: F,
+    ) -> bool {
+        match self {
+            Option::None => false,
+            Option::Some(x) => f(x),
         }
     }
 
