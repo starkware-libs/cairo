@@ -116,11 +116,14 @@
 //!
 //! * [`ok_or`] transforms [`Some(v)`] to [`Ok(v)`], and [`None`] to
 //!   [`Err(err)`] using the provided default `err` value.
+//! * [`ok_or_else`] transforms [`Some(v)`] to [`Ok(v)`], and [`None`] to
+//!   a value of [`Err`] using the provided function
 //!
 //! [`Err(err)`]: Result::Err
 //! [`Ok(v)`]: Result::Ok
 //! [`Some(v)`]: Option::Some
 //! [`ok_or`]: OptionTrait::ok_or
+//! [`ok_or_else`]: OptionTrait::ok_or_else
 //!
 //! These methods transform the [`Some`] variant:
 //!
@@ -191,11 +194,27 @@ pub trait OptionTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let option = Option::Some(123);
-    /// let result = option.ok_or('no value');
-    /// assert!(result.unwrap() == 123);
+    /// assert_eq!(Option::Some('foo').ok_or(0), Result::Ok('foo'));
+    ///
+    /// let option: Option<felt252> = Option::None;
+    /// assert_eq!(option.ok_or(0), Result::Err(0));
     /// ```
     fn ok_or<E, +Destruct<E>>(self: Option<T>, err: E) -> Result<T, E>;
+
+    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
+    /// `Result::Ok(v)` and `Option::None` to `Result::Err(err())`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(Option::Some('foo').ok_or_else(|| 0), Result::Ok('foo'));
+    ///
+    /// let option: Option<felt252> = Option::None;
+    /// assert_eq!(option.ok_or_else(|| 0), Result::Err(0));
+    /// ```
+    fn ok_or_else<E, F, +Destruct<E>, +core::ops::FnOnce<F, ()>[Output: E], +Drop<F>>(
+        self: Option<T>, err: F,
+    ) -> Result<T, E>;
 
     /// Returns `true` if the `Option` is `Option::Some`, `false` otherwise.
     ///
@@ -338,6 +357,16 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         match self {
             Option::Some(v) => Result::Ok(v),
             Option::None => Result::Err(err),
+        }
+    }
+
+    #[inline]
+    fn ok_or_else<E, F, +Destruct<E>, +core::ops::FnOnce<F, ()>[Output: E], +Drop<F>>(
+        self: Option<T>, err: F,
+    ) -> Result<T, E> {
+        match self {
+            Option::Some(v) => Result::Ok(v),
+            Option::None => Result::Err(err()),
         }
     }
 
