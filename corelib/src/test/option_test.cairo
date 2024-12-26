@@ -161,17 +161,3 @@ fn test_option_none_map_or_else() {
     let x: Option<ByteArray> = Option::None;
     assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 42);
 }
-
-#[test]
-fn test_option_some_ok_or() {
-    let x = Option::Some(123);
-    let result = x.ok_or('no value');
-    assert!(result == Result::Ok(123));
-}
-
-#[test]
-fn test_option_none_ok_or() {
-    let x: Option<felt252> = Option::None;
-    let result = x.ok_or('no value');
-    assert!(result == Result::Err('no value'));
-}

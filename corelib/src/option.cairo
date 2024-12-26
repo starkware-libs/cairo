@@ -362,10 +362,10 @@ pub trait OptionTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// assert_eq!(Option::Some("foo").map_or(42, |v| v.len()), 3);
+    /// assert_eq!(Option::Some("foo").map_or(42, |v: ByteArray| v.len()), 3);
     ///
     /// let x: Option<ByteArray> = Option::None;
-    /// assert_eq!(x.map_or(42, |v| v.len()), 42);
+    /// assert_eq!(x.map_or(42, |v: ByteArray| v.len()), 42);
     /// ```
     #[must_use]
     fn map_or<U, F, +Drop<U>, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
