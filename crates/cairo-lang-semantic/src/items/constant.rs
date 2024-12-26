@@ -361,6 +361,16 @@ pub fn constant_semantic_data_cycle_helper(
     })
 }
 
+/// Checks if the given expression only involved constant calculations.
+pub fn validate_const_expr(ctx: &mut ComputationContext<'_>, expr_id: ExprId) {
+    let mut eval_ctx = ConstantEvaluateContext {
+        db: ctx.db,
+        arenas: &ctx.arenas,
+        diagnostics: ctx.diagnostics,
+    };
+    eval_ctx.validate(expr_id);
+}
+
 /// Resolves the given const expression and evaluates its value.
 pub fn resolve_const_expr_and_evaluate(
     db: &dyn SemanticGroup,
