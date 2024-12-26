@@ -101,3 +101,84 @@ Block(
 )
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test using a variant with a generic type.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+enum myEnum<T> {
+    Variant: T,
+}
+use myEnum::Variant;
+
+//! > function_body
+let value = Variant::<u32>(3);
+
+//! > expr_code
+value
+
+//! > expected_semantics
+Var(
+    LocalVarId(test::value),
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test using a variant with a wrong generic type.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+use Option::Some;
+
+//! > function_body
+let value = Some::<i64>(3_u32);
+
+//! > expr_code
+value
+
+//! > expected_semantics
+Var(
+    LocalVarId(test::value),
+)
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::integer::i64", found: "core::integer::u32".
+ --> lib.cairo:2:42
+fn test_func() { let value = Some::<i64>(3_u32); {
+                                         ^^^^^
+
+//! > ==========================================================================
+
+//! > Test using a variant within a module.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+enum myEnum<T> {
+    Variant: T,
+}
+mod test {
+    use super::myEnum::Variant;
+}
+
+//! > function_body
+let value = test::Variant::<u32>(3);
+
+//! > expr_code
+value
+
+//! > expected_semantics
+Var(
+    LocalVarId(test::value),
+)
+
+//! > expected_diagnostics
