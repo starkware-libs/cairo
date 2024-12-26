@@ -128,6 +128,20 @@ fn test_option_none_map_or() {
 }
 
 #[test]
+fn test_option_some_map_or_else() {
+    let k = 21;
+    let x = Option::Some("foo");
+    assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 3);
+}
+
+#[test]
+fn test_option_none_map_or_else() {
+    let k = 21;
+    let x: Option<ByteArray> = Option::None;
+    assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 42);
+}
+
+#[test]
 fn test_option_some_ok_or() {
     let x = Option::Some(123);
     let result = x.ok_or('no value');
