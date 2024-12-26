@@ -129,6 +129,15 @@
 //!   [`None`] values unchanged
 //!
 //! [`map`]: OptionTrait::map
+//!
+//! These methods transform [`Option<T>`] to a value of a possibly
+//! different type `U`:
+//!
+//! * [`map_or`] applies the provided function to the contained value of
+//!   [`Some`], or returns the provided default value if the [`Option`] is
+//!   [`None`]
+//!
+//! [`map_or`]: Option::map_or
 
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
@@ -317,6 +326,28 @@ pub trait OptionTrait<T> {
     fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
         self: Option<T>, f: F,
     ) -> Option<U>;
+
+    /// Returns the provided default result (if none),
+    /// or applies a function to the contained value (if any).
+    ///
+    /// Arguments passed to `map_or` are eagerly evaluated; if you are passing
+    /// the result of a function call, it is recommended to use [`map_or_else`],
+    /// which is lazily evaluated.
+    ///
+    /// [`map_or_else`]: Option::map_or_else
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(Option::Some("foo").map_or(42, |v| v.len()), 3);
+    ///
+    /// let x: Option<ByteArray> = Option::None;
+    /// assert_eq!(x.map_or(42, |v| v.len()), 42);
+    /// ```
+    #[must_use]
+    fn map_or<U, F, +Drop<U>, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Option<T>, default: U, f: F,
+    ) -> U;
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
@@ -412,6 +443,16 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         match self {
             Option::Some(x) => Option::Some(f(x)),
             Option::None => Option::None,
+        }
+    }
+
+    #[inline]
+    fn map_or<U, F, +Drop<U>, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Option<T>, default: U, f: F,
+    ) -> U {
+        match self {
+            Option::Some(x) => f(x),
+            Option::None => default,
         }
     }
 }

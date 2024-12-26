@@ -117,6 +117,17 @@ fn test_option_none_map() {
 }
 
 #[test]
+fn test_option_some_map_or() {
+    assert_eq!(Option::Some("foo").map_or(42, |v: ByteArray| v.len()), 3);
+}
+
+#[test]
+fn test_option_none_map_or() {
+    let x: Option<ByteArray> = Option::None;
+    assert_eq!(x.map_or(42, |v: ByteArray| v.len()), 42);
+}
+
+#[test]
 fn test_option_some_ok_or() {
     let x = Option::Some(123);
     let result = x.ok_or('no value');
