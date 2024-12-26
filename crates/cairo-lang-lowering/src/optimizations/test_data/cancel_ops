@@ -179,7 +179,7 @@ fn foo(a: felt252) -> felt252 {
         let (a, _arr) = c;
         return a;
     } else {
-        cosume(c);
+        consume(c);
         return 1;
     }
 }
@@ -242,7 +242,7 @@ End:
 
 blk4:
 Statements:
-  () <- test::cosume(v11)
+  () <- test::consume(v11)
   (v28: core::felt252) <- 1
 End:
   Return(v28)
