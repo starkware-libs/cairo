@@ -87,7 +87,9 @@
 //! is [`Some`] or [`None`], respectively.
 //!
 //! [`is_none`]: OptionTrait::is_none
+//! [`is_none_or`]: OptionTrait::is_none_or
 //! [`is_some`]: OptionTrait::is_some
+//! [`is_some_and`]: OptionTrait::is_some_and
 //!
 //! ## Extracting the contained value
 //!
@@ -119,6 +121,14 @@
 //! [`Ok(v)`]: Result::Ok
 //! [`Some(v)`]: Option::Some
 //! [`ok_or`]: OptionTrait::ok_or
+//!
+//! These methods transform the [`Some`] variant:
+//!
+//! * [`map`] transforms [`Option<T>`] to [`Option<U>`] by applying the
+//!   provided function to the contained value of [`Some`] and leaving
+//!   [`None`] values unchanged
+//!
+//! [`map`]: OptionTrait::map
 
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
@@ -198,6 +208,23 @@ pub trait OptionTrait<T> {
     #[must_use]
     fn is_some(self: @Option<T>) -> bool;
 
+    /// Returns `true` if the `Option` is `Option::Some` and the value inside of it matches a
+    /// predicate.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(Option::Some(2_u8).is_some_and(|x| x > 1), true);
+    /// assert_eq!(Option::Some(0_u8).is_some_and(|x| x > 1), false);
+    ///
+    /// let option: Option<u8> = Option::None;
+    /// assert_eq!(option.is_some_and(|x| x > 1), false);
+    /// ```
+    #[must_use]
+    fn is_some_and<F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: bool]>(
+        self: Option<T>, f: F,
+    ) -> bool;
+
     /// Returns `true` if the `Option` is `Option::None`, `false` otherwise.
     ///
     /// # Examples
@@ -208,6 +235,23 @@ pub trait OptionTrait<T> {
     /// ```
     #[must_use]
     fn is_none(self: @Option<T>) -> bool;
+
+    /// Returns `true` if the `Option` is `Option::None` or the value inside of it matches a
+    /// predicate.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(Option::Some(2_u8).is_none_or(|x| x > 1), true);
+    /// assert_eq!(Option::Some(0_u8).is_none_or(|x| x > 1), false);
+    ///
+    /// let option: Option<u8> = Option::None;
+    /// assert_eq!(option.is_none_or(|x| x > 1), true);
+    /// ```
+    #[must_use]
+    fn is_none_or<F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: bool]>(
+        self: Option<T>, f: F,
+    ) -> bool;
 
     /// Returns the contained `Some` value if `self` is `Option::Some(x)`. Otherwise, returns the
     /// provided default.
@@ -251,6 +295,28 @@ pub trait OptionTrait<T> {
     >(
         self: Option<T>, f: F,
     ) -> T;
+
+    /////////////////////////////////////////////////////////////////////////
+    // Transforming contained values
+    /////////////////////////////////////////////////////////////////////////
+
+    /// Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
+    /// or returns `None` (if `None`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let maybe_some_string: Option<ByteArray> = Option::Some("Hello, World!");
+    /// // `Option::map` takes self *by value*, consuming `maybe_some_string`
+    /// let maybe_some_len = maybe_some_string.map(|s: ByteArray| s.len());
+    /// assert!(maybe_some_len == Option::Some(13));
+    ///
+    /// let x: Option<ByteArray> = Option::None;
+    /// assert!(x.map(|s: ByteArray| s.len()) == Option::None);
+    /// ```
+    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Option<T>, f: F,
+    ) -> Option<U>;
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
@@ -284,9 +350,29 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
+    fn is_some_and<F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: bool]>(
+        self: Option<T>, f: F,
+    ) -> bool {
+        match self {
+            Option::None => false,
+            Option::Some(x) => f(x),
+        }
+    }
+
+    #[inline]
     fn is_none(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => false,
+            Option::None => true,
+        }
+    }
+
+    #[inline]
+    fn is_none_or<F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: bool]>(
+        self: Option<T>, f: F,
+    ) -> bool {
+        match self {
+            Option::Some(x) => f(x),
             Option::None => true,
         }
     }
@@ -316,6 +402,16 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         match self {
             Option::Some(x) => x,
             Option::None => f(),
+        }
+    }
+
+    #[inline]
+    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Option<T>, f: F,
+    ) -> Option<U> {
+        match self {
+            Option::Some(x) => Option::Some(f(x)),
+            Option::None => Option::None,
         }
     }
 }
