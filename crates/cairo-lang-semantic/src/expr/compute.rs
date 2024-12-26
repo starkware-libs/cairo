@@ -3610,6 +3610,7 @@ pub fn compute_statement_semantic(
                         &rhs_expr,
                         stmt_item_syntax.stable_ptr().untyped(),
                         explicit_type,
+                        false,
                     );
                     let name_syntax = const_syntax.name(syntax_db);
                     let name = name_syntax.text(db.upcast());
