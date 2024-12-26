@@ -82,6 +82,18 @@ fn test_option_none_is_none() {
     assert!(Option::<felt252>::None.is_none());
 }
 
+#[test]
+fn test_option_some_is_none_or() {
+    assert_eq!(Option::Some(2_u8).is_none_or(|x| x > 1), true);
+    assert_eq!(Option::Some(0_u8).is_none_or(|x| x > 1), false);
+}
+
+#[test]
+fn test_option_none_is_none_or() {
+    let option: Option<u8> = Option::None;
+    assert_eq!(option.is_none_or(|x| x > 1), true);
+}
+
 #[derive(Drop)]
 struct NonCopy {}
 
