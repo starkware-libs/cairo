@@ -540,4 +540,118 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
             Result::Err(x) => Option::Some(x),
         }
     }
+
+    /// Maps a `Result<T, E>` to `Result<U, E>` by applying a function to a
+    /// contained [`Ok`] value, leaving an [`Err`] value untouched.
+    ///
+    /// This function can be used to compose the results of two functions.
+    ///
+    /// # Examples
+    ///
+    /// Print the square of the number contained in the `Result`, otherwise print the error.
+    ///
+    /// ```
+    /// let inputs: Array<Result<u32, ByteArray>> = array![
+    ///     Result::Ok(1), Result::Err("error"), Result::Ok(3), Result::Ok(4),
+    /// ];
+    /// for i in inputs {
+    ///     match i.map(|i| i * 2) {
+    ///         Result::Ok(x) => println!("{x}"),
+    ///         Result::Err(e) => println!("{e}"),
+    ///     }
+    /// }
+    /// ```
+    #[inline]
+    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Result<T, E>, f: F,
+    ) -> Result<U, E> {
+        match self {
+            Result::Ok(x) => Result::Ok(f(x)),
+            Result::Err(e) => Result::Err(e),
+        }
+    }
+
+    /// Returns the provided default (if [`Err`]), or
+    /// applies a function to the contained value (if [`Ok`]).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x: Result<_, ByteArray> = Result::Ok("foo");
+    /// assert!(x.map_or(42, |v: ByteArray| v.len()) == 3);
+    ///
+    /// let x: Result<_, ByteArray> = Result::Err("bar");
+    /// assert!(x.map_or(42, |v: ByteArray| v.len()) == 42);
+    /// ```
+    #[inline]
+    fn map_or<U, F, +Destruct<E>, +Destruct<U>, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Result<T, E>, default: U, f: F,
+    ) -> U {
+        match self {
+            Result::Ok(x) => f(x),
+            Result::Err(_) => default,
+        }
+    }
+
+    /// Maps a `Result<T, E>` to `U` by applying fallback function `default` to
+    /// a contained [`Err`] value, or function `f` to a contained [`Ok`] value.
+    ///
+    /// This function can be used to unpack a successful result
+    /// while handling an error.
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let k = 21;
+    ///
+    /// let x : Result<ByteArray, ByteArray> = Result::Ok("foo");
+    /// assert!(x.map_or_else(|e: ByteArray| k * 2, |v: ByteArray| v.len()) == 3);
+    ///
+    /// let x : Result<ByteArray, ByteArray> = Result::Err("bar");
+    /// assert!(x.map_or_else(|e: ByteArray| k * 2, |v: ByteArray| v.len()) == 42);
+    /// ```
+    #[inline]
+    fn map_or_else<
+        U,
+        D,
+        F,
+        +Drop<D>,
+        +Drop<F>,
+        +core::ops::FnOnce<D, (E,)>[Output: U],
+        +core::ops::FnOnce<F, (T,)>[Output: U],
+    >(
+        self: Result<T, E>, default: D, f: F,
+    ) -> U {
+        match self {
+            Result::Ok(t) => f(t),
+            Result::Err(e) => default(e),
+        }
+    }
+
+    /// Maps a `Result<T, E>` to `Result<T, F>` by applying a function to a
+    /// contained [`Err`] value, leaving an [`Ok`] value untouched.
+    ///
+    /// This function can be used to pass through a successful result while handling
+    /// an error.
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let stringify  = |x: u32| -> ByteArray { format!("error code: {x}") };
+    /// let x: Result<u32, u32> = Result::Ok(2);
+    /// assert!(x.map_err(stringify) == Result::<u32, ByteArray>::Ok(2));
+    ///
+    /// let x: Result<u32, u32> = Result::Err(13);
+    /// assert!(x.map_err(stringify) == Result::Err("error code: 13"));
+    /// ```
+    fn map_err<F, O, +Drop<O>, +core::ops::FnOnce<O, (E,)>[Output: F]>(
+        self: Result<T, E>, op: O,
+    ) -> Result<T, F> {
+        match self {
+            Result::Ok(x) => Result::Ok(x),
+            Result::Err(e) => Result::Err(op(e)),
+        }
+    }
 }
