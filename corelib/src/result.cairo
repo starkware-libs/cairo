@@ -270,13 +270,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// assert!(Result::Err("foo").unwrap_or_else(|e: ByteArray| e.len()) == 3);
     /// ```
     #[inline]
-    fn unwrap_or_else<
-        F,
-        +Destruct<E>,
-        +Drop<F>,
-        impl func: core::ops::FnOnce<F, (E,)>[Output: T],
-        +Drop<func::Output>,
-    >(
+    fn unwrap_or_else<F, +Destruct<E>, +Drop<F>, +core::ops::FnOnce<F, (E,)>[Output: T]>(
         self: Result<T, E>, f: F,
     ) -> T {
         match self {
@@ -337,7 +331,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// assert!(y == Result::Err("overflowed"));
     /// ```
     #[inline]
-    fn and_then<U, F, +Drop<F>, impl func: core::ops::FnOnce<F, (T,)>[Output: Result<U, E>]>(
+    fn and_then<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: Result<U, E>]>(
         self: Result<T, E>, op: F,
     ) -> Result<U, E> {
         match self {
@@ -397,7 +391,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// assert!(z == Result::Ok(100));
     /// ```
     #[inline]
-    fn or_else<F, O, +Drop<O>, impl func: core::ops::FnOnce<O, (E,)>[Output: Result<T, F>]>(
+    fn or_else<F, O, +Drop<O>, +core::ops::FnOnce<O, (E,)>[Output: Result<T, F>]>(
         self: Result<T, E>, op: O,
     ) -> Result<T, F> {
         match self {
