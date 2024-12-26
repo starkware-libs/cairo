@@ -83,6 +83,27 @@ fn test_option_none_is_none() {
 }
 
 #[test]
+fn test_option_some_ok_or() {
+    assert_eq!(Option::Some('foo').ok_or(0), Result::Ok('foo'));
+}
+
+#[test]
+fn test_option_none_ok_or() {
+    let option: Option<felt252> = Option::None;
+    assert_eq!(option.ok_or(0), Result::Err(0));
+}
+
+#[test]
+fn test_option_some_ok_or_else() {
+    assert_eq!(Option::Some('foo').ok_or_else( || 0), Result::Ok('foo'));
+}
+
+#[test]
+fn test_option_none_ok_or_else() {
+    let option: Option<felt252> = Option::None;
+    assert_eq!(option.ok_or_else( || 0), Result::Err(0));
+}
+
 fn test_option_some_is_none_or() {
     assert_eq!(Option::Some(2_u8).is_none_or(|x| x > 1), true);
     assert_eq!(Option::Some(0_u8).is_none_or(|x| x > 1), false);
