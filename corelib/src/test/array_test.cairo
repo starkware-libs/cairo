@@ -1,5 +1,6 @@
 use crate::iter::{IntoIterator, Iterator};
 use crate::test::test_utils::assert_eq;
+use crate::array::{EmptyFixedSizeArrayIntoIterator, FixedSizeArrayIntoIterator};
 
 #[test]
 fn test_array() {
@@ -194,6 +195,28 @@ fn test_array_iterator() {
     let mut i = 10;
     while let Option::Some(value) = iter.next() {
         assert_eq!(value, i);
+        i += 1;
+    }
+}
+
+#[test]
+fn test_fixed_size_array_iterator() {
+    let mut input = [10_usize, 11_usize, 12_usize, 13_usize];
+    let mut iter = input.into_iter();
+    let mut i: usize = 10;
+    while let Option::Some(value) = iter.next() {
+        assert_eq!(value, @i);
+        i += 1;
+    }
+}
+
+#[test]
+fn test_empty_fixed_size_array_iterator() {
+    let mut input: [usize; 0] = [];
+    let mut iter = input.into_iter();
+    let mut i: usize = 10;
+    while let Option::Some(value) = iter.next() {
+        assert_eq!(value, @i);
         i += 1;
     }
 }

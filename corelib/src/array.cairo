@@ -708,6 +708,23 @@ impl EmptyFixedSizeArrayImpl<T, +Drop<T>> of ToSpanTrait<[T; 0], T> {
     }
 }
 
+pub(crate) impl FixedSizeArrayIntoIterator<
+    T, const SIZE: usize, -crate::metaprogramming::TypeEqual<[T; SIZE], [T; 0]>, +Drop<T>,
+> of crate::iter::IntoIterator<[T; SIZE]> {
+    type IntoIter = crate::array::SpanIter<T>;
+    fn into_iter(self: [T; SIZE]) -> Self::IntoIter {
+        crate::array::FixedSizeArrayToSpan::<T, SIZE>::span(@self).into_iter()
+    }
+}
+
+pub(crate) impl EmptyFixedSizeArrayIntoIterator<T, +Drop<T>> of crate::iter::IntoIterator<[T; 0]> {
+    type IntoIter = crate::array::SpanIter<T>;
+    fn into_iter(self: [T; 0]) -> Self::IntoIter {
+        crate::array::EmptyFixedSizeArrayImpl::<T>::span(@self).into_iter()
+    }
+}
+
+
 /// Returns an option to a snapshot of a box of struct of members of the same type from a span.
 extern fn tuple_from_span<T, impl Info: FixedSizedArrayInfo<T>>(
     span: @Array<Info::Element>,
