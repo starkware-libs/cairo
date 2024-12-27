@@ -7,7 +7,7 @@ mod deref;
 #[feature("deref_mut")]
 pub use deref::DerefMut;
 pub use deref::{Deref, SnapshotDeref};
-mod range;
+pub(crate) mod range;
 // `RangeOp` is used internally by the compiler.
 #[allow(unused_imports)]
 use range::RangeOp;
