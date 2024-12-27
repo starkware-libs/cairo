@@ -28,7 +28,6 @@ impl MutableVecAsPointer<T> of StorageAsPointer<StoragePath<Mutable<Vec<T>>>> {
     }
 }
 
-
 /// Trait for the interface of a storage vec.
 pub trait VecTrait<T> {
     type ElementType;
@@ -149,5 +148,85 @@ pub impl MutableVecIndexView<
     type Target = StoragePath<Mutable<VecImpl::ElementType>>;
     fn index(self: @VecT, index: u64) -> Self::Target {
         (*self).at(index)
+    }
+}
+
+/// An iterator struct over a Vec in storage.
+#[derive(Drop)]
+pub struct VecIter<T, impl VecImpl: VecTrait<T>> {
+    vec: T,
+    alive: crate::ops::range::RangeIterator<u64>,
+}
+
+impl VecIterator<
+    T, impl VecImpl: VecTrait<T>, +Drop<T>, +Copy<T>,
+> of core::iter::Iterator<VecIter<T>> {
+    type Item = StoragePath<VecImpl::ElementType>;
+    fn next(ref self: VecIter<T>) -> Option<Self::Item> {
+        self.vec.get(self.alive.next()?)
+    }
+}
+
+pub impl VecIntoIterator<
+    T, impl VecImpl: VecTrait<T>, +Drop<T>, +Copy<T>,
+> of crate::iter::IntoIterator<T> {
+    type IntoIter = VecIter<T, VecImpl>;
+    #[inline]
+    fn into_iter(self: T) -> Self::IntoIter {
+        VecIter { alive: (0..self.len()).into_iter(), vec: self }
+    }
+}
+
+pub impl PathableVecIntoIterator<
+    T,
+    +Drop<T>,
+    +Copy<T>,
+    impl PathImpl: StorageAsPath<T>,
+    impl VecImpl: VecTrait<StoragePath<PathImpl::Value>>,
+> of crate::iter::IntoIterator<T> {
+    type IntoIter = VecIter<StoragePath<PathImpl::Value>, VecImpl>;
+    #[inline]
+    fn into_iter(self: T) -> Self::IntoIter {
+        VecIter { alive: (0..self.len()).into_iter(), vec: self.as_path() }
+    }
+}
+
+/// An iterator struct over a MutableVec in storage.
+#[derive(Drop)]
+pub struct MutableVecIter<T, impl MutVecImpl: MutableVecTrait<T>> {
+    vec: T,
+    alive: crate::ops::range::RangeIterator<u64>,
+}
+
+impl MutableVecIterator<
+    T, +Drop<T>, +Copy<T>, impl MutVecImpl: MutableVecTrait<T>,
+> of core::iter::Iterator<MutableVecIter<T>> {
+    type Item = StoragePath<Mutable<MutVecImpl::ElementType>>;
+    fn next(ref self: MutableVecIter<T>) -> Option<Self::Item> {
+        self.vec.get(self.alive.next()?)
+    }
+}
+
+pub impl MutableVecIntoIterator<
+    T, +Drop<T>, +Copy<T>, impl MutVecImpl: MutableVecTrait<T>,
+> of crate::iter::IntoIterator<T> {
+    type IntoIter = MutableVecIter<T, MutVecImpl>;
+    #[inline]
+    fn into_iter(self: T) -> Self::IntoIter {
+        MutableVecIter { alive: (0..self.len()).into_iter(), vec: self }
+    }
+}
+
+pub impl PathableMutableVecIntoIterator<
+    T,
+    +Drop<T>,
+    +Copy<T>,
+    impl PathImpl: StorageAsPath<T>,
+    impl MutVecImpl: MutableVecTrait<StoragePath<PathImpl::Value>>,
+> of crate::iter::IntoIterator<T> {
+    type IntoIter = MutableVecIter<StoragePath<PathImpl::Value>, MutVecImpl>;
+    #[inline]
+    fn into_iter(self: T) -> Self::IntoIter {
+        MutableVecIter { alive: (0..self.len()).into_iter(), vec: self.as_path() }
     }
 }

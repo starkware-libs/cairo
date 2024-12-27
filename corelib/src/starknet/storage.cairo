@@ -79,7 +79,10 @@ use starknet::storage_access::{StorageBaseAddress, storage_base_address_from_fel
 
 mod vec;
 use vec::{MutableVecIndexView, VecIndexView};
-pub use vec::{MutableVecTrait, Vec, VecTrait};
+pub use vec::{
+    MutableVecTrait, PathableMutableVecIntoIterator, PathableVecIntoIterator, Vec, VecIntoIterator,
+    VecTrait,
+};
 
 mod storage_node;
 pub use storage_node::{StorageNode, StorageNodeMut};
