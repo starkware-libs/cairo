@@ -12,7 +12,8 @@ pub trait Iterator<T> {
     fn map<
         B,
         F,
-        +core::ops::FnOnce<F, (Self::Item,)>[Output: B],
+        impl TIter: Self,
+        +core::ops::FnOnce<F, (TIter::Item,)>[Output: B],
         +Drop<T>,
         +Drop<F>,
         +Copy<F>,
