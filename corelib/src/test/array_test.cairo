@@ -1,4 +1,3 @@
-use crate::iter::{IntoIterator, Iterator};
 use crate::test::test_utils::assert_eq;
 
 #[test]
