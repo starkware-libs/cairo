@@ -495,7 +495,7 @@ pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize,
 #[derive(Drop, Clone)]
 pub struct ByteArrayIter {
     ba: ByteArray,
-    alive: crate::ops::RangeIterator<usize>,
+    current_index: crate::ops::RangeIterator<usize>,
 }
 
 impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
@@ -503,7 +503,7 @@ impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
     /// Advances the iterator and returns the next value. Returns `Option::None` when iteration is
     /// finished.
     fn next(ref self: ByteArrayIter) -> Option<u8> {
-        self.ba.at(self.alive.next()?)
+        self.ba.at(self.current_index.next()?)
     }
 }
 
@@ -511,6 +511,6 @@ impl ByteArrayIntoInterator of crate::iter::IntoIterator<ByteArray> {
     type IntoIter = ByteArrayIter;
     #[inline]
     fn into_iter(self: ByteArray) -> ByteArrayIter {
-        ByteArrayIter { alive: (0..self.len()).into_iter(), ba: self }
+        ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
     }
 }
