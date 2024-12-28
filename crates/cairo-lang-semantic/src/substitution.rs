@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
@@ -28,7 +29,10 @@ use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
+    ConcreteTraitTypeLongId,
+};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeId,
@@ -198,19 +202,30 @@ impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Box<T>, E> for TR
     }
 }
 
-impl<T: Clone, V: Clone, E, TRewriter: SemanticRewriter<V, E>>
+impl<T: Clone + Hash + Eq, V: Clone, E, TRewriter: SemanticRewriter<V, E> + SemanticRewriter<T, E>>
     SemanticRewriter<OrderedHashMap<T, V>, E> for TRewriter
 {
     fn internal_rewrite(&mut self, value: &mut OrderedHashMap<T, V>) -> Result<RewriteResult, E> {
         let mut result = RewriteResult::NoChange;
-        for el in value.iter_mut() {
-            match self.internal_rewrite(el.1)? {
-                RewriteResult::Modified => {
-                    result = RewriteResult::Modified;
+        let temp_value = std::mem::take(value);
+        *value = temp_value
+            .into_iter()
+            .map(|(mut k, mut v)| {
+                match self.internal_rewrite(&mut k)? {
+                    RewriteResult::Modified => {
+                        result = RewriteResult::Modified;
+                    }
+                    RewriteResult::NoChange => {}
                 }
-                RewriteResult::NoChange => {}
-            }
-        }
+                match self.internal_rewrite(&mut v)? {
+                    RewriteResult::Modified => {
+                        result = RewriteResult::Modified;
+                    }
+                    RewriteResult::NoChange => {}
+                }
+                Ok((k, v))
+            })
+            .collect::<Result<_, _>>()?;
 
         Ok(result)
     }
@@ -344,6 +359,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteExternTypeLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitLongId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ConcreteTraitTypeId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ConcreteTraitTypeLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionLongId, $($exclude)*);

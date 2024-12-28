@@ -23,7 +23,10 @@ use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
+    ConcreteTraitTypeLongId,
+};
 use crate::substitution::{HasDb, RewriteResult, SemanticObject, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
