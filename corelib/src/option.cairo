@@ -202,7 +202,6 @@
 //!
 //! [`into_iter`]: IntoIterator::into_iter
 
-use crate::iter::{IntoIterator, Iterator};
 
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
@@ -777,7 +776,7 @@ pub struct OptionIter<T> {
     inner: Option<T>,
 }
 
-impl OptionIterator<T> of Iterator<OptionIter<T>> {
+impl OptionIterator<T> of crate::iter::Iterator<OptionIter<T>> {
     type Item = T;
     fn next(ref self: OptionIter<T>) -> Option<T> {
         let item = self.inner;
@@ -786,7 +785,7 @@ impl OptionIterator<T> of Iterator<OptionIter<T>> {
     }
 }
 
-impl OptionIntoIterator<T> of IntoIterator<Option<T>> {
+impl OptionIntoIterator<T> of crate::iter::IntoIterator<Option<T>> {
     type IntoIter = OptionIter<T>;
 
     #[inline]
