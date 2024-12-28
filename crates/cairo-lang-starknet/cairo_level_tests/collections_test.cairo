@@ -1,5 +1,5 @@
 use starknet::storage::{
-    MutableVecTrait, PathableMutableVecIntoIterator, PathableVecIntoIterator, StoragePathEntry,
+    MutableVecTrait, PathableMutableVecIntoIterRange, PathableVecIntoIterRange, StoragePathEntry,
     StoragePointerReadAccess, StoragePointerWriteAccess,
 };
 
@@ -35,32 +35,46 @@ fn test_simple_member_write_to_map() {
 #[test]
 fn test_vec_iter() {
     let mut mut_state = contract_with_vec::contract_state_for_testing();
-    mut_state.simple.append().write(1);
-    mut_state.simple.append().write(2);
-    mut_state.simple.append().write(3);
-
-    let state = @contract_with_vec::contract_state_for_testing();
-
-    let mut i = 1;
-    for entry in state.simple {
-        assert_eq!(entry.read(), i);
-        i += 1;
-    };
-}
-
-#[test]
-fn test_mut_vec_iter() {
-    let mut mut_state = contract_with_vec::contract_state_for_testing();
-    for i in 0..3_usize {
+    for i in 0..9_usize {
         mut_state.simple.append().write(i);
     };
 
     let state = @contract_with_vec::contract_state_for_testing();
     let mut i = 0;
-    for entry in state.simple {
+    for entry in state.simple.into_iter_full_range() {
         assert_eq!(entry.read(), i);
         i += 1;
     };
+    assert_eq!(i, 9);
+
+    let mut i = 2;
+    for entry in state.simple.into_iter_range(2..5) {
+        assert_eq!(entry.read(), i);
+        i += 1;
+    };
+    assert_eq!(i, 5);
+}
+
+#[test]
+fn test_mut_vec_iter() {
+    let mut mut_state = contract_with_vec::contract_state_for_testing();
+    for i in 0..9_usize {
+        mut_state.simple.append().write(i);
+    };
+
+    let mut i = 0;
+    for entry in mut_state.simple.into_iter_full_range() {
+        assert_eq!(entry.read(), i);
+        i += 1;
+    };
+    assert_eq!(i, 9);
+
+    let mut i = 2;
+    for entry in mut_state.simple.into_iter_range(2..5) {
+        assert_eq!(entry.read(), i);
+        i += 1;
+    };
+    assert_eq!(i, 5);
 }
 
 #[test]
