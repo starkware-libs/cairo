@@ -201,7 +201,7 @@ fn test_array_iterator() {
 #[test]
 fn test_fixed_size_array_iterator() {
     let mut input = [10_usize, 11_usize, 12_usize, 13_usize];
-    let mut iter = input.into_iter();
+    let mut iter = (@input).into_iter();
     let mut i: usize = 10;
     while let Option::Some(value) = iter.next() {
         assert_eq!(value, @i);
@@ -212,7 +212,7 @@ fn test_fixed_size_array_iterator() {
 #[test]
 fn test_empty_fixed_size_array_iterator() {
     let mut input: [usize; 0] = [];
-    let mut iter = input.into_iter();
+    let mut iter = (@input).into_iter();
     let mut i: usize = 10;
     while let Option::Some(value) = iter.next() {
         assert_eq!(value, @i);
