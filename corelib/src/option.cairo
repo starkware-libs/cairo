@@ -132,6 +132,52 @@
 //!   [`None`] values unchanged
 //!
 //! [`map`]: OptionTrait::map
+//!
+//! ## Boolean operators
+//!
+//! These methods treat the [`Option`] as a boolean value, where [`Some`]
+//! acts like [`true`] and [`None`] acts like [`false`]. There are two
+//! categories of these methods: ones that take an [`Option`] as input, and
+//! ones that take a function as input (to be lazily evaluated).
+//!
+//! The [`and`], [`or`], and [`xor`] methods take another [`Option`] as
+//! input, and produce an [`Option`] as output. Only the [`and`] method can
+//! produce an [`Option<U>`] value having a different inner type `U` than
+//! [`Option<T>`].
+//!
+//! | method  | self      | input     | output    |
+//! |---------|-----------|-----------|-----------|
+//! | [`and`] | `None`    | (ignored) | `None`    |
+//! | [`and`] | `Some(x)` | `None`    | `None`    |
+//! | [`and`] | `Some(x)` | `Some(y)` | `Some(y)` |
+//! | [`or`]  | `None`    | `None`    | `None`    |
+//! | [`or`]  | `None`    | `Some(y)` | `Some(y)` |
+//! | [`or`]  | `Some(x)` | (ignored) | `Some(x)` |
+//! | [`xor`] | `None`    | `None`    | `None`    |
+//! | [`xor`] | `None`    | `Some(y)` | `Some(y)` |
+//! | [`xor`] | `Some(x)` | `None`    | `Some(x)` |
+//! | [`xor`] | `Some(x)` | `Some(y)` | `None`    |
+//!
+//! [`and`]: OptionTrait::and
+//! [`or`]: OptionTrait::or
+//! [`xor`]: OptionTrait::xor
+//!
+//! The [`and_then`] and [`or_else`] methods take a function as input, and
+//! only evaluate the function when they need to produce a new value. Only
+//! the [`and_then`] method can produce an [`Option<U>`] value having a
+//! different inner type `U` than [`Option<T>`].
+//!
+//! | method       | self      | function input | function result | output    |
+//! |--------------|-----------|----------------|-----------------|-----------|
+//! | [`and_then`] | `None`    | (not provided) | (not evaluated) | `None`    |
+//! | [`and_then`] | `Some(x)` | `x`            | `None`          | `None`    |
+//! | [`and_then`] | `Some(x)` | `x`            | `Some(y)`       | `Some(y)` |
+//! | [`or_else`]  | `None`    | (not provided) | `None`          | `None`    |
+//! | [`or_else`]  | `None`    | (not provided) | `Some(y)`       | `Some(y)` |
+//! | [`or_else`]  | `Some(x)` | (not provided) | (not evaluated) | `Some(x)` |
+//!
+//! [`and_then`]: OptionTrait::and_then
+//! [`or_else`]: OptionTrait::or_else
 
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
@@ -215,6 +261,130 @@ pub trait OptionTrait<T> {
     fn ok_or_else<E, F, +Destruct<E>, +core::ops::FnOnce<F, ()>[Output: E], +Drop<F>>(
         self: Option<T>, err: F,
     ) -> Result<T, E>;
+
+    /// Returns [`None`] if the option is [`None`], otherwise returns `optb`.
+    ///
+    /// Arguments passed to `and` are eagerly evaluated; if you are passing the
+    /// result of a function call, it is recommended to use [`and_then`], which is
+    /// lazily evaluated.
+    ///
+    /// [`and_then`]: OptionTrait::and_then
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x = Option::Some(2);
+    /// let y: Option<ByteArray> = Option::None;
+    /// assert_eq!(x.and(y), Option::None);
+    ///
+    /// let x: Option<u32> = Option::None;
+    /// let y: Option<ByteArray> = Option::Some("foo");
+    /// assert_eq!(x.and(y), Option::None);
+    ///
+    /// let x = Option::Some(2);
+    /// let y: Option<ByteArray> = Option::Some("foo");
+    /// assert_eq!(x.and(y), Option::Some("foo"));
+    ///
+    /// let x: Option<u32> = Option::None;
+    /// let y: Option<ByteArray> = Option::None;
+    /// assert_eq!(x.and(y), Option::None);
+    /// ```
+    fn and<U, +Drop<T>, +Drop<U>>(self: Option<T>, optb: Option<U>) -> Option<U>;
+
+    /// Returns [`None`] if the option is [`None`], otherwise calls `f` with the
+    /// wrapped value and returns the result.
+    ///
+    /// Some languages call this operation flatmap.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::num::traits::CheckedMul;
+    ///
+    /// let option: Option<ByteArray> = checked_mul(2_u32, 2_u32)
+    ///     .and_then(|v| Option::Some(format!("{}", v)));
+    /// assert_eq!(option, Option::Some("4"));
+    ///
+    /// let option: Option<ByteArray> = checked_mul(65536_u32, 65536_u32)
+    ///     .and_then(|v| Option::Some(format!("{}", v)));
+    /// assert_eq!(option, Option::None); // overflowed!
+    ///
+    /// let option: Option<ByteArray> = Option::<u32>::None
+    ///     .and_then(|v| Option::Some(format!("{}", v)));
+    /// assert_eq!(option, Option::None);
+    /// ```
+    fn and_then<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: Option<U>]>(
+        self: Option<T>, f: F,
+    ) -> Option<U>;
+
+    /// Returns the option if it contains a value, otherwise returns `optb`.
+    ///
+    /// Arguments passed to `or` are eagerly evaluated; if you are passing the
+    /// result of a function call, it is recommended to use [`or_else`], which is
+    /// lazily evaluated.
+    ///
+    /// [`or_else`]: OptionTrait::or_else
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x = Option::Some(2);
+    /// let y = Option::None;
+    /// assert_eq!(x.or(y), Option::Some(2));
+    ///
+    /// let x = Option::None;
+    /// let y = Option::Some(100);
+    /// assert_eq!(x.or(y), Option::Some(100));
+    ///
+    /// let x = Option::Some(2);
+    /// let y = Option::Some(100);
+    /// assert_eq!(x.or(y), Option::Some(2));
+    ///
+    /// let x: Option<u32> = Option::None;
+    /// let y = Option::None;
+    /// assert_eq!(x.or(y), Option::None);
+    /// ```
+    fn or<+Drop<T>>(self: Option<T>, optb: Option<T>) -> Option<T>;
+
+    /// Returns the option if it contains a value, otherwise calls `f` and
+    /// returns the result.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let nobody = || Option::<ByteArray>::None;
+    /// let vikings = || Option::<ByteArray>::Some("vikings");
+    ///
+    /// assert_eq!(Option::Some("barbarians").or_else(vikings), Option::Some("barbarians"));
+    /// assert_eq!(Option::None.or_else(vikings), Option::Some("vikings"));
+    /// assert_eq!(Option::None.or_else(nobody), Option::None);
+    /// ```
+    fn or_else<F, +Drop<F>, +core::ops::FnOnce<F, ()>[Output: Option<T>]>(
+        self: Option<T>, f: F,
+    ) -> Option<T>;
+
+    /// Returns [`Some`] if exactly one of `self`, `optb` is [`Some`], otherwise returns [`None`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x = Option::Some(2);
+    /// let y: Option<u32> = Option::None;
+    /// assert_eq!(x.xor(y), Option::Some(2));
+    ///
+    /// let x: Option<u32> = Option::None;
+    /// let y = Option::Some(2);
+    /// assert_eq!(x.xor(y), Option::Some(2));
+    ///
+    /// let x = Option::Some(2);
+    /// let y = Option::Some(2);
+    /// assert_eq!(x.xor(y), Option::None);
+    ///
+    /// let x: Option<u32> = Option::None;
+    /// let y: Option<u32> = Option::None;
+    /// assert_eq!(x.xor(y), Option::None);
+    /// ```
+    fn xor<+Drop<T>>(self: Option<T>, optb: Option<T>) -> Option<T>;
 
     /// Returns `true` if the `Option` is `Option::Some`, `false` otherwise.
     ///
@@ -367,6 +537,51 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         match self {
             Option::Some(v) => Result::Ok(v),
             Option::None => Result::Err(err()),
+        }
+    }
+
+    #[inline]
+    fn and<U, +Drop<T>, +Drop<U>>(self: Option<T>, optb: Option<U>) -> Option<U> {
+        match self {
+            Option::Some(_) => optb,
+            Option::None => Option::None,
+        }
+    }
+
+    #[inline]
+    fn and_then<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: Option<U>]>(
+        self: Option<T>, f: F,
+    ) -> Option<U> {
+        match self {
+            Option::Some(x) => f(x),
+            Option::None => Option::None,
+        }
+    }
+
+    #[inline]
+    fn or<+Drop<T>>(self: Option<T>, optb: Option<T>) -> Option<T> {
+        match self {
+            Option::Some(x) => Option::Some(x),
+            Option::None => optb,
+        }
+    }
+
+    #[inline]
+    fn or_else<F, +Drop<F>, +core::ops::FnOnce<F, ()>[Output: Option<T>]>(
+        self: Option<T>, f: F,
+    ) -> Option<T> {
+        match self {
+            Option::Some(x) => Option::Some(x),
+            Option::None => f(),
+        }
+    }
+
+    #[inline]
+    fn xor<+Drop<T>>(self: Option<T>, optb: Option<T>) -> Option<T> {
+        match (self, optb) {
+            (Option::Some(x), Option::None) => Option::Some(x),
+            (Option::None, Option::Some(x)) => Option::Some(x),
+            _ => Option::None,
         }
     }
 
