@@ -491,6 +491,7 @@ pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize,
     }
 }
 
+// TODO: Implement a more efficient version of this iterator.
 /// An iterator struct over a ByteArray.
 #[derive(Drop, Clone)]
 pub struct ByteArrayIter {
