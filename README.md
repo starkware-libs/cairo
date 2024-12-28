@@ -140,3 +140,6 @@ _For more information and to report security issues, please refer to our [securi
 This project is licensed under the **Apache 2.0**.
 
 See [LICENSE](LICENSE) for more information.
+
+## Contributed by @YourGitHubHandle  
+Exploring StarkNet and contributing to Cairo as part of Web3 development and learning. 🚀
