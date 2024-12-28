@@ -104,6 +104,88 @@ fn test_option_none_ok_or_else() {
     assert_eq!(option.ok_or_else( || 0), Result::Err(0));
 }
 
+#[test]
+fn test_option_and() {
+    let x = Option::Some(2);
+    let y: Option<ByteArray> = Option::None;
+    assert_eq!(x.and(y), Option::None);
+
+    let x: Option<u32> = Option::None;
+    let y: Option<ByteArray> = Option::Some("foo");
+    assert_eq!(x.and(y), Option::None);
+
+    let x = Option::Some(2);
+    let y: Option<ByteArray> = Option::Some("foo");
+    assert_eq!(x.and(y), Option::Some("foo"));
+
+    let x: Option<u32> = Option::None;
+    let y: Option<ByteArray> = Option::None;
+    assert_eq!(x.and(y), Option::None);
+}
+
+#[test]
+fn test_option_and_then() {
+    let checked_mul = core::num::traits::CheckedMul::checked_mul(2_u32, 2_u32);
+    let option: Option<ByteArray> = checked_mul.and_then(|v| Option::Some(format!("{}", v)));
+    assert_eq!(option, Option::Some("4"));
+
+    let checked_mul = core::num::traits::CheckedMul::checked_mul(65536_u32, 65536_u32);
+    let option: Option<ByteArray> = checked_mul.and_then(|v| Option::Some(format!("{}", v)));
+    assert_eq!(option, Option::None); // overflowed!
+
+    let option: Option<ByteArray> = Option::<u32>::None
+        .and_then(|v| Option::Some(format!("{}", v)));
+    assert_eq!(option, Option::None);
+}
+
+#[test]
+fn test_option_or() {
+    let x = Option::Some(2);
+    let y = Option::None;
+    assert_eq!(x.or(y), Option::Some(2));
+
+    let x = Option::None;
+    let y = Option::Some(100);
+    assert_eq!(x.or(y), Option::Some(100));
+
+    let x = Option::Some(2);
+    let y = Option::Some(100);
+    assert_eq!(x.or(y), Option::Some(2));
+
+    let x: Option<u32> = Option::None;
+    let y = Option::None;
+    assert_eq!(x.or(y), Option::None);
+}
+
+#[test]
+fn test_option_or_else() {
+    let nobody =  || Option::<ByteArray>::None;
+    let vikings =  || Option::<ByteArray>::Some("vikings");
+
+    assert_eq!(Option::Some("barbarians").or_else(vikings), Option::Some("barbarians"));
+    assert_eq!(Option::None.or_else(vikings), Option::Some("vikings"));
+    assert_eq!(Option::None.or_else(nobody), Option::None);
+}
+
+#[test]
+fn test_option_xor() {
+    let x = Option::Some(2);
+    let y: Option<u32> = Option::None;
+    assert_eq!(x.xor(y), Option::Some(2));
+
+    let x: Option<u32> = Option::None;
+    let y = Option::Some(2);
+    assert_eq!(x.xor(y), Option::Some(2));
+
+    let x = Option::Some(2);
+    let y = Option::Some(2);
+    assert_eq!(x.xor(y), Option::None);
+
+    let x: Option<u32> = Option::None;
+    let y: Option<u32> = Option::None;
+    assert_eq!(x.xor(y), Option::None);
+}
+
 fn test_option_some_is_none_or() {
     assert_eq!(Option::Some(2_u8).is_none_or(|x| x > 1), true);
     assert_eq!(Option::Some(0_u8).is_none_or(|x| x > 1), false);
