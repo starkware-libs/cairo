@@ -1,7 +1,7 @@
 use crate::iter::Iterator;
 
 #[must_use]
-#[derive(Clone)]
+#[derive(Drop, Clone)]
 pub struct Map<I, F> {
     iter: I,
     f: F,
@@ -15,8 +15,8 @@ pub(crate) impl MapImpl<I, F> of MapTrait<I, F> {
 }
 
 impl MapIterator<
-    B,
     I,
+    B,
     F,
     impl TIter: Iterator<I>,
     +core::ops::FnOnce<F, (TIter::Item,)>[Output: B],
