@@ -495,7 +495,7 @@ pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize,
 #[derive(Drop, Clone)]
 pub struct ByteArrayIter {
     ba: ByteArray,
-    alive: crate::ops::range::RangeIterator<usize>,
+    alive: crate::ops::RangeIterator<usize>,
 }
 
 impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
