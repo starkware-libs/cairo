@@ -388,8 +388,6 @@ use string::StringLiteral;
 
 /// Iterators.
 pub mod iter;
-#[allow(unused_imports)]
-use iter::{IntoIterator, Iterator};
 
 /// Metaprogramming.
 pub mod metaprogramming;
