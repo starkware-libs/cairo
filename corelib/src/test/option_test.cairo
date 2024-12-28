@@ -226,6 +226,7 @@ fn test_option_some_into_iter() {
     let x: Option<u32> = Option::Some(5);
     let mut x_iter = x.into_iter();
     assert!(x_iter.next() == Option::Some(5));
+    assert!(x_iter.next() == Option::None);
 }
 
 #[test]
