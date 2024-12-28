@@ -202,7 +202,6 @@
 //!
 //! [`into_iter`]: IntoIterator::into_iter
 
-
 /// The `Option<T>` enum representing either `Some(value)` or `None`.
 #[must_use]
 #[derive(Copy, Drop, Debug, Serde, PartialEq)]
