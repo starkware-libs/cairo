@@ -1,5 +1,4 @@
 use crate::iter::IntoIterator;
-use crate::array::{EmptyFixedSizeArrayIntoIterator, FixedSizeArrayIntoIterator};
 
 #[test]
 fn test_for_loop_array_sum() {

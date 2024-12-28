@@ -1,6 +1,5 @@
 use crate::iter::{IntoIterator, Iterator};
 use crate::test::test_utils::assert_eq;
-use crate::array::{EmptyFixedSizeArrayIntoIterator, FixedSizeArrayIntoIterator};
 
 #[test]
 fn test_array() {
