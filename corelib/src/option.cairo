@@ -472,14 +472,16 @@ pub struct OptionIter<T> {
     inner: Option<T>,
 }
 
-impl OptionIterator<T, +Copy<T>> of Iterator<OptionIter<T>> {
+impl OptionIterator<T> of Iterator<OptionIter<T>> {
     type Item = T;
     fn next(ref self: OptionIter<T>) -> Option<T> {
-        self.inner
+        let item = self.inner;
+        self.inner = Option::None;
+        item
     }
 }
 
-impl OptionIntoIterator<T, +Copy<T>, +Destruct<T>> of IntoIterator<Option<T>> {
+impl OptionIntoIterator<T> of IntoIterator<Option<T>> {
     type IntoIter = OptionIter<T>;
 
     #[inline]
