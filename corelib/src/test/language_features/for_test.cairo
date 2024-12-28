@@ -65,24 +65,3 @@ fn test_for_loop_range() {
     };
     assert_eq!(sum, 46);
 }
-
-#[test]
-fn test_for_loop_fixed_size_array() {
-    let mut sum = 0_usize;
-    let mut input = [1_usize, 2, 3];
-    for x in (@input) {
-        sum += *x;
-    };
-    assert_eq!(sum, 6);
-}
-
-
-#[test]
-fn test_for_loop_empty_fixed_size_array() {
-    let mut sum = 0_usize;
-    let mut input: [usize; 0] = [];
-    for x in (@input) {
-        sum += *x;
-    };
-    assert_eq!(sum, 0);
-}

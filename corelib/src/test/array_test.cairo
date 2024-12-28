@@ -213,11 +213,7 @@ fn test_fixed_size_array_iterator() {
 fn test_empty_fixed_size_array_iterator() {
     let mut input: [usize; 0] = [];
     let mut iter = (@input).into_iter();
-    let mut i: usize = 10;
-    while let Option::Some(value) = iter.next() {
-        assert_eq!(value, @i);
-        i += 1;
-    }
+    assert!(iter.next().is_none());
 }
 
 fn test_array_into_span() {
