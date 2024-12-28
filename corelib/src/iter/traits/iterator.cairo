@@ -1,4 +1,5 @@
 use crate::iter::adapters::{Map, mapped_iterator};
+use crate::ops::Range;
 
 /// A trait for dealing with iterators.
 ///
@@ -92,5 +93,31 @@ pub trait Iterator<T> {
         self: T, f: F,
     ) -> Map<T, F> {
         mapped_iterator(self, f)
+    }
+}
+
+/// Turn a collection of values into an iterator.
+pub trait IntoIterator<T> {
+    /// The iterator type that will be created.
+    type IntoIter;
+    impl Iterator: Iterator<Self::IntoIter>;
+    /// Creates an iterator from a collection.
+    fn into_iter(self: T) -> Self::IntoIter;
+}
+
+/// Turn a collection of values into an iterator over a specific range.
+pub trait IntoIterRange<T, I> {
+    type IntoIter;
+    impl Iterator: Iterator<Self::IntoIter>;
+    /// Creates an iterator over a range from a collection.
+    fn into_iter_range(self: T, range: Range<I>) -> Self::IntoIter;
+    /// Creates an iterator over the full range of a collection.
+    fn into_iter_full_range(self: T) -> Self::IntoIter;
+}
+
+impl IteratorIntoIterator<T, +Iterator<T>> of IntoIterator<T> {
+    type IntoIter = T;
+    fn into_iter(self: T) -> T {
+        self
     }
 }

@@ -230,4 +230,4 @@
 //! [`map`]: Iterator::map
 mod adapters;
 mod traits;
-pub use traits::{FromIterator, IntoIterator, Iterator};
+pub use traits::{IntoIterRange, IntoIterator, Iterator};
