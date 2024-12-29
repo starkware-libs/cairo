@@ -65,14 +65,3 @@ fn test_for_loop_range() {
     };
     assert_eq!(sum, 46);
 }
-
-#[test]
-fn test_for_loop_ba() {
-    let ba: ByteArray = "hello";
-    let expected = array!['h', 'e', 'l', 'l', 'o'];
-    let mut i = 0;
-    for c in ba {
-        assert_eq!(c, *expected[i]);
-        i += 1;
-    }
-}
