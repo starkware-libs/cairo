@@ -501,8 +501,6 @@ pub struct ByteArrayIter {
 
 impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
     type Item = u8;
-    /// Advances the iterator and returns the next value. Returns `Option::None` when iteration is
-    /// finished.
     fn next(ref self: ByteArrayIter) -> Option<u8> {
         self.ba.at(self.current_index.next()?)
     }
