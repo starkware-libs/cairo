@@ -34,13 +34,12 @@ use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{LookupIntern, OptionHelper, extract_matches, try_extract_matches};
+use cairo_lang_utils::{Intern, LookupIntern, OptionHelper, extract_matches, try_extract_matches};
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use salsa::InternKey;
 use smol_str::SmolStr;
-use utils::Intern;
 
 use super::inference::canonic::ResultNoErrEx;
 use super::inference::conform::InferenceConform;
@@ -62,6 +61,8 @@ use crate::diagnostic::{
     ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics,
     SemanticDiagnosticsBuilder, TraitInferenceErrors, UnsupportedOutsideOfFunctionFeatureName,
 };
+use crate::expr::inference::solver::SolutionSet;
+use crate::expr::inference::{ImplVarTraitItemMappings, InferenceId};
 use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, validate_const_expr};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
@@ -2778,6 +2779,12 @@ fn method_call_expr(
         }
     }
 
+    // Extracting the possible traits that should be imported, in order to use the method.
+    let method_name =
+        expr.path(ctx.db.upcast()).node.clone().get_text_without_trivia(ctx.db.upcast());
+    let ty = ctx.reduce_ty(lexpr.ty());
+    let relevant_traits =
+        match_method_to_traits(ctx.db, ty, &method_name.into(), ctx, lexpr.stable_ptr().untyped());
     let (function_id, actual_trait_id, fixed_lexpr, mutability) =
         compute_method_function_call_data(
             ctx,
@@ -2787,7 +2794,12 @@ fn method_call_expr(
             path.stable_ptr().untyped(),
             generic_args_syntax,
             |ty, method_name, inference_errors| {
-                Some(CannotCallMethod { ty, method_name, inference_errors })
+                Some(CannotCallMethod {
+                    ty,
+                    method_name,
+                    inference_errors,
+                    relevant_traits: relevant_traits.clone().unwrap_or_default(),
+                })
             },
             |_, trait_function_id0, trait_function_id1| {
                 Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
@@ -3800,4 +3812,53 @@ fn function_parameter_types(
     let signature = ctx.db.concrete_function_signature(function)?;
     let param_types = signature.params.into_iter().map(|param| param.ty);
     Ok(param_types)
+}
+
+/// Finds traits which contain a method matching the given name and type.
+/// This function checks for visible traits in the specified module file and filters
+/// methods based on their association with the given type and method name.
+fn match_method_to_traits(
+    db: &dyn SemanticGroup,
+    ty: semantic::TypeId,
+    method_name: &SmolStr,
+    ctx: &mut ComputationContext<'_>,
+    stable_ptr: SyntaxStablePtrId,
+) -> Option<Vec<String>> {
+    let module_file_id = ctx.resolver.module_file_id;
+    let visible_traits = db.visible_traits_from_module(module_file_id)?;
+    let mut relevant_methods = Vec::new();
+
+    for (trait_id, _) in visible_traits.iter() {
+        let clone_data =
+            &mut ctx.resolver.inference().clone_with_inference_id(db, InferenceId::NoContext);
+        let mut inference = clone_data.inference(db);
+        let lookup_context = ctx.resolver.impl_lookup_context();
+        let trait_function = match db.trait_function_by_name(*trait_id, method_name.clone()) {
+            Ok(Some(trait_function)) => trait_function,
+            _ => continue,
+        };
+        let (concrete_trait_id, _) = inference.infer_concrete_trait_by_self(
+            trait_function,
+            ty,
+            &lookup_context,
+            Some(stable_ptr),
+            |_| {},
+        )?;
+        inference.solve().ok();
+        if !matches!(
+            inference.trait_solution_set(
+                concrete_trait_id,
+                ImplVarTraitItemMappings::default(),
+                lookup_context
+            ),
+            Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))
+        ) {
+            continue;
+        }
+        relevant_methods.push(trait_function);
+    }
+    relevant_methods
+        .iter()
+        .map(|method| visible_traits.get(&method.trait_id(db.upcast())).cloned())
+        .collect()
 }
