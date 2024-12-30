@@ -795,20 +795,40 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`#[inline(always)]` is not allowed for functions with impl generic parameters."
                     .into()
             }
-            SemanticDiagnosticKind::CannotCallMethod { ty, method_name, inference_errors } => {
-                if inference_errors.is_empty() {
+            SemanticDiagnosticKind::CannotCallMethod {
+                ty,
+                method_name,
+                inference_errors,
+                relevant_traits,
+            } => {
+                if !inference_errors.is_empty() {
+                    return format!(
+                        "Method `{}` could not be called on type `{}`.\n{}",
+                        method_name,
+                        ty.format(db),
+                        inference_errors.format(db)
+                    );
+                }
+                if !relevant_traits.is_empty() {
+                    let suggestions = relevant_traits
+                        .iter()
+                        .map(|trait_path| format!("`{trait_path}`"))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+
+                    format!(
+                        "Method `{}` not found on type `{}`. Consider importing one of the \
+                         following traits: {}.",
+                        method_name,
+                        ty.format(db),
+                        suggestions
+                    )
+                } else {
                     format!(
                         "Method `{}` not found on type `{}`. Did you import the correct trait and \
                          impl?",
                         method_name,
                         ty.format(db)
-                    )
-                } else {
-                    format!(
-                        "Method `{}` could not be called on type `{}`.\n{}",
-                        method_name,
-                        ty.format(db),
-                        inference_errors.format(db)
                     )
                 }
             }
@@ -1212,6 +1232,7 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         method_name: SmolStr,
         inference_errors: TraitInferenceErrors,
+        relevant_traits: Vec<String>,
     },
     NoSuchStructMember {
         struct_id: StructId,
