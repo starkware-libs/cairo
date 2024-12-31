@@ -1,11 +1,15 @@
+use std::ops::Shl;
+
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
-use num_traits::{ToPrimitive, Zero};
+use num_bigint::BigInt;
+use num_traits::{One, ToPrimitive, Zero};
 
 use super::boxing::box_ty;
 use super::enm::EnumType;
 use super::int::unsigned128::Uint128Type;
 use super::non_zero::NonZeroType;
+use super::starknet::interoperability::{ClassHashType, ContractAddressType};
 use super::structure::StructType;
 use super::utils::Range;
 use crate::define_libfunc_hierarchy;
@@ -67,20 +71,24 @@ fn validate_const_data(
     inner_data: &[GenericArg],
 ) -> Result<(), SpecializationError> {
     let inner_type_info = context.get_type_info(inner_ty.clone())?;
-    if inner_type_info.long_id.generic_id == StructType::ID {
-        validate_const_struct_data(context, &inner_type_info, inner_data)?;
+    let type_range = if inner_type_info.long_id.generic_id == StructType::ID {
+        return validate_const_struct_data(context, &inner_type_info, inner_data);
     } else if inner_type_info.long_id.generic_id == EnumType::ID {
-        validate_const_enum_data(context, &inner_type_info, inner_data)?;
+        return validate_const_enum_data(context, &inner_type_info, inner_data);
     } else if inner_type_info.long_id.generic_id == NonZeroType::ID {
-        validate_const_nz_data(context, &inner_type_info, inner_data)?;
+        return validate_const_nz_data(context, &inner_type_info, inner_data);
+    } else if [ContractAddressType::id(), ClassHashType::id()]
+        .contains(&inner_type_info.long_id.generic_id)
+    {
+        Range::half_open(0, BigInt::one().shl(251))
     } else {
-        let type_range = Range::from_type_info(&inner_type_info)?;
-        let [GenericArg::Value(value)] = inner_data else {
-            return Err(SpecializationError::WrongNumberOfGenericArgs);
-        };
-        if !(&type_range.lower <= value && value < &type_range.upper) {
-            return Err(SpecializationError::UnsupportedGenericArg);
-        }
+        Range::from_type_info(&inner_type_info)?
+    };
+    let [GenericArg::Value(value)] = inner_data else {
+        return Err(SpecializationError::WrongNumberOfGenericArgs);
+    };
+    if !(&type_range.lower <= value && value < &type_range.upper) {
+        return Err(SpecializationError::UnsupportedGenericArg);
     }
     Ok(())
 }
