@@ -1327,3 +1327,184 @@ error: Cycle detected while resolving 'impls alias' items.
  --> lib.cairo:3:6
 impl Ifelt = I0<Ifelt>;
      ^^^^^
+
+//! > ==========================================================================
+
+//! > impl function with wrong generic arg name.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> felt252 {
+    2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Tr {
+    fn foo<T>(x: T);
+}
+
+impl I of Tr {
+    fn foo<U>(x: U) {}
+}
+
+//! > expected_diagnostics
+error: Parameter name of impl function I::foo is incompatible with Tr::foo parameter `T`.
+ --> lib.cairo:6:12
+    fn foo<U>(x: U) {}
+           ^
+
+//! > ==========================================================================
+
+//! > impl function with wrong generic arg trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> felt252 {
+    2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Tr {
+    fn foo<T, +Destruct<T>>(x: T);
+}
+
+impl I of Tr {
+    fn foo<T, +Drop<T>>(x: T) {}
+}
+
+//! > expected_diagnostics
+error: Generic parameter trait of impl function `I::foo` is incompatible with `Tr::foo`. Expected: `core::traits::Destruct::<T>`, actual: `core::traits::Drop::<T>`.
+ --> lib.cairo:6:15
+    fn foo<T, +Drop<T>>(x: T) {}
+              ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > impl function with the wrong generic arg concrete trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> felt252 {
+    2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Tr {
+    fn foo<T, S, +Destruct<T>>(x: T);
+}
+
+impl I of Tr {
+    fn foo<T, S, +Destruct<S>>(x: T) {}
+}
+
+//! > expected_diagnostics
+error: Generic parameter trait of impl function `I::foo` is incompatible with `Tr::foo`. Expected: `core::traits::Destruct::<T>`, actual: `core::traits::Destruct::<S>`.
+ --> lib.cairo:6:18
+    fn foo<T, S, +Destruct<S>>(x: T) {}
+                 ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > impl function with the same generic arg trait.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> felt252 {
+    2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Tr {
+    fn foo<T, +Destruct<T>>(x: T);
+}
+
+impl I of Tr {
+    fn foo<T, +Destruct<T>>(x: T) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > impl function with the wrong generic arg kind.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> felt252 {
+    2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Tr {
+    fn foo<T, +Destruct<T>>();
+}
+
+impl I of Tr {
+    fn foo<const T: i32, S>() {}
+}
+
+//! > expected_diagnostics
+error: Generic parameter kind of impl function `I::foo` is incompatible with `Tr::foo`. Expected: `Type`, actual: `Const`.
+ --> lib.cairo:6:12
+    fn foo<const T: i32, S>() {}
+           ^^^^^^^^^^^^
+
+error: Generic parameter kind of impl function `I::foo` is incompatible with `Tr::foo`. Expected: `Impl`, actual: `Type`.
+ --> lib.cairo:6:26
+    fn foo<const T: i32, S>() {}
+                         ^
+
+//! > ==========================================================================
+
+//! > impl function with the wrong const generic kind.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> felt252 {
+    2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Tr {
+    fn foo<T, const C: T>();
+}
+
+impl I of Tr {
+    fn foo<T, const C: i32>() {}
+}
+
+//! > expected_diagnostics
+error: Parameter type of impl function `I::foo` is incompatible with `Tr::foo`. Expected: `T`, actual: `core::integer::i32`.
+ --> lib.cairo:6:15
+    fn foo<T, const C: i32>() {}
+              ^^^^^^^^^^^^

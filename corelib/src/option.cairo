@@ -133,6 +133,19 @@
 //!
 //! [`map`]: OptionTrait::map
 //!
+//! These methods transform [`Option<T>`] to a value of a possibly
+//! different type `U`:
+//!
+//! * [`map_or`] applies the provided function to the contained value of
+//!   [`Some`], or returns the provided default value if the [`Option`] is
+//!   [`None`]
+//! * [`map_or_else`] applies the provided function to the contained value
+//!   of [`Some`], or returns the result of evaluating the provided
+//!   fallback function if the [`Option`] is [`None`]
+//!
+//! [`map_or`]: OptionTrait::map_or
+//! [`map_or_else`]: OptionTrait::map_or_else
+//!
 //! ## Boolean operators
 //!
 //! These methods treat the [`Option`] as a boolean value, where [`Some`]
@@ -506,6 +519,55 @@ pub trait OptionTrait<T> {
     fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
         self: Option<T>, f: F,
     ) -> Option<U>;
+
+    /// Returns the provided default result (if none),
+    /// or applies a function to the contained value (if any).
+    ///
+    /// Arguments passed to `map_or` are eagerly evaluated; if you are passing
+    /// the result of a function call, it is recommended to use [`map_or_else`],
+    /// which is lazily evaluated.
+    ///
+    /// [`map_or_else`]: OptionTrait::map_or_else
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert_eq!(Option::Some("foo").map_or(42, |v: ByteArray| v.len()), 3);
+    ///
+    /// let x: Option<ByteArray> = Option::None;
+    /// assert_eq!(x.map_or(42, |v: ByteArray| v.len()), 42);
+    /// ```
+    #[must_use]
+    fn map_or<U, F, +Drop<U>, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Option<T>, default: U, f: F,
+    ) -> U;
+
+    /// Computes a default function result (if none), or
+    /// applies a different function to the contained value (if any).
+    ///
+    /// # Basic examples
+    ///
+    /// ```
+    /// let k = 21;
+    ///
+    /// let x = Option::Some("foo");
+    /// assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 3);
+    ///
+    /// let x: Option<ByteArray> = Option::None;
+    /// assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 42);
+    /// ```
+    fn map_or_else<
+        U,
+        D,
+        F,
+        +Drop<U>,
+        +Drop<D>,
+        +Drop<F>,
+        +core::ops::FnOnce<D, ()>[Output: U],
+        +core::ops::FnOnce<F, (T,)>[Output: U],
+    >(
+        self: Option<T>, default: D, f: F,
+    ) -> U;
 }
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
@@ -656,6 +718,35 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         match self {
             Option::Some(x) => Option::Some(f(x)),
             Option::None => Option::None,
+        }
+    }
+
+    #[inline]
+    fn map_or<U, F, +Drop<U>, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Option<T>, default: U, f: F,
+    ) -> U {
+        match self {
+            Option::Some(x) => f(x),
+            Option::None => default,
+        }
+    }
+
+    #[inline]
+    fn map_or_else<
+        U,
+        D,
+        F,
+        +Drop<U>,
+        +Drop<D>,
+        +Drop<F>,
+        +core::ops::FnOnce<D, ()>[Output: U],
+        +core::ops::FnOnce<F, (T,)>[Output: U],
+    >(
+        self: Option<T>, default: D, f: F,
+    ) -> U {
+        match self {
+            Option::Some(x) => f(x),
+            Option::None => default(),
         }
     }
 }

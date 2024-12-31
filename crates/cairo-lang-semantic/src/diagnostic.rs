@@ -3,7 +3,7 @@ use std::fmt::Display;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleId, ModuleItemId,
+    EnumId, FunctionTitleId, GenericKind, ImplDefId, ImplFunctionId, ModuleId, ModuleItemId,
     NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
     TraitImplId, UseId,
 };
@@ -335,6 +335,47 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
+                )
+            }
+
+            SemanticDiagnosticKind::WrongGenericParamTraitForImplFunction {
+                impl_def_id,
+                impl_function_id,
+                trait_id,
+                expected_trait,
+                actual_trait,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Generic parameter trait of impl function `{}::{}` is incompatible with \
+                     `{}::{}`. Expected: `{:?}`, actual: `{:?}`.",
+                    impl_def_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                    expected_trait.debug(db),
+                    actual_trait.debug(db)
+                )
+            }
+            SemanticDiagnosticKind::WrongGenericParamKindForImplFunction {
+                impl_def_id,
+                impl_function_id,
+                trait_id,
+                expected_kind,
+                actual_kind,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Generic parameter kind of impl function `{}::{}` is incompatible with \
+                     `{}::{}`. Expected: `{:?}`, actual: `{:?}`.",
+                    impl_def_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                    expected_kind,
+                    actual_kind
                 )
             }
             SemanticDiagnosticKind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {
@@ -1069,6 +1110,20 @@ pub enum SemanticDiagnosticKind {
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
         expected_name: SmolStr,
+    },
+    WrongGenericParamTraitForImplFunction {
+        impl_def_id: ImplDefId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+        expected_trait: ConcreteTraitId,
+        actual_trait: ConcreteTraitId,
+    },
+    WrongGenericParamKindForImplFunction {
+        impl_def_id: ImplDefId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+        expected_kind: GenericKind,
+        actual_kind: GenericKind,
     },
     WrongType {
         expected_ty: semantic::TypeId,
