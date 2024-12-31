@@ -659,3 +659,27 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 }
+impl IntoOptionImpl<T> of Into<T, Option<T>> {
+    #[inline]
+    fn into(self: T) -> Option<T> {
+        Option::<T>::Some(self)
+    }
+}
+impl IntoOptionFromOptionImpl<T, S, +Into<T, S>> of Into<Option<T>, Option<S>> {
+    #[inline]
+    fn into(self: Option<T>) -> Option<S> {
+        match self {
+            Option::Some(t) => Option::Some(t.into()),
+            Option::None => Option::None,
+        }
+    }
+}
+impl TryIntoOptionFromOptionImpl<T, S, +TryInto<T, S>> of TryInto<Option<T>, S> {
+    #[inline]
+    fn try_into(self: Option<T>) -> Option<S> {
+        match self {
+            Option::Some(t) => t.try_into(),
+            Option::None => Option::None,
+        }
+    }
+}
