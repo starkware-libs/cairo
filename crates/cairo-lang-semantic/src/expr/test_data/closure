@@ -718,3 +718,23 @@ error: Trait `core::ops::function::FnOnce` should not be re-implemented.
  --> lib.cairo:1:16
 impl MyImpl of core::ops::FnOnce<u32, ()> {
                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Passing closures as args with less explicit typing.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() -> Option<u32> {
+    let x: Option<Array<i32>> = Option::Some(array![1, 2, 3]);
+    x.map(|x| x.len())
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
