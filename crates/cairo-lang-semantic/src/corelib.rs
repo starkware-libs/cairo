@@ -256,6 +256,63 @@ pub fn option_none_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVarian
     )
 }
 
+/// Generates a ConcreteVariant instance for `Result::Ok`.
+pub fn result_ok_variant(db: &dyn SemanticGroup, ok_ty: TypeId, err_ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "result"),
+        "Result",
+        vec![GenericArgumentId::Type(ok_ty), GenericArgumentId::Type(err_ty)],
+        "Ok",
+    )
+}
+
+/// Generates a ConcreteVariant instance for `Result::Err`.
+pub fn result_err_variant(
+    db: &dyn SemanticGroup,
+    ok_ty: TypeId,
+    err_ty: TypeId,
+) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "result"),
+        "Result",
+        vec![GenericArgumentId::Type(ok_ty), GenericArgumentId::Type(err_ty)],
+        "Err",
+    )
+}
+
+/// Generates a ConcreteVariant instance for `SignedIntegerResult::InRange`.
+pub fn signed_int_result_in_range_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "integer"),
+        "SignedIntegerResult",
+        vec![GenericArgumentId::Type(ty)],
+        "InRange",
+    )
+}
+/// Generates a ConcreteVariant instance for `SignedIntegerResult::Underflow`.
+pub fn signed_int_result_underflow_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "integer"),
+        "SignedIntegerResult",
+        vec![GenericArgumentId::Type(ty)],
+        "Underflow",
+    )
+}
+/// Generates a ConcreteVariant instance for `SignedIntegerResult::Overflow`.
+pub fn signed_int_result_overflow_variant(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        core_submodule(db, "integer"),
+        "SignedIntegerResult",
+        vec![GenericArgumentId::Type(ty)],
+        "Overflow",
+    )
+}
+
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned
 /// semantic expression.
 pub fn false_literal_expr(

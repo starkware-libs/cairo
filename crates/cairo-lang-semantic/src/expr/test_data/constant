@@ -56,6 +56,12 @@ impl Felt252Div of Div<felt252> {
 }
 const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
 
+const FAILING_CALC: felt252 = if true {
+    core::panic_with_felt252('this should fail')
+} else {
+    70
+};
+
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:17
@@ -81,6 +87,11 @@ error: This expression is not supported as constant.
  --> lib.cairo:14:47
 const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
                                               ^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:17:5
+    core::panic_with_felt252('this should fail')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 

@@ -23,8 +23,9 @@ use smol_str::SmolStr;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::ImplId;
 use crate::corelib::{
-    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant, get_core_trait,
-    get_core_ty_by_name, true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant,
+    get_core_function_id, get_core_trait, get_core_ty_by_name, true_variant,
+    try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -582,6 +583,9 @@ impl ConstantEvaluateContext<'_> {
 
     /// Returns true if the given function is allowed to be called in constant context.
     fn is_function_const(&self, function_id: FunctionId) -> bool {
+        if function_id == self.panic_with_felt252 {
+            return true;
+        }
         let db = self.db;
         let concrete_function = function_id.get_concrete(db);
         let Ok(Some(body)) = concrete_function.body(db) else { return false };
@@ -820,6 +824,12 @@ impl ConstantEvaluateContext<'_> {
             Ok(args) => args,
             Err(err) => return ConstValue::Missing(err),
         };
+        if expr.function == self.panic_with_felt252 {
+            return ConstValue::Missing(self.diagnostics.report(
+                expr.stable_ptr.untyped(),
+                SemanticDiagnosticKind::FailedConstantCalculation,
+            ));
+        }
 
         let imp = extract_matches!(
             expr.function.get_concrete(db.upcast()).generic_function,
@@ -1035,6 +1045,8 @@ pub struct ConstCalcInfo {
     pub bit_or_trait: TraitId,
     /// The trait for bitwise xor.
     pub bit_xor_trait: TraitId,
+    /// The function for panicking with a felt252.
+    pub panic_with_felt252: FunctionId,
 }
 
 impl ConstCalcInfo {
@@ -1050,6 +1062,7 @@ impl ConstCalcInfo {
             bit_and_trait: get_core_trait(db, CoreTraitContext::TopLevel, "BitAnd".into()),
             bit_or_trait: get_core_trait(db, CoreTraitContext::TopLevel, "BitOr".into()),
             bit_xor_trait: get_core_trait(db, CoreTraitContext::TopLevel, "BitXor".into()),
+            panic_with_felt252: get_core_function_id(db, "panic_with_felt252".into(), vec![]),
         }
     }
 }
