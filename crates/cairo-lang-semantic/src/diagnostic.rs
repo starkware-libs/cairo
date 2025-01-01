@@ -738,6 +738,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedConstant => {
                 "This expression is not supported as constant.".into()
             }
+            SemanticDiagnosticKind::FailedConstantCalculation => {
+                "Failed to calculate constant.".into()
+            }
             SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
             SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
                 "Extern types with impl generics are not supported.".into()
@@ -1309,6 +1312,7 @@ pub enum SemanticDiagnosticKind {
     },
     UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName),
     UnsupportedConstant,
+    FailedConstantCalculation,
     DivisionByZero,
     ExternTypeWithImplGenericsNotSupported,
     MissingSemicolon,
