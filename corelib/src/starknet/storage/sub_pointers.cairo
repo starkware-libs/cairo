@@ -1,8 +1,8 @@
 use super::{Mutable, StorageAsPointer, StoragePointer, StoragePointer0Offset};
 
 /// Similar to storage node, but for structs which are stored sequentially in the storage. In
-/// contrast to storage node, the fields of the struct are just offsetted from the base address of
-/// the struct.
+/// contrast to storage node, the fields of the struct are just at an offset from the base address
+/// of the struct.
 pub trait SubPointers<T> {
     /// The type of the storage pointers, generated for the struct T.
     type SubPointersType;
