@@ -554,7 +554,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
 
 
 impl ResultIntoIterator<
-    T, E, +Copy<T>, +Destruct<T>, +Destruct<E>,
+    T, E, +Destruct<T>, +Destruct<E>,
 > of crate::iter::IntoIterator<Result<T, E>> {
     type IntoIter = crate::option::OptionIter<T>;
 
