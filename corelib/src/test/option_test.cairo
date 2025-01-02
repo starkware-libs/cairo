@@ -1,5 +1,3 @@
-use crate::iter::{IntoIterator, Iterator};
-
 #[test]
 fn test_option_some_expect() {
     assert!(Option::Some(42).expect('') == 42);
