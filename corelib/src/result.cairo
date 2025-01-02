@@ -185,7 +185,6 @@
 use crate::array::{ArrayTrait, SpanTrait};
 #[allow(unused_imports)]
 use crate::serde::Serde;
-use crate::iter::{IntoIterator, Iterator};
 
 /// The type used for returning and propagating errors. It is an enum with the variants `Ok: T`,
 /// representing success and containing a value, and `Err: E`, representing error and containing an
@@ -553,28 +552,11 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     }
 }
 
-/// An iterator over the value in a [`Ok`] variant of a [`Result`].
-///
-/// The iterator yields one value if the result is [`Ok`], otherwise none.
-///
-/// This struct is created by the [`into_iter`] method on [`Result`] (provided by the
-/// [`IntoIterator`] trait).
-///
-/// [`into_iter`]: IntoIterator::into_iter
-#[derive(Drop)]
-pub struct ResultIter<T> {
-    inner: Option<T>,
-}
 
-impl ResultIterator<T, +Copy<T>> of Iterator<ResultIter<T>> {
-    type Item = T;
-    fn next(ref self: ResultIter<T>) -> Option<T> {
-        self.inner
-    }
-}
-
-impl ResultIntoIterator<T, E, +Copy<T>, +Destruct<T>, +Destruct<E>> of IntoIterator<Result<T, E>> {
-    type IntoIter = ResultIter<T>;
+impl ResultIntoIterator<
+    T, E, +Copy<T>, +Destruct<T>, +Destruct<E>,
+> of crate::iter::IntoIterator<Result<T, E>> {
+    type IntoIter = crate::option::OptionIter<T>;
 
     /// Returns a consuming iterator over the possibly contained value.
     ///
@@ -592,7 +574,7 @@ impl ResultIntoIterator<T, E, +Copy<T>, +Destruct<T>, +Destruct<E>> of IntoItera
     /// assert!(x_iter.next() == Option::None);
     /// ```
     #[inline]
-    fn into_iter(self: Result<T, E>) -> ResultIter<T> {
-        ResultIter { inner: self.ok() }
+    fn into_iter(self: Result<T, E>) -> crate::option::OptionIter<T> {
+        crate::option::OptionIter { inner: self.ok() }
     }
 }
