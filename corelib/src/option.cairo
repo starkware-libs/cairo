@@ -772,7 +772,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
 /// [`into_iter`]: IntoIterator::into_iter
 #[derive(Drop)]
 pub struct OptionIter<T> {
-    inner: Option<T>,
+    pub(crate) inner: Option<T>,
 }
 
 impl OptionIterator<T> of crate::iter::Iterator<OptionIter<T>> {
