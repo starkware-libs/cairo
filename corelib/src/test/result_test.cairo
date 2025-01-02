@@ -1,5 +1,4 @@
 use crate::result::{Result, ResultTraitImpl};
-use crate::iter::{IntoIterator, Iterator};
 
 #[test]
 fn test_result_ok_expect() {
