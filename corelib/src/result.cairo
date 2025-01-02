@@ -720,6 +720,6 @@ impl ResultIntoIterator<
     /// ```
     #[inline]
     fn into_iter(self: Result<T, E>) -> crate::option::OptionIter<T> {
-        crate::option::OptionIter { inner: self.ok() }
+        self.ok().into_iter()
     }
 }
