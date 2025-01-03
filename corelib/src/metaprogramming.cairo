@@ -1,7 +1,40 @@
 //! Metaprogramming utilities for working with tuples.
 
 /// A trait that can be used to disable implementations based on the types of the generic args.
-/// Assumes that `TypeEqualImpl` is the only implementation of this trait.
+/// Assumes that `TypeEqualImpl<T>` is the only implementation of this trait.
+///
+/// # Examples
+///
+/// use core::metaprogramming::TypeEqual;
+///
+/// /// A simple pair container that requires two different types.
+/// /// Useful for representing relationships between distinct items.
+/// struct TypePair<T, U> {
+///     first: T,
+///     second: U,
+/// }
+///
+/// pub trait TypePairTrait<T, U> {
+///     fn new(first: T, second: U) -> TypePair<T, U>;
+/// }
+///
+/// /// Implementation only allowed when `T` and `U` are different types.
+/// impl TypePairImpl<T, U, -TypeEqual<T, U>, +Drop<T>, +Drop<U>> of TypePairTrait<T, U> {
+///     fn new(first: T, second: U) -> TypePair<T, U> {
+///         TypePair {
+///             first: first,
+///             second: second
+///         }
+///     }
+/// }
+///
+/// fn main() {
+///     // This works - different types
+///     let number_and_bool: TypePair<u32, bool> = TypePairTrait::new(1, true);
+///
+///     // This fails to compile - same types not allowed
+///     let number_and_number: TypePair<u32, u32> = TypePairTrait::new(1, 2);
+/// }
 pub trait TypeEqual<S, T> {}
 
 impl TypeEqualImpl<T> of TypeEqual<T, T>;
