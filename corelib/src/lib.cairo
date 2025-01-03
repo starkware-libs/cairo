@@ -106,17 +106,14 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
     }
 }
 
-/// Boolean module.
 pub mod boolean;
 
-/// Circuit module.
 pub mod circuit;
 
 /// General purpose implicits.
 pub extern type RangeCheck;
 pub extern type SegmentArena;
 
-/// `felt252` module.
 mod felt_252;
 #[allow(unused_imports)]
 use felt_252::{Felt252One, Felt252Zero};
@@ -124,6 +121,7 @@ use felt_252::{Felt252One, Felt252Zero};
 /// `felt252` is the basic field element used in Cairo.
 #[derive(Copy, Drop)]
 pub extern type felt252;
+
 extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
 
 impl Felt252Serde of Serde<felt252> {
@@ -250,51 +248,41 @@ pub mod box;
 #[allow(unused_imports)]
 use box::{Box, BoxTrait};
 
-/// Nullable module.
 pub mod nullable;
 #[allow(unused_imports)]
 use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
 
-/// Module for `Array` and other continuous same type collections.
 pub mod array;
 #[allow(unused_imports)]
 use array::{Array, ArrayTrait};
 
-/// Span module.
 #[allow(unused_imports)]
 use array::{Span, SpanTrait};
 
-/// Dictionary module.
 pub mod dict;
 #[allow(unused_imports)]
 use dict::{
     Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait,
 };
 
-/// Result module.
 pub mod result;
 #[allow(unused_imports)]
 use result::{Result, ResultTrait};
 
-/// Option module.
 pub mod option;
 #[allow(unused_imports)]
 use option::{Option, OptionTrait};
 
-/// Clone module.
 pub mod clone;
 #[allow(unused_imports)]
 use clone::Clone;
 
-/// Elliptic curve module.
 pub mod ec;
 #[allow(unused_imports)]
 use ec::{EcOp, EcPoint, EcState};
 
-/// ECDSA module.
 pub mod ecdsa;
 
-/// Integer module.
 #[feature("corelib-internal-use")]
 pub mod integer;
 #[allow(unused_imports)]
@@ -310,25 +298,19 @@ use integer::{
 #[allow(unused_imports)]
 use integer::{u128_sqrt, u256_sqrt};
 
-/// Math module.
 #[feature("corelib-internal-use")]
 pub mod math;
 
-/// Module containing various traits for relevant numeric types.
 pub mod num;
 
-/// Module containing the operations that can be performed on the different types.
 pub mod ops;
 
-/// Module for comparison operations.
 pub mod cmp;
 
-/// Module for handling gas operations.
 pub mod gas;
 #[allow(unused_imports)]
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
-/// Panics module.
 pub mod panics;
 #[allow(unused_imports)]
 use panics::{panic, Panic, PanicResult};
@@ -363,49 +345,37 @@ pub fn assert(cond: bool, err_code: felt252) {
     }
 }
 
-/// Serde module for serialization and deserialization.
 pub mod serde;
 
-/// Hash functions.
 pub mod hash;
 
-/// Keccak module.
 pub mod keccak;
 
-/// Sha256 module.
 pub mod sha256;
 
-/// Pedersen module.
 pub mod pedersen;
 #[allow(unused_imports)]
 use pedersen::Pedersen;
 
-/// Poseidon module.
 pub mod poseidon;
 #[allow(unused_imports)]
 use poseidon::Poseidon;
 
-/// Debug module.
 pub mod debug;
 
-/// Fmt module.
 pub mod fmt;
 
-/// Starknet module.
 #[feature("corelib-internal-use")]
 pub mod starknet;
 #[allow(unused_imports)]
 use starknet::System;
 
-/// Internals module.
 pub mod internal;
 
-/// Zeroable module.
 pub mod zeroable;
 #[allow(unused_imports)]
 use zeroable::{Zeroable, NonZero};
 
-/// `bytes31` module.
 pub mod bytes_31;
 #[allow(unused_imports)]
 use bytes_31::{
@@ -413,31 +383,24 @@ use bytes_31::{
     Felt252TryIntoBytes31,
 };
 
-/// BytesArray module.
 pub mod byte_array;
 #[allow(unused_imports)]
 use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
 
-/// String module.
 pub mod string;
 #[allow(unused_imports)]
 use string::StringLiteral;
 
-/// `to_byte_array` module.
 pub mod to_byte_array;
 
 #[cfg(test)]
 mod test;
 
-/// Module for testing only.
 pub mod testing;
 
-/// Metaprogramming module.
 pub mod metaprogramming;
 
-/// Preludes module.
 #[allow(unused_imports)]
 mod prelude;
 
-/// Iterators module.
 pub mod iter;
