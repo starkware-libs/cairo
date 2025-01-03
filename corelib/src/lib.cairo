@@ -237,7 +237,6 @@ impl Felt252Default of Default<felt252> {
 }
 
 impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
-    /// Returns the default value for dictionary `felt252` values, i.e., 0.
     #[inline]
     fn zero_default() -> felt252 nopanic {
         0
