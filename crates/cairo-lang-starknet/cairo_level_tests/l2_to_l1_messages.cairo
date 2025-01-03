@@ -1,13 +1,11 @@
-use starknet::{testing, SyscallResultTrait};
-
 use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
+use starknet::{SyscallResultTrait, testing};
 
 #[starknet::contract]
 mod contract_with_messages_sent_to_l1 {
+    use core::array::ArrayTrait;
     use starknet::SyscallResultTrait;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use core::array::ArrayTrait;
-
     use super::generate_payload;
 
     #[storage]

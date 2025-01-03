@@ -10,4 +10,5 @@ pub mod return_optimization;
 pub mod scrub_units;
 pub mod split_structs;
 pub mod strategy;
+pub mod validate;
 pub mod var_renamer;

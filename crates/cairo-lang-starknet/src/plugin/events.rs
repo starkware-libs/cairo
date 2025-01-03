@@ -91,7 +91,7 @@ pub fn get_starknet_event_variants(
                     module_kind.to_str_capital()
                 ),
             ));
-            // The attribute is missing, but this counts as a event - we can't create another
+            // The attribute is missing, but this counts as an event - we can't create another
             // (empty) event.
             Some(variants)
         }

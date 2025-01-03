@@ -5,11 +5,11 @@ pub trait IUpgradable<TCS> {
 }
 #[starknet::component]
 pub mod upgradable {
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use ownable_comp::OwnableHelperImpl;
     use starknet::ClassHash;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use starknet::syscalls::replace_class_syscall;
     use crate::components::ownable::ownable as ownable_comp;
-    use ownable_comp::OwnableHelperImpl;
     #[storage]
     pub struct Storage {
         pub current_implementation: ClassHash,

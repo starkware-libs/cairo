@@ -1,3 +1,7 @@
+//! Utilities for the `felt252` type.
+//!
+//! The implementations defined in this module can be accessed by using the traits directly.
+
 pub(crate) impl Felt252Zero of crate::num::traits::Zero<felt252> {
     fn zero() -> felt252 {
         0

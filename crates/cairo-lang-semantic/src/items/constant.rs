@@ -22,7 +22,7 @@ use smol_str::SmolStr;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::ImplId;
 use crate::corelib::{
-    CoreTraitContext, LiteralError, core_box_ty, core_felt252_ty, core_nonzero_ty, get_core_trait,
+    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, get_core_trait,
     get_core_ty_by_name, try_extract_nz_wrapped_type, validate_literal,
 };
 use crate::db::SemanticGroup;
@@ -34,6 +34,7 @@ use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
+use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{
     ConcreteTypeId, ConcreteVariant, Expr, ExprBlock, ExprConstant, ExprFunctionCall,
@@ -319,6 +320,11 @@ pub fn constant_semantic_data_helper(
     ctx.resolver.inference().finalize(ctx.diagnostics, constant_ast.stable_ptr().untyped());
     ctx.apply_inference_rewriter_to_exprs();
 
+    let const_value = ctx
+        .resolver
+        .inference()
+        .rewrite(const_value)
+        .unwrap_or_else(|_| ConstValue::Missing(skip_diagnostic()).intern(db));
     let resolver_data = Arc::new(ctx.resolver.data);
     let constant = Constant { value: value.id, exprs: Arc::new(ctx.arenas.exprs) };
     Ok(ConstantData {
@@ -455,11 +461,29 @@ pub fn evaluate_constant_expr(
                 .collect(),
             expr.ty,
         ),
-        Expr::StructCtor(ExprStructCtor { members, base_struct: None, ty, .. }) => {
+        Expr::StructCtor(ExprStructCtor {
+            members,
+            base_struct: None,
+            ty,
+            concrete_struct_id,
+            ..
+        }) => {
+            let member_order = match db.concrete_struct_members(*concrete_struct_id) {
+                Ok(member_order) => member_order,
+                Err(diag_add) => return ConstValue::Missing(diag_add),
+            };
             ConstValue::Struct(
-                members
-                    .iter()
-                    .map(|(_, expr_id)| evaluate_constant_expr(db, exprs, *expr_id, diagnostics))
+                member_order
+                    .values()
+                    .map(|m| {
+                        members
+                            .iter()
+                            .find(|(member_id, _)| m.id == *member_id)
+                            .map(|(_, expr_id)| {
+                                evaluate_constant_expr(db, exprs, *expr_id, diagnostics)
+                            })
+                            .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic()))
+                    })
                     .collect(),
                 *ty,
             )
@@ -575,7 +599,7 @@ fn evaluate_const_function_call(
         expr.function.get_concrete(db.upcast()).generic_function,
         GenericFunctionId::Impl
     );
-    let is_felt252_ty = expr.ty == core_felt252_ty(db.upcast());
+    let is_felt252_ty = expr.ty == db.core_felt252_ty();
     let mut value = match imp.function.name(db.upcast()).as_str() {
         "neg" => -&args[0],
         "add" => &args[0] + &args[1],

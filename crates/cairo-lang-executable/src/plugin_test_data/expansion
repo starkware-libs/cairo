@@ -1,0 +1,57 @@
+//! > Basic executable.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[executable]
+fn main() {}
+
+//! > generated_cairo_code
+#[executable]
+fn main() {}
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
+#[executable_raw]
+fn __executable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
+
+    assert(core::array::SpanTrait::is_empty(input), 'Input too long for params.');
+    let __result = @main(
+    );
+    Serde::serialize(__result, ref output);
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test executable with arguments.
+
+//! > test_runner_name
+ExpandExecutableTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[executable]
+fn main(a: felt252, b: felt252) -> felt252 {
+    a + b
+}
+
+//! > generated_cairo_code
+#[executable]
+fn main(a: felt252, b: felt252) -> felt252 {
+    a + b
+}
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod)]
+#[executable_raw]
+fn __executable_wrapper__main(mut input: Span<felt252>, ref output: Array<felt252>) {
+
+    let __param__executable_wrapper__0 = Serde::deserialize(ref input).expect('Failed to deserialize param #0');
+    let __param__executable_wrapper__1 = Serde::deserialize(ref input).expect('Failed to deserialize param #1');
+    assert(core::array::SpanTrait::is_empty(input), 'Input too long for params.');
+    let __result = @main(
+        __param__executable_wrapper__0,
+        __param__executable_wrapper__1,
+    );
+    Serde::serialize(__result, ref output);
+}
+
+//! > expected_diagnostics

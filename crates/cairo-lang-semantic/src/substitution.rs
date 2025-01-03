@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
@@ -12,9 +13,10 @@ use cairo_lang_utils::{LookupIntern, extract_matches};
 use itertools::zip_eq;
 
 use crate::db::SemanticGroup;
+use crate::expr::inference::canonic::CanonicalTrait;
 use crate::expr::inference::{
-    ConstVar, ImplVar, ImplVarId, InferenceId, InferenceVar, LocalConstVarId, LocalImplVarId,
-    LocalTypeVarId, TypeVar,
+    ConstVar, ImplVar, ImplVarId, ImplVarTraitItemMappings, InferenceId, InferenceVar,
+    LocalConstVarId, LocalImplVarId, LocalTypeVarId, TypeVar,
 };
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{
@@ -27,7 +29,10 @@ use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
+    ConcreteTraitTypeLongId,
+};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeId,
@@ -197,18 +202,31 @@ impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Box<T>, E> for TR
     }
 }
 
-impl<T: Clone, V: Clone, E, TRewriter: SemanticRewriter<V, E>>
+impl<T: Clone + Hash + Eq, V: Clone, E, TRewriter: SemanticRewriter<V, E> + SemanticRewriter<T, E>>
     SemanticRewriter<OrderedHashMap<T, V>, E> for TRewriter
 {
     fn internal_rewrite(&mut self, value: &mut OrderedHashMap<T, V>) -> Result<RewriteResult, E> {
         let mut result = RewriteResult::NoChange;
-        for el in value.iter_mut() {
-            match self.internal_rewrite(el.1)? {
+        let mut changed_key = Vec::new();
+        for (k, v) in value.iter_mut() {
+            let mut temp_key = k.clone();
+            match self.internal_rewrite(&mut temp_key)? {
+                RewriteResult::Modified => {
+                    changed_key.push((k.clone(), temp_key));
+                    result = RewriteResult::Modified;
+                }
+                RewriteResult::NoChange => {}
+            }
+            match self.internal_rewrite(v)? {
                 RewriteResult::Modified => {
                     result = RewriteResult::Modified;
                 }
                 RewriteResult::NoChange => {}
             }
+        }
+        for (old_key, new_key) in changed_key {
+            let v = value.swap_remove(&old_key).unwrap();
+            value.insert(new_key, v);
         }
 
         Ok(result)
@@ -343,6 +361,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteExternTypeLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitLongId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ConcreteTraitTypeId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ConcreteTraitTypeLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteImplLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionLongId, $($exclude)*);
@@ -360,6 +380,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, UninferredImpl, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVarMemberPath, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ImplVarTraitItemMappings, $($exclude)*);
+        $crate::prune_single!(__regular_helper, CanonicalTrait, $($exclude)*);
     };
 }
 

@@ -122,20 +122,17 @@ use X::R as RR;
 
 //! > expr_code
 { 
-    let _y = RR { a: 3 };
+    RR { a: 3 };
     use X::R;
-    let _x = R { a: 4 }; 
+    R { a: 4 }
 }
 
 //! > expected_semantics
 Block(
     ExprBlock {
         statements: [
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _y,
-                    ),
+            Expr(
+                StatementExpr {
                     expr: StructCtor(
                         ExprStructCtor {
                             concrete_struct_id: test::X::R,
@@ -159,34 +156,28 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: StructCtor(
-                        ExprStructCtor {
-                            concrete_struct_id: test::X::R,
-                            members: [
-                                (
-                                    MemberId(test::X::a),
-                                    Literal(
-                                        ExprLiteral {
-                                            value: 4,
-                                            ty: core::integer::u8,
-                                        },
-                                    ),
-                                ),
-                            ],
-                            base_struct: None,
-                            ty: test::X::R,
-                        },
-                    ),
+        ],
+        tail: Some(
+            StructCtor(
+                ExprStructCtor {
+                    concrete_struct_id: test::X::R,
+                    members: [
+                        (
+                            MemberId(test::X::a),
+                            Literal(
+                                ExprLiteral {
+                                    value: 4,
+                                    ty: core::integer::u8,
+                                },
+                            ),
+                        ),
+                    ],
+                    base_struct: None,
+                    ty: test::X::R,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R,
     },
 )
 
@@ -211,20 +202,17 @@ use X::R as RR;
 
 //! > expr_code
 { 
-    let _y = RR::<u8> { a: 3 };
+    RR::<u8> { a: 3 };
     use X::R;
-    let _x = R::<u8> { a: 4 }; 
+    R::<u8> { a: 4 }
 }
 
 //! > expected_semantics
 Block(
     ExprBlock {
         statements: [
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _y,
-                    ),
+            Expr(
+                StatementExpr {
                     expr: StructCtor(
                         ExprStructCtor {
                             concrete_struct_id: test::X::R::<core::integer::u8>,
@@ -248,34 +236,28 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: StructCtor(
-                        ExprStructCtor {
-                            concrete_struct_id: test::X::R::<core::integer::u8>,
-                            members: [
-                                (
-                                    MemberId(test::X::a),
-                                    Literal(
-                                        ExprLiteral {
-                                            value: 4,
-                                            ty: core::integer::u8,
-                                        },
-                                    ),
-                                ),
-                            ],
-                            base_struct: None,
-                            ty: test::X::R::<core::integer::u8>,
-                        },
-                    ),
+        ],
+        tail: Some(
+            StructCtor(
+                ExprStructCtor {
+                    concrete_struct_id: test::X::R::<core::integer::u8>,
+                    members: [
+                        (
+                            MemberId(test::X::a),
+                            Literal(
+                                ExprLiteral {
+                                    value: 4,
+                                    ty: core::integer::u8,
+                                },
+                            ),
+                        ),
+                    ],
+                    base_struct: None,
+                    ty: test::X::R::<core::integer::u8>,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R::<core::integer::u8>,
     },
 )
 
@@ -301,20 +283,17 @@ use X::R as RR;
 
 //! > expr_code
 { 
-    let _y = RR::A(2);
+    RR::A(2);
     use X::R;
-    let _x = R::B(3); 
+    R::B(3)
 }
 
 //! > expected_semantics
 Block(
     ExprBlock {
         statements: [
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _y,
-                    ),
+            Expr(
+                StatementExpr {
                     expr: EnumVariantCtor(
                         ExprEnumVariantCtor {
                             variant: R::A,
@@ -332,28 +311,22 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: R::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::X::R,
+        ],
+        tail: Some(
+            EnumVariantCtor(
+                ExprEnumVariantCtor {
+                    variant: R::B,
+                    value_expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u16,
                         },
                     ),
+                    ty: test::X::R,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R,
     },
 )
 
@@ -379,20 +352,17 @@ use X::R as RR;
 
 //! > expr_code
 { 
-    let _y = RR::<u8>::A(2);
+    RR::<u8>::A(2);
     use X::R;
-    let _x = R::<u16>::B(3); 
+    R::<u16>::B(3)
 }
 
 //! > expected_semantics
 Block(
     ExprBlock {
         statements: [
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _y,
-                    ),
+            Expr(
+                StatementExpr {
                     expr: EnumVariantCtor(
                         ExprEnumVariantCtor {
                             variant: R::A,
@@ -410,28 +380,22 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: R::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::X::R::<core::integer::u16>,
+        ],
+        tail: Some(
+            EnumVariantCtor(
+                ExprEnumVariantCtor {
+                    variant: R::B,
+                    value_expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u16,
                         },
                     ),
+                    ty: test::X::R::<core::integer::u16>,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R::<core::integer::u16>,
     },
 )
 
@@ -449,8 +413,7 @@ mod X {
     extern type R;
     extern fn new_r() -> R nopanic;
 }
-use X::R as RR;
-use X::new_r;
+use X::{R as RR, new_r};
 
 //! > function_body
 
@@ -518,8 +481,7 @@ mod X {
     extern type R<T>;
     extern fn new_r<T>() -> R<T> nopanic;
 }
-use X::R as RR;
-use X::new_r;
+use X::{R as RR, new_r};
 
 //! > function_body
 
@@ -575,12 +537,12 @@ Block(
 
 //! > expected_diagnostics
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:9:9
+ --> lib.cairo:8:9
     let y: RR::<u8> = new_r();
         ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:11:9
+ --> lib.cairo:10:9
     let x: R::<u16> = new_r();
         ^
 
@@ -608,8 +570,8 @@ mod R {
 //! > expr_code
 { 
     use X::R;
-    let _y = R::C;
-    let _x = R::B(3); 
+    R::C;
+    R::B(3)
 }
 
 //! > expected_semantics
@@ -619,11 +581,8 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _y,
-                    ),
+            Expr(
+                StatementExpr {
                     expr: Missing(
                         ExprMissing {
                             ty: <missing>,
@@ -631,36 +590,30 @@ Block(
                     ),
                 },
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: R::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::X::R,
+        ],
+        tail: Some(
+            EnumVariantCtor(
+                ExprEnumVariantCtor {
+                    variant: R::B,
+                    value_expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u16,
                         },
                     ),
+                    ty: test::X::R,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R,
     },
 )
 
 //! > expected_diagnostics
 error: Enum "test::X::R" has no variant "C"
- --> lib.cairo:14:17
-    let _y = R::C;
-                ^
+ --> lib.cairo:14:8
+    R::C;
+       ^
 
 //! > ==========================================================================
 
@@ -685,7 +638,7 @@ const R: u8 = 3;
 { 
     use X::R;
     let _y = R;
-    let _x = R::B(3);
+    R::B(3)
 }
 
 //! > expected_semantics
@@ -707,28 +660,22 @@ Block(
                     ),
                 },
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: R::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::X::R,
+        ],
+        tail: Some(
+            EnumVariantCtor(
+                ExprEnumVariantCtor {
+                    variant: R::B,
+                    value_expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u16,
                         },
                     ),
+                    ty: test::X::R,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R,
     },
 )
 
@@ -752,7 +699,6 @@ mod X {
         B: u16,
     }
 }
-
 use X::R;
 
 //! > function_body
@@ -760,9 +706,8 @@ use X::R;
 //! > expr_code
 { 
     const R: u8 = 3;
-
     let _y = R;
-    let _x = R::B(3);
+    R::B(3)
 }
 
 //! > expected_semantics
@@ -785,28 +730,22 @@ Block(
                     ),
                 },
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        _x,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: R::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::X::R,
+        ],
+        tail: Some(
+            EnumVariantCtor(
+                ExprEnumVariantCtor {
+                    variant: R::B,
+                    value_expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::integer::u16,
                         },
                     ),
+                    ty: test::X::R,
                 },
             ),
-        ],
-        tail: None,
-        ty: (),
+        ),
+        ty: test::X::R,
     },
 )
 
@@ -829,7 +768,6 @@ pub mod generic_type {
         B: u16,
     }
 }
-
 use generic_type::E as EE;
 
 //! > function_body
@@ -837,13 +775,11 @@ use generic_type::E as EE;
 //! > expr_code
 { 
     use generic_type::E;
-    let b = EE::B(3);
-    match b {
+    match EE::B(3) {
         EE::A(_) => {},
         EE::B(_) => {},
     }
-    let e = E::A(1);
-    match e {
+    match E::A(1) {
         E::A(_) => {},
         E::B(_) => {},
     }
@@ -856,31 +792,21 @@ Block(
             Item(
                 StatementItem,
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        b,
-                    ),
-                    expr: EnumVariantCtor(
-                        ExprEnumVariantCtor {
-                            variant: E::B,
-                            value_expr: Literal(
-                                ExprLiteral {
-                                    value: 3,
-                                    ty: core::integer::u16,
-                                },
-                            ),
-                            ty: test::generic_type::E,
-                        },
-                    ),
-                },
-            ),
             Expr(
                 StatementExpr {
                     expr: Match(
                         ExprMatch {
-                            matched_expr: Var(
-                                LocalVarId(test::b),
+                            matched_expr: EnumVariantCtor(
+                                ExprEnumVariantCtor {
+                                    variant: E::B,
+                                    value_expr: Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::integer::u16,
+                                        },
+                                    ),
+                                    ty: test::generic_type::E,
+                                },
                             ),
                             arms: [
                                 MatchArm {
@@ -937,12 +863,11 @@ Block(
                     ),
                 },
             ),
-            Let(
-                StatementLet {
-                    pattern: Variable(
-                        e,
-                    ),
-                    expr: EnumVariantCtor(
+        ],
+        tail: Some(
+            Match(
+                ExprMatch {
+                    matched_expr: EnumVariantCtor(
                         ExprEnumVariantCtor {
                             variant: E::A,
                             value_expr: Literal(
@@ -953,15 +878,6 @@ Block(
                             ),
                             ty: test::generic_type::E,
                         },
-                    ),
-                },
-            ),
-        ],
-        tail: Some(
-            Match(
-                ExprMatch {
-                    matched_expr: Var(
-                        LocalVarId(test::e),
                     ),
                     arms: [
                         MatchArm {
@@ -1018,6 +934,427 @@ Block(
             ),
         ),
         ty: (),
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing simple use star usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+pub mod a {
+    pub const IN_A: u8 = 2;
+}
+pub mod use_a_star {
+    use super::a::*;
+}
+
+//! > function_body
+
+//! > expr_code
+use_a_star::IN_A
+
+//! > expected_semantics
+Constant(
+    ExprConstant {
+        const_value_id: 2,
+        ty: core::integer::u8,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star mutual usage
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    use super::b::*;
+}
+
+mod b {
+    use super::a::*;
+}
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star recursive import
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: warnings_only)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    use a::a::a::a as b;
+    use super::*;
+}
+
+//! > function_body
+
+//! > expr_code
+{}
+
+//! > expected_semantics
+Block(
+    ExprBlock {
+        statements: [],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+warning: Unused import: `test::a::b`
+ --> lib.cairo:2:18
+    use a::a::a::a as b;
+                 ^^^^^^
+
+//! > ==========================================================================
+
+//! > Testing use star imported non public module
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        pub const ACCESSIBLE: u8 = 1;
+    }
+}
+use a::b::*;
+
+//! > function_body
+
+//! > expr_code
+ACCESSIBLE
+
+//! > expected_semantics
+Constant(
+    ExprConstant {
+        const_value_id: 1,
+        ty: core::integer::u8,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star public path
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        pub const C: u8 = 1;
+    }
+}
+
+mod c {
+    pub mod d {
+        pub use super::super::a::b::*;
+    }
+}
+use c::d::*;
+
+//! > function_body
+
+//! > expr_code
+C
+
+//! > expected_semantics
+Constant(
+    ExprConstant {
+        const_value_id: 1,
+        ty: core::integer::u8,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star accessible module crate
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        pub const C: u8 = 1;
+    }
+}
+use a::*;
+
+//! > function_body
+
+//! > expr_code
+b::C
+
+//! > expected_semantics
+Constant(
+    ExprConstant {
+        const_value_id: 1,
+        ty: core::integer::u8,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Testing use star taking best path
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub mod b {
+        pub const C: u8 = 1;
+    }
+}
+
+mod c {
+    pub mod d {
+        pub use super::super::a::b::*;
+    }
+}
+
+mod e {
+    pub mod f {
+        use super::super::a::b::*;
+    }
+}
+use c::d::*;
+use e::f::*;
+
+//! > function_body
+
+//! > expr_code
+C
+
+//! > expected_semantics
+Constant(
+    ExprConstant {
+        const_value_id: 1,
+        ty: core::integer::u8,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Trait import impl through use star.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub trait MyTrait<T> {
+        fn foo(self: T) -> T;
+    }
+}
+mod b {
+    pub struct V {}
+    impl VMyTrait of super::a::MyTrait<V> {
+        fn foo(self: V) -> V {
+            self
+        }
+    }
+}
+use a::*;
+
+//! > function_body
+
+//! > expr_code
+b::V {}.foo()
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: test::b::VMyTrait::foo,
+        args: [
+            Value(
+                StructCtor(
+                    ExprStructCtor {
+                        concrete_struct_id: test::b::V,
+                        members: [],
+                        base_struct: None,
+                        ty: test::b::V,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: None,
+        ty: test::b::V,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Impl import trait through use star.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub trait MyTrait<T> {
+        fn foo(self: T) -> T;
+    }
+}
+mod b {
+    pub impl VMyTrait of super::a::MyTrait<super::c::V> {
+        fn foo(self: super::c::V) -> super::c::V {
+            self
+        }
+    }
+}
+
+mod c {
+    pub struct V {}
+}
+use b::*;
+
+//! > function_body
+
+//! > expr_code
+c::V {}.foo()
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: test::b::VMyTrait::foo,
+        args: [
+            Value(
+                StructCtor(
+                    ExprStructCtor {
+                        concrete_struct_id: test::c::V,
+                        members: [],
+                        base_struct: None,
+                        ty: test::c::V,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: None,
+        ty: test::c::V,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Struct import impl through use star.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+pub trait MyTrait<T> {
+    fn foo(t: T) -> T;
+}
+mod b {
+    pub impl VMyTrait of super::MyTrait<super::c::V> {
+        fn foo(t: super::c::V) -> super::c::V {
+            t
+        }
+    }
+}
+
+mod c {
+    use super::b::*;
+    pub struct V {}
+}
+
+//! > function_body
+
+//! > expr_code
+MyTrait::foo(c::V {})
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: test::b::VMyTrait::foo,
+        args: [
+            Value(
+                StructCtor(
+                    ExprStructCtor {
+                        concrete_struct_id: test::c::V,
+                        members: [],
+                        base_struct: None,
+                        ty: test::c::V,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: None,
+        ty: test::c::V,
     },
 )
 

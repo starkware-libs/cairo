@@ -82,21 +82,6 @@ fn libfunc_cost(idx: usize) -> CostExpr {
                 (future_statement_cost(0) -future_statement_cost(1) - CostExpr::from_const(1)),
             ]);
             "simple cycle")]
-#[test_case(indoc! {"
-                return();
-                test_program@1() -> ();
-            "},
-            HashMap::new() =>
-            Err(CostError::StatementOutOfBounds(StatementIdx(1)));
-            "handle bad function entry point")]
-#[test_case(indoc! {"
-                jump() { 4() };
-                return();
-                test_program@0() -> ();
-            "},
-            HashMap::new() =>
-            Err(CostError::StatementOutOfBounds(StatementIdx(4)));
-            "handle bad jump target")]
 fn generate(
     code: &str,
     costs: HashMap<ConcreteLibfuncId, Vec<CostExpr>>,

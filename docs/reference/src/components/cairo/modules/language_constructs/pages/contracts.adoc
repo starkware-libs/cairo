@@ -30,8 +30,8 @@ module as a contract.
 == Storage
 
 
-Unlike a Cairo program, which is stateless, a Starknet contract has a state, called “the contract’s
-storage”.
+Unlike a Cairo program, which is stateless, a Starknet contract has a state, called "the contract’s
+storage".
 Transactions invoked on such contracts may modify this state.
 
 In a contract, you can define a struct named `Storage`. The members of this struct are the storage

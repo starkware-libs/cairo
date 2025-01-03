@@ -7,8 +7,8 @@ pub trait GetSupply<TContractState> {
 pub mod contract_with_4_components {
     use starknet::ContractAddress;
     use crate::components::erc20::erc20 as erc20_comp;
-    use crate::components::ownable::ownable as ownable_comp;
     use crate::components::mintable::mintable as mintable_comp;
+    use crate::components::ownable::ownable as ownable_comp;
     use crate::components::upgradable::upgradable as upgradable_comp;
     #[storage]
     struct Storage {

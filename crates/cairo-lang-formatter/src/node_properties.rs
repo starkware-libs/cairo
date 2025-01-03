@@ -324,31 +324,56 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::PatternFixedSizeArray => Some(10),
                 _ => None,
             },
-            Some(SyntaxKind::StatementLet) => match self.kind(db) {
-                SyntaxKind::ExprBinary
-                | SyntaxKind::ExprBlock
-                | SyntaxKind::ExprErrorPropagate
-                | SyntaxKind::ExprFieldInitShorthand
-                | SyntaxKind::ExprFunctionCall
-                | SyntaxKind::ExprIf
-                | SyntaxKind::ExprList
-                | SyntaxKind::ExprMatch
-                | SyntaxKind::ExprMissing
-                | SyntaxKind::ExprParenthesized
-                | SyntaxKind::ExprPath
-                | SyntaxKind::ExprStructCtorCall
-                | SyntaxKind::ExprListParenthesized
-                | SyntaxKind::ArgListBraced
-                | SyntaxKind::ArgListBracketed
-                | SyntaxKind::ExprUnary => Some(1),
-                SyntaxKind::TerminalEq => Some(10),
-                SyntaxKind::PatternEnum
-                | SyntaxKind::PatternTuple
-                | SyntaxKind::PatternStruct
-                | SyntaxKind::PatternFixedSizeArray => Some(11),
-                SyntaxKind::TypeClause => Some(12),
-                _ => None,
-            },
+            Some(SyntaxKind::StatementLet) => {
+                let let_statement = ast::StatementLet::from_syntax_node(db, self.parent().unwrap());
+                let pattern = let_statement.pattern(db).as_syntax_node();
+
+                if pattern.kind(db) == SyntaxKind::PatternStruct {
+                    // Calculate the number of descendants for the pattern (LHS) and RHS of the
+                    // `let` statement. The `pattern_count` represents the total
+                    // number of nested nodes in the pattern, while `rhs_count`
+                    // is limited to at most `pattern_count + 1` descendants.
+                    let pattern_count = pattern.descendants(db).count();
+
+                    // Limiting `rhs_count` ensures that we don't traverse deeply nested structures
+                    // unnecessarily. If the RHS has more descendants than
+                    // `pattern_count`, we can conclude that the RHS is more
+                    // complex without fully iterating over all descendants.
+                    let rhs_count = let_statement
+                        .rhs(db)
+                        .as_syntax_node()
+                        .descendants(db)
+                        .take(pattern_count + 1)
+                        .count();
+
+                    if pattern_count > rhs_count { Some(9) } else { Some(11) }
+                } else {
+                    match self.kind(db) {
+                        SyntaxKind::ExprBinary
+                        | SyntaxKind::ExprBlock
+                        | SyntaxKind::ExprErrorPropagate
+                        | SyntaxKind::ExprFieldInitShorthand
+                        | SyntaxKind::ExprFunctionCall
+                        | SyntaxKind::ExprIf
+                        | SyntaxKind::ExprList
+                        | SyntaxKind::ExprMatch
+                        | SyntaxKind::ExprMissing
+                        | SyntaxKind::ExprParenthesized
+                        | SyntaxKind::ExprPath
+                        | SyntaxKind::ExprStructCtorCall
+                        | SyntaxKind::ExprListParenthesized
+                        | SyntaxKind::ArgListBraced
+                        | SyntaxKind::ArgListBracketed
+                        | SyntaxKind::ExprUnary => Some(1),
+                        SyntaxKind::TerminalEq => Some(10),
+                        SyntaxKind::PatternEnum
+                        | SyntaxKind::PatternTuple
+                        | SyntaxKind::PatternFixedSizeArray => Some(11),
+                        SyntaxKind::TypeClause => Some(12),
+                        _ => None,
+                    }
+                }
+            }
             Some(SyntaxKind::ItemConstant) => match self.kind(db) {
                 SyntaxKind::ExprBinary
                 | SyntaxKind::ExprBlock
@@ -458,6 +483,20 @@ impl SyntaxNodeFormat for SyntaxNode {
                 ))
             }
             _ => match self.kind(db) {
+                SyntaxKind::PatternStructParamList => {
+                    let leading_break_point = BreakLinePointProperties::new(
+                        2,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        true,
+                    );
+                    let mut trailing_break_point = leading_break_point.clone();
+                    trailing_break_point.set_comma_if_broken();
+                    BreakLinePointsPositions::Both {
+                        leading: leading_break_point,
+                        trailing: trailing_break_point,
+                    }
+                }
                 SyntaxKind::ExprList | SyntaxKind::PatternList => {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
@@ -648,7 +687,12 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalMul if parent_kind(db, self) != Some(SyntaxKind::ExprUnary) => {
+                SyntaxKind::TerminalMul
+                    if !matches!(
+                        parent_kind(db, self),
+                        Some(SyntaxKind::ExprUnary | SyntaxKind::UsePathStar)
+                    ) =>
+                {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         10,
                         BreakLinePointIndentation::Indented,

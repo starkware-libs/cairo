@@ -69,6 +69,18 @@ pub enum CollectionsBreakingBehavior {
     LineByLine,
 }
 
+/// Impl CollectionsBreakingBehavior from bool, where true is `LineByLine` and false is
+/// `SingleBreakPoint`. This adheres to the existing behavior of the formatter CLI.
+impl From<bool> for CollectionsBreakingBehavior {
+    fn from(b: bool) -> Self {
+        if b {
+            CollectionsBreakingBehavior::LineByLine
+        } else {
+            CollectionsBreakingBehavior::SingleBreakPoint
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct FormatterConfig {
@@ -77,6 +89,8 @@ pub struct FormatterConfig {
     sort_module_level_items: bool,
     tuple_breaking_behavior: CollectionsBreakingBehavior,
     fixed_array_breaking_behavior: CollectionsBreakingBehavior,
+    merge_use_items: bool,
+    allow_duplicate_uses: bool,
 }
 
 // Config params
@@ -91,6 +105,8 @@ impl FormatterConfig {
         sort_module_level_items: bool,
         tuple_breaking_behavior: CollectionsBreakingBehavior,
         fixed_array_breaking_behavior: CollectionsBreakingBehavior,
+        merge_use_items: bool,
+        allow_duplicate_uses: bool,
     ) -> Self {
         Self {
             tab_size,
@@ -98,21 +114,47 @@ impl FormatterConfig {
             sort_module_level_items,
             tuple_breaking_behavior,
             fixed_array_breaking_behavior,
+            merge_use_items,
+            allow_duplicate_uses,
         }
     }
 
-    pub fn sort_module_level_items(mut self, sort_module_level_items: bool) -> Self {
-        self.sort_module_level_items = sort_module_level_items;
+    pub fn sort_module_level_items(mut self, sort_module_level_items: Option<bool>) -> Self {
+        if let Some(sort) = sort_module_level_items {
+            self.sort_module_level_items = sort;
+        }
         self
     }
 
-    pub fn tuple_breaking_behavior(mut self, behavior: CollectionsBreakingBehavior) -> Self {
-        self.tuple_breaking_behavior = behavior;
+    pub fn tuple_breaking_behavior(
+        mut self,
+        behavior: Option<CollectionsBreakingBehavior>,
+    ) -> Self {
+        if let Some(behavior) = behavior {
+            self.tuple_breaking_behavior = behavior;
+        }
         self
     }
 
-    pub fn fixed_array_breaking_behavior(mut self, behavior: CollectionsBreakingBehavior) -> Self {
-        self.fixed_array_breaking_behavior = behavior;
+    pub fn fixed_array_breaking_behavior(
+        mut self,
+        behavior: Option<CollectionsBreakingBehavior>,
+    ) -> Self {
+        if let Some(behavior) = behavior {
+            self.fixed_array_breaking_behavior = behavior;
+        }
+        self
+    }
+    pub fn merge_use_items(mut self, merge: Option<bool>) -> Self {
+        if let Some(merge) = merge {
+            self.merge_use_items = merge;
+        }
+        self
+    }
+    pub fn allow_duplicate_uses(mut self, allow: Option<bool>) -> Self {
+        if let Some(allow) = allow {
+            self.allow_duplicate_uses = allow;
+        }
         self
     }
 }
@@ -121,9 +163,11 @@ impl Default for FormatterConfig {
         Self {
             tab_size: TAB_SIZE,
             max_line_length: MAX_LINE_LENGTH,
-            sort_module_level_items: false,
+            sort_module_level_items: true,
             tuple_breaking_behavior: CollectionsBreakingBehavior::LineByLine,
             fixed_array_breaking_behavior: CollectionsBreakingBehavior::SingleBreakPoint,
+            merge_use_items: true,
+            allow_duplicate_uses: false,
         }
     }
 }

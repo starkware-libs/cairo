@@ -46,4 +46,4 @@ error: Type not found.
 error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u8`, actual: `core::integer::u16`.
  --> lib.cairo:7:28
     fn foo(x: T, y: u8, z: u16) -> T {}
-                           ^*^
+                           ^^^

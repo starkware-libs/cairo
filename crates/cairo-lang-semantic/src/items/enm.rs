@@ -13,6 +13,7 @@ use itertools::enumerate;
 use smol_str::SmolStr;
 
 use super::attribute::SemanticQueryAttrs;
+use super::feature_kind::extract_item_feature_config;
 use super::generics::{GenericParamsData, semantic_generic_params};
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
@@ -209,6 +210,10 @@ pub fn priv_enum_definition_data(
     let mut variants = OrderedHashMap::default();
     let mut variant_semantic = OrderedHashMap::default();
     for (variant_idx, variant) in enumerate(enum_ast.variants(syntax_db).elements(syntax_db)) {
+        let feature_restore = resolver
+            .data
+            .feature_config
+            .override_with(extract_item_feature_config(db, &variant, &mut diagnostics));
         let id = VariantLongId(module_file_id, variant.stable_ptr()).intern(db);
         let ty = match variant.type_clause(syntax_db) {
             ast::OptionTypeClause::Empty(_) => unit_ty(db),
@@ -221,6 +226,7 @@ pub fn priv_enum_definition_data(
             diagnostics.report(&variant, EnumVariantRedefinition { enum_id, variant_name });
         }
         variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
+        resolver.data.feature_config.restore(feature_restore);
     }
 
     // Check fully resolved.

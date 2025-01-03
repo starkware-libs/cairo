@@ -1,15 +1,15 @@
-use std::collections::HashMap;
 use std::hash::Hash;
 
 use cairo_lang_defs::ids::{TraitConstantId, TraitTypeId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::{Intern, LookupIntern};
 use itertools::zip_eq;
 
 use super::canonic::{NoError, ResultNoErrEx};
 use super::{
     ErrorSet, ImplVarId, ImplVarTraitItemMappings, Inference, InferenceError, InferenceResult,
-    InferenceVar,
+    InferenceVar, LocalTypeVarId, TypeVar,
 };
 use crate::corelib::never_ty;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
@@ -17,7 +17,7 @@ use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ImplId, ImplImplId, ImplLongId, ImplLookupContext};
 use crate::items::trt::ConcreteTraitImplId;
 use crate::substitution::SemanticRewriter;
-use crate::types::{ImplTypeId, peel_snapshots};
+use crate::types::{ClosureTypeLongId, ImplTypeId, peel_snapshots};
 use crate::{
     ConcreteFunction, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId,
     FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
@@ -110,13 +110,12 @@ impl InferenceConform for Inference<'_> {
                 }
             }
             TypeLongId::ImplType(impl_type) => {
-                if let Some(ty) = self.impl_type_bounds.get(&impl_type) {
+                if let Some(ty) = self.impl_type_bounds.get(&impl_type.into()) {
                     return self.conform_ty_ex(ty0, *ty, ty0_is_self);
                 }
             }
             _ => {}
         }
-        let n_snapshots = 0;
         let long_ty0 = ty0.lookup_intern(self.db);
 
         match long_ty0 {
@@ -159,8 +158,24 @@ impl InferenceConform for Inference<'_> {
                 if closure0.wrapper_location != closure1.wrapper_location {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 }
-
-                Ok((TypeLongId::Closure(closure0).intern(self.db), n_snapshots))
+                let param_tys = zip_eq(closure0.param_tys, closure1.param_tys)
+                    .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let captured_types = zip_eq(closure0.captured_types, closure1.captured_types)
+                    .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let ret_ty = self.conform_ty(closure0.ret_ty, closure1.ret_ty)?;
+                Ok((
+                    TypeLongId::Closure(ClosureTypeLongId {
+                        param_tys,
+                        ret_ty,
+                        captured_types,
+                        wrapper_location: closure0.wrapper_location,
+                        parent_function: closure0.parent_function,
+                    })
+                    .intern(self.db),
+                    n_snapshots,
+                ))
             }
             TypeLongId::FixedSizeArray { type_id, size } => {
                 let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
@@ -171,11 +186,11 @@ impl InferenceConform for Inference<'_> {
                 let ty = self.conform_ty(type_id, type_id1)?;
                 Ok((TypeLongId::FixedSizeArray { type_id: ty, size }.intern(self.db), n_snapshots))
             }
-            TypeLongId::Snapshot(ty0) => {
-                let TypeLongId::Snapshot(ty1) = long_ty1 else {
+            TypeLongId::Snapshot(inner_ty0) => {
+                let TypeLongId::Snapshot(inner_ty1) = long_ty1 else {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
-                let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
+                let (ty, n_snapshots) = self.conform_ty_ex(inner_ty0, inner_ty1, ty0_is_self)?;
                 Ok((TypeLongId::Snapshot(ty).intern(self.db), n_snapshots))
             }
             TypeLongId::GenericParameter(_) => {
@@ -186,14 +201,14 @@ impl InferenceConform for Inference<'_> {
                 // don't panic in case of a bug.
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
-            TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, n_snapshots)),
+            TypeLongId::Var(var) => Ok((self.assign_ty(var, ty1)?, 0)),
             TypeLongId::ImplType(impl_type) => {
-                if let Some(ty) = self.impl_type_bounds.get(&impl_type) {
+                if let Some(ty) = self.impl_type_bounds.get(&impl_type.into()) {
                     return self.conform_ty_ex(*ty, ty1, ty0_is_self);
                 }
                 Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }))
             }
-            TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
+            TypeLongId::Missing(_) => Ok((ty0, 0)),
             TypeLongId::Coupon(function_id0) => {
                 let TypeLongId::Coupon(function_id1) = long_ty1 else {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
@@ -220,7 +235,7 @@ impl InferenceConform for Inference<'_> {
                         .intern(self.db),
                     )
                     .intern(self.db),
-                    n_snapshots,
+                    0,
                 ))
             }
         }
@@ -608,7 +623,7 @@ impl Inference<'_> {
         &mut self,
         id: ImplVarId,
         key: K,
-        get_map: impl Fn(&mut ImplVarTraitItemMappings) -> &mut HashMap<K, V>,
+        get_map: impl Fn(&mut ImplVarTraitItemMappings) -> &mut OrderedHashMap<K, V>,
         new_var: impl FnOnce(&mut Self, Option<SyntaxStablePtrId>) -> V,
     ) -> V
     where
@@ -690,6 +705,46 @@ impl Inference<'_> {
             TypeLongId::Closure(closure) => {
                 closure.param_tys.into_iter().any(|ty| self.internal_ty_contains_var(ty, var))
                     || self.internal_ty_contains_var(closure.ret_ty, var)
+            }
+        }
+    }
+
+    /// Creates a var for each constrained impl_type and conforms the types.
+    pub fn conform_generic_params_type_constraints(&mut self, constraints: &Vec<(TypeId, TypeId)>) {
+        let mut impl_type_bounds = Default::default();
+        for (ty0, ty1) in constraints {
+            let ty0 = if let TypeLongId::ImplType(impl_type) = ty0.lookup_intern(self.db) {
+                self.impl_type_assignment(impl_type, &mut impl_type_bounds)
+            } else {
+                *ty0
+            };
+            let ty1 = if let TypeLongId::ImplType(impl_type) = ty1.lookup_intern(self.db) {
+                self.impl_type_assignment(impl_type, &mut impl_type_bounds)
+            } else {
+                *ty1
+            };
+            self.conform_ty(ty0, ty1).ok();
+        }
+        self.set_impl_type_bounds(impl_type_bounds);
+    }
+
+    /// An helper function for getting for an impl type assignment.
+    /// Creates a new type var if the impl type is not yet assigned.
+    fn impl_type_assignment(
+        &mut self,
+        impl_type: ImplTypeId,
+        impl_type_bounds: &mut OrderedHashMap<ImplTypeId, TypeId>,
+    ) -> TypeId {
+        match impl_type_bounds.entry(impl_type) {
+            Entry::Occupied(entry) => *entry.get(),
+            Entry::Vacant(entry) => {
+                let inference_id = self.data.inference_id;
+                let id = LocalTypeVarId(self.data.type_vars.len());
+                let var = TypeVar { inference_id, id };
+                let ty = TypeLongId::Var(var).intern(self.db);
+                entry.insert(ty);
+                self.type_vars.push(var);
+                ty
             }
         }
     }

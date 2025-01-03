@@ -1,8 +1,0 @@
-//! > cairo_code
-struct _ {}
-
-//! > syntax
-struct               source.cairo keyword.declaration.struct.cairo storage.type.cairo
-_                    source.cairo variable.other.cairo
-{                    source.cairo punctuation.brackets.curly.cairo
-}                    source.cairo punctuation.brackets.curly.cairo

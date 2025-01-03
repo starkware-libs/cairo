@@ -1,6 +1,6 @@
 use std::ops::{Add, Sub};
 
-use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
+use cairo_lang_sierra::algorithm::topological_order::reverse_topological_ordering;
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
@@ -259,33 +259,31 @@ fn analyze_gas_statements<
     for (branch_info, branch_cost, branch_requirement) in
         zip_eq3(&invocation.branches, &libfunc_cost, &branch_requirements)
     {
-        let future_wallet_value = context.wallet_at(&idx.next(&branch_info.target)).value;
-        // TODO(lior): Consider checking that idx.next(&branch_info.target) is indeed branch
-        //   align.
         if let BranchCost::WithdrawGas(WithdrawGasBranchInfo { success: true, .. }) = branch_cost {
+            // Note that `idx.next(&branch_info.target)` is indeed branch align due to
+            // `ProgramRegistry::validate`.
+            let branch_align_idx = idx.next(&branch_info.target);
             let withdrawal = specific_context.get_gas_withdrawal(
                 idx,
                 branch_cost,
                 &wallet_value,
-                future_wallet_value,
+                context.wallet_at(&branch_align_idx).value,
             )?;
-            for (token_type, amount) in SpecificCostContext::to_full_cost_map(withdrawal) {
+            for (token_type, amount) in SpecificCostContext::into_full_cost_iter(withdrawal) {
                 assert_eq!(
                     variable_values.insert((*idx, token_type), std::cmp::max(amount, 0)),
                     None
                 );
 
                 assert_eq!(
-                    variable_values.insert(
-                        (idx.next(&branch_info.target), token_type),
-                        std::cmp::max(-amount, 0),
-                    ),
+                    variable_values
+                        .insert((branch_align_idx, token_type), std::cmp::max(-amount, 0)),
                     None
                 );
             }
         } else if let BranchCost::RedepositGas = branch_cost {
             let cost = wallet_value.clone() - branch_requirement.value.clone();
-            for (token_type, amount) in SpecificCostContext::to_full_cost_map(cost) {
+            for (token_type, amount) in SpecificCostContext::into_full_cost_iter(cost) {
                 assert_eq!(variable_values.insert((*idx, token_type), amount), None);
             }
         } else if let BranchCost::FunctionCost { sign: BranchCostSign::Add, .. } = branch_cost {
@@ -293,12 +291,12 @@ fn analyze_gas_statements<
             // `branch_requirement`. Otherwise, wallet value will be zero and the difference
             // should be registered in the refund variables.
             let cost = wallet_value.clone() - branch_requirement.value.clone();
-            for (token_type, amount) in SpecificCostContext::to_full_cost_map(cost) {
+            for (token_type, amount) in SpecificCostContext::into_full_cost_iter(cost) {
                 assert_eq!(variable_values.insert((*idx, token_type), amount), None);
             }
         } else if invocation.branches.len() > 1 {
             let cost = wallet_value.clone() - branch_requirement.value.clone();
-            for (token_type, amount) in SpecificCostContext::to_full_cost_map(cost) {
+            for (token_type, amount) in SpecificCostContext::into_full_cost_iter(cost) {
                 assert_eq!(
                     variable_values.insert((idx.next(&branch_info.target), token_type), amount),
                     None
@@ -315,7 +313,7 @@ pub trait SpecificCostContextTrait<CostType: CostTypeTrait> {
 
     /// Converts a `CostType` to a [OrderedHashMap] from [CostTokenType] to i64.
     /// All relevant [CostTokenType] are included (even if their value is 0).
-    fn to_full_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64>;
+    fn into_full_cost_iter(cost: CostType) -> impl Iterator<Item = (CostTokenType, i64)>;
 
     /// Computes the value that should be withdrawn and added to the wallet.
     fn get_gas_withdrawal(
@@ -449,8 +447,10 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
         &mut self,
         specific_cost_context: &SpecificCostContext,
     ) -> Result<(), CostError> {
-        let topological_order =
-            compute_topological_order(self.program.statements.len(), true, |current_idx| {
+        let rev_topological_order = compute_reverse_topological_order(
+            self.program.statements.len(),
+            true,
+            |current_idx| {
                 match &self.program.get_statement(current_idx).unwrap() {
                     Statement::Return(_) => {
                         // Return has no dependencies.
@@ -464,9 +464,10 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
                             .collect()
                     }
                 }
-            })?;
+            },
+        )?;
 
-        for current_idx in topological_order {
+        for current_idx in rev_topological_order {
             // The computation of the dependencies was completed.
             let res = self.no_cache_compute_wallet_at(&current_idx, specific_cost_context);
             // Update the cache with the result.
@@ -513,14 +514,16 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
         &self,
         specific_cost_context: &SpecificCostContext,
     ) -> Result<UnorderedHashMap<StatementIdx, CostType>, CostError> {
-        // Compute a topological order of the statements.
+        // Compute a reverse topological order of the statements.
         // Unlike `prepare_wallet`:
         // * function calls are not treated as edges and
         // * the success branches of `withdraw_gas` are treated as edges.
         //
         // Note, that we allow cycles, but the result may not be optimal in such a case.
-        let topological_order =
-            compute_topological_order(self.program.statements.len(), false, |current_idx| {
+        let rev_topological_order = compute_reverse_topological_order(
+            self.program.statements.len(),
+            false,
+            |current_idx| {
                 match self.program.get_statement(current_idx).unwrap() {
                     Statement::Return(_) => {
                         // Return has no dependencies.
@@ -532,7 +535,8 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
                         .map(|branch_info| current_idx.next(&branch_info.target))
                         .collect(),
                 }
-            })?;
+            },
+        )?;
 
         // Compute the excess mapping - additional amount of cost that, if possible, should be
         // added to the wallet value.
@@ -540,7 +544,7 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
         // The set of statements for which the excess value was already finalized.
         let mut finalized_excess_statements = UnorderedHashSet::<StatementIdx>::default();
 
-        for idx in topological_order.iter().rev() {
+        for idx in rev_topological_order.iter().rev() {
             self.handle_excess_at(
                 idx,
                 specific_cost_context,
@@ -672,17 +676,16 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
 /// Generates a topological ordering of the statements according to the given dependencies_callback.
 ///
 /// Each statement appears in the ordering after its dependencies.
-fn compute_topological_order(
+fn compute_reverse_topological_order(
     n_statements: usize,
     detect_cycles: bool,
     dependencies_callback: impl Fn(&StatementIdx) -> Vec<StatementIdx>,
 ) -> Result<Vec<StatementIdx>, CostError> {
-    get_topological_ordering(
+    reverse_topological_ordering(
         detect_cycles,
         (0..n_statements).map(StatementIdx),
         n_statements,
         |idx| Ok(dependencies_callback(&idx)),
-        CostError::StatementOutOfBounds,
         |_| CostError::UnexpectedCycle,
     )
 }
@@ -691,14 +694,13 @@ pub struct PreCostContext {}
 
 impl SpecificCostContextTrait<PreCost> for PreCostContext {
     fn to_cost_map(cost: PreCost) -> OrderedHashMap<CostTokenType, i64> {
-        let res = cost.0;
-        res.into_iter().map(|(token_type, val)| (token_type, val as i64)).collect()
+        cost.0.into_iter().map(|(token_type, val)| (token_type, val as i64)).collect()
     }
 
-    fn to_full_cost_map(cost: PreCost) -> OrderedHashMap<CostTokenType, i64> {
-        CostTokenType::iter_precost()
-            .map(|token_type| (*token_type, (*cost.0.get(token_type).unwrap_or(&0)).into()))
-            .collect()
+    fn into_full_cost_iter(cost: PreCost) -> impl Iterator<Item = (CostTokenType, i64)> {
+        CostTokenType::iter_precost().map(move |token_type| {
+            (*token_type, cost.0.get(token_type).copied().unwrap_or_default().into())
+        })
     }
 
     fn get_gas_withdrawal(
@@ -748,8 +750,8 @@ pub trait PostCostTypeEx: CostTypeTrait + Copy {
     /// Constructor from [ConstCost].
     fn from_const_cost(const_cost: &ConstCost) -> Self;
 
-    /// See [SpecificCostContextTrait::to_full_cost_map].
-    fn to_full_cost_map(self) -> OrderedHashMap<CostTokenType, i64>;
+    /// See [SpecificCostContextTrait::into_full_cost_iter].
+    fn into_full_cost_iter(self) -> impl Iterator<Item = (CostTokenType, i64)>;
 }
 
 impl PostCostTypeEx for i32 {
@@ -757,8 +759,8 @@ impl PostCostTypeEx for i32 {
         const_cost.cost()
     }
 
-    fn to_full_cost_map(self) -> OrderedHashMap<CostTokenType, i64> {
-        [(CostTokenType::Const, self.into())].into_iter().collect()
+    fn into_full_cost_iter(self) -> impl Iterator<Item = (CostTokenType, i64)> {
+        [(CostTokenType::Const, self.into())].into_iter()
     }
 }
 
@@ -767,14 +769,13 @@ impl PostCostTypeEx for ConstCost {
         *const_cost
     }
 
-    fn to_full_cost_map(self) -> OrderedHashMap<CostTokenType, i64> {
+    fn into_full_cost_iter(self) -> impl Iterator<Item = (CostTokenType, i64)> {
         [
             (CostTokenType::Step, self.steps.into()),
             (CostTokenType::Hole, self.holes.into()),
             (CostTokenType::RangeCheck, self.range_checks.into()),
         ]
         .into_iter()
-        .collect()
     }
 }
 
@@ -785,11 +786,15 @@ pub struct PostcostContext<'a> {
 
 impl<CostType: PostCostTypeEx> SpecificCostContextTrait<CostType> for PostcostContext<'_> {
     fn to_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64> {
-        if cost == CostType::default() { Default::default() } else { Self::to_full_cost_map(cost) }
+        if cost == CostType::default() {
+            Default::default()
+        } else {
+            Self::into_full_cost_iter(cost).collect()
+        }
     }
 
-    fn to_full_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64> {
-        cost.to_full_cost_map()
+    fn into_full_cost_iter(cost: CostType) -> impl Iterator<Item = (CostTokenType, i64)> {
+        cost.into_full_cost_iter()
     }
 
     fn get_gas_withdrawal(

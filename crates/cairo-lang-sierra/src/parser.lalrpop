@@ -101,7 +101,7 @@ GenericTypeId: GenericTypeId = {
 
 ConcreteTypeId: ConcreteTypeId = {
     <id:ConcreteLabel> => ConcreteTypeId::from_string(id),
-    "@" <id:ConcreteLabel> => ConcreteTypeId::from_string(format!("@{id}")),
+    "@" <ty:ConcreteTypeId> => ConcreteTypeId::from_string(format!("@{ty}")),
     "[" <id:UnsignedInt> "]" => ConcreteTypeId::new(id),
     "[" <ty:ConcreteTypeId> ";" <count:UnsignedInt> "]" =>
         ConcreteTypeId::from_string(format!("[{ty}; {count}]")),
