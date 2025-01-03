@@ -1,5 +1,4 @@
-//! Provides a collection of common traits and related functionality for working with
-//! various types.
+//! Collection of common traits and related functionality for working with various types.
 //!
 //! The main components of this module are:
 //!
@@ -46,7 +45,8 @@ use crate::panics::Panic;
 /// ```
 ///
 /// However, if a type implements `Copy`, it instead has 'copy semantics'.
-/// We can derive a `Copy` implementation. Most basic types implement it by default.
+/// We can derive a `Copy` implementation with the `#[derive(Copy)]` attribute. Most basic types
+/// implement it by default.
 ///
 /// ```
 /// #[derive(Copy, Drop)]
@@ -70,7 +70,7 @@ pub trait Copy<T>;
 ///
 /// Types that implement the `Drop` trait are automatically destroyed when going out of scope.
 /// This destruction does nothing, it is a no-op - simply a hint to the compiler that this type
-/// can safely be destroyed once it's no longer useful. We call this "dropping" a value.
+/// can safely go out of scope once it's no longer useful. We call this "dropping" a value.
 ///
 /// ```
 /// struct Point {
@@ -83,8 +83,8 @@ pub trait Copy<T>;
 /// ```
 ///
 /// This won't compile as `p` is not dropped at the end of `foo`.
-/// We can derive `Drop` on `Point` to allow `p` to go out of scope trivially. All basic types
-/// implement the`Drop` trait, except the `Felt252Dict` type.
+/// We can derive `Drop` on `Point` using the `#[derive(Drop)]` attribute to allow `p` to go out of
+/// scope trivially. All basic types implement the`Drop` trait, except the `Felt252Dict` type.
 ///
 /// ```
 /// #[derive(Drop)]
@@ -386,9 +386,9 @@ impl PartialOrdSnap<T, +PartialOrd<T>, +Copy<T>> of PartialOrd<@T> {
     }
 }
 
-/// A trait for safe conversion between types.
+/// A trait for conversion between types where the conversion is guaranteed to succeed.
 pub trait Into<T, S> {
-    /// Converts a type into another in safely manner.
+    /// Converts a type into another in a safely manner.
     ///
     /// # Examples
     ///
@@ -406,7 +406,7 @@ impl TIntoT<T> of Into<T, T> {
     }
 }
 
-/// A trait for fallible conversion between types.
+/// A trait for conversion between types where the conversion is not guaranteed to succeed.
 pub trait TryInto<T, S> {
     /// Converts a type into another and returns an option of the value if the conversion is
     /// successful, `Option::None` otherwise.
@@ -516,6 +516,14 @@ pub(crate) impl PanicDestructForDestruct<T, +Destruct<T>> of PanicDestruct<T> {
 }
 
 /// A trait for giving a default value to a type.
+///
+/// This trait is implemented for all primitive types in the core library.
+///
+/// It is possible to implement it on a custom type using the `#[derive(Default)]` attribute if all
+/// its elements already implement `Default`.
+///
+/// It is also possible to implement it on enum types, declaring the default value of the enum by
+/// using the `#[default]` attribute on one of its variants.
 pub trait Default<T> {
     /// Creates a default instance for any type.
     ///
@@ -523,6 +531,20 @@ pub trait Default<T> {
     ///
     /// ```
     /// use core::dict::Felt252Dict;
+    ///
+    /// #[derive(Default, Drop)]
+    /// struct A {
+    ///     item1: felt252,
+    ///     item2: u64,
+    /// }
+    ///
+    /// #[derive(Default, Drop)]
+    /// enum CaseWithDefault {
+    ///     A: felt252,
+    ///     B: u128,
+    ///     #[default]
+    ///     C: u64,
+    /// }
     ///
     /// let dict: Felt252Dict<u8> = Default::default();
     /// ````
