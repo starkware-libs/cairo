@@ -78,11 +78,8 @@ use starknet::SyscallResult;
 use starknet::storage_access::{StorageBaseAddress, storage_base_address_from_felt252};
 
 mod vec;
+pub use vec::{IntoIterRange, MutableVecTrait, Vec, VecTrait};
 use vec::{MutableVecIndexView, VecIndexView};
-pub use vec::{
-    MutableVecIntoIterRange, MutableVecTrait, PathableMutableVecIntoIterRange,
-    PathableVecIntoIterRange, Vec, VecIntoIterRange, VecTrait,
-};
 
 mod storage_node;
 pub use storage_node::{StorageNode, StorageNodeMut};

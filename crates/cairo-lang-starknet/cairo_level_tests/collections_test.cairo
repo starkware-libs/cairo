@@ -1,6 +1,6 @@
 use starknet::storage::{
-    MutableVecTrait, PathableMutableVecIntoIterRange, PathableVecIntoIterRange, StoragePathEntry,
-    StoragePointerReadAccess, StoragePointerWriteAccess,
+    IntoIterRange, MutableVecTrait, StoragePathEntry, StoragePointerReadAccess,
+    StoragePointerWriteAccess,
 };
 
 #[starknet::contract]

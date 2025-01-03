@@ -1,3 +1,3 @@
 mod traits;
 
-pub use traits::iterator::{IntoIterRange, IntoIterator, Iterator};
+pub use traits::iterator::{IntoIterator, Iterator};

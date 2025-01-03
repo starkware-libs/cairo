@@ -1,4 +1,4 @@
-use core::iter::IntoIterator;
+use core::iter::{IntoIterator, Iterator};
 use core::ops::Range;
 use super::{
     Mutable, StorageAsPath, StorageAsPointer, StoragePath, StoragePathTrait, StoragePathUpdateTrait,
@@ -152,98 +152,112 @@ pub impl MutableVecIndexView<
     }
 }
 
-/// An iterator struct over a Vec in storage.
+/// Turn a collection of values into an iterator over a specific range.
+pub trait IntoIterRange<T> {
+    type IntoIter;
+    impl Iterator: Iterator<Self::IntoIter>;
+    /// Creates an iterator over a range from a collection.
+    fn into_iter_range(self: T, range: Range<u64>) -> Self::IntoIter;
+    /// Creates an iterator over the full range of a collection.
+    fn into_iter_full_range(self: T) -> Self::IntoIter;
+}
+
+/// An iterator struct over a `Vec` in storage.
 #[derive(Drop)]
-pub struct VecIter<T, impl VecImpl: VecTrait<T>> {
+pub struct VecIter<T, impl VecTraitImpl: VecTrait<T>> {
     vec: T,
     current_index: crate::ops::RangeIterator<u64>,
 }
 
-impl VecIterator<
-    T, impl VecImpl: VecTrait<T>, +Drop<T>, +Copy<T>,
-> of core::iter::Iterator<VecIter<T>> {
-    type Item = StoragePath<VecImpl::ElementType>;
+impl VecIterator<T, impl VecTraitImpl: VecTrait<T>, +Drop<T>, +Copy<T>> of Iterator<VecIter<T>> {
+    type Item = StoragePath<VecTraitImpl::ElementType>;
     fn next(ref self: VecIter<T>) -> Option<Self::Item> {
         self.vec.get(self.current_index.next()?)
     }
 }
 
-pub impl VecIntoIterRange<
-    T, impl VecImpl: VecTrait<T>, +Drop<T>, +Copy<T>,
-> of crate::iter::IntoIterRange<T, u64> {
-    type IntoIter = VecIter<T, VecImpl>;
+// Implement `IntoIterRange` for `StoragePath<Vec<T>>`
+impl VecIntoIterRange<
+    T, impl VecTraitImpl: VecTrait<StoragePath<Vec<T>>>,
+> of IntoIterRange<StoragePath<Vec<T>>> {
+    type IntoIter = VecIter<StoragePath<Vec<T>>, VecTraitImpl>;
     #[inline]
-    fn into_iter_range(self: T, range: Range<u64>) -> Self::IntoIter {
+    fn into_iter_range(self: StoragePath<Vec<T>>, range: Range<u64>) -> Self::IntoIter {
         VecIter { current_index: range.into_iter(), vec: self }
     }
     #[inline]
-    fn into_iter_full_range(self: T) -> Self::IntoIter {
-        VecIter { current_index: (0..self.len()).into_iter(), vec: self }
+    fn into_iter_full_range(self: StoragePath<Vec<T>>) -> Self::IntoIter {
+        VecIter { current_index: (0..VecTraitImpl::len(self)).into_iter(), vec: self }
     }
 }
 
+/// Implement `IntoIterRange` for any type that implements StorageAsPath into a storage path
+/// that implements VecTrait.
 pub impl PathableVecIntoIterRange<
     T,
-    +Drop<T>,
-    +Copy<T>,
+    +Destruct<T>,
     impl PathImpl: StorageAsPath<T>,
-    impl VecImpl: VecTrait<StoragePath<PathImpl::Value>>,
-> of crate::iter::IntoIterRange<T, u64> {
-    type IntoIter = VecIter<StoragePath<PathImpl::Value>, VecImpl>;
+    impl VecTraitImpl: VecTrait<StoragePath<PathImpl::Value>>,
+> of IntoIterRange<T> {
+    type IntoIter = VecIter<StoragePath<PathImpl::Value>, VecTraitImpl>;
     #[inline]
     fn into_iter_range(self: T, range: Range<u64>) -> Self::IntoIter {
-        VecIntoIterRange::into_iter_range(self.as_path(), range)
+        VecIter { current_index: range.into_iter(), vec: self.as_path() }
     }
     #[inline]
     fn into_iter_full_range(self: T) -> Self::IntoIter {
-        VecIntoIterRange::into_iter_full_range(self.as_path())
+        let vec = self.as_path();
+        VecIter { current_index: (0..vec.len()).into_iter(), vec }
     }
 }
 
-/// An iterator struct over a MutableVec in storage.
+/// An iterator struct over a `Mutable<Vec>` in storage.
 #[derive(Drop)]
-struct MutableVecIter<T, impl MutVecImpl: MutableVecTrait<T>> {
+struct MutableVecIter<T, impl MutVecTraitImpl: MutableVecTrait<T>> {
     vec: T,
     current_index: crate::ops::RangeIterator<u64>,
 }
 
 impl MutableVecIterator<
-    T, +Drop<T>, +Copy<T>, impl MutVecImpl: MutableVecTrait<T>,
-> of core::iter::Iterator<MutableVecIter<T>> {
-    type Item = StoragePath<Mutable<MutVecImpl::ElementType>>;
+    T, +Drop<T>, +Copy<T>, impl MutVecTraitImpl: MutableVecTrait<T>,
+> of Iterator<MutableVecIter<T>> {
+    type Item = StoragePath<Mutable<MutVecTraitImpl::ElementType>>;
     fn next(ref self: MutableVecIter<T>) -> Option<Self::Item> {
         self.vec.get(self.current_index.next()?)
     }
 }
 
-pub impl MutableVecIntoIterRange<
-    T, +Drop<T>, +Copy<T>, impl MutVecImpl: MutableVecTrait<T>,
-> of crate::iter::IntoIterRange<T, u64> {
-    type IntoIter = MutableVecIter<T, MutVecImpl>;
+// Implement `IntoIterRange` for `StoragePath<Mutable<Vec<T>>>`
+impl MutableVecIntoIterRange<
+    T, impl MutVecTraitImpl: MutableVecTrait<StoragePath<Mutable<Vec<T>>>>,
+> of IntoIterRange<StoragePath<Mutable<Vec<T>>>> {
+    type IntoIter = MutableVecIter<StoragePath<Mutable<Vec<T>>>, MutVecTraitImpl>;
     #[inline]
-    fn into_iter_range(self: T, range: Range<u64>) -> Self::IntoIter {
+    fn into_iter_range(self: StoragePath<Mutable<Vec<T>>>, range: Range<u64>) -> Self::IntoIter {
         MutableVecIter { current_index: range.into_iter(), vec: self }
     }
     #[inline]
-    fn into_iter_full_range(self: T) -> Self::IntoIter {
-        MutableVecIter { current_index: (0..self.len()).into_iter(), vec: self }
+    fn into_iter_full_range(self: StoragePath<Mutable<Vec<T>>>) -> Self::IntoIter {
+        MutableVecIter { current_index: (0..MutVecTraitImpl::len(self)).into_iter(), vec: self }
     }
 }
 
-pub impl PathableMutableVecIntoIterRange<
+/// Implement `IntoIterRange` for any type that implements StorageAsPath into a storage path
+/// that implements MutableVecTrait.
+impl PathableMutableVecIntoIterRange<
     T,
-    +Drop<T>,
-    +Copy<T>,
+    +Destruct<T>,
     impl PathImpl: StorageAsPath<T>,
-    impl MutVecImpl: MutableVecTrait<StoragePath<PathImpl::Value>>,
-> of crate::iter::IntoIterRange<T, u64> {
-    type IntoIter = MutableVecIter<StoragePath<PathImpl::Value>, MutVecImpl>;
+    impl MutVecTraitImpl: MutableVecTrait<StoragePath<PathImpl::Value>>,
+> of IntoIterRange<T> {
+    type IntoIter = MutableVecIter<StoragePath<PathImpl::Value>, MutVecTraitImpl>;
     #[inline]
     fn into_iter_range(self: T, range: Range<u64>) -> Self::IntoIter {
-        MutableVecIntoIterRange::into_iter_range(self.as_path(), range)
+        MutableVecIter { current_index: range.into_iter(), vec: self.as_path() }
     }
     #[inline]
     fn into_iter_full_range(self: T) -> Self::IntoIter {
-        MutableVecIntoIterRange::into_iter_full_range(self.as_path())
+        let vec = self.as_path();
+        MutableVecIter { current_index: (0..vec.len()).into_iter(), vec }
     }
 }
