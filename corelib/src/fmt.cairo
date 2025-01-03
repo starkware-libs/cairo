@@ -353,3 +353,4 @@ impl LowerHexNonZero<T, +LowerHex<T>, +Copy<T>, +Drop<T>> of LowerHex<NonZero<T>
         write!(f, "{value:x}")
     }
 }
+

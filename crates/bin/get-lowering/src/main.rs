@@ -15,7 +15,7 @@ use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::destructs::add_destructs;
 use cairo_lang_lowering::fmt::{
-    FlatLoweredSerializable, LoweredFormatter, SemanticSerielizationContext, SerielizationContext,
+    FlatLoweredSerializable, LoweredFormatter, SemanticSerializationContext, SerializationContext,
 };
 use cairo_lang_lowering::ids::{
     ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,
@@ -296,7 +296,7 @@ fn main() -> anyhow::Result<()> {
             })
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
-        let mut ctx = SerielizationContext::new(db);
+        let mut ctx = SerializationContext::new(db);
         let mut lowereds = Vec::new();
         for (count, function_id) in funcs.iter().enumerate() {
             // println!("{}:  {:?}", count, function_id.name(db));

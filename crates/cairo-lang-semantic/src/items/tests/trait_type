@@ -3127,4 +3127,76 @@ trait OtherTrait<T> {
 error: Trait `test::OtherTrait::<core::integer::u32>` has multiple implementations, in: `+OtherTrait<I1::ty>`, `+OtherTrait<u32>`
  --> lib.cairo:9:17
     OtherTrait::foo(5_u32);
+<<<<<<< Updated upstream
                 ^*^
+=======
+                ^^^
+
+//! > ==========================================================================
+
+//! > impl function with wrong generic associated item constraint.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    type ty;
+}
+trait Tr {
+    fn foo<+MyTrait[ty: i32]>();
+}
+
+impl I of Tr {
+    fn foo<impl I1: MyTrait[ty: u64]>() {}
+}
+
+//! > expected_diagnostics
+error: Generic parameter trait of impl function `I::foo` is incompatible with `Tr::foo`. Expected: `test::MyTrait`, actual: `test::MyTrait`.
+ --> lib.cairo:9:12
+    fn foo<impl I1: MyTrait[ty: u64]>() {}
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > impl function with 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Tr<T> {
+    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+        self: Option<T>, f: F,
+    ) -> Option<U>;
+}
+
+impl I<K> of Tr<K> {
+    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (K,)>[Output: U]>(
+        self: Option<K>, f: F,
+    ) -> Option<U> {
+        match self {
+            Option::Some(x) => Option::Some(f(x)),
+            Option::None => Option::None,
+        }
+    }
+}
+
+//! > expected_diagnostics
+error: Generic parameter trait of impl function `I::map` is incompatible with `Tr::map`. Expected: `core::ops::function::FnOnce::<F, (K,)>`, actual: `core::ops::function::FnOnce::<F, (K,)>`.
+ --> lib.cairo:8:28
+    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (K,)>[Output: U]>(
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>>>>>>> Stashed changes
