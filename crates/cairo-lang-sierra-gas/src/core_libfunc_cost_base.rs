@@ -504,6 +504,11 @@ pub fn core_libfunc_cost(
                     .into(),
                 ]
             }
+            BoundedIntConcreteLibfunc::Trim(libfunc) => {
+                let steps: BranchCost =
+                    ConstCost::steps(if libfunc.trimmed_value.is_zero() { 1 } else { 2 }).into();
+                vec![steps.clone(), steps]
+            }
             BoundedIntConcreteLibfunc::IsZero(_) => {
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
             }

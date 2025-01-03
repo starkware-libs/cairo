@@ -46,9 +46,11 @@ foo
 
 //! > lowering_diagnostics
 warning: Unreachable code
- --> lib.cairo:3:5
-    5;
-    ^^
+ --> lib.cairo:3:5-4:6
+      5;
+ _____^
+|     6;
+|______^
 
 //! > lowering_flat
 Parameters: v0: core::felt252
@@ -375,9 +377,9 @@ foo
 
 //! > semantic_diagnostics
 error: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
- --> lib.cairo:1:43
+ --> lib.cairo:1:38
 fn foo(mut data: Span::<felt252>) -> u128 {
-                                          ^
+                                     ^^^^
 
 //! > lowering_diagnostics
 

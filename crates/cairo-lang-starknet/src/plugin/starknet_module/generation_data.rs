@@ -62,8 +62,6 @@ pub struct StarknetModuleCommonGenerationData {
     pub state_struct_code: RewriteNode,
     /// The generated event-related code.
     pub event_code: RewriteNode,
-    /// Use declarations to add to the internal submodules.
-    pub extra_uses_node: RewriteNode,
 }
 impl StarknetModuleCommonGenerationData {
     pub fn into_rewrite_node(

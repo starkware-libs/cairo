@@ -18,8 +18,8 @@ pub enum ProjectError {
     NoSuchFile { path: String },
     #[error("Couldn't handle {path}: Not a legal path.")]
     BadPath { path: String },
-    #[error("Failed to load project config.")]
-    LoadProjectError,
+    #[error("Failed to load project config: {0}")]
+    LoadProjectError(DeserializationError),
 }
 
 /// Setup to 'db' to compile the file at the given path.
@@ -97,14 +97,10 @@ pub fn setup_project(
     path: &Path,
 ) -> Result<Vec<CrateId>, ProjectError> {
     if path.is_dir() {
-        match ProjectConfig::from_directory(path) {
-            Ok(config) => {
-                let main_crate_ids = get_main_crate_ids_from_project(db, &config);
-                update_crate_roots_from_project_config(db, &config);
-                Ok(main_crate_ids)
-            }
-            _ => Err(ProjectError::LoadProjectError),
-        }
+        let config = ProjectConfig::from_directory(path).map_err(ProjectError::LoadProjectError)?;
+        let main_crate_ids = get_main_crate_ids_from_project(db, &config);
+        update_crate_roots_from_project_config(db, &config);
+        Ok(main_crate_ids)
     } else {
         Ok(vec![setup_single_file_project(db, path)?])
     }

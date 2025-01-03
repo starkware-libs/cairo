@@ -1,5 +1,5 @@
-use starknet::syscalls::deploy_syscall;
 use starknet::SyscallResultTrait;
+use starknet::syscalls::deploy_syscall;
 
 #[starknet::interface]
 trait IContractWithEvent<T> {
@@ -58,8 +58,7 @@ mod contract_with_event {
         self.emit(FlatEvent::FlatEvent(StaticEvent {}));
     }
 }
-
-use contract_with_event::{Event, IncrementalEvent, StaticEvent, FlatEvent};
+use contract_with_event::{Event, FlatEvent, IncrementalEvent, StaticEvent};
 
 #[test]
 fn test_events() {

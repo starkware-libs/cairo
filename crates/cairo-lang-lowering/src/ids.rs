@@ -267,6 +267,7 @@ impl FunctionLongId {
                                 semantic::corelib::destruct_trait_fn(semantic_db),
                                 semantic::corelib::panic_destruct_trait_fn(semantic_db),
                                 semantic::corelib::fn_once_call_trait_fn(semantic_db),
+                                semantic::corelib::fn_call_trait_fn(semantic_db),
                             ]
                             .contains(&function)
                         );
@@ -339,10 +340,18 @@ impl FunctionId {
     pub fn semantic_full_path(&self, db: &dyn LoweringGroup) -> String {
         self.lookup_intern(db).semantic_full_path(db)
     }
-    pub fn get_extern(&self, db: &dyn LoweringGroup) -> Option<ExternFunctionId> {
+    /// Returns the function as an `ExternFunctionId` and its generic arguments, if it is an
+    /// `extern` functions.
+    pub fn get_extern(
+        &self,
+        db: &dyn LoweringGroup,
+    ) -> Option<(ExternFunctionId, Vec<GenericArgumentId>)> {
         let semantic = try_extract_matches!(self.lookup_intern(db), FunctionLongId::Semantic)?;
-        let generic = semantic.get_concrete(db.upcast()).generic_function;
-        try_extract_matches!(generic, GenericFunctionId::Extern)
+        let concrete = semantic.get_concrete(db.upcast());
+        Some((
+            try_extract_matches!(concrete.generic_function, GenericFunctionId::Extern)?,
+            concrete.generic_args,
+        ))
     }
 }
 pub trait SemanticFunctionIdEx {
@@ -350,7 +359,16 @@ pub trait SemanticFunctionIdEx {
 }
 impl SemanticFunctionIdEx for semantic::FunctionId {
     fn lowered(&self, db: &dyn LoweringGroup) -> FunctionId {
-        FunctionLongId::Semantic(*self).intern(db)
+        let ret = FunctionLongId::Semantic(*self).intern(db);
+        // If the function is generated, we need to check if it has a body, so we can return its
+        // generated function id.
+        // TODO(orizi): This is a hack, we should have a better way to do this.
+        if let Ok(Some(body)) = ret.body(db) {
+            if let Ok(id) = body.function_id(db) {
+                return id;
+            }
+        }
+        ret
     }
 }
 impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {

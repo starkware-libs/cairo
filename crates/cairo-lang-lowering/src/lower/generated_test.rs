@@ -87,7 +87,8 @@ fn test_generated_function(
                 func_description,
                 get_location_marks(
                     db,
-                    &generated_id.stable_location(db).unwrap().diagnostic_location(db)
+                    &generated_id.stable_location(db).unwrap().diagnostic_location(db),
+                    true
                 )
             )
             .unwrap();

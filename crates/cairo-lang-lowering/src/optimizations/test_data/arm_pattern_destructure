@@ -236,14 +236,14 @@ blk9:
 Statements:
 End:
   Match(match_enum(v24) {
-    MyEnum::a(v56) => blk19,
-    MyEnum::b(v57) => blk20,
-    MyEnum::c(v58) => blk21,
-    MyEnum::d(v59) => blk22,
-    MyEnum::e(v60) => blk23,
-    MyEnum::f(v61) => blk24,
-    MyEnum::g(v62) => blk25,
-    MyEnum::h(v63) => blk26,
+    MyEnum::a(v63) => blk26,
+    MyEnum::b(v62) => blk25,
+    MyEnum::c(v61) => blk24,
+    MyEnum::d(v60) => blk23,
+    MyEnum::e(v59) => blk22,
+    MyEnum::f(v58) => blk21,
+    MyEnum::g(v57) => blk20,
+    MyEnum::h(v56) => blk19,
   })
 
 blk10:
@@ -295,39 +295,39 @@ End:
 blk19:
 Statements:
 End:
-  Goto(blk10, {v56 -> v38})
+  Goto(blk17, {v56 -> v45})
 
 blk20:
 Statements:
 End:
-  Goto(blk11, {v57 -> v39})
+  Goto(blk16, {v57 -> v44})
 
 blk21:
 Statements:
 End:
-  Goto(blk12, {v58 -> v40})
+  Goto(blk15, {v58 -> v43})
 
 blk22:
 Statements:
 End:
-  Goto(blk13, {v59 -> v41})
+  Goto(blk14, {v59 -> v42})
 
 blk23:
 Statements:
 End:
-  Goto(blk14, {v60 -> v42})
+  Goto(blk13, {v60 -> v41})
 
 blk24:
 Statements:
 End:
-  Goto(blk15, {v61 -> v43})
+  Goto(blk12, {v61 -> v40})
 
 blk25:
 Statements:
 End:
-  Goto(blk16, {v62 -> v44})
+  Goto(blk11, {v62 -> v39})
 
 blk26:
 Statements:
 End:
-  Goto(blk17, {v63 -> v45})
+  Goto(blk10, {v63 -> v38})

@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId, TraitId,
+    GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -14,7 +15,7 @@ use smol_str::SmolStr;
 
 use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
-use super::visibility::Visibility;
+use super::visibility::{Visibility, peek_visible_in};
 use crate::SemanticDiagnostic;
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
@@ -32,6 +33,7 @@ pub struct ModuleItemInfo {
 pub struct ModuleSemanticData {
     /// The items in the module without duplicates.
     pub items: OrderedHashMap<SmolStr, ModuleItemInfo>,
+    pub global_uses: OrderedHashMap<GlobalUseId, Visibility>,
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
 
@@ -110,7 +112,17 @@ pub fn priv_module_semantic_data(
             );
         }
     }
-    Ok(Arc::new(ModuleSemanticData { items, diagnostics: diagnostics.build() }))
+
+    let global_uses = db
+        .module_global_uses(module_id)?
+        .iter()
+        .map(|(global_use_id, use_path_star)| {
+            let item = ast::UsePath::Star(use_path_star.clone()).get_item(syntax_db);
+            let visibility = item.visibility(syntax_db);
+            (*global_use_id, Visibility::from_ast(db.upcast(), &mut diagnostics, &visibility))
+        })
+        .collect();
+    Ok(Arc::new(ModuleSemanticData { items, global_uses, diagnostics: diagnostics.build() }))
 }
 
 pub fn module_item_by_name(
@@ -129,6 +141,15 @@ pub fn module_item_info_by_name(
 ) -> Maybe<Option<ModuleItemInfo>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).cloned())
+}
+
+/// Get the imported global uses of a module, and their visibility.
+pub fn get_module_global_uses(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<GlobalUseId, Visibility>> {
+    let module_data = db.priv_module_semantic_data(module_id)?;
+    Ok(module_data.global_uses.clone())
 }
 
 /// Query implementation of [SemanticGroup::module_all_used_items].
@@ -171,55 +192,95 @@ pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<V
     })
 }
 
-/// Finds all the trait ids usable in the current context.
+/// Finds all the trait ids usable in the current context, using `global use` imports.
 pub fn module_usable_trait_ids(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
 ) -> Maybe<Arc<OrderedHashMap<TraitId, LookupItemId>>> {
-    let mut module_traits = OrderedHashMap::from_iter(
-        db.module_traits_ids(module_id)?
-            .iter()
-            .map(|traid_id| (*traid_id, LookupItemId::ModuleItem(ModuleItemId::Trait(*traid_id)))),
-    );
-    // Add traits from impls in the module.
-    for imp in db.module_impls_ids(module_id)?.iter().copied() {
-        let Ok(trait_id) = db.impl_def_trait(imp) else {
-            continue;
-        };
-        module_traits.entry(trait_id).or_insert(LookupItemId::ModuleItem(ModuleItemId::Impl(imp)));
-    }
-    // Add traits from impl aliases in the module.
-    for alias in db.module_impl_aliases_ids(module_id)?.iter().copied() {
-        let Ok(impl_id) = db.impl_alias_impl_def(alias) else {
-            continue;
-        };
-        let Ok(trait_id) = db.impl_def_trait(impl_id) else {
-            continue;
-        };
-        module_traits
-            .entry(trait_id)
-            .or_insert(LookupItemId::ModuleItem(ModuleItemId::ImplAlias(alias)));
-    }
-    // Add traits from uses in the module.
-    for use_id in db.module_uses_ids(module_id)?.iter().copied() {
-        let Ok(resolved_item) = db.use_resolved_item(use_id) else {
-            continue;
-        };
-        match resolved_item {
-            // use of a trait.
-            ResolvedGenericItem::Trait(trait_id) => {
-                module_traits.insert(trait_id, LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
+    // Get the traits first from the module, do not change this order.
+    let mut module_traits = specific_module_usable_trait_ids(db, module_id, module_id)?;
+    for (user_module, containing_module) in &db.priv_module_use_star_modules(module_id).accessible {
+        if let Ok(star_module_traits) =
+            specific_module_usable_trait_ids(db, *user_module, *containing_module)
+        {
+            for (trait_id, local_item_id) in star_module_traits {
+                module_traits.entry(trait_id).or_insert(local_item_id);
             }
-            // use of an impl from which we get the trait.
-            ResolvedGenericItem::Impl(impl_def_id) => {
-                if let Ok(trait_id) = db.impl_def_trait(impl_def_id) {
-                    module_traits
-                        .entry(trait_id)
-                        .or_insert(LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
+        }
+    }
+    Ok(module_traits.into())
+}
+
+/// Finds all the trait ids usable in the current context, not using `global use` imports.
+fn specific_module_usable_trait_ids(
+    db: &dyn SemanticGroup,
+    user_module: ModuleId,
+    containing_module: ModuleId,
+) -> Maybe<OrderedHashMap<TraitId, LookupItemId>> {
+    let mut module_traits: OrderedHashMap<TraitId, LookupItemId> = OrderedHashMap::default();
+    for item in db.priv_module_semantic_data(containing_module)?.items.values() {
+        if !matches!(
+            item.item_id,
+            ModuleItemId::Trait(_)
+                | ModuleItemId::Impl(_)
+                | ModuleItemId::ImplAlias(_)
+                | ModuleItemId::Use(_)
+        ) {
+            continue;
+        }
+        if !peek_visible_in(db.upcast(), item.visibility, containing_module, user_module) {
+            continue;
+        }
+        match item.item_id {
+            ModuleItemId::Trait(trait_id) => {
+                module_traits
+                    .insert(trait_id, LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
+            }
+            ModuleItemId::Impl(impl_def_id) => {
+                // Add traits from impls in the module.
+                let Ok(trait_id) = db.impl_def_trait(impl_def_id) else {
+                    continue;
                 };
+                module_traits
+                    .entry(trait_id)
+                    .or_insert(LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id)));
+            }
+            ModuleItemId::ImplAlias(impl_alias_id) => {
+                // Add traits from impl aliases in the module.
+                let Ok(impl_id) = db.impl_alias_impl_def(impl_alias_id) else {
+                    continue;
+                };
+                let Ok(trait_id) = db.impl_def_trait(impl_id) else {
+                    continue;
+                };
+                module_traits
+                    .entry(trait_id)
+                    .or_insert(LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id)));
+            }
+            ModuleItemId::Use(use_id) => {
+                // Add traits from uses in the module.
+                let Ok(resolved_item) = db.use_resolved_item(use_id) else {
+                    continue;
+                };
+                match resolved_item {
+                    // use of a trait.
+                    ResolvedGenericItem::Trait(trait_id) => {
+                        module_traits
+                            .insert(trait_id, LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
+                    }
+                    // use of an impl from which we get the trait.
+                    ResolvedGenericItem::Impl(impl_def_id) => {
+                        if let Ok(trait_id) = db.impl_def_trait(impl_def_id) {
+                            module_traits
+                                .entry(trait_id)
+                                .or_insert(LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
+                        };
+                    }
+                    _ => {}
+                }
             }
             _ => {}
         }
     }
-    Ok(module_traits.into())
+    Ok(module_traits)
 }

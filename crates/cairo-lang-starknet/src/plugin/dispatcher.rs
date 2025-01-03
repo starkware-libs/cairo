@@ -175,11 +175,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                             "        core::serde::Serde::<{type_name}>::serialize(@$arg_name$, \
                              ref {CALLDATA_PARAM_NAME});\n"
                         ),
-                        &[(
-                            "arg_name".to_string(),
-                            RewriteNode::new_trimmed(param.name(db).as_syntax_node()),
-                        )]
-                        .into(),
+                        &[("arg_name".to_string(), RewriteNode::from_ast_trimmed(&param.name(db)))]
+                            .into(),
                     ));
                 }
 
@@ -367,6 +364,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             content,
             code_mappings,
             aux_data: None,
+            diagnostics_note: Default::default(),
         }),
         diagnostics,
         remove_original_item: false,
