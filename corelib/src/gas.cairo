@@ -22,10 +22,6 @@ pub extern type GasBuiltin;
 /// Returns `Option::Some(())` if there is sufficient gas to handle the success case, otherwise
 /// returns `Option::None`.
 ///
-/// # Panics
-///
-/// Panics if there is not enough available gas for the withdrawal.
-///
 /// # Examples
 ///
 /// ```
