@@ -560,6 +560,8 @@ impl SnapshotDefault<T, +Default<T>, +Drop<T>> of Default<@T> {
 }
 
 /// A trait that allows to return default values for types used as values in a dictionary.
+///
+/// This trait must be implemented for any type that will be stored in a dictionary.
 pub trait Felt252DictValue<T> {
     /// Returns the default value for this type as a value in a `Felt252Dict`.
     /// Should be logically equivalent to 0.
