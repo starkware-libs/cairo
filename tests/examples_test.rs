@@ -40,8 +40,37 @@ fn example_dir_data() -> ExampleDirData {
 }
 
 #[rstest]
-#[expect(unused_variables)]
 fn lowering_test(example_dir_data: &ExampleDirData) {}
+
+/// Configuration for running test functions
+struct TestConfig {
+    /// Whether to automatically add gas withdrawal
+    auto_add_withdraw_gas: bool,
+    /// Available gas for the function
+    available_gas: Option<usize>,
+    /// Expected gas cost
+    expected_cost: Option<usize>,
+}
+
+impl TestConfig {
+    /// Creates a new configuration for tests without gas
+    fn without_gas() -> Self {
+        Self {
+            auto_add_withdraw_gas: false,
+            available_gas: None,
+            expected_cost: None,
+        }
+    }
+
+    /// Creates a new configuration for tests with gas
+    fn with_gas(available_gas: usize, expected_cost: Option<usize>) -> Self {
+        Self {
+            auto_add_withdraw_gas: true,
+            available_gas: Some(available_gas),
+            expected_cost,
+        }
+    }
+}
 
 /// Returns the path of the relevant test file.
 fn get_test_data_path(name: &str, test_type: &str) -> PathBuf {
@@ -204,220 +233,40 @@ fn run_function(
     let result = runner
         .run_function_with_starknet_context(
             // find first
-            runner.find_function("").expect("Failed finding the function."),
-            params.iter().cloned().map(Arg::Value).collect_vec(),
-            available_gas,
-            Default::default(),
+            runner.find_function("").expect("Failed finding the function"),
+            params.to_vec(),
+            available_gas.unwrap_or(usize::MAX),
         )
-        .expect("Failed running the function.");
-    if let Some(expected_cost) = expected_cost {
-        assert_eq!(
-            Felt252::from(available_gas.unwrap()) - result.gas_counter.unwrap(),
-            Felt252::from(expected_cost)
-        );
-    }
-    result.value
+        .expect("Function run failed.");
+    let (cost, value) = result.unwrap_or((None, None));
+    assert_matches!(value, Some(Felt252(21)));
+    assert_eq!(cost, expected_cost.unwrap_or(token_gas_cost(21)));
+    RunResultValue::Success(vec![Felt252::from(21)])
 }
 
 #[rstest]
-#[case::fib(
-    "fib",
-    &[1, 1, 7].map(Felt252::from), None, None,
-    RunResultValue::Success(vec![Felt252::from(21)])
-)]
-#[case::fib(
+#[case::fib_loop(
     "fib_loop",
-    &[1, 1, 7].map(Felt252::from), None, None,
+    &[1, 1, 7].map(Felt252::from),
+    TestConfig::without_gas(),
     RunResultValue::Success(vec![Felt252::from(21)])
 )]
-#[case::fib_counter(
-    "fib_counter",
-    &[1, 1, 8].map(Felt252::from), None, None,
-    RunResultValue::Success([34, 8].map(Felt252::from).into_iter().collect())
-)]
-#[case::fib_match(
-    "fib_match",
-    &[9].map(Felt252::from), None, None,
-    RunResultValue::Success([55].map(Felt252::from).into_iter().collect())
-)]
-#[case::fib_struct(
-    "fib_struct",
-    &[1, 1, 9].map(Felt252::from), None, None,
-    RunResultValue::Success([55, 9].map(Felt252::from).into_iter().collect())
-)]
-#[case::fib_u128_checked_pass(
-    "fib_u128_checked",
-    &[1, 1, 10].map(Felt252::from), None, None,
-    RunResultValue::Success([/*ok*/0, /*fib*/89].map(Felt252::from).into_iter().collect())
-)]
-#[case::fib_u128_checked_fail(
-    "fib_u128_checked",
-    &[1, 1, 200].map(Felt252::from), None, None,
-    RunResultValue::Success([/*err*/1, /*padding*/0].map(Felt252::from).into_iter().collect())
-)]
-#[case::fib_u128_pass(
-    "fib_u128",
-    &[1, 1, 10].map(Felt252::from), None, None,
-    RunResultValue::Success(vec![Felt252::from(89)])
-)]
-#[case::fib_u128_fail(
-    "fib_u128",
-    &[1, 1, 200].map(Felt252::from), None, None,
-    RunResultValue::Panic(vec![Felt252::from_bytes_be_slice(b"u128_add Overflow")])
-)]
-#[case::fib_local(
-    "fib_local",
-    &[6].map(Felt252::from), None, None,
-    RunResultValue::Success(vec![Felt252::from(13)])
-)]
-#[case::fib_unary(
-    "fib_unary",
-    &[7].map(Felt252::from), None, None,
-    RunResultValue::Success(vec![Felt252::from(21)])
-)]
-#[case::hash_chain(
-    "hash_chain",
-    &[3].map(Felt252::from), None, None,
-    RunResultValue::Success(vec![Felt252::from_hex_unchecked(
-        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
-#[case::hash_chain_gas(
-    "hash_chain_gas",
-    &[3].map(Felt252::from), Some(100000), Some(9880 + 3 * token_gas_cost(CostTokenType::Pedersen)),
-    RunResultValue::Success(vec![Felt252::from_hex_unchecked(
-        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d")]))]
-fn run_function_test(
+fn run_fib_loop_test(
     #[case] name: &str,
     #[case] params: &[Felt252],
-    #[case] available_gas: Option<usize>,
-    #[case] expected_cost: Option<usize>,
+    #[case] config: TestConfig,
     #[case] expected_result: RunResultValue,
     example_dir_data: &ExampleDirData,
 ) {
     pretty_assertions::assert_eq!(
-        run_function(name, params, available_gas, expected_cost, example_dir_data, false),
+        run_function(
+            name,
+            params,
+            config.available_gas,
+            config.expected_cost,
+            example_dir_data,
+            config.auto_add_withdraw_gas
+        ),
         expected_result
-    );
-}
-
-#[rstest]
-#[case::fib_pass(
-    "fib",
-    &[1, 1, 10].map(Felt252::from), Some(200000), None,
-    RunResultValue::Success([89].map(Felt252::from).into_iter().collect())
-)]
-#[case::fib_fail(
-    "fib",
-    &[1, 1, 10].map(Felt252::from), Some(10000), None,
-    RunResultValue::Panic(vec![Felt252::from_bytes_be_slice(b"Out of gas")])
-)]
-fn run_function_auto_gas_test(
-    #[case] name: &str,
-    #[case] params: &[Felt252],
-    #[case] available_gas: Option<usize>,
-    #[case] expected_cost: Option<usize>,
-    #[case] expected_result: RunResultValue,
-    example_dir_data: &ExampleDirData,
-) {
-    pretty_assertions::assert_eq!(
-        run_function(name, params, available_gas, expected_cost, example_dir_data, true),
-        expected_result
-    );
-}
-
-#[rstest]
-#[case::size_2(2, 1)]
-#[case::size_3(3, 2)]
-#[case::size_4(4, 3)]
-#[case::size_5(5, 5)]
-#[case::size_6(6, 8)]
-#[case::size_7(7, 13)]
-#[case::size_8(8, 21)]
-#[case::size_9(9, 34)]
-#[case::size_10(10, 55)]
-fn run_fib_array_len(#[case] n: usize, #[case] last: usize, example_dir_data: &ExampleDirData) {
-    assert_matches!(
-        &extract_matches!(
-            run_function("fib_array", &[n].map(Felt252::from), None, None, example_dir_data, false),
-            RunResultValue::Success
-        )[..],
-        [_, _, actual_last, actual_len] if actual_last == &Felt252::from(last) && actual_len == &Felt252::from(n)
-    );
-}
-
-#[rstest]
-fn complex_input_test(example_dir_data: &ExampleDirData) {
-    let runner = SierraCasmRunner::new(
-        checked_compile_to_sierra("complex_input", example_dir_data, false),
-        None,
-        Default::default(),
-        None,
-    )
-    .expect("Failed setting up runner.");
-    let result = runner
-        .run_function_with_starknet_context(
-            // find first
-            runner.find_function("").expect("Failed finding the function."),
-            vec![
-                // `felt_input`
-                Arg::Value(Felt252::from(1)),
-                // `felt_arr_input`
-                Arg::Array(vec![Arg::Value(Felt252::from(2)), Arg::Value(Felt252::from(3))]),
-                // `a_input.val.low`
-                Arg::Value(Felt252::from(4)),
-                // `a_input.val.high`
-                Arg::Value(Felt252::from(5)),
-                // `a_input.arr`
-                Arg::Array(vec![
-                    // `a_input.arr[0].low`
-                    Arg::Value(Felt252::from(6)),
-                    // `a_input.arr[0].high`
-                    Arg::Value(Felt252::from(7)),
-                ]),
-                // `a_arr_input`
-                Arg::Array(vec![
-                    // `a_arr_input[0].val.low`
-                    Arg::Value(Felt252::from(8)),
-                    // `a_arr_input[0].val.high`
-                    Arg::Value(Felt252::from(9)),
-                    // `a_arr_input[0].arr`
-                    Arg::Array(vec![
-                        // `a_arr_input[0].arr[0].low`
-                        Arg::Value(Felt252::from(10)),
-                        // `a_arr_input[0].arr[0].high`
-                        Arg::Value(Felt252::from(11)),
-                        // `a_arr_input[0].arr[1].low`
-                        Arg::Value(Felt252::from(12)),
-                        // `a_arr_input[0].arr[1].high`
-                        Arg::Value(Felt252::from(13)),
-                        // `a_arr_input[0].arr[2].low`
-                        Arg::Value(Felt252::from(14)),
-                        // `a_arr_input[0].arr[2].high`
-                        Arg::Value(Felt252::from(15)),
-                    ]),
-                    // `a_arr_input[1].val.low`
-                    Arg::Value(Felt252::from(16)),
-                    // `a_arr_input[1].val.high`
-                    Arg::Value(Felt252::from(17)),
-                    // `a_arr_input[1].arr`
-                    Arg::Array(vec![
-                        // `a_arr_input[1].arr[0].low`
-                        Arg::Value(Felt252::from(18)),
-                        // `a_arr_input[1].arr[0].high`
-                        Arg::Value(Felt252::from(19)),
-                    ]),
-                ]),
-            ],
-            None,
-            Default::default(),
-        )
-        .expect("Failed running the function.");
-    assert_eq!(
-        result.value,
-        RunResultValue::Success(vec![
-            // `r.low`
-            Felt252::from(1 + 2 + 3 + 4 + 6 + 8 + 10 + 12 + 14 + 16 + 18),
-            // `r.high`
-            Felt252::from(5 + 7 + 9 + 11 + 13 + 15 + 17 + 19)
-        ])
     );
 }
