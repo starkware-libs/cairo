@@ -119,6 +119,11 @@ mod felt_252;
 use felt_252::{Felt252One, Felt252Zero};
 
 /// `felt252` is the basic field element used in Cairo.
+///
+/// It corresponds to an integer in the range 0 ≤ x < P where P is
+/// a very large prime number currently equal to 2^251 + 17⋅2^192 + 1.
+///
+/// Any operation that uses `felt252` will be computed modulo P.
 #[derive(Copy, Drop)]
 pub extern type felt252;
 
@@ -145,12 +150,14 @@ impl Felt252Serde of Serde<felt252> {
 }
 
 extern fn felt252_add(lhs: felt252, rhs: felt252) -> felt252 nopanic;
+
 impl Felt252Add of Add<felt252> {
     #[inline]
     fn add(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_add(lhs, rhs)
     }
 }
+
 impl Felt252AddEq of AddEq<felt252> {
     #[inline]
     fn add_eq(ref self: felt252, other: felt252) {
@@ -159,12 +166,14 @@ impl Felt252AddEq of AddEq<felt252> {
 }
 
 extern fn felt252_sub(lhs: felt252, rhs: felt252) -> felt252 nopanic;
+
 impl Felt252Sub of Sub<felt252> {
     #[inline]
     fn sub(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_sub(lhs, rhs)
     }
 }
+
 impl Felt252SubEq of SubEq<felt252> {
     #[inline]
     fn sub_eq(ref self: felt252, other: felt252) {
@@ -173,12 +182,14 @@ impl Felt252SubEq of SubEq<felt252> {
 }
 
 extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
+
 impl Felt252Mul of Mul<felt252> {
     #[inline]
     fn mul(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_mul(lhs, rhs)
     }
 }
+
 impl Felt252MulEq of MulEq<felt252> {
     #[inline]
     fn mul_eq(ref self: felt252, other: felt252) {
@@ -201,8 +212,10 @@ impl Felt252Neg of Neg<felt252> {
 /// use core::felt252_div;
 ///
 /// assert!(felt252_div(4, 2) == 2);
-/// ```
+/// assert!(felt252_div(4, 3) ==
+/// 1206167596222043737899107594365023368541035738443865566657697352045290673495);
 ///
+/// ```
 pub extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
 
 impl Felt252PartialEq of PartialEq<felt252> {
@@ -254,10 +267,7 @@ use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box}
 
 pub mod array;
 #[allow(unused_imports)]
-use array::{Array, ArrayTrait};
-
-#[allow(unused_imports)]
-use array::{Span, SpanTrait};
+use array::{Array, ArrayTrait, Span, SpanTrait};
 
 pub mod dict;
 #[allow(unused_imports)]
@@ -308,7 +318,6 @@ pub mod math;
 pub mod num;
 
 pub mod ops;
-
 #[allow(unused_imports)]
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
@@ -392,18 +401,16 @@ pub mod string;
 #[allow(unused_imports)]
 use string::StringLiteral;
 
+pub mod iter;
+
 pub mod metaprogramming;
 
 #[allow(unused_imports)]
 mod prelude;
 
-pub mod iter;
-
 #[cfg(test)]
 mod test;
 
-/// Module for testing only.
 pub mod testing;
 
-/// to_byte_array.
 pub mod to_byte_array;
