@@ -11,11 +11,13 @@
 use core::array::ArrayTrait;
 #[allow(unused_imports)]
 use core::integer::U256TryIntoNonZero;
-use core::math::{u256_mul_mod_n, u256_inv_mod};
+use core::math::{u256_inv_mod, u256_mul_mod_n};
 use core::option::OptionTrait;
 use core::traits::{Into, TryInto};
 #[allow(unused_imports)]
-use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, SyscallResultTrait};
+use starknet::eth_address::U256IntoEthAddress;
+#[allow(unused_imports)]
+use starknet::{EthAddress, SyscallResult, SyscallResultTrait};
 
 /// Represents a Secp256{k/r}1 ECDSA signature.
 ///
