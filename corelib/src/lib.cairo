@@ -92,7 +92,6 @@ impl BoolPartialEq of PartialEq<bool> {
 }
 
 impl BoolFelt252DictValue of Felt252DictValue<bool> {
-    /// Returns the default value for dictionary `bool` values, i.e., `false`.
     #[inline]
     fn zero_default() -> bool nopanic {
         false
