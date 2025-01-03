@@ -218,3 +218,42 @@ fn test_option_none_map() {
     let x: Option<ByteArray> = Option::None;
     assert!(x.map(|s: ByteArray| s.len()) == Option::None);
 }
+
+#[test]
+fn test_option_some_map_or() {
+    assert_eq!(Option::Some("foo").map_or(42, |v: ByteArray| v.len()), 3);
+}
+
+#[test]
+fn test_option_none_map_or() {
+    let x: Option<ByteArray> = Option::None;
+    assert_eq!(x.map_or(42, |v: ByteArray| v.len()), 42);
+}
+
+#[test]
+fn test_option_some_map_or_else() {
+    let k = 21;
+    let x = Option::Some("foo");
+    assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 3);
+}
+
+#[test]
+fn test_option_none_map_or_else() {
+    let k = 21;
+    let x: Option<ByteArray> = Option::None;
+    assert_eq!(x.map_or_else( || 2 * k, |v: ByteArray| v.len()), 42);
+}
+
+fn test_option_some_into_iter() {
+    let x: Option<u32> = Option::Some(5);
+    let mut x_iter = x.into_iter();
+    assert!(x_iter.next() == Option::Some(5));
+    assert!(x_iter.next() == Option::None);
+}
+
+#[test]
+fn test_option_none_into_iter() {
+    let x: Option<u32> = Option::None;
+    let mut x_iter = x.into_iter();
+    assert!(x_iter.next() == Option::None);
+}

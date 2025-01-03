@@ -41,7 +41,10 @@ use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     ImplLookupContext, UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
+    ConcreteTraitTypeLongId,
+};
 use crate::substitution::{HasDb, RewriteResult, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
@@ -933,14 +936,12 @@ impl<'db> Inference<'db> {
             }
             _ => {}
         };
-
         let (canonical_trait, canonicalizer) = CanonicalTrait::canonicalize(
             self.db,
             self.inference_id,
             concrete_trait_id,
             impl_var_trait_item_mappings,
         );
-
         // impl_type_bounds order is deterimend by the generic params of the function and therefore
         // is consistent.
         let solution_set = match self.db.canonic_trait_solutions(

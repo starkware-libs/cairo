@@ -1,5 +1,3 @@
-use crate::iter::IntoIterator;
-
 #[test]
 fn test_for_loop_array_sum() {
     let mut sum = 0;
