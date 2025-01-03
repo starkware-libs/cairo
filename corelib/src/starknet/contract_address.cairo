@@ -24,7 +24,7 @@ use core::zeroable::Zeroable;
 #[derive(Copy, Drop)]
 pub extern type ContractAddress;
 
-/// Returns a `ContractAddress` value given a `felt252` address value.
+/// Returns a `ContractAddress` given a `felt252` value.
 ///
 /// # Examples
 ///
