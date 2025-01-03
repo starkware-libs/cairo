@@ -148,7 +148,7 @@ struct MyStruct {
 error: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
  --> lib.cairo:6:5
     [MyStruct { x: 10 }; 3]
-    ^*********************^
+    ^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
 Parameters:
@@ -193,7 +193,7 @@ impl CtorMyStruct of CtorTrait<MyStruct> {
 error: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
  --> lib.cairo:19:5
     [CtorTrait::<T>::new(); 3]
-    ^************************^
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
 Parameters:
@@ -261,7 +261,7 @@ foo
 error: Fixed size array repeated element size must be greater than 0.
  --> lib.cairo:2:5
     [0_u32; 0]
-    ^********^
+    ^^^^^^^^^^
 
 //! > lowering_flat
 Parameters:

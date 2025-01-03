@@ -11,7 +11,6 @@ trait FirstInterface<T> {
 mod toto {
     #[storage]
     struct Storage {}
-
     use super::{FirstInterfaceDispatcher, FirstInterfaceDispatcherTrait};
 
     #[external(v0)]

@@ -1,7 +1,0 @@
-//! > cairo_code
-mod my_mod }
-
-//! > syntax
-mod                  source.cairo storage.type.cairo
-my_mod               source.cairo entity.name.module.cairo
-}                    source.cairo punctuation.brackets.curly.cairo

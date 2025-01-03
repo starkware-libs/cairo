@@ -4449,3 +4449,82 @@ End:
   Return(v10)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Array get at known index 0.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(x: @Array<u8>) -> Option<Box<@u8>> {
+    x.get(0)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: @core::array::Array::<core::integer::u8>
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 0
+End:
+  Match(match core::array::array_get::<core::integer::u8>(v0, v1) {
+    Option::Some(v2) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::Some(v2)
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk2:
+Statements:
+  (v5: ()) <- struct_construct()
+  (v6: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::None(v5)
+End:
+  Goto(blk3, {v6 -> v4})
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: @core::array::Array::<core::integer::u8>
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 0
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::integer::u8>(v0) {
+    Option::Some(v7, v2) => blk1,
+    Option::None(v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::Some(v2)
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk2:
+Statements:
+  (v5: ()) <- struct_construct()
+  (v6: core::option::Option::<core::box::Box::<@core::integer::u8>>) <- Option::None(v5)
+End:
+  Goto(blk3, {v6 -> v4})
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > lowering_diagnostics

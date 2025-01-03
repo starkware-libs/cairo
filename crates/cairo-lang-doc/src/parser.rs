@@ -171,7 +171,7 @@ impl<'a> DocumentationCommentParser<'a> {
             .to_documentable_item_id(self.db.upcast())
     }
 
-    /// Parses the path as a string to an Path Expression, which can be later used by a resolver.
+    /// Parses the path as a string to a Path Expression, which can be later used by a resolver.
     fn prase_comment_link_path(&self, path: String) -> Option<ExprPath> {
         let virtual_file = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),

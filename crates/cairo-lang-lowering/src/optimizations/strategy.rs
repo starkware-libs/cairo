@@ -2,6 +2,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::{Intern, LookupIntern, define_short_id};
 
 use super::gas_redeposit::gas_redeposit;
+use super::validate::validate;
 use crate::FlatLowered;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
@@ -34,6 +35,8 @@ pub enum OptimizationPhase {
     /// The following is not really an optimization but we want to apply optimizations before and
     /// after it, so it is convenient to treat it as an optimization.
     LowerImplicits,
+    /// A validation phase that checks the lowering is valid. Used for debugging purposes.
+    Validate,
 }
 
 impl OptimizationPhase {
@@ -59,6 +62,8 @@ impl OptimizationPhase {
             OptimizationPhase::SplitStructs => split_structs(lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
+            OptimizationPhase::Validate => validate(lowered)
+                .unwrap_or_else(|err| panic!("Failed validation: {:?}", err.to_message())),
         }
         Ok(())
     }

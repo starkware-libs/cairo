@@ -79,3 +79,6 @@ fn comment_remains_after_last_comma() {
         0 // Second comment that needs to remain although it follows a comma.
     ];
 }
+fn struct_line_breaking() {
+    let MyStruct {long_long_long_long_key_a, long_long_long_long_key_b, long_long_long_long_key_c, long_long_long_long_key_d, long_long_long_long_key_e, } = my_val;
+}

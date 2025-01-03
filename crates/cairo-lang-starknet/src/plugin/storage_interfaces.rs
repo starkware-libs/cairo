@@ -4,20 +4,24 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_defs::plugin_utils::extract_single_unnamed_arg;
 use cairo_lang_filesystem::ids::CodeMapping;
+use cairo_lang_syntax::attribute::structured::{
+    AttributeArg, AttributeArgVariant, AttributeStructurize,
+};
 use cairo_lang_syntax::node::ast::OptionArgListParenthesized;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
+use itertools::zip_eq;
 
 use super::starknet_module::backwards_compatible_storage;
-use super::utils::has_derive;
+use super::utils::{has_derive, validate_v0};
 use super::{
-    FLAT_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR, STORAGE_SUB_POINTERS_ATTR, STORE_TRAIT,
-    SUBSTORAGE_ATTR,
+    FLAT_ATTR, RENAME_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR, STORAGE_SUB_POINTERS_ATTR,
+    STORE_TRAIT, SUBSTORAGE_ATTR,
 };
 
-/// Generates an impl for the `starknet::StorageNode` to point to a generate a struct to to be
+/// Generates an impl for the `starknet::StorageNode` to point to a generate a struct to be
 /// pointed to allowing further access to each of its members (i.e. there will be a fitting member
 /// in the inner struct for each member of the struct).
 ///
@@ -85,16 +89,18 @@ impl MacroPlugin for StorageInterfacesPlugin {
                 if !diagnostics.is_empty() {
                     return PluginResult { code: None, diagnostics, remove_original_item: false };
                 }
+                let configs = struct_members_storage_configs(db, &struct_ast, &mut diagnostics);
                 let (content, code_mappings) =
-                    handle_storage_interface_struct(db, &struct_ast, metadata).build();
+                    handle_storage_interface_struct(db, &struct_ast, &configs, metadata).build();
                 PluginResult {
                     code: Some(PluginGeneratedFile {
                         name: "storage_node".into(),
                         content,
                         code_mappings,
                         aux_data: None,
+                        diagnostics_note: Default::default(),
                     }),
-                    diagnostics: vec![],
+                    diagnostics,
                     remove_original_item: false,
                 }
             }
@@ -137,6 +143,7 @@ impl MacroPlugin for StorageInterfacesPlugin {
                         content,
                         code_mappings,
                         aux_data: None,
+                        diagnostics_note: Default::default(),
                     }),
                     diagnostics: vec![],
                     remove_original_item: false,
@@ -157,7 +164,11 @@ impl MacroPlugin for StorageInterfacesPlugin {
     }
 
     fn declared_attributes(&self) -> Vec<String> {
-        vec![STORAGE_NODE_ATTR.to_string(), STORAGE_SUB_POINTERS_ATTR.to_string()]
+        vec![
+            STORAGE_NODE_ATTR.to_string(),
+            STORAGE_SUB_POINTERS_ATTR.to_string(),
+            RENAME_ATTR.to_string(),
+        ]
     }
 
     fn phantom_type_attributes(&self) -> Vec<String> {
@@ -374,7 +385,7 @@ impl<'a> StorageInterfaceInfo<'a> {
                 "        let __$field_name$_value__ = \
                  starknet::storage::PendingStoragePathTrait::new(
                         @self,
-                        selector!(\"$field_name$\")
+                        selector!(\"$field_selector_name$\")
                     );
                     "
                 .to_string()
@@ -404,7 +415,7 @@ impl<'a> StorageInterfaceInfo<'a> {
                     .to_string()
                 } else {
                     "        let __$field_name$_value__ = starknet::storage::StorageBase \
-                     {__base_address__: selector!(\"$field_name$\")};
+                     {__base_address__: selector!(\"$field_selector_name$\")};
 "
                     .to_string()
                 }
@@ -427,6 +438,7 @@ impl<'a> StorageInterfaceInfo<'a> {
 fn handle_storage_interface_for_interface_type(
     db: &dyn SyntaxGroup,
     struct_ast: &ast::ItemStruct,
+    configs: &[StorageMemberConfig],
     metadata: &MacroPluginMetadata<'_>,
     storage_node_type: StorageInterfaceType,
     builder: &mut PatchBuilder<'_>,
@@ -435,12 +447,12 @@ fn handle_storage_interface_for_interface_type(
         StorageInterfaceInfo { db, node_type: storage_node_type.clone(), is_mutable: false };
     // Create Info with type and false for is_mutable
     add_interface_struct_definition(db, builder, struct_ast, &storage_node_info, metadata);
-    add_interface_impl(db, builder, struct_ast, &storage_node_info);
+    add_interface_impl(db, builder, struct_ast, configs, &storage_node_info);
     let mutable_storage_node_info =
         StorageInterfaceInfo { db, node_type: storage_node_type, is_mutable: true };
     // Create Info with type and true for is_mutable
     add_interface_struct_definition(db, builder, struct_ast, &mutable_storage_node_info, metadata);
-    add_interface_impl(db, builder, struct_ast, &mutable_storage_node_info);
+    add_interface_impl(db, builder, struct_ast, configs, &mutable_storage_node_info);
 }
 
 /// Adds the storage interface structs (two variants, mutable and immutable) and their constructor
@@ -451,6 +463,7 @@ fn handle_storage_interface_for_interface_type(
 pub fn handle_storage_interface_struct<'a>(
     db: &'a dyn SyntaxGroup,
     struct_ast: &ast::ItemStruct,
+    configs: &[StorageMemberConfig],
     metadata: &MacroPluginMetadata<'_>,
 ) -> PatchBuilder<'a> {
     // Run for both StorageNode and StorageTrait
@@ -472,6 +485,7 @@ pub fn handle_storage_interface_struct<'a>(
         handle_storage_interface_for_interface_type(
             db,
             struct_ast,
+            configs,
             metadata,
             interface_type,
             &mut builder,
@@ -503,10 +517,8 @@ fn add_interface_struct_definition(
     storage_node_info: &StorageInterfaceInfo<'_>,
     metadata: &MacroPluginMetadata<'_>,
 ) {
-    let struct_name_syntax = struct_ast.name(db).as_syntax_node();
-
     let node_type_name = storage_node_info.node_type_name();
-    let struct_name_rewrite_node = RewriteNode::new_trimmed(struct_name_syntax.clone());
+    let struct_name_rewrite_node = RewriteNode::from_ast_trimmed(&struct_ast.name(db));
     let struct_visibility = if backwards_compatible_storage(metadata.edition) {
         RewriteNode::text("pub ")
     } else {
@@ -531,8 +543,6 @@ fn add_interface_struct_definition(
     ));
 
     for field in struct_ast.members(db).elements(db) {
-        let field_name = field.name(db).as_syntax_node();
-        let field_type = field.type_clause(db).ty(db).as_syntax_node();
         let concrete_node_members_type = storage_node_info.concrete_node_members_type(&field);
         let field_visibility = if backwards_compatible_storage(metadata.edition) {
             RewriteNode::text("pub ")
@@ -545,11 +555,17 @@ fn add_interface_struct_definition(
         };
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("    $field_visibility$$field_name$: {concrete_node_members_type},\n",),
+            &format!(
+                "$attributes$    $field_visibility$$field_name$: {concrete_node_members_type},\n",
+            ),
             &[
+                ("attributes".to_string(), RewriteNode::from_ast(&field.attributes(db))),
                 ("field_visibility".to_string(), field_visibility),
-                ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
-                ("field_type".to_string(), RewriteNode::new_trimmed(field_type)),
+                ("field_name".to_string(), RewriteNode::from_ast_trimmed(&field.name(db))),
+                (
+                    "field_type".to_string(),
+                    RewriteNode::from_ast_trimmed(&field.type_clause(db).ty(db)),
+                ),
             ]
             .into(),
         ));
@@ -562,9 +578,10 @@ fn add_interface_impl(
     db: &dyn SyntaxGroup,
     builder: &mut PatchBuilder<'_>,
     struct_ast: &ast::ItemStruct,
+    configs: &[StorageMemberConfig],
     storage_node_info: &StorageInterfaceInfo<'_>,
 ) {
-    let struct_name_syntax = struct_ast.name(db).as_syntax_node();
+    let struct_name = RewriteNode::from_ast_trimmed(&struct_ast.name(db));
     let node_type_name = storage_node_info.node_type_name();
     let node_impl_name = storage_node_info.node_impl_name();
     let node_trait_name = storage_node_info.node_trait_name();
@@ -582,20 +599,23 @@ fn add_interface_impl(
              {{{node_constructor_prefix_code}
 ",
         ),
-        &[("object_name".to_string(), RewriteNode::new_trimmed(struct_name_syntax.clone()))].into(),
+        &[("object_name".to_string(), struct_name.clone())].into(),
     ));
 
     let fields = struct_ast.members(db).elements(db);
-    let mut fields_iter = fields.iter().peekable();
-    while let Some(field) = fields_iter.next() {
-        let field_name = field.name(db).as_syntax_node();
-        let field_type = field.type_clause(db).ty(db).as_syntax_node();
+    let mut fields_iter = zip_eq(&fields, configs).peekable();
+    while let Some((field, config)) = fields_iter.next() {
+        let field_name = RewriteNode::from_ast_trimmed(&field.name(db));
+        let field_type = RewriteNode::from_ast_trimmed(&field.type_clause(db).ty(db));
+        let field_selector_name =
+            config.rename.as_deref().map_or_else(|| field_name.clone(), RewriteNode::text);
         let is_last = fields_iter.peek().is_none();
         builder.add_modified(RewriteNode::interpolate_patched(
             &storage_node_info.node_constructor_field_init_code(is_last, field),
             &[
-                ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
-                ("field_type".to_string(), RewriteNode::new_trimmed(field_type)),
+                ("field_selector_name".to_string(), field_selector_name),
+                ("field_name".to_string(), field_name),
+                ("field_type".to_string(), field_type),
             ]
             .into(),
         ));
@@ -603,14 +623,13 @@ fn add_interface_impl(
 
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!("        {} {{\n", storage_node_info.node_type_name()),
-        &[("object_name".to_string(), RewriteNode::new_trimmed(struct_name_syntax))].into(),
+        &[("object_name".to_string(), struct_name)].into(),
     ));
 
     for field in struct_ast.members(db).elements(db) {
-        let field_name = field.name(db).as_syntax_node();
         builder.add_modified(RewriteNode::interpolate_patched(
             "           $field_name$: __$field_name$_value__,\n",
-            &[("field_name".to_string(), RewriteNode::new_trimmed(field_name))].into(),
+            &[("field_name".to_string(), RewriteNode::from_ast_trimmed(&field.name(db)))].into(),
         ));
     }
 
@@ -625,7 +644,6 @@ fn add_node_enum_definition(
     is_mutable: bool,
 ) {
     let storage_node_info = StorageInterfaceInfo::from_enum_ast(db, enum_ast, is_mutable).unwrap();
-    let enum_name_syntax = enum_ast.name(db).as_syntax_node();
     let node_type_name = storage_node_info.node_type_name();
 
     builder.add_modified(RewriteNode::interpolate_patched(
@@ -634,22 +652,20 @@ fn add_node_enum_definition(
             enum {node_type_name} {{
                 "
         ),
-        &[("object_name".to_string(), RewriteNode::new_trimmed(enum_name_syntax.clone()))].into(),
+        &[("object_name".to_string(), RewriteNode::from_ast_trimmed(&enum_ast.name(db)))].into(),
     ));
     for variant in enum_ast.variants(db).elements(db) {
         let concrete_node_members_type = storage_node_info.concrete_node_members_type(&variant);
-        let field_name = variant.name(db).as_syntax_node();
         let field_type = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => RewriteNode::text("()"),
-            ast::OptionTypeClause::TypeClause(tc) => {
-                RewriteNode::new_trimmed(tc.ty(db).as_syntax_node())
-            }
+            ast::OptionTypeClause::TypeClause(tc) => RewriteNode::from_ast_trimmed(&tc.ty(db)),
         };
 
         builder.add_modified(RewriteNode::interpolate_patched(
-            &format!("    $field_name$: {concrete_node_members_type},\n",),
+            &format!("$attributes$    $field_name$: {concrete_node_members_type},\n",),
             &[
-                ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
+                ("attributes".to_string(), RewriteNode::from_ast(&variant.attributes(db))),
+                ("field_name".to_string(), RewriteNode::from_ast_trimmed(&variant.name(db))),
                 ("field_type".to_string(), field_type),
             ]
             .into(),
@@ -666,7 +682,7 @@ fn add_node_enum_impl(
     is_mutable: bool,
 ) {
     let storage_node_info = StorageInterfaceInfo::from_enum_ast(db, enum_ast, is_mutable).unwrap();
-    let enum_name_syntax = enum_ast.name(db).as_syntax_node();
+    let enum_name = RewriteNode::from_ast_trimmed(&enum_ast.name(db));
     let node_type_name = storage_node_info.node_type_name();
     let node_impl_name = storage_node_info.node_impl_name();
     let node_trait_name = storage_node_info.node_trait_name();
@@ -683,7 +699,7 @@ fn add_node_enum_impl(
                         {node_constructor_prefix_code}
 ",
         ),
-        &[("object_name".to_string(), RewriteNode::new_trimmed(enum_name_syntax.clone()))].into(),
+        &[("object_name".to_string(), enum_name.clone())].into(),
     ));
 
     let mut default_index = None;
@@ -697,7 +713,6 @@ fn add_node_enum_impl(
         } else {
             index + usize::from(default_index.is_none())
         };
-        let field_name = variant.name(db).as_syntax_node();
         let field_type = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => "()".to_string(),
             ast::OptionTypeClause::TypeClause(tc) => {
@@ -708,8 +723,8 @@ fn add_node_enum_impl(
         builder.add_modified(RewriteNode::interpolate_patched(
             &storage_node_info.node_constructor_field_init_code(false, variant),
             &[
-                ("object_name".to_string(), RewriteNode::new_trimmed(enum_name_syntax.clone())),
-                ("field_name".to_string(), RewriteNode::new_trimmed(field_name)),
+                ("object_name".to_string(), enum_name.clone()),
+                ("field_name".to_string(), RewriteNode::from_ast_trimmed(&variant.name(db))),
                 ("field_type".to_string(), RewriteNode::text(&field_type)),
                 ("field_index".to_string(), RewriteNode::text(&variant_selector.to_string())),
             ]
@@ -722,4 +737,100 @@ fn add_node_enum_impl(
         builder.add_str("        _ => panic!(\"Invalid selector value\"),\n");
     }
     builder.add_str("    }\n}\n}\n");
+}
+
+/// The configuration of a storage struct member.
+#[derive(Debug)]
+pub struct StorageMemberConfig {
+    pub kind: StorageMemberKind,
+    pub rename: Option<String>,
+}
+
+/// The kind of a storage struct member.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum StorageMemberKind {
+    /// A basic storage member - would be stored in a separate storage slot.
+    Basic,
+    /// A flat storage member - would be stored in the same storage slot as the struct.
+    Flat,
+    /// A sub-storage member - would be stored in the same storage slot, but used for components.
+    SubStorage,
+}
+
+/// Gets the storage configuration for members of a struct.
+pub fn struct_members_storage_configs(
+    db: &dyn SyntaxGroup,
+    struct_ast: &ast::ItemStruct,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Vec<StorageMemberConfig> {
+    struct_ast
+        .members(db)
+        .elements(db)
+        .into_iter()
+        .map(|member| get_member_storage_config(db, &member, diagnostics))
+        .collect()
+}
+
+/// Gets the storage configuration of a struct member.
+pub fn get_member_storage_config(
+    db: &dyn SyntaxGroup,
+    member: &ast::Member,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> StorageMemberConfig {
+    let mut result = StorageMemberConfig { kind: StorageMemberKind::Basic, rename: None };
+    for attr in member.query_attr(db, FLAT_ATTR) {
+        let attr = attr.structurize(db);
+        if result.kind != StorageMemberKind::Basic {
+            diagnostics.push(PluginDiagnostic::error(
+                attr.stable_ptr,
+                "Multiple storage attributes are not allowed.".to_string(),
+            ));
+        }
+        if !attr.args.is_empty() {
+            diagnostics.push(PluginDiagnostic::error(
+                attr.args_stable_ptr,
+                "Unexpected arguments.".to_string(),
+            ));
+        }
+        result.kind = StorageMemberKind::Flat;
+    }
+    for attr in member.query_attr(db, SUBSTORAGE_ATTR) {
+        if result.kind != StorageMemberKind::Basic {
+            diagnostics.push(PluginDiagnostic::error(
+                &attr,
+                "Multiple storage attributes are not allowed.".to_string(),
+            ));
+        }
+        validate_v0(db, diagnostics, &attr, SUBSTORAGE_ATTR);
+        result.kind = StorageMemberKind::SubStorage;
+    }
+    for attr in member.query_attr(db, RENAME_ATTR) {
+        if result.kind != StorageMemberKind::Basic {
+            diagnostics.push(PluginDiagnostic::error(
+                &attr,
+                "The `rename` attribute cannot be used with other storage attributes.".to_string(),
+            ));
+        }
+        if result.rename.is_some() {
+            diagnostics.push(PluginDiagnostic::error(
+                &attr,
+                "Multiple `rename` attributes are not allowed.".to_string(),
+            ));
+        }
+        let attr = attr.structurize(db);
+        let [
+            AttributeArg {
+                variant: AttributeArgVariant::Unnamed(ast::Expr::String(value)), ..
+            },
+        ] = &attr.args[..]
+        else {
+            diagnostics.push(PluginDiagnostic::error(
+                attr.args_stable_ptr,
+                "Unexpected arguments, expected single string argument.".to_string(),
+            ));
+            continue;
+        };
+        result.rename = value.string_value(db);
+    }
+    result
 }

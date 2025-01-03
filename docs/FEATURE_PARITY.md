@@ -1,6 +1,6 @@
 # Cairo 0 Features Parity
 
- In this page we track the missing features to reach feature parity with the old compiler version. We divided them by Cairo, Starknet and specific system calls in Starknet OS.
+ On this page we track the missing features to reach feature parity with the old compiler version. We divided them by Cairo, Starknet and specific system calls in Starknet OS.
 
  If we missed a feature, please let us know.
 
@@ -56,5 +56,4 @@
 | get_sequencer_address | ✅     |
 | get_transaction_info  | ✅     |
 | send_message_to_l1    | ✅     |
-| deploy                | ✅     |
 

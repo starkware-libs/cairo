@@ -208,6 +208,7 @@ impl DebugWithDb<dyn SierraGenGroup> for SierraProgramWithDebug {
                     let loc = get_location_marks(
                         db.upcast(),
                         &loc.first().unwrap().diagnostic_location(db.upcast()),
+                        true,
                     );
                     println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
                 }

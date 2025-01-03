@@ -12,6 +12,7 @@ use cairo_lang_utils::{Intern, LookupIntern};
 use smol_str::SmolStr;
 
 use super::attribute::SemanticQueryAttrs;
+use super::feature_kind::extract_item_feature_config;
 use super::generics::{GenericParamsData, semantic_generic_params};
 use super::visibility::Visibility;
 use crate::db::SemanticGroup;
@@ -187,6 +188,10 @@ pub fn priv_struct_definition_data(
     // Members.
     let mut members = OrderedHashMap::default();
     for member in struct_ast.members(syntax_db).elements(syntax_db) {
+        let feature_restore = resolver
+            .data
+            .feature_config
+            .override_with(extract_item_feature_config(db, &member, &mut diagnostics));
         let id = MemberLongId(module_file_id, member.stable_ptr()).intern(db);
         let ty = resolve_type(
             db,
@@ -202,6 +207,7 @@ pub fn priv_struct_definition_data(
         {
             diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name });
         }
+        resolver.data.feature_config.restore(feature_restore);
     }
 
     // Check fully resolved.

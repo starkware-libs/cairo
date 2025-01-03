@@ -26,6 +26,7 @@ pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
 pub mod utils;
+pub mod with_db;
 
 #[cfg(test)]
 mod ast_test;

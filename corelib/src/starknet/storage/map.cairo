@@ -1,8 +1,7 @@
 #[allow(unused_imports)]
 use super::{
-    StoragePath, Mutable, StoragePathHashState, StoragePathTrait, StoragePathUpdateTrait,
-    MutableTrait, StorageAsPointer, StoragePointerReadAccess, StoragePointerWriteAccess,
-    StorageAsPath,
+    Mutable, MutableTrait, StorageAsPath, StorageAsPointer, StoragePath, StoragePathHashState,
+    StoragePathTrait, StoragePathUpdateTrait, StoragePointerReadAccess, StoragePointerWriteAccess,
 };
 
 /// Trait for reading a contract/component storage member in a specific key place.

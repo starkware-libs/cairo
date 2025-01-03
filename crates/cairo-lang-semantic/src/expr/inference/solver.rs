@@ -1,3 +1,6 @@
+use std::collections::BTreeMap;
+use std::sync::Arc;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_proc_macros::SemanticObject;
@@ -18,7 +21,7 @@ use crate::items::imp::{
     find_closure_generated_candidate,
 };
 use crate::substitution::SemanticRewriter;
-use crate::types::ImplTypeId;
+use crate::types::{ImplTypeById, ImplTypeId};
 use crate::{ConcreteTraitId, GenericArgumentId, TypeId, TypeLongId};
 
 /// A generic solution set for an inference constraint system.
@@ -82,12 +85,15 @@ pub fn canonic_trait_solutions(
     db: &dyn SemanticGroup,
     canonical_trait: CanonicalTrait,
     lookup_context: ImplLookupContext,
+    impl_type_bounds: BTreeMap<ImplTypeById, TypeId>,
 ) -> Result<SolutionSet<CanonicalImpl>, InferenceError> {
     let mut concrete_trait_id = canonical_trait.id;
+    let impl_type_bounds = Arc::new(impl_type_bounds);
     // If the trait is not fully concrete, we might be able to use the trait's items to find a
     // more concrete trait.
     if !concrete_trait_id.is_fully_concrete(db) {
-        let mut solver = Solver::new(db, canonical_trait, lookup_context.clone());
+        let mut solver =
+            Solver::new(db, canonical_trait, lookup_context.clone(), impl_type_bounds.clone());
         match solver.solution_set(db) {
             SolutionSet::None => {}
             SolutionSet::Unique(imp) => {
@@ -104,6 +110,7 @@ pub fn canonic_trait_solutions(
         db,
         CanonicalTrait { id: concrete_trait_id, mappings: ImplVarTraitItemMappings::default() },
         lookup_context,
+        impl_type_bounds,
     );
 
     Ok(solver.solution_set(db))
@@ -115,6 +122,7 @@ pub fn canonic_trait_solutions_cycle(
     _cycle: &salsa::Cycle,
     _canonical_trait: &CanonicalTrait,
     _lookup_context: &ImplLookupContext,
+    _impl_type_bounds: &BTreeMap<ImplTypeById, TypeId>,
 ) -> Result<SolutionSet<CanonicalImpl>, InferenceError> {
     Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
 }
@@ -163,6 +171,7 @@ impl Solver {
         db: &dyn SemanticGroup,
         canonical_trait: CanonicalTrait,
         lookup_context: ImplLookupContext,
+        impl_type_bounds: Arc<BTreeMap<ImplTypeById, TypeId>>,
     ) -> Self {
         let filter = canonical_trait.id.filter(db);
         let mut candidates =
@@ -172,7 +181,14 @@ impl Solver {
         let candidate_solvers = candidates
             .into_iter()
             .filter_map(|candidate| {
-                CandidateSolver::new(db, &canonical_trait, candidate, &lookup_context).ok()
+                CandidateSolver::new(
+                    db,
+                    &canonical_trait,
+                    candidate,
+                    &lookup_context,
+                    impl_type_bounds.clone(),
+                )
+                .ok()
             })
             .collect();
 
@@ -223,10 +239,19 @@ impl CandidateSolver {
         canonical_trait: &CanonicalTrait,
         candidate: UninferredImpl,
         lookup_context: &ImplLookupContext,
+        impl_type_bounds: Arc<BTreeMap<ImplTypeById, TypeId>>,
     ) -> InferenceResult<CandidateSolver> {
         let mut inference_data: InferenceData = InferenceData::new(InferenceId::Canonical);
         let mut inference = inference_data.inference(db);
+        inference.data.impl_type_bounds = impl_type_bounds.clone();
         let (canonical_trait, canonical_embedding) = canonical_trait.embed(&mut inference);
+
+        // If the closure params are not var free, we cannot infer the negative impl.
+        // We use the canonical trait concretize the closure params.
+        if let UninferredImpl::GeneratedImpl(imp) = candidate {
+            inference.conform_traits(imp.lookup_intern(db).concrete_trait, canonical_trait.id)?;
+        }
+
         // Add the defining module of the candidate to the lookup.
         let mut lookup_context = lookup_context.clone();
         lookup_context.insert_lookup_scope(db, &candidate);
