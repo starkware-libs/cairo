@@ -161,11 +161,8 @@ mod sub_pointers;
 pub use sub_pointers::{SubPointers, SubPointersForward, SubPointersMut, SubPointersMutForward};
 
 mod vec;
+pub use vec::{IntoIterRange, MutableVecTrait, Vec, VecTrait};
 use vec::{MutableVecIndexView, VecIndexView};
-pub use vec::{
-    MutableVecIntoIterRange, MutableVecTrait, PathableMutableVecIntoIterRange,
-    PathableVecIntoIterRange, Vec, VecIntoIterRange, VecTrait,
-};
 
 /// A pointer to an address in storage, can be used to read and write values, if the generic type
 /// supports it (e.g. basic types like `felt252`).
