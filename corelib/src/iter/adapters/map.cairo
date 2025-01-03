@@ -1,5 +1,13 @@
 use crate::iter::Iterator;
 
+/// An iterator that maps the values of `iter` with `f`.
+///
+/// This `struct` is created by the [`map`] method on [`Iterator`]. See its
+/// documentation for more.
+///
+/// [`map`]: Iterator::map
+/// [`Iterator`]: core::iter::Iterator
+///
 #[must_use]
 #[derive(Drop, Clone)]
 pub struct Map<I, F> {
