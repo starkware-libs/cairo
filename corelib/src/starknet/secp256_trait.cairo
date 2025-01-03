@@ -50,6 +50,16 @@ impl SignatureStorePacking of starknet::StorePacking<Signature, (u256, u256, boo
 /// coordinate is `r`.
 ///
 /// See https://eips.ethereum.org/EIPS/eip-155 for more details.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::secp256_trait::signature_from_vrs;
+///
+/// let signature = signature_from_vrs(0,
+/// 0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac_u256,
+/// 0x36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d60_u256);
+/// ```
 pub fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
     Signature { r, s, y_parity: v % 2 == 0 }
 }
@@ -61,7 +71,33 @@ pub fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
 ///
 /// # Examples
 ///
-/// TODO(tadev0): add examples.
+/// ```
+/// use core::starknet::secp256k1::Secp256k1Point;
+/// use core::starknet::secp256_trait::Secp256Trait;
+/// use core::starknet::SyscallResultTrait;
+///
+/// assert!(
+///     Secp256Trait::<
+///         Secp256k1Point,
+///     >::get_curve_size() == 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141,
+/// );
+///
+/// let generator = Secp256Trait::<Secp256k1Point>::get_generator_point();
+///
+/// let generator = Secp256Trait::<
+/// Secp256k1Point,
+/// >::secp256_ec_new_syscall(
+/// 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,
+/// 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8,
+/// )
+/// .unwrap_syscall();
+///
+/// let random_point = Secp256Trait::<
+/// Secp256k1Point,
+/// >::secp256_ec_get_point_from_x_syscall(
+/// 0x4aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff3_u256, true,
+/// );
+/// ```
 pub trait Secp256Trait<Secp256Point> {
     /// Returns the order (size) of the curve's underlying field.
     ///
@@ -101,7 +137,26 @@ pub trait Secp256Trait<Secp256Point> {
 /// and scalar multiplication.
 ///
 /// # Examples
-/// TODO(tadev0): add examples.
+///
+/// ```
+/// use core::starknet::SyscallResultTrait;
+/// use core::starknet::secp256k1::Secp256k1Point;
+/// use core::starknet::secp256_trait::Secp256PointTrait;
+/// use core::starknet::secp256_trait::Secp256Trait;
+///
+/// let generator = Secp256Trait::<Secp256k1Point>::get_generator_point();
+///
+/// assert!(
+///     Secp256PointTrait::get_coordinates(generator)
+///         .unwrap_syscall() == (
+///             0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,
+///             0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8,
+///         ),
+/// );
+///
+/// let point = Secp256PointTrait::add(generator, generator);
+/// let other_point = Secp256PointTrait::mul(generator, 2);
+/// ```
 pub trait Secp256PointTrait<Secp256Point> {
     /// Returns the x and y coordinates of the curve point.
     fn get_coordinates(self: Secp256Point) -> SyscallResult<(u256, u256)>;
@@ -127,6 +182,16 @@ pub trait Secp256PointTrait<Secp256Point> {
 /// # Returns
 ///
 /// Returns `true` if the value is in the valid range [1, N), `false` otherwise.
+///
+/// # Examples
+///
+/// ```
+/// assert!(
+///     is_signature_entry_valid::<
+///         Secp256k1Point,
+///     >(0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac_u256),
+/// );
+/// ```
 pub fn is_signature_entry_valid<
     Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>,
 >(
@@ -138,7 +203,10 @@ pub fn is_signature_entry_valid<
 /// Checks whether a signature is valid given a public key point and a message hash.
 ///
 /// # Examples
-/// TODO(tadev0): add examples.
+///
+/// ```
+///
+/// ```
 pub fn is_valid_signature<
     Secp256Point,
     +Drop<Secp256Point>,
@@ -171,7 +239,10 @@ pub fn is_valid_signature<
 /// Returns the public key as a point on the curve.
 ///
 /// # Examples
-/// TODO(tadev0): add examples.
+///
+/// ```
+///
+/// ```
 pub fn recover_public_key<
     Secp256Point,
     +Drop<Secp256Point>,
