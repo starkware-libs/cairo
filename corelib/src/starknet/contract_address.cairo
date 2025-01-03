@@ -2,8 +2,7 @@
 //! `[0, 2**251)`.
 //!
 //!
-//! `contract_address_const` function allows to construct a `ContractAddress` value from a constant
-//! `felt252` value.
+//! A variable of type `ContractAddress` can be created from a `felt252` value using the `contract_address_const` function, or using the `TryInto` trait.
 //!
 //! # Examples
 //!
