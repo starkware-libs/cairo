@@ -1,11 +1,17 @@
 //! Utilities for handling gas in Cairo code.
-//!
 
+#[cfg(not(gas: "disabled"))]
 use crate::RangeCheck;
 
-/// A type representing the table of the costs of the different builtin usages.
+/// Type representing the table of the costs of the different builtin usages.
+#[cfg(not(gas: "disabled"))]
 #[derive(Copy, Drop)]
 pub extern type BuiltinCosts;
+
+/// Placeholder when gas mechanism is disabled.
+#[cfg(gas: "disabled")]
+#[derive(Copy, Drop)]
+pub struct BuiltinCosts {}
 
 /// The gas builtin.
 /// This type is used to handle gas in the Cairo code.
@@ -35,15 +41,27 @@ pub extern type GasBuiltin;
 ///     Option::None => cheap_not_enough_gas_case(),
 /// }
 /// ```
+#[cfg(not(gas: "disabled"))]
 pub extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+/// Placeholder when gas mechanism is disabled.
+#[cfg(gas: "disabled")]
+pub fn withdraw_gas() -> Option<()> nopanic {
+    Option::Some(())
+}
 
 /// Same as `withdraw_gas`, but directly receives `BuiltinCosts`, which enables optimizations
 /// by removing the need for repeated internal calls for fetching the table of consts that may
 /// internally happen in calls to `withdraw_gas`.
 /// Should be used with caution.
+#[cfg(not(gas: "disabled"))]
 pub extern fn withdraw_gas_all(
     costs: BuiltinCosts,
 ) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+/// Placeholder when gas mechanism is disabled.
+#[cfg(gas: "disabled")]
+pub fn withdraw_gas_all(costs: BuiltinCosts) -> Option<()> nopanic {
+    Option::Some(())
+}
 
 
 /// Returns unused gas into the gas builtin.
@@ -53,4 +71,10 @@ pub extern fn withdraw_gas_all(
 pub extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 
 /// Returns the `BuiltinCosts` table to be used in `withdraw_gas_all`.
+#[cfg(not(gas: "disabled"))]
 pub extern fn get_builtin_costs() -> BuiltinCosts nopanic;
+/// Placeholder when gas mechanism is disabled.
+#[cfg(gas: "disabled")]
+pub fn get_builtin_costs() -> BuiltinCosts nopanic {
+    BuiltinCosts {}
+}

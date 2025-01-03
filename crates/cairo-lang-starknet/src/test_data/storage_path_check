@@ -26,15 +26,15 @@ struct Storage {
 //! > expected_diagnostics
 
 //! > diagnostics
-warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`.
+warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:10:5
     has_a: HasA,
-    ^***^
+    ^^^^^
 
-warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`.
+warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:17:9
     pub has_a: HasA,
-        ^***^
+        ^^^^^
 
 //! > ==========================================================================
 
@@ -75,7 +75,7 @@ mod contract_with_and_without_ignored {
 //! > expected_diagnostics
 
 //! > diagnostics
-warning: Plugin diagnostic: The path `y.member0` collides with existing path `x.ignored_member.member0`.
+warning: Plugin diagnostic: The path `y.member0` collides with existing path `x.ignored_member.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:25:13
         pub y: Struct0,
             ^
@@ -115,15 +115,15 @@ mod component_with_and_without_ignored {
 //! > expected_diagnostics
 
 //! > diagnostics
-warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`.
+warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:19:13
         pub has_a: HasA,
-            ^***^
+            ^^^^^
 
-warning: Plugin diagnostic: The path `has_has_a.has_a.a` collides with existing path `a`.
+warning: Plugin diagnostic: The path `has_has_a.has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:21:13
         pub has_has_a: HasHasA,
-            ^*******^
+            ^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -151,7 +151,7 @@ struct IgnoredMemberStruct {
 
 #[starknet::component]
 mod component {
-    use super::{Struct0, IgnoredMemberStruct};
+    use super::{IgnoredMemberStruct, Struct0};
     #[storage]
     pub struct Storage {
         #[flat]
@@ -174,12 +174,75 @@ mod contract_with_component {
 //! > expected_diagnostics
 
 //! > diagnostics
-warning: Plugin diagnostic: The path `y.ignored_member.member0` collides with existing path `x.member0`.
+warning: Plugin diagnostic: The path `y.ignored_member.member0` collides with existing path `x.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:25:13
         pub y: IgnoredMemberStruct,
             ^
 
-warning: Plugin diagnostic: The path `member.y.ignored_member.member0` collides with existing path `member.x.member0`.
+warning: Plugin diagnostic: The path `member.y.ignored_member.member0` collides with existing path `member.x.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:35:9
         member: component::Storage,
-        ^****^
+        ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test ignored colliding paths check.
+
+//! > test_runner_name
+test_storage_path_check(expect_diagnostics: false)
+
+//! > cairo_code
+#[starknet::storage_node]
+struct SingleMember {
+    pub value: felt252,
+}
+
+#[starknet::storage_node]
+struct IgnoredCollision1 {
+    #[flat]
+    #[allow(starknet::colliding_storage_paths)]
+    pub a: SingleMember,
+    #[flat]
+    pub b: SingleMember,
+}
+
+#[starknet::storage_node]
+struct IgnoredCollision2 {
+    #[flat]
+    pub a: SingleMember,
+    #[flat]
+    #[allow(starknet::colliding_storage_paths)]
+    pub b: SingleMember,
+}
+
+#[starknet::storage_node]
+#[allow(starknet::colliding_storage_paths)]
+struct IgnoredCollision3 {
+    #[flat]
+    pub a: SingleMember,
+    #[flat]
+    pub b: SingleMember,
+}
+
+//! > diagnostics
+
+//! > ==========================================================================
+
+//! > Test collision by renames.
+
+//! > test_runner_name
+test_storage_path_check(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::storage_node]
+struct IgnoredCollision1 {
+    pub a: felt252,
+    #[rename("a")]
+    pub b: felt252,
+}
+
+//! > diagnostics
+warning: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+ --> lib.cairo:5:9
+    pub b: felt252,
+        ^

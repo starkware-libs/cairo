@@ -288,9 +288,7 @@ impl U96sIntoCircuitInputValue of IntoCircuitInputValue<[u96; 4]> {
     fn into_circuit_input_value(self: [u96; 4]) -> [U96Guarantee; 4] {
         let [val0, val1, val2, val3] = self;
         [
-            into_u96_guarantee(val0),
-            into_u96_guarantee(val1),
-            into_u96_guarantee(val2),
+            into_u96_guarantee(val0), into_u96_guarantee(val1), into_u96_guarantee(val2),
             into_u96_guarantee(val3),
         ]
     }
@@ -299,10 +297,8 @@ impl U96sIntoCircuitInputValue of IntoCircuitInputValue<[u96; 4]> {
 impl U384IntoCircuitInputValue of IntoCircuitInputValue<u384> {
     fn into_circuit_input_value(self: u384) -> [U96Guarantee; 4] {
         [
-            into_u96_guarantee(self.limb0),
-            into_u96_guarantee(self.limb1),
-            into_u96_guarantee(self.limb2),
-            into_u96_guarantee(self.limb3),
+            into_u96_guarantee(self.limb0), into_u96_guarantee(self.limb1),
+            into_u96_guarantee(self.limb2), into_u96_guarantee(self.limb3),
         ]
     }
 }
@@ -428,11 +424,9 @@ extern fn get_circuit_output<C, Output>(
 
 /// Helper module to convert into `u384`.
 mod conversions {
-    use crate::internal::{
-        bounded_int, bounded_int::{BoundedInt, AddHelper, MulHelper, DivRemHelper},
-    };
-    use crate::integer::upcast;
-
+    use crate::integer::{downcast, upcast};
+    use crate::internal::bounded_int::{AddHelper, BoundedInt, DivRemHelper, MulHelper};
+    use crate::internal::bounded_int;
     use super::{u384, u96};
 
     type ConstValue<const VALUE: felt252> = BoundedInt<VALUE, VALUE>;
@@ -507,6 +501,14 @@ mod conversions {
         u384 { limb0, limb1, limb2: upcast(limb2), limb3: 0 }
     }
 
+    pub fn felt252_try_into_two_u96(value: felt252) -> Option<(u96, u96)> {
+        let v: u256 = value.into();
+        let (limb1_low32, limb0) = bounded_int::div_rem(v.low, NZ_POW96_TYPED);
+        let limb1_high64: BoundedInt<0, { POW64 - 1 }> = downcast(v.high)?;
+        let limb1 = bounded_int::add(bounded_int::mul(limb1_high64, POW32_TYPED), limb1_low32);
+        Option::Some((limb0, limb1))
+    }
+
     pub fn try_into_u128(value: u384) -> Option<u128> {
         if value.limb2 != 0 || value.limb3 != 0 {
             return Option::None;
@@ -540,6 +542,10 @@ mod conversions {
             },
         )
     }
+
+    pub fn two_u96_into_felt252(limb0: u96, limb1: u96) -> felt252 {
+        limb0.into() + limb1.into() * POW96
+    }
 }
 
 impl U128IntoU384 of Into<u128, u384> {
@@ -569,6 +575,21 @@ impl U384TryIntoU128 of TryInto<u384, u128> {
 impl U384TryIntoU256 of TryInto<u384, u256> {
     fn try_into(self: u384) -> Option<u256> {
         conversions::try_into_u256(self)
+    }
+}
+
+impl U384Serde of Serde<u384> {
+    fn serialize(self: @u384, ref output: Array<felt252>) {
+        output.append(conversions::two_u96_into_felt252(*self.limb0, *self.limb1));
+        output.append(conversions::two_u96_into_felt252(*self.limb2, *self.limb3));
+    }
+
+    fn deserialize(ref serialized: Span<felt252>) -> Option<u384> {
+        let [l01, l23] = (*serialized.multi_pop_front::<2>()?).unbox();
+        let (limb0, limb1) = conversions::felt252_try_into_two_u96(l01)?;
+        let (limb2, limb3) = conversions::felt252_try_into_two_u96(l23)?;
+
+        return Option::Some(u384 { limb0, limb1, limb2, limb3 });
     }
 }
 

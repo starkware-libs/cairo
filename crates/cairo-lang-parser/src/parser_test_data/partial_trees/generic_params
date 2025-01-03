@@ -20,30 +20,31 @@ GenericParamList
     ├── separator #0 (kind: TokenComma): ','
     ├── item #1 (kind: GenericParamImplAnonymous)
     │   ├── plus (kind: TokenPlus): '+'
-    │   └── trait_path (kind: ExprPath)
-    │       ├── item #0 (kind: PathSegmentSimple)
-    │       │   └── ident (kind: TokenIdentifier): 'traits'
-    │       ├── separator #0 (kind: TokenColonColon): '::'
-    │       └── item #1 (kind: PathSegmentWithGenericArgs)
-    │           ├── ident (kind: TokenIdentifier): 'Into'
-    │           ├── separator (kind: OptionTerminalColonColonEmpty) []
-    │           └── generic_args (kind: GenericArgs)
-    │               ├── langle (kind: TokenLT): '<'
-    │               ├── generic_args (kind: GenericArgList)
-    │               │   ├── item #0 (kind: GenericArgNamed)
-    │               │   │   ├── name (kind: TokenIdentifier): 'T'
-    │               │   │   ├── colon (kind: TokenColon): ':'
-    │               │   │   └── value (kind: GenericArgValueExpr)
-    │               │   │       └── expr (kind: ExprPath)
-    │               │   │           └── item #0 (kind: PathSegmentSimple)
-    │               │   │               └── ident (kind: TokenIdentifier): 'S'
-    │               │   ├── separator #0 (kind: TokenComma): ','
-    │               │   └── item #1 (kind: GenericArgUnnamed)
-    │               │       └── value (kind: GenericArgValueExpr)
-    │               │           └── expr (kind: ExprPath)
-    │               │               └── item #0 (kind: PathSegmentSimple)
-    │               │                   └── ident (kind: TokenIdentifier): 'TEvent'
-    │               └── rangle (kind: TokenGT): '>'
+    │   ├── trait_path (kind: ExprPath)
+    │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │   │   └── ident (kind: TokenIdentifier): 'traits'
+    │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │   └── item #1 (kind: PathSegmentWithGenericArgs)
+    │   │       ├── ident (kind: TokenIdentifier): 'Into'
+    │   │       ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │   │       └── generic_args (kind: GenericArgs)
+    │   │           ├── langle (kind: TokenLT): '<'
+    │   │           ├── generic_args (kind: GenericArgList)
+    │   │           │   ├── item #0 (kind: GenericArgNamed)
+    │   │           │   │   ├── name (kind: TokenIdentifier): 'T'
+    │   │           │   │   ├── colon (kind: TokenColon): ':'
+    │   │           │   │   └── value (kind: GenericArgValueExpr)
+    │   │           │   │       └── expr (kind: ExprPath)
+    │   │           │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │           │   │               └── ident (kind: TokenIdentifier): 'S'
+    │   │           │   ├── separator #0 (kind: TokenComma): ','
+    │   │           │   └── item #1 (kind: GenericArgUnnamed)
+    │   │           │       └── value (kind: GenericArgValueExpr)
+    │   │           │           └── expr (kind: ExprPath)
+    │   │           │               └── item #0 (kind: PathSegmentSimple)
+    │   │           │                   └── ident (kind: TokenIdentifier): 'TEvent'
+    │   │           └── rangle (kind: TokenGT): '>'
+    │   └── type_constrains (kind: OptionAssociatedItemConstraintsEmpty) []
     ├── separator #1 (kind: TokenComma): ','
     └── item #2 (kind: GenericParamNegativeImpl)
         ├── minus (kind: TokenMinus): '-'

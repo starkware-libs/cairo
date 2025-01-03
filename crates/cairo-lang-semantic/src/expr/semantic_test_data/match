@@ -409,7 +409,7 @@ match a {
 error: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:8:18
     MyEnum::B => 3_u16,
-                 ^***^
+                 ^^^^^
 
 //! > expected_semantics
 Match(
@@ -483,7 +483,7 @@ match a {
 error: Match arms have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:8:18
     MyEnum::B => 3 + 3_u16,
-                 ^*******^
+                 ^^^^^^^^^
 
 //! > expected_semantics
 Match(
@@ -769,17 +769,17 @@ Match(
 error: Missing variable in pattern.
  --> lib.cairo:14:5
     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
-    ^**********^
+    ^^^^^^^^^^^^
 
 error: Missing variable in pattern.
  --> lib.cairo:14:20
     MyEnum::A(x) | MyEnum::B((t, _)) => x + t,
-                   ^***************^
+                   ^^^^^^^^^^^^^^^^^
 
 error: Match arms have incompatible types: "core::felt252" and "core::integer::u8"
  --> lib.cairo:15:60
     MyEnum::C((x, _, t)) | MyEnum::D(P{x, y: _, z: t }) => x + t,
-                                                           ^***^
+                                                           ^^^^^
 
 //! > ==========================================================================
 

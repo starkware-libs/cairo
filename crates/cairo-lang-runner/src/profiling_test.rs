@@ -11,7 +11,7 @@ use cairo_lang_test_utils::get_direct_or_file_content;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::ProfilingInfoProcessor;
+use super::{ProfilingInfoProcessor, ProfilingInfoProcessorParams};
 use crate::{ProfilingInfoCollectionConfig, SierraCasmRunner};
 
 cairo_lang_test_utils::test_file_test!(
@@ -21,6 +21,7 @@ cairo_lang_test_utils::test_file_test!(
         major_test_cases: "major_test_cases",
         profiling: "profiling",
         circuit: "circuit",
+        scoped_statements: "scoped_statements"
     },
     test_profiling
 );
@@ -34,6 +35,10 @@ pub fn test_profiling(
         profiling_info_collection_config.set_max_stack_trace_depth(
             max_stack_trace_depth.parse().expect("max_stack_trace_depth must be a number."),
         );
+    }
+
+    if inputs.get("collect_scoped_sierra_statement_weights").is_some() {
+        profiling_info_collection_config.collect_scoped_sierra_statement_weights = true;
     }
 
     let db = RootDatabase::builder()
@@ -77,7 +82,22 @@ pub fn test_profiling(
         Some(&db),
         sierra_program,
         statements_functions,
-        Default::default(),
+        if inputs.contains_key("scoped_mode") {
+            ProfilingInfoProcessorParams {
+                min_weight: 1,
+                process_by_statement: false,
+                process_by_concrete_libfunc: false,
+                process_by_generic_libfunc: false,
+                process_by_user_function: false,
+                process_by_original_user_function: false,
+                process_by_cairo_function: false,
+                process_by_stack_trace: false,
+                process_by_cairo_stack_trace: false,
+                process_by_scoped_statement: true,
+            }
+        } else {
+            Default::default()
+        },
     );
     let processed_profiling_info = profiling_processor.process(&result.profiling_info.unwrap());
 

@@ -1,8 +1,8 @@
-use starknet::{ContractAddress, get_caller_address, contract_address_const};
 use starknet::storage::{
-    StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-    StorageMapWriteAccess,
+    StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
+    StoragePointerWriteAccess,
 };
+use starknet::{ContractAddress, contract_address_const, get_caller_address};
 
 
 #[starknet::interface]
@@ -35,8 +35,6 @@ pub trait HasStorage<
     fn storage(self: @TContractState) -> StorageImpl::BaseType;
     fn storage_mut(ref self: TContractState) -> StorageImplMut::BaseType;
 }
-
-
 use core::num::traits::Zero;
 use starknet::storage::Map;
 #[starknet::storage_node]

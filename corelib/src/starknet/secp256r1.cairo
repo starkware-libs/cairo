@@ -1,14 +1,26 @@
-//! This module contains functions and constructs related to elliptic curve operations on the
-//! secp256r1 curve.
+//! Functions and constructs related to elliptic curve operations on the secp256r1 curve.
+//!
+//! This module provides functionality for performing operations on the NIST P-256 (also known as
+//! secp256r1) elliptic curve. It implements the traits defined in the `secp256_trait` module to
+//! ensure consistent behavior across different secp256 curve implementations.
+//!
+//! Curve information:
+//! * Base field: q =
+//!   0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff
+//! * Scalar field: r =
+//!   0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+//! * a = -3
+//! * b = 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b
+//! * Curve equation: y^2 = x^3 + ax + b
 
-use core::option::OptionTrait;
 use core::gas::GasBuiltin;
+use core::option::OptionTrait;
 #[allow(unused_imports)]
-use starknet::{
-    EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait,
-};
+use starknet::secp256_trait::{Secp256PointTrait, Secp256Trait};
+#[allow(unused_imports)]
+use starknet::{EthAddress, SyscallResult, SyscallResultTrait};
 
-/// A point on the Secp256r1 curve.
+/// Represents a point on the secp256r1 elliptic curve.
 #[derive(Copy, Drop)]
 pub extern type Secp256r1Point;
 
@@ -17,7 +29,7 @@ pub(crate) impl Secp256r1Impl of Secp256Trait<Secp256r1Point> {
     fn get_curve_size() -> u256 {
         0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
     }
-    /// Creates the generator point of the secp256r1 curve.
+
     fn get_generator_point() -> Secp256r1Point {
         secp256r1_new_syscall(
             0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296,
@@ -30,6 +42,7 @@ pub(crate) impl Secp256r1Impl of Secp256Trait<Secp256r1Point> {
     fn secp256_ec_new_syscall(x: u256, y: u256) -> SyscallResult<Option<Secp256r1Point>> {
         secp256r1_new_syscall(x, y)
     }
+
     fn secp256_ec_get_point_from_x_syscall(
         x: u256, y_parity: bool,
     ) -> SyscallResult<Option<Secp256r1Point>> {
@@ -41,32 +54,50 @@ pub(crate) impl Secp256r1PointImpl of Secp256PointTrait<Secp256r1Point> {
     fn get_coordinates(self: Secp256r1Point) -> SyscallResult<(u256, u256)> {
         secp256r1_get_xy_syscall(self)
     }
+
     fn add(self: Secp256r1Point, other: Secp256r1Point) -> SyscallResult<Secp256r1Point> {
         secp256r1_add_syscall(self, other)
     }
+
     fn mul(self: Secp256r1Point, scalar: u256) -> SyscallResult<Secp256r1Point> {
         secp256r1_mul_syscall(self, scalar)
     }
 }
 
-/// Creates a secp256r1 EC point from the given x and y coordinates.
-/// Returns None if the given coordinates do not correspond to a point on the curve.
+/// Creates a new point on the secp256r1 curve from its `x` and `y` coordinates.
+///
+/// # Returns
+///
+/// Returns `Some(point)` if the coordinates represent a valid point on the curve,
+/// `None` otherwise.
 extern fn secp256r1_new_syscall(
     x: u256, y: u256,
 ) -> SyscallResult<Option<Secp256r1Point>> implicits(GasBuiltin, System) nopanic;
 
-/// Computes the addition of secp256r1 EC points `p0 + p1`.
+/// Adds two points `p0` and `p1` on the secp256r1 curve.
 extern fn secp256r1_add_syscall(
     p0: Secp256r1Point, p1: Secp256r1Point,
 ) -> SyscallResult<Secp256r1Point> implicits(GasBuiltin, System) nopanic;
-/// Computes the product of a secp256r1 EC point `p` by the given scalar `scalar`.
+
+/// Multiplies a point `p` on the curve by the given `scalar`.
 extern fn secp256r1_mul_syscall(
     p: Secp256r1Point, scalar: u256,
 ) -> SyscallResult<Secp256r1Point> implicits(GasBuiltin, System) nopanic;
 
-/// Computes the point on the secp256r1 curve that matches the given `x` coordinate, if such exists.
-/// Out of the two possible y's, chooses according to `y_parity`.
-/// `y_parity` == true means that the y coordinate is odd.
+/// Recovers a point on the curve given its x-coordinate and `y-parity`.
+///
+/// Since the curve equation y² = x³ + ax + b has two solutions for y given x,
+/// the `y_parity` parameter is used to determine which y value to use.
+///
+/// # Arguments
+///
+/// * `x` - The x coordinate of the point
+/// * `y_parity` - If true, choose the odd y value; if false, choose the even y value
+///
+/// # Returns
+///
+/// Returns `Some(point)` if a point exists with the given x coordinate,
+/// `None` otherwise.
 extern fn secp256r1_get_point_from_x_syscall(
     x: u256, y_parity: bool,
 ) -> SyscallResult<Option<Secp256r1Point>> implicits(GasBuiltin, System) nopanic;
@@ -81,6 +112,7 @@ impl Secp256r1PointSerde of Serde<Secp256r1Point> {
         let point = (*self).get_coordinates().unwrap();
         point.serialize(ref output)
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<Secp256r1Point> {
         let (x, y) = Serde::<(u256, u256)>::deserialize(ref serialized)?;
         secp256r1_new_syscall(x, y).unwrap_syscall()

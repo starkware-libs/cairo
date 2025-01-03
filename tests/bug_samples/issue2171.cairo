@@ -1,5 +1,5 @@
-use starknet::ContractAddress;
 use core::test::test_utils::assert_eq;
+use starknet::ContractAddress;
 
 #[test]
 fn main() {

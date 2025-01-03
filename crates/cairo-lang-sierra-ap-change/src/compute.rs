@@ -180,7 +180,6 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                 }
                 Ok(res)
             },
-            ApChangeError::StatementOutOfBounds,
             |_| unreachable!("Cycle isn't an error."),
         )
     }
@@ -216,7 +215,6 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                     })
                     .collect())
             },
-            ApChangeError::StatementOutOfBounds,
             |_| unreachable!("Cycle isn't an error."),
         )
     }

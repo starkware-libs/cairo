@@ -8,12 +8,10 @@ trait IMintableToken<T> {
 
 #[starknet::contract]
 mod token_bridge {
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use core::num::traits::Zero;
-    use starknet::SyscallResultTrait;
-    use starknet::{
-        ContractAddress, get_caller_address, EthAddress, syscalls::send_message_to_l1_syscall,
-    };
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::syscalls::send_message_to_l1_syscall;
+    use starknet::{ContractAddress, EthAddress, SyscallResultTrait, get_caller_address};
     use super::{IMintableTokenDispatcher, IMintableTokenDispatcherTrait};
 
     const WITHDRAW_MESSAGE: felt252 = 0;

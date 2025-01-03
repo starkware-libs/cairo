@@ -49,6 +49,8 @@ pub enum ProgramRegistryError {
     TypeInfoDeclarationMismatch(ConcreteTypeId),
     #[error("Function `{func_id}`'s parameter type `{ty}` is not storable.")]
     FunctionWithUnstorableType { func_id: FunctionId, ty: ConcreteTypeId },
+    #[error("Function `{0}` points to non existing entry point statement.")]
+    FunctionNonExistingEntryPoint(FunctionId),
     #[error("#{0}: Libfunc invocation input count mismatch")]
     LibfuncInvocationInputCountMismatch(StatementIdx),
     #[error("#{0}: Libfunc invocation branch count mismatch")]
@@ -149,6 +151,11 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                         ty: ty.clone(),
                     }));
                 }
+            }
+            if func.entry_point.0 >= program.statements.len() {
+                return Err(Box::new(ProgramRegistryError::FunctionNonExistingEntryPoint(
+                    func.id.clone(),
+                )));
             }
         }
         // A branch map, mapping from a destination statement to the statement that jumps to it.

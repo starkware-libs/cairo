@@ -1,7 +1,0 @@
-//! > cairo_code
-mod _;
-
-//! > syntax
-mod                  source.cairo keyword.other.cairo storage.type.cairo
-_                    source.cairo variable.other.cairo
-;                    source.cairo punctuation.semi.cairo

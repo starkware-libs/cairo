@@ -823,3 +823,221 @@ store_temp<NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>>([1
 return([1]); // 2
 
 test::foo@0([0]: BoundedInt<-680564733841876926926749214863536422911, -1>) -> (NonZero<BoundedInt<-680564733841876926926749214863536422911, -1>>);
+
+//! > ==========================================================================
+
+//! > bounded_int_trim libfunc remove 0 below.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+type Res = core::internal::OptionRev<BoundedInt<1, 0xff>>;
+extern fn bounded_int_trim<T, const REMOVED_VALUE: felt252>(value: T) -> Res nopanic;
+
+fn foo(value: u8) -> Res {
+    bounded_int_trim::<_, 0>(value)
+}
+
+//! > casm
+jmp rel 7 if [fp + -3] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type BoundedInt<1, 255> = BoundedInt<1, 255> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::internal::OptionRev::<test::BoundedInt::<1, 255>> = Enum<ut@core::internal::OptionRev::<test::BoundedInt::<1, 255>>, Unit, BoundedInt<1, 255>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_trim<u8, 0> = bounded_int_trim<u8, 0>;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 0> = enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 0>;
+libfunc store_temp<core::internal::OptionRev::<test::BoundedInt::<1, 255>>> = store_temp<core::internal::OptionRev::<test::BoundedInt::<1, 255>>>;
+libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 1> = enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 1>;
+
+bounded_int_trim<u8, 0>([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 0>([2]) -> ([3]); // 3
+store_temp<core::internal::OptionRev::<test::BoundedInt::<1, 255>>>([3]) -> ([3]); // 4
+return([3]); // 5
+branch_align() -> (); // 6
+enum_init<core::internal::OptionRev::<test::BoundedInt::<1, 255>>, 1>([1]) -> ([4]); // 7
+store_temp<core::internal::OptionRev::<test::BoundedInt::<1, 255>>>([4]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: u8) -> (core::internal::OptionRev::<test::BoundedInt::<1, 255>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > bounded_int_trim libfunc remove 0 above.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+type Res = core::internal::OptionRev<BoundedInt<-0xff, -1>>;
+extern fn bounded_int_trim<T, const REMOVED_VALUE: felt252>(value: T) -> Res nopanic;
+
+fn foo(value: BoundedInt<-0xff, 0>) -> Res {
+    bounded_int_trim::<_, 0>(value)
+}
+
+//! > casm
+jmp rel 7 if [fp + -3] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type BoundedInt<-255, 0> = BoundedInt<-255, 0> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type BoundedInt<-255, -1> = BoundedInt<-255, -1> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::internal::OptionRev::<test::BoundedInt::<-255, -1>> = Enum<ut@core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, Unit, BoundedInt<-255, -1>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_trim<BoundedInt<-255, 0>, 0> = bounded_int_trim<BoundedInt<-255, 0>, 0>;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 0> = enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 0>;
+libfunc store_temp<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>> = store_temp<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>>;
+libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 1> = enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 1>;
+
+bounded_int_trim<BoundedInt<-255, 0>, 0>([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 0>([2]) -> ([3]); // 3
+store_temp<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>>([3]) -> ([3]); // 4
+return([3]); // 5
+branch_align() -> (); // 6
+enum_init<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>, 1>([1]) -> ([4]); // 7
+store_temp<core::internal::OptionRev::<test::BoundedInt::<-255, -1>>>([4]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: BoundedInt<-255, 0>) -> (core::internal::OptionRev::<test::BoundedInt::<-255, -1>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > bounded_int_trim libfunc remove non-0 below.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+type Res = core::internal::OptionRev<BoundedInt<-0x7f, 0x7f>>;
+extern fn bounded_int_trim<T, const REMOVED_VALUE: felt252>(value: T) -> Res nopanic;
+
+fn foo(value: i8) -> Res {
+    bounded_int_trim::<_, -0x80>(value)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + -128, ap++;
+jmp rel 7 if [ap + -1] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type BoundedInt<-127, 127> = BoundedInt<-127, 127> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::internal::OptionRev::<test::BoundedInt::<-127, 127>> = Enum<ut@core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, Unit, BoundedInt<-127, 127>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_trim<i8, -128> = bounded_int_trim<i8, -128>;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 0> = enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 0>;
+libfunc store_temp<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>> = store_temp<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>>;
+libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 1> = enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 1>;
+
+bounded_int_trim<i8, -128>([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 0>([2]) -> ([3]); // 3
+store_temp<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>>([3]) -> ([3]); // 4
+return([3]); // 5
+branch_align() -> (); // 6
+enum_init<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>, 1>([1]) -> ([4]); // 7
+store_temp<core::internal::OptionRev::<test::BoundedInt::<-127, 127>>>([4]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: i8) -> (core::internal::OptionRev::<test::BoundedInt::<-127, 127>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 400})
+
+//! > ==========================================================================
+
+//! > bounded_int_trim libfunc remove non-0 above.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+type Res = core::internal::OptionRev<BoundedInt<0, 0xfe>>;
+extern fn bounded_int_trim<T, const REMOVED_VALUE: felt252>(value: T) -> Res nopanic;
+
+fn foo(value: u8) -> Res {
+    bounded_int_trim::<_, 0xff>(value)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + 255, ap++;
+jmp rel 7 if [ap + -1] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type BoundedInt<0, 254> = BoundedInt<0, 254> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::internal::OptionRev::<test::BoundedInt::<0, 254>> = Enum<ut@core::internal::OptionRev::<test::BoundedInt::<0, 254>>, Unit, BoundedInt<0, 254>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_trim<u8, 255> = bounded_int_trim<u8, 255>;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 0> = enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 0>;
+libfunc store_temp<core::internal::OptionRev::<test::BoundedInt::<0, 254>>> = store_temp<core::internal::OptionRev::<test::BoundedInt::<0, 254>>>;
+libfunc enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 1> = enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 1>;
+
+bounded_int_trim<u8, 255>([0]) { fallthrough() 6([1]) }; // 0
+branch_align() -> (); // 1
+struct_construct<Unit>() -> ([2]); // 2
+enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 0>([2]) -> ([3]); // 3
+store_temp<core::internal::OptionRev::<test::BoundedInt::<0, 254>>>([3]) -> ([3]); // 4
+return([3]); // 5
+branch_align() -> (); // 6
+enum_init<core::internal::OptionRev::<test::BoundedInt::<0, 254>>, 1>([1]) -> ([4]); // 7
+store_temp<core::internal::OptionRev::<test::BoundedInt::<0, 254>>>([4]) -> ([4]); // 8
+return([4]); // 9
+
+test::foo@0([0]: u8) -> (core::internal::OptionRev::<test::BoundedInt::<0, 254>>);
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 400})

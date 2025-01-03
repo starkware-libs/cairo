@@ -26,22 +26,22 @@ fn foo4() -> felt252 {
 error: Type not found.
  --> lib.cairo:1:14
 fn foo1() -> UnknownType {
-             ^*********^
+             ^^^^^^^^^^^
 
 error: Type not found.
  --> lib.cairo:4:14
 fn foo2() -> UnknownType {
-             ^*********^
+             ^^^^^^^^^^^
 
 error: Type not found.
  --> lib.cairo:8:5
     UnknownType {}
-    ^*********^
+    ^^^^^^^^^^^
 
 error: Type not found.
  --> lib.cairo:11:12
     return UnknownType {};
-           ^*********^
+           ^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -64,4 +64,4 @@ struct MyStruct {
 error: Type not found.
  --> lib.cairo:2:8
     a: UnknownType,
-       ^*********^
+       ^^^^^^^^^^^

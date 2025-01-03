@@ -19,9 +19,12 @@ foo
 
 //! > lowering_diagnostics
 error: Cannot inline a function that might call itself.
- --> lib.cairo:1:1
-#[inline(always)]
-^***************^
+ --> lib.cairo:1:1-5:1
+  #[inline(always)]
+ _^
+| ...
+| }
+|_^
 
 //! > before
 Parameters: v0: core::felt252, v1: core::felt252

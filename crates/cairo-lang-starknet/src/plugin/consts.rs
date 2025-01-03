@@ -41,6 +41,7 @@ pub const EMBEDDABLE_AS_ATTR: &str = "embeddable_as";
 pub const COMPONENT_INLINE_MACRO: &str = "component";
 pub const HAS_COMPONENT_TRAIT: &str = "HasComponent";
 pub const SUBSTORAGE_ATTR: &str = "substorage";
+pub const RENAME_ATTR: &str = "rename";
 pub const NESTED_ATTR: &str = "nested";
 pub const FLAT_ATTR: &str = "flat";
 pub const KEY_ATTR: &str = "key";

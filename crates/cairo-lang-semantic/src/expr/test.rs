@@ -101,6 +101,7 @@ fn test_expand_expr(
         inputs["expr_code"].as_str(),
         inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("function_body").map(|s| s.as_str()).unwrap_or(""),
+        inputs.get("crate_settings").map(|x| x.as_str()),
     )
     .split();
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
@@ -129,6 +130,7 @@ fn test_expr_semantics(
         inputs["expr_code"].as_str(),
         inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("function_body").map(|s| s.as_str()).unwrap_or(""),
+        inputs.get("crate_settings").map(|x| x.as_str()),
     )
     .split();
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
@@ -221,7 +223,7 @@ fn test_expr_var() {
 fn test_expr_call_failures() {
     let db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let (test_expr, diagnostics) = setup_test_expr(&db_val, "foo()", "", "").split();
+    let (test_expr, diagnostics) = setup_test_expr(&db_val, "foo()", "", "", None).split();
     let db = &db_val;
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
@@ -230,7 +232,7 @@ fn test_expr_call_failures() {
             error: Function not found.
              --> lib.cairo:2:1
             foo()
-            ^*^
+            ^^^
 
         "});
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");

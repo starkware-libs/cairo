@@ -1,21 +1,37 @@
+//! Mathematical operations and utilities.
+//!
+//! Provides extended GCD, modular inverse, and modular arithmetic operations.
+
+use crate::integer::{U128MulGuarantee, u256_wide_mul, u512_safe_div_rem_by_u256};
+use crate::RangeCheck;
 #[allow(unused_imports)]
-use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+use crate::option::OptionTrait;
 #[allow(unused_imports)]
 use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
-use crate::option::OptionTrait;
-use crate::integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
-use crate::RangeCheck;
+use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
 // supported.
-/// Extended GCD: finds (g, s, t, sub_direction) such that
-/// `g = gcd(a, b) = s * a - t * b` if `sub_direction` is true, or
-/// `g = gcd(a, b) = t * b - s * a` if `sub_direction` is false.
-/// `(s, -t)` or `(-s, t)` are the Bezout coefficients (according to `sub_direction`).
+/// Computes the extended GCD and Bezout coefficients for two numbers.
 ///
-/// Uses the Extended Euclidean algorithm.
+/// Uses the Extended Euclidean algorithm to find (g, s, t, sub_direction) where `g = gcd(a, b)`.
+/// The relationship between inputs and outputs is:
+/// * If `sub_direction` is true:  `g = s * a - t * b`
+/// * If `sub_direction` is false: `g = t * b - s * a`
+///
+/// Returns a tuple (g, s, t, sub_direction) where g is the GCD and `(s, -t)` or `(-s, t)` are the
+/// Bezout coefficients (according to `sub_direction`).
+///
+/// # Examples
+///
+/// ```
+/// use core::math::egcd;
+///
+/// let (g, s, t, dir) = egcd::<u32>(12, 8);
+/// assert!(g == 4);
+/// ```
 pub fn egcd<
     T,
     +Copy<T>,
@@ -47,9 +63,19 @@ pub fn egcd<
 }
 
 // TODO(yuval): use signed integers once supported.
-/// Returns `s` the inverse of `a` modulo `n` such that `as`≡ 1 modulo `n`, or None if `gcd(a, n)
-/// > 1`.
-/// `s` is guaranteed to be between `1` and `n - 1` (inclusive).
+/// Computes the modular multiplicative inverse of `a` modulo `n`.
+///
+/// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `n-1` inclusive, or
+/// `Option::None` if `gcd(a,n) > 1` (inverse doesn't exist).
+///
+/// # Examples
+///
+/// ```
+/// use core::math::inv_mod;
+///
+/// let inv = inv_mod::<u32>(3, 7);
+/// assert!(inv == Option::Some(5));
+/// ```
 pub fn inv_mod<
     T,
     +Copy<T>,
@@ -85,7 +111,8 @@ pub fn inv_mod<
     }
 }
 
-/// Returns `1 / b (mod n)`, or None if `b` is not invertible modulo `n`.
+/// Returns `1 / b (mod n)`, or `None` if `b` is not invertible modulo `n`.
+///
 /// All `b`s will be considered not invertible for `n == 1`.
 /// Additionally returns several `U128MulGuarantee`s that are required for validating the
 /// calculation.
@@ -106,8 +133,18 @@ extern fn u256_guarantee_inv_mod_n(
     (U128MulGuarantee, U128MulGuarantee),
 > implicits(RangeCheck) nopanic;
 
-/// Returns the inverse of `a` modulo `n`, or None if `a` is not invertible modulo `n`.
+/// Returns the inverse of `a` modulo `n`, or `None` if `a` is not invertible modulo `n`.
+///
 /// All `a`s will be considered not invertible for `n == 1`.
+///
+/// # Examples
+///
+/// ```
+/// use core::math::u256_inv_mod;
+///
+/// let inv = u256_inv_mod(3, 17);
+/// assert!(inv == Option::Some(6));
+/// ```
 #[inline]
 pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     match u256_guarantee_inv_mod_n(a, n) {
@@ -116,26 +153,45 @@ pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
     }
 }
 
-/// Returns `a / b (mod n)`, or None if `b` is not invertible modulo `n`.
+/// Returns `a / b (mod n)`, or `None` if `b` is not invertible modulo `n`.
+///
+/// # Examples
+///
+/// ```
+/// use core::math::u256_inv_mod;
+///
+/// let result = u256_div_mod_n(17, 7, 29);
+/// assert!(result == Option::Some(19));
+/// ```
 pub fn u256_div_mod_n(a: u256, b: u256, n: NonZero<u256>) -> Option<u256> {
     Option::Some(u256_mul_mod_n(a, u256_inv_mod(b, n)?.into(), n))
 }
 
 /// Returns `a * b (mod n)`.
+///
+/// # Examples
+///
+/// ```
+/// use core::math::u256_mul_mod_n;
+///
+/// let result = u256_mul_mod_n(17, 23, 29);
+/// assert!(result == 14);
+/// ```
 pub fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
     let (_, r) = u512_safe_div_rem_by_u256(u256_wide_mul(a, b), n);
     r
 }
 
-// === Oneable ===
 /// A trait for types that have a multiplicative identity element.
 trait Oneable<T> {
     /// Returns the multiplicative identity element of Self, 1.
     #[must_use]
     fn one() -> T;
+
     /// Returns whether self is equal to 1, the multiplicative identity element.
     #[must_use]
     fn is_one(self: T) -> bool;
+
     /// Returns whether self is not equal to 1, the multiplicative identity element.
     #[must_use]
     fn is_non_one(self: T) -> bool;
@@ -148,10 +204,12 @@ pub(crate) mod one_based {
         fn one() -> T {
             OneImpl::one()
         }
+
         #[inline]
         fn is_one(self: T) -> bool {
             OneImpl::is_one(@self)
         }
+
         #[inline]
         fn is_non_one(self: T) -> bool {
             OneImpl::is_non_one(@self)
@@ -159,7 +217,6 @@ pub(crate) mod one_based {
     }
 }
 
-// Oneable impls
 impl U8Oneable = one_based::OneableImpl<u8>;
 impl U16Oneable = one_based::OneableImpl<u16>;
 impl U32Oneable = one_based::OneableImpl<u32>;

@@ -51,6 +51,7 @@ pub fn handle_derive(
                 content,
                 code_mappings,
                 aux_data,
+                diagnostics_note: Default::default(),
             })
         },
         diagnostics,

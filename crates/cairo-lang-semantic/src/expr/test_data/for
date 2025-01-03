@@ -22,7 +22,7 @@ foo
 error: Can only break with a value inside a `loop`.
  --> lib.cairo:5:9
         break 5;
-        ^******^
+        ^^^^^^^^
 
 //! > ==========================================================================
 
