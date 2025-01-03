@@ -230,7 +230,6 @@ impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
 }
 
 impl Felt252Default of Default<felt252> {
-    /// Returns the default value for a `felt252`, i.e., 0.
     #[inline]
     fn default() -> felt252 nopanic {
         0
