@@ -2,7 +2,8 @@
 //! `[0, 2**251)`.
 //!
 //!
-//! A variable of type `ContractAddress` can be created from a `felt252` value using the `contract_address_const` function, or using the `TryInto` trait.
+//! A variable of type `ContractAddress` can be created from a `felt252` value using the
+//! `contract_address_const` function, or using the `TryInto` trait.
 //!
 //! # Examples
 //!
@@ -12,9 +13,9 @@
 //! let contract_address = contract_address_const::<0x0>();
 //! ```
 
+use core::RangeCheck;
 #[allow(unused_imports)]
 use core::hash::{Hash, HashStateTrait};
-use core::RangeCheck;
 use core::serde::Serde;
 #[allow(unused_imports)]
 use core::zeroable::Zeroable;
