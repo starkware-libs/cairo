@@ -506,7 +506,7 @@ impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
     }
 }
 
-impl ByteArrayIntoInterator of crate::iter::IntoIterator<ByteArray> {
+impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
     type IntoIter = ByteArrayIter;
     #[inline]
     fn into_iter(self: ByteArray) -> ByteArrayIter {
