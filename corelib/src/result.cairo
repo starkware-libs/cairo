@@ -660,7 +660,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
         }
     }
 
-    /// Maps a `Result<T, E>` to `Result<T, G>` by applying a function to a
+    /// Maps a `Result<T, E>` to `Result<T, F>` by applying a function to a
     /// contained [`Err`] value, leaving an [`Ok`] value untouched.
     ///
     /// This function can be used to pass through a successful result while handling
@@ -677,12 +677,12 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let x: Result<u32, u32> = Result::Err(13);
     /// assert!(x.map_err(stringify) == Result::Err("error code: 13"));
     /// ```
-    fn map_err<F, G, +Drop<F>, +core::ops::FnOnce<F, (E,)>[Output: G]>(
-        self: Result<T, E>, f: F,
-    ) -> Result<T, G> {
+    fn map_err<F, O, +Drop<O>, +core::ops::FnOnce<O, (E,)>[Output: F]>(
+        self: Result<T, E>, op: O,
+    ) -> Result<T, F> {
         match self {
             Result::Ok(x) => Result::Ok(x),
-            Result::Err(e) => Result::Err(f(e)),
+            Result::Err(e) => Result::Err(op(e)),
         }
     }
 }
