@@ -37,6 +37,7 @@ use crate::traits::{
     Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
     TupleSize0Copy, TupleSize0Drop,
 };
+use crate::iter::{IntoIterator, Iterator};
 use crate::zeroable::{NonZero, Zeroable};
 use crate::{
     BoolBitAnd, BoolBitOr, BoolBitXor, BoolFelt252DictValue, BoolIntoFelt252, BoolNot,
