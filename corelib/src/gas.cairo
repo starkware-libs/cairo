@@ -1,13 +1,5 @@
 //! Utilities for handling gas in Cairo code.
 //!
-//! This module includes various features:
-//! - `withdraw_gas`: A function that withdraws gas from the `GasBuiltin` to handle the success case
-//! flow.
-//! - `withdraw_gas_all`: A function that is similar to `withdraw_gas`, but directly receives the
-//! `BuiltinCosts`, enabling optimizations.
-//! - `redeposit_gas`: A function that returns unused gas into the `GasBuiltin`.
-//! - `get_builtin_costs`: A function that returns the `BuiltinCosts` table to be used with
-//! `withdraw_gas_all`.
 
 use crate::RangeCheck;
 
