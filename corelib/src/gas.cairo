@@ -43,6 +43,7 @@ pub extern type GasBuiltin;
 /// ```
 #[cfg(not(gas: "disabled"))]
 pub extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
 pub fn withdraw_gas() -> Option<()> nopanic {
@@ -57,12 +58,12 @@ pub fn withdraw_gas() -> Option<()> nopanic {
 pub extern fn withdraw_gas_all(
     costs: BuiltinCosts,
 ) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
 pub fn withdraw_gas_all(costs: BuiltinCosts) -> Option<()> nopanic {
     Option::Some(())
 }
-
 
 /// Returns unused gas into the gas builtin.
 ///
@@ -73,6 +74,7 @@ pub extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 /// Returns the `BuiltinCosts` table to be used in `withdraw_gas_all`.
 #[cfg(not(gas: "disabled"))]
 pub extern fn get_builtin_costs() -> BuiltinCosts nopanic;
+
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
 pub fn get_builtin_costs() -> BuiltinCosts nopanic {
