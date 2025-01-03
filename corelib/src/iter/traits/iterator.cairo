@@ -1,4 +1,5 @@
 use core::ops::Range;
+
 /// A trait for dealing with iterators.
 ///
 /// This is the main iterator trait. For more about the concept of iterators
@@ -48,16 +49,6 @@ pub trait IntoIterator<T> {
     impl Iterator: Iterator<Self::IntoIter>;
     /// Creates an iterator from a collection.
     fn into_iter(self: T) -> Self::IntoIter;
-}
-
-/// Turn a collection of values into an iterator over a specific range.
-pub trait IntoIterRange<T, I> {
-    type IntoIter;
-    impl Iterator: Iterator<Self::IntoIter>;
-    /// Creates an iterator over a range from a collection.
-    fn into_iter_range(self: T, range: Range<I>) -> Self::IntoIter;
-    /// Creates an iterator over the full range of a collection.
-    fn into_iter_full_range(self: T) -> Self::IntoIter;
 }
 
 impl IteratorIntoIterator<T, +Iterator<T>> of IntoIterator<T> {
