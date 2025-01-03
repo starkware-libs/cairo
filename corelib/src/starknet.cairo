@@ -101,7 +101,7 @@ fn use_system_implicit() implicits(System) {}
 /// The `Result` type for a syscall.
 pub type SyscallResult<T> = Result<T, Array<felt252>>;
 
-/// Trait for handling syscalls results.
+/// Trait for handling syscall results.
 pub trait SyscallResultTrait<T> {
     /// Unwraps a syscall result, yielding the content of an `Ok`.
     ///

@@ -57,5 +57,4 @@ We divided them by Cairo, Starknet and specific system calls in Starknet OS.
 |get_sequencer_address    |✅
 |get_transaction_info    |✅
 |send_message_to_l1     |✅
-|deploy    |✅
 |===
