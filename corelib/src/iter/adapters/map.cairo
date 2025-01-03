@@ -28,8 +28,8 @@ impl MapIterator<
     F,
     impl TIter: Iterator<I>,
     +core::ops::FnOnce<F, (TIter::Item,)>[Output: B],
-    +Drop<I>,
-    +Drop<F>,
+    +Destruct<I>,
+    +Destruct<F>,
     +Copy<F>,
 > of Iterator<Map<I, F>> {
     type Item = B;
