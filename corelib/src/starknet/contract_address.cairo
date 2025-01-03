@@ -1,8 +1,6 @@
 //! The `ContractAddress` type represents a Starknet contract address, with a value range of
 //! `[0, 2**251)`.
 //!
-//! This module implements some basic traits for the `ContractAddress` type, such as [`Serde`],
-//! [`Zero`], [`PartialEq`], [`PartialOrd`] and [`Debug`].
 //!
 //! `contract_address_const` function allows to construct a `ContractAddress` value from a constant
 //! `felt252` value.
