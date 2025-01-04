@@ -256,3 +256,18 @@ fn test_result_ok_err_should_return_none() {
     let x: Result<u32, ByteArray> = Result::Ok(2);
     assert!(x.err().is_none());
 }
+
+#[test]
+fn test_result_ok_iter_next() {
+    let x: Result<u32, ByteArray> = Result::Ok(5);
+    let mut x_iter = x.into_iter();
+    assert!(x_iter.next() == Option::Some(5));
+    assert!(x_iter.next() == Option::None);
+}
+
+#[test]
+fn test_result_err_iter_next() {
+    let x: Result<u32, ByteArray> = Result::Err("nothing!");
+    let mut x_iter = x.into_iter();
+    assert!(x_iter.next() == Option::None);
+}
