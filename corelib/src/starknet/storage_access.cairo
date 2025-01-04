@@ -26,11 +26,13 @@ pub extern type StorageBaseAddress;
 
 // Storage.
 pub extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
+
 pub extern fn storage_base_address_from_felt252(
     addr: felt252,
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
 
 pub(crate) extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
+
 pub extern fn storage_address_from_base_and_offset(
     base: StorageBaseAddress, offset: u8,
 ) -> StorageAddress nopanic;
@@ -46,6 +48,7 @@ impl Felt252TryIntoStorageAddress of TryInto<felt252, StorageAddress> {
         storage_address_try_from_felt252(self)
     }
 }
+
 impl StorageAddressIntoFelt252 of Into<StorageAddress, felt252> {
     fn into(self: StorageAddress) -> felt252 {
         storage_address_to_felt252(self)
@@ -87,21 +90,24 @@ impl LowerHexStorageBaseAddress of core::fmt::LowerHex<StorageBaseAddress> {
 pub trait Store<T> {
     /// Reads a value from storage from domain `address_domain` and base address `base`.
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T>;
+
     /// Writes a value to storage to domain `address_domain` and base address `base`.
     fn write(address_domain: u32, base: StorageBaseAddress, value: T) -> SyscallResult<()>;
+
     /// Reads a value from storage from domain `address_domain` and base address `base` at offset
     /// `offset`.
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<T>;
+
     /// Writes a value to storage to domain `address_domain` and base address `base` at offset
     /// `offset`.
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: T,
     ) -> SyscallResult<()>;
+
     fn size() -> u8;
 }
-
 
 /// Trait for easier implementation of `Store` used for packing and unpacking values into values
 /// that already implement `Store`, and having `Store` implemented using this conversion.
@@ -119,22 +125,26 @@ impl StoreUsingPacking<
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T> {
         Result::Ok(TPacking::unpack(PackedTStore::read(address_domain, base)?))
     }
+
     #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: T) -> SyscallResult<()> {
         PackedTStore::write(address_domain, base, TPacking::pack(value))
     }
+
     #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<T> {
         Result::Ok(TPacking::unpack(PackedTStore::read_at_offset(address_domain, base, offset)?))
     }
+
     #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: T,
     ) -> SyscallResult<()> {
         PackedTStore::write_at_offset(address_domain, base, offset, TPacking::pack(value))
     }
+
     #[inline]
     fn size() -> u8 {
         PackedTStore::size()
@@ -146,16 +156,19 @@ impl StoreFelt252 of Store<felt252> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<felt252> {
         storage_read_syscall(address_domain, storage_address_from_base(base))
     }
+
     #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: felt252) -> SyscallResult<()> {
         storage_write_syscall(address_domain, storage_address_from_base(base), value)
     }
+
     #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<felt252> {
         storage_read_syscall(address_domain, storage_address_from_base_and_offset(base, offset))
     }
+
     #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: felt252,
@@ -164,6 +177,7 @@ impl StoreFelt252 of Store<felt252> {
             address_domain, storage_address_from_base_and_offset(base, offset), value,
         )
     }
+
     #[inline]
     fn size() -> u8 {
         1_u8
@@ -174,6 +188,7 @@ impl StorePackingBool of StorePacking<bool, felt252> {
     fn pack(value: bool) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> bool {
         value != 0
@@ -184,6 +199,7 @@ impl StorePackingU8 of StorePacking<u8, felt252> {
     fn pack(value: u8) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> u8 {
         value.try_into().expect('StoreU8 - non u8')
@@ -194,6 +210,7 @@ impl StorePackingI8 of StorePacking<i8, felt252> {
     fn pack(value: i8) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> i8 {
         value.try_into().expect('StoreI8 - non i8')
@@ -204,6 +221,7 @@ impl StorePackingU16 of StorePacking<u16, felt252> {
     fn pack(value: u16) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> u16 {
         value.try_into().expect('StoreU16 - non u16')
@@ -214,6 +232,7 @@ impl StorePackingI16 of StorePacking<i16, felt252> {
     fn pack(value: i16) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> i16 {
         value.try_into().expect('StoreI16 - non i16')
@@ -224,6 +243,7 @@ impl StorePackingU32 of StorePacking<u32, felt252> {
     fn pack(value: u32) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> u32 {
         value.try_into().expect('StoreU32 - non u32')
@@ -234,6 +254,7 @@ impl StorePackingI32 of StorePacking<i32, felt252> {
     fn pack(value: i32) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> i32 {
         value.try_into().expect('StoreI32 - non i32')
@@ -244,6 +265,7 @@ impl StorePackingU64 of StorePacking<u64, felt252> {
     fn pack(value: u64) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> u64 {
         value.try_into().expect('StoreU64 - non u64')
@@ -254,6 +276,7 @@ impl StorePackingI64 of StorePacking<i64, felt252> {
     fn pack(value: i64) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> i64 {
         value.try_into().expect('StoreI64 - non i64')
@@ -264,6 +287,7 @@ impl StorePackingU128 of StorePacking<u128, felt252> {
     fn pack(value: u128) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> u128 {
         value.try_into().expect('StoreU128 - non u128')
@@ -274,6 +298,7 @@ impl StorePackingI128 of StorePacking<i128, felt252> {
     fn pack(value: i128) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> i128 {
         value.try_into().expect('StoreI128 - non i128')
@@ -284,6 +309,7 @@ impl StorePackingU256 of StorePacking<u256, (u128, u128)> {
     fn pack(value: u256) -> (u128, u128) {
         (value.low, value.high)
     }
+
     #[inline]
     fn unpack(value: (u128, u128)) -> u256 {
         let (low, high) = value;
@@ -295,6 +321,7 @@ impl StorePackingBytes31 of StorePacking<bytes31, felt252> {
     fn pack(value: bytes31) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> bytes31 {
         value.try_into().expect('StoreBytes31 - non bytes31')
@@ -305,6 +332,7 @@ impl StorePackingNonZero<T, +TryInto<T, NonZero<T>>> of StorePacking<NonZero<T>,
     fn pack(value: NonZero<T>) -> T {
         value.into()
     }
+
     #[inline]
     fn unpack(value: T) -> NonZero<T> {
         value.try_into().expect('StoreNonZero - zero value')
@@ -315,6 +343,7 @@ impl StorePackingStorageAddress of StorePacking<StorageAddress, felt252> {
     fn pack(value: StorageAddress) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> StorageAddress {
         value.try_into().expect('Non StorageAddress')
@@ -325,6 +354,7 @@ impl StorePackingContractAddress of StorePacking<ContractAddress, felt252> {
     fn pack(value: ContractAddress) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> ContractAddress {
         value.try_into().expect('Non ContractAddress')
@@ -335,6 +365,7 @@ impl StorePackingClassHash of StorePacking<ClassHash, felt252> {
     fn pack(value: ClassHash) -> felt252 {
         value.into()
     }
+
     #[inline]
     fn unpack(value: felt252) -> ClassHash {
         value.try_into().expect('Non ClassHash')
@@ -347,22 +378,26 @@ impl TupleSize0Store of Store<()> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<()> {
         Result::Ok(())
     }
+
     #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: ()) -> SyscallResult<()> {
         Result::Ok(())
     }
+
     #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<()> {
         Result::Ok(())
     }
+
     #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: (),
     ) -> SyscallResult<()> {
         Result::Ok(())
     }
+
     #[inline]
     fn size() -> u8 {
         0
@@ -375,6 +410,7 @@ impl StorePackingTuple1<T> of StorePacking<(T,), T> {
         let (value,) = value;
         value
     }
+
     fn unpack(value: T) -> (T,) {
         (value,)
     }
@@ -386,6 +422,7 @@ impl StorePackingFixedSizedArray0<T> of StorePacking<[T; 0], ()> {
         let [] = value;
         ()
     }
+
     #[inline]
     fn unpack(value: ()) -> [T; 0] {
         []
@@ -398,6 +435,7 @@ impl StorePackingFixedSizedArray1<T> of StorePacking<[T; 1], T> {
         let [value] = value;
         value
     }
+
     fn unpack(value: T) -> [T; 1] {
         [value]
     }
@@ -420,12 +458,14 @@ impl TupleNextStore<
         let rest = RestStore::read_at_offset(address_domain, base, HeadStore::size())?;
         Result::Ok(TH::reconstruct(head, rest))
     }
+
     #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: T) -> SyscallResult<()> {
         let (head, rest) = TH::split_head(value);
         HeadStore::write(address_domain, base, head)?;
         RestStore::write_at_offset(address_domain, base, HeadStore::size(), rest)
     }
+
     #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8,
@@ -434,6 +474,7 @@ impl TupleNextStore<
         let rest = RestStore::read_at_offset(address_domain, base, offset + HeadStore::size())?;
         Result::Ok(TH::reconstruct(head, rest))
     }
+
     #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: T,
@@ -442,6 +483,7 @@ impl TupleNextStore<
         HeadStore::write_at_offset(address_domain, base, offset, head)?;
         RestStore::write_at_offset(address_domain, base, offset + HeadStore::size(), rest)
     }
+
     #[inline]
     fn size() -> u8 {
         HeadStore::size() + RestStore::size()
@@ -464,6 +506,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
     }
+
     #[inline]
     fn write(
         address_domain: u32, base: StorageBaseAddress, value: Result<T, E>,
@@ -480,6 +523,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
         };
         starknet::SyscallResult::Ok(())
     }
+
     #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8,
@@ -497,6 +541,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
     }
+
     #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: Result<T, E>,
@@ -513,6 +558,7 @@ impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result
         };
         starknet::SyscallResult::Ok(())
     }
+
     #[inline]
     fn size() -> u8 {
         1 + core::cmp::max(Store::<T>::size(), Store::<E>::size())
@@ -533,6 +579,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>> of Store<Option<T>> {
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
     }
+
     #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: Option<T>) -> SyscallResult<()> {
         match value {
@@ -544,6 +591,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>> of Store<Option<T>> {
         };
         starknet::SyscallResult::Ok(())
     }
+
     #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8,
@@ -559,6 +607,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>> of Store<Option<T>> {
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
     }
+
     #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: Option<T>,
@@ -572,6 +621,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>> of Store<Option<T>> {
         };
         starknet::SyscallResult::Ok(())
     }
+
     #[inline]
     fn size() -> u8 {
         1 + Store::<T>::size()
@@ -593,16 +643,19 @@ impl ByteArrayStore of Store<ByteArray> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<ByteArray> {
         inner_read_byte_array(address_domain, storage_address_from_base(base))
     }
+
     #[inline]
     fn write(address_domain: u32, base: StorageBaseAddress, value: ByteArray) -> SyscallResult<()> {
         inner_write_byte_array(address_domain, storage_address_from_base(base), value)
     }
+
     #[inline]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8,
     ) -> SyscallResult<ByteArray> {
         inner_read_byte_array(address_domain, storage_address_from_base_and_offset(base, offset))
     }
+
     #[inline]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: ByteArray,
@@ -611,6 +664,7 @@ impl ByteArrayStore of Store<ByteArray> {
             address_domain, storage_address_from_base_and_offset(base, offset), value,
         )
     }
+    
     #[inline]
     fn size() -> u8 {
         1
