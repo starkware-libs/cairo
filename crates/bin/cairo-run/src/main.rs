@@ -123,7 +123,7 @@ fn main() -> anyhow::Result<()> {
             while let Some(item) = format_next_item(&mut felts) {
                 if !first {
                     print!(", ");
-                   }
+                }
                 first = false;
                 print!("{}", item.quote_if_string());
             }
