@@ -741,6 +741,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::FailedConstantCalculation => {
                 "Failed to calculate constant.".into()
             }
+            SemanticDiagnosticKind::ConstantCalculationDepthExceeded => {
+                "Constant calculation depth exceeded.".into()
+            }
             SemanticDiagnosticKind::InnerFailedConstantCalculation(inner, _) => inner.format(db),
             SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
             SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
@@ -1322,6 +1325,7 @@ pub enum SemanticDiagnosticKind {
     UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName),
     UnsupportedConstant,
     FailedConstantCalculation,
+    ConstantCalculationDepthExceeded,
     InnerFailedConstantCalculation(Box<SemanticDiagnostic>, Vec<DiagnosticNote>),
     DivisionByZero,
     ExternTypeWithImplGenericsNotSupported,
