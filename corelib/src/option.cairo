@@ -508,12 +508,8 @@ pub trait OptionTrait<T> {
         self: Option<T>, f: F,
     ) -> T;
 
-    /////////////////////////////////////////////////////////////////////////
-    // Transforming contained values
-    /////////////////////////////////////////////////////////////////////////
-
     /// Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
-    /// or returns `None` (if `None`).
+    /// or returns `Option::None` (if `None`).
     ///
     /// # Examples
     ///
@@ -526,7 +522,7 @@ pub trait OptionTrait<T> {
     /// let x: Option<ByteArray> = Option::None;
     /// assert!(x.map(|s: ByteArray| s.len()) == Option::None);
     /// ```
-    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+    fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
         self: Option<T>, f: F,
     ) -> Option<U>;
 
