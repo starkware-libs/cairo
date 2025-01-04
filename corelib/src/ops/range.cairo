@@ -102,6 +102,74 @@ impl RangeIntoIterator<
     }
 }
 
+/// Represents the range [start, end].
+#[derive(Clone, Drop)]
+pub struct RangeInclusive<T> {
+    /// The lower bound of the range (inclusive).
+    pub start: T,
+    /// The upper bound of the range (inclusive).
+    pub end: T,
+}
+
+#[derive(Clone, Drop)]
+pub struct RangeInclusiveIterator<T> {
+    /// The current value of the iterator.
+    cur: T,
+    /// The upper bound of the range (inclusive).
+    end: T,
+}
+
+/// Handles the range inclusive operator (`..=`).
+#[generate_trait]
+pub impl RangeInclusiveOpImpl<T> of RangeInclusiveOp<T> {
+    /// Handles the `..=` operator. Returns the value of the expression `start..=end`.
+    fn range_inclusive(start: T, end: T) -> RangeInclusive<T> {
+        RangeInclusive { start, end }
+    }
+}
+
+impl RangeInclusiveIteratorImpl<
+    T, impl OneT: One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>,
+> of Iterator<RangeInclusiveIterator<T>> {
+    type Item = T;
+
+    fn next(ref self: RangeInclusiveIterator<T>) -> Option<T> {
+        if self.cur != self.end {
+            let value = self.cur;
+            self.cur = value + OneT::one();
+            Option::Some(value)
+        } else if self.cur == self.end {
+            let value = self.cur;
+            self.cur = value + OneT::one();
+            Option::Some(value)
+        } else {
+            Option::None
+        }
+    }
+}
+
+pub impl RangeInclusiveIntoIterator<
+    T,
+    impl OneT: One<T>,
+    +Add<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+    -SierraIntRangeSupport<T>,
+> of IntoIterator<RangeInclusive<T>> {
+    type IntoIter = RangeInclusiveIterator<T>;
+
+    fn into_iter(self: RangeInclusive<T>) -> Self::IntoIter {
+        if self.start <= self.end {
+            Self::IntoIter { cur: self.start, end: self.end }
+        } else {
+            let oob = self.end + OneT::one();
+            Self::IntoIter { cur: oob, end: oob }
+        }
+    }
+}
+
 // Sierra optimization.
 
 mod internal {
