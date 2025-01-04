@@ -508,6 +508,10 @@ pub trait OptionTrait<T> {
         self: Option<T>, f: F,
     ) -> T;
 
+    /////////////////////////////////////////////////////////////////////////
+    // Transforming contained values
+    /////////////////////////////////////////////////////////////////////////
+
     /// Maps an `Option<T>` to `Option<U>` by applying a function to a contained value (if `Some`)
     /// or returns `Option::None` (if `None`).
     ///
@@ -718,7 +722,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn map<U, F, +Drop<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
+    fn map<U, F, +Destruct<F>, +core::ops::FnOnce<F, (T,)>[Output: U]>(
         self: Option<T>, f: F,
     ) -> Option<U> {
         match self {
