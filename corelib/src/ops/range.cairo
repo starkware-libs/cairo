@@ -54,7 +54,7 @@ pub impl RangeOpImpl<T> of RangeOp<T> {
 }
 
 /// Represents an iterator located at `cur`, whose end is `end` (`cur <= end`).
-#[derive(Clone, Drop)]
+#[derive(Clone, Drop, PartialEq)]
 pub struct RangeIterator<T> {
     /// The current value of the iterator.
     cur: T,
