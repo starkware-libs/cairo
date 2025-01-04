@@ -100,7 +100,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack
             | SyntaxKind::TokenImplicits => true,
-            SyntaxKind::TerminalDotDot
+            SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
                 if matches!(parent_kind(db, self), Some(SyntaxKind::ExprBinary)) =>
             {
                 true
@@ -165,7 +165,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
-            SyntaxKind::TokenDotDot
+            SyntaxKind::TokenDotDot | SyntaxKind::TokenDotDotEq
                 if grandparent_kind(db, self) == Some(SyntaxKind::StructArgTail) =>
             {
                 true
@@ -753,7 +753,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalDotDot
+                SyntaxKind::TerminalDotDot | SyntaxKind::TerminalDotDotEq
                     if matches!(parent_kind(db, self), Some(SyntaxKind::ExprBinary)) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
