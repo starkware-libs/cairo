@@ -2077,8 +2077,39 @@ fn maybe_compute_pattern_semantic(
             })
         }
         ast::Pattern::Path(path) => {
-            // A path of length 1 is an identifier, which will result in a variable pattern.
-            // Currently, other paths are not supported (and not clear if ever will be).
+            let item_result = ctx.resolver.resolve_generic_path(
+                &mut Default::default(),
+                path,
+                NotFoundItemType::Identifier,
+                Some(&mut ctx.environment),
+            );
+            if let Ok(item) = item_result {
+                if let Some(generic_variant) =
+                    try_extract_matches!(item, ResolvedGenericItem::Variant)
+                {
+                    let (concrete_enum, _n_snapshots) =
+                        extract_concrete_enum_from_pattern_and_validate(
+                            ctx,
+                            pattern_syntax,
+                            ty,
+                            generic_variant.enum_id,
+                        )?;
+                    let concrete_variant = ctx
+                        .db
+                        .concrete_enum_variant(concrete_enum, &generic_variant)
+                        .map_err(|_| ctx.diagnostics.report(path, UnknownEnum))?;
+                    return Ok(Pattern::EnumVariant(PatternEnumVariant {
+                        variant: concrete_variant,
+                        inner_pattern: None,
+                        ty,
+                        stable_ptr: path.stable_ptr().into(),
+                    }));
+                }
+            }
+
+            // Paths with a single element are treated as identifiers, which will result in a
+            // variable pattern if no matching enum variant is found. If a matching enum
+            // variant exists, it is resolved to the corresponding concrete variant.
             if path.elements(syntax_db).len() > 1 {
                 return Err(ctx.diagnostics.report(path, Unsupported));
             }
