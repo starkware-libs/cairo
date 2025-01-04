@@ -135,6 +135,15 @@ pub impl RangeInclusiveOpImpl<T> of RangeInclusiveOp<T> {
     }
 }
 
+impl RangeInclusiveDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<RangeInclusive<T>> {
+    fn fmt(self: @RangeInclusive<T>, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
+        self.start.fmt(ref f)?;
+        write!(f, "..=")?;
+        self.end.fmt(ref f)?;
+        Result::Ok(())
+    }
+}
+
 impl RangeInclusiveIteratorImpl<
     T, +One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>, +PartialOrd<T>,
 > of Iterator<RangeInclusiveIterator<T>> {
