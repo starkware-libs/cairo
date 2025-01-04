@@ -103,7 +103,7 @@ impl RangeIntoIterator<
 }
 
 /// Represents the range [start, end].
-#[derive(Clone, Drop)]
+#[derive(Clone, Drop, PartialEq)]
 pub struct RangeInclusive<T> {
     /// The lower bound of the range (inclusive).
     pub start: T,
