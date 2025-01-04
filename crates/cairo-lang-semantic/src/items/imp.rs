@@ -3146,10 +3146,91 @@ fn validate_impl_function_signature(
         );
         return Ok(trait_function_id);
     }
-    let substitution =
+    let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
+    let func_generics: Vec<GenericParam> =
+        SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
+            .rewrite(func_generics)?;
+
+    let function_substitution =
         GenericSubstitution::new(&func_generics, &generic_params_to_args(impl_func_generics, db));
-    let concrete_trait_signature = SubstitutionRewriter { db, substitution: &substitution }
-        .rewrite(concrete_trait_signature)?;
+
+    for (trait_generic_param, generic_param) in izip!(func_generics, impl_func_generics.iter()) {
+        if let Some(name) = trait_generic_param.id().name(defs_db) {
+            if Some(name.clone()) != generic_param.id().name(defs_db) {
+                diagnostics.report(generic_param.stable_ptr(defs_db), WrongParameterName {
+                    impl_def_id,
+                    impl_function_id,
+                    trait_id,
+                    expected_name: name,
+                });
+            }
+        }
+        match (generic_param, trait_generic_param) {
+            (GenericParam::Type(_), GenericParam::Type(_)) => {}
+            (GenericParam::Impl(generic_param), GenericParam::Impl(trait_generic_param))
+            | (GenericParam::NegImpl(generic_param), GenericParam::NegImpl(trait_generic_param)) => {
+                let rewritten_trait_param_trait =
+                    SubstitutionRewriter { db, substitution: &function_substitution }
+                        .rewrite(trait_generic_param.concrete_trait)?;
+                let rewritten_trait_param_type_constraints =
+                    SubstitutionRewriter { db, substitution: &function_substitution }
+                        .rewrite(trait_generic_param.type_constraints)?;
+                generic_param
+                    .concrete_trait
+                    .map(|actual_trait| {
+                        rewritten_trait_param_trait
+                            .map(|expected_trait| {
+                                if actual_trait != expected_trait
+                                    || generic_param.type_constraints
+                                        != rewritten_trait_param_type_constraints
+                                {
+                                    diagnostics.report(
+                                        generic_param.id.stable_ptr(defs_db),
+                                        WrongGenericParamTraitForImplFunction {
+                                            impl_def_id,
+                                            impl_function_id,
+                                            trait_id,
+                                            expected_trait,
+                                            actual_trait,
+                                        },
+                                    );
+                                }
+                            })
+                            .ok();
+                    })
+                    .ok();
+            }
+            (GenericParam::Const(generic_param), GenericParam::Const(trait_generic_param)) => {
+                let expected_ty = SubstitutionRewriter { db, substitution: &function_substitution }
+                    .rewrite(trait_generic_param.ty)?;
+                if generic_param.ty != expected_ty {
+                    diagnostics.report(generic_param.id.stable_ptr(defs_db), WrongParameterType {
+                        impl_def_id,
+                        impl_function_id,
+                        trait_id,
+                        expected_ty,
+                        actual_ty: generic_param.ty,
+                    });
+                }
+            }
+            (generic_param, trait_generic_param) => {
+                diagnostics.report(
+                    generic_param.stable_ptr(defs_db),
+                    WrongGenericParamKindForImplFunction {
+                        impl_def_id,
+                        impl_function_id,
+                        trait_id,
+                        expected_kind: trait_generic_param.kind(),
+                        actual_kind: generic_param.kind(),
+                    },
+                );
+            }
+        }
+    }
+
+    let concrete_trait_signature =
+        SubstitutionRewriter { db, substitution: &function_substitution }
+            .rewrite(concrete_trait_signature)?;
 
     if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(&signature_syntax.parameters(syntax_db), WrongNumberOfParameters {
@@ -3160,7 +3241,6 @@ fn validate_impl_function_signature(
             actual: signature.params.len(),
         });
     }
-    let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
     let concrete_trait_signature =
         SubstitutionRewriter { db, substitution: impl_def_substitution.as_ref() }
             .rewrite(concrete_trait_signature)?;

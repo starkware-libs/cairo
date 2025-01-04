@@ -3,12 +3,45 @@ use core::num::traits::One;
 use core::traits::Add;
 
 /// Represents the range [start, end).
-#[derive(Clone, Drop)]
+#[derive(Clone, Drop, PartialEq)]
 pub struct Range<T> {
     /// The lower bound of the range (inclusive).
     pub start: T,
     /// The upper bound of the range (exclusive).
     pub end: T,
+}
+
+#[generate_trait]
+pub impl RangeImpl<T, +Copy<T>, +Drop<T>, +PartialOrd<T>> of RangeTrait<T> {
+    /// Returns `true` if the range contains no items.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(!(3_u8..5_u8).is_empty());
+    /// assert!( (3_u8..3_u8).is_empty());
+    /// assert!( (3_u8..2_u8).is_empty());
+    /// ```
+    #[inline]
+    fn is_empty(self: @Range<T>) -> bool {
+        !(self.start < self.end)
+    }
+}
+
+impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range<T>> {
+    /// Formats a `Range` type, allowing to print `Range` instances for debugging purposes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// println!("{:?}", 1..5); // Result will be `1..5`
+    /// ```
+    fn fmt(self: @Range<T>, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
+        self.start.fmt(ref f)?;
+        write!(f, "..")?;
+        self.end.fmt(ref f)?;
+        Result::Ok(())
+    }
 }
 
 /// Handles the range operator (`..`).
@@ -72,8 +105,8 @@ impl RangeIntoIterator<
 // Sierra optimization.
 
 mod internal {
-    use core::iter::Iterator;
     use core::internal::OptionRev;
+    use core::iter::Iterator;
 
     #[derive(Copy, Drop)]
     pub extern type IntRange<T>;

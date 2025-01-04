@@ -359,7 +359,16 @@ pub trait SemanticFunctionIdEx {
 }
 impl SemanticFunctionIdEx for semantic::FunctionId {
     fn lowered(&self, db: &dyn LoweringGroup) -> FunctionId {
-        FunctionLongId::Semantic(*self).intern(db)
+        let ret = FunctionLongId::Semantic(*self).intern(db);
+        // If the function is generated, we need to check if it has a body, so we can return its
+        // generated function id.
+        // TODO(orizi): This is a hack, we should have a better way to do this.
+        if let Ok(Some(body)) = ret.body(db) {
+            if let Ok(id) = body.function_id(db) {
+                return id;
+            }
+        }
+        ret
     }
 }
 impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {

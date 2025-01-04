@@ -43,13 +43,12 @@ struct TransactionInfo {
 #[starknet::contract]
 mod storage_accesses {
     use core::num::traits::Zero;
-    use starknet::get_caller_address;
-    use starknet::ContractAddress;
-    use super::{UserInfo, TransactionInfo};
     use starknet::storage::{
-        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess,
+        StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
     };
+    use starknet::{ContractAddress, get_caller_address};
+    use super::{TransactionInfo, UserInfo};
 
     #[storage]
     struct Storage {
@@ -1845,13 +1844,12 @@ impl IERC20SafeDispatcherSubPointersMutDrop of core::traits::Drop::<IERC20SafeDi
 impl IERC20SafeDispatcherSubPointersMutCopy of core::traits::Copy::<IERC20SafeDispatcherSubPointersMut>;
 
     use core::num::traits::Zero;
-    use starknet::get_caller_address;
-    use starknet::ContractAddress;
-    use super::{UserInfo, TransactionInfo};
     use starknet::storage::{
-        StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess, StorageMapReadAccess,
-        StorageMapWriteAccess,
+        StorageMapReadAccess, StorageMapWriteAccess, StoragePathEntry, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
     };
+    use starknet::{ContractAddress, get_caller_address};
+    use super::{TransactionInfo, UserInfo};
 
     #[storage]
     struct Storage {

@@ -23,10 +23,9 @@
 //! let hash = state.finalize();
 //! ```
 
-use crate::array::Span;
-use crate::array::SpanTrait;
-use crate::option::OptionTrait;
+use crate::array::{Span, SpanTrait};
 use crate::hash::HashStateTrait;
+use crate::option::OptionTrait;
 
 pub extern type Poseidon;
 
