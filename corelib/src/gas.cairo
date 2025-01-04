@@ -1,3 +1,5 @@
+//! Utilities for handling gas in Cairo code.
+
 #[cfg(not(gas: "disabled"))]
 use crate::RangeCheck;
 
@@ -20,12 +22,15 @@ pub extern type GasBuiltin;
 /// Returns `Option::Some(())` if there is sufficient gas to handle the success case, otherwise
 /// returns `Option::None`.
 ///
-/// Example:
+/// # Examples
+///
 /// ```
 /// // The success branch is the following lines, the failure branch is the `panic` caused by the
 /// // `unwrap` call.
 /// withdraw_gas().unwrap();
+/// ```
 ///
+/// ```
 /// // Direct handling of `withdraw_gas`.
 /// match withdraw_gas() {
 ///     Option::Some(()) => success_case(),
@@ -34,6 +39,7 @@ pub extern type GasBuiltin;
 /// ```
 #[cfg(not(gas: "disabled"))]
 pub extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
 pub fn withdraw_gas() -> Option<()> nopanic {
@@ -48,12 +54,12 @@ pub fn withdraw_gas() -> Option<()> nopanic {
 pub extern fn withdraw_gas_all(
     costs: BuiltinCosts,
 ) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
 pub fn withdraw_gas_all(costs: BuiltinCosts) -> Option<()> nopanic {
     Option::Some(())
 }
-
 
 /// Returns unused gas into the gas builtin.
 ///
@@ -64,6 +70,7 @@ pub extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 /// Returns the `BuiltinCosts` table to be used in `withdraw_gas_all`.
 #[cfg(not(gas: "disabled"))]
 pub extern fn get_builtin_costs() -> BuiltinCosts nopanic;
+
 /// Placeholder when gas mechanism is disabled.
 #[cfg(gas: "disabled")]
 pub fn get_builtin_costs() -> BuiltinCosts nopanic {
