@@ -509,7 +509,7 @@ impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
 impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
     type IntoIter = ByteArrayIter;
     #[inline]
-    fn into_iter(self: ByteArray) -> ByteArrayIter {
+    fn into_iter(self: ByteArray) -> Self::IntoIter {
         ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
     }
 }
