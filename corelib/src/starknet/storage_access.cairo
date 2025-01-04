@@ -664,7 +664,7 @@ impl ByteArrayStore of Store<ByteArray> {
             address_domain, storage_address_from_base_and_offset(base, offset), value,
         )
     }
-    
+
     #[inline]
     fn size() -> u8 {
         1
