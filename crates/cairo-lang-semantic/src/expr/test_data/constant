@@ -64,6 +64,12 @@ const FAILING_CALC: felt252 = if true {
 
 const FUNC_CALC_SUCCESS: () = panic_if_true(false);
 const FUNC_CALC_FAILURE: () = panic_if_true(true);
+const FUNC_CALC_SUCCESS_OPTION: felt252 = Option::Some(5).unwrap();
+const FUNC_CALC_FAILURE_OPTION: felt252 = Option::None.unwrap();
+const FUNC_CALC_SUCCESS_RESULT1: felt252 = Result::<_, felt252>::Ok(5).unwrap();
+const FUNC_CALC_FAILURE_RESULT1: felt252 = Result::Err(5).unwrap();
+const FUNC_CALC_SUCCESS_RESULT2: felt252 = Result::<felt252, _>::Err(5).unwrap_err();
+const FUNC_CALC_FAILURE_RESULT2: felt252 = Result::Ok(5).unwrap_err();
 
 const fn panic_if_true(cond: bool) {
     if cond {
@@ -107,9 +113,48 @@ error: Failed to calculate constant.
 const FUNC_CALC_FAILURE: () = panic_if_true(true);
                               ^^^^^^^^^^^^^^^^^^^
 note: In `test::panic_if_true`:
-  --> lib.cairo:27:9
+  --> lib.cairo:33:9
         core::panic_with_felt252('assertion failed')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:25:43
+const FUNC_CALC_FAILURE_OPTION: felt252 = Option::None.unwrap();
+                                          ^^^^^^^^^^^^^^^^^^^^^
+note: In `core::option::OptionTraitImpl::<T>::expect`:
+  --> /home/ori/rust/cairo-ws/corelib/src/option.cairo:588:29
+            Option::None => crate::panic_with_felt252(err),
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: In `core::option::OptionTraitImpl::<core::felt252>::unwrap`:
+  --> /home/ori/rust/cairo-ws/corelib/src/option.cairo:594:9
+        self.expect('Option::unwrap failed.')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:27:44
+const FUNC_CALC_FAILURE_RESULT1: felt252 = Result::Err(5).unwrap();
+                                           ^^^^^^^^^^^^^^^^^^^^^^^
+note: In `core::result::ResultTraitImpl::<T, E>::expect::<core::traits::PanicDestructForDestruct::<E, +Destruct<E>>>`:
+  --> /home/ori/rust/cairo-ws/corelib/src/result.cairo:207:31
+            Result::Err(_) => crate::panic_with_felt252(err),
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: In `core::result::ResultTraitImpl::<core::felt252, core::felt252>::unwrap::<core::traits::DestructFromDrop::<core::felt252, core::felt252Drop>>`:
+  --> /home/ori/rust/cairo-ws/corelib/src/result.cairo:224:9
+        self.expect('Result::unwrap failed.')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:29:44
+const FUNC_CALC_FAILURE_RESULT2: felt252 = Result::Ok(5).unwrap_err();
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: In `core::result::ResultTraitImpl::<T, E>::expect_err::<+PanicDestruct<T>>`:
+  --> /home/ori/rust/cairo-ws/corelib/src/result.cairo:417:30
+            Result::Ok(_) => crate::panic_with_felt252(err),
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: In `core::result::ResultTraitImpl::<core::felt252, core::felt252>::unwrap_err::<core::traits::PanicDestructForDestruct::<core::felt252, core::traits::DestructFromDrop::<core::felt252, core::felt252Drop>>>`:
+  --> /home/ori/rust/cairo-ws/corelib/src/result.cairo:435:9
+        self.expect_err('Result::unwrap_err failed.')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
