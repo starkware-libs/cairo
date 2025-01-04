@@ -64,6 +64,9 @@ const FAILING_CALC: felt252 = if true {
 
 const FUNC_CALC_SUCCESS: () = panic_if_true(false);
 const FUNC_CALC_FAILURE: () = panic_if_true(true);
+const FUNC_CALC_SUCCESS_OPTION: felt252 = Option::Some(5).unwrap();
+const FUNC_CALC_SUCCESS_RESULT1: felt252 = Result::<_, felt252>::Ok(5).unwrap();
+const FUNC_CALC_SUCCESS_RESULT2: felt252 = Result::<felt252, _>::Err(5).unwrap_err();
 
 const fn panic_if_true(cond: bool) {
     if cond {
@@ -107,7 +110,7 @@ error: Failed to calculate constant.
 const FUNC_CALC_FAILURE: () = panic_if_true(true);
                               ^^^^^^^^^^^^^^^^^^^
 note: In `test::panic_if_true`:
-  --> lib.cairo:27:9
+  --> lib.cairo:30:9
         core::panic_with_felt252('assertion failed')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
