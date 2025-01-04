@@ -213,6 +213,7 @@ impl<'a> Lexer<'a> {
             "let" => TokenKind::Let,
             "return" => TokenKind::Return,
             "match" => TokenKind::Match,
+            "macro" => TokenKind::Macro,
             "if" => TokenKind::If,
             "loop" => TokenKind::Loop,
             "continue" => TokenKind::Continue,
@@ -276,6 +277,7 @@ impl<'a> Lexer<'a> {
                 '%' => self.pick_kind('=', TokenKind::ModEq, TokenKind::Mod),
                 '+' => self.pick_kind('=', TokenKind::PlusEq, TokenKind::Plus),
                 '#' => self.take_token_of_kind(TokenKind::Hash),
+                '$' => self.take_token_of_kind(TokenKind::Dollar),
                 '-' => {
                     self.take();
                     match self.peek() {
@@ -375,6 +377,7 @@ enum TokenKind {
     Let,
     Return,
     Match,
+    Macro,
     If,
     While,
     For,
@@ -420,6 +423,7 @@ enum TokenKind {
     Colon,
     ColonColon,
     Comma,
+    Dollar,
     Dot,
     DotDot,
     Eq,
@@ -474,6 +478,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Implicits => SyntaxKind::TerminalImplicits,
         TokenKind::NoPanic => SyntaxKind::TerminalNoPanic,
         TokenKind::Pub => SyntaxKind::TerminalPub,
+        TokenKind::Macro => SyntaxKind::TerminalMacro,
         TokenKind::And => SyntaxKind::TerminalAnd,
         TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
         TokenKind::At => SyntaxKind::TerminalAt,
@@ -501,6 +506,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Colon => SyntaxKind::TerminalColon,
         TokenKind::ColonColon => SyntaxKind::TerminalColonColon,
         TokenKind::Comma => SyntaxKind::TerminalComma,
+        TokenKind::Dollar => SyntaxKind::TerminalDollar,
         TokenKind::Dot => SyntaxKind::TerminalDot,
         TokenKind::DotDot => SyntaxKind::TerminalDotDot,
         TokenKind::Eq => SyntaxKind::TerminalEq,

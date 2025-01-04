@@ -317,7 +317,7 @@ identifier
 test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
-macro!
+a_macro!
 fn foo() {}
 
 //! > top_level_kind
@@ -328,20 +328,20 @@ FunctionWithBody
 
 //! > expected_diagnostics
 error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
- --> dummy_file.cairo:1:7
-macro!
-      ^
+ --> dummy_file.cairo:1:9
+a_macro!
+        ^
 
 error: Missing token TerminalSemicolon.
- --> dummy_file.cairo:1:7
-macro!
-      ^
+ --> dummy_file.cairo:1:9
+a_macro!
+        ^
 
 //! > expected_tree
 └── Top level kind: ModuleItemList
     ├── child #0 (kind: ItemInlineMacro)
     │   ├── attributes (kind: AttributeList) []
-    │   ├── name (kind: TokenIdentifier): 'macro'
+    │   ├── name (kind: TokenIdentifier): 'a_macro'
     │   ├── bang (kind: TokenNot): '!'
     │   ├── arguments (kind: TokenTreeNode)
     │   │   └── subtree (kind: WrappedTokenTreeMissing) []

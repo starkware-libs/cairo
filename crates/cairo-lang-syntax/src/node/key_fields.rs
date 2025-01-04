@@ -120,6 +120,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ClosureParamWrapperNAry => {
             vec![]
         }
+        SyntaxKind::ExprPlaceholder => {
+            vec![]
+        }
         SyntaxKind::StructArgExpr => {
             vec![]
         }
@@ -408,6 +411,13 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::ItemInlineMacro => {
             vec![]
         }
+        SyntaxKind::ItemMacroDeclaration => {
+            vec![/* name */ children[3]]
+        }
+        SyntaxKind::MacroRulesList => vec![],
+        SyntaxKind::MacroRule => {
+            vec![]
+        }
         SyntaxKind::LegacyExprInlineMacro => {
             vec![]
         }
@@ -487,6 +497,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TokenLet => vec![],
         SyntaxKind::TerminalLet => {
+            vec![]
+        }
+        SyntaxKind::TokenMacro => vec![],
+        SyntaxKind::TerminalMacro => {
             vec![]
         }
         SyntaxKind::TokenMatch => vec![],
@@ -587,6 +601,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         }
         SyntaxKind::TokenDivEq => vec![],
         SyntaxKind::TerminalDivEq => {
+            vec![]
+        }
+        SyntaxKind::TokenDollar => vec![],
+        SyntaxKind::TerminalDollar => {
             vec![]
         }
         SyntaxKind::TokenDot => vec![],
