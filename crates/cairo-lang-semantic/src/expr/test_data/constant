@@ -77,6 +77,12 @@ const fn panic_if_true(cond: bool) {
     }
 }
 
+const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
+
+const fn call_myself() -> felt252 {
+    call_myself()
+}
+
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:17
@@ -155,6 +161,11 @@ note: In `core::result::ResultTraitImpl::<core::felt252, core::felt252>::unwrap_
   --> /home/ori/rust/cairo-ws/corelib/src/result.cairo:435:9
         self.expect_err('Result::unwrap_err failed.')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Constant calculation depth exceeded.
+ --> lib.cairo:37:43
+const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
+                                          ^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
