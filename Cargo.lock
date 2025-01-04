@@ -1150,6 +1150,7 @@ dependencies = [
  "anyhow",
  "cairo-lang-compiler",
  "cairo-lang-diagnostics",
+ "cairo-lang-filesystem",
  "cairo-lang-runner",
  "cairo-lang-sierra-generator",
  "cairo-lang-starknet",

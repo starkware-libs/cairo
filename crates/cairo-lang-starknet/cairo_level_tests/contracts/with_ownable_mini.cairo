@@ -1,11 +1,11 @@
 #[starknet::contract]
 mod ownable_mini_contract {
-    use crate::components::ownable_mini;
     use starknet::ContractAddress;
     use starknet::storage::{
         StorageAsPath, StorageNode, StorageNodeMut, StoragePointerReadAccess,
         StoragePointerWriteAccess,
     };
+    use crate::components::ownable_mini;
 
     #[storage]
     struct Storage {

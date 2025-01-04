@@ -1752,7 +1752,7 @@ impl<'a> Parser<'a> {
 
             let pattern_list_green = if pattern_list.is_empty() {
                 self.create_and_report_missing::<PatternListOr>(
-                    ParserDiagnosticKind::MissingPatteren,
+                    ParserDiagnosticKind::MissingPattern,
                 )
             } else {
                 PatternListOr::new_green(self.db, pattern_list)

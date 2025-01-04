@@ -34,7 +34,7 @@ See xref:linear-types.adoc[linear types] for more information.
 * `Destruct` - Implements the destruct method to explicitly destroy the type.
 All members of the type must also be `Destruct`.
 See xref:linear-types.adoc[linear types] for more information.
-* `PartialEq` - Implements the xref::equality-operators.adoc[equality operators] `==` and `!=` for the type.
+* `PartialEq` - Implements the xref:equality-operators.adoc[equality operators] `==` and `!=` for the type.
 All members of the type must also be `PartialEq`.
 * `Serde` - Implements the Serde trait for serialization and deserialization for the type.
 All members of the type must also be `Serde`.

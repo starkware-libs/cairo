@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
@@ -40,7 +41,7 @@ use crate::items::visibility::Visibility;
 use crate::plugin::AnalyzerPlugin;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::substitution::GenericSubstitution;
-use crate::types::{ImplTypeId, TypeSizeInformation};
+use crate::types::{ImplTypeById, ImplTypeId, TypeSizeInformation};
 use crate::{
     FunctionId, Parameter, SemanticDiagnostic, TypeId, corelib, items, lsp_helpers, semantic, types,
 };
@@ -711,6 +712,7 @@ pub trait SemanticGroup:
         &self,
         canonical_trait: inference::canonic::CanonicalTrait,
         lookup_context: ImplLookupContext,
+        impl_type_bounds: BTreeMap<ImplTypeById, TypeId>,
     ) -> Result<
         inference::solver::SolutionSet<inference::canonic::CanonicalImpl>,
         inference::InferenceError,
@@ -1461,6 +1463,13 @@ pub trait SemanticGroup:
         generic_param: GenericParamId,
         in_cycle: bool,
     ) -> Maybe<GenericParamData>;
+
+    /// Returns the type constraints intoduced by the generic params.
+    #[salsa::invoke(items::generics::generic_params_type_constraints)]
+    fn generic_params_type_constraints(
+        &self,
+        generic_params: Vec<GenericParamId>,
+    ) -> Vec<(TypeId, TypeId)>;
 
     // Concrete type.
     // ==============

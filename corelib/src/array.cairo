@@ -61,19 +61,17 @@
 //!
 //! [`append`]: ArrayTrait::append
 
-#[feature("deprecated-index-traits")]
-use crate::traits::IndexView;
-
 use crate::box::BoxTrait;
+use crate::iter::Iterator;
+use crate::metaprogramming::TypeEqual;
+use crate::serde::Serde;
+use crate::RangeCheck;
 #[allow(unused_imports)]
 use crate::gas::withdraw_gas;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
-use crate::serde::Serde;
-use crate::metaprogramming::TypeEqual;
-use crate::iter::Iterator;
-use crate::RangeCheck;
-
+#[feature("deprecated-index-traits")]
+use crate::traits::IndexView;
 /// A collection of elements of the same type continuous in memory.
 #[derive(Drop)]
 pub extern type Array<T>;

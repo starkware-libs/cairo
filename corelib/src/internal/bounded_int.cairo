@@ -211,7 +211,7 @@ impl NegFelt2520x7ffffffffffffffffffffffffffffffe =
     neg_felt252::Impl<0x7ffffffffffffffffffffffffffffffe, -0x7ffffffffffffffffffffffffffffffe>;
 impl NegFelt252Minus0x7ffffffffffffffffffffffffffffffe =
     neg_felt252::Impl<-0x7ffffffffffffffffffffffffffffffe, 0x7ffffffffffffffffffffffffffffffe>;
-impl NegFelt2520x0x7fffffffffffffffffffffffffffffff =
+impl NegFelt2520x7fffffffffffffffffffffffffffffff =
     neg_felt252::Impl<0x7fffffffffffffffffffffffffffffff, -0x7fffffffffffffffffffffffffffffff>;
 impl NegFelt252Minus0x7fffffffffffffffffffffffffffffff =
     neg_felt252::Impl<-0x7fffffffffffffffffffffffffffffff, 0x7fffffffffffffffffffffffffffffff>;
@@ -270,7 +270,7 @@ impl MulMinusOneNegateHelper<T, impl H: MulHelper<T, MinusOne>> of NegateHelper<
 }
 
 pub use {
-    bounded_int_add as add, bounded_int_sub as sub, bounded_int_mul as mul,
-    bounded_int_div_rem as div_rem, bounded_int_constrain as constrain,
-    bounded_int_is_zero as is_zero, bounded_int_trim as trim,
+    bounded_int_add as add, bounded_int_constrain as constrain, bounded_int_div_rem as div_rem,
+    bounded_int_is_zero as is_zero, bounded_int_mul as mul, bounded_int_sub as sub,
+    bounded_int_trim as trim,
 };

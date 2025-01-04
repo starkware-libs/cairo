@@ -18,10 +18,10 @@ compile_error!("error message");
 error: Macro `compile_error` must have exactly 1 unnamed arguments.
  --> test_src/lib.cairo:1:1
 compile_error!();
-^***************^
+^^^^^^^^^^^^^^^^^
 
 
-error: `compiler_error!` argument must be an unnamed string argument.
+error: `compile_error!` argument must be an unnamed string argument.
  --> test_src/lib.cairo:3:16
 compile_error!(1);
                ^
@@ -30,13 +30,13 @@ compile_error!(1);
 error: Macro `compile_error` must have exactly 1 unnamed arguments.
  --> test_src/lib.cairo:5:1
 compile_error!("message", "extra");
-^*********************************^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 error: "error message"
  --> test_src/lib.cairo:7:1
 compile_error!("error message");
-^******************************^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -59,6 +59,8 @@ compile_error!("ignore");
 
 //! > expected_diagnostics
 error: "show"
- --> test_src/lib.cairo:1:1
-#[cfg(noignore)]
-^**************^
+ --> test_src/lib.cairo:1:1-2:23
+  #[cfg(noignore)]
+ _^
+| compile_error!("show");
+|_______________________^

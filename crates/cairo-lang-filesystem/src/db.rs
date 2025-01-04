@@ -27,7 +27,7 @@ pub const CORELIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Unique identifier of a crate.
 ///
-/// This directly translates to [`DependencySettings.discriminator`] expect the discriminator
+/// This directly translates to [`DependencySettings.discriminator`] except the discriminator
 /// **must** be `None` for the core crate.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct CrateIdentifier(SmolStr);
@@ -155,7 +155,7 @@ pub struct ExperimentalFeaturesConfig {
     pub associated_item_constraints: bool,
     /// Allows using coupon types and coupon calls.
     ///
-    /// Each function has a associated `Coupon` type, which represents paying the cost of the
+    /// Each function has an associated `Coupon` type, which represents paying the cost of the
     /// function before calling it.
     #[serde(default)]
     pub coupons: bool,

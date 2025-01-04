@@ -44,7 +44,7 @@ error: Member specified more than once.
 error: The base struct must always be the last argument.
  --> lib.cairo:12:9
         ..d,
-        ^*^
+        ^^^
 
 error: Unknown member.
  --> lib.cairo:13:9
@@ -85,7 +85,7 @@ error: Type "test::A" has no member "f"
 error: Invalid member expression.
  --> lib.cairo:8:7
     a.a::b;
-      ^**^
+      ^^^^
 
 error: Invalid member expression.
  --> lib.cairo:9:7
@@ -126,4 +126,4 @@ struct A {
 error: Base struct has no effect, all the fields in the struct have already been specified.
  --> lib.cairo:5:15
     A { a: 4, ..a }
-              ^*^
+              ^^^

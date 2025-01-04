@@ -22,7 +22,7 @@ use smol_str::SmolStr;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::ImplId;
 use crate::corelib::{
-    CoreTraitContext, LiteralError, core_box_ty, core_felt252_ty, core_nonzero_ty, get_core_trait,
+    CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, get_core_trait,
     get_core_ty_by_name, try_extract_nz_wrapped_type, validate_literal,
 };
 use crate::db::SemanticGroup;
@@ -599,7 +599,7 @@ fn evaluate_const_function_call(
         expr.function.get_concrete(db.upcast()).generic_function,
         GenericFunctionId::Impl
     );
-    let is_felt252_ty = expr.ty == core_felt252_ty(db.upcast());
+    let is_felt252_ty = expr.ty == db.core_felt252_ty();
     let mut value = match imp.function.name(db.upcast()).as_str() {
         "neg" => -&args[0],
         "add" => &args[0] + &args[1],

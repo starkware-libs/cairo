@@ -413,8 +413,7 @@ mod X {
     extern type R;
     extern fn new_r() -> R nopanic;
 }
-use X::R as RR;
-use X::new_r;
+use X::{R as RR, new_r};
 
 //! > function_body
 
@@ -482,8 +481,7 @@ mod X {
     extern type R<T>;
     extern fn new_r<T>() -> R<T> nopanic;
 }
-use X::R as RR;
-use X::new_r;
+use X::{R as RR, new_r};
 
 //! > function_body
 
@@ -539,12 +537,12 @@ Block(
 
 //! > expected_diagnostics
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:9:9
+ --> lib.cairo:8:9
     let y: RR::<u8> = new_r();
         ^
 
 warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
- --> lib.cairo:11:9
+ --> lib.cairo:10:9
     let x: R::<u16> = new_r();
         ^
 
@@ -701,7 +699,6 @@ mod X {
         B: u16,
     }
 }
-
 use X::R;
 
 //! > function_body
@@ -771,7 +768,6 @@ pub mod generic_type {
         B: u16,
     }
 }
-
 use generic_type::E as EE;
 
 //! > function_body
@@ -1023,8 +1019,8 @@ edition = "2024_07"
 
 //! > module_code
 mod a {
-    use super::*;
     use a::a::a::a as b;
+    use super::*;
 }
 
 //! > function_body
@@ -1043,9 +1039,9 @@ Block(
 
 //! > expected_diagnostics
 warning: Unused import: `test::a::b`
- --> lib.cairo:3:18
+ --> lib.cairo:2:18
     use a::a::a::a as b;
-                 ^****^
+                 ^^^^^^
 
 //! > ==========================================================================
 
@@ -1063,7 +1059,6 @@ mod a {
         pub const ACCESSIBLE: u8 = 1;
     }
 }
-
 use a::b::*;
 
 //! > function_body
@@ -1103,7 +1098,6 @@ mod c {
         pub use super::super::a::b::*;
     }
 }
-
 use c::d::*;
 
 //! > function_body
@@ -1137,7 +1131,6 @@ mod a {
         pub const C: u8 = 1;
     }
 }
-
 use a::*;
 
 //! > function_body
@@ -1183,9 +1176,7 @@ mod e {
         use super::super::a::b::*;
     }
 }
-
 use c::d::*;
-
 use e::f::*;
 
 //! > function_body
@@ -1227,7 +1218,6 @@ mod b {
         }
     }
 }
-
 use a::*;
 
 //! > function_body
@@ -1285,7 +1275,6 @@ mod b {
 mod c {
     pub struct V {}
 }
-
 use b::*;
 
 //! > function_body
@@ -1366,6 +1355,104 @@ FunctionCall(
         ],
         coupon_arg: None,
         ty: test::c::V,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test using a variant with a generic type.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+enum myEnum<T> {
+    Variant: T,
+}
+use myEnum::Variant;
+
+//! > function_body
+
+//! > expr_code
+Variant::<u32>(3)
+
+//! > expected_semantics
+EnumVariantCtor(
+    ExprEnumVariantCtor {
+        variant: myEnum::Variant,
+        value_expr: Literal(
+            ExprLiteral {
+                value: 3,
+                ty: core::integer::u32,
+            },
+        ),
+        ty: test::myEnum::<core::integer::u32>,
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test using a variant with a wrong generic type.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: true)
+
+//! > module_code
+use Option::Some;
+
+//! > function_body
+
+//! > expr_code
+Some::<i64>(3_u32)
+
+//! > expected_semantics
+Missing(
+    ExprMissing {
+        ty: <missing>,
+    },
+)
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::integer::i64", found: "core::integer::u32".
+ --> lib.cairo:3:13
+Some::<i64>(3_u32)
+            ^^^^^
+
+//! > ==========================================================================
+
+//! > Test using a variant within a module.
+
+//! > test_runner_name
+test_expr_semantics(expect_diagnostics: false)
+
+//! > module_code
+enum myEnum<T> {
+    Variant: T,
+}
+mod test {
+    use super::myEnum::Variant;
+}
+
+//! > function_body
+
+//! > expr_code
+test::Variant::<u32>(3)
+
+//! > expected_semantics
+EnumVariantCtor(
+    ExprEnumVariantCtor {
+        variant: myEnum::Variant,
+        value_expr: Literal(
+            ExprLiteral {
+                value: 3,
+                ty: core::integer::u32,
+            },
+        ),
+        ty: test::myEnum::<core::integer::u32>,
     },
 )
 

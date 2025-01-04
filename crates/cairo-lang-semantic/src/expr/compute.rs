@@ -66,7 +66,7 @@ use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
-use crate::items::imp::{ImplLongId, filter_candidate_traits, infer_impl_by_self};
+use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::us::get_use_path_segments;
 use crate::items::visibility;
@@ -77,14 +77,14 @@ use crate::resolve::{
 use crate::semantic::{self, Binding, FunctionId, LocalVariable, TypeId, TypeLongId};
 use crate::substitution::SemanticRewriter;
 use crate::types::{
-    ClosureTypeLongId, ConcreteTypeId, ImplTypeId, add_type_based_diagnostics, are_coupons_enabled,
+    ClosureTypeLongId, ConcreteTypeId, add_type_based_diagnostics, are_coupons_enabled,
     extract_fixed_size_array_size, peel_snapshots, peel_snapshots_ex,
     resolve_type_with_environment, verify_fixed_size_array_size, wrap_in_snapshots,
 };
 use crate::usage::Usages;
 use crate::{
-    ConcreteEnumId, ConcreteTraitLongId, GenericArgumentId, GenericParam, LocalItem, Member,
-    Mutability, Parameter, PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
+    ConcreteEnumId, GenericArgumentId, GenericParam, LocalItem, Member, Mutability, Parameter,
+    PatternStringLiteral, PatternStruct, Signature, StatementItemKind,
 };
 
 /// Expression with its id.
@@ -1051,42 +1051,13 @@ pub fn compute_root_expr(
         let Ok(concrete_trait_id) = imp.concrete_trait else {
             continue;
         };
-        for (concrete_trait_type_id, ty1) in imp.type_constraints {
-            let trait_ty = concrete_trait_type_id.trait_type(ctx.db);
-            let impl_type = ImplTypeId::new(
-                ImplLongId::GenericParameter(*param).intern(ctx.db),
-                trait_ty,
-                ctx.db,
-            );
-            let ty0 = inference.impl_type_assignment(impl_type);
-            inference.conform_ty(ty0, ty1).ok();
-        }
-        let ConcreteTraitLongId { trait_id, generic_args } =
-            concrete_trait_id.lookup_intern(ctx.db);
-        if crate::corelib::fn_traits(ctx.db).contains(&trait_id) {
+        if crate::corelib::fn_traits(ctx.db).contains(&concrete_trait_id.trait_id(ctx.db)) {
             ctx.are_closures_in_context = true;
         }
-        if trait_id != get_core_trait(ctx.db, CoreTraitContext::MetaProgramming, "TypeEqual".into())
-        {
-            continue;
-        }
-        let [GenericArgumentId::Type(ty0), GenericArgumentId::Type(ty1)] = generic_args.as_slice()
-        else {
-            unreachable!("TypeEqual should have 2 arguments");
-        };
-        let ty0 = if let TypeLongId::ImplType(impl_type) = ty0.lookup_intern(ctx.db) {
-            inference.impl_type_assignment(impl_type)
-        } else {
-            *ty0
-        };
-        let ty1 = if let TypeLongId::ImplType(impl_type) = ty1.lookup_intern(ctx.db) {
-            inference.impl_type_assignment(impl_type)
-        } else {
-            *ty1
-        };
-        inference.conform_ty(ty0, ty1).ok();
     }
-    inference.finalize_impl_type_bounds();
+    let constrains =
+        ctx.db.generic_params_type_constraints(ctx.resolver.data.generic_params.clone());
+    inference.conform_generic_params_type_constraints(&constrains);
 
     let return_type = ctx.reduce_ty(return_type);
     let res = compute_expr_block_semantic(ctx, syntax)?;
@@ -2106,8 +2077,39 @@ fn maybe_compute_pattern_semantic(
             })
         }
         ast::Pattern::Path(path) => {
-            // A path of length 1 is an identifier, which will result in a variable pattern.
-            // Currently, other paths are not supported (and not clear if ever will be).
+            let item_result = ctx.resolver.resolve_generic_path(
+                &mut Default::default(),
+                path,
+                NotFoundItemType::Identifier,
+                Some(&mut ctx.environment),
+            );
+            if let Ok(item) = item_result {
+                if let Some(generic_variant) =
+                    try_extract_matches!(item, ResolvedGenericItem::Variant)
+                {
+                    let (concrete_enum, _n_snapshots) =
+                        extract_concrete_enum_from_pattern_and_validate(
+                            ctx,
+                            pattern_syntax,
+                            ty,
+                            generic_variant.enum_id,
+                        )?;
+                    let concrete_variant = ctx
+                        .db
+                        .concrete_enum_variant(concrete_enum, &generic_variant)
+                        .map_err(|_| ctx.diagnostics.report(path, UnknownEnum))?;
+                    return Ok(Pattern::EnumVariant(PatternEnumVariant {
+                        variant: concrete_variant,
+                        inner_pattern: None,
+                        ty,
+                        stable_ptr: path.stable_ptr().into(),
+                    }));
+                }
+            }
+
+            // Paths with a single element are treated as identifiers, which will result in a
+            // variable pattern if no matching enum variant is found. If a matching enum
+            // variant exists, it is resolved to the corresponding concrete variant.
             if path.elements(syntax_db).len() > 1 {
                 return Err(ctx.diagnostics.report(path, Unsupported));
             }

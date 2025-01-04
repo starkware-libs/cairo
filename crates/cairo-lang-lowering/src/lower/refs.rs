@@ -219,7 +219,7 @@ enum Value {
     Scattered(Box<Scattered>),
 }
 
-/// A value for an non-stored member path. Recursively holds the [Value] for the members.
+/// A value for a non-stored member path. Recursively holds the [Value] for the members.
 #[derive(Clone, Debug, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 struct Scattered {

@@ -109,7 +109,7 @@ mod test_contract {
 
 lib.cairo:1:1
 #[starknet::contract]
-^*******************^
+^^^^^^^^^^^^^^^^^^^^^
 contract:
 
 
@@ -329,7 +329,7 @@ pub mod __constructor {
 
 lib.cairo:29:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl EventDrop of core::traits::Drop::<Event>;
@@ -337,7 +337,7 @@ impl EventDrop of core::traits::Drop::<Event>;
 
 lib.cairo:29:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -393,7 +393,7 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 lib.cairo:34:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
@@ -401,7 +401,7 @@ impl AwesomeEventDrop of core::traits::Drop::<AwesomeEvent>;
 
 lib.cairo:34:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
@@ -427,7 +427,7 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 
 lib.cairo:39:14
     #[derive(Drop, starknet::Event)]
-             ^**^
+             ^^^^
 impls:
 
 impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
@@ -435,7 +435,7 @@ impl BestEventEverDrop of core::traits::Drop::<BestEventEver>;
 
 lib.cairo:39:20
     #[derive(Drop, starknet::Event)]
-                   ^*************^
+                   ^^^^^^^^^^^^^^^
 starknet_derive:
 
 impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
@@ -453,7 +453,7 @@ impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
 
 lib.cairo:7:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseDrop of core::traits::Drop::<StorageStorageBase>;
@@ -462,7 +462,7 @@ impl StorageStorageBaseCopy of core::traits::Copy::<StorageStorageBase>;
 
 lib.cairo:7:5
     #[storage]
-    ^********^
+    ^^^^^^^^^^
 impls:
 
 impl StorageStorageBaseMutDrop of core::traits::Drop::<StorageStorageBaseMut>;
