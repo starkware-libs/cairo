@@ -204,14 +204,19 @@ impl Felt252Neg of Neg<felt252> {
     }
 }
 
-/// Performs a division on `felt252` values.
+/// Performs division on `felt252` values in Cairo's finite field.
+/// Unlike regular integer division, `felt252` division returns a field element n that satisfies
+/// the equation: n * rhs ≡ lhs (mod P), where P is the `felt252` prime.
 ///
 /// # Examples
 ///
 /// ```
 /// use core::felt252_div;
 ///
+/// // Even division works as expected
 /// assert!(felt252_div(4, 2) == 2);
+///
+/// // Non-even division returns a field element n where n * 3 ≡ 4 (mod P)
 /// assert!(felt252_div(4, 3) ==
 /// 1206167596222043737899107594365023368541035738443865566657697352045290673495);
 ///
