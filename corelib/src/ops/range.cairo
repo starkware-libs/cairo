@@ -3,7 +3,7 @@ use core::num::traits::One;
 use core::traits::Add;
 
 /// Represents the range [start, end).
-#[derive(Clone, Drop)]
+#[derive(Clone, Drop, PartialEq)]
 pub struct Range<T> {
     /// The lower bound of the range (inclusive).
     pub start: T,
