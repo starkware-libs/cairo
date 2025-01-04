@@ -24,16 +24,14 @@ pub(crate) impl MapImpl<I, F> of MapTrait<I, F> {
 
 impl MapIterator<
     I,
-    B,
     F,
     impl TIter: Iterator<I>,
-    +core::ops::FnOnce<F, (TIter::Item,)>[Output: B],
+    impl func: core::ops::Fn<F, (TIter::Item,)>,
     +Destruct<I>,
     +Destruct<F>,
-    +Copy<F>,
 > of Iterator<Map<I, F>> {
-    type Item = B;
-    fn next(ref self: Map<I, F>) -> Option<B> {
-        self.iter.next().map(self.f)
+    type Item = func::Output;
+    fn next(ref self: Map<I, F>) -> Option<func::Output> {
+        self.iter.next().map(@self.f)
     }
 }

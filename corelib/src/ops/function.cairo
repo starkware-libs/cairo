@@ -23,6 +23,15 @@ impl FnOnceImpl<T, Args, +Destruct<T>, +Fn<T, Args>> of FnOnce<T, Args> {
     }
 }
 
+/// An implementation of `FnOnce` when `Fn` is implemented and the receiver is by-reference.
+/// Makes sure we can always pass an `Fn` to a function that expects an `FnOnce`.
+impl FnOnceSnapImpl<T, Args, +Destruct<T>, +Fn<T, Args>> of FnOnce<@T, Args> {
+    type Output = Fn::<T, Args>::Output;
+    fn call(self: @T, args: Args) -> Self::Output {
+        Fn::call(self, args)
+    }
+}
+
 /// The version of the call operator that takes a by-snapshot receiver.
 ///
 /// Instances of `Fn` can be called multiple times.
