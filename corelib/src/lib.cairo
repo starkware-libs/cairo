@@ -213,10 +213,10 @@ impl Felt252Neg of Neg<felt252> {
 /// ```
 /// use core::felt252_div;
 ///
-/// // Even division works as expected
+/// // Division with 0 remainder works the same way as integer division.
 /// assert!(felt252_div(4, 2) == 2);
 ///
-/// // Non-even division returns a field element n where n * 3 ≡ 4 (mod P)
+/// // Division with non 0 remainder returns a field element n where n * 3 ≡ 4 (mod P)
 /// assert!(felt252_div(4, 3) ==
 /// 1206167596222043737899107594365023368541035738443865566657697352045290673495);
 ///
