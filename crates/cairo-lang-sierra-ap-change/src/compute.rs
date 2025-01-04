@@ -62,7 +62,7 @@ struct ApChangeCalcHelper<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> us
     token_usages: TokenUsages,
     /// The size of allocated locals until the statement.
     locals_size: UnorderedHashMap<StatementIdx, usize>,
-    /// The lower bound of a ap-change to the furthest return per statement.
+    /// The lower bound of an ap-change to the furthest return per statement.
     known_ap_change_to_return: UnorderedHashMap<StatementIdx, usize>,
     /// The ap_change of functions with known ap changes.
     function_ap_change: OrderedHashMap<FunctionId, usize>,
@@ -139,7 +139,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         Ok(())
     }
 
-    /// Calculates the lower bound of a ap-change to the furthest return per statement.
+    /// Calculates the lower bound of an ap-change to the furthest return per statement.
     /// If it is unknown does not set it.
     fn calc_known_ap_change_for_statement(
         &mut self,
