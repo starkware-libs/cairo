@@ -230,6 +230,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
         SyntaxKind::OptionTerminalNoPanicEmpty => {
             vec![]
         }
+        SyntaxKind::OptionTerminalConstEmpty => {
+            vec![]
+        }
         SyntaxKind::FunctionSignature => {
             vec![]
         }
@@ -268,7 +271,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: &[GreenId]) -> Vec<GreenId> {
             vec![]
         }
         SyntaxKind::FunctionDeclaration => {
-            vec![/* name */ children[1]]
+            vec![/* name */ children[2]]
         }
         SyntaxKind::ItemConstant => {
             vec![/* name */ children[3]]

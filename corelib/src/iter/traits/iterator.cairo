@@ -22,3 +22,12 @@ impl IteratorIntoIterator<T, +Iterator<T>> of IntoIterator<T> {
         self
     }
 }
+
+impl SnapshotFixedSizeArrayIntoIterator<
+    T, const SIZE: usize, +Drop<T>, impl ToSpan: core::array::ToSpanTrait<[T; SIZE], T>,
+> of IntoIterator<@[T; SIZE]> {
+    type IntoIter = crate::array::SpanIter<T>;
+    fn into_iter(self: @[T; SIZE]) -> Self::IntoIter {
+        ToSpan::span(self).into_iter()
+    }
+}

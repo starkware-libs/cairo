@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::ids::{
     GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, LookupItemId,
-    ModuleFileId, ModuleId, ModuleItemId, TraitId, TraitItemId,
+    ModuleFileId, ModuleId, ModuleItemId, TraitId, TraitItemId, VariantId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, CrateSettings};
@@ -53,10 +53,10 @@ use crate::items::trt::{
 };
 use crate::items::{TraitOrImplContext, visibility};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::types::{ImplTypeId, are_coupons_enabled, resolve_type};
+use crate::types::{ConcreteEnumLongId, ImplTypeId, are_coupons_enabled, resolve_type};
 use crate::{
-    ConcreteFunction, ConcreteTypeId, ExprId, FunctionId, FunctionLongId, GenericArgumentId,
-    GenericParam, Member, Mutability, TypeId, TypeLongId,
+    ConcreteFunction, ConcreteTypeId, ConcreteVariant, ExprId, FunctionId, FunctionLongId,
+    GenericArgumentId, GenericParam, Member, Mutability, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -1114,7 +1114,14 @@ impl<'db> Resolver<'db> {
                 )?)
                 .intern(self.db),
             ),
-            ResolvedGenericItem::Variant(_) => panic!("Variant is not a module item."),
+            ResolvedGenericItem::Variant(var) => {
+                ResolvedConcreteItem::Variant(self.specialize_variant(
+                    diagnostics,
+                    identifier.stable_ptr().untyped(),
+                    var.id,
+                    &generic_args_syntax.unwrap_or_default(),
+                )?)
+            }
             ResolvedGenericItem::TraitFunction(_) => panic!("TraitFunction is not a module item."),
             ResolvedGenericItem::Variable(_) => panic!("Variable is not a module item."),
         })
@@ -1373,6 +1380,30 @@ impl<'db> Resolver<'db> {
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
 
         Ok(ConcreteImplLongId { impl_def_id, generic_args }.intern(self.db))
+    }
+
+    /// Specializes a variant.
+    fn specialize_variant(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        stable_ptr: SyntaxStablePtrId,
+        variant_id: VariantId,
+        generic_args: &[ast::GenericArg],
+    ) -> Maybe<ConcreteVariant> {
+        let concrete_enum_id = ConcreteEnumLongId {
+            enum_id: variant_id.enum_id(self.db.upcast()),
+            generic_args: self.resolve_generic_args(
+                diagnostics,
+                &self.db.enum_generic_params(variant_id.enum_id(self.db.upcast()))?,
+                generic_args,
+                stable_ptr,
+            )?,
+        }
+        .intern(self.db);
+        self.db.concrete_enum_variant(
+            concrete_enum_id,
+            &self.db.variant_semantic(variant_id.enum_id(self.db.upcast()), variant_id)?,
+        )
     }
 
     /// Specializes a generic function.
