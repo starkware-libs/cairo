@@ -273,13 +273,7 @@ impl<'a> Lexer<'a> {
                 '.' => {
                     self.take();
                     match self.peek() {
-                        Some('.') => {
-                            self.take();
-                            match self.peek() {
-                                Some('=') => self.take_token_of_kind(TokenKind::DotDotEq),
-                                _ => TokenKind::DotDot,
-                            }
-                        }
+                        Some('.') => self.pick_kind('=', TokenKind::DotDotEq, TokenKind::DotDot),
                         _ => TokenKind::Dot,
                     }
                 }

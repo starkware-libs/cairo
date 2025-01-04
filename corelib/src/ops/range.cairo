@@ -151,9 +151,16 @@ pub struct RangeInclusive<T> {
 #[derive(Clone, Drop)]
 pub struct RangeInclusiveIterator<T> {
     /// The current value of the iterator.
-    cur: T,
+    pub(crate) cur: T,
     /// The upper bound of the range (inclusive).
-    end: T,
+    pub(crate) end: T,
+    // This field is:
+    //  - `false` upon construction
+    //  - `false` when iteration has yielded an element and the iterator is not exhausted
+    //  - `true` when iteration has been used to exhaust the iterator
+    //
+    // This is required to differentiate bewteen the last element and the end of the range.
+    pub(crate) exhausted: bool,
 }
 
 /// Handles the range inclusive operator (`..=`).
@@ -166,24 +173,32 @@ pub impl RangeInclusiveOpImpl<T> of RangeInclusiveOp<T> {
 }
 
 impl RangeInclusiveIteratorImpl<
-    T, impl OneT: One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>, +PartialOrd<T>,
+    T, +One<T>, +Add<T>, +Copy<T>, +Drop<T>, +PartialEq<T>, +PartialOrd<T>,
 > of Iterator<RangeInclusiveIterator<T>> {
     type Item = T;
 
     fn next(ref self: RangeInclusiveIterator<T>) -> Option<T> {
-        if self.cur <= self.end {
-            let value = self.cur;
-            self.cur = value + OneT::one();
-            Option::Some(value)
-        } else {
-            Option::None
+        if self.exhausted {
+            return Option::None;
         }
+
+        let current = self.cur;
+
+        // If this is the last element, mark as exhausted for next iteration
+        if current == self.end {
+            self.exhausted = true;
+            return Option::Some(current);
+        }
+
+        // We know current < self.end here, because the iterator is not exhausted
+        self.cur = current + One::one();
+        Option::Some(current)
     }
 }
 
 pub impl RangeInclusiveIntoIterator<
     T,
-    impl OneT: One<T>,
+    +One<T>,
     +Add<T>,
     +Copy<T>,
     +Drop<T>,
@@ -194,14 +209,11 @@ pub impl RangeInclusiveIntoIterator<
     type IntoIter = RangeInclusiveIterator<T>;
 
     fn into_iter(self: RangeInclusive<T>) -> Self::IntoIter {
-        if self.start <= self.end {
-            Self::IntoIter { cur: self.start, end: self.end }
-        } else {
-            let oob = self.end + OneT::one();
-            Self::IntoIter { cur: oob, end: self.end }
-        }
+        let exhausted = self.start > self.end;
+        Self::IntoIter { cur: self.start, end: self.end, exhausted }
     }
 }
+
 
 // Sierra optimization.
 
