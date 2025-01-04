@@ -256,3 +256,59 @@ fn test_result_ok_err_should_return_none() {
     let x: Result<u32, ByteArray> = Result::Ok(2);
     assert!(x.err().is_none());
 }
+
+#[test]
+fn test_result_ok_map() {
+    let x: Result<u32, ByteArray> = Result::Ok(1);
+    assert!(x.map(|i| i * 2) == Result::Ok(2));
+}
+
+#[test]
+fn test_result_err_map() {
+    let x: Result<u32, ByteArray> = Result::Err("error");
+    assert!(x.map(|i| i * 2) == Result::Err("error"));
+}
+
+#[test]
+fn test_result_ok_map_or() {
+    let x: Result<ByteArray, ByteArray> = Result::Ok("foo");
+    assert!(x.map_or(42, |v: ByteArray| v.len()) == 3);
+}
+
+#[test]
+fn test_result_err_map_or() {
+    let x: Result<ByteArray, ByteArray> = Result::Err("bar");
+    assert!(x.map_or(42, |v: ByteArray| v.len()) == 42);
+}
+
+#[test]
+fn test_result_ok_map_or_else() {
+    let k = 21;
+    let x: Result<ByteArray, _> = Result::Ok("foo");
+    assert!(x.map_or_else(|_e: ByteArray| k * 2, |v: ByteArray| v.len()) == 3);
+}
+
+#[test]
+fn test_result_err_map_or_else() {
+    let k = 21;
+    let x: Result<_, ByteArray> = Result::Err("bar");
+    assert!(x.map_or_else(|_e| k * 2, |v: ByteArray| v.len()) == 42);
+}
+
+#[test]
+fn test_result_ok_map_err() {
+    let stringify = |x: u32| -> ByteArray {
+        format!("error code: {}", x)
+    };
+    let x: Result<u32, u32> = Result::Ok(2);
+    assert!(x.map_err(stringify) == Result::<u32, ByteArray>::Ok(2));
+}
+
+#[test]
+fn test_result_err_map_err() {
+    let stringify = |x: u32| -> ByteArray {
+        format!("error code: {}", x)
+    };
+    let x: Result<u32, u32> = Result::Err(13);
+    assert!(x.map_err(stringify) == Result::Err("error code: 13"));
+}
