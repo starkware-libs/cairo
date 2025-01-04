@@ -54,9 +54,9 @@
 //! [`Option::Some(Item)`]: Option::Some
 //! [`next`]: Iterator::next
 //!
-//! # Iterators in Cairo
+//! # Forms of iteration
 //!
-//! There are currently one common method which can create iterators from a collection:
+//! There is currently only one common method which can create iterators from a collection:
 //!
 //! * `into_iter()`, which iterates over `T`.
 //!
@@ -138,19 +138,19 @@
 //! ```
 //!
 //! This will print the numbers one through five, each on their own line. But
-//! you'll notice something here: we never called anything on our vector to
+//! you'll notice something here: we never called anything on our array to
 //! produce an iterator. What gives?
 //!
-//! There's a trait in the standard library for converting something into an
+//! There's a trait in the core library for converting something into an
 //! iterator: [`IntoIterator`]. This trait has one method, [`into_iter`],
 //! which converts the thing implementing [`IntoIterator`] into an iterator.
 //! Let's take a look at that `for` loop again, and what the compiler converts
 //! it into:
 //!
-//! [`into_iter`]: IntoIterator::into_iter
+//! [`into_iter`]: core::iter::IntoIterator::into_iter
 //!
 //! ```
-//! let values = vec![1, 2, 3, 4, 5];
+//! let values = array![1, 2, 3, 4, 5];
 //!
 //! for x in values {
 //!     println!("{x}");
@@ -182,7 +182,7 @@
 //! that returns, calling [`next`] over and over until we see a `Option::None`. At
 //! that point, we `break` out of the loop, and we're done iterating.
 //!
-//! There's one more subtle bit here: the standard library contains an
+//! There's one more subtle bit here: the core library contains an
 //! interesting implementation of [`IntoIterator`]:
 //!
 //! ```ignore (only-for-syntax-highlight)
@@ -204,9 +204,6 @@
 //!
 //! The only adapter for now is [`map`].
 //! For more, see the [`map`] documentation.
-//!
-//! If an iterator adapter panics, the iterator will be in an unspecified (but
-//! memory safe) state.
 //!
 //! [`map`]: Iterator::map
 //!
