@@ -1116,6 +1116,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
             SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
             SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
+            SyntaxKind::TerminalDotDotEq => self.take::<TerminalDotDotEq>().into(),
             _ => unreachable!(),
         }
     }
