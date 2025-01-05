@@ -9,11 +9,11 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
-    error_code,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
+    ErrorCode, Severity, error_code,
 };
 use cairo_lang_filesystem::db::Edition;
-use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::{self as syntax};
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -741,6 +741,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::FailedConstantCalculation => {
                 "Failed to calculate constant.".into()
             }
+            SemanticDiagnosticKind::InnerFailedConstantCalculation(inner, _) => inner.format(db),
             SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
             SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
                 "Extern types with impl generics are not supported.".into()
@@ -1024,6 +1025,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             | SemanticDiagnosticKind::UnusedUse => Severity::Warning,
             SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
+        }
+    }
+
+    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
+        if let SemanticDiagnosticKind::InnerFailedConstantCalculation(_, notes) = &self.kind {
+            notes
+        } else {
+            &[]
         }
     }
 
@@ -1313,6 +1322,7 @@ pub enum SemanticDiagnosticKind {
     UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName),
     UnsupportedConstant,
     FailedConstantCalculation,
+    InnerFailedConstantCalculation(Box<SemanticDiagnostic>, Vec<DiagnosticNote>),
     DivisionByZero,
     ExternTypeWithImplGenericsNotSupported,
     MissingSemicolon,
