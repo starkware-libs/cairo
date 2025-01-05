@@ -262,7 +262,15 @@ impl<'a> Parser<'a> {
         let post_visibility_offset = self.offset.add_width(self.current_width);
 
         match self.peek().kind {
-            SyntaxKind::TerminalConst => Ok(self.expect_item_const(attributes, visibility).into()),
+            SyntaxKind::TerminalConst => {
+                let const_kw = self.take::<TerminalConst>();
+                Ok(if self.peek().kind == SyntaxKind::TerminalFunction {
+                    self.expect_item_function_with_body(attributes, visibility, const_kw.into())
+                        .into()
+                } else {
+                    self.expect_item_const(attributes, visibility, const_kw).into()
+                })
+            }
             SyntaxKind::TerminalModule => {
                 Ok(self.expect_item_module(attributes, visibility).into())
             }
@@ -274,9 +282,13 @@ impl<'a> Parser<'a> {
                 Ok(self.expect_item_type_alias(attributes, visibility).into())
             }
             SyntaxKind::TerminalExtern => Ok(self.expect_item_extern(attributes, visibility)),
-            SyntaxKind::TerminalFunction => {
-                Ok(self.expect_item_function_with_body(attributes, visibility).into())
-            }
+            SyntaxKind::TerminalFunction => Ok(self
+                .expect_item_function_with_body(
+                    attributes,
+                    visibility,
+                    OptionTerminalConstEmpty::new_green(self.db).into(),
+                )
+                .into()),
             SyntaxKind::TerminalUse => Ok(self.expect_item_use(attributes, visibility).into()),
             SyntaxKind::TerminalTrait => Ok(self.expect_item_trait(attributes, visibility).into()),
             SyntaxKind::TerminalImpl => Ok(self.expect_module_item_impl(attributes, visibility)),
@@ -512,8 +524,8 @@ impl<'a> Parser<'a> {
         &mut self,
         attributes: AttributeListGreen,
         visibility: VisibilityGreen,
+        const_kw: TerminalConstGreen,
     ) -> ItemConstantGreen {
-        let const_kw = self.take::<TerminalConst>();
         let name = self.parse_identifier();
         let type_clause = self.parse_type_clause(ErrorRecovery {
             should_stop: is_of_kind!(eq, semicolon, module_item_kw),
@@ -557,8 +569,17 @@ impl<'a> Parser<'a> {
     ) -> ExternItem {
         let extern_kw = self.take::<TerminalExtern>();
         match self.peek().kind {
-            SyntaxKind::TerminalFunction => {
-                let declaration = self.expect_function_declaration();
+            SyntaxKind::TerminalFunction | SyntaxKind::TerminalConst => {
+                let (optional_const, function_kw) = if self.peek().kind == SyntaxKind::TerminalConst
+                {
+                    (self.take::<TerminalConst>().into(), self.parse_token::<TerminalFunction>())
+                } else {
+                    (
+                        OptionTerminalConstEmpty::new_green(self.db).into(),
+                        self.take::<TerminalFunction>(),
+                    )
+                };
+                let declaration = self.expect_function_declaration_ex(optional_const, function_kw);
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 ExternItem::Function(ItemExternFunction::new_green(
                     self.db,
@@ -779,13 +800,33 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Function.
     /// Expected pattern: `<FunctionDeclaration>`
-    fn expect_function_declaration(&mut self) -> FunctionDeclarationGreen {
+    fn expect_function_declaration(
+        &mut self,
+        optional_const: OptionTerminalConstGreen,
+    ) -> FunctionDeclarationGreen {
         let function_kw = self.take::<TerminalFunction>();
+        self.expect_function_declaration_ex(optional_const, function_kw)
+    }
+
+    /// Assumes the current token is Function.
+    /// Expected pattern: `<FunctionDeclaration>`
+    fn expect_function_declaration_ex(
+        &mut self,
+        optional_const: OptionTerminalConstGreen,
+        function_kw: TerminalFunctionGreen,
+    ) -> FunctionDeclarationGreen {
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
         let signature = self.expect_function_signature();
 
-        FunctionDeclaration::new_green(self.db, function_kw, name, generic_params, signature)
+        FunctionDeclaration::new_green(
+            self.db,
+            optional_const,
+            function_kw,
+            name,
+            generic_params,
+            signature,
+        )
     }
 
     /// Assumes the current token is Function.
@@ -794,8 +835,9 @@ impl<'a> Parser<'a> {
         &mut self,
         attributes: AttributeListGreen,
         visibility: VisibilityGreen,
+        optional_const: OptionTerminalConstGreen,
     ) -> FunctionWithBodyGreen {
-        let declaration = self.expect_function_declaration();
+        let declaration = self.expect_function_declaration(optional_const);
         let function_body = self.parse_block();
         FunctionWithBody::new_green(self.db, attributes, visibility, declaration, function_body)
     }
@@ -839,9 +881,21 @@ impl<'a> Parser<'a> {
         };
 
         match self.peek().kind {
-            SyntaxKind::TerminalFunction => Ok(self.expect_trait_item_function(attributes).into()),
+            SyntaxKind::TerminalFunction => Ok(self
+                .expect_trait_item_function(
+                    attributes,
+                    OptionTerminalConstEmpty::new_green(self.db).into(),
+                )
+                .into()),
             SyntaxKind::TerminalType => Ok(self.expect_trait_item_type(attributes).into()),
-            SyntaxKind::TerminalConst => Ok(self.expect_trait_item_const(attributes).into()),
+            SyntaxKind::TerminalConst => {
+                let const_kw = self.take::<TerminalConst>();
+                Ok(if self.peek().kind == SyntaxKind::TerminalFunction {
+                    self.expect_trait_item_function(attributes, const_kw.into()).into()
+                } else {
+                    self.expect_trait_item_const(attributes, const_kw).into()
+                })
+            }
             SyntaxKind::TerminalImpl => Ok(self.expect_trait_item_impl(attributes).into()),
             _ => {
                 if has_attrs {
@@ -861,8 +915,9 @@ impl<'a> Parser<'a> {
     fn expect_trait_item_function(
         &mut self,
         attributes: AttributeListGreen,
+        optional_const: OptionTerminalConstGreen,
     ) -> TraitItemFunctionGreen {
-        let declaration = self.expect_function_declaration();
+        let declaration = self.expect_function_declaration(optional_const);
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             self.parse_block().into()
         } else {
@@ -886,8 +941,8 @@ impl<'a> Parser<'a> {
     fn expect_trait_item_const(
         &mut self,
         attributes: AttributeListGreen,
+        const_kw: TerminalConstGreen,
     ) -> TraitItemConstantGreen {
-        let const_kw = self.take::<TerminalConst>();
         let name = self.parse_identifier();
         let type_clause = self.parse_type_clause(ErrorRecovery {
             should_stop: is_of_kind!(eq, semicolon, module_item_kw),
@@ -1011,13 +1066,25 @@ impl<'a> Parser<'a> {
         let visibility = VisibilityDefault::new_green(self.db).into();
 
         match self.peek().kind {
-            SyntaxKind::TerminalFunction => {
-                Ok(self.expect_item_function_with_body(attributes, visibility).into())
-            }
+            SyntaxKind::TerminalFunction => Ok(self
+                .expect_item_function_with_body(
+                    attributes,
+                    visibility,
+                    OptionTerminalConstEmpty::new_green(self.db).into(),
+                )
+                .into()),
             SyntaxKind::TerminalType => {
                 Ok(self.expect_item_type_alias(attributes, visibility).into())
             }
-            SyntaxKind::TerminalConst => Ok(self.expect_item_const(attributes, visibility).into()),
+            SyntaxKind::TerminalConst => {
+                let const_kw = self.take::<TerminalConst>();
+                Ok(if self.peek().kind == SyntaxKind::TerminalFunction {
+                    self.expect_item_function_with_body(attributes, visibility, const_kw.into())
+                        .into()
+                } else {
+                    self.expect_item_const(attributes, visibility, const_kw).into()
+                })
+            }
             SyntaxKind::TerminalImpl => {
                 Ok(self.expect_impl_item_impl(attributes, visibility).into())
             }
@@ -2072,12 +2139,19 @@ impl<'a> Parser<'a> {
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Ok(StatementBreak::new_green(self.db, attributes, break_kw, expr, semicolon).into())
             }
-            SyntaxKind::TerminalConst => Ok(StatementItem::new_green(
-                self.db,
-                self.expect_item_const(attributes, VisibilityDefault::new_green(self.db).into())
+            SyntaxKind::TerminalConst => {
+                let const_kw = self.take::<TerminalConst>();
+                Ok(StatementItem::new_green(
+                    self.db,
+                    self.expect_item_const(
+                        attributes,
+                        VisibilityDefault::new_green(self.db).into(),
+                        const_kw,
+                    )
                     .into(),
-            )
-            .into()),
+                )
+                .into())
+            }
             SyntaxKind::TerminalUse => Ok(StatementItem::new_green(
                 self.db,
                 self.expect_item_use(attributes, VisibilityDefault::new_green(self.db).into())

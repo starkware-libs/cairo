@@ -425,6 +425,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_separated_list("ImplicitsList", "ExprPath", "TerminalComma")
     .add_option("ImplicitsClause")
     .add_option("TerminalNoPanic")
+    .add_option("TerminalConst")
     // TODO(spapini): Add generic params.
     // This is an unnamed signature, e.g. "() -> Type".
     .add_struct(StructBuilder::new("FunctionSignature")
@@ -510,6 +511,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("rbrace", "TerminalRBrace")
     )
     .add_struct(StructBuilder::new("FunctionDeclaration")
+        .node("optional_const", "OptionTerminalConst")
         .node("function_kw", "TerminalFunction")
         .key_node("name", "TerminalIdentifier")
         .node("generic_params", "OptionWrappedGenericParamList")

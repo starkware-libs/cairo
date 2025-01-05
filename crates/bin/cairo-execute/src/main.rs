@@ -25,7 +25,7 @@ struct Args {
     /// The Cairo project path to compile and run.
     path: PathBuf,
 
-    /// Whether to only build and into the given path.
+    /// Whether to only build and save into the given path.
     #[clap(long)]
     build_only: Option<PathBuf>,
 

@@ -197,6 +197,23 @@ fn test_array_iterator() {
     }
 }
 
+#[test]
+fn test_fixed_size_array_iterator() {
+    let mut iter = (@[10_usize, 11, 12, 13]).into_iter();
+    assert_eq!(iter.next(), Option::Some(@10));
+    assert_eq!(iter.next(), Option::Some(@11));
+    assert_eq!(iter.next(), Option::Some(@12));
+    assert_eq!(iter.next(), Option::Some(@13));
+    assert!(iter.next().is_none());
+}
+
+#[test]
+fn test_empty_fixed_size_array_iterator() {
+    let mut input: [usize; 0] = [];
+    let mut iter = (@input).into_iter();
+    assert!(iter.next().is_none());
+}
+
 fn test_array_into_span() {
     assert_eq!(array![1, 2, 3].span(), array![1, 2, 3].into())
 }

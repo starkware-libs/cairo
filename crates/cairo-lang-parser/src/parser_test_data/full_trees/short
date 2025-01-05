@@ -34,6 +34,7 @@ false
     │       ├── attributes (kind: AttributeList) []
     │       ├── visibility (kind: VisibilityDefault) []
     │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │       │   ├── name (kind: TokenIdentifier): 'foo'
     │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -108,6 +109,7 @@ true
     │       ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
     │       ├── [36mvisibility[0m (kind: VisibilityDefault)[95m [][0m
     │       ├── [36mdeclaration[0m (kind: FunctionDeclaration)
+    │       │   ├── [36moptional_const[0m (kind: OptionTerminalConstEmpty)[95m [][0m
     │       │   ├── [34mfunction_kw[0m (kind: TokenFunction): '[1;32mfn[0m'
     │       │   ├── [34mname[0m (kind: TokenIdentifier): '[1;32mfoo[0m'
     │       │   ├── [36mgeneric_params[0m (kind: OptionWrappedGenericParamListEmpty)[95m [][0m

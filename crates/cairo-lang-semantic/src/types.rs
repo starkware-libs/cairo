@@ -655,6 +655,7 @@ pub fn extract_fixed_size_array_size(
                 &size,
                 size_expr_syntax.stable_ptr().untyped(),
                 get_usize_ty(db),
+                false,
             );
             if matches!(const_value, ConstValue::Int(_, _) | ConstValue::Generic(_)) {
                 Ok(Some(const_value.intern(db)))
