@@ -205,7 +205,7 @@ pub trait Secp256PointTrait<Secp256Point> {
     fn mul(self: Secp256Point, scalar: u256) -> SyscallResult<Secp256Point>;
 }
 
-/// Checks whether the given value is a valid signature component.
+/// Checks whether the given `value` is in the range [1, N), where N is the size of the curve.
 ///
 /// For ECDSA signatures to be secure, both `r` and `s` components must be in the range [1, N),
 /// where N is the order of the curve. This function validates that a given value meets this
