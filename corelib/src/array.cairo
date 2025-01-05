@@ -816,6 +816,13 @@ impl SpanIntoIterator<T> of crate::iter::IntoIterator<Span<T>> {
     }
 }
 
+impl SnapshotSpanIntoIterator<T> of core::iter::IntoIterator<@Span<T>> {
+    type IntoIter = core::array::SpanIter<T>;
+    fn into_iter(self: @Span<T>) -> Self::IntoIter {
+        (*self).into_iter()
+    }
+}
+
 /// An iterator struct over an array collection.
 #[derive(Drop)]
 pub struct ArrayIter<T> {
