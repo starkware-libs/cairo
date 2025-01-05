@@ -12,8 +12,7 @@
 /// Basic usage:
 ///
 /// ```
-/// let v = array![1, 2, 3];
-/// let mut iter = v.into_iter();
+/// let mut iter = array![1, 2, 3].into_iter();
 ///
 /// assert_eq!(Option::Some(1), iter.next());
 /// assert_eq!(Option::Some(2), iter.next());
@@ -80,8 +79,7 @@ pub trait IntoIterator<T> {
     /// # Examples
     ///
     /// ```
-    /// let v = array![1, 2, 3];
-    /// let mut iter = v.into_iter();
+    /// let mut iter = array![1, 2, 3].into_iter();
     ///
     /// assert_eq!(Option::Some(1), iter.next());
     /// assert_eq!(Option::Some(2), iter.next());

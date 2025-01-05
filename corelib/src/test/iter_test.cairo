@@ -1,10 +1,6 @@
-use crate::iter::IntoIterator;
-
 #[test]
 fn test_into_iter() {
-    let v = array![1, 2, 3];
-    let mut iter = v.into_iter();
-
+    let mut iter = array![1, 2, 3].into_iter();
     assert_eq!(Option::Some(1), iter.next());
     assert_eq!(Option::Some(2), iter.next());
     assert_eq!(Option::Some(3), iter.next());
