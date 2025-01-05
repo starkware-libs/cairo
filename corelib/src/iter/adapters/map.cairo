@@ -1,5 +1,3 @@
-use crate::iter::Iterator;
-
 /// An iterator that maps the values of `iter` with `f`.
 ///
 /// This `struct` is created by the [`map`] method on [`Iterator`]. See its
@@ -15,7 +13,7 @@ pub struct Map<I, F> {
     f: F,
 }
 
-pub(crate) fn mapped_iterator<I, F>(iter: I, f: F) -> Map<I, F> {
+pub fn mapped_iterator<I, F>(iter: I, f: F) -> Map<I, F> {
     Map { iter, f }
 }
 

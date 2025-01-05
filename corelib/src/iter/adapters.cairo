@@ -1,2 +1,4 @@
 mod map;
-pub use map::{Map, mapped_iterator};
+pub use map::Map;
+#[allow(unused_imports)]
+pub(crate) use map::mapped_iterator;
