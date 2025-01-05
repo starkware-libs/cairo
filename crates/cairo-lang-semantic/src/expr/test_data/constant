@@ -62,20 +62,14 @@ const FAILING_CALC: felt252 = if true {
     70
 };
 
-const FUNC_CALC_SUCCESS: () = panic_if_true(false);
-const FUNC_CALC_FAILURE: () = panic_if_true(true);
-const VALID_EQ: () = panic_if_true(1 == 2);
-const VALID_NE: () = panic_if_true(1 != 1);
-const VALID_LT: () = panic_if_true(1_usize < 1);
-const VALID_LE: () = panic_if_true(2_usize <= 1);
-const VALID_GT: () = panic_if_true(1_usize > 1);
-const VALID_GE: () = panic_if_true(1_usize >= 2);
-
-const fn panic_if_true(cond: bool) {
-    if cond {
-        core::panic_with_felt252('assertion failed')
-    }
-}
+const FUNC_CALC_SUCCESS: () = assert(true, 'works');
+const FUNC_CALC_FAILURE: () = assert(false, 'does not work');
+const VALID_EQ: () = assert(1 == 1, '1 == 1');
+const VALID_NE: () = assert(1 != 2, '1 != 1');
+const VALID_LT: () = assert(1_usize < 2, '1 < 2');
+const VALID_LE: () = assert(1_usize <= 1, '1 <= 1');
+const VALID_GT: () = assert(2_usize > 1, '2 > 1');
+const VALID_GE: () = assert(1_usize >= 1, '1 >= 1');
 
 const FUNC_CALC_SUCCESS_OPTION: felt252 = Option::Some(5).unwrap();
 const FUNC_CALC_SUCCESS_RESULT1: felt252 = Result::<_, felt252>::Ok(5).unwrap();
@@ -120,15 +114,15 @@ error: Failed to calculate constant.
 
 error: Failed to calculate constant.
  --> lib.cairo:23:31
-const FUNC_CALC_FAILURE: () = panic_if_true(true);
-                              ^^^^^^^^^^^^^^^^^^^
-note: In `test::panic_if_true`:
-  --> lib.cairo:33:9
-        core::panic_with_felt252('assertion failed')
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+const FUNC_CALC_FAILURE: () = assert(false, 'does not work');
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: In `core::assert`:
+  --> /home/ori/rust/cairo-ws/corelib/src/lib.cairo:359:9
+        panic_with_felt252(err_code)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Constant calculation depth exceeded.
- --> lib.cairo:41:43
+ --> lib.cairo:35:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 
