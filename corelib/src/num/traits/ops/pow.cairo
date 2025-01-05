@@ -28,38 +28,222 @@ pub trait Pow<Base, Exp> {
     fn pow(self: Base, exp: Exp) -> Self::Output;
 }
 
-mod mul_based {
-    /// Square and multiply implementation for `Pow`.
-    pub impl PowByMul<
-        Base, +Mul<Base>, +Copy<Base>, +Drop<Base>, +core::num::traits::One<Base>,
-    > of super::Pow<Base, usize> {
-        type Output = Base;
+// TODO(gil): Use a macro for it instead of copy paste.
+// Not using a trait for the implementation to allow `fn` to be `const`.
 
-        fn pow(self: Base, exp: usize) -> Base {
-            let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-            let tail_result = if tail_exp == 0 {
-                core::num::traits::One::one()
-            } else {
-                Self::pow(self * self, tail_exp)
-            };
-            if head_exp == 0 {
-                tail_result
-            } else {
-                tail_result * self
-            }
+impl PowFelt252 of Pow<felt252, usize> {
+    type Output = felt252;
+
+    const fn pow(self: felt252, exp: usize) -> felt252 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
         }
     }
 }
 
-impl PowFelt252 = mul_based::PowByMul<felt252>;
-impl PowI8 = mul_based::PowByMul<i8>;
-impl PowU8 = mul_based::PowByMul<u8>;
-impl PowI16 = mul_based::PowByMul<i16>;
-impl PowU16 = mul_based::PowByMul<u16>;
-impl PowI32 = mul_based::PowByMul<i32>;
-impl PowU32 = mul_based::PowByMul<u32>;
-impl PowI64 = mul_based::PowByMul<i64>;
-impl PowU64 = mul_based::PowByMul<u64>;
-impl PowI128 = mul_based::PowByMul<i128>;
-impl PowU128 = mul_based::PowByMul<u128>;
-impl PowU256 = mul_based::PowByMul<u256>;
+impl PowI8 of Pow<i8, usize> {
+    type Output = i8;
+
+    const fn pow(self: i8, exp: usize) -> i8 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
+impl PowU8 of Pow<u8, usize> {
+    type Output = u8;
+
+    const fn pow(self: u8, exp: usize) -> u8 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
+impl PowI16 of Pow<i16, usize> {
+    type Output = i16;
+
+    const fn pow(self: i16, exp: usize) -> i16 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
+impl PowU16 of Pow<u16, usize> {
+    type Output = u16;
+
+    const fn pow(self: u16, exp: usize) -> u16 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
+impl PowI32 of Pow<i32, usize> {
+    type Output = i32;
+
+    const fn pow(self: i32, exp: usize) -> i32 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
+impl PowU32 of Pow<u32, usize> {
+    type Output = u32;
+
+    const fn pow(self: u32, exp: usize) -> u32 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
+impl PowI64 of Pow<i64, usize> {
+    type Output = i64;
+
+    const fn pow(self: i64, exp: usize) -> i64 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
+impl PowU64 of Pow<u64, usize> {
+    type Output = u64;
+
+    const fn pow(self: u64, exp: usize) -> u64 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
+impl PowI128 of Pow<i128, usize> {
+    type Output = i128;
+
+    const fn pow(self: i128, exp: usize) -> i128 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
+impl PowU128 of Pow<u128, usize> {
+    type Output = u128;
+
+    const fn pow(self: u128, exp: usize) -> u128 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
+impl PowU256 of Pow<u256, usize> {
+    type Output = u256;
+
+    const fn pow(self: u256, exp: usize) -> u256 {
+        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+        let tail_result = if tail_exp == 0 {
+            1
+        } else {
+            Self::pow(self * self, tail_exp)
+        };
+        if head_exp == 0 {
+            tail_result
+        } else {
+            tail_result * self
+        }
+    }
+}
+
