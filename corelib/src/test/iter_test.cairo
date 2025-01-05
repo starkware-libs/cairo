@@ -42,7 +42,7 @@ fn test_into_iter_impl() {
     c.add(2);
 
     let mut n = 0;
-    for i in c.into_iter() {
+    for i in c {
         assert_eq!(i, n);
         n += 1;
     };
