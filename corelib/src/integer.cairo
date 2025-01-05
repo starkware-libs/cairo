@@ -1,21 +1,58 @@
-//! Integer operations.
+//! Integer types and operations.
 //!
-//! This module provides functionality for working with integer types in Cairo,
-//! including unsigned and signed integers of various sizes.
+//! This module provides the built-in integer types and their associated operations.
 //!
-//! # Key Components
+//! # Integer Types
 //!
-//! - **Unsigned Integers:** u8, u16, u32, u64, u128, u256
-//! - **Signed Integers:** i8, i16, i32, i64, i128
+//! The following integer types are available:
 //!
-//! # Features
+//! * Unsigned integers: [`u8`], [`u16`], [`u32`], [`u64`], [`u128`], [`u256`]
+//! * Signed integers: [`i8`], [`i16`], [`i32`], [`i64`], [`i128`]
 //!
-//! - **Conversion:** Between integer types and felt252.
-//! - **Operations:** Basic arithmetic, bitwise, and comparison operations.
-//! - **Overflow Handling:** Checked, wrapping, and saturating arithmetic methods.
-//! - **Special Types:**
-//!   - `U128MulGuarantee`: Ensures correctness of multiplication results.
-//!   - `u512`: For wide multiplication results.
+//! # Operations
+//!
+//! Integer types implement various traits that enable common operations:
+//!
+//! * Basic arithmetic via [`Add`], [`Sub`], [`Mul`], and [`DivRem`]
+//! * Bitwise operations via [`BitAnd`], [`BitOr`], [`BitXor`], and [`BitNot`]
+//! * Comparison via [`PartialEq`] and [`PartialOrd`]
+//! * Safe arithmetic via [`CheckedAdd`], [`CheckedSub`], [`CheckedMul`]
+//! * Wrapping arithmetic via [`WrappingAdd`], [`WrappingSub`]
+//! * Overflow handling via [`OverflowingAdd`], [`OverflowingSub`], [`OverflowingMul`]
+//!
+//! # Examples
+//!
+//! Basic arithmetic:
+//!
+//! ```
+//! let a: u8 = 5;
+//! let b: u8 = 10;
+//! let sum = a + b; // 15
+//! let product = a * b; // 50
+//! ```
+//!
+//! Checked operations:
+//!
+//! ```
+//! use core::traits::CheckedAdd;
+//!
+//! let max = u8::MAX;
+//! let result = max.checked_add(1_u8); // Returns None (overflow)
+//! ```
+//!
+//! # Conversions
+//!
+//! Integers can be converted between different types using:
+//!
+//! * [`TryInto`] for potentially fallible conversions
+//! * [`Into`] for infallible conversions to wider types
+//!
+//! # Panics
+//!
+//! Integer operations will panic on:
+//! * Overflow in non-wrapping arithmetic operations
+//!
+//! Use the checked variants of these operations to handle these cases safely.
 
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
@@ -1189,6 +1226,7 @@ pub trait BoundedInt<T> {
     /// Returns the minimal value of the type.
     #[must_use]
     fn min() -> T nopanic;
+
     /// Returns the maximal value of the type.
     #[must_use]
     fn max() -> T nopanic;
@@ -1201,6 +1239,7 @@ mod bounded_int_impls {
         fn min() -> T nopanic {
             Bounded::MIN
         }
+
         #[inline]
         fn max() -> T nopanic {
             Bounded::MAX
