@@ -62,6 +62,15 @@ const FAILING_CALC: felt252 = if true {
     70
 };
 
+const FUNC_CALC_SUCCESS: () = panic_if_true(false);
+const FUNC_CALC_FAILURE: () = panic_if_true(true);
+
+const fn panic_if_true(cond: bool) {
+    if cond {
+        core::panic_with_felt252('assertion failed')
+    }
+}
+
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:17
@@ -92,6 +101,15 @@ error: Failed to calculate constant.
  --> lib.cairo:17:5
     core::panic_with_felt252('this should fail')
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:23:31
+const FUNC_CALC_FAILURE: () = panic_if_true(true);
+                              ^^^^^^^^^^^^^^^^^^^
+note: In `test::panic_if_true`:
+  --> lib.cairo:27:9
+        core::panic_with_felt252('assertion failed')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
