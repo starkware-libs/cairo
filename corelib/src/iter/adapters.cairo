@@ -1,2 +1,2 @@
 mod map;
-pub use map::{Map, MapTrait};
+pub use map::{Map, mapped_iterator};
