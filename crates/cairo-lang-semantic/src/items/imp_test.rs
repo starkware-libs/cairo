@@ -38,7 +38,8 @@ fn test_impl() {
     assert_eq!(
         format!("{:?}", signature.debug(db)),
         "Signature { params: [Parameter { id: ParamId(test::a), name: \"a\", ty: core::felt252, \
-         mutability: Immutable }], return_type: (), implicits: [], panicable: true }"
+         mutability: Immutable }], return_type: (), implicits: [], panicable: true, is_const: \
+         false }"
     );
 
     db.impl_def_concrete_trait(impl_def_id).unwrap();
