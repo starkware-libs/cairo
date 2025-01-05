@@ -167,3 +167,99 @@ impl SierraRangeIntoIterator<
         }
     }
 }
+
+/// An endpoint of a range of keys.
+///
+/// # Examples
+///
+/// `Bound`s are range endpoints:
+///
+/// ```
+/// use core::ops::{Bounds, RangeBounds};
+///
+/// assert_eq!((1..12).start_bound(), Bound::Included(@1));
+/// assert_eq!((1..12).end_bound(), Bound::Excluded(@12));
+/// ```
+#[derive(Clone, Drop, Debug, PartialEq)]
+pub enum Bound<T> {
+    /// An inclusive bound.
+    Included: T,
+    /// An exclusive bound.
+    Excluded: T,
+    /// An infinite endpoint. Indicates that there is no bound in this direction.
+    Unbounded,
+}
+
+
+/// `RangeBounds` is implemented by Cairo's built-in range types, produced
+/// by range syntax like `a..b`
+pub trait RangeBounds<T> {
+    type Item;
+    //BUG: adding a trait bound at this level crashes the compiler
+    // impl ItemPartialOrd: PartialOrd<@Self::Item>;
+
+    /// Start index bound.
+    ///
+    /// Returns the start value as a `Bound`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::ops::{Bounds, RangeBounds};
+    ///
+    /// assert!( (3_u8..5).start_bound() == Bound::Included(@3));
+    /// ```
+    fn start_bound(self: @T) -> Bound<@Self::Item>;
+
+    /// End index bound.
+    ///
+    /// Returns the end value as a `Bound`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!( (3_u8..5).end_bound() == Bound::Excluded(@5));
+    /// ```
+    fn end_bound(self: @T) -> Bound<@Self::Item>;
+
+    /// Returns `true` if `item` is contained in the range.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::ops::RangeBounds;
+    ///
+    /// assert!( (3_u8..5).contains(@4));
+    /// assert!(!(3_u8..5).contains(@2));
+    /// ```
+    fn contains(self: @T, item: @Self::Item) -> bool;
+}
+
+impl RangeBoundsRangeImpl<T, +Destruct<T>, +PartialOrd<@T>> of RangeBounds<Range<T>> {
+    type Item = T;
+
+    #[inline]
+    fn start_bound(self: @Range<T>) -> Bound<@T> {
+        Bound::Included(self.start)
+    }
+
+    #[inline]
+    fn end_bound(self: @Range<T>) -> Bound<@T> {
+        Bound::Excluded(self.end)
+    }
+
+    //BUG: adding this as a default trait impl crashes the compiler
+    #[inline]
+    fn contains(self: @Range<T>, item: @T) -> bool {
+        (match Self::start_bound(self) {
+            Bound::Included(start) => start <= item,
+            Bound::Excluded(start) => start < item,
+            Bound::Unbounded => true,
+        })
+            && (match Self::end_bound(self) {
+                Bound::Included(end) => item <= end,
+                Bound::Excluded(end) => item < end,
+                Bound::Unbounded => true,
+            })
+    }
+}

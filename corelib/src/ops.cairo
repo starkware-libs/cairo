@@ -11,7 +11,7 @@ mod range;
 // `RangeOp` is used internally by the compiler.
 #[allow(unused_imports)]
 use range::RangeOp;
-pub use range::{Range, RangeIterator, RangeTrait};
+pub use range::{Bound, Range, RangeBounds, RangeIterator, RangeTrait};
 
 mod function;
 pub use function::{Fn, FnOnce};
