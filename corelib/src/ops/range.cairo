@@ -7,7 +7,6 @@
 //!
 //! There is currently only a single range operator form: `start..end`, representing a range from
 //! `start` (inclusive) to `end` (exclusive).
-//!
 
 use core::iter::{IntoIterator, Iterator};
 use core::num::traits::One;
@@ -24,13 +23,13 @@ use core::traits::Add;
 /// The `start..end` syntax is a `Range`:
 ///
 /// ```
-/// assert_eq!((3..5), core::ops::Range { start: 3, end: 5 });
+/// assert!((3..5) == core::ops::Range { start: 3, end: 5 });
 ///
 /// let mut sum = 0;
 /// for i in 3..6 {
 ///     sum += i;
 /// }
-/// assert_eq!(sum, 3 + 4 + 5);
+/// assert!(sum == 3 + 4 + 5);
 /// ```
 #[derive(Clone, Drop, PartialEq)]
 pub struct Range<T> {
