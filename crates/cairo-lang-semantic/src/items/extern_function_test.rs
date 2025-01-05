@@ -24,6 +24,7 @@ fn test_extern_function() {
     let signature = db.extern_function_signature(extern_function_id).unwrap();
     assert_eq!(
         format!("{:?}", signature.debug(db)),
-        "Signature { params: [], return_type: (), implicits: [], panicable: false }"
+        "Signature { params: [], return_type: (), implicits: [], panicable: false, is_const: \
+         false }"
     );
 }

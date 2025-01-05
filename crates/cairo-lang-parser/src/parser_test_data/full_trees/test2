@@ -50,6 +50,7 @@ skipped tokens
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -225,6 +226,7 @@ skipped tokens
     │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── visibility (kind: VisibilityDefault) []
     │   │       │       ├── declaration (kind: FunctionDeclaration)
+    │   │       │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │       │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │       │       │   ├── name (kind: TokenIdentifier): 'foo'
     │   │       │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -271,6 +273,7 @@ skipped tokens
     │           │   │   ├── attributes (kind: AttributeList) []
     │           │   │   ├── visibility (kind: VisibilityDefault) []
     │           │   │   ├── declaration (kind: FunctionDeclaration)
+    │           │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │           │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │           │   │   │   ├── name (kind: TokenIdentifier): 'bar'
     │           │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -439,6 +442,7 @@ skipped tokens
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: TokenFunction): 'fn'
@@ -909,6 +913,7 @@ skipped tokens
     │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── visibility (kind: VisibilityDefault) []
     │   │       │       ├── declaration (kind: FunctionDeclaration)
+    │   │       │       │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │       │       │   ├── function_kw (kind: TerminalFunction)
     │   │       │       │   │   ├── leading_trivia (kind: Trivia)
     │   │       │       │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1020,6 +1025,7 @@ skipped tokens
     │           │   │   ├── attributes (kind: AttributeList) []
     │           │   │   ├── visibility (kind: VisibilityDefault) []
     │           │   │   ├── declaration (kind: FunctionDeclaration)
+    │           │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │           │   │   │   ├── function_kw (kind: TerminalFunction)
     │           │   │   │   │   ├── leading_trivia (kind: Trivia)
     │           │   │   │   │   │   └── child #0 (kind: TokenWhitespace).

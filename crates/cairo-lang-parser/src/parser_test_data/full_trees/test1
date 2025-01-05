@@ -64,6 +64,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -464,6 +465,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'bar'
     │   │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -506,6 +508,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'glee'
     │   │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -668,6 +671,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'match_e_enum'
     │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -929,6 +933,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   ├── child #0 (kind: TokenNewline).
@@ -1982,6 +1987,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   └── child #0 (kind: TokenNewline).
@@ -2097,6 +2103,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: TokenFunction): 'fn'
@@ -2526,6 +2533,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── optional_const (kind: OptionTerminalConstEmpty) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   └── child #0 (kind: TokenNewline).

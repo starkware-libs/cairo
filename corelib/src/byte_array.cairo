@@ -490,3 +490,26 @@ pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize,
         self.at(index).expect('Index out of bounds')
     }
 }
+
+// TODO: Implement a more efficient version of this iterator.
+/// An iterator struct over a ByteArray.
+#[derive(Drop, Clone)]
+pub struct ByteArrayIter {
+    ba: ByteArray,
+    current_index: crate::ops::RangeIterator<usize>,
+}
+
+impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
+    type Item = u8;
+    fn next(ref self: ByteArrayIter) -> Option<u8> {
+        self.ba.at(self.current_index.next()?)
+    }
+}
+
+impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
+    type IntoIter = ByteArrayIter;
+    #[inline]
+    fn into_iter(self: ByteArray) -> ByteArrayIter {
+        ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
+    }
+}

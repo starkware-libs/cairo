@@ -132,3 +132,29 @@ fn test_two_complex_enums() {
             .unbox() == (ThreeOptions2::A(1337), ThreeOptions2::C),
     );
 }
+
+#[test]
+fn test_complex_consts() {
+    const VAR_AND_MATCH_CONST: felt252 = {
+        let x = Option::Some((1, 2_u8));
+        match x {
+            Option::Some((v, _)) => v,
+            Option::None => 3,
+        }
+    };
+    assert_eq!(VAR_AND_MATCH_CONST, 1);
+    const TRUE: bool = true;
+    const IF_CONST_TRUE: felt252 = if TRUE {
+        4
+    } else {
+        5
+    };
+    assert_eq!(IF_CONST_TRUE, 4);
+    const FALSE: bool = false;
+    const IF_CONST_FALSE: felt252 = if FALSE {
+        6
+    } else {
+        7
+    };
+    assert_eq!(IF_CONST_FALSE, 7);
+}

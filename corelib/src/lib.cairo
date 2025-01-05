@@ -1,3 +1,5 @@
+//! Main entrypoint for the Cairo core library.
+
 pub mod traits;
 use serde::Serde;
 #[feature("deprecated-index-traits")]
@@ -9,8 +11,10 @@ use traits::{
     PartialOrd, Rem, RemEq, Sub, SubEq, TryInto, TupleSize0Copy, TupleSize0Drop,
 };
 
+/// `usize` is an alias for `u32` type.
 pub type usize = u32;
 
+/// `bool` enum representing either `false` or `true`.
 #[derive(Copy, Drop, Default)]
 pub enum bool {
     #[default]
@@ -26,6 +30,7 @@ impl BoolSerde of Serde<bool> {
             0_felt252
         }.serialize(ref output);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<bool> {
         Option::Some(*serialized.pop_front()? != 0)
     }
@@ -76,6 +81,7 @@ impl BoolPartialEq of PartialEq<bool> {
             true => *rhs,
         }
     }
+
     #[inline]
     fn ne(lhs: @bool, rhs: @bool) -> bool {
         match lhs {
@@ -85,7 +91,6 @@ impl BoolPartialEq of PartialEq<bool> {
     }
 }
 
-/// Default values for felt252_dict values.
 impl BoolFelt252DictValue of Felt252DictValue<bool> {
     #[inline]
     fn zero_default() -> bool nopanic {
@@ -100,6 +105,7 @@ impl BoolIntoFelt252 of Into<bool, felt252> {
         bool_to_felt252(self)
     }
 }
+
 pub mod boolean;
 
 pub mod circuit;
@@ -108,19 +114,26 @@ pub mod circuit;
 pub extern type RangeCheck;
 pub extern type SegmentArena;
 
-/// felt252.
 mod felt_252;
 #[allow(unused_imports)]
 use felt_252::{Felt252One, Felt252Zero};
 
+/// `felt252` is the basic field element used in Cairo.
+///
+/// It corresponds to an integer in the range 0 ≤ x < P where P is
+/// a very large prime number currently equal to 2^251 + 17⋅2^192 + 1.
+///
+/// Any operation that uses `felt252` will be computed modulo P.
 #[derive(Copy, Drop)]
 pub extern type felt252;
+
 extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
 
 impl Felt252Serde of Serde<felt252> {
     fn serialize(self: @felt252, ref output: Array<felt252>) {
         output.append(*self);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<felt252> {
         let mut snapshot = serialized.snapshot;
         match crate::array::array_snapshot_pop_front(ref snapshot) {
@@ -136,12 +149,15 @@ impl Felt252Serde of Serde<felt252> {
     }
 }
 
+extern fn felt252_add(lhs: felt252, rhs: felt252) -> felt252 nopanic;
+
 impl Felt252Add of Add<felt252> {
     #[inline]
     fn add(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_add(lhs, rhs)
     }
 }
+
 impl Felt252AddEq of AddEq<felt252> {
     #[inline]
     fn add_eq(ref self: felt252, other: felt252) {
@@ -149,13 +165,15 @@ impl Felt252AddEq of AddEq<felt252> {
     }
 }
 
-extern fn felt252_add(lhs: felt252, rhs: felt252) -> felt252 nopanic;
+extern fn felt252_sub(lhs: felt252, rhs: felt252) -> felt252 nopanic;
+
 impl Felt252Sub of Sub<felt252> {
     #[inline]
     fn sub(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_sub(lhs, rhs)
     }
 }
+
 impl Felt252SubEq of SubEq<felt252> {
     #[inline]
     fn sub_eq(ref self: felt252, other: felt252) {
@@ -163,21 +181,21 @@ impl Felt252SubEq of SubEq<felt252> {
     }
 }
 
-extern fn felt252_sub(lhs: felt252, rhs: felt252) -> felt252 nopanic;
+extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
+
 impl Felt252Mul of Mul<felt252> {
     #[inline]
     fn mul(lhs: felt252, rhs: felt252) -> felt252 {
         felt252_mul(lhs, rhs)
     }
 }
+
 impl Felt252MulEq of MulEq<felt252> {
     #[inline]
     fn mul_eq(ref self: felt252, other: felt252) {
         self = Mul::mul(self, other);
     }
 }
-
-extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 
 impl Felt252Neg of Neg<felt252> {
     #[inline]
@@ -186,6 +204,23 @@ impl Felt252Neg of Neg<felt252> {
     }
 }
 
+/// Performs division on `felt252` values in Cairo's finite field.
+/// Unlike regular integer division, `felt252` division returns a field element n that satisfies
+/// the equation: n * rhs ≡ lhs (mod P), where P is the `felt252` prime.
+///
+/// # Examples
+///
+/// ```
+/// use core::felt252_div;
+///
+/// // Division with 0 remainder works the same way as integer division.
+/// assert!(felt252_div(4, 2) == 2);
+///
+/// // Division with non 0 remainder returns a field element n where n * 3 ≡ 4 (mod P)
+/// assert!(felt252_div(4, 3) ==
+/// 1206167596222043737899107594365023368541035738443865566657697352045290673495);
+///
+/// ```
 pub extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
 
 impl Felt252PartialEq of PartialEq<felt252> {
@@ -227,55 +262,42 @@ impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
 
-/// Boxes.
 pub mod box;
 #[allow(unused_imports)]
 use box::{Box, BoxTrait};
 
-/// Nullable
 pub mod nullable;
 #[allow(unused_imports)]
 use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
 
-/// Module for `Array` and other continuous same type collections.
 pub mod array;
 #[allow(unused_imports)]
-use array::{Array, ArrayTrait};
+use array::{Array, ArrayTrait, Span, SpanTrait};
 
-/// Span.
-#[allow(unused_imports)]
-use array::{Span, SpanTrait};
-
-/// Dictionary.
 pub mod dict;
 #[allow(unused_imports)]
 use dict::{
     Felt252Dict, Felt252DictTrait, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash,
 };
 
-/// Result.
 pub mod result;
 #[allow(unused_imports)]
 use result::{Result, ResultTrait};
 
-/// Option.
 pub mod option;
 #[allow(unused_imports)]
 use option::{Option, OptionTrait};
 
-/// Clone.
 pub mod clone;
 #[allow(unused_imports)]
 use clone::Clone;
 
-/// EC.
 pub mod ec;
 #[allow(unused_imports)]
 use ec::{EcOp, EcPoint, EcState};
 
 pub mod ecdsa;
 
-/// Integer.
 #[feature("corelib-internal-use")]
 pub mod integer;
 #[allow(unused_imports)]
@@ -291,37 +313,46 @@ use integer::{
 #[allow(unused_imports)]
 use integer::{u128_sqrt, u256_sqrt};
 
-/// Module for comparison operations.
 pub mod cmp;
 
-/// Module for handling gas operations.
 pub mod gas;
 
-/// Math.
 #[feature("corelib-internal-use")]
 pub mod math;
 
-/// Module containing the traits for relevant for numeric types.
 pub mod num;
 
-/// Module containing the operations that can be performed on the different types.
 pub mod ops;
 #[allow(unused_imports)]
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
-
-/// Panics.
 pub mod panics;
 #[allow(unused_imports)]
 use panics::{Panic, PanicResult, panic};
 
 pub enum never {}
 
+/// Panics with the given `felt252` as error message.
+///
+/// # Examples
+///
+/// ```
+/// use core::panic_with_felt252;
+///
+/// panic_with_felt252('error message');
+/// ```
 #[inline]
 pub fn panic_with_felt252(err_code: felt252) -> never {
     panic(array![err_code])
 }
 
+/// Panics if `cond` is false with the given `felt252` as error message.
+///
+/// # Examples
+///
+/// ```
+/// assert(false, 'error message');
+/// ```
 #[inline]
 pub fn assert(cond: bool, err_code: felt252) {
     if !cond {
@@ -329,46 +360,37 @@ pub fn assert(cond: bool, err_code: felt252) {
     }
 }
 
-/// Hash functions.
 pub mod hash;
 
 pub mod keccak;
 
-/// Pedersen
 pub mod pedersen;
 
-/// Serialization and Deserialization.
 pub mod serde;
 
 pub mod sha256;
 #[allow(unused_imports)]
 use pedersen::Pedersen;
 
-/// Poseidon
 pub mod poseidon;
 #[allow(unused_imports)]
 use poseidon::Poseidon;
 
-/// Debug.
 pub mod debug;
 
 pub mod fmt;
 
-/// Starknet
 #[feature("corelib-internal-use")]
 pub mod starknet;
 #[allow(unused_imports)]
 use starknet::System;
 
-/// Internals.
 pub mod internal;
 
-/// Zeroable.
 pub mod zeroable;
 #[allow(unused_imports)]
 use zeroable::{NonZero, Zeroable};
 
-/// bytes31.
 pub mod bytes_31;
 #[allow(unused_imports)]
 use bytes_31::{
@@ -376,31 +398,24 @@ use bytes_31::{
     bytes31_const,
 };
 
-/// BytesArray.
 pub mod byte_array;
 #[allow(unused_imports)]
 use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
 
-/// String.
 pub mod string;
 #[allow(unused_imports)]
 use string::StringLiteral;
 
-/// Iterators.
 pub mod iter;
 
-/// Metaprogramming.
 pub mod metaprogramming;
 
-/// Preludes.
 #[allow(unused_imports)]
 mod prelude;
 
 #[cfg(test)]
 mod test;
 
-/// Module for testing only.
 pub mod testing;
 
-/// to_byte_array.
 pub mod to_byte_array;

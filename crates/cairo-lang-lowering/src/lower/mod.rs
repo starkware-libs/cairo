@@ -764,7 +764,10 @@ fn lower_single_pattern(
         }) => {
             lower_tuple_like_pattern_helper(ctx, builder, lowered_expr, &patterns, ty)?;
         }
-        semantic::Pattern::Otherwise(_) => {}
+        semantic::Pattern::Otherwise(pattern) => {
+            let var = lowered_expr.as_var_usage(ctx, builder)?.var_id;
+            ctx.variables.variables[var].location = ctx.get_location(pattern.stable_ptr.untyped());
+        }
         semantic::Pattern::Missing(_) => unreachable!("Missing pattern in semantic model."),
     }
     Ok(())

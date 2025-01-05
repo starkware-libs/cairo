@@ -150,12 +150,11 @@ pub fn priv_free_function_declaration_data(
 
     let mut environment = Environment::empty();
 
-    let signature_syntax = declaration.signature(syntax_db);
     let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
-        &signature_syntax,
+        &declaration,
         FunctionTitleId::Free(free_function_id),
         &mut environment,
     );
