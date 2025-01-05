@@ -216,9 +216,8 @@
 //! method calls a closure on each element it iterates over:
 //!
 //! ```
-//! # #![allow(unused_must_use)]
 //! let v = array![1, 2, 3, 4, 5];
-//! v.into_iter().map(|x| println!("{x}"));
+//! let _ = v.into_iter().map(|x| println!("{x}"));
 //! ```
 //!
 //! This will not print any values, as we only created an iterator, rather than

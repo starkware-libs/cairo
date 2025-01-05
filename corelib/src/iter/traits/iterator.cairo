@@ -76,9 +76,8 @@ pub trait Iterator<T> {
     /// If you're doing some sort of side effect, prefer `for` to `map()`:
     ///
     /// ```
-    /// # #![allow(unused_must_use)]
     /// // don't do this:
-    /// (0..5_usize).into_iter().map(|x| println!("{x}"));
+    /// let _ = (0..5_usize).into_iter().map(|x| println!("{x}"));
     ///
     /// // it won't even execute, as it is lazy. Cairo will warn you about this.
     ///
