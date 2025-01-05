@@ -1,5 +1,3 @@
-use crate::iter::{IntoIterator, Iterator};
-
 #[test]
 fn test_iter_adapter_map() {
     let a = array![1, 2, 3];
