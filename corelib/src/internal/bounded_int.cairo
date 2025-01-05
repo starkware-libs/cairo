@@ -20,7 +20,7 @@ impl Felt252TryIntoBoundedInt<
     const MIN: felt252, const MAX: felt252,
 > of TryInto<felt252, BoundedInt<MIN, MAX>> {
     fn try_into(self: felt252) -> Option<BoundedInt<MIN, MAX>> {
-        // Using `downcast` is allowed, since `BoundedInt` itself is not `pub`, and only has few
+        // Using `downcast` is allowed, since `BoundedInt` itself is not `pub`, and only has a few
         // specific `pub` instances, such as `u96`, `ConstZero` and `ConstOne`.
         downcast(self)
     }
