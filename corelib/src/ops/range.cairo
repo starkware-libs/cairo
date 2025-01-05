@@ -1,8 +1,36 @@
+//! Range and iteration utilities.
+//!
+//! This module provides functionality for creating and iterating over ranges of values.
+//! A range represents an interval of values from a start point to an end point.
+//!
+//! # Range Operator Forms
+//!
+//! There is currently only a single range operator form: `start..end`, representing a range from
+//! `start` (inclusive) to `end` (exclusive).
+
 use core::iter::{IntoIterator, Iterator};
 use core::num::traits::One;
 use core::traits::Add;
 
-/// Represents the range [start, end).
+/// A (half-open) range bounded inclusively below and exclusively above
+/// (`start..end`).
+///
+/// The range `start..end` contains all values with `start <= x < end`.
+/// It is empty if `start >= end`.
+///
+/// # Examples
+///
+/// The `start..end` syntax is a `Range`:
+///
+/// ```
+/// assert!((3..5) == core::ops::Range { start: 3, end: 5 });
+///
+/// let mut sum = 0;
+/// for i in 3..6 {
+///     sum += i;
+/// }
+/// assert!(sum == 3 + 4 + 5);
+/// ```
 #[derive(Clone, Drop, PartialEq)]
 pub struct Range<T> {
     /// The lower bound of the range (inclusive).
@@ -29,13 +57,6 @@ pub impl RangeImpl<T, +Copy<T>, +Drop<T>, +PartialOrd<T>> of RangeTrait<T> {
 }
 
 impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range<T>> {
-    /// Formats a `Range` type, allowing to print `Range` instances for debugging purposes.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// println!("{:?}", 1..5); // Result will be `1..5`
-    /// ```
     fn fmt(self: @Range<T>, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
         self.start.fmt(ref f)?;
         write!(f, "..")?;
@@ -44,10 +65,11 @@ impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range
     }
 }
 
-/// Handles the range operator (`..`).
+/// Handles the range binary operator (`..`).
+/// Used by the compiler to create a `Range` from the given `start` (inclusive) and `end`
+/// (exclusive) values.
 #[generate_trait]
 pub impl RangeOpImpl<T> of RangeOp<T> {
-    /// Handles the `..` operator. Returns the value of the expression `start..end`.
     fn range(start: T, end: T) -> Range<T> {
         Range { start, end }
     }
