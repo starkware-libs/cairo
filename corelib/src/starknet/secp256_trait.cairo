@@ -221,11 +221,7 @@ pub trait Secp256PointTrait<Secp256Point> {
 /// use core::starknet::secp256r1::Secp256r1Point;
 /// use core::starknet::secp256_trait::is_signature_entry_valid;
 ///
-/// assert!(
-///     is_signature_entry_valid::<
-///         Secp256r1Point,
-///     >(0xa73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac_u256),
-/// );
+/// assert!(!is_signature_entry_valid::<Secp256r1Point>(0));
 /// ```
 pub fn is_signature_entry_valid<
     Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>,
