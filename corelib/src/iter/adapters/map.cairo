@@ -15,11 +15,8 @@ pub struct Map<I, F> {
     f: F,
 }
 
-#[generate_trait]
-pub(crate) impl MapImpl<I, F> of MapTrait<I, F> {
-    fn new(iter: I, f: F) -> Map<I, F> {
-        Map { iter, f }
-    }
+pub(crate) fn mapped_iterator<I, F>(iter: I, f: F) -> Map<I, F> {
+    Map { iter, f }
 }
 
 impl MapIterator<
