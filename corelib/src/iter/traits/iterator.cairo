@@ -79,7 +79,8 @@ pub trait Iterator<T> {
     /// // don't do this:
     /// let _ = (0..5_usize).into_iter().map(|x| println!("{x}"));
     ///
-    /// // it won't even execute, as it is lazy. Cairo will warn you about this.
+    /// // it won't even execute, as it is lazy. Cairo will warn you about this if not specifically
+    /// ignored, as is done here.
     ///
     /// // Instead, use for:
     /// for x in 0..5_usize {
