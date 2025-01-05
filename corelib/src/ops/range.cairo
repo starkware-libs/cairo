@@ -3,39 +3,35 @@
 //! This module provides functionality for creating and iterating over ranges of values.
 //! A range represents an interval of values from a start point to an end point.
 //!
-//! # The Range Operator `..`
+//! # Range Operator Forms
 //!
-//! The `..` operator creates a range that includes all values from the start value
-//! up to, but not including, the end value. For example:
-//! * `0..5` represents the values 0, 1, 2, 3, 4
-//! * `start..end` represents all values x where start <= x < end
+//! There is currently only a single range operator form: `start..end`, representing a range from
+//! `start` (inclusive) to `end` (exclusive).
 //!
-//! # Examples
-//!
-//! ```
-//! use core::ops::Range;
-//!
-//! // Iterate over numbers 0 to 9
-//! for i in 0..10_u8 {
-//!     // use i
-//! }
-//!
-//! // Create a range explicitly
-//! let range = Range { start: 5, end: 10 };
-//!
-//! for i in range {
-//!     // use i
-//! }
-//! ```
 
 use core::iter::{IntoIterator, Iterator};
 use core::num::traits::One;
 use core::traits::Add;
 
-/// Represents the range [start, end).
+/// A (half-open) range bounded inclusively below and exclusively above
+/// (`start..end`).
 ///
 /// The range `start..end` contains all values with `start <= x < end`.
 /// It is empty if `start >= end`.
+///
+/// # Examples
+///
+/// The `start..end` syntax is a `Range`:
+///
+/// ```
+/// assert_eq!((3..5), core::ops::Range { start: 3, end: 5 });
+///
+/// let mut sum = 0;
+/// for i in 3..6 {
+///     sum += i;
+/// }
+/// assert_eq!(sum, 3 + 4 + 5);
+/// ```
 #[derive(Clone, Drop, PartialEq)]
 pub struct Range<T> {
     /// The lower bound of the range (inclusive).
@@ -62,13 +58,6 @@ pub impl RangeImpl<T, +Copy<T>, +Drop<T>, +PartialOrd<T>> of RangeTrait<T> {
 }
 
 impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range<T>> {
-    /// Formats a `Range` type, allowing to print `Range` instances for debugging purposes.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// println!("{:?}", 1..5); // Result will be `1..5`
-    /// ```
     fn fmt(self: @Range<T>, ref f: crate::fmt::Formatter) -> Result<(), crate::fmt::Error> {
         self.start.fmt(ref f)?;
         write!(f, "..")?;
@@ -77,20 +66,11 @@ impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range
     }
 }
 
-/// Handles the range operator (`..`).
+/// Handles the range binary operator (`..`).
+/// Used by the compiler to create a `Range` from the given `start` (inclusive) and `end`
+/// (exclusive) values.
 #[generate_trait]
-pub impl RangeOpImpl<T> of RangeOp<T> {
-    /// Handles the `..` operator.
-    /// Returns the value of the expression `start..end`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let range = 0..10_u8;
-    ///
-    /// for i in range { // use i
-    /// };
-    /// ```
+pub(crate) impl RangeOpImpl<T> of RangeOp<T> {
     fn range(start: T, end: T) -> Range<T> {
         Range { start, end }
     }
