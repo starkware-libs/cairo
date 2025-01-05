@@ -13,7 +13,6 @@ mod felt_test;
 mod fmt_test;
 mod hash_test;
 mod integer_test;
-mod iter_test;
 mod keccak_test;
 mod math_test;
 mod nullable_test;
