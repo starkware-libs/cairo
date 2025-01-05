@@ -69,7 +69,7 @@ impl RangeDebug<T, impl TDebug: crate::fmt::Debug<T>> of crate::fmt::Debug<Range
 /// Used by the compiler to create a `Range` from the given `start` (inclusive) and `end`
 /// (exclusive) values.
 #[generate_trait]
-pub(crate) impl RangeOpImpl<T> of RangeOp<T> {
+pub impl RangeOpImpl<T> of RangeOp<T> {
     fn range(start: T, end: T) -> Range<T> {
         Range { start, end }
     }
