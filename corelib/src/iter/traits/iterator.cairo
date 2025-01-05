@@ -1,4 +1,4 @@
-use crate::iter::adapters::{Map, MapTrait};
+use crate::iter::adapters::{Map, mapped_iterator};
 
 /// A trait for dealing with iterators.
 ///
@@ -98,6 +98,6 @@ pub trait Iterator<T> {
     >(
         self: T, f: F,
     ) -> Map<T, F> {
-        MapTrait::new(self, f)
+        mapped_iterator(self, f)
     }
 }
