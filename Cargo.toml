@@ -31,16 +31,15 @@ members = [
     "crates/cairo-lang-diagnostics",
     "crates/cairo-lang-doc",
     "crates/cairo-lang-eq-solver",
+    "crates/cairo-lang-executable",
     "crates/cairo-lang-filesystem",
     "crates/cairo-lang-formatter",
-    "crates/cairo-lang-language-server",
     "crates/cairo-lang-lowering",
     "crates/cairo-lang-parser",
     "crates/cairo-lang-plugins",
     "crates/cairo-lang-proc-macros",
     "crates/cairo-lang-project",
     "crates/cairo-lang-runnable-utils",
-    "crates/cairo-lang-runnable",
     "crates/cairo-lang-runner",
     "crates/cairo-lang-semantic",
     "crates/cairo-lang-sierra",
@@ -49,6 +48,7 @@ members = [
     "crates/cairo-lang-sierra-generator",
     "crates/cairo-lang-sierra-to-casm",
     "crates/cairo-lang-sierra-type-size",
+    "crates/cairo-lang-primitive-token",
     "crates/cairo-lang-starknet",
     "crates/cairo-lang-starknet-classes",
     "crates/cairo-lang-syntax",
@@ -57,8 +57,8 @@ members = [
     "crates/cairo-lang-test-runner",
     "crates/cairo-lang-utils",
     "crates/bin/cairo-compile",
+    "crates/bin/cairo-execute",
     "crates/bin/cairo-format",
-    "crates/bin/cairo-language-server",
     "crates/bin/cairo-run",
     "crates/bin/cairo-test",
     "crates/bin/generate-syntax",
@@ -73,7 +73,7 @@ members = [
 exclude = ["ensure-no_std"]
 
 [workspace.package]
-version = "2.8.4"
+version = "2.9.2"
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
@@ -87,7 +87,7 @@ ark-secp256r1 = "0.4.0"
 ark-std = "0.4.0"
 assert_matches = "1.5"
 bimap = "0.6.3"
-cairo-vm = { version = "1.0.1", features = ["mod_builtin"]}
+cairo-vm = { version = "1.0.1", features = ["mod_builtin"] }
 clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
 const-fnv1a-hash = "1.1.0"

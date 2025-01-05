@@ -3,12 +3,13 @@ use cairo_lang_defs::ids::{
     ImplFunctionId, ImplImplDefId, LocalVarId, MemberId, ParamId, StructId, TraitConstantId,
     TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
+use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_utils::LookupIntern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::{
-    ConstVar, ImplVar, ImplVarId, Inference, InferenceId, InferenceVar, LocalConstVarId,
-    LocalImplVarId, LocalTypeVarId, TypeVar,
+    ConstVar, ImplVar, ImplVarId, ImplVarTraitItemMappings, Inference, InferenceId, InferenceVar,
+    LocalConstVarId, LocalImplVarId, LocalTypeVarId, TypeVar,
 };
 use crate::db::SemanticGroup;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
@@ -22,7 +23,10 @@ use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
+    ConcreteTraitTypeLongId,
+};
 use crate::substitution::{HasDb, RewriteResult, SemanticObject, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
@@ -37,21 +41,28 @@ use crate::{
 };
 
 /// A canonical representation of a concrete trait that needs to be solved.
-#[derive(Copy, Clone, PartialEq, Hash, Eq, Debug)]
-pub struct CanonicalTrait(pub ConcreteTraitId);
+#[derive(Clone, PartialEq, Hash, Eq, Debug, SemanticObject)]
+pub struct CanonicalTrait {
+    pub id: ConcreteTraitId,
+    pub mappings: ImplVarTraitItemMappings,
+}
+
 impl CanonicalTrait {
     /// Canonicalizes a concrete trait that is part of an [Inference].
     pub fn canonicalize(
         db: &dyn SemanticGroup,
         source_inference_id: InferenceId,
         trait_id: ConcreteTraitId,
+        impl_var_mappings: ImplVarTraitItemMappings,
     ) -> (Self, CanonicalMapping) {
-        let (t, mapping) = Canonicalizer::canonicalize(db, source_inference_id, trait_id);
-        (Self(t), mapping)
+        Canonicalizer::canonicalize(db, source_inference_id, Self {
+            id: trait_id,
+            mappings: impl_var_mappings,
+        })
     }
     /// Embeds a canonical trait into an [Inference].
-    pub fn embed(&self, inference: &mut Inference<'_>) -> (ConcreteTraitId, CanonicalMapping) {
-        Embedder::embed(inference, self.0)
+    pub fn embed(&self, inference: &mut Inference<'_>) -> (CanonicalTrait, CanonicalMapping) {
+        Embedder::embed(inference, self.clone())
     }
 }
 
@@ -60,7 +71,7 @@ impl CanonicalTrait {
 pub struct CanonicalImpl(pub ImplId);
 impl CanonicalImpl {
     /// Canonicalizes a concrete impl that is part of an [Inference].
-    /// Uses the same same canonicalization of the trait, to be consistent.
+    /// Uses the same canonicalization of the trait, to be consistent.
     pub fn canonicalize(
         db: &dyn SemanticGroup,
         impl_id: ImplId,

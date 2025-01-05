@@ -359,6 +359,13 @@ define_top_level_language_element_id!(
     lookup_intern_constant,
     intern_constant
 );
+define_language_element_id_basic!(
+    GlobalUseId,
+    GlobalUseLongId,
+    ast::UsePathStar,
+    lookup_intern_global_use,
+    intern_global_use
+);
 define_top_level_language_element_id!(
     UseId,
     UseLongId,
@@ -567,6 +574,11 @@ impl TraitTypeId {
 impl TopLevelLanguageElementId for TraitTypeId {
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.trait_id(db).full_path(db), self.name(db))
+    }
+}
+impl UnstableSalsaId for TraitTypeId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
     }
 }
 

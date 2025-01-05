@@ -129,7 +129,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         // Find all the variables that are alive after this block convergence.
-        // A variable is alive after a converges if it is a alive in some block that is reachable
+        // A variable is alive after a converges if it is an alive in some block that is reachable
         // from it by any arm.
         let mut vars = OrderedHashMap::<VariableId, OrderedHashSet<BlockId>>::default();
         let mut any_merges = false;

@@ -37,6 +37,7 @@ fn test_trait() {
     assert_eq!(
         format!("{:?}", signature.debug(db)),
         "Signature { params: [Parameter { id: ParamId(test::a), name: \"a\", ty: core::felt252, \
-         mutability: Immutable }], return_type: (), implicits: [], panicable: true }"
+         mutability: Immutable }], return_type: (), implicits: [], panicable: true, is_const: \
+         false }"
     );
 }

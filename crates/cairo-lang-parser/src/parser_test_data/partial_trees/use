@@ -72,3 +72,122 @@ ItemUse
     │       │   └── ident (kind: TokenIdentifier): 'Y'
     │       └── alias_clause (kind: OptionAliasClauseEmpty) []
     └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test use global.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    use X::*;
+}
+
+//! > top_level_kind
+ItemUse
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemUse
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── use_kw (kind: TokenUse): 'use'
+    ├── use_path (kind: UsePathSingle)
+    │   ├── ident (kind: PathSegmentSimple)
+    │   │   └── ident (kind: TokenIdentifier): 'X'
+    │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   └── use_path (kind: UsePathStar)
+    │       └── star (kind: TokenMul): '*'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test use global with attribute.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    #[attribute]
+    use X::*;
+}
+
+//! > top_level_kind
+ItemUse
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemUse
+    ├── attributes (kind: AttributeList)
+    │   └── child #0 (kind: Attribute)
+    │       ├── hash (kind: TokenHash): '#'
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── attr (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'attribute'
+    │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       └── rbrack (kind: TokenRBrack): ']'
+    ├── visibility (kind: VisibilityDefault) []
+    ├── use_kw (kind: TokenUse): 'use'
+    ├── use_path (kind: UsePathSingle)
+    │   ├── ident (kind: PathSegmentSimple)
+    │   │   └── ident (kind: TokenIdentifier): 'X'
+    │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   └── use_path (kind: UsePathStar)
+    │       └── star (kind: TokenMul): '*'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test use global with multi.
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo() {
+    use X::{*, A, B};
+}
+
+//! > top_level_kind
+ItemUse
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemUse
+    ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
+    ├── use_kw (kind: TokenUse): 'use'
+    ├── use_path (kind: UsePathSingle)
+    │   ├── ident (kind: PathSegmentSimple)
+    │   │   └── ident (kind: TokenIdentifier): 'X'
+    │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   └── use_path (kind: UsePathMulti)
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── use_paths (kind: UsePathList)
+    │       │   ├── item #0 (kind: UsePathStar)
+    │       │   │   └── star (kind: TokenMul): '*'
+    │       │   ├── separator #0 (kind: TokenComma): ','
+    │       │   ├── item #1 (kind: UsePathLeaf)
+    │       │   │   ├── ident (kind: PathSegmentSimple)
+    │       │   │   │   └── ident (kind: TokenIdentifier): 'A'
+    │       │   │   └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │       │   ├── separator #1 (kind: TokenComma): ','
+    │       │   └── item #2 (kind: UsePathLeaf)
+    │       │       ├── ident (kind: PathSegmentSimple)
+    │       │       │   └── ident (kind: TokenIdentifier): 'B'
+    │       │       └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── semicolon (kind: TokenSemicolon): ';'

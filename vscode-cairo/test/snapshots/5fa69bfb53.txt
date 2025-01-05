@@ -1,8 +1,0 @@
-//! > cairo_code
-enum _ {}
-
-//! > syntax
-enum                 source.cairo keyword.declaration.enum.cairo storage.type.cairo
-_                    source.cairo variable.other.cairo
-{                    source.cairo punctuation.brackets.curly.cairo
-}                    source.cairo punctuation.brackets.curly.cairo

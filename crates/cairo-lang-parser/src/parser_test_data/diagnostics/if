@@ -43,7 +43,7 @@ error: Missing tokens. Expected an expression.
 error: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:2:13
     if 0 == if x {1} else {2} {
-            ^**^
+            ^^^^
 
 //! > ==========================================================================
 

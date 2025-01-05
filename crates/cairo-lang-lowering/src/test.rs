@@ -111,7 +111,7 @@ fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
 fn test_location_and_diagnostics() {
     let db = &mut LoweringDatabaseForTesting::default();
 
-    let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;").unwrap();
+    let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;", None).unwrap();
 
     let function_body = db.function_body(test_expr.function_id).unwrap();
 
@@ -134,14 +134,17 @@ fn test_location_and_diagnostics() {
         .lookup_intern(db);
 
     assert_eq!(format!("{:?}", location.debug(db)), indoc::indoc! {"
-lib.cairo:1:1
-fn test_func() { let mut a = 5; {
-^*******************************^
+lib.cairo:1:1-3:4
+  fn test_func() { let mut a = 5; {
+ _^
+| a = a * 3
+| }; }
+|____^
 note: this error originates in auto-generated withdraw_gas logic.
 note: Adding destructor for:
   --> lib.cairo:2:1
 a = a * 3
-^*******^"});
+^^^^^^^^^"});
 
     let mut builder = DiagnosticsBuilder::default();
 
@@ -152,14 +155,17 @@ a = a * 3
 
     assert_eq!(builder.build().format(db), indoc::indoc! {"
 error: Cannot inline a function that might call itself.
- --> lib.cairo:1:1
-fn test_func() { let mut a = 5; {
-^*******************************^
+ --> lib.cairo:1:1-3:4
+  fn test_func() { let mut a = 5; {
+ _^
+| a = a * 3
+| }; }
+|____^
 note: this error originates in auto-generated withdraw_gas logic.
 note: Adding destructor for:
   --> lib.cairo:2:1
 a = a * 3
-^*******^
+^^^^^^^^^
 
 "});
 }

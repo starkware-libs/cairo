@@ -1,8 +1,0 @@
-//! > cairo_code
-extern type _;
-
-//! > syntax
-extern               source.cairo keyword.other.cairo storage.type.cairo
-type                 source.cairo keyword.declaration.type.cairo storage.type.cairo
-_                    source.cairo variable.other.cairo
-;                    source.cairo punctuation.semi.cairo

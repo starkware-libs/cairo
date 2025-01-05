@@ -10,7 +10,7 @@ If we want to run code that is gas tested:
 cargo run --bin cairo-run -- --single-file /path/to/file.cairo --available-gas 200
 ```
 
-We currently only run the `main` function with no arguments beside implicits.
+We currently only run the `main` function with no arguments besides implicits.
 
 # Example
 

@@ -277,7 +277,7 @@ impl InferenceEmbeddings for Inference<'_> {
         let mut substitution = GenericSubstitution::default();
         for generic_param in generic_params {
             let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
-                .rewrite(*generic_param)
+                .rewrite(generic_param.clone())
                 .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
             let generic_arg =
                 self.infer_generic_arg(&generic_param, lookup_context.clone(), stable_ptr)?;
@@ -374,11 +374,17 @@ impl InferenceEmbeddings for Inference<'_> {
                 let concrete_trait_id = param
                     .concrete_trait
                     .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
-                Ok(GenericArgumentId::Impl(self.new_impl_var(
-                    concrete_trait_id,
-                    stable_ptr,
-                    lookup_context,
-                )))
+                let impl_id = self.new_impl_var(concrete_trait_id, stable_ptr, lookup_context);
+                for (trait_ty, ty1) in param.type_constraints.iter() {
+                    let ty0 = self.reduce_impl_ty(ImplTypeId::new(
+                        impl_id,
+                        trait_ty.trait_type(self.db),
+                        self.db,
+                    ))?;
+                    // Conforming the type will always work as the impl is a new inference variable.
+                    self.conform_ty(ty0, *ty1).ok();
+                }
+                Ok(GenericArgumentId::Impl(impl_id))
             }
             GenericParam::Const(GenericParamConst { ty, .. }) => {
                 Ok(GenericArgumentId::Constant(self.new_const_var(stable_ptr, *ty)))

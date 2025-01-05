@@ -1,17 +1,23 @@
+use std::path::PathBuf;
+
 use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
     ModuleItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, Token, TypedSyntaxNode};
+use cairo_lang_syntax::node::{SyntaxNode, Terminal, Token as SyntaxToken, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
+use indoc::indoc;
+use num_traits::ToPrimitive;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use test_log::test;
 
 use crate::db::ParserGroup;
-use crate::test_utils::create_virtual_file;
-use crate::utils::SimpleParserDatabase;
+use crate::printer::print_tree;
+use crate::test_utils::{MockToken, MockTokenStream, create_virtual_file};
+use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics_from_file};
 
 fn build_empty_file_green_tree(db: &dyn SyntaxGroup, file_id: FileId) -> SyntaxFile {
     let eof_token = TokenEndOfFile::new_green(db, SmolStr::from(""));
@@ -52,4 +58,56 @@ fn test_parser_shorthand() {
     let (_node, diagnostics) = db.parse_virtual_with_diagnostics("");
     assert_eq!(diagnostics.format(&db), "");
     let _node = db.parse_virtual("").unwrap();
+}
+
+#[test]
+fn test_token_stream_parser() {
+    let filepath: PathBuf =
+        [env!("CARGO_MANIFEST_DIR"), "src/parser_test_data/cairo_test_files/short.cairo"]
+            .into_iter()
+            .collect();
+    let db_val = SimpleParserDatabase::default();
+    let db = &db_val;
+
+    let (root_node, _) = get_syntax_root_and_diagnostics_from_file(db, filepath);
+
+    let token_stream = MockTokenStream::from_syntax_node(db, root_node.clone());
+    let (node_from_token_stream, _) = db.parse_token_stream(&token_stream);
+
+    let original_leaves: Vec<SyntaxNode> = root_node.tokens(db.upcast()).collect();
+
+    let token_stream_origin_leaves: Vec<SyntaxNode> =
+        node_from_token_stream.tokens(db.upcast()).collect();
+
+    assert_eq!(original_leaves.len(), token_stream_origin_leaves.len());
+    assert_eq!(
+        print_tree(db, &root_node, false, true),
+        print_tree(db, &node_from_token_stream, false, true)
+    )
+}
+
+#[test]
+fn test_token_stream_expr_parser() {
+    let expr_code = indoc! {r#"
+      temp = a
+    "#};
+    let db = SimpleParserDatabase::default();
+
+    let token_stream = MockTokenStream {
+        tokens: vec![MockToken {
+            content: expr_code.to_string(),
+            span: TextSpan {
+                start: TextOffset::default(),
+                end: TextOffset::default()
+                    .add_width(TextWidth::new_for_testing(expr_code.len().to_u32().unwrap())),
+            },
+        }],
+        content_string: expr_code.to_string(),
+    };
+
+    let (node_from_token_stream, _) = db.parse_token_stream_expr(&token_stream);
+
+    let node_text = node_from_token_stream.get_text(db.upcast());
+
+    assert_eq!(node_text, expr_code);
 }

@@ -35,16 +35,15 @@ CRATES_TO_PUBLISH=(
     cairo-lang-starknet-classes
     cairo-lang-starknet
     cairo-lang-runnable-utils
-    cairo-lang-runnable
+    cairo-lang-executable
     cairo-lang-runner
     cairo-lang-test-plugin
     cairo-lang-test-runner
     cairo-lang-doc
-    cairo-lang-language-server
     cairo-compile
     cairo-format
-    cairo-language-server
     cairo-run
+    cairo-execute
     cairo-test
     sierra-compile
     starknet-compile
@@ -52,11 +51,11 @@ CRATES_TO_PUBLISH=(
 )
 
 # Assert that the number of crates to publish is equal to the number of crates in the workspace
-# - 4 (the number of crates that are for internal use only).
-NUM_CRATES_IN_WORKSPACE=$(find crates/ -name Cargo.toml | wc -l) 
-if [ "${#CRATES_TO_PUBLISH[@]}" -ne "$((NUM_CRATES_IN_WORKSPACE - 4))" ]; then
-    echo "The number of crates to publish is not equal to the number of crates in the workspace, 
-    new crates were probably added, please update the list of crates to publish."
+# - 5 (the number of crates that are for internal use only).
+NUM_CRATES_IN_WORKSPACE=$(find crates/ -name Cargo.toml | wc -l)
+if [ "${#CRATES_TO_PUBLISH[@]}" -ne "$((NUM_CRATES_IN_WORKSPACE - 5))" ]; then
+    echo "The number of crates to publish is not equal to the number of crates in the workspace,"
+    echo "new crates were probably added, please update the list of crates to publish."
     exit 1
 fi
 

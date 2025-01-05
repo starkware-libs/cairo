@@ -10,7 +10,7 @@ mod mod;
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:5
 mod mod;
-    ^*^
+    ^^^
 
 //! > ==========================================================================
 
@@ -26,7 +26,7 @@ struct mod {}
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:8
 struct mod {}
-       ^*^
+       ^^^
 
 //! > ==========================================================================
 
@@ -42,7 +42,7 @@ enum mod {}
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:6
 enum mod {}
-     ^*^
+     ^^^
 
 //! > ==========================================================================
 
@@ -58,7 +58,7 @@ extern fn mod() nopanic;
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:11
 extern fn mod() nopanic;
-          ^*^
+          ^^^
 
 //! > ==========================================================================
 
@@ -74,7 +74,7 @@ extern type mod;
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:13
 extern type mod;
-            ^*^
+            ^^^
 
 //! > ==========================================================================
 
@@ -91,7 +91,7 @@ fn foo() {}
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:3
 #[mod]
-  ^*^
+  ^^^
 
 //! > ==========================================================================
 
@@ -107,7 +107,7 @@ fn mod() {}
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:4
 fn mod() {}
-   ^*^
+   ^^^
 
 //! > ==========================================================================
 
@@ -123,7 +123,7 @@ trait mod {}
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:7
 trait mod {}
-      ^*^
+      ^^^
 
 //! > ==========================================================================
 
@@ -141,7 +141,7 @@ trait trt {
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:2:8
     fn mod();
-       ^*^
+       ^^^
 
 //! > ==========================================================================
 
@@ -157,7 +157,7 @@ impl mod of MyTrait {}
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:6
 impl mod of MyTrait {}
-     ^*^
+     ^^^
 
 //! > ==========================================================================
 
@@ -175,7 +175,7 @@ fn foo() {
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:2:9
     A { mod }
-        ^*^
+        ^^^
 
 //! > ==========================================================================
 
@@ -193,7 +193,7 @@ fn foo() {
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:2:13
     let ref mod = 3;
-            ^*^
+            ^^^
 
 //! > ==========================================================================
 
@@ -211,7 +211,7 @@ fn foo() {
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:2:20
     let MyStruct { mod } = 3;
-                   ^*^
+                   ^^^
 
 //! > ==========================================================================
 
@@ -227,7 +227,7 @@ fn f(ref mod: felt252) {}
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:10
 fn f(ref mod: felt252) {}
-         ^*^
+         ^^^
 
 //! > ==========================================================================
 
@@ -243,7 +243,7 @@ fn f(mod: felt252) {}
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:6
 fn f(mod: felt252) {}
-     ^*^
+     ^^^
 
 //! > ==========================================================================
 
@@ -261,7 +261,7 @@ struct A {
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:2:5
     mod: felt252
-    ^*^
+    ^^^
 
 //! > ==========================================================================
 
@@ -277,7 +277,7 @@ use mod::foo;
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:5
 use mod::foo;
-    ^*^
+    ^^^
 
 //! > ==========================================================================
 
@@ -293,7 +293,7 @@ struct A<mod> {}
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:10
 struct A<mod> {}
-         ^*^
+         ^^^
 
 //! > ==========================================================================
 
@@ -309,4 +309,4 @@ fn foo() implicits(mod) {}
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:20
 fn foo() implicits(mod) {}
-                   ^*^
+                   ^^^

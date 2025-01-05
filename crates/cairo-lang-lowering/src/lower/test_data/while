@@ -63,8 +63,11 @@ End:
 
 
 Generated loop lowering for source location:
-    while x != 0 {
-    ^************^
+      while x != 0 {
+ _____^
+|         x = x - 1;
+|     };
+|_____^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -206,8 +209,11 @@ End:
 
 
 Generated loop lowering for source location:
-    while let true = (x != 0) {
-    ^*************************^
+      while let true = (x != 0) {
+ _____^
+| ...
+|     };
+|_____^
 
 Parameters: v0: core::felt252
 blk0 (root):
@@ -341,8 +347,11 @@ End:
 
 
 Generated loop lowering for source location:
-    while let MyEnum::A(x) = a() {
-    ^****************************^
+      while let MyEnum::A(x) = a() {
+ _____^
+|         y = y + x
+|     };
+|_____^
 
 Parameters: v0: core::felt252
 blk0 (root):
