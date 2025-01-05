@@ -7,8 +7,6 @@
 /// One benefit of implementing `IntoIterator` is that your type will [work
 /// with Cairo's `for` loop syntax](crate::iter#for-loops-and-intoiterator).
 ///
-/// See also: [`FromIterator`].
-///
 /// # Examples
 ///
 /// Basic usage:
@@ -64,7 +62,7 @@
 ///
 /// // ... and then turn it into an Iterator:
 /// let mut n = 0;
-/// for i in c.into_iter() {
+/// for i in c {
 ///     assert_eq!(i, n);
 ///     n += 1;
 /// };
