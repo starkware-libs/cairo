@@ -33,7 +33,7 @@
 ///     let number_and_bool: TypePair<u32, bool> = TypePairTrait::new(1, true);
 ///
 ///     // This fails to compile - same types not allowed
-///     let number_and_number: TypePair<u32, u32> = TypePairTrait::new(1, 2);
+///     // let number_and_number: TypePair<u32, u32> = TypePairTrait::new(1, 2);
 /// }
 pub trait TypeEqual<S, T> {}
 
