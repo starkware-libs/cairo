@@ -77,6 +77,7 @@ const VALID_LT: () = assert(1_usize < 2);
 const VALID_LE: () = assert(1_usize <= 1);
 const VALID_GT: () = assert(2_usize > 1);
 const VALID_GE: () = assert(1_usize >= 1);
+const VALID_DIVREM: () = assert(DivRem::div_rem(5_u8, 2) == (2, 1));
 
 const FUNC_CALC_SUCCESS_OPTION: felt252 = Option::Some(5).unwrap();
 const FUNC_CALC_SUCCESS_RESULT1: felt252 = Result::<_, felt252>::Ok(5).unwrap();
@@ -129,7 +130,7 @@ note: In `test::assert`:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Constant calculation depth exceeded.
- --> lib.cairo:42:43
+ --> lib.cairo:43:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 
