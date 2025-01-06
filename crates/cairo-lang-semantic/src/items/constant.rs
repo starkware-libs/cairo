@@ -762,7 +762,7 @@ impl ConstantEvaluateContext<'_> {
                     } else if let Some(else_block) = expr.else_block {
                         self.evaluate(else_block)
                     } else {
-                        ConstValue::Struct(vec![], unit_ty(self.db))
+                        self.unit_const.clone()
                     }
                 }
                 crate::Condition::Let(id, patterns) => {
@@ -786,7 +786,7 @@ impl ConstantEvaluateContext<'_> {
                     if let Some(else_block) = expr.else_block {
                         self.evaluate(else_block)
                     } else {
-                        ConstValue::Struct(vec![], unit_ty(self.db))
+                        self.unit_const.clone()
                     }
                 }
             },
@@ -822,16 +822,15 @@ impl ConstantEvaluateContext<'_> {
 
         let imp = extract_matches!(concrete_function.generic_function, GenericFunctionId::Impl);
         let bool_value = |condition: bool| {
-            ConstValue::Enum(
-                if condition { true_variant(db) } else { false_variant(db) },
-                ConstValue::Struct(vec![], unit_ty(db)).into(),
-            )
+            if condition { self.true_const.clone() } else { self.false_const.clone() }
         };
 
         if imp.function == self.eq_fn {
             return bool_value(args[0] == args[1]);
         } else if imp.function == self.ne_fn {
             return bool_value(args[0] != args[1]);
+        } else if imp.function == self.not_fn {
+            return bool_value(args[0] == self.false_const);
         }
 
         let args = match args
@@ -1123,42 +1122,50 @@ pub struct ConstCalcInfo {
     /// Traits that are allowed for consts if their impls is in the corelib.
     const_traits: UnorderedHashSet<TraitId>,
     /// The trait function for `Neg::neg`.
-    pub neg_fn: TraitFunctionId,
+    neg_fn: TraitFunctionId,
     /// The trait function for `Add::add`.
-    pub add_fn: TraitFunctionId,
+    add_fn: TraitFunctionId,
     /// The trait function for `Sub::sub`.
-    pub sub_fn: TraitFunctionId,
+    sub_fn: TraitFunctionId,
     /// The trait function for `Mul::mul`.
-    pub mul_fn: TraitFunctionId,
+    mul_fn: TraitFunctionId,
     /// The trait function for `Div::div`.
-    pub div_fn: TraitFunctionId,
+    div_fn: TraitFunctionId,
     /// The trait function for `Rem::rem`.
-    pub rem_fn: TraitFunctionId,
+    rem_fn: TraitFunctionId,
     /// The trait function for `BitAnd::bitand`.
-    pub bit_and_fn: TraitFunctionId,
+    bit_and_fn: TraitFunctionId,
     /// The trait function for `BitOr::bitor`.
-    pub bit_or_fn: TraitFunctionId,
+    bit_or_fn: TraitFunctionId,
     /// The trait function for `BitXor::bitxor`.
-    pub bit_xor_fn: TraitFunctionId,
+    bit_xor_fn: TraitFunctionId,
     /// The trait function for `PartialEq::eq`.
-    pub eq_fn: TraitFunctionId,
+    eq_fn: TraitFunctionId,
     /// The trait function for `PartialEq::ne`.
-    pub ne_fn: TraitFunctionId,
+    ne_fn: TraitFunctionId,
     /// The trait function for `PartialOrd::lt`.
-    pub lt_fn: TraitFunctionId,
+    lt_fn: TraitFunctionId,
     /// The trait function for `PartialOrd::le`.
-    pub le_fn: TraitFunctionId,
+    le_fn: TraitFunctionId,
     /// The trait function for `PartialOrd::gt`.
-    pub gt_fn: TraitFunctionId,
+    gt_fn: TraitFunctionId,
     /// The trait function for `PartialOrd::ge`.
-    pub ge_fn: TraitFunctionId,
+    ge_fn: TraitFunctionId,
+    /// The trait function for `Not::not`.
+    not_fn: TraitFunctionId,
+    /// The const value for the unit type `()`.
+    unit_const: ConstValue,
+    /// The const value for `true`.
+    true_const: ConstValue,
+    /// The const value for `false`.
+    false_const: ConstValue,
     /// The function for panicking with a felt252.
-    pub panic_with_felt252: FunctionId,
+    panic_with_felt252: FunctionId,
 }
 
 impl ConstCalcInfo {
     /// Creates a new ConstCalcInfo.
-    pub fn new(db: &dyn SemanticGroup) -> Self {
+    fn new(db: &dyn SemanticGroup) -> Self {
         let neg_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Neg".into());
         let add_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Add".into());
         let sub_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Sub".into());
@@ -1170,9 +1177,11 @@ impl ConstCalcInfo {
         let bit_xor_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitXor".into());
         let partial_eq_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialEq".into());
         let partial_ord_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialOrd".into());
+        let not_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Not".into());
         let trait_fn = |trait_id, name: &str| {
             db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
         };
+        let unit_const = ConstValue::Struct(vec![], unit_ty(db));
         Self {
             const_traits: [
                 neg_trait,
@@ -1186,6 +1195,7 @@ impl ConstCalcInfo {
                 bit_xor_trait,
                 partial_eq_trait,
                 partial_ord_trait,
+                not_trait,
             ]
             .into_iter()
             .collect(),
@@ -1204,6 +1214,10 @@ impl ConstCalcInfo {
             le_fn: trait_fn(partial_ord_trait, "le"),
             gt_fn: trait_fn(partial_ord_trait, "gt"),
             ge_fn: trait_fn(partial_ord_trait, "ge"),
+            not_fn: trait_fn(not_trait, "not"),
+            true_const: ConstValue::Enum(true_variant(db), unit_const.clone().into()),
+            false_const: ConstValue::Enum(false_variant(db), unit_const.clone().into()),
+            unit_const,
             panic_with_felt252: get_core_function_id(db, "panic_with_felt252".into(), vec![]),
         }
     }
