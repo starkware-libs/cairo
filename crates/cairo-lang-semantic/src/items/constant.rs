@@ -24,7 +24,7 @@ use num_traits::{Num, ToPrimitive, Zero};
 use smol_str::SmolStr;
 
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
-use super::imp::ImplId;
+use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
     CoreTraitContext, LiteralError, core_box_ty, core_nonzero_ty, false_variant,
     get_core_function_id, get_core_trait, get_core_ty_by_name, true_variant,
@@ -206,7 +206,7 @@ impl ImplConstantId {
         trait_constant_id: TraitConstantId,
         db: &dyn SemanticGroup,
     ) -> Self {
-        if let crate::items::imp::ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
+        if let ImplLongId::Concrete(concrete_impl) = impl_id.lookup_intern(db) {
             let impl_def_id = concrete_impl.impl_def_id(db);
             assert_eq!(Ok(trait_constant_id.trait_id(db.upcast())), db.impl_def_trait(impl_def_id));
         }
@@ -597,12 +597,26 @@ impl ConstantEvaluateContext<'_> {
         }
         let db = self.db;
         let concrete_function = function_id.get_concrete(db);
-        let Ok(Some(body)) = concrete_function.body(db) else { return false };
-        let signature = self.db.function_with_body_signature(body.function_with_body_id(self.db));
+        let signature = (|| match concrete_function.generic_function {
+            GenericFunctionId::Free(id) => db.free_function_signature(id),
+            GenericFunctionId::Extern(id) => db.extern_function_signature(id),
+            GenericFunctionId::Impl(id) => {
+                if let ImplLongId::Concrete(impl_id) = id.impl_id.lookup_intern(db) {
+                    if let Ok(Some(impl_function_id)) = impl_id.get_impl_function(db, id.function) {
+                        return self.db.impl_function_signature(impl_function_id);
+                    }
+                }
+                self.db.trait_function_signature(id.function)
+            }
+            GenericFunctionId::Trait(id) => db.trait_function_signature(id.trait_function(db)),
+        })();
         if signature.map(|s| s.is_const) == Ok(true) {
             return true;
         }
-        let GenericFunctionWithBodyId::Impl(imp) = body.generic_function(db) else { return false };
+        let Ok(Some(body)) = concrete_function.body(db) else { return false };
+        let GenericFunctionWithBodyId::Impl(imp) = body.generic_function(db) else {
+            return false;
+        };
         let impl_def = imp.concrete_impl_id.impl_def_id(db);
         if impl_def.parent_module(db.upcast()).owning_crate(db.upcast()) != db.core_crate() {
             return false;
@@ -623,11 +637,10 @@ impl ConstantEvaluateContext<'_> {
                 .get(&expr.var)
                 .cloned()
                 .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic())),
-            Expr::Constant(expr) => {
-                SubstitutionRewriter { db, substitution: &self.generic_substitution }
-                    .rewrite(expr.const_value_id.lookup_intern(db))
-                    .unwrap_or_else(ConstValue::Missing)
-            }
+            Expr::Constant(expr) => self
+                .rewriter()
+                .rewrite(expr.const_value_id.lookup_intern(db))
+                .unwrap_or_else(ConstValue::Missing),
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. }) => {
                 for statement_id in statements {
                     match &self.arenas.statements[*statement_id] {
@@ -813,7 +826,10 @@ impl ConstantEvaluateContext<'_> {
                 SemanticDiagnosticKind::FailedConstantCalculation,
             ));
         }
-        let concrete_function = expr.function.get_concrete(db);
+        let concrete_function = match self.rewriter().rewrite(expr.function.get_concrete(db)) {
+            Ok(v) => v,
+            Err(err) => return ConstValue::Missing(err),
+        };
         if let Some(calc_result) =
             self.evaluate_const_function_call(&concrete_function, &args, expr.stable_ptr.untyped())
         {
@@ -956,6 +972,11 @@ impl ConstantEvaluateContext<'_> {
             );
         }
         Some(value)
+    }
+
+    /// `SubstitutionRewriter` for the current generic substitution.
+    fn rewriter(&self) -> SubstitutionRewriter<'_> {
+        SubstitutionRewriter { db: self.db, substitution: &self.generic_substitution }
     }
 
     /// Extract const member access from a const value.
