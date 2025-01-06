@@ -22,6 +22,7 @@ pub mod logging;
 pub mod ordered_hash_map;
 pub mod ordered_hash_set;
 pub mod unordered_hash_map;
+// comment!
 pub mod unordered_hash_set;
 
 /// Similar to From / TryFrom, but returns an option.
