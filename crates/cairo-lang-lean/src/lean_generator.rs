@@ -1416,11 +1416,17 @@ impl<'a> LeanFuncInfo<'a> {
         };
 
         let mut vars = HashMap::new();
+        // The list of 'let' variables defined in this block. Because these are not assigned their
+        // own memory, they do not need to be added as block arguments (if referred to after being
+        // assigned, otherwise this is a reference to an earlier binding of the variable).
+        let mut let_vars: HashSet<String> = HashSet::new();
 
         // If the variable's offset is before the block's start offset, it should be added as an argument.
         // In this case we provide its offset.
-        let should_add_arg = |var : &VarBaseDesc| {
-            if let Some((reg, var_offset)) = get_ref_from_deref(&var.var_expr) {
+        let should_add_arg = |var : &VarBaseDesc, let_vars : &HashSet<String>| {
+            if let_vars.contains(&var.name) {
+                None
+            } else if let Some((reg, var_offset)) = get_ref_from_deref(&var.var_expr) {
                 if var_offset < start_ap_offset {
                     Some((reg, var_offset))
                 } else {
@@ -1435,35 +1441,36 @@ impl<'a> LeanFuncInfo<'a> {
             match statement {
                 StatementDesc::TempVar(var)|StatementDesc::LocalVar(var) => {
                     if let Some(expr) = &var.expr {
-                        if let Some(offset) = should_add_arg(&expr.var_a) {
+                        if let Some(offset) = should_add_arg(&expr.var_a, &let_vars) {
                             vars.insert(expr.var_a.name.clone(), expr.var_a.var_expr.clone());
                         }
                         if let Some(var_b) = &expr.var_b {
-                            if let Some(offset) = should_add_arg(&var_b) {
+                            if let Some(offset) = should_add_arg(&var_b, &let_vars) {
                                 vars.insert(var_b.name.clone(), var_b.var_expr.clone());
                             }
                         }
                     }
                 },
                 StatementDesc::Let(assign) => {
-                    if let Some(offset) = should_add_arg(&assign.expr.var_a) {
+                    let_vars.insert(assign.lhs.name.clone());
+                    if let Some(offset) = should_add_arg(&assign.expr.var_a, &let_vars) {
                         vars.insert(assign.expr.var_a.name.clone(), assign.expr.var_a.var_expr.clone());
                     }
                     if let Some(var_b) = &assign.expr.var_b {
-                        if let Some(offset) = should_add_arg(&var_b) {
+                        if let Some(offset) = should_add_arg(&var_b, &let_vars) {
                             vars.insert(var_b.name.clone(), var_b.var_expr.clone());
                         }
                     }
                 },
                 StatementDesc::Assert(assign) => {
-                    if let Some(offset) = should_add_arg(&assign.lhs) {
+                    if let Some(offset) = should_add_arg(&assign.lhs, &let_vars) {
                         vars.insert(assign.lhs.name.clone(), assign.lhs.var_expr.clone());
                     }
-                    if let Some(offset) = should_add_arg(&assign.expr.var_a) {
+                    if let Some(offset) = should_add_arg(&assign.expr.var_a, &let_vars) {
                         vars.insert(assign.expr.var_a.name.clone(), assign.expr.var_a.var_expr.clone());
                     }
                     if let Some(var_b) = &assign.expr.var_b {
-                        if let Some(offset) = should_add_arg(&var_b) {
+                        if let Some(offset) = should_add_arg(&var_b, &let_vars) {
                             vars.insert(var_b.name.clone(), var_b.var_expr.clone());
                         }
                     }
@@ -1471,7 +1478,7 @@ impl<'a> LeanFuncInfo<'a> {
                 StatementDesc::Jump(jump) => {
 
                     if let Some(cond_var) = &jump.cond_var {
-                        if let Some(offset) = should_add_arg(&cond_var) {
+                        if let Some(offset) = should_add_arg(&cond_var, &let_vars) {
                             vars.insert(cond_var.name.clone(), cond_var.var_expr.clone());
                         }
                     };
@@ -1483,11 +1490,15 @@ impl<'a> LeanFuncInfo<'a> {
                             &jump.target,
                             Some(start_ap_offset),
                         ) {
-                            vars.insert(arg_name, arg_expr);
+                            if !let_vars.contains(&arg_name) {
+                                vars.insert(arg_name, arg_expr);
+                            }
                         }
                     } else { // jump to a return label
                         for (arg_name, arg_expr) in self.get_ret_block_args(&jump.target, start_ap_offset) {
-                            vars.insert(arg_name, arg_expr);
+                            if !let_vars.contains(&arg_name) {
+                                vars.insert(arg_name, arg_expr);
+                            }
                         }
                     }
                     if jump.cond_var.is_none() {
@@ -1865,6 +1876,9 @@ fn generate_soundness_spec_prelude(main_func_name: &str) -> Vec<String> {
     prelude.push(String::from("import Verification.Semantics.Soundness.Prelude"));
     prelude.push(String::from("import Verification.Libfuncs.Common"));
     prelude.push(String::from(""));
+    prelude.push(String::from("set_option linter.unusedVariables false"));
+    prelude.push(String::from("set_option linter.unusedSectionVars false"));
+    prelude.push(String::from(""));
     prelude.push(String::from("open Tactic"));
     prelude.push(String::from("set_option autoImplicit false"));
     prelude.push("set_option maxRecDepth 1024".into());
@@ -1883,6 +1897,11 @@ fn generate_soundness_prelude(main_func_name: &str) -> Vec<String> {
     prelude.push(String::from("import Verification.Libfuncs.Common"));
     prelude.push(format!("import Verification.Libfuncs.XXX.{}", lean_soundness_spec_file_name(main_func_name, false)));
     prelude.push(format!("import Verification.Libfuncs.XXX.{}", lean_code_file_name(main_func_name, false)));
+    prelude.push(String::from(""));
+    prelude.push(String::from("set_option linter.unusedVariables false"));
+    prelude.push(String::from("set_option linter.unusedSectionVars false"));
+    prelude.push(String::from("set_option linter.unusedTactic false"));
+    prelude.push(String::from("set_option linter.unreachableTactic false"));
     prelude.push(String::from(""));
     prelude.push(String::from("open Tactic"));
     prelude.push(String::from("set_option autoImplicit false"));
@@ -1903,6 +1922,9 @@ fn generate_completeness_spec_prelude(main_func_name: &str) -> Vec<String> {
     prelude.push(String::from("import Verification.Semantics.Soundness.Prelude"));
     prelude.push(String::from("import Verification.Libfuncs.Common"));
     prelude.push(String::from(""));
+    prelude.push(String::from("set_option linter.unusedVariables false"));
+    prelude.push(String::from("set_option linter.unusedSectionVars false"));
+    prelude.push(String::from(""));
     prelude.push(String::from("open Tactic"));
 
     prelude.push(String::from("set_option autoImplicit false"));
@@ -1922,11 +1944,16 @@ fn generate_completeness_prelude(main_func_name: &str) -> Vec<String> {
     prelude.push(format!("import Verification.Libfuncs.XXX.{}", lean_completeness_spec_file_name(main_func_name, false)));
     prelude.push(format!("import Verification.Libfuncs.XXX.{}", lean_code_file_name(main_func_name, false)));
     prelude.push(String::from(""));
+    prelude.push(String::from("set_option linter.unusedVariables false"));
+    prelude.push(String::from("set_option linter.unusedSectionVars false"));
+    prelude.push(String::from("set_option linter.unusedTactic false"));
+    prelude.push(String::from("set_option linter.unreachableTactic false"));
+    prelude.push(String::from(""));
     prelude.push(String::from("open Tactic"));
     prelude.push(String::from("open Mrel"));
     prelude.push(String::from("set_option autoImplicit false"));
     prelude.push(String::from("set_option maxRecDepth 1024"));
-    prelude.push(String::from("set_option maxHeartbeats 1000000"));
+    prelude.push(String::from("set_option maxHeartbeats 10000000"));
     prelude.push(String::from(""));
     prelude.push(format!("open {}", lean_vm_code_name(main_func_name)));
     prelude.push(format!("open {}", lean_completeness_name(main_func_name)));
@@ -2704,7 +2731,7 @@ impl AutoProof {
         } else {
             rws.push(tv_rw);
             if op == "-" {
-                rws.push("add_sub_cancel".into())
+                rws.push("add_sub_cancel_right".into())
             }
             vec![format!("rw [{all_rws}]", all_rws = rws.join(", "))]
         }
@@ -2735,7 +2762,7 @@ impl AutoProof {
         } else {
             let exact: String = if op == "-" {
                 rws.push(ha_rw);
-                rws.push("add_sub_cancel".into());
+                rws.push("add_sub_cancel_right".into());
                 "".into()
             } else {
                 format!(" ; exact {ha_rw}")
@@ -3376,7 +3403,7 @@ impl LeanGenerator for AutoProof {
             if is_rc {
                 self.push_main(indent, &format!("mkdef hl_{ret_name} : {ret_name} = {rc_arg_name} + {max_rc_count}"));
 
-                let htv_str4: String = format!("have htv_{ret_name} : {ret_name} = _");
+                let htv_str4: String = format!("let htv_{ret_name} : {ret_name} = _");
                 let htv_copy: String = htv_str4.clone();
                 self.push_main(indent, &(htv_copy + " := by"));
                 self.push_main(indent, &format!("  apply Eq.symm; apply Eq.trans ret_{ret_name}"));
@@ -3763,11 +3790,7 @@ impl CompletenessProof {
             } else {
                 self.push_main(indent, &format!("simp only [←{var_rw}, ←{orig_arg_rw}]"));
             }
-        } /*else if ap_offset == 0 {
-            self.push_main(indent, "simp only [Int.sub_self]");
-        } else {
-            self.push_main(indent, &format!("simp only [Int.add_comm σ.ap {ap_offset}, Int.add_sub_cancel]"));
-        }*/
+        }
     }
 
     /// Generates the description of the rhs variables of an assert or variable assignment. Also generates
@@ -3904,15 +3927,13 @@ impl CompletenessProof {
             let offset = rc_offset.to_usize().expect("rc offset out of bounds");
             self.push_main(indent, &format!("simp only [h_rc_plus_{offset}]"));
             self.push_main(indent, "try dsimp [exec_vals, rc_vals]");
-            self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel', sub_self] ; try norm_num1");
-            // self.push_main(indent, "try ring_nf");
-            // self.push_main(indent, &format!("simp only [Int.add_comm _ {offset}, Int.add_sub_cancel]"));
+            self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel_left, sub_self] ; try norm_num1");
             if 0 < let_simps.len() {
                 self.push_main(indent, &format!("try simp only [{simps}]", simps = let_simps.join(", ")));
             }
         } else {
             self.push_main(indent, "try dsimp [exec_vals, rc_vals]");
-            self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel', sub_self] ; try norm_num1");
+            self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel_left, sub_self] ; try norm_num1");
             // self.push_main(indent, "try ring_nf");
             if !is_rc_var {
                 if let Some(simps) = assert_simps {
@@ -4148,7 +4169,6 @@ impl CompletenessProof {
                 self.push_main(indent, "try simp only [add_zero]");
             }
             self.push_main(indent, &format!("simp only [h_ap_plus_{ap_offset}]"));
-            // self.push_main(indent, "try simp only [add_sub_add_comm, add_sub_right_comm, sub_add_cancel', sub_self] ; try norm_num1");
             self.push_main(indent, "try dsimp [exec_vals, rc_vals]");
             self.push_main(indent, "try ring_nf");
             self.push_main(indent, "try rfl");
