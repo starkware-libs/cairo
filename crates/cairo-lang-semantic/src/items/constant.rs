@@ -376,6 +376,7 @@ pub fn validate_const_expr(ctx: &mut ComputationContext<'_>, expr_id: ExprId) {
         arenas: &ctx.arenas,
         vars: Default::default(),
         generic_substitution: Default::default(),
+        depth: 0,
         diagnostics: ctx.diagnostics,
     };
     eval_ctx.validate(expr_id);
@@ -419,6 +420,7 @@ pub fn resolve_const_expr_and_evaluate(
                 arenas: &ctx.arenas,
                 vars: Default::default(),
                 generic_substitution: Default::default(),
+                depth: 0,
                 diagnostics: ctx.diagnostics,
             };
             eval_ctx.validate(value.id);
@@ -469,6 +471,7 @@ struct ConstantEvaluateContext<'a> {
     arenas: &'a Arenas,
     vars: OrderedHashMap<VarId, ConstValue>,
     generic_substitution: GenericSubstitution,
+    depth: usize,
     diagnostics: &'a mut SemanticDiagnostics,
 }
 impl ConstantEvaluateContext<'_> {
@@ -903,6 +906,13 @@ impl ConstantEvaluateContext<'_> {
         require(signature.is_const)?;
         let generic_substitution = body_id.substitution(db).ok()?;
         let body = db.function_body(concrete_body_id).ok()?;
+        const MAX_CONST_EVAL_DEPTH: usize = 100;
+        if self.depth > MAX_CONST_EVAL_DEPTH {
+            return Some(ConstValue::Missing(
+                self.diagnostics
+                    .report(stable_ptr, SemanticDiagnosticKind::ConstantCalculationDepthExceeded),
+            ));
+        }
         let mut diagnostics = SemanticDiagnostics::default();
         let mut inner = ConstantEvaluateContext {
             db,
@@ -915,19 +925,25 @@ impl ConstantEvaluateContext<'_> {
                 .zip(args.iter().cloned())
                 .collect(),
             generic_substitution,
+            depth: self.depth + 1,
             diagnostics: &mut diagnostics,
         };
         let value = inner.evaluate(body.body_expr);
         for diagnostic in diagnostics.build().get_all() {
             let location = diagnostic.location(db.elongate());
-            let (inner_diag, mut notes) =
-                if let SemanticDiagnosticKind::InnerFailedConstantCalculation(inner_diag, notes) =
-                    diagnostic.kind
-                {
+            let (inner_diag, mut notes) = match diagnostic.kind {
+                SemanticDiagnosticKind::ConstantCalculationDepthExceeded => {
+                    self.diagnostics.report(
+                        stable_ptr,
+                        SemanticDiagnosticKind::ConstantCalculationDepthExceeded,
+                    );
+                    continue;
+                }
+                SemanticDiagnosticKind::InnerFailedConstantCalculation(inner_diag, notes) => {
                     (inner_diag, notes)
-                } else {
-                    (diagnostic.into(), vec![])
-                };
+                }
+                _ => (diagnostic.into(), vec![]),
+            };
             notes.push(DiagnosticNote::with_location(
                 format!("In `{}`", concrete_function.full_name(db)),
                 location,
