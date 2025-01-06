@@ -112,7 +112,6 @@ fn test_dict_of_nullable() {
     dict.insert(11, nullable::nullable_from_box(BoxTrait::new(2)));
     let val10 = dict[10].deref();
     let val11 = dict[11].deref();
-    let val12 = dict[12];
     assert_eq(@val10, @1, 'dict[10] == 1');
     assert_eq(@val11, @2, 'dict[11] == 2');
     assert(
