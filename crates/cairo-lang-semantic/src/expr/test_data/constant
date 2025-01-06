@@ -64,6 +64,12 @@ const FAILING_CALC: felt252 = if true {
 
 const FUNC_CALC_SUCCESS: () = panic_if_true(false);
 const FUNC_CALC_FAILURE: () = panic_if_true(true);
+const VALID_EQ: () = panic_if_true(1 == 2);
+const VALID_NE: () = panic_if_true(1 != 1);
+const VALID_LT: () = panic_if_true(1_usize < 1);
+const VALID_LE: () = panic_if_true(2_usize <= 1);
+const VALID_GT: () = panic_if_true(1_usize > 1);
+const VALID_GE: () = panic_if_true(1_usize >= 2);
 
 const fn panic_if_true(cond: bool) {
     if cond {
@@ -117,12 +123,12 @@ error: Failed to calculate constant.
 const FUNC_CALC_FAILURE: () = panic_if_true(true);
                               ^^^^^^^^^^^^^^^^^^^
 note: In `test::panic_if_true`:
-  --> lib.cairo:27:9
+  --> lib.cairo:33:9
         core::panic_with_felt252('assertion failed')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Constant calculation depth exceeded.
- --> lib.cairo:35:43
+ --> lib.cairo:41:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 

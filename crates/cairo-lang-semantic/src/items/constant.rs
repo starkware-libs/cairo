@@ -4,7 +4,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId, TraitConstantId, TraitId, VarId,
+    NamedLanguageElementId, TraitConstantId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, ToMaybe, skip_diagnostic,
@@ -14,6 +14,7 @@ use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{
     Intern, LookupIntern, define_short_id, extract_matches, require, try_extract_matches,
 };
@@ -609,18 +610,7 @@ impl ConstantEvaluateContext<'_> {
         let Ok(trait_id) = db.impl_def_trait(impl_def) else {
             return false;
         };
-        [
-            self.neg_trait,
-            self.add_trait,
-            self.sub_trait,
-            self.mul_trait,
-            self.div_trait,
-            self.rem_trait,
-            self.bit_and_trait,
-            self.bit_or_trait,
-            self.bit_xor_trait,
-        ]
-        .contains(&trait_id)
+        self.const_traits.contains(&trait_id)
     }
 
     /// Evaluate the given const expression value.
@@ -830,6 +820,20 @@ impl ConstantEvaluateContext<'_> {
             return calc_result;
         }
 
+        let imp = extract_matches!(concrete_function.generic_function, GenericFunctionId::Impl);
+        let bool_value = |condition: bool| {
+            ConstValue::Enum(
+                if condition { true_variant(db) } else { false_variant(db) },
+                ConstValue::Struct(vec![], unit_ty(db)).into(),
+            )
+        };
+
+        if imp.function == self.eq_fn {
+            return bool_value(args[0] == args[1]);
+        } else if imp.function == self.ne_fn {
+            return bool_value(args[0] != args[1]);
+        }
+
         let args = match args
             .into_iter()
             .map(|arg| match arg {
@@ -855,28 +859,31 @@ impl ConstantEvaluateContext<'_> {
             Ok(args) => args,
             Err(err) => return ConstValue::Missing(err),
         };
-
-        let imp = extract_matches!(concrete_function.generic_function, GenericFunctionId::Impl);
-        let is_felt252_ty = expr.ty == db.core_felt252_ty();
-        let mut value = match imp.impl_id.concrete_trait(self.db).unwrap().trait_id(self.db) {
-            id if id == self.neg_trait => -&args[0],
-            id if id == self.add_trait => &args[0] + &args[1],
-            id if id == self.sub_trait => &args[0] - &args[1],
-            id if id == self.mul_trait => &args[0] * &args[1],
-            id if (id == self.div_trait || id == self.rem_trait) && args[1].is_zero() => {
+        let mut value = match imp.function {
+            id if id == self.neg_fn => -&args[0],
+            id if id == self.add_fn => &args[0] + &args[1],
+            id if id == self.sub_fn => &args[0] - &args[1],
+            id if id == self.mul_fn => &args[0] * &args[1],
+            id if (id == self.div_fn || id == self.rem_fn) && args[1].is_zero() => {
                 return ConstValue::Missing(
                     self.diagnostics
                         .report(expr.stable_ptr.untyped(), SemanticDiagnosticKind::DivisionByZero),
                 );
             }
-            id if id == self.div_trait && !is_felt252_ty => &args[0] / &args[1],
-            id if id == self.rem_trait && !is_felt252_ty => &args[0] % &args[1],
-            id if id == self.bit_and_trait && !is_felt252_ty => &args[0] & &args[1],
-            id if id == self.bit_or_trait && !is_felt252_ty => &args[0] | &args[1],
-            id if id == self.bit_xor_trait && !is_felt252_ty => &args[0] ^ &args[1],
-            _ => unreachable!("Unexpected function call in constant lowering: {:?}", expr),
+            id if id == self.div_fn => &args[0] / &args[1],
+            id if id == self.rem_fn => &args[0] % &args[1],
+            id if id == self.bit_and_fn => &args[0] & &args[1],
+            id if id == self.bit_or_fn => &args[0] | &args[1],
+            id if id == self.bit_xor_fn => &args[0] ^ &args[1],
+            id if id == self.lt_fn => return bool_value(args[0] < args[1]),
+            id if id == self.le_fn => return bool_value(args[0] <= args[1]),
+            id if id == self.gt_fn => return bool_value(args[0] > args[1]),
+            id if id == self.ge_fn => return bool_value(args[0] >= args[1]),
+            _ => {
+                unreachable!("Unexpected function call in constant lowering: {:?}", expr)
+            }
         };
-        if is_felt252_ty {
+        if expr.ty == db.core_felt252_ty() {
             // Specifically handling felt252s since their evaluation is more complex.
             value %= BigInt::from_str_radix(
                 "800000000000011000000000000000000000000000000000000000000000001",
@@ -1113,24 +1120,38 @@ pub fn const_calc_info(db: &dyn SemanticGroup) -> Arc<ConstCalcInfo> {
 /// Holds static information about extern functions required for const calculations.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ConstCalcInfo {
-    /// The trait for negation.
-    pub neg_trait: TraitId,
-    /// The trait for addition.
-    pub add_trait: TraitId,
-    /// The trait for subtraction.
-    pub sub_trait: TraitId,
-    /// The trait for multiplication.
-    pub mul_trait: TraitId,
-    /// The trait for division.
-    pub div_trait: TraitId,
-    /// The trait for remainder.
-    pub rem_trait: TraitId,
-    /// The trait for bitwise and.
-    pub bit_and_trait: TraitId,
-    /// The trait for bitwise or.
-    pub bit_or_trait: TraitId,
-    /// The trait for bitwise xor.
-    pub bit_xor_trait: TraitId,
+    /// Traits that are allowed for consts if their impls is in the corelib.
+    const_traits: UnorderedHashSet<TraitId>,
+    /// The trait function for `Neg::neg`.
+    pub neg_fn: TraitFunctionId,
+    /// The trait function for `Add::add`.
+    pub add_fn: TraitFunctionId,
+    /// The trait function for `Sub::sub`.
+    pub sub_fn: TraitFunctionId,
+    /// The trait function for `Mul::mul`.
+    pub mul_fn: TraitFunctionId,
+    /// The trait function for `Div::div`.
+    pub div_fn: TraitFunctionId,
+    /// The trait function for `Rem::rem`.
+    pub rem_fn: TraitFunctionId,
+    /// The trait function for `BitAnd::bitand`.
+    pub bit_and_fn: TraitFunctionId,
+    /// The trait function for `BitOr::bitor`.
+    pub bit_or_fn: TraitFunctionId,
+    /// The trait function for `BitXor::bitxor`.
+    pub bit_xor_fn: TraitFunctionId,
+    /// The trait function for `PartialEq::eq`.
+    pub eq_fn: TraitFunctionId,
+    /// The trait function for `PartialEq::ne`.
+    pub ne_fn: TraitFunctionId,
+    /// The trait function for `PartialOrd::lt`.
+    pub lt_fn: TraitFunctionId,
+    /// The trait function for `PartialOrd::le`.
+    pub le_fn: TraitFunctionId,
+    /// The trait function for `PartialOrd::gt`.
+    pub gt_fn: TraitFunctionId,
+    /// The trait function for `PartialOrd::ge`.
+    pub ge_fn: TraitFunctionId,
     /// The function for panicking with a felt252.
     pub panic_with_felt252: FunctionId,
 }
@@ -1138,16 +1159,51 @@ pub struct ConstCalcInfo {
 impl ConstCalcInfo {
     /// Creates a new ConstCalcInfo.
     pub fn new(db: &dyn SemanticGroup) -> Self {
+        let neg_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Neg".into());
+        let add_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Add".into());
+        let sub_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Sub".into());
+        let mul_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Mul".into());
+        let div_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Div".into());
+        let rem_trait = get_core_trait(db, CoreTraitContext::TopLevel, "Rem".into());
+        let bit_and_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitAnd".into());
+        let bit_or_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitOr".into());
+        let bit_xor_trait = get_core_trait(db, CoreTraitContext::TopLevel, "BitXor".into());
+        let partial_eq_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialEq".into());
+        let partial_ord_trait = get_core_trait(db, CoreTraitContext::TopLevel, "PartialOrd".into());
+        let trait_fn = |trait_id, name: &str| {
+            db.trait_function_by_name(trait_id, name.into()).unwrap().unwrap()
+        };
         Self {
-            neg_trait: get_core_trait(db, CoreTraitContext::TopLevel, "Neg".into()),
-            add_trait: get_core_trait(db, CoreTraitContext::TopLevel, "Add".into()),
-            sub_trait: get_core_trait(db, CoreTraitContext::TopLevel, "Sub".into()),
-            mul_trait: get_core_trait(db, CoreTraitContext::TopLevel, "Mul".into()),
-            div_trait: get_core_trait(db, CoreTraitContext::TopLevel, "Div".into()),
-            rem_trait: get_core_trait(db, CoreTraitContext::TopLevel, "Rem".into()),
-            bit_and_trait: get_core_trait(db, CoreTraitContext::TopLevel, "BitAnd".into()),
-            bit_or_trait: get_core_trait(db, CoreTraitContext::TopLevel, "BitOr".into()),
-            bit_xor_trait: get_core_trait(db, CoreTraitContext::TopLevel, "BitXor".into()),
+            const_traits: [
+                neg_trait,
+                add_trait,
+                sub_trait,
+                mul_trait,
+                div_trait,
+                rem_trait,
+                bit_and_trait,
+                bit_or_trait,
+                bit_xor_trait,
+                partial_eq_trait,
+                partial_ord_trait,
+            ]
+            .into_iter()
+            .collect(),
+            neg_fn: trait_fn(neg_trait, "neg"),
+            add_fn: trait_fn(add_trait, "add"),
+            sub_fn: trait_fn(sub_trait, "sub"),
+            mul_fn: trait_fn(mul_trait, "mul"),
+            div_fn: trait_fn(div_trait, "div"),
+            rem_fn: trait_fn(rem_trait, "rem"),
+            bit_and_fn: trait_fn(bit_and_trait, "bitand"),
+            bit_or_fn: trait_fn(bit_or_trait, "bitor"),
+            bit_xor_fn: trait_fn(bit_xor_trait, "bitxor"),
+            eq_fn: trait_fn(partial_eq_trait, "eq"),
+            ne_fn: trait_fn(partial_eq_trait, "ne"),
+            lt_fn: trait_fn(partial_ord_trait, "lt"),
+            le_fn: trait_fn(partial_ord_trait, "le"),
+            gt_fn: trait_fn(partial_ord_trait, "gt"),
+            ge_fn: trait_fn(partial_ord_trait, "ge"),
             panic_with_felt252: get_core_function_id(db, "panic_with_felt252".into(), vec![]),
         }
     }
