@@ -201,6 +201,16 @@
 //! [`Ok`]: Result::Ok
 //! [`Err`]: Result::Err
 //!
+//! ## Iterating over `Result`
+//!
+//! A [`Result`] can be iterated over. This can be helpful if you need an
+//! iterator that is conditionally empty. The iterator will either produce
+//! a single value (when the [`Result`] is [`Ok`]), or produce no values
+//! (when the [`Result`] is [`Err`]). For example, [`into_iter`]
+//! contains [`Some(v)`] if the [`Result`] is [`Ok(v)`], and [`None`] if the
+//! [`Result`] is [`Err`].
+//!
+//! [`into_iter`]: IntoIterator::into_iter
 
 #[allow(unused_imports)]
 use crate::array::{ArrayTrait, SpanTrait};
@@ -684,5 +694,32 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
             Result::Ok(x) => Result::Ok(x),
             Result::Err(e) => Result::Err(op(e)),
         }
+    }
+}
+
+
+impl ResultIntoIterator<
+    T, E, +Destruct<T>, +Destruct<E>,
+> of crate::iter::IntoIterator<Result<T, E>> {
+    type IntoIter = crate::option::OptionIter<T>;
+
+    /// Returns a consuming iterator over the possibly contained value.
+    ///
+    /// The iterator yields one value if the result is [`Result::Ok`], otherwise none.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x: Result<u32, ByteArray> = Result::Ok(5);
+    /// let mut x_iter = x.into_iter();
+    /// assert!(x_iter.next() == Option::Some(5));
+    ///
+    /// let x: Result<u32, ByteArray> = Result::Err("nothing!");
+    /// let mut x_iter = x.into_iter();
+    /// assert!(x_iter.next() == Option::None);
+    /// ```
+    #[inline]
+    fn into_iter(self: Result<T, E>) -> crate::option::OptionIter<T> {
+        self.ok().into_iter()
     }
 }

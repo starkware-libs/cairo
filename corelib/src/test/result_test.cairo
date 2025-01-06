@@ -312,3 +312,18 @@ fn test_result_err_map_err() {
     let x: Result<u32, u32> = Result::Err(13);
     assert!(x.map_err(stringify) == Result::Err("error code: 13"));
 }
+
+#[test]
+fn test_result_ok_iter_next() {
+    let x: Result<u32, ByteArray> = Result::Ok(5);
+    let mut x_iter = x.into_iter();
+    assert!(x_iter.next() == Option::Some(5));
+    assert!(x_iter.next() == Option::None);
+}
+
+#[test]
+fn test_result_err_iter_next() {
+    let x: Result<u32, ByteArray> = Result::Err("nothing!");
+    let mut x_iter = x.into_iter();
+    assert!(x_iter.next() == Option::None);
+}
