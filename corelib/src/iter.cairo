@@ -228,6 +228,6 @@
 //! ```
 //!
 //! [`map`]: Iterator::map
-mod traits;
 mod adapters;
+mod traits;
 pub use traits::{IntoIterator, Iterator};
