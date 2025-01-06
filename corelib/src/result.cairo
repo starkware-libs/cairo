@@ -242,7 +242,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let result: Result<felt252, felt252> = Result::Ok(123);
     /// assert!(result.expect('no value') == 123);
     /// ```
-    fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+    const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
         match self {
             Result::Ok(x) => x,
             Result::Err(_) => crate::panic_with_felt252(err),
@@ -261,7 +261,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let result: Result<felt252, felt252> = Result::Ok(123);
     /// assert!(result.unwrap() == 123);
     /// ```
-    fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
+    const fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
         self.expect('Result::unwrap failed.')
     }
 
@@ -276,7 +276,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let result: Result<felt252, felt252> = Result::Err('no value');
     /// assert!(result.unwrap_or(456) == 456);
     /// ```
-    fn unwrap_or<+Destruct<T>, +Destruct<E>>(self: Result<T, E>, default: T) -> T {
+    const fn unwrap_or<+Destruct<T>, +Destruct<E>>(self: Result<T, E>, default: T) -> T {
         match self {
             Result::Ok(x) => x,
             Result::Err(_) => default,
@@ -453,7 +453,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let result: Result<felt252, felt252> = Result::Err('no value');
     /// assert!(result.expect_err('result is ok') == 'no value');
     /// ```
-    fn expect_err<+PanicDestruct<T>>(self: Result<T, E>, err: felt252) -> E {
+    const fn expect_err<+PanicDestruct<T>>(self: Result<T, E>, err: felt252) -> E {
         match self {
             Result::Ok(_) => crate::panic_with_felt252(err),
             Result::Err(x) => x,
@@ -472,7 +472,7 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// let result: Result<felt252, felt252> = Result::Err('no value');
     /// assert!(result.unwrap_err() == 'no value');
     /// ```
-    fn unwrap_err<+PanicDestruct<T>>(self: Result<T, E>) -> E {
+    const fn unwrap_err<+PanicDestruct<T>>(self: Result<T, E>) -> E {
         self.expect_err('Result::unwrap_err failed.')
     }
 

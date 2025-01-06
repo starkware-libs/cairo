@@ -56,6 +56,38 @@ impl Felt252Div of Div<felt252> {
 }
 const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
 
+const FAILING_CALC: felt252 = if true {
+    core::panic_with_felt252('this should fail')
+} else {
+    70
+};
+
+/// Copy of `assert` to avoid getting paths from the corelib.
+const fn assert(cond: bool) {
+    if !cond {
+        core::panic_with_felt252('failed assertion')
+    }
+}
+
+const FUNC_CALC_SUCCESS: () = assert(true);
+const FUNC_CALC_FAILURE: () = assert(false);
+const VALID_EQ: () = assert(1 == 1);
+const VALID_NE: () = assert(1 != 2);
+const VALID_LT: () = assert(1_usize < 2);
+const VALID_LE: () = assert(1_usize <= 1);
+const VALID_GT: () = assert(2_usize > 1);
+const VALID_GE: () = assert(1_usize >= 1);
+
+const FUNC_CALC_SUCCESS_OPTION: felt252 = Option::Some(5).unwrap();
+const FUNC_CALC_SUCCESS_RESULT1: felt252 = Result::<_, felt252>::Ok(5).unwrap();
+const FUNC_CALC_SUCCESS_RESULT2: felt252 = Result::<felt252, _>::Err(5).unwrap_err();
+
+const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
+
+const fn call_myself() -> felt252 {
+    call_myself()
+}
+
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:17
@@ -72,16 +104,6 @@ error: The '?' operator is not supported outside of functions.
     Option::<felt252>::Some(0)?
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: A numeric literal of type core::bool cannot be created.
- --> lib.cairo:6:42
-const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                         ^
-
-error: A numeric literal of type core::bool cannot be created.
- --> lib.cairo:6:46
-const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
-                                             ^
-
 error: Trait has no implementation in context: core::traits::Add::<core::bool>.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
@@ -91,6 +113,25 @@ error: This expression is not supported as constant.
  --> lib.cairo:14:47
 const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
                                               ^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:17:5
+    core::panic_with_felt252('this should fail')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:30:31
+const FUNC_CALC_FAILURE: () = assert(false);
+                              ^^^^^^^^^^^^^
+note: In `test::assert`:
+  --> lib.cairo:25:9
+        core::panic_with_felt252('failed assertion')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Constant calculation depth exceeded.
+ --> lib.cairo:42:43
+const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
+                                          ^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -109,11 +150,6 @@ foo
 const DEFAULT_VAR: bool = 1;
 
 //! > expected_diagnostics
-error: A numeric literal of type core::bool cannot be created.
- --> lib.cairo:1:27
-const DEFAULT_VAR: bool = 1;
-                          ^
-
 error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:1:27
 const DEFAULT_VAR: bool = 1;
@@ -136,11 +172,6 @@ foo
 const B: u8 = -1;
 
 //! > expected_diagnostics
-error: The value does not fit within the range of type core::integer::u8.
- --> lib.cairo:1:15
-const B: u8 = -1;
-              ^^
-
 error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>.
  --> lib.cairo:1:15
 const B: u8 = -1;
@@ -230,47 +261,6 @@ const COMPLEX_STRUCT: ComplexStruct = ComplexStruct {
 };
 
 const CONST_MEMBER: u8 = COMPLEX_STRUCT.a;
-
-//! > semantic_diagnostics
-error: The value does not fit within the range of type core::integer::u8.
- --> lib.cairo:1:26
-const UNSIGNED_VAR: u8 = 256;
-                         ^*^
-
-error: The value does not fit within the range of type core::integer::i8.
- --> lib.cairo:2:24
-const SIGNED_VAR: i8 = 128;
-                       ^*^
-
-error: The value does not fit within the range of type core::integer::i8.
- --> lib.cairo:5:36
-const OUT_OF_RANGE_NEGATIVE1: i8 = -0x81;
-                                   ^***^
-
-error: The value does not fit within the range of type core::integer::i16.
- --> lib.cairo:6:37
-const OUT_OF_RANGE_NEGATIVE2: i16 = -0x8001;
-                                    ^*****^
-
-error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
- --> lib.cairo:7:36
-const ZERO_NON_ZERO: NonZero<u8> = 0;
-                                   ^
-
-error: The value does not fit within the range of type core::integer::i8.
- --> lib.cairo:9:39
-const CALCULATION_WITH_OVERFLOW: i8 = 120 + 10;
-                                      ^******^
-
-error: This expression is not supported as constant.
- --> lib.cairo:10:39
-const CALCULATION_WITH_DIVISION: u8 = 120 / 0;
-                                      ^*****^
-
-error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
- --> lib.cairo:28:8
-    d: 0,
-       ^
 
 //! > expected_diagnostics
 error: The value does not fit within the range of type core::integer::u8.

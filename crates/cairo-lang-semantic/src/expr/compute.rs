@@ -62,7 +62,7 @@ use crate::diagnostic::{
     ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics,
     SemanticDiagnosticsBuilder, TraitInferenceErrors, UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate};
+use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, validate_const_expr};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::feature_kind::extract_item_feature_config;
 use crate::items::functions::function_signature_params;
@@ -1085,7 +1085,9 @@ pub fn compute_root_expr(
     inference.finalize(ctx.diagnostics, syntax.into());
 
     ctx.apply_inference_rewriter();
-
+    if ctx.signature.map(|s| s.is_const) == Some(true) {
+        validate_const_expr(ctx, res);
+    }
     Ok(res)
 }
 
@@ -3610,6 +3612,7 @@ pub fn compute_statement_semantic(
                         &rhs_expr,
                         stmt_item_syntax.stable_ptr().untyped(),
                         explicit_type,
+                        false,
                     );
                     let name_syntax = const_syntax.name(syntax_db);
                     let name = name_syntax.text(db.upcast());

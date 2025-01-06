@@ -1608,6 +1608,7 @@ impl<'db> Resolver<'db> {
                     &value,
                     generic_arg_syntax.stable_ptr().untyped(),
                     const_param.ty,
+                    false,
                 );
 
                 // Update `self` data with const_eval_resolver's data.
