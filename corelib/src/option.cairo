@@ -240,7 +240,7 @@ pub trait OptionTrait<T> {
     /// let value = option.expect('no value');
     /// assert!(value == 123);
     /// ```
-    fn expect(self: Option<T>, err: felt252) -> T;
+    const fn expect(self: Option<T>, err: felt252) -> T;
 
     /// Returns the contained `Some` value, consuming the `self` value.
     ///
@@ -255,7 +255,7 @@ pub trait OptionTrait<T> {
     /// let value = option.unwrap();
     /// assert!(value == 123);
     /// ```
-    fn unwrap(self: Option<T>) -> T;
+    const fn unwrap(self: Option<T>) -> T;
 
     /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
     /// `Result::Ok(v)` and `Option::None` to `Result::Err(err)`.
@@ -477,7 +477,7 @@ pub trait OptionTrait<T> {
     /// let option = Option::None;
     /// assert!(option.unwrap_or(456) == 456);
     /// ```
-    fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T;
+    const fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T;
 
     /// Returns the contained `Some` value if `self` is `Option::Some(x)`. Otherwise, returns
     /// `Default::<T>::default()`.
@@ -582,7 +582,7 @@ pub trait OptionTrait<T> {
 
 pub impl OptionTraitImpl<T> of OptionTrait<T> {
     #[inline(always)]
-    fn expect(self: Option<T>, err: felt252) -> T {
+    const fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
             Option::None => crate::panic_with_felt252(err),
@@ -590,7 +590,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline(always)]
-    fn unwrap(self: Option<T>) -> T {
+    const fn unwrap(self: Option<T>) -> T {
         self.expect('Option::unwrap failed.')
     }
 
@@ -694,7 +694,7 @@ pub impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline]
-    fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T {
+    const fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T {
         match self {
             Option::Some(x) => x,
             Option::None => default,
