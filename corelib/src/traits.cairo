@@ -323,7 +323,10 @@ pub trait BitNot<T> {
     fn bitnot(a: T) -> T;
 }
 
-/// A trait for comparing two values of the same type.
+/// A trait for types that form a partial order.
+///
+/// The `lt`, `le`, `gt`, and `ge` methods of this trait can be called using the `<`, `<=`, `>`, and
+/// `>=` operators, respectively.
 pub trait PartialOrd<T> {
     /// Returns whether `lhs` is lower than `rhs` as a boolean.
     ///
