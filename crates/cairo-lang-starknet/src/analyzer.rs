@@ -257,7 +257,7 @@ fn member_analyze(
     user_data_path.pop();
 }
 
-/// Adds diagnostics for a enum deriving `starknet::Store`.
+/// Adds diagnostics for an enum deriving `starknet::Store`.
 ///
 /// Specifically finds cases missing a `#[default]` variant.
 fn add_derive_store_enum_diags(

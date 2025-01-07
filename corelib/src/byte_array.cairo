@@ -153,7 +153,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// ba.append(@"2");
     /// assert!(ba == "12");
     /// ```
-    fn append(ref self: ByteArray, mut other: @ByteArray) {
+    fn append(ref self: ByteArray, other: @ByteArray) {
         let mut other_data = other.data.span();
 
         if self.pending_word_len == 0 {
@@ -509,7 +509,7 @@ impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
 impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
     type IntoIter = ByteArrayIter;
     #[inline]
-    fn into_iter(self: ByteArray) -> ByteArrayIter {
+    fn into_iter(self: ByteArray) -> Self::IntoIter {
         ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
     }
 }

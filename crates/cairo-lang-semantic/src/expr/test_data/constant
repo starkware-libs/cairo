@@ -56,6 +56,52 @@ impl Felt252Div of Div<felt252> {
 }
 const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
 
+const FAILING_CALC: felt252 = if true {
+    core::panic_with_felt252('this should fail')
+} else {
+    70
+};
+
+/// Copy of `assert` to avoid getting paths from the corelib.
+const fn assert(cond: bool) {
+    if !cond {
+        core::panic_with_felt252('failed assertion')
+    }
+}
+
+const FUNC_CALC_SUCCESS: () = assert(true);
+const FUNC_CALC_FAILURE: () = assert(false);
+const VALID_EQ: () = assert(1 == 1);
+const VALID_NE: () = assert(1 != 2);
+const VALID_LT: () = assert(1_usize < 2);
+const VALID_LE: () = assert(1_usize <= 1);
+const VALID_GT: () = assert(2_usize > 1);
+const VALID_GE: () = assert(1_usize >= 1);
+const VALID_DIVREM: () = assert(DivRem::div_rem(5_u8, 2) == (2, 1));
+use core::num::traits::Pow;
+
+const VALID_POW_MIN2_0: () = assert((-2_i8).pow(0) == 1);
+const VALID_POW_MIN2_3: () = assert((-2_i8).pow(3) == -8);
+const VALID_POW_MIN2_6: () = assert((-2_i8).pow(6) == 64);
+
+const VALID_POW_0_0: () = assert(0_felt252.pow(0) == 1);
+const VALID_POW_0_1: () = assert(0_felt252.pow(1) == 0);
+const VALID_POW_0_2: () = assert(0_felt252.pow(2) == 0);
+
+const VALID_POW_2_0: () = assert(2_felt252.pow(0) == 0b1);
+const VALID_POW_2_6: () = assert(2_felt252.pow(6) == 0b1000000);
+const VALID_POW_2_10: () = assert(2_felt252.pow(10) == 0b10000000000);
+
+const FUNC_CALC_SUCCESS_OPTION: felt252 = Option::Some(5).unwrap();
+const FUNC_CALC_SUCCESS_RESULT1: felt252 = Result::<_, felt252>::Ok(5).unwrap();
+const FUNC_CALC_SUCCESS_RESULT2: felt252 = Result::<felt252, _>::Err(5).unwrap_err();
+
+const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
+
+const fn call_myself() -> felt252 {
+    call_myself()
+}
+
 //! > expected_diagnostics
 error: Type not found.
  --> lib.cairo:1:17
@@ -81,6 +127,25 @@ error: This expression is not supported as constant.
  --> lib.cairo:14:47
 const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
                                               ^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:17:5
+    core::panic_with_felt252('this should fail')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:30:31
+const FUNC_CALC_FAILURE: () = assert(false);
+                              ^^^^^^^^^^^^^
+note: In `test::assert`:
+  --> lib.cairo:25:9
+        core::panic_with_felt252('failed assertion')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Constant calculation depth exceeded.
+ --> lib.cairo:56:43
+const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
+                                          ^^^^^^^^^^^^^
 
 //! > ==========================================================================
 

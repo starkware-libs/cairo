@@ -153,10 +153,9 @@ impl Felt252DictImpl<T, +Felt252DictValue<T>> of Felt252DictTrait<T> {
 
     #[inline]
     fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T {
-        let (entry, prev_value) = felt252_dict_entry_get(self, key);
-        let return_value = prev_value;
-        self = felt252_dict_entry_finalize(entry, prev_value);
-        return_value
+        let (entry, value) = felt252_dict_entry_get(self, key);
+        self = felt252_dict_entry_finalize(entry, value);
+        value
     }
 
     #[inline(never)]
