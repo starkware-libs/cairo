@@ -3,6 +3,7 @@ pub use starknet::storage::{
     StoragePointerWriteAccess,
 };
 pub use crate::ops::Deref;
+pub use crate::iter::{FromIterator, IntoIterator, Iterator};
 use crate::array::{Array, ArrayTrait, Span, SpanTrait, ToSpanTrait};
 use crate::box::{Box, BoxTrait};
 use crate::byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
@@ -37,7 +38,6 @@ use crate::traits::{
     Felt252DictValue, Into, Mul, Neg, Not, PanicDestruct, PartialEq, PartialOrd, Rem, Sub, TryInto,
     TupleSize0Copy, TupleSize0Drop,
 };
-pub use crate::iter::{FromIterator, IntoIterator, Iterator};
 use crate::zeroable::{NonZero, Zeroable};
 use crate::{
     BoolBitAnd, BoolBitOr, BoolBitXor, BoolFelt252DictValue, BoolIntoFelt252, BoolNot,

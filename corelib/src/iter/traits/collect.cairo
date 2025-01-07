@@ -17,9 +17,9 @@
 /// Basic usage:
 ///
 /// ```
-/// let range = (0..5_u32).into_iter();
+/// let iter = (0..5_u32).into_iter();
 ///
-/// let v = FromIterator::from_iter(range);
+/// let v = FromIterator::from_iter(iter);
 ///
 /// assert_eq!(v, array![0, 1, 2, 3, 4]);
 /// ```
@@ -75,9 +75,9 @@ pub trait FromIterator<T, G> {
     /// # Examples
     ///
     /// ```
-    /// let range = (0..5_u32).into_iter();
+    /// let iter = (0..5_u32).into_iter();
     ///
-    /// let v = FromIterator::from_iter(range);
+    /// let v = FromIterator::from_iter(iter);
     ///
     /// assert_eq!(v, array![0, 1, 2, 3, 4]);
     /// ```
