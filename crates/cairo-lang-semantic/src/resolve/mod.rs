@@ -68,6 +68,8 @@ mod item;
 pub const SELF_TYPE_KW: &str = "Self";
 pub const SUPER_KW: &str = "super";
 pub const CRATE_KW: &str = "crate";
+// Remove when this becomes an actual crate.
+const STARKNET_CRATE_NAME: &str = "starknet";
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
@@ -1303,6 +1305,15 @@ impl<'db> Resolver<'db> {
 
             return ResolvedBase::Crate(dep_crate_id);
         }
+        // If the first segment is `core` - and it was not overridden by a dependency - using it.
+        if ident == CORELIB_CRATE_NAME {
+            return ResolvedBase::Crate(CrateId::core(self.db));
+        }
+        // TODO(orizi): Remove when `starknet` becomes a proper crate.
+        if ident == STARKNET_CRATE_NAME {
+            // Making sure we don't look for it in `*` modules, to prevent cycles.
+            return ResolvedBase::Module(self.prelude_submodule());
+        }
         // If an item with this name is found in one of the 'use *' imports, use the module that
         match self.resolve_path_using_use_star(module_id, identifier) {
             UseStarResult::UniquePathFound(inner_module_item) => {
@@ -1322,10 +1333,6 @@ impl<'db> Resolver<'db> {
                 }
                 return ResolvedBase::ItemNotVisible(module_item_id, containing_modules);
             }
-        }
-        // If the first segment is `core` - and it was not overridden by a dependency - using it.
-        if ident == CORELIB_CRATE_NAME {
-            return ResolvedBase::Crate(CrateId::core(self.db));
         }
         ResolvedBase::Module(self.prelude_submodule())
     }
