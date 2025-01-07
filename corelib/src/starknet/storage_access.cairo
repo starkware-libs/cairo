@@ -1,3 +1,22 @@
+//! Storage access for low level Starknet contract storage manipulation.
+//!
+//! This module provides the functionality for manually reading from and writing to
+//! Starknet contract storage.
+//!
+//! # Storage Architecture
+//!
+//! Storage in Starknet is organized as:
+//! * Storage addresses with range `[0, 2^251)`
+//! * Base addresses that can be combined with offsets
+//! * Domain-separated storage spaces accessed via domain IDs
+//!
+//! # Core Components
+//!
+//! * `StorageAddress`: Represents a storage location in a Starknet contract
+//! * `StorageBaseAddress`: Base address that can be combined with offsets
+//! * `Store<T>`: Trait for types that can be stored in contract storage
+//! * `StorePacking<T,P>`: Trait for packing/unpacking values for storage
+
 use core::RangeCheck;
 use core::array::ArrayTrait;
 use core::byte_array::ByteArrayTrait;
@@ -21,22 +40,62 @@ use starknet::syscalls::{storage_read_syscall, storage_write_syscall};
 #[derive(Copy, Drop)]
 pub extern type StorageAddress;
 
+/// Represents a base address of a storage value that can be combined with offsets.
 #[derive(Copy, Drop)]
 pub extern type StorageBaseAddress;
 
-// Storage.
+/// Returns a `StorageBaseAddress` given a constant `felt252` value.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::storage_access::storage_base_address_const;
+///
+/// let base_address = storage_base_address_const::<0>();
+/// ```
 pub extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
 
+/// Returns a `StorageBaseAddress` given a `felt252` value.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::storage_access::storage_base_address_from_felt252;
+///
+/// let base_address = storage_base_address_from_felt252(0);
+/// ```
 pub extern fn storage_base_address_from_felt252(
     addr: felt252,
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
 
 pub(crate) extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
 
+/// Returns a `StorageBaseAddress` given a `StorageBaseAddress` and an offset.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::storage_access::{storage_base_address_from_felt252,
+/// storage_address_from_base_and_offset};
+///
+/// let base_address = storage_base_address_from_felt252(0);
+/// let new_address = storage_address_from_base_and_offset(base_address, 1);
+/// ```
 pub extern fn storage_address_from_base_and_offset(
     base: StorageBaseAddress, offset: u8,
 ) -> StorageAddress nopanic;
 
+/// Converts a `StorageBaseAddress` into a `StorageAddress`.
+///
+/// # Examples
+///
+/// ```
+/// use core::starknet::storage_access::{storage_base_address_from_felt252,
+/// storage_address_from_base};
+///
+/// let base_address = storage_base_address_from_felt252(0);
+/// let address = storage_address_from_base(base_address);
+/// ```
 pub extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
 pub(crate) extern fn storage_address_try_from_felt252(
@@ -59,6 +118,7 @@ impl StorageAddressSerde of Serde<StorageAddress> {
     fn serialize(self: @StorageAddress, ref output: Array<felt252>) {
         storage_address_to_felt252(*self).serialize(ref output);
     }
+
     fn deserialize(ref serialized: Span<felt252>) -> Option<StorageAddress> {
         Option::Some(
             storage_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?,
@@ -114,6 +174,7 @@ pub trait Store<T> {
 pub trait StorePacking<T, PackedT> {
     /// Packs a value of type `T` into a value of type `PackedT`.
     fn pack(value: T) -> PackedT;
+
     /// Unpacks a value of type `PackedT` into a value of type `T`.
     fn unpack(value: PackedT) -> T;
 }
