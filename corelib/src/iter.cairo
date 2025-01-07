@@ -231,4 +231,4 @@
 
 mod adapters;
 mod traits;
-pub use traits::iterator::{IntoIterator, Iterator};
+pub use traits::{IntoIterator, Iterator};
