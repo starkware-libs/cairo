@@ -214,7 +214,6 @@ fn test_empty_snapshot_fixed_size_array_iterator() {
     assert!(iter.next().is_none());
 }
 
-
 fn test_snapshot_array_into_iter() {
     let mut iter = (@array![1, 2, 3, 4, 5]).into_iter();
     assert_eq!(iter.next(), Option::Some(@1));
@@ -234,6 +233,20 @@ fn test_snapshot_span_into_iter() {
     assert_eq!(iter.next(), Option::Some(@4));
     assert_eq!(iter.next(), Option::Some(@5));
     assert!(iter.next().is_none());
+}
+
+#[test]
+fn test_array_from_iterator() {
+    let iter = (0..5_u32).into_iter();
+    let v = FromIterator::from_iter(iter);
+    assert_eq!(v, array![0, 1, 2, 3, 4]);
+}
+
+#[test]
+fn test_span_from_iterator() {
+    let iter = (0..5_u32).into_iter();
+    let v = FromIterator::from_iter(iter);
+    assert_eq!(v, array![0, 1, 2, 3, 4].span());
 }
 
 #[test]
