@@ -215,27 +215,25 @@ fn test_empty_snapshot_fixed_size_array_iterator() {
 }
 
 
-#[test]
 fn test_snapshot_array_into_iter() {
-    let mut arr = array![1, 2, 3, 4, 5];
-    let mut arr_iter = (@arr).into_iter();
-
-    let mut i = 1;
-    while let Option::Some(value) = arr_iter.next() {
-        assert_eq!(value, @i);
-        i += 1;
-    }
+    let mut iter = (@array![1, 2, 3, 4, 5]).into_iter();
+    assert_eq!(iter.next(), Option::Some(@1));
+    assert_eq!(iter.next(), Option::Some(@2));
+    assert_eq!(iter.next(), Option::Some(@3));
+    assert_eq!(iter.next(), Option::Some(@4));
+    assert_eq!(iter.next(), Option::Some(@5));
+    assert!(iter.next().is_none());
 }
 
 #[test]
 fn test_snapshot_span_into_iter() {
-    let span = array![1, 2, 3, 4, 5].span();
-    let mut span_iter = (@span).into_iter();
-    let mut i = 1;
-    while let Option::Some(value) = span_iter.next() {
-        assert_eq!(value, @i);
-        i += 1;
-    }
+    let mut iter = (@(array![1, 2, 3, 4, 5].span())).into_iter();
+    assert_eq!(iter.next(), Option::Some(@1));
+    assert_eq!(iter.next(), Option::Some(@2));
+    assert_eq!(iter.next(), Option::Some(@3));
+    assert_eq!(iter.next(), Option::Some(@4));
+    assert_eq!(iter.next(), Option::Some(@5));
+    assert!(iter.next().is_none());
 }
 
 #[test]
