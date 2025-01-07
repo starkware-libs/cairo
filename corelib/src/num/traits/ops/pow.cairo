@@ -28,222 +28,154 @@ pub trait Pow<Base, Exp> {
     fn pow(self: Base, exp: Exp) -> Self::Output;
 }
 
-// TODO(gil): Use a macro for it instead of copy paste.
-// Not using a trait for the implementation to allow `fn` to be `const`.
+mod mul_based {
+    /// Helper to implement const pow fns.
+    trait ConstPowHelper<T> {
+        const fn one() -> T;
+        const fn mul(lhs: T, rhs: T) -> T;
+    }
 
-impl PowFelt252 of Pow<felt252, usize> {
-    type Output = felt252;
+    /// Square and multiply implementation for `Pow`.
+    pub impl PowByMul<T, impl H: ConstPowHelper<T>, +Copy<T>, +Drop<T>> of super::Pow<T, usize> {
+        type Output = T;
 
-    const fn pow(self: felt252, exp: usize) -> felt252 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
+        const fn pow(self: T, exp: usize) -> T {
+            let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
+            let tail_result = if tail_exp == 0 {
+                H::one()
+            } else {
+                Self::pow(H::mul(self, self), tail_exp)
+            };
+            if head_exp == 0 {
+                tail_result
+            } else {
+                H::mul(tail_result, self)
+            }
+        }
+    }
+
+    // TODO(gil): Use a macro for it instead of copy paste.
+    // TODO(orizi): Consider extracting this for other corelib const calculations.
+    // Not using a trait for the implementation to allow `fn` to be `const`.
+
+    impl ConstPowHelperFelt252 of ConstPowHelper<felt252> {
+        const fn one() -> felt252 {
             1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
+        }
+        const fn mul(lhs: felt252, rhs: felt252) -> felt252 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperI8 of ConstPowHelper<i8> {
+        const fn one() -> i8 {
+            1
+        }
+        const fn mul(lhs: i8, rhs: i8) -> i8 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperU8 of ConstPowHelper<u8> {
+        const fn one() -> u8 {
+            1
+        }
+        const fn mul(lhs: u8, rhs: u8) -> u8 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperI16 of ConstPowHelper<i16> {
+        const fn one() -> i16 {
+            1
+        }
+        const fn mul(lhs: i16, rhs: i16) -> i16 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperU16 of ConstPowHelper<u16> {
+        const fn one() -> u16 {
+            1
+        }
+        const fn mul(lhs: u16, rhs: u16) -> u16 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperI32 of ConstPowHelper<i32> {
+        const fn one() -> i32 {
+            1
+        }
+        const fn mul(lhs: i32, rhs: i32) -> i32 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperU32 of ConstPowHelper<u32> {
+        const fn one() -> u32 {
+            1
+        }
+        const fn mul(lhs: u32, rhs: u32) -> u32 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperI64 of ConstPowHelper<i64> {
+        const fn one() -> i64 {
+            1
+        }
+        const fn mul(lhs: i64, rhs: i64) -> i64 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperU64 of ConstPowHelper<u64> {
+        const fn one() -> u64 {
+            1
+        }
+        const fn mul(lhs: u64, rhs: u64) -> u64 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperI128 of ConstPowHelper<i128> {
+        const fn one() -> i128 {
+            1
+        }
+        const fn mul(lhs: i128, rhs: i128) -> i128 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperU128 of ConstPowHelper<u128> {
+        const fn one() -> u128 {
+            1
+        }
+        const fn mul(lhs: u128, rhs: u128) -> u128 {
+            lhs * rhs
+        }
+    }
+
+    impl ConstPowHelperU256 of ConstPowHelper<u256> {
+        const fn one() -> u256 {
+            1
+        }
+        const fn mul(lhs: u256, rhs: u256) -> u256 {
+            lhs * rhs
         }
     }
 }
 
-impl PowI8 of Pow<i8, usize> {
-    type Output = i8;
-
-    const fn pow(self: i8, exp: usize) -> i8 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
-impl PowU8 of Pow<u8, usize> {
-    type Output = u8;
-
-    const fn pow(self: u8, exp: usize) -> u8 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
-impl PowI16 of Pow<i16, usize> {
-    type Output = i16;
-
-    const fn pow(self: i16, exp: usize) -> i16 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
-impl PowU16 of Pow<u16, usize> {
-    type Output = u16;
-
-    const fn pow(self: u16, exp: usize) -> u16 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
-impl PowI32 of Pow<i32, usize> {
-    type Output = i32;
-
-    const fn pow(self: i32, exp: usize) -> i32 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
-impl PowU32 of Pow<u32, usize> {
-    type Output = u32;
-
-    const fn pow(self: u32, exp: usize) -> u32 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
-impl PowI64 of Pow<i64, usize> {
-    type Output = i64;
-
-    const fn pow(self: i64, exp: usize) -> i64 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
-impl PowU64 of Pow<u64, usize> {
-    type Output = u64;
-
-    const fn pow(self: u64, exp: usize) -> u64 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
-impl PowI128 of Pow<i128, usize> {
-    type Output = i128;
-
-    const fn pow(self: i128, exp: usize) -> i128 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
-impl PowU128 of Pow<u128, usize> {
-    type Output = u128;
-
-    const fn pow(self: u128, exp: usize) -> u128 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
-impl PowU256 of Pow<u256, usize> {
-    type Output = u256;
-
-    const fn pow(self: u256, exp: usize) -> u256 {
-        let (tail_exp, head_exp) = DivRem::div_rem(exp, 2);
-        let tail_result = if tail_exp == 0 {
-            1
-        } else {
-            Self::pow(self * self, tail_exp)
-        };
-        if head_exp == 0 {
-            tail_result
-        } else {
-            tail_result * self
-        }
-    }
-}
-
+impl PowFelt252 = mul_based::PowByMul<felt252>;
+impl PowI8 = mul_based::PowByMul<i8>;
+impl PowU8 = mul_based::PowByMul<u8>;
+impl PowI16 = mul_based::PowByMul<i16>;
+impl PowU16 = mul_based::PowByMul<u16>;
+impl PowI32 = mul_based::PowByMul<i32>;
+impl PowU32 = mul_based::PowByMul<u32>;
+impl PowI64 = mul_based::PowByMul<i64>;
+impl PowU64 = mul_based::PowByMul<u64>;
+impl PowI128 = mul_based::PowByMul<i128>;
+impl PowU128 = mul_based::PowByMul<u128>;
+impl PowU256 = mul_based::PowByMul<u256>;
