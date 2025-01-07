@@ -10,6 +10,7 @@ use std::path::Path;
 use cairo_lang_formatter::CairoFormatter;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use colored::Colorize;
+#[cfg(feature = "lean")]
 use cairo_lang_lean::lean_generator::{
     write_lean_soundness_spec_file,
     write_lean_soundness_file,
@@ -165,6 +166,7 @@ impl TestBuilder {
     fn new_test(&mut self) {
         self.close_open_tag();
         let name = self.current_test_name.as_ref().expect("No name found for test.");
+        #[cfg(feature = "lean")]
         self.current_test.as_mut().expect("No test found.").attributes.entry("test_name".into()).or_insert(name.into());
         let old_test =
             self.tests.insert(name.clone(), std::mem::take(&mut self.current_test).unwrap());
@@ -367,7 +369,9 @@ pub fn run_test_file(
     let is_format_mode = std::env::var("CAIRO_SKIP_FORMAT_TESTS") != Ok("1".into());
     let filter = std::env::var("CAIRO_TEST_FILTER").unwrap_or_default();
 
+    #[cfg(feature = "lean")]
     let gen_lean_mode = std::env::var("CAIRO_GEN_LEAN") == Ok("1".into());
+    #[cfg(feature = "lean")]
     let lean_outputs = vec!(
         "lean_func_name",
         "lean_soundness_spec",
@@ -432,6 +436,7 @@ pub fn run_test_file(
         log::debug!("Running test: {test_path}");
         let result = runner.run(&test.attributes, &runner_args);
 
+        #[cfg(feature = "lean")]
         if gen_lean_mode {
             let lean_func_name = result.outputs.get("lean_func_name").expect("Lean function name missing.");
             write_lean_soundness_spec_file(&path, lean_func_name, result.outputs.get("lean_soundness_spec"))?;
@@ -445,6 +450,7 @@ pub fn run_test_file(
         if is_fix_mode {
             let mut new_test = test.clone();
             for (key, value) in result.outputs.iter() {
+                #[cfg(feature = "lean")]
                 if lean_outputs.contains(&&key[..]) {
                     continue;
                 }
@@ -467,6 +473,7 @@ pub fn run_test_file(
         // If not in fix mode, also validate expectations.
         if !is_fix_mode {
             for (key, value) in result.outputs {
+                #[cfg(feature = "lean")]
                 if lean_outputs.contains(&&key[..]) {
                     continue;
                 }

@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
+#[cfg(feature = "lean")]
 use cairo_lang_casm::builder::CasmBuilderAuxiliaryInfo;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
@@ -110,6 +111,7 @@ pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
     pub consts_info: ConstsInfo,
+    #[cfg(feature = "lean")]
     pub aux_infos: Vec<CasmBuilderAuxiliaryInfo>,
 }
 impl Display for CairoProgram {
@@ -474,6 +476,7 @@ pub fn compile(
         CircuitsInfo::new(&registry, program.type_declarations.iter().map(|td| &td.id))?;
 
     let mut program_offset: usize = 0;
+    #[cfg(feature = "lean")]
     let mut aux_infos: Vec<CasmBuilderAuxiliaryInfo> = Vec::new();
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
@@ -565,6 +568,7 @@ pub fn compile(
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
                 let start_offset = program_offset;
+                #[cfg(feature = "lean")]
                 if let Some(mut aux_info) = compiled_invocation.aux_info {
                     if aux_info.not_empty() {
                         aux_info.finalize(compiled_invocation.instructions.len());
@@ -660,6 +664,7 @@ pub fn compile(
         instructions,
         consts_info,
         debug_info: CairoProgramDebugInfo { sierra_statement_info },
+        #[cfg(feature = "lean")]
         aux_infos: aux_infos,
     })
 }

@@ -1,4 +1,3 @@
-use std::env::args;
 use std::{fs, iter};
 use std::cmp::{min, max, Ordering};
 use std::path::{Path, PathBuf};
@@ -17,7 +16,6 @@ use cairo_lang_casm::instructions::{InstructionBody, Instruction, AddApInstructi
 use cairo_lang_casm::operand::{ CellRef, DerefOrImmediate, Register, ResOperand };
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::bigint::BigIntAsHex;
-use cairo_lang_sierra::extensions::bounded_int::BoundedIntDivRemAlgorithm;
 
 /// Creates a function name which is based on the test name and the choice of algorithms.
 pub fn func_name_from_test_name(test_name: &str, aux_infos: &Vec<CasmBuilderAuxiliaryInfo>) -> String {

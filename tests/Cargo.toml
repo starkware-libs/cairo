@@ -6,6 +6,9 @@ repository.workspace = true
 license-file.workspace = true
 description = ""
 
+[features]
+lean = ["cairo-lang-lean/lean", "cairo-lang-test-utils/lean"]
+
 [dev-dependencies]
 assert_matches.workspace = true
 cairo-lang-casm = { path = "../crates/cairo-lang-casm" }

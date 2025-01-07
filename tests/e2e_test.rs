@@ -19,6 +19,7 @@ use cairo_lang_test_utils::test_lock;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
+#[cfg(feature = "lean")]
 use cairo_lang_lean::lean_generator::{
     func_name_from_test_name,
     generate_lean_soundness,
@@ -287,21 +288,24 @@ fn run_e2e_test(
         res.insert("function_costs".into(), function_costs_str.to_string());
     }
 
-    let lean_func_name = func_name_from_test_name(inputs["test_name"].as_str(), &cairo_program.aux_infos);
-    res.insert(
-        "lean_func_name".into(),
-        lean_func_name.clone(),
-    );
-    let (lean_soundness_spec, lean_soundness) =
-        generate_lean_soundness(&lean_func_name, &cairo_program);
-    res.insert("lean_soundness_spec".into(), lean_soundness_spec);
-    res.insert("lean_soundness".into(), lean_soundness);
-    let (lean_completeness_spec, lean_completeness) =
-        generate_lean_completeness(&lean_func_name, &cairo_program);
-    res.insert("lean_completeness_spec".into(), lean_completeness_spec);
-    res.insert("lean_completeness".into(), lean_completeness);
-    let lean_code = generate_lean_code(&lean_func_name, &cairo_program);
-    res.insert("lean_code".into(), lean_code);
+    #[cfg(feature = "lean")]
+    {
+        let lean_func_name = func_name_from_test_name(inputs["test_name"].as_str(), &cairo_program.aux_infos);
+        res.insert(
+            "lean_func_name".into(),
+            lean_func_name.clone(),
+        );
+        let (lean_soundness_spec, lean_soundness) =
+            generate_lean_soundness(&lean_func_name, &cairo_program);
+        res.insert("lean_soundness_spec".into(), lean_soundness_spec);
+        res.insert("lean_soundness".into(), lean_soundness);
+        let (lean_completeness_spec, lean_completeness) =
+            generate_lean_completeness(&lean_func_name, &cairo_program);
+        res.insert("lean_completeness_spec".into(), lean_completeness_spec);
+        res.insert("lean_completeness".into(), lean_completeness);
+        let lean_code = generate_lean_code(&lean_func_name, &cairo_program);
+        res.insert("lean_code".into(), lean_code);
+    }
 
     TestRunnerResult::success(res)
 }

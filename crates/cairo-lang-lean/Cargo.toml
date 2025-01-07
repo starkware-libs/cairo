@@ -6,6 +6,9 @@ repository.workspace = true
 license-file.workspace = true
 description = "Cairo Lean verification."
 
+[features]
+lean = ["cairo-lang-casm/lean", "cairo-lang-sierra-to-casm/lean"]
+
 [dependencies]
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.9.2" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.9.2" }

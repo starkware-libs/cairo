@@ -1,6 +1,8 @@
 use std::ops::Shl;
 
-use cairo_lang_casm::builder::{CasmBuilder, LibfuncAlgTypeDesc};
+use cairo_lang_casm::builder::CasmBuilder;
+#[cfg(feature = "lean")]
+use cairo_lang_casm::builder::LibfuncAlgTypeDesc;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::bounded_int::{
     BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
@@ -61,6 +63,7 @@ pub fn build_div_rem(
 
     let mut casm_builder = CasmBuilder::default();
 
+    #[cfg(feature = "lean")]
     if let Some(aux_info) = &mut casm_builder.aux_info {
         aux_info.set_alg_type(
             match &alg {
