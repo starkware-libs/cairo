@@ -162,7 +162,7 @@ impl DemandReporter<VariableId, PanicState> for DestructAdder<'_> {
 }
 
 /// A state saved for each position in the back analysis.
-/// Used to determine if a Panic object is guaranteed to exist or be created, an where.
+/// Used to determine if a Panic object is guaranteed to exist or be created, and where.
 #[derive(Clone, Default)]
 pub enum PanicState {
     /// The flow will end with a panic. The locations are all the possible places a Panic object
