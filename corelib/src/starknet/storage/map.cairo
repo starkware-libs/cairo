@@ -1,3 +1,26 @@
+//! Key-value storage mapping implementation for Starknet contracts.
+//!
+//! This module provides the core mapping functionality used in Starknet smart contracts,
+//! allowing contracts to store and retrieve values associated with keys in contract
+//! storage.
+//!
+//! # Core Components
+//!
+//! * `Map<K,V>`: Main mapping type for key-value storage
+//! * `StorageMapReadAccess`: Trait for reading values from mappings
+//! * `StorageMapWriteAccess`: Trait for writing values to mappings
+//! * `StoragePathEntry`: Trait for retrieving storage paths from keys
+//!
+//! # Examples
+//!
+//! ```
+//! #[storage]
+//! struct Storage {
+//!     a: Map<felt252, felt52>,
+//!     b: Map<felt52, Map<felt52, felt52>>,
+//! }
+//! ```
+
 #[allow(unused_imports)]
 use super::{
     Mutable, MutableTrait, StorageAsPath, StorageAsPointer, StoragePath, StoragePathHashState,
@@ -5,6 +28,21 @@ use super::{
 };
 
 /// Trait for reading a contract/component storage member in a specific key place.
+///
+/// # Examples
+///
+/// ```
+/// #[storage]
+/// struct Storage {
+///     a: Map<felt252, felt52>,
+///     b: Map<felt52, Map<felt52, felt52>>,
+/// }
+///
+/// fn use_storage(self: @ContractState) {
+///     let a_value = self.a.entry(1).read();
+///     let b_value = self.b.entry(1).entry(2).read()
+/// }
+/// ```
 pub trait StorageMapReadAccess<TMemberState> {
     type Key;
     type Value;
@@ -12,14 +50,40 @@ pub trait StorageMapReadAccess<TMemberState> {
 }
 
 /// Trait for writing contract/component storage member in a specific key place.
+///
+/// # Examples
+///
+/// ```
+/// #[storage]
+/// struct Storage {
+///     a: Map<felt252, felt52>,
+///     b: Map<felt52, Map<felt52, felt52>>,
+/// }
+///
+/// fn write_to_storage(self: ContractState) {
+///     self.a.entry(1).write(0);
+///     self.b.entry(1).entry(2).write(1)
+/// }
+/// ```
 pub trait StorageMapWriteAccess<TMemberState> {
     type Key;
     type Value;
     fn write(self: TMemberState, key: Self::Key, value: Self::Value);
 }
 
-
-/// Trait for updating the hash state with a value, using an `entry` method.
+/// Trait for updating the hash state (storage path) with a value, using an `entry` method.
+///
+/// # Examples
+///
+/// ```
+/// #[storage]
+/// struct Storage {
+///     a: Map<felt252, felt52>,
+///     b: Map<felt52, Map<felt52, felt52>>,
+/// }
+///
+/// let a_storage_path = self.a.entry(1);
+/// ```
 pub trait StoragePathEntry<C> {
     type Key;
     type Value;
@@ -41,7 +105,7 @@ impl EntryInfoImpl<K, V> of EntryInfo<Map<K, V>> {
     type Value = V;
 }
 
-/// Implement StoragePathEntry for any `EntryInfo` type if their key implements `Hash`.
+/// Implement `StoragePathEntry` for any `EntryInfo` type if their key implements `Hash`.
 impl EntryInfoStoragePathEntry<
     T, +EntryInfo<T>, +core::hash::Hash<EntryInfo::<T>::Key, StoragePathHashState>,
 > of StoragePathEntry<StoragePath<T>> {
@@ -52,7 +116,7 @@ impl EntryInfoStoragePathEntry<
     }
 }
 
-/// Same as `StoragePathEntryMap`, but for Mutable<T>, forwards the Mutable wrapper onto the value
+/// Same as `StoragePathEntryMap`, but for `Mutable<T>`, forwards the Mutable wrapper onto the value
 /// type.
 impl MutableEntryStoragePathEntry<
     T,
@@ -67,7 +131,8 @@ impl MutableEntryStoragePathEntry<
     }
 }
 
-/// Implement StorageMapAccessTrait for any type that implements StoragePathEntry and Store.
+/// Implement `StorageMapReadAccess` trait for any type that implements `StoragePathEntry` and
+/// `Store`.
 impl StorableEntryReadAccess<
     T,
     +EntryInfo<T>,
@@ -96,8 +161,8 @@ impl StorageAsPathReadForward<
     }
 }
 
-/// Implement StorageMapAccessTrait for any Mutable type that implements StoragePathEntry and
-/// Store.
+/// Implement `StorageMapReadAccess` trait for any mutable type that implements `StoragePathEntry`
+/// and `Store`.
 impl MutableStorableEntryReadAccess<
     T,
     +MutableTrait<T>,
@@ -116,8 +181,8 @@ impl MutableStorableEntryReadAccess<
 }
 
 
-/// Implement StorageMapAccessTrait for any Mutable type that implements StoragePathEntry and
-/// Store.
+/// Implement `StorageMapWriteAccess` trait for any mutable type that implements `StoragePathEntry`
+/// and `Store`.
 impl MutableStorableEntryWriteAccess<
     T,
     +MutableTrait<T>,
@@ -137,7 +202,6 @@ impl MutableStorableEntryWriteAccess<
     }
 }
 
-
 impl StorageAsPathWriteForward<
     T,
     impl PathImpl: StorageAsPath<T>,
@@ -153,7 +217,7 @@ impl StorageAsPathWriteForward<
     }
 }
 
-/// Implement StoragePathEntry for any type that implements StoragePath and StoragePathEntry.
+/// Implement `StoragePathEntry` for any type that implements `StoragePath` and `StoragePathEntry`.
 impl PathableStorageEntryImpl<
     T,
     impl PathImpl: StorageAsPath<T>,
