@@ -276,6 +276,14 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprUnary => Some(3),
                 _ => None,
             },
+
+            Some(SyntaxKind::ExprClosure) => match self.kind(db) {
+                SyntaxKind::ClosureParamWrapperNAry => Some(3),
+                SyntaxKind::ReturnTypeClause => Some(2),
+                SyntaxKind::ExprBlock => Some(1),
+                _ => None,
+            },
+
             Some(SyntaxKind::ExprIf) => match self.kind(db) {
                 SyntaxKind::ExprBlock => Some(1),
                 SyntaxKind::ConditionExpr | SyntaxKind::ConditionLet => Some(2),
@@ -527,12 +535,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         trailing: trailing_break_point,
                     }
                 }
-                SyntaxKind::ParamList
-                    if !matches!(
-                        parent_kind(db, self),
-                        Some(SyntaxKind::ClosureParamWrapperNAry)
-                    ) =>
-                {
+                SyntaxKind::ParamList => {
                     let leading_break_point = BreakLinePointProperties::new(
                         2,
                         BreakLinePointIndentation::IndentedWithTail,

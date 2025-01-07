@@ -82,3 +82,8 @@ fn comment_remains_after_last_comma() {
 fn struct_line_breaking() {
     let MyStruct {long_long_long_long_key_a, long_long_long_long_key_b, long_long_long_long_key_c, long_long_long_long_key_d, long_long_long_long_key_e, } = my_val;
 }
+fn closure_line_breaking() {
+    let closure_with_a_very_very_very_very_very_very_very_very_large_name = |left: usize, right: usize| -> usize {
+            left + right
+        };
+}
