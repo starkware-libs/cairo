@@ -40,7 +40,23 @@ pub struct Range<T> {
 }
 
 #[generate_trait]
-pub impl RangeImpl<T, +Copy<T>, +Drop<T>, +PartialOrd<T>> of RangeTrait<T> {
+pub impl RangeImpl<T, +Destruct<T>, +PartialOrd<@T>> of RangeTrait<T> {
+    /// Returns `true` if `item` is contained in the range.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// assert!(!(3..5).contains(@2));
+    /// assert!( (3..5).contains(@3));
+    /// assert!( (3..5).contains(@4));
+    /// assert!(!(3..5).contains(@5));
+    ///
+    /// assert!(!(3..3).contains(@3));
+    /// assert!(!(3..2).contains(@3));
+    fn contains(self: @Range<T>, item: @T) -> bool {
+        self.start <= item && item < self.end
+    }
+
     /// Returns `true` if the range contains no items.
     ///
     /// # Examples
@@ -111,7 +127,6 @@ impl RangeIntoIterator<
     -SierraIntRangeSupport<T>,
 > of IntoIterator<Range<T>> {
     type IntoIter = RangeIterator<T>;
-
     fn into_iter(self: Range<T>) -> Self::IntoIter {
         let start = self.start;
         let end = self.end;
@@ -159,7 +174,6 @@ impl SierraRangeIntoIterator<
     T, +Copy<T>, +Drop<T>, +SierraIntRangeSupport<T>,
 > of IntoIterator<Range<T>> {
     type IntoIter = internal::IntRange<T>;
-
     fn into_iter(self: Range<T>) -> Self::IntoIter {
         match internal::int_range_try_new(self.start, self.end) {
             Result::Ok(range) => range,
