@@ -11,13 +11,13 @@ mod test_contract {
 
     #[external(v0)]
     #[raw_output]
-    fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
+    fn test_raw_output(ref self: ContractState) -> Span<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 
     #[external(v0)]
     #[raw_output]
-    fn test_raw_output_with_spaces(ref self: ContractState) -> Span::<felt252> {
+    fn test_raw_output_with_spaces(ref self: ContractState) -> Span<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 }
@@ -32,13 +32,13 @@ mod test_contract {
 
     #[external(v0)]
     #[raw_output]
-    fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
+    fn test_raw_output(ref self: ContractState) -> Span<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 
     #[external(v0)]
     #[raw_output]
-    fn test_raw_output_with_spaces(ref self: ContractState) -> Span::<felt252> {
+    fn test_raw_output_with_spaces(ref self: ContractState) -> Span<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 }
@@ -117,7 +117,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x2a1a1bba6d0c773fab786191dfb5454782701d3308f2d60e686ba861815e841;
+pub const TEST_CLASS_HASH: felt252 = 0xd3e4aedceb9023ffd093c5d4d4605354999ba4a10776d97d533a048d33898;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
