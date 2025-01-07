@@ -14,10 +14,10 @@
 //! ```
 //! let mut iter = array![1, 2, 3].into_iter();
 //!
-//! assert_eq!(Option::Some(1), iter.next());
-//! assert_eq!(Option::Some(2), iter.next());
-//! assert_eq!(Option::Some(3), iter.next());
-//! assert_eq!(Option::None, iter.next());
+//! assert!(Option::Some(1) == iter.next());
+//! assert!(Option::Some(2) == iter.next());
+//! assert!(Option::Some(3) == iter.next());
+//! assert!(Option::None == iter.next());
 //! ```
 //!
 //! Implementing `IntoIterator` for your type:
@@ -63,7 +63,7 @@
 //! // ... and then turn it into an `Iterator`:
 //! let mut n = 0;
 //! for i in c {
-//!     assert_eq!(i, n);
+//!     assert!(i == n);
 //!     n += 1;
 //! };
 //! ```
@@ -85,10 +85,10 @@ pub trait IntoIterator<T> {
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter();
     ///
-    /// assert_eq!(Option::Some(1), iter.next());
-    /// assert_eq!(Option::Some(2), iter.next());
-    /// assert_eq!(Option::Some(3), iter.next());
-    /// assert_eq!(Option::None, iter.next());
+    /// assert!(Option::Some(1) == iter.next());
+    /// assert!(Option::Some(2) == iter.next());
+    /// assert!(Option::Some(3) == iter.next());
+    /// assert!(Option::None == iter.next());
     /// ```
     fn into_iter(self: T) -> Self::IntoIter;
 }
