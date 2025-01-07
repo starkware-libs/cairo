@@ -21,13 +21,13 @@ mod test_contract {
         var_u64: u64,
         var_u128: u128,
         var_bool: bool,
-        felt252_to_u128: LegacyMap::<felt252, u128>,
-        u128_to_bool: LegacyMap::<u128, bool>,
-        bool_to_felt252: LegacyMap::<bool, felt252>,
+        felt252_to_u128: LegacyMap<felt252, u128>,
+        u128_to_bool: LegacyMap<u128, bool>,
+        bool_to_felt252: LegacyMap<bool, felt252>,
         outer_type_var: super::OuterType,
-        outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+        outer_type_to_outer_type: LegacyMap<super::OuterType, super::OuterType>,
         inner_type_var: inner::InnerType,
-        inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+        inner_type_to_inner_type: LegacyMap<inner::InnerType, inner::InnerType>,
     }
 
     mod inner {
@@ -58,13 +58,13 @@ mod test_contract {
         var_u64: u64,
         var_u128: u128,
         var_bool: bool,
-        felt252_to_u128: LegacyMap::<felt252, u128>,
-        u128_to_bool: LegacyMap::<u128, bool>,
-        bool_to_felt252: LegacyMap::<bool, felt252>,
+        felt252_to_u128: LegacyMap<felt252, u128>,
+        u128_to_bool: LegacyMap<u128, bool>,
+        bool_to_felt252: LegacyMap<bool, felt252>,
         outer_type_var: super::OuterType,
-        outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+        outer_type_to_outer_type: LegacyMap<super::OuterType, super::OuterType>,
         inner_type_var: inner::InnerType,
-        inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+        inner_type_to_inner_type: LegacyMap<inner::InnerType, inner::InnerType>,
     }
 
     mod inner {
@@ -210,13 +210,13 @@ pub struct Storage {
         pub var_u64: u64,
         pub var_u128: u128,
         pub var_bool: bool,
-        pub felt252_to_u128: LegacyMap::<felt252, u128>,
-        pub u128_to_bool: LegacyMap::<u128, bool>,
-        pub bool_to_felt252: LegacyMap::<bool, felt252>,
+        pub felt252_to_u128: LegacyMap<felt252, u128>,
+        pub u128_to_bool: LegacyMap<u128, bool>,
+        pub bool_to_felt252: LegacyMap<bool, felt252>,
         pub outer_type_var: super::OuterType,
-        pub outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+        pub outer_type_to_outer_type: LegacyMap<super::OuterType, super::OuterType>,
         pub inner_type_var: inner::InnerType,
-        pub inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+        pub inner_type_to_inner_type: LegacyMap<inner::InnerType, inner::InnerType>,
 }
 
 #[derive(Drop, Copy)]
@@ -229,13 +229,13 @@ pub struct StorageStorageBase {
     pub var_u64: starknet::storage::StorageBase<u64>,
     pub var_u128: starknet::storage::StorageBase<u128>,
     pub var_bool: starknet::storage::StorageBase<bool>,
-    pub felt252_to_u128: starknet::storage::StorageBase<LegacyMap::<felt252, u128>>,
-    pub u128_to_bool: starknet::storage::StorageBase<LegacyMap::<u128, bool>>,
-    pub bool_to_felt252: starknet::storage::StorageBase<LegacyMap::<bool, felt252>>,
+    pub felt252_to_u128: starknet::storage::StorageBase<LegacyMap<felt252, u128>>,
+    pub u128_to_bool: starknet::storage::StorageBase<LegacyMap<u128, bool>>,
+    pub bool_to_felt252: starknet::storage::StorageBase<LegacyMap<bool, felt252>>,
     pub outer_type_var: starknet::storage::StorageBase<super::OuterType>,
-    pub outer_type_to_outer_type: starknet::storage::StorageBase<LegacyMap::<super::OuterType, super::OuterType>>,
+    pub outer_type_to_outer_type: starknet::storage::StorageBase<LegacyMap<super::OuterType, super::OuterType>>,
     pub inner_type_var: starknet::storage::StorageBase<inner::InnerType>,
-    pub inner_type_to_inner_type: starknet::storage::StorageBase<LegacyMap::<inner::InnerType, inner::InnerType>>,
+    pub inner_type_to_inner_type: starknet::storage::StorageBase<LegacyMap<inner::InnerType, inner::InnerType>>,
 }
 #[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
@@ -283,13 +283,13 @@ pub struct StorageStorageBaseMut {
     pub var_u64: starknet::storage::StorageBase<starknet::storage::Mutable::<u64>>,
     pub var_u128: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
     pub var_bool: starknet::storage::StorageBase<starknet::storage::Mutable::<bool>>,
-    pub felt252_to_u128: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<felt252, u128>>>,
-    pub u128_to_bool: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<u128, bool>>>,
-    pub bool_to_felt252: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<bool, felt252>>>,
+    pub felt252_to_u128: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap<felt252, u128>>>,
+    pub u128_to_bool: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap<u128, bool>>>,
+    pub bool_to_felt252: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap<bool, felt252>>>,
     pub outer_type_var: starknet::storage::StorageBase<starknet::storage::Mutable::<super::OuterType>>,
-    pub outer_type_to_outer_type: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<super::OuterType, super::OuterType>>>,
+    pub outer_type_to_outer_type: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap<super::OuterType, super::OuterType>>>,
     pub inner_type_var: starknet::storage::StorageBase<starknet::storage::Mutable::<inner::InnerType>>,
-    pub inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap::<inner::InnerType, inner::InnerType>>>,
+    pub inner_type_to_inner_type: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap<inner::InnerType, inner::InnerType>>>,
 }
 #[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
@@ -363,7 +363,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21bc80a6e513ea8e536;
+pub const TEST_CLASS_HASH: felt252 = 0x25c680547752cece853ea35e00dbd269ee33545db32a2d900eb20e872e0d255;
 
 
 pub mod __external {
@@ -443,25 +443,25 @@ impl StorageStorageBaseMutCopy of core::traits::Copy::<StorageStorageBaseMut>;
 //! > expected_diagnostics
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:18:26
-        felt252_to_u128: LegacyMap::<felt252, u128>,
+        felt252_to_u128: LegacyMap<felt252, u128>,
                          ^^^^^^^^^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:19:23
-        u128_to_bool: LegacyMap::<u128, bool>,
+        u128_to_bool: LegacyMap<u128, bool>,
                       ^^^^^^^^^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:20:26
-        bool_to_felt252: LegacyMap::<bool, felt252>,
+        bool_to_felt252: LegacyMap<bool, felt252>,
                          ^^^^^^^^^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:22:35
-        outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+        outer_type_to_outer_type: LegacyMap<super::OuterType, super::OuterType>,
                                   ^^^^^^^^^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:24:35
-        inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+        inner_type_to_inner_type: LegacyMap<inner::InnerType, inner::InnerType>,
                                   ^^^^^^^^^

@@ -923,10 +923,12 @@ impl SyntaxNodeFormat for SyntaxNode {
                 matches!(
                     parent_kind(db, &path_node),
                     Some(
-                        SyntaxKind::ItemImpl
-                            | SyntaxKind::GenericParamImplNamed
+                        SyntaxKind::GenericArgValueExpr
                             | SyntaxKind::GenericParamImplAnonymous
-                            | SyntaxKind::GenericArgValueExpr
+                            | SyntaxKind::GenericParamImplNamed
+                            | SyntaxKind::ItemImpl
+                            | SyntaxKind::ReturnTypeClause
+                            | SyntaxKind::TypeClause
                     )
                 )
             }
