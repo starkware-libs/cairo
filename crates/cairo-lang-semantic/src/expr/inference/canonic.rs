@@ -88,7 +88,7 @@ impl CanonicalImpl {
 }
 
 /// Mapping between canonical space and inference space.
-/// Created by a either canonicalizing or embedding a trait.
+/// Created by either canonicalizing or embedding a trait.
 #[derive(Debug)]
 pub struct CanonicalMapping {
     to_canonic: VarMapping,
